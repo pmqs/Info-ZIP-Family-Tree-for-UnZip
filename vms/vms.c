@@ -1,21 +1,11 @@
 /*
-  Copyright (c) 1990-2003 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
-
-/*
-   2004-10-01 SMS.  Changed to clear the extra byte written out by qio()
-   and sys$write() when an odd byte count is incremented to the next
-   even value, either explicitly (qio), or implicitly (sys$write), on
-   the theory that a reliable NUL beats left-over garbage.  Alpha and
-   VAX object files seem frequently to have even more than one byte of
-   extra junk past EOF, so this may not help them.
-*/
-
 /*---------------------------------------------------------------------------
 
   vms.c                                        Igor Mandrichenko and others
@@ -65,17 +55,17 @@
    (GNU C may define vax but not __VAX.)
 */
 #ifdef vax
-# define __VAX 1
+#  define __VAX 1
 #endif /* def vax */
 
 #ifdef __VAX
-# define GVTC (unsigned int)
+#  define GVTC (unsigned int)
 #else /* def __VAX */
-# define GVTC
+#  define GVTC
 #endif /* def __VAX */
 
 /* With GNU C, some FAB bits may be declared only as masks, not as
- * structure bits, 
+ * structure bits.
  */
 #ifdef __GNUC__
 # define OLD_FABDEF 1
@@ -123,6 +113,9 @@ static unsigned loccnt = 0;
 static uch *locptr;
 static char got_eol = 0;
 
+static char vms_msgbuf[ 256];           /* VMS-specific error message. */
+static $DESCRIPTOR( vms_msgbuf_dscr, vms_msgbuf);
+
 struct bufdsc
 {
     struct bufdsc *next;
@@ -164,7 +157,6 @@ static unsigned find_eol(uch *p, unsigned n, unsigned *l);
 static time_t mkgmtime(struct tm *tm);
 static void uxtime2vmstime(time_t utimeval, long int binval[2]);
 #endif /* TIMESTAMP */
-static void vms_msg(__GPRO__ char *string, int status);
 
 /* 2004-11-23 SMS.
  *
@@ -192,15 +184,14 @@ static void vms_msg(__GPRO__ char *string, int status);
 
 /* GETJPI item descriptor structure. */
 typedef struct
-    {
+{
     short buf_len;
     short itm_cod;
     void *buf;
     int *ret_len;
-    } jpi_item_t;
+} jpi_item_t;
 
 /* Durable storage */
-
 static int rms_defaults_known = 0;
 
 /* JPI item buffers. */
@@ -238,79 +229,110 @@ static int rms_mbf_len;         /* Should come back 1. */
 /* GETJPI item descriptor set. */
 
 struct
-    {
+{
     jpi_item_t rms_ext_itm;
     jpi_item_t rms_mbc_itm;
     jpi_item_t rms_mbf_itm;
     int term;
-    } jpi_itm_lst =
+} jpi_itm_lst =
      { { 2, JPI$_RMS_EXTEND_SIZE, &rms_ext, &rms_ext_len },
        { 1, JPI$_RMS_DFMBC, &rms_mbc, &rms_mbc_len },
        { 1, JPI$_RMS_DFMBFSDK, &rms_mbf, &rms_mbf_len },
        0
      };
 
-int get_rms_defaults()
+static int get_rms_defaults()
 {
-int sts;
+    int sts;
 
-/* Get process RMS_DEFAULT values. */
+    /* Get process RMS_DEFAULT values. */
 
-sts = sys$getjpiw( 0, 0, 0, &jpi_itm_lst, 0, 0, 0);
-if ((sts& STS$M_SEVERITY) != STS$M_SUCCESS)
+    sts = sys$getjpiw(0, 0, 0, &jpi_itm_lst, 0, 0, 0);
+    if ((sts& STS$M_SEVERITY) != STS$M_SUCCESS)
     {
-    /* Failed.  Don't try again. */
-    rms_defaults_known = -1;
+        /* Failed.  Don't try again. */
+        rms_defaults_known = -1;
     }
-else
+    else
     {
-    /* Fine, but don't come back. */
-    rms_defaults_known = 1;
-    }
-
-/* Limit the active values according to the RMS_DEFAULT values. */
-
-if (rms_defaults_known > 0)
-    {
-    /* Set the default values. */
-
-    rms_ext_active = RMS_DEQ_DEFAULT;
-    rms_mbc_active = RMS_MBC_DEFAULT;
-    rms_mbf_active = RMS_MBF_DEFAULT;
-
-    /* Default extend quantity.  Use the user value, if set. */
-    if (rms_ext > 0)
-        {
-        rms_ext_active = rms_ext;
-        }
-
-    /* Default multi-block count.  Use the user value, if set. */
-    if (rms_mbc > 0)
-        {
-        rms_mbc_active = rms_mbc;
-        }
-
-    /* Default multi-buffer count.  Use the user value, if set. */
-    if (rms_mbf > 0)
-        {
-        rms_mbf_active = rms_mbf;
-        }
+        /* Fine, but don't come back. */
+        rms_defaults_known = 1;
     }
 
-if (DIAG_FLAG)
-    {
-    fprintf( stderr,
-     "Get RMS defaults.  getjpi sts = %%x%08x.\n",
-     sts);
+    /* Limit the active values according to the RMS_DEFAULT values. */
 
     if (rms_defaults_known > 0)
+    {
+        /* Set the default values. */
+        rms_ext_active = RMS_DEQ_DEFAULT;
+        rms_mbc_active = RMS_MBC_DEFAULT;
+        rms_mbf_active = RMS_MBF_DEFAULT;
+
+        /* Default extend quantity.  Use the user value, if set. */
+        if (rms_ext > 0)
         {
-        fprintf( stderr,
-         "               Default: deq = %6d, mbc = %3d, mbf = %3d.\n",
-         rms_ext, rms_mbc, rms_mbf);
+            rms_ext_active = rms_ext;
+        }
+
+        /* Default multi-block count.  Use the user value, if set. */
+        if (rms_mbc > 0)
+        {
+            rms_mbc_active = rms_mbc;
+        }
+
+        /* Default multi-buffer count.  Use the user value, if set. */
+        if (rms_mbf > 0)
+        {
+            rms_mbf_active = rms_mbf;
         }
     }
-return sts;
+
+    if (DIAG_FLAG)
+    {
+        fprintf(stderr, "Get RMS defaults.  getjpi sts = %%x%08x.\n", sts);
+
+        if (rms_defaults_known > 0)
+        {
+            fprintf( stderr,
+             "               Default: deq = %6d, mbc = %3d, mbf = %3d.\n",
+             rms_ext, rms_mbc, rms_mbf);
+        }
+    }
+    return sts;
+}
+
+
+char *vms_msg_text( void)
+{
+    return vms_msgbuf;
+}
+
+
+static int vms_msg_only( int status)
+{
+    int msglen = 0;
+    int sts;
+
+    sts = lib$sys_getmsg( &status, &msglen, &vms_msgbuf_dscr, 0, 0);
+
+    vms_msgbuf[ msglen] = '\0';
+    return sts;
+}
+
+
+static void vms_msg(__GPRO__ char *string, int status)
+{
+    int msglen = 0;
+
+    if (ERR(lib$sys_getmsg(&status, &msglen, &vms_msgbuf_dscr, 0, 0)))
+        Info(slide, 1, ((char *)slide,
+             "%s[ VMS status = %d ]\n", string, status));
+    else
+    {
+        vms_msgbuf[msglen] = '\0';
+        Info(slide, 1, ((char *)slide, "%s[ %s ]\n", string,
+vms_msgbuf));
+    }
 }
 
 
@@ -389,12 +411,11 @@ int check_format(__G)
 int open_outfile(__G)           /* return 1 (PK_WARN) if fail */
     __GDEF
 {
-
     /* Get process RMS_DEFAULT values, if not already done. */
     if (rms_defaults_known == 0)
-        {
+    {
         get_rms_defaults();
-        }
+    }
 
     switch (find_vms_attrs(__G))
     {
@@ -494,9 +515,8 @@ static void set_default_datetime_XABs(__GPRO)
 
 static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 {
-    int bin_fixed;
     int ierr;
-    int text_output;
+    int text_output, bin_fixed;
 
     /* extract the file in text (variable-length) format, when
      * a) explicitely requested by the user (through the -a option)
@@ -574,7 +594,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
          * not available, then suffer with the default behavior.
          */
         if (rms_defaults_known > 0)
-            {
+        {
             /* Set the FAB/RAB parameters accordingly. */
             outfab-> fab$w_deq = rms_ext_active;
             outrab-> rab$b_mbc = rms_mbc_active;
@@ -587,10 +607,10 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
             /* If using multiple buffers, enable write-behind. */
             if (rms_mbf_active > 1)
-                {
+            {
                 outrab-> rab$l_rop |= RAB$M_WBH;
-                }
             }
+        }
 
         /* Set the initial file allocation according to the file
          * size.  Also set the "sequential access only" flag, as
@@ -601,17 +621,17 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         outfab-> fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
         outfab-> fab$l_fop |= FAB$M_SQO;
 
-#else /* def OLD_FABDEF */
+#else /* !OLD_FABDEF */
 
             /* Truncate at EOF on close, as we may over-extend. */
             outfab-> fab$v_tef = 1;
 
             /* If using multiple buffers, enable write-behind. */
             if (rms_mbf_active > 1)
-                {
+            {
                 outrab-> rab$v_wbh = 1;
-                }
             }
+        }
 
         /* Set the initial file allocation according to the file
          * size.  Also set the "sequential access only" flag, as
@@ -622,7 +642,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         outfab-> fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
         outfab-> fab$v_sqo = 1;
 
-#endif /* def OLD_FABDEF */
+#endif /* ?OLD_FABDEF */
 
         ierr = sys$create(outfab);
         if (ierr == RMS$_FEX)
@@ -728,9 +748,9 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
          */
 #ifdef OLD_FABDEF
         outfab-> fab$l_fop |= FAB$M_SQO;
-#else /* def OLD_FABDEF */
+#else /* !OLD_FABDEF */
         outfab-> fab$v_sqo = 1;
-#endif /* def OLD_FABDEF */
+#endif /* ?OLD_FABDEF */
 
         ierr = sys$create(outfab);
         if (ierr == RMS$_FEX)
@@ -958,7 +978,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
          * (The "no other readers" flag is also required, if you want
          * the "sequential access only" flag to have any effect.)
          */
-        pka_fib.FIB$L_ACCTL = FIB$M_WRITE| FIB$M_SEQONLY| FIB$M_NOREAD;
+        pka_fib.FIB$L_ACCTL = FIB$M_WRITE | FIB$M_SEQONLY | FIB$M_NOREAD;
 
         /* Allocate space for the file */
         pka_fib.FIB$W_EXCTL = FIB$M_EXTEND;
@@ -1415,6 +1435,15 @@ static int WriteQIO(__G__ buf, len)
     return PK_COOL;
 }
 
+/*
+   2004-10-01 SMS.  Changed to clear the extra byte written out by qio()
+   and sys$write() when an odd byte count is incremented to the next
+   even value, either explicitly (qio), or implicitly (sys$write), on
+   the theory that a reliable NUL beats left-over garbage.  Alpha and
+   VAX object files seem frequently to have even more than one byte of
+   extra junk past EOF, so this may not help them.
+*/
+
 static int _flush_qio(__G__ rawbuf, size, final_flag)
                                                 /* Asynchronous version */
     __GDEF
@@ -1453,12 +1482,12 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
         unsigned bufcnt_even;
 
         /* Round up to an even byte count. */
-        bufcnt_even = (curbuf->bufcnt+ 1)& (~1);
+        bufcnt_even = (curbuf->bufcnt+1) & (~1);
         /* If there is one, clear the extra byte. */
         if (bufcnt_even > curbuf->bufcnt)
-            curbuf->buf[ curbuf->bufcnt] = '\0';
+            curbuf->buf[curbuf->bufcnt] = '\0';
 
-        return WriteQIO( curbuf->buf, bufcnt_even);
+        return WriteQIO(curbuf->buf, bufcnt_even);
     }
     else
     {
@@ -1484,7 +1513,7 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
             unsigned loccnt_even;
 
             /* Round up to an even byte count. */
-            loccnt_even = (loccnt+ 1)& (~1);
+            loccnt_even = (loccnt+1) & (~1);
             /* If there is one, clear the extra byte. */
             if (loccnt_even > loccnt)
                 locbuf[ loccnt] = '\0';
@@ -1492,7 +1521,7 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
             status = sys$qiow(0, pka_devchn, IO$_WRITEVBLK,
                               &pka_io_sb, 0, 0,
                               locbuf,
-                              loccnt_even, 
+                              loccnt_even,
                               pka_vbn,
                               0, 0, 0);
             if (!ERR(status))
@@ -1643,7 +1672,7 @@ static int _flush_varlen(__G__ rawbuf, size, final_flag)
                 return PK_DISK;
             size -= 2+reclen;
             inptr += 2+reclen;
-            if ( reclen & 1)
+            if ( reclen & 1 )
             {
                 --size;
                 ++inptr;
@@ -1941,8 +1970,8 @@ static int WriteBuffer(__G__ buf, len)
         /* If odd byte count, then this must be the final record.
            Clear the extra byte past EOF to help keep the file clean.
         */
-        if (len& 1 != 0)
-            buf[ len] = '\0';
+        if (len & 1)
+            buf[len] = '\0';
 
         outrab->rab$w_rsz = len;
         outrab->rab$l_rbf = (char *) buf;
@@ -2454,25 +2483,6 @@ void dump_rms_block(p)
 
 
 
-static void vms_msg(__GPRO__ char *string, int status)
-{
-    static char msgbuf[256];
-
-    $DESCRIPTOR(msgd, msgbuf);
-    int msglen = 0;
-
-    if (ERR(lib$sys_getmsg(&status, &msglen, &msgd, 0, 0)))
-        Info(slide, 1, ((char *)slide,
-             "%s[ VMS status = %d ]\n", string, status));
-    else
-    {
-        msgbuf[msglen] = '\0';
-        Info(slide, 1, ((char *)slide, "%s[ %s ]\n", string, msgbuf));
-    }
-}
-
-
-
 #ifndef SFX
 
 /* 2004-11-23 SMS.
@@ -2515,10 +2525,24 @@ char *do_wild( __G__ wld )
         nam.nam$l_rsa = filenam;
         nam.nam$b_rss = sizeof(filenam)-1;
 
-        if ( !OK(sys$parse(&fab)) )
-            return (char *)NULL;     /* Initialization failed */
+        nam.nam$b_nop = NAM$M_SYNCHK;  /* Syntax-only analysis. */
 
         first_call = 0;
+
+        /* 2005-08-08 SMS.
+         * Parse the file spec.  If sys$parse() fails, save the VMS
+         * error message for later use, and return a null string.
+         */
+        status = sys$parse( &fab);
+        if (!OK( status))
+        {
+            vms_msg_only(__G__ status);
+            filenam[0] = '\0';
+            return filenam;
+#if 0
+            return (char *)NULL;     /* Initialization failed */
+#endif /* 0 */
+        }
 
         /* 2004-11-23 SMS.
          * Don't do this.  I see no good reason to lie about the file
@@ -2527,15 +2551,16 @@ char *do_wild( __G__ wld )
          * admit that the full file spec from sys$parse() may be ugly,
          * but at least it's never misleading.
          */
-        status = sys$search( &fab);
+        status = sys$search(&fab);
         if ( !OK(status) )
         {
+            /* Save the VMS error message for later use. */
+            vms_msg_only(__G__ status);
 #if 0
             strcpy( filenam, wld );
             return filenam;
 #endif /* 0 */
         }
-
     }
     else
     {
@@ -2575,9 +2600,9 @@ static ulg unix_to_vms[8]={ /* Map from UNIX rwx to VMS rwed */
                     /* and DESCRIP.MMS */
 
 #ifdef SETDFPROT
-#ifndef sys$setdfprot
+# ifndef sys$setdfprot
 extern int sys$setdfprot();
-#endif /* ndef sys$setdfprot */
+# endif /* !sys$setdfprot */
 #endif /* SETDFPROT */
 
 
@@ -2602,7 +2627,7 @@ int mapattr(__G)
 
 #ifdef SETDFPROT    /* Undef this if linker cat't resolve SYS$SETDFPROT */
         defprot = (ulg)0L;
-        if ( !ERR( sys$setdfprot( 0, &defprot)) )
+        if ( !ERR(sys$setdfprot(0, &defprot)) )
         {
             sysdef = defprot & ( (1L<<XAB$S_SYS)-1 ) << XAB$V_SYS;
             owndef = defprot & ( (1L<<XAB$S_OWN)-1 ) << XAB$V_OWN;
@@ -2642,6 +2667,7 @@ int mapattr(__G)
                     /* GRR:  Yup.  Bad decision on my part... */
         case ACORN_:
         case ATARI_:
+        case ATHEOS_:
         case BEOS_:
         case QDOS_:
         case TANDEM_:
@@ -3594,7 +3620,7 @@ void version(__G)
     char *chrp1;
     char *chrp2;
     char buf[40];
-    char vms_vers[ 16];
+    char vms_vers[16];
     int ver_maj;
 #endif
 #ifdef __DECC_VER
@@ -3604,18 +3630,18 @@ void version(__G)
 
 #ifdef VMS_VERSION
     /* Truncate the version string at the first (trailing) space. */
-    strncpy( vms_vers, VMS_VERSION, sizeof( vms_vers));
+    strncpy(vms_vers, VMS_VERSION, sizeof(vms_vers));
+    vms_vers[sizeof(vms_vers)-1] = '\0';
     chrp1 = strchr( vms_vers, ' ');
     if (chrp1 != NULL)
         *chrp1 = '\0';
 
     /* Determine the major version number. */
     ver_maj = 0;
-    chrp1 = strchr( &vms_vers[ 1], '.');
-    for (chrp2 = &vms_vers[ 1];
-     chrp2 < chrp1;
-     ver_maj = ver_maj* 10+ *(chrp2++)- '0');
-
+    chrp1 = strchr(&vms_vers[ 1], '.');
+    for (chrp2 = &vms_vers[1];
+         chrp2 < chrp1;
+         ver_maj = ver_maj * 10 + *(chrp2++) - '0');
 #endif /* def VMS_VERSION */
 
 /*  DEC C in ANSI mode does not like "#ifdef MACRO" inside another
@@ -3647,20 +3673,20 @@ void version(__G)
 #endif
 
 #ifdef VMS_VERSION
-#  if defined( __alpha)
+#  if defined(__alpha)
       "OpenVMS",
-      (sprintf( buf, " (%s Alpha)", vms_vers), buf),
-#  elif defined( __IA64) /* defined( __alpha) */
+      (sprintf(buf, " (%s Alpha)", vms_vers), buf),
+#  elif defined(__IA64)
       "OpenVMS",
-      (sprintf( buf, " (%s IA64)", vms_vers), buf),
-#  else /* defined( __alpha) */
+      (sprintf(buf, " (%s IA64)", vms_vers), buf),
+#  else /* VAX */
       (ver_maj >= 6) ? "OpenVMS" : "VMS",
-      (sprintf( buf, " (%s VAX)", vms_vers), buf),
-#  endif /* def VAX */
+      (sprintf(buf, " (%s VAX)", vms_vers), buf),
+#  endif
 #else
       "VMS",
       "",
-#endif /* def VMS_VERSION */
+#endif /* ?VMS_VERSION */
 
 #ifdef __DATE__
       " on ", __DATE__
@@ -3674,6 +3700,8 @@ void version(__G)
 } /* end function version() */
 
 #endif /* !SFX */
+
+
 
 #ifdef __DECC
 
@@ -3700,50 +3728,49 @@ int openr_id = OPENR_ID;        /* Callback id storage, read. */
 
 /* acc_cb() */
 
-int acc_cb( int *id_arg, struct FAB *fab, struct RAB *rab)
+int acc_cb(int *id_arg, struct FAB *fab, struct RAB *rab)
 {
-int sts;
+    int sts;
 
-/* Get process RMS_DEFAULT values, if not already done. */
-if (rms_defaults_known == 0)
+    /* Get process RMS_DEFAULT values, if not already done. */
+    if (rms_defaults_known == 0)
     {
-    get_rms_defaults();
+        get_rms_defaults();
     }
 
-/* If RMS_DEFAULT (and adjusted active) values are available, then set
- * the FAB/RAB parameters.  If RMS_DEFAULT values are not available,
- * suffer with the default parameters.
- */
-if (rms_defaults_known > 0)
+    /* If RMS_DEFAULT (and adjusted active) values are available, then set
+     * the FAB/RAB parameters.  If RMS_DEFAULT values are not available,
+     * suffer with the default parameters.
+     */
+    if (rms_defaults_known > 0)
     {
-    /* Set the FAB/RAB parameters accordingly. */
-    fab-> fab$w_deq = rms_ext_active;
-    rab-> rab$b_mbc = rms_mbc_active;
-    rab-> rab$b_mbf = rms_mbf_active;
+        /* Set the FAB/RAB parameters accordingly. */
+        fab-> fab$w_deq = rms_ext_active;
+        rab-> rab$b_mbc = rms_mbc_active;
+        rab-> rab$b_mbf = rms_mbf_active;
 
-    /* Truncate at EOF on close, as we'll probably over-extend. */
-    fab-> fab$v_tef = 1;
+        /* Truncate at EOF on close, as we'll probably over-extend. */
+        fab-> fab$v_tef = 1;
 
-    /* If using multiple buffers, enable read-ahead and write-behind. */
-    if (rms_mbf_active > 1)
+        /* If using multiple buffers, enable read-ahead and write-behind. */
+        if (rms_mbf_active > 1)
         {
-        rab-> rab$v_rah = 1;
-        rab-> rab$v_wbh = 1;
+            rab-> rab$v_rah = 1;
+            rab-> rab$v_wbh = 1;
         }
 
-    if (DIAG_FLAG)
+        if (DIAG_FLAG)
         {
-        fprintf( stderr,
-         "Open callback.  ID = %d, deq = %6d, mbc = %3d, mbf = %3d.\n",
-         *id_arg, fab-> fab$w_deq, rab-> rab$b_mbc, rab-> rab$b_mbf);
+            fprintf(stderr,
+              "Open callback.  ID = %d, deq = %6d, mbc = %3d, mbf = %3d.\n",
+              *id_arg, fab-> fab$w_deq, rab-> rab$b_mbc, rab-> rab$b_mbf);
         }
     }
 
-/* Declare success. */
-return 0;
+    /* Declare success. */
+    return 0;
 }
 
-#endif /* def __DECC */
 
 
 /*
@@ -3759,11 +3786,8 @@ return 0;
  *----------------------------------------------------------------------
  */
 
-#ifdef __DECC
-
 #ifdef __CRTL_VER
-
-#if !defined( __VAX) && (__CRTL_VER >= 70301000)
+#if !defined(__VAX) && (__CRTL_VER >= 70301000)
 
 #include <unixlib.h>
 
@@ -3773,7 +3797,7 @@ return 0;
 
 /*    Flag to sense if decc_init() was called. */
 
-int decc_init_done = -1;
+static int decc_init_done = -1;
 
 /*--------------------------------------------------------------------*/
 
@@ -3786,10 +3810,10 @@ int decc_init_done = -1;
 /* Structure to hold a DECC$* feature name and its desired value. */
 
 typedef struct
-   {
+{
    char *name;
    int value;
-   } decc_feat_t;
+} decc_feat_t;
 
 /* Array of DECC$* feature names and their desired values. */
 
@@ -3812,59 +3836,61 @@ decc_feat_t decc_feat_array[] = {
    /* List terminator. */
  { (char *)NULL, 0 } };
 
+
 /* LIB$INITIALIZE initialization function. */
 
-static void decc_init( void)
+static void decc_init(void)
 {
-int feat_index;
-int feat_value;
-int feat_value_max;
-int feat_value_min;
-int i;
-int sts;
+    int feat_index;
+    int feat_value;
+    int feat_value_max;
+    int feat_value_min;
+    int i;
+    int sts;
 
-/* Set the global flag to indicate that LIB$INITIALIZE worked. */
+    /* Set the global flag to indicate that LIB$INITIALIZE worked. */
 
-decc_init_done = 1;
+    decc_init_done = 1;
 
-/* Loop through all items in the decc_feat_array[]. */
+    /* Loop through all items in the decc_feat_array[]. */
 
-for (i = 0; decc_feat_array[ i].name != NULL; i++)
-   {
-   /* Get the feature index. */
-   feat_index = decc$feature_get_index( decc_feat_array[ i].name);
-   if (feat_index >= 0)
-      {
-      /* Valid item.  Collect its properties. */
-      feat_value = decc$feature_get_value( feat_index, 1);
-      feat_value_min = decc$feature_get_value( feat_index, 2);
-      feat_value_max = decc$feature_get_value( feat_index, 3);
+    for (i = 0; decc_feat_array[i].name != NULL; i++)
+    {
+        /* Get the feature index. */
+        feat_index = decc$feature_get_index(decc_feat_array[i].name);
+        if (feat_index >= 0)
+        {
+            /* Valid item.  Collect its properties. */
+            feat_value = decc$feature_get_value(feat_index, 1);
+            feat_value_min = decc$feature_get_value(feat_index, 2);
+            feat_value_max = decc$feature_get_value(feat_index, 3);
 
-      if ((decc_feat_array[ i].value >= feat_value_min) &&
-       (decc_feat_array[ i].value <= feat_value_max))
-         {
-         /* Valid value.  Set it if necessary. */
-         if (feat_value != decc_feat_array[ i].value)
+            if ((decc_feat_array[i].value >= feat_value_min) &&
+                (decc_feat_array[i].value <= feat_value_max))
             {
-            sts = decc$feature_set_value( feat_index,
-             1,
-             decc_feat_array[ i].value);
+                /* Valid value.  Set it if necessary. */
+                if (feat_value != decc_feat_array[i].value)
+                {
+                    sts = decc$feature_set_value(
+                              feat_index,
+                              1,
+                              decc_feat_array[ i].value);
+                }
             }
-         }
-      else
-         {
-         /* Invalid DECC feature value. */
-         printf( " INVALID DECC FEATURE VALUE, %d: %d <= %s <= %d.\n",
-          feat_value,
-          feat_value_min, decc_feat_array[ i].name, feat_value_max);
-         }
-      }
-   else
-      {
-      /* Invalid DECC feature name. */
-      printf( " UNKNOWN DECC FEATURE: %s.\n", decc_feat_array[ i].name);
-      }
-   }
+            else
+            {
+                /* Invalid DECC feature value. */
+                printf(" INVALID DECC FEATURE VALUE, %d: %d <= %s <= %d.\n",
+                  feat_value,
+                  feat_value_min, decc_feat_array[ i].name, feat_value_max);
+            }
+        }
+        else
+        {
+            /* Invalid DECC feature name. */
+            printf(" UNKNOWN DECC FEATURE: %s.\n", decc_feat_array[i].name);
+        }
+    }
 }
 
 /* Get "decc_init()" into a valid, loaded LIB$INITIALIZE PSECT. */
@@ -3874,9 +3900,9 @@ for (i = 0; decc_feat_array[ i].name != NULL; i++)
 /* Establish the LIB$INITIALIZE PSECT, with proper alignment and
    attributes.
 */
-globaldef { "LIB$INITIALIZ" } readonly _align (LONGWORD)
+globaldef {"LIB$INITIALIZ"} readonly _align (LONGWORD)
    int spare[ 8] = { 0 };
-globaldef { "LIB$INITIALIZE" } readonly _align (LONGWORD)
+globaldef {"LIB$INITIALIZE"} readonly _align (LONGWORD)
    void (*x_decc_init)() = decc_init;
 
 /* Fake reference to ensure loading the LIB$INITIALIZE PSECT. */
@@ -3884,15 +3910,13 @@ globaldef { "LIB$INITIALIZE" } readonly _align (LONGWORD)
 #pragma extern_model save
 int lib$initialize(void);
 #pragma extern_model strict_refdef
-int dmy_lib$initialize = (int) lib$initialize;
+int dmy_lib$initialize = (int)lib$initialize;
 #pragma extern_model restore
 
 #pragma standard
 
 #endif /* !defined( __VAX) && (__CRTL_VER >= 70301000) */
-
-#endif /* def __CRTL_VER */
-
-#endif /* def __DECC */
+#endif /* __CRTL_VER */
+#endif /* __DECC */
 
 #endif /* VMS */

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2003 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -79,15 +79,20 @@ static ZCONST char Far CannotAllocateBuffers[] =
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find or open %s, %s.zip or %s.\n";
 # else /* !UNIX */
-# ifndef AMIGA
+#  ifndef AMIGA
    static ZCONST char Far CannotFindWildcardMatch[] =
      "%s:  cannot find any matches for wildcard specification \"%s\".\n";
-# endif /* !AMIGA */
+#  endif /* !AMIGA */
    static ZCONST char Far CannotFindZipfileDirMsg[] =
      "%s:  cannot find zipfile directory in %s,\n\
         %sand cannot find %s, period.\n";
+#  ifdef VMS
+   static ZCONST char Far CannotFindEitherZipfile[] =
+     "%s:  cannot find %s (%s).\n";
+#  else /* def VMS */
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find either %s or %s.\n";
+#  endif /* def VMS [else] */
 # endif /* ?UNIX */
    extern ZCONST char Far Zipnfo[];       /* in unzip.c */
 #ifndef WINDLL
@@ -364,7 +369,18 @@ int process_zipfiles(__G)    /* return PK-type error code */
             char *p = lastzipfn + strlen(lastzipfn);
 
             G.zipfn = lastzipfn;
+
+            /* 2004-11-24 SMS.
+             * 2005-08-02 SMS.  Moved into UnZip 5 from UnZip 6.
+             * VMS has already tried a default file type of ".zip" in
+             * do_wild(), so adding ZSUFX here only causes confusion by
+             * corrupting some valid (though nonexistent) file names.
+             * Complaining below about "fred;4.zip" is unlikely to be
+             * helpful to the victim.
+             */
+#ifndef VMS
             strcpy(p, ZSUFX);
+#endif /* ndef VMS */
 
             NumMissDirs = NumMissFiles = 0;
             error_in_archive = PK_COOL;
@@ -587,6 +603,20 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
                   LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
                   G.wildzipfn, G.wildzipfn, G.zipfn));
 #else /* !(UNIX || QDOS) */
+# ifdef VMS
+            if (G.no_ecrec)
+                Info(slide, 0x401, ((char *)slide,
+                  LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
+                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  G.wildzipfn, uO.zipinfo_mode? "  " : "",
+                  (*G.zipfn ? G.zipfn : vms_msg_text())));
+            else
+                Info(slide, 0x401, ((char *)slide,
+                  LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
+                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  G.wildzipfn,
+                  (*G.zipfn ? G.zipfn : vms_msg_text())));
+# else /* def VMS */
             if (G.no_ecrec)
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
@@ -597,6 +627,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
                   LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
                   LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
                   G.wildzipfn, G.zipfn));
+# endif /* def VMS [else] */
 #endif /* ?(UNIX || QDOS) */
         }
 #endif /* !SFX */
@@ -741,7 +772,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         }
 #endif /* !SFX */
         if ((G.extra_bytes = G.real_ecrec_offset-G.expect_ecrec_offset) <
-            (LONGINT)0)
+            (Z_OFF_T)0)
         {
             Info(slide, 0x401, ((char *)slide, LoadFarString(MissingBytes),
               G.zipfn, (long)(-G.extra_bytes)));
@@ -915,7 +946,7 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
     long searchlen;
 {
     int i, numblks, found=FALSE;
-    LONGINT tail_len;
+    Z_OFF_T tail_len;
     ec_byte_rec byterec;
 
 
@@ -1155,7 +1186,7 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
                 break;
 
             default:     /* AMIGA_, FS_HPFS_, FS_NTFS_, MAC_, UNIX_, ATARI_, */
-                break;   /*  FS_VFAT_, BEOS_ (Z_SYSTEM_), THEOS_: */
+                break;   /*  FS_VFAT_, ATHEOS_, BEOS_ (Z_SYSTEM_), THEOS_: */
                          /*  no conversion */
         }
     else if (uO.L_flag > 1)   /* let -LL force lower case for all names */
