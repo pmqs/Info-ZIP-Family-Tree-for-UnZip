@@ -1,53 +1,70 @@
-UnZip, version 6.0b BETA, 12 November 2004
+UnZip, version 6.00c BETA, 14 January 2005
 
 Features added (or removed):
 
-6.0a ():
- - many changes by Myles
+6.00a ():
+ - Many changes by Myles
 
-6.0b (12 Nov 04):
- - added dll changes from Mike White [EG]
- - added Unix Large File Support but must be enabled manually [EG]
- - humble beginnings of adding configure script to Unix port to
-    autoconfigure large file support [EG]
+6.00b (12 Nov 04):
+ - Added dll changes from Mike White.  [MW, EG]
+ - Added Unix Large File Support but must be enabled manually.  [EG]
+ - Humble beginnings of adding configure script to Unix port to
+    autoconfigure large file support.  [EG]
  - VMS changes, including large file support, better handling of
    -V and new -VV options, revised build procedures, and
-   documentation updates [SMS]
+   documentation updates.  [SMS]
  - file_size added to process.c to handle files sizes larger
-   than 2 GB more cleanly when no large file support [SMS]
- - large file debugging on Unix and VMS [SMS, EG]
- - added ATHEOS port [Ruslan Nickolaev, EG]
- - split w32i64.h with large file includes for dll [EG]
+   than 2 GB more cleanly when no large file support.  [SMS]
+ - Large file debugging on Unix and VMS.  [SMS, EG]
+ - Added ATHEOS port [Ruslan Nickolaev, EG]
+ - Split w32i64.h with large file includes for dll [EG]
 
-6.0c (xx Nov 04):
+6.00c (17 Jan 05):
 
  - Faster VMS I/O, both reading the archive and creating extracted
    data files.  Disk paralysis during file allocation, when
-   highwater marking is enabled on the destination device, is gone.
+   highwater marking is enabled on the destination device, is
+   gone.  [SMS]
+ - Various Amiga and Win32 changes (see files).  [PK]
+ - Add NOSHARE compile option for VMS.  [SMS]
 
 
 Bugs fixed:
 
-6.0b (12 Nov 04):
+6.00b (12 Nov 04):
 
- - output bug fixes to account for sizes > 2 Gb and < 4 GB [EG]
-
- - bug fixes in ZipInfo [EG]
-
- - reverted unix.c to an older version to make
+ - Output bug fixes to account for sizes > 2 Gb and < 4 GB.  [EG]
+ - Bug fixes in ZipInfo.  [EG]
+ - Reverted unix.c to an older version to make
    calls to defer_dir_attribs compatible.  Also needed to rework
    win32.c to make compatible.  Probably broke NT but haven't tested.
-   Need to trace out and fix [EG]
+   Need to trace out and fix.  [EG]
+ - On VMS, when an odd output byte count is incremented to the next
+   larger even value, the extra byte written is now always zero,
+   reducing random differences between original and extracted files.  [SMS]
 
 
-6.0c (xx Nov 04):
+6.00c (17 Jan 05):
 
  - On VMS, "cannot find either fred;1 or fred;1.zip." messages changed
-   to show only non-fictional file names.
+   to show only non-fictional file names.  [SMS]
+ - Debian patch 001 - change __GNU__ to __GLIBC__ in unix/unxcfg.h.  This is
+   required to build under glibc-based systems not being Linux-based (like
+   the Debian GNU/kFreeBSD port, which is in preparation).  In fact,
+   everywhere the macro __GNU__ is used, __GLIBC__ should be used instead.
+   It could be made even shorter since defined(linux) || defined(__GLIBC__)
+   should be the same as simply defined(__GLIBC__).  [?, EG]
+ - Debian patch 002 - add newline to end of cannot open zipfile message
+   in fileio.c.  [?, EG]
+ - Various bug fixes (see files gbloffs.c, process.c, unzpriv.h, amiga/amiga.h,
+   amiga/filedate.c, amiga/flate.a, amiga/makefile.azt, and win32/w32cfg.h).  [PK]
+ - Some type changes in globals.h.  [SMS]
+
+
 
 ==================
 
-These changes occurred in beta versions 6.0a to 6.0b.  This list may have
+These changes occurred in beta versions 6.00a to 6.00c.  This list may have
 left out some bugfixes and even some features...void where prohibited, your
 mileage may vary, etc., etc.
 
