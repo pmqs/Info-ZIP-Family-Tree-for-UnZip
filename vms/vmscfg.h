@@ -1,45 +1,64 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2005-Feb-10 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 /*---------------------------------------------------------------------------
-    OpenVMS specific configuration section (included by unzpriv.h):
+
+  vmscfg.h
+
+  This header file contains VMS-specific code for inclusion in
+  UNZPRIV.H.
+
   ---------------------------------------------------------------------------*/
+
 
 #ifndef __vmscfg_h   /* Prevent (unlikely) multiple inclusions. */
 #define __vmscfg_h
 
-/* Accomodation for /NAMES = AS_IS with old header files. */
-#define cma$tis_errno_get_addr CMA$TIS_ERRNO_GET_ADDR
+#ifdef VMS
 
-/* 2007-02-22 SMS.
- * Enable symbolic links according to the available C RTL support,
- * unless prohibited by the user defining NO_SYMLINKS.
- */
-#if !defined(__VAX) && defined(__CRTL_VER) && __CRTL_VER >= 70301000
-#  ifndef NO_SYMLINKS
-#     define SYMLINKS
-#  endif
-#endif
-#ifdef SYMLINKS
-#  include <unistd.h>
+/* LARGE FILE SUPPORT - 10/6/04 EG */
+/* This needs to be set before the includes so they set the right sizes */
+
+#ifdef NO_LARGE_FILE_SUPPORT
+# ifdef LARGE_FILE_SUPPORT
+#  undef LARGE_FILE_SUPPORT
+# endif
 #endif
 
+#ifdef LARGE_FILE_SUPPORT
+
+# define _LARGEFILE             /* Define the pertinent macro. */
+
+/* LARGE_FILE_SUPPORT implies ZIP64_SUPPORT,
+   unless explicitly disabled by NO_ZIP64_SUPPORT.
+*/
+#  ifdef NO_ZIP64_SUPPORT
+#    ifdef ZIP64_SUPPORT
+#      undef ZIP64_SUPPORT
+#    endif /* def ZIP64_SUPPORT */
+#  else /* def NO_ZIP64_SUPPORT */
+#    ifndef ZIP64_SUPPORT
+#      define ZIP64_SUPPORT
+#    endif /* ndef ZIP64_SUPPORT */
+#  endif /* def NO_ZIP64_SUPPORT */
+
+#endif /* def LARGE_FILE_SUPPORT */
+
+#  include <unixio.h>
 #  include <types.h>                    /* GRR:  experimenting... */
 #  include <stat.h>
 #  include <time.h>                     /* the usual non-BSD time functions */
 #  include <file.h>                     /* same things as fcntl.h has */
-#  include <unixio.h>
 #  include <rms.h>
-   /* Define maximum path length according to NAM member size. */
-#  ifndef NAM_MAXRSS
-#    define NAM_MAXRSS NAM$C_MAXRSS
+#  define _MAX_PATH (NAM$C_MAXRSS+1)    /* to define FILNAMSIZ below */
+#  ifndef HAVE_STRNICMP                 /* use our private zstrnicmp() */
+#    define NO_STRNICMP                 /*  unless explicitely overridden */
 #  endif
-#  define _MAX_PATH (NAM_MAXRSS+1)      /* to define FILNAMSIZ below */
 #  ifdef RETURN_CODES  /* VMS interprets standard PK return codes incorrectly */
 #    define RETURN(ret) return_VMS(__G__ (ret))   /* verbose version */
 #    define EXIT(ret)   return_VMS(__G__ (ret))
@@ -73,48 +92,65 @@
 #    if (!defined(NO_EF_UT_TIME) && !defined(USE_EF_UT_TIME))
 #      define USE_EF_UT_TIME
 #    endif
-#    if (!defined(HAVE_STRNICMP) && !defined(NO_STRNICMP))
-#      define HAVE_STRNICMP
-#      ifdef STRNICMP
-#        undef STRNICMP
-#      endif
-#      define STRNICMP  strncasecmp
-#    endif
-#  endif
-#  ifndef HAVE_STRNICMP                 /* use our private zstrnicmp() */
-#    define NO_STRNICMP                 /*  unless explicitly overridden */
 #  endif
 #  if (!defined(NOTIMESTAMP) && !defined(TIMESTAMP))
 #    define TIMESTAMP
 #  endif
 #  define RESTORE_UIDGID
-   /* VMS is run on little-endian processors with 4-byte ints:
-    * enable the optimized CRC-32 code */
-#  ifdef IZ_CRC_BE_OPTIMIZ
-#    undef IZ_CRC_BE_OPTIMIZ
-#  endif
-#  if !defined(IZ_CRC_LE_OPTIMIZ) && !defined(NO_CRC_OPTIMIZ)
-#    define IZ_CRC_LE_OPTIMIZ
-#  endif
-#  if !defined(IZ_CRCOPTIM_UNFOLDTBL) && !defined(NO_CRC_OPTIMIZ)
-#    define IZ_CRCOPTIM_UNFOLDTBL
-#  endif
 
-#  ifdef __DECC
-    /* File open callback ID values. */
-#   define OPENR_ID 1
-    /* File open callback ID storage. */
-    extern int openr_id;
-    /* File open callback function. */
-    extern int acc_cb();
-    /* Option macros for open().
-     * General: Stream access
-     *
-     * Callback function (DEC C only) sets deq, mbc, mbf, rah, wbh, ...
-     */
-#   define OPNZIP_RMS_ARGS "ctx=stm", "acc", acc_cb, &openr_id
-#  else /* !__DECC */ /* (So, GNU C, VAX C, ...)*/
-#   define OPNZIP_RMS_ARGS "ctx=stm"
-#  endif /* ?__DECC */
+#ifdef NO_OFF_T
+  typedef long zoff_t;
+#else
+  typedef off_t zoff_t;
+#endif
 
-#endif /* !__vmscfg_h */
+typedef struct stat z_stat;
+
+/* LARGE_FILE_SUPPORT implies ZIP64_SUPPORT,
+   unless explicitly disabled by NO_ZIP64_SUPPORT.
+*/
+#ifdef LARGE_FILE_SUPPORT
+#  ifndef NO_ZIP64_SUPPORT
+#    ifndef ZIP64_SUPPORT
+#      define ZIP64_SUPPORT
+#    endif
+#  else
+#    ifdef ZIP64_SUPPORT
+#      undef ZIP64_SUPPORT
+#    endif
+#  endif
+#endif
+
+
+#ifdef __DECC
+
+/* File open callback ID values. */
+
+#  define OPENR_ID 1
+
+/* File open callback ID storage. */
+
+extern int openr_id;
+
+/* File open callback function. */
+
+extern int acc_cb();
+
+/* Option macros for open().
+ * General: Stream access
+ *
+ * Callback function (DEC C only) sets deq, mbc, mbf, rah, wbh, ...
+ */
+
+#  define OPENR O_RDONLY, 0, "ctx=stm", "acc", acc_cb, &openr_id
+
+#else /* def __DECC */ /* (So, GNU C, VAX C, ...)*/
+
+#  define OPENR O_RDONLY, 0, "ctx=stm"
+
+#endif /* def __DECC */
+
+#endif /* def VMS */
+
+#endif /* ndef __vmscfg_h */
+
