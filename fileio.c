@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -114,11 +114,11 @@ static int disk_error OF((__GPRO));
 /****************************/
 
 static ZCONST char Far CannotOpenZipfile[] =
-  "error:  cannot open zipfile [ %s ]\n        %s\n";
+  "error:  cannot open zipfile [ %s ]\n        %s";
 
 #if (!defined(VMS) && !defined(AOS_VS) && !defined(CMS_MVS) && !defined(MACOS))
 #if (!defined(TANDEM))
-#if (defined(ATH_BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32))
+#if (defined(BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32))
    static ZCONST char Far CannotDeleteOldFile[] =
      "error:  cannot delete old %s\n";
 #ifdef UNIXBACKUP
@@ -126,7 +126,7 @@ static ZCONST char Far CannotOpenZipfile[] =
      "error:  cannot rename old %s\n";
    static ZCONST char Far BackupSuffix[] = "~";
 #endif
-#endif /* ATH_BEO_THS_UNX || DOS_FLX_NLM_OS2_W32 */
+#endif /* BEO_THS_UNX || DOS_FLX_NLM_OS2_W32 */
 #ifdef NOVELL_BUG_FAILSAFE
    static ZCONST char Far NovellBug[] =
      "error:  %s: stat() says does not exist, but fopen() found anyway\n";
@@ -189,7 +189,7 @@ int open_input_file(__G)    /* return 1 if open failed */
      */
 
 #ifdef VMS
-    G.zipfd = open(G.zipfn, O_RDONLY, 0, OPNZIP_RMS_ARGS);
+    G.zipfd = open( G.zipfn, OPENR);    /* See [.VMS]VMSCFG.H. */
 #else /* !VMS */
 #ifdef MACOS
     G.zipfd = open(G.zipfn, 0);
@@ -239,13 +239,15 @@ int open_outfile(__G)         /* return 1 if fail */
     __GDEF
 {
 #ifdef DLL
+#ifndef ZIP64_SUPPORT
     if (G.redirect_data)
         return (redirect_outfile(__G) == FALSE);
+#endif
 #endif
 #ifdef QDOS
     QFilename(__G__ G.filename);
 #endif
-#if (defined(DOS_FLX_NLM_OS2_W32) || defined(ATH_BEO_THS_UNX))
+#if (defined(DOS_FLX_NLM_OS2_W32) || defined(BEO_THS_UNX))
 #ifdef BORLAND_STAT_BUG
     /* Borland 5.0's stat() barfs if the filename has no extension and the
      * file doesn't exist. */
@@ -259,7 +261,7 @@ int open_outfile(__G)         /* return 1 if fail */
     }
 #endif /* BORLAND_STAT_BUG */
 #ifdef SYMLINKS
-    if (SSTAT(G.filename, &G.statbuf) == 0 || lstat(G.filename,&G.statbuf) == 0)
+    if (SSTAT(G.filename, &G.statbuf) == 0 || zlstat(G.filename,&G.statbuf) == 0)
 #else
     if (SSTAT(G.filename, &G.statbuf) == 0)
 #endif /* ?SYMLINKS */
@@ -354,7 +356,7 @@ int open_outfile(__G)         /* return 1 if fail */
               FnFilter1(G.filename)));
         }
     }
-#endif /* DOS_FLX_NLM_OS2_W32 || ATH_BEO_THS_UNX */
+#endif /* DOS_FLX_NLM_OS2_W32 || BEO_THS_UNX */
 #ifdef RISCOS
     if (SWI_OS_File_7(G.filename,0xDEADDEAD,0xDEADDEAD,G.lrec.ucsize)!=NULL) {
         Info(slide, 1, ((char *)slide, LoadFarString(CannotCreateFile),
@@ -380,9 +382,9 @@ int open_outfile(__G)         /* return 1 if fail */
 #else /* !TOPS20 */
 #ifdef MTS
     if (uO.aflag)
-        G.outfile = fopen(G.filename, FOPWT);
+        G.outfile = zfopen(G.filename, FOPWT);
     else
-        G.outfile = fopen(G.filename, FOPW);
+        G.outfile = zfopen(G.filename, FOPW);
     if (G.outfile == (FILE *)NULL) {
         Info(slide, 1, ((char *)slide, LoadFarString(CannotCreateFile),
           FnFilter1(G.filename)));
@@ -392,7 +394,7 @@ int open_outfile(__G)         /* return 1 if fail */
 #ifdef DEBUG
     Info(slide, 1, ((char *)slide,
       "open_outfile:  doing fopen(%s) for reading\n", FnFilter1(G.filename)));
-    if ((G.outfile = fopen(G.filename, FOPR)) == (FILE *)NULL)
+    if ((G.outfile = zfopen(G.filename, FOPR)) == (FILE *)NULL)
         Info(slide, 1, ((char *)slide,
           "open_outfile:  fopen(%s) for reading failed:  does not exist\n",
           FnFilter1(G.filename)));
@@ -404,7 +406,7 @@ int open_outfile(__G)         /* return 1 if fail */
     }
 #endif /* DEBUG */
 #ifdef NOVELL_BUG_FAILSAFE
-    if (G.dne && ((G.outfile = fopen(G.filename, FOPR)) != (FILE *)NULL)) {
+    if (G.dne && ((G.outfile = zfopen(G.filename, FOPR)) != (FILE *)NULL)) {
         Info(slide, 0x401, ((char *)slide, LoadFarString(NovellBug),
           FnFilter1(G.filename)));
         fclose(G.outfile);
@@ -413,7 +415,7 @@ int open_outfile(__G)         /* return 1 if fail */
 #endif /* NOVELL_BUG_FAILSAFE */
     Trace((stderr, "open_outfile:  doing fopen(%s) for writing\n",
       FnFilter1(G.filename)));
-    if ((G.outfile = fopen(G.filename, FOPW)) == (FILE *)NULL) {
+    if ((G.outfile = zfopen(G.filename, FOPW)) == (FILE *)NULL) {
         Info(slide, 0x401, ((char *)slide, LoadFarString(CannotCreateFile),
           FnFilter1(G.filename)));
         return 1;
@@ -497,13 +499,13 @@ void undefer_input(__G)
 void defer_leftover_input(__G)
     __GDEF
 {
-    if ((long)G.incnt > G.csize) {
+    if (G.incnt > G.csize) {
         /* (G.csize < MAXINT), we can safely cast it to int !! */
         if (G.csize < 0L)
             G.csize = 0L;
-        G.inptr_leftover = G.inptr + (int)G.csize;
-        G.incnt_leftover = G.incnt - (int)G.csize;
-        G.incnt = (int)G.csize;
+        G.inptr_leftover = G.inptr + G.csize;
+        G.incnt_leftover = G.incnt - G.csize;
+        G.incnt = G.csize;
     } else
         G.incnt_leftover = 0;
     G.csize -= G.incnt;
@@ -595,7 +597,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 #if CRYPT
     if (G.pInfo->encrypted) {
         uch *p;
-        int n;
+        zoff_t n;
 
         /* This was previously set to decrypt one byte beyond G.csize, when
          * incnt reached that far.  GRR said, "but it's required:  why?"  This
@@ -657,7 +659,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
 
 int seek_zipf(__G__ abs_offset)
     __GDEF
-    Z_OFF_T abs_offset;
+    zoff_t abs_offset;
 {
 /*
  *  Seek to the block boundary of the block which includes abs_offset,
@@ -678,29 +680,34 @@ int seek_zipf(__G__ abs_offset)
  *  PK_EOF if seeking past end of zipfile
  *  PK_OK when seek was successful
  */
-    Z_OFF_T request = abs_offset + G.extra_bytes;
-    Z_OFF_T inbuf_offset = request % INBUFSIZ;
-    Z_OFF_T bufstart = request - inbuf_offset;
+    zoff_t request = abs_offset + G.extra_bytes;
+    zoff_t inbuf_offset = request % INBUFSIZ;
+    zoff_t bufstart = request - inbuf_offset;
 
     if (request < 0) {
         Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
              G.zipfn, LoadFarString(ReportMsg)));
         return(PK_BADERR);
     } else if (bufstart != G.cur_zipfile_bufstart) {
+
         Trace((stderr,
-          "fpos_zip: abs_offset = %ld, G.extra_bytes = %ld\n",
-          abs_offset, G.extra_bytes));
+          "fpos_zip: abs_offset = %s, G.extra_bytes = %s\n",
+          fzofft( abs_offset, NULL, NULL),
+          fzofft( G.extra_bytes, NULL, NULL)));
 #ifdef USE_STRM_INPUT
-        fseek(G.zipfd, bufstart, SEEK_SET);
+        fseek(G.zipfd, (LONGINT)bufstart, SEEK_SET);
         G.cur_zipfile_bufstart = ftell(G.zipfd);
 #else /* !USE_STRM_INPUT */
-        G.cur_zipfile_bufstart = lseek(G.zipfd, bufstart, SEEK_SET);
+        G.cur_zipfile_bufstart = zlseek(G.zipfd, bufstart, SEEK_SET);
 #endif /* ?USE_STRM_INPUT */
         Trace((stderr,
-          "       request = %ld, (abs+extra) = %ld, inbuf_offset = %ld\n",
-          request, (abs_offset+G.extra_bytes), inbuf_offset));
-        Trace((stderr, "       bufstart = %ld, cur_zipfile_bufstart = %ld\n",
-          bufstart, G.cur_zipfile_bufstart));
+          "       request = %s, (abs+extra) = %s, inbuf_offset = %s\n",
+          fzofft( request, NULL, NULL),
+          fzofft( (abs_offset+G.extra_bytes), NULL, NULL),
+          fzofft( inbuf_offset, NULL, NULL)));
+        Trace((stderr, "       bufstart = %s, cur_zipfile_bufstart = %s\n",
+          fzofft( bufstart, NULL, NULL),
+          fzofft( G.cur_zipfile_bufstart, NULL, NULL)));
         if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) <= 0)
             return(PK_EOF);
         G.incnt -= (int)inbuf_offset;
@@ -1850,7 +1857,7 @@ int check_for_newer(__G__ filename)  /* return 1 if existing file is newer */
         Trace((stderr, "check_for_newer:  doing lstat(%s)\n",
           FnFilter1(filename)));
         /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
-        if (lstat(filename, &G.statbuf) == 0) {
+        if (zlstat(filename, &G.statbuf) == 0) {
             Trace((stderr,
               "check_for_newer:  lstat(%s) returns 0:  symlink does exist\n",
               FnFilter1(filename)));
@@ -1867,7 +1874,7 @@ int check_for_newer(__G__ filename)  /* return 1 if existing file is newer */
 
 #ifdef SYMLINKS
     /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
-    if (lstat(filename, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
+    if (zlstat(filename, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
         Trace((stderr, "check_for_newer:  %s is a symbolic link\n",
           FnFilter1(filename)));
         if (QCOND2 && !IS_OVERWRT_ALL)
@@ -2195,6 +2202,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         } else
             if (readbuf(__G__ (char *)G.extra_field, length) == 0)
                 return PK_EOF;
+        getZip64Data(__G__ G.extra_field, length);
         break;
 
 #ifdef AMIGA
@@ -2274,6 +2282,41 @@ ulg makelong(sig)
         + (((ulg)sig[2]) << 16)
         + (((ulg)sig[1]) << 8)
         + ((ulg)sig[0]);
+}
+
+
+
+/************************/
+/* Function makeint64() */
+/************************/
+
+zoff_t makeint64(sig)
+    ZCONST uch *sig;
+{
+#ifdef LARGE_FILE_SUPPORT
+    /*
+     * Convert intel style 'int64' variable to non-Intel non-16-bit
+     * host format.  This routine also takes care of byte-ordering.
+     */
+    return (((zoff_t)sig[7]) << 56)
+        + (((zoff_t)sig[6]) << 48)
+        + (((zoff_t)sig[4]) << 32)
+        + (((zoff_t)sig[3]) << 24)
+        + (((zoff_t)sig[2]) << 16)
+        + (((zoff_t)sig[1]) << 8)
+        + ((zoff_t)sig[0]);
+
+#else /* def LARGE_FILE_SUPPORT */
+
+    if ((sig[7]| sig[6]| sig[5]| sig[4]) != 0)
+        return 0xffffffff;
+    else
+        return (((zoff_t)sig[3]) << 24)
+            + (((zoff_t)sig[2]) << 16)
+            + (((zoff_t)sig[1]) << 8)
+            + ((zoff_t)sig[0]);
+
+#endif /* def LARGE_FILE_SUPPORT */
 }
 
 

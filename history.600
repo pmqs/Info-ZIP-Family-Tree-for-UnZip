@@ -1,0 +1,53 @@
+UnZip, version 6.0b BETA, 12 November 2004
+
+Features added (or removed):
+
+6.0a ():
+ - many changes by Myles
+
+6.0b (12 Nov 04):
+ - added dll changes from Mike White [EG]
+ - added Unix Large File Support but must be enabled manually [EG]
+ - humble beginnings of adding configure script to Unix port to
+    autoconfigure large file support [EG]
+ - VMS changes, including large file support, better handling of
+   -V and new -VV options, revised build procedures, and
+   documentation updates [SMS]
+ - file_size added to process.c to handle files sizes larger
+   than 2 GB more cleanly when no large file support [SMS]
+ - large file debugging on Unix and VMS [SMS, EG]
+ - added ATHEOS port [Ruslan Nickolaev, EG]
+ - split w32i64.h with large file includes for dll [EG]
+
+6.0c (xx Nov 04):
+
+ - Faster VMS I/O, both reading the archive and creating extracted
+   data files.  Disk paralysis during file allocation, when
+   highwater marking is enabled on the destination device, is gone.
+
+
+Bugs fixed:
+
+6.0b (12 Nov 04):
+
+ - output bug fixes to account for sizes > 2 Gb and < 4 GB [EG]
+
+ - bug fixes in ZipInfo [EG]
+
+ - reverted unix.c to an older version to make
+   calls to defer_dir_attribs compatible.  Also needed to rework
+   win32.c to make compatible.  Probably broke NT but haven't tested.
+   Need to trace out and fix [EG]
+
+
+6.0c (xx Nov 04):
+
+ - On VMS, "cannot find either fred;1 or fred;1.zip." messages changed
+   to show only non-fictional file names.
+
+==================
+
+These changes occurred in beta versions 6.0a to 6.0b.  This list may have
+left out some bugfixes and even some features...void where prohibited, your
+mileage may vary, etc., etc.
+

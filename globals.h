@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -142,10 +142,6 @@
 #  endif
 #endif
 
-#ifdef USE_BZIP2
-#  include "bzlib.h"
-#endif
-
 
 /*************/
 /*  Globals  */
@@ -185,10 +181,10 @@ typedef struct Globals {
     int create_dirs;      /* used by main(), mapname(), checkdir() */
     int extract_flag;
     int newzip;           /* reset in extract.c; used in crypt.c */
-    Z_OFF_T   real_ecrec_offset;
-    Z_OFF_T   expect_ecrec_offset;
-    long csize;           /* used by decompr. (NEXTBYTE): must be signed */
-    long used_csize;      /* used by extract_or_test_member(), explode() */
+    zoff_t   real_ecrec_offset;
+    zoff_t   expect_ecrec_offset;
+    long     csize;       /* used by decompr. (NEXTBYTE): must be signed */
+    long     used_csize;  /* used by extract_or_test_member(), explode() */
 
 #ifdef DLL
      int fValidate;       /* true if only validating an archive */
@@ -237,7 +233,7 @@ typedef struct Globals {
 #endif
     uch       *inbuf;               /* input buffer (any size is OK) */
     uch       *inptr;               /* pointer into input buffer */
-    int       incnt;
+    long      incnt;
 
 #ifndef FUNZIP
     ulg       bitbuf;
@@ -251,16 +247,16 @@ typedef struct Globals {
 #else
     int       zipfd;                /* zipfile file handle */
 #endif
-    Z_OFF_T   ziplen;
-    Z_OFF_T   cur_zipfile_bufstart; /* extract_or_test, readbuf, ReadByte */
-    Z_OFF_T   extra_bytes;          /* used in unzip.c, misc.c */
+    zoff_t    ziplen;
+    zoff_t    cur_zipfile_bufstart; /* extract_or_test, readbuf, ReadByte */
+    zoff_t    extra_bytes;          /* used in unzip.c, misc.c */
     uch       *extra_field;         /* Unix, VMS, Mac, OS/2, Acorn, ... */
     uch       *hold;
 
     local_file_hdr  lrec;          /* used in unzip.c, extract.c */
     cdir_file_hdr   crec;          /* used in unzip.c, extract.c, misc.c */
     ecdir_rec       ecrec;         /* used in unzip.c, extract.c */
-    struct stat     statbuf;       /* used by main, mapname, check_for_newer */
+    z_stat   statbuf;       /* used by main, mapname, check_for_newer */
 
     int      mem_mode;
     uch      *outbufptr;           /* extract.c static */
@@ -351,7 +347,7 @@ typedef struct Globals {
     LPUSERFUNCTIONS lpUserFunctions;
 #endif
 
-    int incnt_leftover;       /* so improved NEXTBYTE does not waste input */
+    long incnt_leftover;    /* so improved NEXTBYTE does not waste input */
     uch *inptr_leftover;
 
 #ifdef VMS_TEXT_CONV
@@ -395,6 +391,8 @@ Uz_Globs *globalsCtor   OF((void));
 extern char local_hdr_sig[4];
 extern char central_hdr_sig[4];
 extern char end_central_sig[4];
+extern char end_central32_sig[4];
+extern char end_central64_sig[4];
 /* extern char extd_local_sig[4];  NOT USED YET */
 
 #ifdef REENTRANT
