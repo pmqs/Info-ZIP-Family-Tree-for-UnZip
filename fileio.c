@@ -114,7 +114,7 @@ static int disk_error OF((__GPRO));
 /****************************/
 
 static ZCONST char Far CannotOpenZipfile[] =
-  "error:  cannot open zipfile [ %s ]\n        %s";
+  "error:  cannot open zipfile [ %s ]\n        %s\n";
 
 #if (!defined(VMS) && !defined(AOS_VS) && !defined(CMS_MVS) && !defined(MACOS))
 #if (!defined(TANDEM))
@@ -189,7 +189,7 @@ int open_input_file(__G)    /* return 1 if open failed */
      */
 
 #ifdef VMS
-    G.zipfd = open(G.zipfn, O_RDONLY, 0, "ctx=stm");
+    G.zipfd = open( G.zipfn, OPENR);    /* See UNZPRIV.H. */
 #else /* !VMS */
 #ifdef MACOS
     G.zipfd = open(G.zipfn, 0);

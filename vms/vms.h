@@ -35,9 +35,6 @@
 #ifndef __IODEF_LOADED
 #include <iodef.h>
 #endif
-#if !defined(_RMS_H) && !defined(__RMS_LOADED)
-#include <rms.h>
-#endif
 
 #define ERR(s) !((s) & 1)       /* VMS system error */
 

@@ -657,6 +657,35 @@
 #    define TIMESTAMP
 #  endif
 #  define RESTORE_UIDGID
+
+#ifdef __DECC
+
+/* File open callback ID values. */
+
+#  define OPENR_ID 1
+
+/* File open callback ID storage. */
+
+extern int openr_id;
+
+/* File open callback function. */
+
+extern int acc_cb();
+
+/* Option macros for open().
+ * General: Stream access
+ *
+ * Callback function (DEC C only) sets deq, mbc, mbf, rah, wbh, ...
+ */
+
+#  define OPENR O_RDONLY, 0, "ctx=stm", "acc", acc_cb, &openr_id
+
+#else /* def __DECC */ /* (So, GNU C, VAX C, ...)*/
+
+#  define OPENR O_RDONLY, 0, "ctx=stm"
+
+#endif /* def __DECC */
+
 #endif /* VMS */
 
 /*---------------------------------------------------------------------------
@@ -1048,7 +1077,7 @@
 #endif
 
 #if (!defined(LZW_CLEAN) && !defined(USE_UNSHRINK))
-#  define LZW_CLEAN
+#  define USE_UNSHRINK
 #endif
 
 #ifndef O_BINARY
