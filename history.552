@@ -1,0 +1,55 @@
+UnZip, version 5.52, 30 Dec 2004
+
+Features added (or removed):
+
+5.52a (10 Dec 04):
+ - no new features.
+
+5.52b (30 Dec 04):
+ - a note added to README file.
+
+5.52c (8 Jan 05):
+ - no new features.
+
+5.52d (17 Jan 05):
+ - Faster VMS I/O, both reading the archive and creating extracted data
+   files.  Disk paralysis during file allocation, when highwater marking
+   is enabled on the destination device, is gone.
+ - Where the C RTL permits, with SET PROCESS /PARSE = EXTENDED,
+   command-line case is preserved, obviating quotation of upper- or
+   mixed-case options and parameters.
+
+
+Bugs fixed:
+
+5.52a (10 Dec 04):
+ - Debian patch 001 - change __GNU__ to __GLIBC__ in unix/unxcfg.h.  This is
+   required to build under glibc-based systems not being Linux-based (like
+   the Debian GNU/kFreeBSD port, which is in preparation).  In fact,
+   everywhere the macro __GNU__ is used, __GLIBC__ should be used instead.
+   It could be made even shorter since defined(linux) || defined(__GLIBC__)
+   should be the same as simply defined(__GLIBC__).
+ - Debian patch 002 - add newline to end of cannot open zipfile message
+   in fileio.c.
+
+5.52b (30 Dec 04):
+ - format fixes.
+
+5.52c (8 Jan 05):
+ - minor fixes.
+
+5.52d (17 Jan 05):
+ - On VMS, when an odd output byte count is incremented to the next
+   larger even value, the extra byte written is now always zero,
+   reducing random differences between original and extracted files.
+ - On VMS, "cannot find either fred;1 or fred;1.zip." messages have been
+   changed to show only non-fictional file names.
+
+
+==================
+
+These changes occurred in beta versions 5.52a to 5.52b.  This list may have
+left out some bugfixes and even some features...void where prohibited, your
+mileage may vary, etc., etc.
+
+Ed Gordon
