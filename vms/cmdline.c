@@ -7,7 +7,7 @@
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 #define module_name VMS_UNZIP_CMDLINE
-#define module_ident "02-008"
+#define module_ident "02-009"
 /*
 **
 **  Facility:   UNZIP
@@ -24,6 +24,8 @@
 **
 **  Modified by:
 **
+**      02-009          Steven Schweda          28-JAN-2005 16:16
+**              Added /TIMESTAMP (-T) qualifier.
 **      02-008          Christian Spieler       08-DEC-2001 23:44
 **              Added support for /TRAVERSE_DIRS argument
 **      02-007          Christian Spieler       24-SEP-2001 21:12
@@ -144,6 +146,7 @@ $DESCRIPTOR(cli_super_quiet,    "QUIET.SUPER");         /* -qq */
 $DESCRIPTOR(cli_test,           "TEST");                /* -t */
 $DESCRIPTOR(cli_pipe,           "PIPE");                /* -p */
 $DESCRIPTOR(cli_password,       "PASSWORD");            /* -P */
+$DESCRIPTOR(cli_timestamp,      "TIMESTAMP");           /* -T */
 $DESCRIPTOR(cli_uppercase,      "UPPERCASE");           /* -U */
 $DESCRIPTOR(cli_update,         "UPDATE");              /* -u */
 $DESCRIPTOR(cli_version,        "VERSION");             /* -V */
@@ -470,6 +473,13 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         *ptr++ = '-';
     if (status != CLI$_ABSENT)
         *ptr++ = 't';
+
+    /*
+    **  Set archive timestamp according to its newest file.
+    */
+    status = cli$present(&cli_timestamp);
+    if (status & 1)
+        *ptr++ = 'T';
 
     /*
     **  Traverse directories (don't skip "../" path components)
