@@ -2110,7 +2110,6 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* int    open_outfile        OF((__GPRO));           * (see fileio.c) vms.c */
 /* int    flush               OF((__GPRO__ uch *rawbuf, unsigned size,
                                   int final_flag));   * (see fileio.c) vms.c */
-   char * vms_msg_text        OF((__GPRO));                         /* vms.c */
 #ifdef RETURN_CODES
    void   return_VMS          OF((__GPRO__ int zip_error));         /* vms.c */
 #else

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -836,9 +836,9 @@ check_cli (struct dsc$descriptor_s *qual)
 
 int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 {
-    extern char UnzipSFXBanner[];
+    extern ZCONST char UnzipSFXBanner[];
 #ifdef BETA
-    extern char BetaVersion[];
+    extern ZCONST char BetaVersion[];
 #endif
     int flag;
 
@@ -872,9 +872,9 @@ Modifying options are /TEXT, /BINARY, /JUNK, /[NO]OVERWRITE, /QUIET,\n\
 
 int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 {
-    extern char UnzipUsageLine1[];
+    extern ZCONST char UnzipUsageLine1[];
 #ifdef BETA
-    extern char BetaVersion[];
+    extern ZCONST char BetaVersion[];
 #endif
     int flag;
 

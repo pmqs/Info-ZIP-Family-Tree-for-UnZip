@@ -56,20 +56,20 @@
 */
 #ifdef vax
 #  define __VAX 1
-#endif /* def vax */
+#endif
 
 #ifdef __VAX
 #  define GVTC (unsigned int)
-#else /* def __VAX */
+#else
 #  define GVTC
-#endif /* def __VAX */
+#endif
 
 /* With GNU C, some FAB bits may be declared only as masks, not as
  * structure bits.
  */
 #ifdef __GNUC__
-# define OLD_FABDEF 1
-#endif /* def __GNUC__ */
+#  define OLD_FABDEF 1
+#endif
 
 #define ASYNCH_QIO              /* Use asynchronous PK-style QIO writes */
 
@@ -113,9 +113,6 @@ static unsigned loccnt = 0;
 static uch *locptr;
 static char got_eol = 0;
 
-static char vms_msgbuf[ 256];           /* VMS-specific error message. */
-static $DESCRIPTOR( vms_msgbuf_dscr, vms_msgbuf);
-
 struct bufdsc
 {
     struct bufdsc *next;
@@ -157,6 +154,7 @@ static unsigned find_eol(uch *p, unsigned n, unsigned *l);
 static time_t mkgmtime(struct tm *tm);
 static void uxtime2vmstime(time_t utimeval, long int binval[2]);
 #endif /* TIMESTAMP */
+static void vms_msg(__GPRO__ char *string, int status);
 
 /* 2004-11-23 SMS.
  *
@@ -293,46 +291,12 @@ static int get_rms_defaults()
 
         if (rms_defaults_known > 0)
         {
-            fprintf( stderr,
-             "               Default: deq = %6d, mbc = %3d, mbf = %3d.\n",
-             rms_ext, rms_mbc, rms_mbf);
+            fprintf(stderr,
+              "               Default: deq = %6d, mbc = %3d, mbf = %3d.\n",
+              rms_ext, rms_mbc, rms_mbf);
         }
     }
     return sts;
-}
-
-
-char *vms_msg_text( void)
-{
-    return vms_msgbuf;
-}
-
-
-static int vms_msg_only( int status)
-{
-    int msglen = 0;
-    int sts;
-
-    sts = lib$sys_getmsg( &status, &msglen, &vms_msgbuf_dscr, 0, 0);
-
-    vms_msgbuf[ msglen] = '\0';
-    return sts;
-}
-
-
-static void vms_msg(__GPRO__ char *string, int status)
-{
-    int msglen = 0;
-
-    if (ERR(lib$sys_getmsg(&status, &msglen, &vms_msgbuf_dscr, 0, 0)))
-        Info(slide, 1, ((char *)slide,
-             "%s[ VMS status = %d ]\n", string, status));
-    else
-    {
-        vms_msgbuf[msglen] = '\0';
-        Info(slide, 1, ((char *)slide, "%s[ %s ]\n", string,
-vms_msgbuf));
-    }
 }
 
 
@@ -2483,6 +2447,25 @@ void dump_rms_block(p)
 
 
 
+static void vms_msg(__GPRO__ char *string, int status)
+{
+    static char msgbuf[256];
+
+    $DESCRIPTOR(msgd, msgbuf);
+    int msglen = 0;
+
+    if (ERR(lib$sys_getmsg(&status, &msglen, &msgd, 0, 0)))
+        Info(slide, 1, ((char *)slide,
+             "%s[ VMS status = %d ]\n", string, status));
+    else
+    {
+        msgbuf[msglen] = '\0';
+        Info(slide, 1, ((char *)slide, "%s[ %s ]\n", string, msgbuf));
+    }
+}
+
+
+
 #ifndef SFX
 
 /* 2004-11-23 SMS.
@@ -2525,24 +2508,10 @@ char *do_wild( __G__ wld )
         nam.nam$l_rsa = filenam;
         nam.nam$b_rss = sizeof(filenam)-1;
 
-        nam.nam$b_nop = NAM$M_SYNCHK;  /* Syntax-only analysis. */
+        if ( !OK(sys$parse(&fab)) )
+            return (char *)NULL;     /* Initialization failed */
 
         first_call = 0;
-
-        /* 2005-08-08 SMS.
-         * Parse the file spec.  If sys$parse() fails, save the VMS
-         * error message for later use, and return a null string.
-         */
-        status = sys$parse( &fab);
-        if (!OK( status))
-        {
-            vms_msg_only(__G__ status);
-            filenam[0] = '\0';
-            return filenam;
-#if 0
-            return (char *)NULL;     /* Initialization failed */
-#endif /* 0 */
-        }
 
         /* 2004-11-23 SMS.
          * Don't do this.  I see no good reason to lie about the file
@@ -2554,13 +2523,12 @@ char *do_wild( __G__ wld )
         status = sys$search(&fab);
         if ( !OK(status) )
         {
-            /* Save the VMS error message for later use. */
-            vms_msg_only(__G__ status);
 #if 0
             strcpy( filenam, wld );
             return filenam;
 #endif /* 0 */
         }
+
     }
     else
     {
@@ -3642,7 +3610,7 @@ void version(__G)
     for (chrp2 = &vms_vers[1];
          chrp2 < chrp1;
          ver_maj = ver_maj * 10 + *(chrp2++) - '0');
-#endif /* def VMS_VERSION */
+#endif /* VMS_VERSION */
 
 /*  DEC C in ANSI mode does not like "#ifdef MACRO" inside another
     macro when MACRO is equated to a value (by "#define MACRO 1").   */
@@ -3882,7 +3850,7 @@ static void decc_init(void)
                 /* Invalid DECC feature value. */
                 printf(" INVALID DECC FEATURE VALUE, %d: %d <= %s <= %d.\n",
                   feat_value,
-                  feat_value_min, decc_feat_array[ i].name, feat_value_max);
+                  feat_value_min, decc_feat_array[i].name, feat_value_max);
             }
         }
         else
