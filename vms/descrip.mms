@@ -1,4 +1,4 @@
-#                                               21 December 2004.  SMS.
+#                                               22 February 2005.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -18,7 +18,7 @@
 #                   Link with /DEBUG /TRACEBACK.
 #                   (Default is /NOTRACEBACK.)
 #
-#    LARGE=1        Enable large-file (>2GB) support.  Non-VAX-only.
+#    LARGE=1        Enable large-file (>2GB) support.  Non-VAX only.
 #
 #    LINKOPTS=xxx   Link with LINK options xxx.  For example:
 #                   LINKOPTS=/NOINFO
@@ -75,9 +75,9 @@
 # To delete the architecture-specific generated files for this system
 # type:
 #
-#    MMS /DESCRIP = [.VMS] /MACRO = (LARGE=1)   ! Large-file product.
+#    MMS /DESCRIP = [.VMS] /MACRO = (LARGE=1) CLEAN     ! Large-file.
 # or
-#    MMS /DESCRIP = [.VMS]                      ! Small-file product.
+#    MMS /DESCRIP = [.VMS] CLEAN                        ! Small-file.
 #
 # To build a complete small-file product for debug with compiler
 # listings and link maps:
@@ -132,22 +132,22 @@ CLEAN :
 CLEAN_ALL :
 	if (f$search( "[.ALPHA*]*.*") .nes. "") then -
 	 delete [.ALPHA*]*.*;*
-	if (f$search( "ALPHA.dir") .nes. "") then -
-	 set protection = w:d ALPHA.dir;*
-	if (f$search( "ALPHA.dir") .nes. "") then -
-	 delete ALPHA.dir;*
-	if (f$search( "[.IA64]*.*") .nes. "") then -
+	if (f$search( "ALPHA*.dir") .nes. "") then -
+	 set protection = w:d ALPHA*.dir;*
+	if (f$search( "ALPHA*.dir") .nes. "") then -
+	 delete ALPHA*.dir;*
+	if (f$search( "[.IA64*]*.*") .nes. "") then -
 	 delete [.IA64*]*.*;*
-	if (f$search( "IA64.dir") .nes. "") then -
-	 set protection = w:d IA64.dir;*
-	if (f$search( "IA64.dir") .nes. "") then -
-	 delete IA64.dir;*
+	if (f$search( "IA64*.dir") .nes. "") then -
+	 set protection = w:d IA64*.dir;*
+	if (f$search( "IA64*.dir") .nes. "") then -
+	 delete IA64*.dir;*
 	if (f$search( "[.VAX*]*.*") .nes. "") then -
 	 delete [.VAX*]*.*;*
-	if (f$search( "VAX.dir") .nes. "") then -
-	 set protection = w:d VAX.dir;*
-	if (f$search( "VAX.dir") .nes. "") then -
-	 delete VAX.dir;*
+	if (f$search( "VAX*.dir") .nes. "") then -
+	 set protection = w:d VAX*.dir;*
+	if (f$search( "VAX*.dir") .nes. "") then -
+	 delete VAX*.dir;*
 	if (f$search( "[.vms]ZIP_CLI.RNH") .nes. "") then -
 	 delete [.vms]ZIP_CLI.RNH;*
 	if (f$search( "ZIP_CLI.HLP") .nes. "") then -
@@ -168,7 +168,7 @@ CLEAN_ALL :
 	@ write sys$output -
  "distribution kit.)  See [.VMS]DESCRIP_MKDEPS.MMS for instructions on"
 	@ write sys$output -
- "generating the [.VMS]DESCRIP_DEPS.MMS."
+ "generating [.VMS]DESCRIP_DEPS.MMS."
 	@ write sys$output ""
 
 # CLEAN_EXE target.  Delete the executables in [.$(DEST)].
@@ -324,6 +324,7 @@ unzip_cli.hlp : [.vms]unzip_cli.help [.vms]cvthelp.tpu
 	edit /tpu /nosection /nodisplay /command = [.vms]cvthelp.tpu -
 	 $(MMS$SOURCE)
 	rename unzip_cli.rnh [.vms]
+        purge /nolog /keep = 1 [.vms]unzip_cli.rnh
 	runoff /output = $(MMS$TARGET) [.vms]unzip_cli.rnh
 
 # Include generated source dependencies.

@@ -48,6 +48,8 @@
 .!              Added description for new /TRAVERSE_DIRS option.
 .!      02-010          Steven Schweda          28-Jan-2005 16:16:36
 .!              Added /TIMESTAMP (-T) qualifier.
+.!      02-011          Steven Schweda          14-FEB-2005
+.!              Added /DOT_VERSION (-Y) and /ODS2 (-2) qualifiers.
 .!
 <INIT>
 <MAIN>
@@ -186,6 +188,14 @@ Display the archive comment.
 Specifies the output directory where all the extracted files are to be
 placed.
 <QUALIFIER>
+/DOT_VERSION
+
+/DOT_VERSION
+
+Causes UnZip to treat archived file name endings of ".nnn" (where "nnn"
+is a decimal number) as if they were VMS version numbers (";nnn").  (The
+default is to treat them as file types.)  Example: "a.b.3" -> "a.b;3".
+<QUALIFIER>
 /EXCLUDE
 
 /EXCLUDE=(file[,...])
@@ -243,6 +253,21 @@ specify the amount of information displayed.  The default is /BRIEF.
 
 Convert filenames from all-uppercase operating systems to lowercase.  This
 option has no effect under VMS.
+<QUALIFIER>
+/ODS2
+
+/ODS2
+
+Causes UnZip to convert archived file names to ODS2-compatible file
+names (substituting "_" for any invalid characters), regardless of the
+type of the destination file system.
+
+The default is to use ODS5-compatible file names when the destination
+file system is ODS5, and to convert the names to ODS2-compatible names
+when the destination file system is ODS2.
+
+Beginning in UnZip 3.0, ODS2-compatible names are explicitly set to
+upper case.
 <QUALIFIER>
 /OVERWRITE
 

@@ -55,7 +55,18 @@
 #  include <time.h>                     /* the usual non-BSD time functions */
 #  include <file.h>                     /* same things as fcntl.h has */
 #  include <rms.h>
-#  define _MAX_PATH (NAM$C_MAXRSS+1)    /* to define FILNAMSIZ below */
+
+/* Define maximum path length according to NAM[L] member size. */
+#  ifndef NAM_MAXRSS
+#    ifdef NAML$C_MAXRSS
+#      define NAM_MAXRSS NAML$C_MAXRSS
+#    else
+#      define NAM_MAXRSS NAM$C_MAXRSS
+#    endif
+#  endif
+
+#  define _MAX_PATH (NAM_MAXRSS+1)      /* to define FILNAMSIZ below */
+
 #  ifndef HAVE_STRNICMP                 /* use our private zstrnicmp() */
 #    define NO_STRNICMP                 /*  unless explicitely overridden */
 #  endif
