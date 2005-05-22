@@ -1,6 +1,6 @@
 __________________________________________________________________________
 
-  This is the Info-ZIP file INSTALL (for UnZip), last updated 28 Apr 2001.
+  This is the Info-ZIP file INSTALL (for UnZip), last updated 27 Feb 2005.
 __________________________________________________________________________
 
   Yes, this is a rather long file, but don't be intimidated:  much of its
@@ -26,10 +26,8 @@ To compile UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
 (4) Try out your new UnZip the way you would any new utility:  read the
     docs first.
 
-    Ah ha ha ha!!  Oh, that kills me.  But seriously...for VMS, UnZip must
-    be installed as a "foreign symbol"; see the Install section below or
-    [.vms]readme.vms for details.  (It basically involves adding a line
-    sort of like this to login.com:    $ unzip == "$disk:[dir]unzip.exe")
+    Ah ha ha ha!!  Oh, that kills me.  But seriously...  For VMS, see the
+    Install section below or [.vms]readme. for details.
 
     For DOS and other OSes without explicit timezone support (i.e., everybody
     but Unix, Windows 95 and NT), make sure the "TZ" environment variable is
@@ -117,13 +115,16 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         in general.  All other regular expressions (including "?" and
         "[range_of_chars]") retain their Unix-like behavior.
 
-      WILD_STOP_AT_DIR
-        Modifies the pattern matching routine so that both '?' (single-char
+      WILD_STOP_AT_DIR   (incompatible with WINDLL!)
+        Enables an additional option "-W".  When this qualifier is specified,
+        the pattern matching routine is modified so that both '?' (single-char
         wildcard) and '*' (multi-char wildcard) do not match the directory
         separator character '/'. Examples:
           "*.c" matches "foo.c" but not "mydir/foo.c"
           "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
           "??*/*" matches "ab/foo" and "abc/foo" but not "a/foo" or "a/b/foo"
+        To enable matching across directory separator chars, two consecutive
+        multi-char wildcards "**" should be specified.
         This modified behaviour is equivalent to the pattern matching style
         used by the shells of some of UnZip's supported target OSs (one
         example is Acorn RISC OS).
@@ -162,15 +163,18 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
       VMS_TEXT_CONV   (everybody except VMS)
         VMS Stream_LF-format text files archived with the "-V" option
         (/VMS), but NOT with -VV (/VMS=ALL), should be fine when extracted
-        on other systems.  Text files with other formats (like the default
-        VFC, with its embedded byte counts) may be only semi-readable at
-        best when extracted on other systems.  Defining this option enables
-        UnZip's -aa option to attempt to convert such files to native text
-        format.  Non-VMS UnZips don't actually detect the precise VMS format
-        of the files, however, but instead rely on some reasonably good
-        heuristics (i.e., guesses).  Therefore this option is not enabled by
-        default, but it can be extremely useful on those rare occasions when
-        a VMS text file must be extracted as normal text.
+        on other systems.  Stream_LF-files archived with -VV should be
+        readable as well, but they may get some junk appended.
+        Text files with other formats (like the default VFC, with its
+        embedded byte counts) may be only semi-readable at best when
+        extracted on other systems.  Defining this option enables UnZip's
+        -aa option to detect and convert VMS VFC-record text files into
+        native text format.  Non-VMS UnZips now use a rudimentary VMS extra
+        field analyser to relyably determine such text files. (Earlier
+        versions of UnZip applied some heuristics instead.)
+        Therefore this option is now enabled by default for the main program
+        (but not the SFX stub), because it can be extremely useful on those
+        rare occasions when a VMS text file must be extracted as normal text.
 
       USE_DJGPP_ENV   (MS-DOS DJGPP 2.0x only)
         Regular DJGPP v2.0x compiled programs which use ENVIRONMENT are
@@ -201,6 +205,27 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         macro to enable its use.  See also msdos/doscfg.h.  [Note that djgpp
         2.0's LFN support is flaky; users should upgrade to 2.01 or later.]
 
+      NO_W32TIMES_IZFIX (Win32 including WinDLL, and WinCE)
+        By specifying this option, you can disable Info-ZIP's special timestamp
+        adjustment to get stable time stamps on NTFS disks that do not change
+        depending on the current time being normal vs. daylight saving time.
+        When this option is set, UnZip behaves exactly like other programs;
+        file timestamps on NTFS partitions are created so that their >current<
+        local time representation displayed by directory listings (cmd.exe "dir"
+        command or Windows Explorer listings) is the same as shown by UnZip's
+        listing. But the actual UTC timestamp values stored in the NTFS
+        file attributes vary depending on whether extraction is done at
+        summer or winter time.
+        This option is not recommended because it sacrifies the timestamp
+        comparison checks when extracting or modifying archives in "update
+        only newer" mode.
+        However, for environments where consistency of >displayed< dates
+        of files extracted to NTFS vs. FAT disks is considered more important
+        than correctly working update/freshen tasks of Zip&UnZip, this
+        option may be used.
+        >> DO NOT DISTRIBUTE OR PUBLISH executables that were compiled with
+        this option! <<
+
       NOTIMESTAMP
         This option disables the -T option, which basically does exactly what
         Zip's -go options do (i.e., set the timestamp of the zipfile to that of
@@ -212,15 +237,21 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
       DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
         This option controls the order in which date components are printed
         in listings:  day-month-year or month-day-year or year-month-day.
-        For DOS derivatives the format is automatically obtained from the
-        operating system; most others default to DF_MDY.
+        For DOS, FlexOS, OS2, Theos and Win32, the format is automatically
+        obtained from the operating system; most others default to DF_MDY.
+
+      DATE_SEPCHAR='-' or '.' or '/' etc.
+        This option controls the character that separates the date components
+        shown in (non-ZipInfo-mode) listings.  The Win32 port obtains the
+        separator automatically from the operating system's locale settings;
+        all others default to '-'.
 
       ACORN_FTYPE_NFS  (needs support for long filenames with embedded commas)
         This option enables a -F option that instructs UnZip to interpret the
         filetype information extracted from Acorn RiscOS extra field blocks.
         The filetype IDs are translated into "NFS filetype extensions" and
         appended to the names of the extracted files. This feature facilitates
-        maintance of Unix-based NFS volumes that are exported to Acorn RiscOS
+        maintenance of Unix-based NFS volumes that are exported to Acorn RiscOS
         systems.
 
       QLZIP  (Unix only)
@@ -307,16 +338,17 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         support in the master source tree. This feature will become a default
         option in the future 6.0 release of UnZip.
 
-      LZW_CLEAN   (now default)
-      USE_UNSHRINK
+      LZW_CLEAN
+      USE_UNSHRINK (now default, as of January 2005)
         The "shrinking" algorithm from PKZIP 1.0 is an LZW variant.  Unisys
         patented the Lempel-Ziv-Welch algorithm in 1985 and has publicly
         claimed that decompression is covered by it.  (IBM also patented the
-        same thing in a filing 3 weeks prior to Unisys's.)  Therefore un-
-        shrinking is disabled by default, but those with LZW licenses can
-        enable it by defining USE_UNSHRINK.  (Unshrinking was used by PKZIP
-        1.0 and 1.1, and Zip 1.0 and 1.1.  All newer archives use only the
-        deflation method.)
+        same thing in a filing 3 weeks prior to Unisys's.)  In 2004, the
+        Unisys and IBM patents expired worldwide, so unshrinking is now
+        enabled again by default.  If you do not wish to include the LZW
+        method, you may still disable it by defining LZW_CLEAN.
+        (Unshrinking was used by PKZIP 1.0 and 1.1, and Zip 1.0 and 1.1.
+        All newer archives use only the deflation method.)
 
       COPYRIGHT_CLEAN   (now default)
       USE_SMITH_CODE
@@ -324,9 +356,10 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         Smith's unzip 2.0 (as in, "substantially similar") is in unreduce.c.
         Since reducing was only used by very early PKZIP beta versions (0.9x),
         support for it is now omitted by default (COPYRIGHT_CLEAN).  To in-
-        clude unreducing capability, define USE_SMITH_CODE.  Note that this
-        subjects UnZip to any and all restrictions in Smith's copyright; see
-        the UnZip COPYING file for details.
+        clude unreducing capability, define USE_SMITH_CODE and replace the
+        stub unreduce.c source file by the separatly distributed full source
+        code module.  Note that this subjects UnZip to any and all restrictions
+        in Smith's copyright; see the UnZip COPYING.OLD file for details.
 
       USE_CRYPT
         Enable decryption support for all binaries.  The default setting
@@ -415,7 +448,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
              MMK /DESC = [.VMS] CLEAN_EXE  ! Deletes existing executables.
              MMK /DESC = [.VMS]            ! Builds new executables.
              MMK /DESC = [.VMS] /MACRO = LARGE=1 CLEAN_EXE
-             MMK /DESC = [.VMS] /MACRO = LARGE=1 
+             MMK /DESC = [.VMS] /MACRO = LARGE=1
 
         o Build a large-file product from scratch, for debug, getting
           compiler listings and link maps:
@@ -440,7 +473,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         default UNIX-like command-line interface, UNZIP_CLI.HLP for the
         VMS-like command-line interface), are placed in the main
         directory.  With a mixed-architecture VMS cluster, the same main
-        directory on a shared disk may may be used by all system types. 
+        directory on a shared disk may may be used by all system types.
         (Using the NOHELP option with BUILD_UNZIP.COM can keep it from
         making the same help files repeatedly.)
 
@@ -592,35 +625,32 @@ Unix
   it in order to find the new executables.
 
 VMS
+  To complete the installation, the executables may be left in place,
+  or moved (or copied) to a convenient place.  While other methods
+  (like DCL$PATH) exist, most users define symbols to make the UnZip
+  executables available as foreign commands.  These symbol definitions
+  may be placed in a user's SYS$LOGIN:LOGIN.COM, or in a more central
+  location, like SYS$MANAGER:SYLOGIN.COM.  Typical symbol definitions
+  might look like these:
 
-  To complete the installation, the executables may be left in place, or
-  moved (or copied) to a convenient place.  It's then common to define
-  symbols to make the UnZip executables foreign commands, often in
-  SYS$MANAGER:SYLOGIN.COM, or individual users' SYS$LOGIN:LOGIN.COM. 
-  Typical commands might look like these:
+     UNZIP :== $ dev:[dir]UNZIP.EXE             ! UNIX-like command line.
+  or:
+     UNZIP :== $ dev:[dir]UNZIP_CLI.EXE         ! VMS-like command line.
 
-      $ UNZIP :== $ device:[directory]UNZIP.EXE
-      $ UNZIP_CLI :== $ device:[directory]UNZIP_CLI.EXE
-      $ UNZIPSFX :== $ device:[directory]UNZIPSFX.EXE
-      $ UNZIPSFX_CLI :== $ device:[directory]UNZIPSFX_CLI.EXE
-      $ ZIPINFO :== $ device:[directory]UNZIP.EXE "-Z"
+  For convenience, a ZIPINFO symbol could also be defined, so:
 
-  If the CLI form of the UnZip executable were preferred, one might use
-  commands like these, instead, for the UnZip programs:
+     ZIPINFO :== $ dev:[dir]UNZIP.EXE """-Z"""
 
-      $ UNZIP :== $ device:[directory]UNZIP_CLI.EXE
-      $ UNZIP_UNIX :== $ device:[directory]UNZIP.EXE
+  On a non-VAX system, different symbols could be defined for the
+  small-file and large-file programs.  For example:
 
-  Alternatively, on systems which support it, a user may define the
-  logical name DCL$PATH to include the device:[directory] where the Zip
-  executables are stored.  (If this is done, the command name will be
-  the same as the program name.)  The "OpenVMS User's Manual" describes
-  these mechanisms in more detail.
+     UNZIPS  :== $ dev:[dir.ALPHA]UNZIP.EXE     ! UNZIPS = small-file UnZip.
+     UNZIP*L :== $ dev:[dir.ALPHAL]UNZIP.EXE    ! UNZIP[L] = large-file UnZip.
 
   The builders create help text files, UNZIP.HLP and UNZIP_CLI.HLP.
   These may be incorporated into an existing help library, or a separate
-  Zip help library may be created using commands like these, using
-  either ZIP.HLP (as shown) or ZIP_CLI.HLP:
+  UnZip help library may be created using commands like these, using
+  either UNZIP.HLP (as shown) or UNZIP_CLI.HLP:
 
       $ LIBRARY /HELP dev:[dir]existing_library.HLB UNZIP.HLP
 
@@ -640,7 +670,16 @@ VMS
 
   The kit includes MAKESFX.COM, a command procedure intended to simplify
   creating a self-extracting archive.  It may be helpful to install this
-  procedure near the UnZip executables.
+  procedure near the UnZip executables.  MAKESFX.COM expects another
+  symbol definition, like one of these:
+
+     UNZIPSFX :== $ dev:[dir]UNZIPSFX.EXE       ! UNIX-like command line.
+  or:
+     UNZIPSFX :== $ dev:[dir]UNZIPSFX_CLI.EXE   ! VMS-like command line.
+
+  Again here, on a non-VAX system, either a small-file or a large-file
+  UNZIPSFX program may be used.  (MAKESFX.COM could be modified to allow
+  a run-time choice to be made.)
 
 OS/2, MS-DOS, NT, Atari, Amiga
   Move or copy unzip.exe (or unzip.ttp, or UnZip, or whatever) to a direc-

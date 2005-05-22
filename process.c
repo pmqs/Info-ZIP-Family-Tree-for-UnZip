@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -15,6 +15,8 @@
   Contains:  process_zipfiles()
              free_G_buffers()
              do_seekable()
+             file_size()
+             rec_find()
              check_ecrec_zip64()
              find_ecrec64()
              find_ecrec()
@@ -40,7 +42,18 @@
 #endif
 
 static int    do_seekable        OF((__GPRO__ int lastchance));
+#ifdef DO_SAFECHECK_2GB
+# ifdef USE_STRM_INPUT
+static zoff_t file_size          OF((FILE *file));
+# else
+static zoff_t file_size          OF((int fh));
+# endif
+#endif /* DO_SAFECHECK_2GB */
+static int    rec_find           OF((__GPRO__ zoff_t, char *, int));
+static int    check_ecrec_zip64  OF((__GPRO));
+static int    find_ecrec64       OF((__GPRO__ zoff_t searchlen));
 static int    find_ecrec         OF((__GPRO__ zoff_t searchlen));
+
 
 static ZCONST char Far CannotAllocateBuffers[] =
   "error:  cannot allocate unzip buffers\n";
@@ -82,15 +95,20 @@ static ZCONST char Far CannotAllocateBuffers[] =
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find or open %s, %s.zip or %s.\n";
 # else /* !UNIX */
-# ifndef AMIGA
+#  ifndef AMIGA
    static ZCONST char Far CannotFindWildcardMatch[] =
      "%s:  cannot find any matches for wildcard specification \"%s\".\n";
-# endif /* !AMIGA */
+#  endif /* !AMIGA */
    static ZCONST char Far CannotFindZipfileDirMsg[] =
      "%s:  cannot find zipfile directory in %s,\n\
         %sand cannot find %s, period.\n";
+#  ifdef VMS
+   static ZCONST char Far CannotFindEitherZipfile[] =
+     "%s:  cannot find %s (%s).\n";
+#  else /* def VMS */
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find either %s or %s.\n";
+#  endif /* def VMS [else] */
 # endif /* ?UNIX */
    extern ZCONST char Far Zipnfo[];       /* in unzip.c */
 #ifndef WINDLL
@@ -98,6 +116,10 @@ static ZCONST char Far CannotAllocateBuffers[] =
 #else
    static ZCONST char Far Unzip[] = "UnZip DLL";
 #endif
+#ifdef DO_SAFECHECK_2GB
+   static ZCONST char Far ZipfileTooBig[] =
+     "Trying to read large file (> 2 GB) without large file support\n";
+#endif /* DO_SAFECHECK_2GB */
    static ZCONST char Far MaybeExe[] =
      "note:  %s may be a plain executable, not an archive\n";
    static ZCONST char Far CentDirNotInZipMsg[] = "\n\
@@ -133,7 +155,7 @@ static ZCONST char Far CannotAllocateBuffers[] =
 #endif /* ?SFX */
 
 static ZCONST char Far MissingBytes[] =
-  "error [%s]:  missing %d bytes in zipfile\n\
+  "error [%s]:  missing %s bytes in zipfile\n\
   (attempting to process anyway)\n";
 static ZCONST char Far NullCentDirOffset[] =
   "error [%s]:  NULL central directory offset\n\
@@ -142,6 +164,9 @@ static ZCONST char Far ZipfileEmpty[] = "warning [%s]:  zipfile is empty\n";
 static ZCONST char Far CentDirStartNotFound[] =
   "error [%s]:  start of central directory not found;\n\
   zipfile corrupt.\n%s";
+static ZCONST char Far Cent64EndSigSearchErr[] =
+  "fatal error: read failure while seeking for End-of-centdir-64 signature.\n\
+  This zipfile is corrupt.\n";
 #ifndef SFX
    static ZCONST char Far CentDirTooLong[] =
      "error [%s]:  reported length of central directory is\n\
@@ -159,69 +184,6 @@ static ZCONST char Far CentDirStartNotFound[] =
 static ZCONST char Far ZipfileCommTrunc1[] =
   "\ncaution:  zipfile comment truncated\n";
 
-
-/* File size determination which does not mislead for large files in a
-   small-file program.  Probably should be somewhere else.
-*/
-zoff_t file_size( char * name)
-{
-    int sts;
-    size_t siz;
-    FILE *file;
-    zoff_t ofs;
-    char waste[ 4];
-
-    file = zfopen( name, FOPR);
-    if (file == NULL)
-    {
-       /* Can't open file.  Can't get size. */
-       ofs = EOF;
-    }
-    else
-    {
-        /* Seek to actual EOF. */
-        sts = zfseeko( file, 0, SEEK_END);
-        if (sts != 0)
-        {
-            /* fseeko() failed.  (Unlikely.) */
-            ofs = EOF;
-        }
-        else
-        {
-            /* Get apparent offset at EOF. */
-            ofs = zftello( file);
-            if (ofs < 0)
-            {
-                /* Offset negative (overflow).  File too big. */
-                ofs = EOF;
-            }
-            else
-            {
-                /* Seek to apparent EOF offset.
-                   Won't be at actual EOF if offset was truncated.
-                */
-                sts = zfseeko( file, ofs, SEEK_SET);
-                if (sts != 0)
-                {
-                    /* fseeko() failed.  (Unlikely.) */
-                    ofs = EOF;
-                }
-                else
-                {
-                    /* Read a byte at apparent EOF.  Should set EOF flag. */
-                    siz = fread( waste, 1, 1, file);
-                    if (feof( file) == 0)
-                    {
-                        /* Not at EOF, but should be.  File too big. */
-                        ofs = EOF;
-                    }
-                }
-            }
-        }
-        fclose( file);
-    }
-return ofs;
-}
 
 
 
@@ -267,12 +229,12 @@ int process_zipfiles(__G)    /* return PK-type error code */
 
     /* finish up initialization of magic signature strings */
     local_hdr_sig[0]  /* = extd_local_sig[0] */ =       /* ASCII 'P', */
-      central_hdr_sig[0] = end_central32_sig[0] =         /* not EBCDIC */
-        end_central64_sig[0] = 0x50;
+      central_hdr_sig[0] = end_central_sig[0] =         /* not EBCDIC */
+      end_central64_sig[0] = 0x50;
 
     local_hdr_sig[1]  /* = extd_local_sig[1] */ =       /* ASCII 'K', */
-      central_hdr_sig[1] = end_central32_sig[1] =         /* not EBCDIC */
-        end_central64_sig[1] = 0x4B;
+      central_hdr_sig[1] = end_central_sig[1] =         /* not EBCDIC */
+      end_central64_sig[1] = 0x4B;
 
 /*---------------------------------------------------------------------------
     Make sure timezone info is set correctly; localtime() returns GMT on
@@ -665,6 +627,20 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
                   LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
                   G.wildzipfn, G.wildzipfn, G.zipfn));
 #else /* !(UNIX || QDOS) */
+# ifdef VMS
+            if (G.no_ecrec)
+                Info(slide, 0x401, ((char *)slide,
+                  LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
+                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  G.wildzipfn, uO.zipinfo_mode? "  " : "",
+                  (*G.zipfn ? G.zipfn : vms_msg_text())));
+            else
+                Info(slide, 0x401, ((char *)slide,
+                  LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
+                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  G.wildzipfn,
+                  (*G.zipfn ? G.zipfn : vms_msg_text())));
+# else /* def VMS */
             if (G.no_ecrec)
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
@@ -675,28 +651,13 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
                   LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
                   LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
                   G.wildzipfn, G.zipfn));
+# endif /* def VMS [else] */
 #endif /* ?(UNIX || QDOS) */
         }
 #endif /* !SFX */
         return error? IZ_DIR : PK_NOZIP;
     }
-
-#ifdef LARGE_FILE_SUPPORT
-    G.ziplen = G.statbuf.st_size; /* Simple is good. */
-#else /* def LARGE_FILE_SUPPORT */
-    G.ziplen = file_size( G.zipfn);     /* Need more care. */
-#endif /* def LARGE_FILE_SUPPORT */
-
-    if (G.ziplen == EOF)
-        {
-        Info(slide, 0x401, ((char *)slide,
-          "Trying to read large file (> 2 GB) without large file support\n"));
-        /*
-        printf(
-" We need a better error message for: 64-bit file, 32-bit program.\n");
-        */
-        return PK_ERRBF;
-        }
+    G.ziplen = G.statbuf.st_size;
 
 #ifndef SFX
 #if defined(UNIX) || defined(DOS_OS2_W32) || defined(THEOS)
@@ -713,13 +674,21 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
     if (open_input_file(__G))   /* this should never happen, given */
         return PK_NOZIP;        /*  the stat() test above, but... */
 
-/*---------------------------------------------------------------------------
-    Find and process the end-of-central-directory header.  UnZip need only
-    check last 65557 bytes of zipfile:  comment may be up to 65535, end-of-
-    central-directory record is 18 bytes, and signature itself is 4 bytes;
-    add some to allow for appended garbage.  Since ZipInfo is often used as
-    a debugging tool, search the whole zipfile if zipinfo_mode is true.
-  ---------------------------------------------------------------------------*/
+#ifdef DO_SAFECHECK_2GB
+    /* Need more care: Do not trust the size returned by stat() but
+       determine it by reading beyond the end of the file. */
+    G.ziplen = file_size(G.zipfd);
+
+    if (G.ziplen == EOF) {
+        Info(slide, 0x401, ((char *)slide, LoadFarString(ZipfileTooBig)));
+        /*
+        printf(
+" We need a better error message for: 64-bit file, 32-bit program.\n");
+        */
+        CLOSE_INFILE();
+        return PK_ERRBF;
+    }
+#endif /* !DO_SAFECHECK_2GB */
 
     /* initialize the CRC table pointer (once) */
     if (CRC_32_TAB == NULL) {
@@ -740,6 +709,14 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         }
     }
 #endif /* !SFX || SFX_EXDIR */
+
+/*---------------------------------------------------------------------------
+    Find and process the end-of-central-directory header.  UnZip need only
+    check last 65557 bytes of zipfile:  comment may be up to 65535, end-of-
+    central-directory record is 18 bytes, and signature itself is 4 bytes;
+    add some to allow for appended garbage.  Since ZipInfo is often used as
+    a debugging tool, search the whole zipfile if zipinfo_mode is true.
+  ---------------------------------------------------------------------------*/
 
     G.cur_zipfile_bufstart = 0;
     G.inptr = G.inbuf;
@@ -809,13 +786,15 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         if (G.ecrec.number_this_disk > G.ecrec.num_disk_start_cdir) {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(CentDirNotInZipMsg), G.zipfn,
-              G.ecrec.number_this_disk, G.ecrec.num_disk_start_cdir));
+              (ulg)G.ecrec.number_this_disk,
+              (ulg)G.ecrec.num_disk_start_cdir));
             error_in_archive = PK_FIND;
             too_weird_to_continue = TRUE;
         } else {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(EndCentDirBogus), G.zipfn,
-              G.ecrec.number_this_disk, G.ecrec.num_disk_start_cdir));
+              (ulg)G.ecrec.number_this_disk,
+              (ulg)G.ecrec.num_disk_start_cdir));
             error_in_archive = PK_WARN;
         }
 #ifdef NO_MULTIPART   /* concatenation of multiple parts works in some cases */
@@ -835,10 +814,10 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         }
 #endif /* !SFX */
         if ((G.extra_bytes = G.real_ecrec_offset-G.expect_ecrec_offset) <
-            (LONGINT)0)
+            (Z_OFF_T)0)
         {
             Info(slide, 0x401, ((char *)slide, LoadFarString(MissingBytes),
-              G.zipfn, fzofft( (-G.extra_bytes), NULL, NULL)));
+              G.zipfn, FmZofft((-G.extra_bytes), NULL, NULL)));
             error_in_archive = PK_ERR;
         } else if (G.extra_bytes > 0) {
             if ((G.ecrec.offset_start_central_directory == 0) &&
@@ -854,7 +833,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
             else {
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(ExtraBytesAtStart), G.zipfn,
-                  fzofft( G.extra_bytes, NULL, NULL),
+                  FmZofft(G.extra_bytes, NULL, NULL),
                   (G.extra_bytes == 1)? "":"s"));
                 error_in_archive = PK_WARN;
             }
@@ -917,7 +896,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
             }
 #ifndef SFX
             Info(slide, 0x401, ((char *)slide, LoadFarString(CentDirTooLong),
-              G.zipfn, fzofft( (-tmp), NULL, NULL)));
+              G.zipfn, FmZofft((-tmp), NULL, NULL)));
 #endif
             error_in_archive = PK_ERR;
         }
@@ -1000,9 +979,100 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
 
 
 
+#ifdef DO_SAFECHECK_2GB
+/************************/
+/* Function file_size() */
+/************************/
+/* File size determination which does not mislead for large files in a
+   small-file program.  Probably should be somewhere else.
+   The file has to be opened previously
+*/
+#ifdef USE_STRM_INPUT
+static zoff_t file_size(file)
+    FILE *file;
+{
+    int sts;
+    size_t siz;
+#else /* !USE_STRM_INPUT */
+static zoff_t file_size(fh)
+    int fh;
+{
+    int siz;
+#endif /* ?USE_STRM_INPUT */
+    zoff_t ofs;
+    char waste[4];
+
+#ifdef USE_STRM_INPUT
+    /* Seek to actual EOF. */
+    sts = zfseeko(file, 0, SEEK_END);
+    if (sts != 0) {
+        /* fseeko() failed.  (Unlikely.) */
+        ofs = EOF;
+    } else {
+        /* Get apparent offset at EOF. */
+        ofs = zftello(file);
+        if (ofs < 0) {
+            /* Offset negative (overflow).  File too big. */
+            ofs = EOF;
+        } else {
+            /* Seek to apparent EOF offset.
+               Won't be at actual EOF if offset was truncated.
+            */
+            sts = zfseeko(file, ofs, SEEK_SET);
+            if (sts != 0) {
+                /* fseeko() failed.  (Unlikely.) */
+                ofs = EOF;
+            } else {
+                /* Read a byte at apparent EOF.  Should set EOF flag. */
+                siz = fread(waste, 1, 1, file);
+                if (feof(file) == 0) {
+                    /* Not at EOF, but should be.  File too big. */
+                    ofs = EOF;
+                }
+            }
+        }
+    }
+#else /* !USE_STRM_INPUT */
+    /* Seek to actual EOF. */
+    ofs = zlseek(fh, 0, SEEK_END);
+    if (ofs == (zoff_t) -1) {
+        /* zlseek() failed.  (Unlikely.) */
+        ofs = EOF;
+    } else if (ofs < 0) {
+        /* Offset negative (overflow).  File too big. */
+        ofs = EOF;
+    } else {
+        /* Seek to apparent EOF offset.
+           Won't be at actual EOF if offset was truncated.
+        */
+        ofs = zlseek(fh, ofs, SEEK_SET);
+        if (ofs == (zoff_t) -1) {
+            /* zlseek() failed.  (Unlikely.) */
+            ofs = EOF;
+        } else {
+            /* Read a byte at apparent EOF.  Should set EOF flag. */
+            siz = read(fh, waste, 1);
+            if (siz != 0) {
+                /* Not at EOF, but should be.  File too big. */
+                ofs = EOF;
+            }
+        }
+    }
+#endif /* ?USE_STRM_INPUT */
+    return ofs;
+} /* end function file_size() */
+#endif /* DO_SAFECHECK_2GB */
+
+
+
+
+/***********************/
+/* Function rec_find() */
+/***********************/
 
 static int rec_find(__G__ searchlen, signature, rec_size)
-    __GDEF                                           /* return PK-class error */
+    /* return 0 when rec found, 1 when not found, 2 in case of read error */
+    __GDEF
     zoff_t searchlen;
     char* signature;
     int rec_size;
@@ -1017,22 +1087,21 @@ static int rec_find(__G__ searchlen, signature, rec_size)
 
     if ((tail_len = G.ziplen % INBUFSIZ) > rec_size) {
 #ifdef USE_STRM_INPUT
-        fseek((FILE *)G.zipfd, G.ziplen-tail_len, SEEK_SET);
-        G.cur_zipfile_bufstart = ftell((FILE *)G.zipfd);
+        zfseeko(G.zipfd, G.ziplen-tail_len, SEEK_SET);
+        G.cur_zipfile_bufstart = zftello(G.zipfd);
 #else /* !USE_STRM_INPUT */
-        G.cur_zipfile_bufstart = zlseek(G.zipfd, G.ziplen-tail_len,
-          SEEK_SET);
+        G.cur_zipfile_bufstart = zlseek(G.zipfd, G.ziplen-tail_len, SEEK_SET);
 #endif /* ?USE_STRM_INPUT */
         if ((G.incnt = read(G.zipfd, (char *)G.inbuf,
             (unsigned int)tail_len)) != (int)tail_len)
-            goto fail;      /* it's expedient... */
+            return 2;      /* it's expedient... */
 
         /* 'P' must be at least (rec_size+4) bytes from end of zipfile */
         for (G.inptr = G.inbuf+(int)tail_len-(rec_size+4);
              G.inptr >= G.inbuf;
              --G.inptr) {
             if ( (*G.inptr == (uch)0x50) &&         /* ASCII 'P' */
-                 !strncmp((char *)G.inptr, signature, 4)) {
+                 !strncmp((char *)G.inptr, signature, 4) ) {
                 G.incnt -= (int)(G.inptr - G.inbuf);
                 found = TRUE;
                 break;
@@ -1054,15 +1123,18 @@ static int rec_find(__G__ searchlen, signature, rec_size)
 
     for (i = 1;  !found && (i <= numblks);  ++i) {
         G.cur_zipfile_bufstart -= INBUFSIZ;
+#ifdef USE_STRM_INPUT
+        zfseeko(G.zipfd, G.cur_zipfile_bufstart, SEEK_SET);
+#else /* !USE_STRM_INPUT */
         zlseek(G.zipfd, G.cur_zipfile_bufstart, SEEK_SET);
+#endif /* ?USE_STRM_INPUT */
         if ((G.incnt = read(G.zipfd,(char *)G.inbuf,INBUFSIZ))
             != INBUFSIZ)
-            break;          /* fall through and fail */
+            return 2;          /* read error is fatal failure */
 
-        for (G.inptr = G.inbuf+INBUFSIZ-1;  G.inptr >= G.inbuf;
-             --G.inptr)
-            if ((native(*G.inptr) == 'P')  &&
-                 !strncmp((char *)G.inptr, signature, 4)) {
+        for (G.inptr = G.inbuf+INBUFSIZ-1;  G.inptr >= G.inbuf; --G.inptr)
+            if ( (*G.inptr == (uch)0x50) &&         /* ASCII 'P' */
+                 !strncmp((char *)G.inptr, signature, 4) ) {
                 G.incnt -= (int)(G.inptr - G.inbuf);
                 found = TRUE;
                 break;
@@ -1070,23 +1142,8 @@ static int rec_find(__G__ searchlen, signature, rec_size)
         /* sig may span block boundary: */
         memcpy((char *)G.hold, (char *)G.inbuf, 3);
     }
-
-/*---------------------------------------------------------------------------
-Searched through whole region where signature should be without finding
-it.  Print informational message and die a horrible death.
-  ---------------------------------------------------------------------------*/
-
-fail:
-    if (!found) {
-        if (uO.qflag || uO.zipinfo_mode)
-            Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
-        Info(slide, 0x401, ((char *)slide,
-          LoadFarString(CentDirEndSigNotFound)));
-        return PK_ERR;   /* failed */
-    }
-
-    return PK_COOL;
-}
+    return (found ? 0 : 1);
+} /* end function rec_find() */
 
 
 
@@ -1098,19 +1155,19 @@ fail:
 static int check_ecrec_zip64(__G)
     __GDEF
 {
-    return G.ecrec.number_this_disk                == 0xffff
-        || G.ecrec.num_disk_start_cdir             == 0xffff
-        || G.ecrec.num_entries_centrl_dir_ths_disk == 0xffff
-        || G.ecrec.total_entries_central_dir       == 0xffff
-        || G.ecrec.size_central_directory          == 0xffffffff
-        || G.ecrec.offset_start_central_directory  == 0xffffffff;
-}
+    return G.ecrec.offset_start_central_directory  == 0xFFFFFFFFL
+        || G.ecrec.size_central_directory          == 0xFFFFFFFFL
+        || G.ecrec.total_entries_central_dir       == 0xFFFF
+        || G.ecrec.num_entries_centrl_dir_ths_disk == 0xFFFF
+        || G.ecrec.num_disk_start_cdir             == 0xFFFF
+        || G.ecrec.number_this_disk                == 0xFFFF;
+} /* end function check_ecrec_zip64() */
 
 
 
-/*************************/
+/***************************/
 /* Function find_ecrec64() */
-/*************************/
+/***************************/
 
 static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
     __GDEF
@@ -1118,10 +1175,17 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
 {
     ec_byte_rec64 byterec;
 
-    strncpy(end_central_sig,end_central64_sig,4);/* we know its a big file now */
-
-    if ((rec_find(__G__ searchlen, end_central_sig, ECREC64_SIZE))
-        == PK_ERR) return PK_ERR;
+    switch(rec_find(__G__ searchlen, end_central64_sig, ECREC64_SIZE)) {
+      case 1:
+        return PK_OK;
+      case 2:
+        if (uO.qflag || uO.zipinfo_mode)
+            Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
+        Info(slide, 0x401, ((char *)slide,
+          LoadFarString(Cent64EndSigSearchErr)));
+        return PK_ERR;
+      /* else: found ECREC64, continue! */
+    }
 
     G.real_ecrec_offset = G.cur_zipfile_bufstart + (G.inptr-G.inbuf);
 
@@ -1129,13 +1193,14 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
         return PK_EOF;
 
     if (G.ecrec.number_this_disk == 0xffff)
-      G.ecrec.number_this_disk = makelong(&byterec[NUMBER_THIS_DISK64]);
+      G.ecrec.number_this_disk
+        = (zuvl_t)makelong(&byterec[NUMBER_THIS_DISK64]);
     if (G.ecrec.num_disk_start_cdir == 0xffff)
       G.ecrec.num_disk_start_cdir
-        = makelong(&byterec[NUM_DISK_WITH_START_CENTRAL_DIR64]);
+        = (zuvl_t)makelong(&byterec[NUM_DISK_WITH_START_CEN_DIR64]);
     if (G.ecrec.num_entries_centrl_dir_ths_disk == 0xffff)
       G.ecrec.num_entries_centrl_dir_ths_disk
-        = makeint64(&byterec[NUM_ENTRIES_CENTRL_DIR_THS_DISK64]);
+        = makeint64(&byterec[NUM_ENTRIES_CEN_DIR_THS_DISK64]);
     if (G.ecrec.total_entries_central_dir == 0xffff)
       G.ecrec.total_entries_central_dir
         = makeint64(&byterec[TOTAL_ENTRIES_CENTRAL_DIR64]);
@@ -1146,8 +1211,12 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
       G.ecrec.offset_start_central_directory
         = makeint64(&byterec[OFFSET_START_CENTRAL_DIRECTORY64]);
 
+    /* We know its a big file now. The "end of the central directory" mark
+       used as break condition for the central-directory scan  is the
+       "end_central64" signature. */
+    G.ecrec.is_zip64_archive = TRUE;
     return PK_COOL;
-}
+} /* end function find_ecrec64() */
 
 
 
@@ -1163,14 +1232,16 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
     int result;
     ec_byte_rec byterec;
 
-    strncpy(end_central_sig,end_central32_sig,4);/* assume small file first */
-
 /*---------------------------------------------------------------------------
     Treat case of short zipfile separately.
   ---------------------------------------------------------------------------*/
 
     if (G.ziplen <= INBUFSIZ) {
+#ifdef USE_STRM_INPUT
+        zfseeko(G.zipfd, 0L, SEEK_SET);
+#else /* !USE_STRM_INPUT */
         zlseek(G.zipfd, 0L, SEEK_SET);
+#endif /* ?USE_STRM_INPUT */
         if ((G.incnt = read(G.zipfd,(char *)G.inbuf,(unsigned int)G.ziplen))
             == (int)G.ziplen)
 
@@ -1186,31 +1257,32 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
                 }
             }
 
-            /* 2004-11-13 SMS.
-               If signature not found (I/O error, or whatever), then
-               put out the long error message as rec_find() would,
-               and then get out.
-            */
-            if (!found)
-            {
-                if (uO.qflag || uO.zipinfo_mode)
-                    Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
-                Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CentDirEndSigNotFound)));
-                return PK_ERR;   /* failed */
-            }
-
 /*---------------------------------------------------------------------------
-    Zipfile is longer than INBUFSIZ:  may need to loop.  Start with short
-    block at end of zipfile (if not TOO short).
+    Zipfile is longer than INBUFSIZ:
 
     MB - this next block of code moved to rec_find so that same code can be
     used to look for zip64 ec record.  No need to include code above since
     a zip64 ec record will only be looked for if it is a BIG file.
   ---------------------------------------------------------------------------*/
 
-    } else if ((rec_find(__G__ searchlen, end_central_sig, ECREC_SIZE))
-        == PK_ERR) return PK_ERR;
+    } else {
+        found =
+          (rec_find(__G__ searchlen, end_central_sig, ECREC_SIZE) == 0
+           ? TRUE : FALSE);
+    } /* end if (ziplen > INBUFSIZ) */
+
+/*---------------------------------------------------------------------------
+    Searched through whole region where signature should be without finding
+    it.  Print informational message and die a horrible death.
+  ---------------------------------------------------------------------------*/
+
+    if (!found) {
+        if (uO.qflag || uO.zipinfo_mode)
+            Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
+        Info(slide, 0x401, ((char *)slide,
+          LoadFarString(CentDirEndSigNotFound)));
+        return PK_ERR;   /* failed */
+    }
 
 /*---------------------------------------------------------------------------
     Found the signature, so get the end-central data before returning.  Do
@@ -1221,8 +1293,8 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
     G.real_ecrec_offset = G.cur_zipfile_bufstart + (G.inptr-G.inbuf);
 #ifdef TEST
     printf("\n  found end-of-central-dir signature at offset %s (%sh)\n",
-      fzofft( G.real_ecrec_offset, NULL, NULL),
-      fzofft( G.real_ecrec_offset, FZOFFT_HEX_DOT_WID, "X"));
+      FmZofft(G.real_ecrec_offset, NULL, NULL),
+      FmZofft(G.real_ecrec_offset, FZOFFT_HEX_DOT_WID, "X"));
     printf("    from beginning of file; offset %d (%.4Xh) within block\n",
       G.inptr-G.inbuf, G.inptr-G.inbuf);
 #endif
@@ -1233,9 +1305,9 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
     G.ecrec.number_this_disk =
       makeword(&byterec[NUMBER_THIS_DISK]);
     G.ecrec.num_disk_start_cdir =
-      makeword(&byterec[NUM_DISK_WITH_START_CENTRAL_DIR]);
+      makeword(&byterec[NUM_DISK_WITH_START_CEN_DIR]);
     G.ecrec.num_entries_centrl_dir_ths_disk =
-      makeword(&byterec[NUM_ENTRIES_CENTRL_DIR_THS_DISK]);
+      makeword(&byterec[NUM_ENTRIES_CEN_DIR_THS_DISK]);
     G.ecrec.total_entries_central_dir =
       makeword(&byterec[TOTAL_ENTRIES_CENTRAL_DIR]);
     G.ecrec.size_central_directory =
@@ -1551,7 +1623,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
             offset += sizeof(G.crec.relative_offset_local_header);
           }
           if (G.crec.disk_number_start == 0xffff){
-            G.crec.disk_number_start = makelong(offset + ef_buf);
+            G.crec.disk_number_start = (zuvl_t)makelong(offset + ef_buf);
             offset += sizeof(G.crec.disk_number_start);
           }
         }

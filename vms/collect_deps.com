@@ -1,20 +1,21 @@
-$!                                              3 March 2005.  SMS.
+$!                                              24 May 2005.  SMS.
 $!
 $! Info-ZIP VMS accessory procedure.
 $!
-$!    Collect all source file dependencies specified by P2,
-$!    and add P3 prefix.
-$!    Convert absolute dependencies to relative from one level above P4.
-$!    P1 = output file specification.
+$!    For the product named by P1,
+$!    collect all source file dependencies specified by P3,
+$!    and add P4 prefix.
+$!    Convert absolute dependencies to relative from one level above P5.
+$!    P2 = output file specification.
 $!
-$! MMS /EXTENDED_SYNTAX can't easily pass a macro invocation for P3, so
+$! MMS /EXTENDED_SYNTAX can't easily pass a macro invocation for P4, so
 $! we remove any internal spaces which might have been added to prevent
 $! immediate evaluation of a macro invocation.
 $!
-$ prefix = f$edit( p3, "COLLAPSE")
+$ prefix = f$edit( p4, "COLLAPSE")
 $!
-$ dev_lose = f$parse( p4, , , "DEVICE", "SYNTAX_ONLY")
-$ dir_lose = f$parse( p4, , , "DIRECTORY", "SYNTAX_ONLY")
+$ dev_lose = f$parse( p5, , , "DEVICE", "SYNTAX_ONLY")
+$ dir_lose = f$parse( p5, , , "DIRECTORY", "SYNTAX_ONLY")
 $ suffix = ".VMS]"
 $ suffix_loc = f$locate( suffix, dir_lose)
 $ if (suffix_loc .lt f$length( dir_lose))
@@ -26,19 +27,19 @@ $ endif
 $!
 $! For portability, make the output file record format Stream_LF.
 $!
-$ create /fdl = sys$input 'p1'
+$ create /fdl = sys$input 'p2'
 RECORD
         Carriage_Control carriage_return
         Format stream_lf
 $!
-$ open /read /write /error = end_main deps_out 'p1'
+$ open /read /write /error = end_main deps_out 'p2'
 $ on error then goto loop_main_end
 $!
 $! Include proper-inclusion-check preface.
 $!
-$ incl_macro = "INCL_"+ f$parse( p1, , , "NAME", "SYNTAX_ONLY")
+$ incl_macro = "INCL_"+ f$parse( p2, , , "NAME", "SYNTAX_ONLY")
 $ write deps_out "#"
-$ write deps_out "# Zip for VMS - MMS (or MMK) Source Dependency File."
+$ write deps_out "# ''p1' for VMS - MMS (or MMK) Source Dependency File."
 $ write deps_out "#"
 $ write deps_out ""
 $ write deps_out -
@@ -56,7 +57,7 @@ $!
 $! Actual dependencies from individual dependency files.
 $!
 $ loop_main_top:
-$    file = f$search( p2)
+$    file = f$search( p3)
 $    if (file .eqs. "") then goto loop_main_end
 $!
 $    open /read /error = end_subs deps_in 'file'

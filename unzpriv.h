@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -42,11 +42,8 @@
 #  ifdef DLL
 #    undef DLL
 #  endif
-#  ifdef SFX            /* fUnZip is NOT the sfx stub! */
+#  ifdef SFX    /* fUnZip is NOT the sfx stub! */
 #    undef SFX
-#  endif
-#  ifdef USE_BZIP2      /* fUnZip does not support bzip2 decompression */
-#    undef USE_BZIP2
 #  endif
 #endif
 
@@ -67,7 +64,7 @@
 #  endif
 #endif
 
-/* disable bzip2 support for SFX stub, unless explicitly requested */
+/* disable BZip2 support for SFX stub, unless explicitely requested */
 #if (defined(SFX) && !defined(BZIP2_SFX) && defined(USE_BZIP2))
 #  undef USE_BZIP2
 #endif
@@ -110,7 +107,7 @@
 #    undef FORCE_UNIX_OVER_WIN32
 #  endif
 #  ifdef FORCE_WIN32_OVER_UNIX
-     /* native Win32 support was explicitly requested... */
+     /* native Win32 support was explicitely requested... */
 #    undef UNIX
 #  else
      /* use the POSIX (Unix) emulation features by default... */
@@ -207,36 +204,6 @@
 /*---------------------------------------------------------------------------
     OS-dependent includes
   ---------------------------------------------------------------------------*/
-
-#ifdef EFT
-#  define Z_OFF_T off_t  /* Amdahl UTS nonsense ("extended file types") */
-#else
-#if (defined(UNIX) && defined(_FILE_OFFSET_BITS) && (_FILE_OFFSET_BITS == 64))
-#  define Z_OFF_T off_t /* 64bit offsets to support 2GB < zipfile size < 4GB */
-#else
-#  define Z_OFF_T long
-#endif
-#endif
-
-#ifdef MODERN
-#  ifndef NO_STDDEF_H
-#    include <stddef.h>
-#  endif
-#  ifndef NO_STDLIB_H
-#    include <stdlib.h>  /* standard library prototypes, malloc(), etc. */
-#  endif
-   typedef size_t extent;
-#else /* !MODERN */
-#  ifndef AOS_VS         /* mostly modern? */
-     Z_OFF_T lseek();
-#    ifdef VAXC          /* not fully modern, but has stdlib.h and void */
-#      include <stdlib.h>
-#    else
-       char *malloc();
-#    endif /* ?VAXC */
-#  endif /* !AOS_VS */
-   typedef unsigned int extent;
-#endif /* ?MODERN */
 
 
 /*---------------------------------------------------------------------------
@@ -463,11 +430,11 @@
 #endif /* MTS */
 
  /*---------------------------------------------------------------------------
-    Novell Netware NLM section
+    Novell NLM section
   ---------------------------------------------------------------------------*/
 
 #ifdef NLM
-#  include "netware/nlmcfg.h"
+#  include "novell/nlmcfg.h"
 #endif
 
  /*---------------------------------------------------------------------------
@@ -609,6 +576,35 @@
 #endif
 
 
+
+/* ----------------------------------------------------------------------------
+   MUST BE AFTER LARGE FILE INCLUDES
+   ---------------------------------------------------------------------------- */
+
+/* This stuff calls in types and messes up large file includes.  It needs to
+   go after large file defines in local includes.
+   I am guessing that moving them here probably broke some ports, but hey.
+   10/31/2004 EG */
+
+#ifdef EFT
+#  define Z_OFF_T off_t  /* Amdahl UTS nonsense ("extended file types") */
+#else
+#if (defined(UNIX) && defined(_FILE_OFFSET_BITS) && (_FILE_OFFSET_BITS == 64))
+#  define Z_OFF_T off_t /* 64bit offsets to support 2GB < zipfile size < 4GB */
+#else
+#  define Z_OFF_T long
+#endif
+#endif
+
+#ifndef ZOFF_T_DEFINED
+   typedef Z_OFF_T zoff_t;
+#  define ZOFF_T_DEFINED
+#endif
+#ifndef Z_STAT_DEFINED
+   typedef struct stat z_stat;
+#  define Z_STAT_DEFINED
+#endif
+
 #ifndef MINIX            /* Minix needs it after all the other includes (?) */
 #  include <stdio.h>
 #endif
@@ -628,15 +624,46 @@
 #include <signal.h>      /* used in unzip.c, fileio.c */
 
 
+#ifdef MODERN
+#  ifndef NO_STDDEF_H
+#    include <stddef.h>
+#  endif
+#  ifndef NO_STDLIB_H
+#    include <stdlib.h>  /* standard library prototypes, malloc(), etc. */
+#  endif
+   typedef size_t extent;
+#else /* !MODERN */
+#  ifndef AOS_VS         /* mostly modern? */
+     Z_OFF_T lseek();
+#    ifdef VAXC          /* not fully modern, but has stdlib.h and void */
+#      include <stdlib.h>
+#    else
+       char *malloc();
+#    endif /* ?VAXC */
+#  endif /* !AOS_VS */
+   typedef unsigned int extent;
+#endif /* ?MODERN */
+
+
+
+
 /*************/
 /*  Defines  */
 /*************/
 
 #define UNZIP_BZ2VERS   46
+#ifdef ZIP64_SUPPORT
+# ifdef USE_BZIP2
+#  define UNZIP_VERSION   UNZIP_BZ2VERS
+# else
+#  define UNZIP_VERSION   45
+# endif
+#else
 #ifdef USE_DEFLATE64
 #  define UNZIP_VERSION   21   /* compatible with PKUNZIP 4.0 */
 #else
 #  define UNZIP_VERSION   20   /* compatible with PKUNZIP 2.0 */
+#endif
 #endif
 #define VMS_UNZIP_VERSION 42   /* if OS-needed-to-extract is VMS:  can do */
 
@@ -726,13 +753,6 @@
 #ifndef TIMET_TO_NATIVE         /* everybody but MSC 7.0 and Macintosh */
 #  define TIMET_TO_NATIVE(x)
 #  define NATIVE_TO_TIMET(x)
-#endif
-#ifndef SSTAT
-#  ifdef WILD_STAT_BUG
-#    define SSTAT(path,pbuf) (iswild(path) || stat(path,pbuf))
-#  else
-#    define SSTAT stat
-#  endif
 #endif
 #ifndef STRNICMP
 #  ifdef NO_STRNICMP
@@ -870,20 +890,6 @@
 #  undef ASM_CRC
 #endif
 
-#ifdef USE_ZLIB
-#  ifdef IZ_CRC_BE_OPTIMIZ
-#    undef IZ_CRC_BE_OPTIMIZ
-#  endif
-#  ifdef IZ_CRC_LE_OPTIMIZ
-#    undef IZ_CRC_LE_OPTIMIZ
-#  endif
-#endif
-#if (!defined(IZ_CRC_BE_OPTIMIZ) && !defined(IZ_CRC_LE_OPTIMIZ))
-#  ifdef IZ_CRCOPTIM_UNFOLDTBL
-#    undef IZ_CRCOPTIM_UNFOLDTBL
-#  endif
-#endif
-
 #ifndef INBUFSIZ
 #  if (defined(MED_MEM) || defined(SMALL_MEM))
 #    define INBUFSIZ  2048  /* works for MS-DOS small model */
@@ -896,7 +902,7 @@
    /* For environments using 16-bit integers OUTBUFSIZ must be limited to
     * less than 64k (do_string() uses "unsigned" in calculations involving
     * OUTBUFSIZ).  This is achieved by defining MED_MEM when WSIZE = 64k (aka
-    * Deflate64 support enabled) or EOL markers contain multiple characters.
+    * Deflate64 support enabled) or EOL markers consist multiple characters.
     * (The rule gets applied AFTER the default rule for INBUFSIZ because it
     * is not neccessary to reduce INBUFSIZE in this case.)
     */
@@ -1039,7 +1045,6 @@
 #  define FOPR  "r","ctx=stm"
 #  define FOPM  "r+","ctx=stm","rfm=fix","mrs=512"
 #  define FOPW  "w","ctx=stm","rfm=fix","mrs=512"
-#  define FOPWR "w+","ctx=stm","rfm=fix","mrs=512"
 #endif /* VMS */
 
 #ifdef CMS_MVS
@@ -1076,9 +1081,6 @@
 #  ifndef FOPWT
 #    define FOPWT "wt"
 #  endif
-#  ifndef FOPWR
-#    define FOPWR "w+b"
-#  endif
 #else /* !MODERN */
 #  ifndef FOPR
 #    define FOPR "r"
@@ -1091,9 +1093,6 @@
 #  endif
 #  ifndef FOPWT
 #    define FOPWT "w"
-#  endif
-#  ifndef FOPWR
-#    define FOPWR "w+"
 #  endif
 #endif /* ?MODERN */
 
@@ -1174,10 +1173,6 @@
 # endif
 #endif /* MALLOC_WORK && !MY_ZCALLOC */
 
-#ifdef REGULUS  /* returns the inode number on success(!)...argh argh argh */
-#  define stat(p,s) zstat((p),(s))
-#endif
-
 #if (defined(CRAY) && defined(ZMEM))
 #  undef ZMEM
 #endif
@@ -1226,6 +1221,201 @@
 #ifndef IS_VOLID
 #  define IS_VOLID(m)  ((m) & 0x08)
 #endif
+
+/***********************************/
+/*  LARGE_FILE_SUPPORT             */
+/***********************************/
+/* This whole section lifted from Zip 3b tailor.h
+
+ * Types are in OS dependant headers (eg, w32cfg.h)
+ *
+ * LARGE_FILE_SUPPORT and ZIP64_SUPPORT are automatically
+ * set in OS dependant headers (for some ports) based on the port and compiler.
+ *
+ * Function prototypes are below as OF is defined earlier in this file
+ * but after OS dependant header is included.
+ *
+ * E. Gordon 9/21/2003
+ * Updated 1/28/2004
+ * Lifted and placed here 6/7/2004 - Myles Bennett
+ */
+#ifdef LARGE_FILE_SUPPORT
+  /* 64-bit Large File Support */
+
+/* ---------------------------- */
+
+# if defined(UNIX) || defined(VMS)
+
+    /* 64-bit stat functions */
+#   define zstat stat
+#   define zfstat fstat
+#   define zlstat lstat
+
+    /* 64-bit fseeko */
+#   define zlseek lseek
+#   define zfseeko fseeko
+
+    /* 64-bit ftello */
+#   define zftello ftello
+
+    /* 64-bit fopen */
+#   define zfopen fopen
+#   define zfdopen fdopen
+
+# endif /* UNIX || VMS */
+
+/* ---------------------------- */
+
+# ifdef WIN32
+
+#   if defined(_MSC_VER) || defined(__MINGW32__) || defined(__LCC__)
+    /* MS C (VC), MinGW GCC port and LCC-32 use the MS C Runtime lib */
+
+    /* 64-bit stat functions */
+#     define zstat _stati64
+#     define zfstat _fstati64
+
+    /* 64-bit lseek */
+#     define zlseek _lseeki64
+
+    /* The newest MinGW port contains built-in extension to the MSC rtl that
+       provide fseeko and ftello, but our implementations will do for now. */
+    /* 64-bit fseeko */
+      int zfseeko OF((FILE *, zoff_t, int));
+
+    /* 64-bit ftello */
+      zoff_t zftello OF((FILE *));
+
+    /* 64-bit fopen */
+#     define zfopen fopen
+#     define zfdopen fdopen
+
+#   endif /* _MSC_VER || __MINGW__ || __LCC__ */
+
+#   ifdef __CYGWIN__
+    /* CYGWIN GCC Posix emulator on Windows
+       (configuration not yet finished/tested)  */
+
+    /* 64-bit stat functions */
+#     define zstat _stati64
+#     define zfstat _fstati64
+
+    /* 64-bit lseek */
+#     define zlseek _lseeki64
+
+    /* 64-bit fseeko */
+#     define zfseeko fseeko
+
+    /* 64-bit ftello */
+#     define zftello ftello
+
+    /* 64-bit fopen */
+#     define zfopen fopen
+#     define zfdopen fdopen
+
+#   endif
+#   if defined(__WATCOMC__) || defined(__BORLANDC__)
+    /* WATCOM C and Borland C provide their own C runtime libraries,
+       but they are sufficiently compatible with MS CRTL. */
+
+    /* 64-bit stat functions */
+#     define zstat _stati64
+#     define zfstat _fstati64
+
+#   ifdef __WATCOMC__
+    /* 64-bit lseek */
+#     define zlseek _lseeki64
+#   endif
+
+    /* 64-bit fseeko */
+      int zfseeko OF((FILE *, zoff_t, int));
+
+    /* 64-bit ftello */
+      zoff_t zftello OF((FILE *));
+
+    /* 64-bit fopen */
+#     define zfopen fopen
+#     define zfdopen fdopen
+
+#   endif
+#   ifdef __IBMC__
+      /* IBM C */
+
+      /* 64-bit stat functions */
+
+      /* 64-bit fseeko */
+
+      /* 64-bit ftello */
+
+      /* 64-bit fopen */
+
+#   endif
+
+# endif /* WIN32 */
+
+#else
+  /* No Large File Support */
+
+# ifndef REGULUS  /* returns the inode number on success(!)...argh argh argh */
+#   define zstat stat
+# endif
+# define zfstat fstat
+# define zlstat lstat
+# define zlseek lseek
+# define zfseeko fseek
+# define zftello ftell
+# define zfopen fopen
+# define zfdopen fdopen
+
+# if defined(UNIX) || defined(VMS) || defined(WIN32)
+    /* For these systems, implement "64bit file vs. 32bit prog" check  */
+#   ifndef DO_SAFECHECK_2GB
+#     define DO_SAFECHECK_2GB
+#   endif
+# endif
+
+#endif
+
+/* No "64bit file vs. 32bit prog" check for SFX stub, to save space */
+#if (defined(DO_SAFECHECK_2GB) && defined(SFX))
+#  undef DO_SAFECHECK_2GB
+#endif
+
+#ifndef SSTAT
+#  ifdef WILD_STAT_BUG
+#    define SSTAT(path,pbuf) (iswild(path) || zstat(path,pbuf))
+#  else
+#    define SSTAT    zstat
+#  endif
+#endif
+#ifdef S_IFLNK
+#  define LSTAT      zlstat
+#  define LSSTAT(n, s)  (linkput ? zlstat((n), (s)) : SSTAT((n), (s)))
+#else
+#  define LSTAT      SSTAT
+#  define LSSTAT     SSTAT
+#endif
+
+
+/* Default fzofft() format selection. */
+
+#ifndef FZOFFT_FMT
+
+#  ifdef LARGE_FILE_SUPPORT
+#    define FZOFFT_FMT "ll"
+#    define FZOFFT_HEX_WID_VALUE "16"
+#  else /* def LARGE_FILE_SUPPORT */
+#    define FZOFFT_FMT "l"
+#    define FZOFFT_HEX_WID_VALUE "8"
+#  endif /* def LARGE_FILE_SUPPORT */
+
+#endif /* ndef FZOFFT_FMT */
+
+#define FZOFFT_HEX_WID ((char *) -1)
+#define FZOFFT_HEX_DOT_WID ((char *) -2)
+
+#define FZOFFT_NUM 4            /* Number of chambers. */
+#define FZOFFT_LEN 24           /* Number of characters/chamber. */
 
 
 #ifdef SHORT_SYMS                   /* Mark Williams C, ...? */
@@ -1376,14 +1566,11 @@
 #define DEFLATED          8
 #define ENHDEFLATED       9
 #define DCLIMPLODED      10
+#define PKRESMOD11       11
 #define BZIPPED          12
-#define LZMAED           14
-#define IBMTERSED        18
-#define IBMLZ77ED        19
-#define PPMDED           98
-#define NUM_METHODS      16     /* number of known method IDs */
-/* don't forget to update list.c (list_files()), extract.c and zipinfo.c
- * appropriately if NUM_METHODS changes */
+#define NUM_METHODS      13    /* index of last method + 1 */
+/* don't forget to update list_files(), extract.c and zipinfo.c appropriately
+ * if NUM_METHODS changes */
 
 /* (the PK-class error codes are public and have been moved into unzip.h) */
 
@@ -1397,21 +1584,10 @@
 /* extra-field ID values, all little-endian: */
 #define EF_PKSZ64    0x0001    /* PKWARE's 64-bit filesize extensions */
 #define EF_AV        0x0007    /* PKWARE's authenticity verification */
-#define EF_EFS       0x0008    /* PKWARE's extended language encoding */
 #define EF_OS2       0x0009    /* OS/2 extended attributes */
 #define EF_PKW32     0x000a    /* PKWARE's Win95/98/WinNT filetimes */
 #define EF_PKVMS     0x000c    /* PKWARE's VMS */
 #define EF_PKUNIX    0x000d    /* PKWARE's Unix */
-#define EF_PKFORK    0x000e    /* PKWARE's future stream/fork descriptors */
-#define EF_PKPATCH   0x000f    /* PKWARE's patch descriptor */
-#define EF_PKPKCS7   0x0014    /* PKWARE's PKCS#7 store for X.509 Certs */
-#define EF_PKFX509   0x0015    /* PKWARE's file X.509 Cert&Signature ID */
-#define EF_PKCX509   0x0016    /* PKWARE's central dir X.509 Cert ID */
-#define EF_PKENCRHD  0x0017    /* PKWARE's Strong Encryption header */
-#define EF_PKRMCTL   0x0018    /* PKWARE's Record Management Controls*/
-#define EF_PKLSTCS7  0x0019    /* PKWARE's PKCS#7 Encr. Recipient Cert List */
-#define EF_PKIBM     0x0065    /* PKWARE's IBM S/390 & AS/400 attributes */
-#define EF_PKIBM2    0x0066    /* PKWARE's IBM S/390 & AS/400 compr. attribs */
 #define EF_IZVMS     0x4d49    /* Info-ZIP's VMS ("IM") */
 #define EF_IZUNIX    0x5855    /* Info-ZIP's old Unix[1] ("UX") */
 #define EF_IZUNIX2   0x7855    /* Info-ZIP's new Unix[2] ("Ux") */
@@ -1495,9 +1671,10 @@
     likely that these will ever change.  But if they do, make sure both these
     defines AND the typedefs below get updated accordingly.
   ---------------------------------------------------------------------------*/
-#define LREC_SIZE   26   /* lengths of local file headers, central */
-#define CREC_SIZE   42   /*  directory headers, and the end-of-    */
-#define ECREC_SIZE  18   /*  central-dir record, respectively      */
+#define LREC_SIZE    26   /* lengths of local file headers, central */
+#define CREC_SIZE    42   /*  directory headers, end-of-central-dir */
+#define ECREC_SIZE   18   /*  record and zip64 end-of-central-dir   */
+#define ECREC64_SIZE 56   /*  record, respectively                  */
 
 #define MAX_BITS    13                 /* used in unshrink() */
 #define HSIZE       (1 << MAX_BITS)    /* size of global work area */
@@ -1564,28 +1741,45 @@
 /*  Typedefs  */
 /**************/
 
-#ifndef Z_UINT4_DEFINED
-# if (defined(MODERN) && !defined(NO_LIMITS_H))
-#  if (defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL))
-     typedef unsigned int       z_uint4;
-#    define Z_UINT4_DEFINED
-#  else
-#  if (defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL))
-     typedef unsigned long      z_uint4;
-#    define Z_UINT4_DEFINED
-#  else
-#  if (defined(USHRT_MAX) && (USHRT_MAX == 0xffffffffUL))
-     typedef unsigned short     z_uint4;
-#    define Z_UINT4_DEFINED
-#  endif
-#  endif
-#  endif
-# endif /* MODERN && !NO_LIMITS_H */
-#endif /* !Z_UINT4_DEFINED */
+#ifdef ZIP64_SUPPORT
+# ifndef Z_UINT8_DEFINED
+#   ifdef __GNUC__
+  typedef unsigned long long    z_uint8;
+#   else
+  typedef unsigned __int64      z_uint8;
+#   endif
+#   define Z_UINT8_DEFINED
+# endif
+#endif
 #ifndef Z_UINT4_DEFINED
   typedef ulg                   z_uint4;
 # define Z_UINT4_DEFINED
 #endif
+
+/* The following three user-defined unsigned integer types are used for
+   holding zipfile entities (required widths without / with Zip64 support):
+   a) sizes and offset of zipfile entries
+      (4 bytes / 8 bytes)
+   b) enumeration and counts of zipfile entries
+      (2 bytes / 8 bytes)
+      Remark: internally, we use 4 bytes for archive member counting in the
+              No-Zip64 case, because UnZip supports more than 64k entries for
+              classic Zip archives without Zip64 extensions.
+   c) enumeration and counts of zipfile volumes of multivolume archives
+      (2 bytes / 4 bytes)
+ */
+#ifdef ZIP64_SUPPORT
+  typedef  z_uint8              zusz_t;     /* zipentry sizes & offsets */
+  typedef  z_uint8              zucn_t;     /* archive entry counts */
+  typedef  z_uint4              zuvl_t;     /* multivolume numbers */
+# define MASK_ZUCN64            ((zucn_t)0xFFFFFFFFFFFFFFFF)
+#else
+  typedef  ulg                  zusz_t;     /* zipentry sizes & offsets */
+  typedef  unsigned int         zucn_t;     /* archive entry counts */
+  typedef  unsigned short       zuvl_t;     /* multivolume numbers */
+# define MASK_ZUCN64            (~(zucn_t)0)
+#endif
+#define MASK_ZUCN16             ((zucn_t)0xFFFF)
 
 #ifdef NO_UID_GID
 #  ifdef UID_USHORT
@@ -1632,11 +1826,11 @@ typedef struct iztimes {
 #endif /* SYMLINKS */
 
 typedef struct min_info {
-    Z_OFF_T offset;
-    ulg compr_size;          /* compressed size (needed if extended header) */
-    ulg uncompr_size;        /* uncompressed size (needed if extended header) */
+    zoff_t offset;
+    zusz_t compr_size;       /* compressed size (needed if extended header) */
+    zusz_t uncompr_size;     /* uncompressed size (needed if extended header) */
     ulg crc;                 /* crc (needed if extended header) */
-    ush diskstart;           /* no of volume where this entry starts */
+    zuvl_t diskstart;        /* no of volume where this entry starts */
     uch hostver;
     uch hostnum;
     unsigned file_attr;      /* local flavor, as used by creat(), chmod()... */
@@ -1646,9 +1840,6 @@ typedef struct min_info {
     unsigned textmode : 1;   /* file is to be extracted as text */
     unsigned lcflag : 1;     /* convert filename to lowercase */
     unsigned vollabel : 1;   /* "file" is an MS-DOS volume (disk) label */
-#ifdef SYMLINKS
-    unsigned symlink : 1;    /* file is a symbolic link */
-#endif
     unsigned HasUxAtt : 1;   /* crec ext_file_attr has Unix style mode bits */
 #ifndef SFX
     char Far *cfilname;      /* central header version of filename */
@@ -1738,6 +1929,14 @@ typedef struct VMStimbuf {
 #      define OFFSET_START_CENTRAL_DIRECTORY    16
 #      define ZIPFILE_COMMENT_LENGTH            20
 
+   typedef uch   ec_byte_rec64[ ECREC64_SIZE+4 ];
+#      define NUMBER_THIS_DISK64                16
+#      define NUM_DISK_WITH_START_CEN_DIR64     20
+#      define NUM_ENTRIES_CEN_DIR_THS_DISK64    24
+#      define TOTAL_ENTRIES_CENTRAL_DIR64       32
+#      define SIZE_CENTRAL_DIRECTORY64          40
+#      define OFFSET_START_CENTRAL_DIRECTORY64  48
+
 
 /* The following structs are used to hold all header data of a zip entry.
    Traditionally, the structs' layouts followed the data layout of the
@@ -1749,8 +1948,8 @@ typedef struct VMStimbuf {
    (top-down), to prevent internal padding and optimize memory usage!
  */
    typedef struct local_file_header {                 /* LOCAL */
-       ulg csize;
-       ulg ucsize;
+       zusz_t csize;
+       zusz_t ucsize;
        ulg last_mod_dos_datetime;
        ulg crc32;
        uch version_needed_to_extract[2];
@@ -1760,15 +1959,14 @@ typedef struct VMStimbuf {
        ush extra_field_length;
    } local_file_hdr;
 
-#if 0
    typedef struct central_directory_file_header {     /* CENTRAL */
-       ulg csize;
-       ulg ucsize;
-       ulg relative_offset_local_header;
+       zusz_t csize;
+       zusz_t ucsize;
+       zusz_t relative_offset_local_header;
        ulg last_mod_dos_datetime;
        ulg crc32;
        ulg external_file_attributes;
-       ush disk_number_start;
+       zuvl_t disk_number_start;
        ush internal_file_attributes;
        uch version_made_by[2];
        uch version_needed_to_extract[2];
@@ -1778,15 +1976,15 @@ typedef struct VMStimbuf {
        ush extra_field_length;
        ush file_comment_length;
    } cdir_file_hdr;
-#endif /* 0 */
 
    typedef struct end_central_dir_record {            /* END CENTRAL */
-       ulg size_central_directory;
-       ulg offset_start_central_directory;
-       ush num_entries_centrl_dir_ths_disk;
-       ush total_entries_central_dir;
-       ush number_this_disk;
-       ush num_disk_start_cdir;
+       zusz_t size_central_directory;
+       zusz_t offset_start_central_directory;
+       zucn_t num_entries_centrl_dir_ths_disk;
+       zucn_t total_entries_central_dir;
+       zuvl_t number_this_disk;
+       zuvl_t num_disk_start_cdir;
+       int is_zip64_archive;
        ush zipfile_comment_length;
    } ecdir_rec;
 
@@ -1856,7 +2054,10 @@ void     free_G_buffers          OF((__GPRO));
 /* static int    find_ecrec      OF((__GPRO__ long searchlen)); */
 int      uz_end_central          OF((__GPRO));
 int      process_cdir_file_hdr   OF((__GPRO));
+int      get_cdir_ent            OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
+int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
+                                     unsigned ef_len));
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
                                      iztimes *z_utim, ush *z_uidgid));
@@ -1876,7 +2077,7 @@ unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
 #endif
 int      zi_end_central          OF((__GPRO));
 int      zipinfo                 OF((__GPRO));
-/* static int      zi_long       OF((__GPRO__ ulg *pEndprev)); */
+/* static int      zi_long       OF((__GPRO__ zusz_t *pEndprev)); */
 /* static int      zi_short      OF((__GPRO)); */
 /* static char    *zi_time       OF((__GPRO__ ZCONST ulg *datetimez,
                                      ZCONST time_t *modtimez, char *d_t_str));*/
@@ -1891,7 +2092,7 @@ int      list_files              OF((__GPRO));
    int   get_time_stamp          OF((__GPRO__  time_t *last_modtime,
                                      ulg *nmember));
 #endif
-int      ratio                   OF((ulg uc, ulg c));
+int      ratio                   OF((zusz_t uc, zusz_t c));
 void     fnprint                 OF((__GPRO));
 
 #endif /* !SFX */
@@ -1907,7 +2108,7 @@ void     defer_leftover_input OF((__GPRO));
 unsigned readbuf              OF((__GPRO__ char *buf, register unsigned len));
 int      readbyte             OF((__GPRO));
 int      fillinbuf            OF((__GPRO));
-int      seek_zipf            OF((__GPRO__ Z_OFF_T abs_offset));
+int      seek_zipf            OF((__GPRO__ zoff_t abs_offset));
 #ifdef FUNZIP
    int   flush                OF((__GPRO__ ulg size));  /* actually funzip.c */
 #else
@@ -1920,6 +2121,9 @@ int      check_for_newer      OF((__GPRO__ char *filename)); /* os2,vmcms,vms */
 int      do_string            OF((__GPRO__ unsigned int length, int option));
 ush      makeword             OF((ZCONST uch *b));
 ulg      makelong             OF((ZCONST uch *sig));
+zusz_t   makeint64            OF((ZCONST uch *sig));
+char    *fzofft               OF((__GPRO__ zoff_t val,
+                                  ZCONST char *pre, ZCONST char *post));
 #if (!defined(STR_TO_ISO) || defined(NEED_STR2ISO))
    char *str2iso              OF((char *dst, ZCONST char *src));
 #endif
@@ -1970,9 +2174,6 @@ int    extract_or_test_files     OF((__GPRO));
 /* static int   TestExtraField   OF((__GPRO__ uch *ef, unsigned ef_len)); */
 /* static int   test_OS2         OF((__GPRO__ uch *eb, unsigned eb_size)); */
 /* static int   test_NT          OF((__GPRO__ uch *eb, unsigned eb_size)); */
-#ifndef SFX
-  unsigned find_compr_idx        OF((unsigned compr_methodnum));
-#endif
 int    memextract                OF((__GPRO__ uch *tgt, ulg tgtsize,
                                      ZCONST uch *src, ulg srcsize));
 int    memflush                  OF((__GPRO__ ZCONST uch *rawbuf, ulg size));
@@ -2014,7 +2215,6 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #endif /* !SFX && !FUNZIP */
 #ifdef USE_BZIP2
    int    UZbunzip2              OF((__GPRO));                  /* extract.c */
-   void   bz_internal_error      OF((int errcode));             /* ubz2err.c */
 #endif
 
 /*---------------------------------------------------------------------------
@@ -2045,11 +2245,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
     MSDOS-only functions:
   ---------------------------------------------------------------------------*/
 
-#ifdef MSDOS
-#if (!defined(FUNZIP) && !defined(SFX) && !defined(WINDLL))
-   void     check_for_windows     OF((ZCONST char *app));         /* msdos.c */
-#endif
-#if (defined(__GO32__) || defined(__EMX__))
+#if (defined(MSDOS) && (defined(__GO32__) || defined(__EMX__)))
    unsigned _dos_getcountryinfo(void *);                          /* msdos.c */
 #if (!defined(__DJGPP__) || (__DJGPP__ < 2))
    unsigned _dos_setftime(int, unsigned, unsigned);               /* msdos.c */
@@ -2058,7 +2254,6 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    void _dos_getdrive(unsigned *);                                /* msdos.c */
    unsigned _dos_close(int);                                      /* msdos.c */
 #endif /* !__DJGPP__ || (__DJGPP__ < 2) */
-#endif /* __GO32__ || __EMX__ */
 #endif
 
 /*---------------------------------------------------------------------------
@@ -2126,16 +2321,16 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* int    open_outfile        OF((__GPRO));           * (see fileio.c) vms.c */
 /* int    flush               OF((__GPRO__ uch *rawbuf, unsigned size,
                                   int final_flag));   * (see fileio.c) vms.c */
-   char  *vms_msg_text        OF((void));                           /* vms.c */
-#ifdef RETURN_CODES
+   char * vms_msg_text        OF((__GPRO));                         /* vms.c */
+# ifdef RETURN_CODES
    void   return_VMS          OF((__GPRO__ int zip_error));         /* vms.c */
-#else
+# else
    void   return_VMS          OF((int zip_error));                  /* vms.c */
-#endif
-#ifdef VMSCLI
+# endif
+# ifdef VMSCLI
    ulg    vms_unzip_cmdline   OF((int *, char ***));            /* cmdline.c */
    int    VMSCLI_usage        OF((__GPRO__ int error));         /* cmdline.c */
-#endif
+# endif
 #endif
 
 /*---------------------------------------------------------------------------
@@ -2152,7 +2347,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #endif
 #ifdef W32_STAT_BANDAID
    int   zstat_win32    OF((__W32STAT_GLOBALS__
-                            const char *path, struct stat *buf)); /* win32.c */
+                            const char *path, z_stat *buf));      /* win32.c */
 #endif
 #endif
 
@@ -2171,8 +2366,13 @@ int      match           OF((ZCONST char *s, ZCONST char *p,
                              int ic __WDLPRO));                   /* match.c */
 int      iswild          OF((ZCONST char *p));                    /* match.c */
 
-/* declarations of public CRC-32 functions have been moved into crc32.h
-   (free_crc_table(), get_crc_table(), crc32())                      crc32.c */
+#ifdef DYNALLOC_CRCTAB
+   void     free_crc_table  OF((void));                          /* crctab.c */
+#endif
+#ifndef USE_ZLIB
+   ZCONST ulg near *get_crc_table  OF((void));         /* funzip.c, crctab.c */
+   ulg      crc32           OF((ulg crc, ZCONST uch *buf, extent len));
+#endif /* !USE_ZLIB */                        /* assembler source or crc32.c */
 
 int      dateformat      OF((void));                                /* local */
 char     dateseparator   OF((void));                                /* local */
@@ -2191,7 +2391,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 # endif
 #endif /* MORE && (ATH_BEO_UNX || QDOS || VMS) */
 #ifdef OS2_W32
-   int   SetFileSize     OF((FILE *file, ulg filesize));            /* local */
+   int   SetFileSize     OF((FILE *file, zusz_t filesize));         /* local */
 #endif
 #ifndef MTS /* macro in MTS */
    void  close_outfile   OF((__GPRO));                              /* local */
@@ -2271,7 +2471,10 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
     * standard C functions from <stdio.h>.
     */
 #  define read(fd,buf,n) fread((buf),1,(n),(FILE *)(fd))
-#  define lseek(fd,o,w) fseek((FILE *)(fd),(o),(w))
+#  ifdef zlseek
+#    undef zlseek
+#  endif
+#  define zlseek(fd,o,w) zfseeko((FILE *)(fd),(o),(w))
 #  define close(fd) fclose((FILE *)(fd))
 #endif /* USE_STRM_INPUT */
 
@@ -2279,13 +2482,13 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
  * UnZip. Otherwise, to get the same behaviour as for (*G.message)(), the
  * Info() definition for "FUNZIP" would have to be corrected:
  * #define Info(buf,flag,sprf_arg) \
- *      (fputs((char *)(sprintf sprf_arg, (buf)), \
- *             (flag)&1? stderr : stdout) < 0)
+ *      (fprintf((flag)&1? stderr : stdout, \
+ *               (char *)(sprintf sprf_arg, (buf))) == EOF)
  */
 #ifndef Info   /* may already have been defined for redirection */
 #  ifdef FUNZIP
 #    define Info(buf,flag,sprf_arg) \
-     fputs((char *)(sprintf sprf_arg, (buf)), (flag)&1? stderr : stdout)
+     fprintf((flag)&1? stderr : stdout, (char *)(sprintf sprf_arg, (buf)))
 #  else
 #    ifdef INT_SPRINTF  /* optimized version for "int sprintf()" flavour */
 #      define Info(buf,flag,sprf_arg) \
@@ -2297,6 +2500,11 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #    endif
 #  endif
 #endif /* !Info */
+
+/*  This wrapper macro around fzofft() is just defined to "hide" the
+ *  argument needed to reference the global storage buffers.
+ */
+#define FmZofft(val, pre, post) fzofft(__G__ val, pre, post)
 
 /*  The following macro wrappers around the fnfilter function are used many
  *  times to prepare archive entry names or name components for displaying
@@ -2315,13 +2523,6 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #  define CRCVAL_INITIAL  crc32(0L, NULL, 0)
 #else
 #  define CRCVAL_INITIAL  0L
-#endif
-
-#ifdef SYMLINKS
-   /* This macro defines the Zip "made by" hosts that are considered
-      to support storing symbolic link entries. */
-#  define SYMLINK_HOST(hn) ((hn) == UNIX_ || (hn) == ATARI_ || \
-      (hn) == ATHEOS_ || (hn) == BEOS_ || (hn) == VMS_)
 #endif
 
 #ifndef TEST_NTSD               /* "NTSD valid?" checking function */
