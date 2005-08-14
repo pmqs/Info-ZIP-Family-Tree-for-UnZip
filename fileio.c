@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
+  See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -36,6 +36,8 @@
              do_string()
              makeword()
              makelong()
+             makeint64()
+             fzofft()
              str2iso()                (CRYPT && NEED_STR2ISO, only)
              str2oem()                (CRYPT && NEED_STR2OEM, only)
              memset()                 (ZMEM only)
@@ -86,6 +88,25 @@
    feed the fprintf clone no more than 16K chunks at a time. This should
    be valid for anything up to 64K (and probably beyond, assuming your
    buffers are that big).
+
+   2005-09-16 SMS.
+   On VMS, when output is redirected to a file, as in a command like
+   "PIPE UNZIP -v > X.OUT", the output file is created with VFC record
+   format, and multiple calls to write() will produce multiple records,
+   even when there's no newline terminator in the buffer.  The result is
+   unsightly output with spurious newlines.  Using fprintf() instead of
+   write() here, and disabling an fflush() below, together seem to solve
+   the problem.  (If there's a better method, be my guest.)
+
+   According to the C RTL manual, "The write and decc$record_write
+   functions always generate at least one record."  Also, "[T]he fwrite
+   function always generates at least <number_items> records."  So,
+   "fwrite(buf, len, 1, strm)" is much better ("1" record) than
+   "fwrite(buf, 1, len, strm)" ("len" (1-character) records, _really_
+   ugly), but neither is good.  Similarly, "The fflush function always
+   generates a record if there is unwritten data in the buffer." 
+   Apparently fprintf() buffers the stuff somewhere, and puts out a
+   record (only) when it sees a newline.
 */
 #ifdef WINDLL
 #  define WriteError(buf,len,strm) \
@@ -95,8 +116,13 @@
 #    define WriteError(buf,len,strm) \
      ((extent)fwrite((char *)(buf),1,(extent)(len),strm) != (extent)(len))
 #  else
-#    define WriteError(buf,len,strm) \
+#    ifdef VMS
+#      define WriteError(buf,len,strm) \
+        (fprintf( strm, "%.*s", len, buf) != (int)(len))
+#    else /* def VMS */
+#      define WriteError(buf,len,strm) \
      ((extent)write(fileno(strm),(char *)(buf),(extent)(len)) != (extent)(len))
+#    endif /* def VMS [else] */
 #  endif
 #endif /* ?WINDLL */
 
@@ -114,11 +140,11 @@ static int disk_error OF((__GPRO));
 /****************************/
 
 static ZCONST char Far CannotOpenZipfile[] =
-  "error:  cannot open zipfile [ %s ]\n        %s";
+  "error:  cannot open zipfile [ %s ]\n        %s\n";
 
 #if (!defined(VMS) && !defined(AOS_VS) && !defined(CMS_MVS) && !defined(MACOS))
 #if (!defined(TANDEM))
-#if (defined(BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32))
+#if (defined(ATH_BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32))
    static ZCONST char Far CannotDeleteOldFile[] =
      "error:  cannot delete old %s\n";
 #ifdef UNIXBACKUP
@@ -126,7 +152,7 @@ static ZCONST char Far CannotOpenZipfile[] =
      "error:  cannot rename old %s\n";
    static ZCONST char Far BackupSuffix[] = "~";
 #endif
-#endif /* BEO_THS_UNX || DOS_FLX_NLM_OS2_W32 */
+#endif /* ATH_BEO_THS_UNX || DOS_FLX_NLM_OS2_W32 */
 #ifdef NOVELL_BUG_FAILSAFE
    static ZCONST char Far NovellBug[] =
      "error:  %s: stat() says does not exist, but fopen() found anyway\n";
@@ -189,7 +215,7 @@ int open_input_file(__G)    /* return 1 if open failed */
      */
 
 #ifdef VMS
-    G.zipfd = open( G.zipfn, OPENR);    /* See [.VMS]VMSCFG.H. */
+    G.zipfd = open(G.zipfn, O_RDONLY, 0, OPNZIP_RMS_ARGS);
 #else /* !VMS */
 #ifdef MACOS
     G.zipfd = open(G.zipfn, 0);
@@ -200,11 +226,7 @@ int open_input_file(__G)    /* return 1 if open failed */
 #ifdef USE_STRM_INPUT
     G.zipfd = fopen(G.zipfn, FOPR);
 #else /* !USE_STRM_INPUT */
-# ifdef O_BINARY
     G.zipfd = open(G.zipfn, O_RDONLY | O_BINARY);
-# else
-    G.zipfd = open(G.zipfn, O_RDONLY);
-# endif
 #endif /* ?USE_STRM_INPUT */
 #endif /* ?CMS_MVS */
 #endif /* ?MACOS */
@@ -239,15 +261,13 @@ int open_outfile(__G)         /* return 1 if fail */
     __GDEF
 {
 #ifdef DLL
-#ifndef ZIP64_SUPPORT
     if (G.redirect_data)
         return (redirect_outfile(__G) == FALSE);
-#endif
 #endif
 #ifdef QDOS
     QFilename(__G__ G.filename);
 #endif
-#if (defined(DOS_FLX_NLM_OS2_W32) || defined(BEO_THS_UNX))
+#if (defined(DOS_FLX_NLM_OS2_W32) || defined(ATH_BEO_THS_UNX))
 #ifdef BORLAND_STAT_BUG
     /* Borland 5.0's stat() barfs if the filename has no extension and the
      * file doesn't exist. */
@@ -261,7 +281,8 @@ int open_outfile(__G)         /* return 1 if fail */
     }
 #endif /* BORLAND_STAT_BUG */
 #ifdef SYMLINKS
-    if (SSTAT(G.filename, &G.statbuf) == 0 || zlstat(G.filename,&G.statbuf) == 0)
+    if (SSTAT(G.filename, &G.statbuf) == 0 ||
+        zlstat(G.filename, &G.statbuf) == 0)
 #else
     if (SSTAT(G.filename, &G.statbuf) == 0)
 #endif /* ?SYMLINKS */
@@ -356,7 +377,7 @@ int open_outfile(__G)         /* return 1 if fail */
               FnFilter1(G.filename)));
         }
     }
-#endif /* DOS_FLX_NLM_OS2_W32 || BEO_THS_UNX */
+#endif /* DOS_FLX_NLM_OS2_W32 || ATH_BEO_THS_UNX */
 #ifdef RISCOS
     if (SWI_OS_File_7(G.filename,0xDEADDEAD,0xDEADDEAD,G.lrec.ucsize)!=NULL) {
         Info(slide, 1, ((char *)slide, LoadFarString(CannotCreateFile),
@@ -499,13 +520,13 @@ void undefer_input(__G)
 void defer_leftover_input(__G)
     __GDEF
 {
-    if (G.incnt > G.csize) {
+    if ((zoff_t)G.incnt > G.csize) {
         /* (G.csize < MAXINT), we can safely cast it to int !! */
         if (G.csize < 0L)
             G.csize = 0L;
-        G.inptr_leftover = G.inptr + G.csize;
-        G.incnt_leftover = G.incnt - G.csize;
-        G.incnt = G.csize;
+        G.inptr_leftover = G.inptr + (int)G.csize;
+        G.incnt_leftover = G.incnt - (int)G.csize;
+        G.incnt = (int)G.csize;
     } else
         G.incnt_leftover = 0;
     G.csize -= G.incnt;
@@ -597,7 +618,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 #if CRYPT
     if (G.pInfo->encrypted) {
         uch *p;
-        zoff_t n;
+        int n;
 
         /* This was previously set to decrypt one byte beyond G.csize, when
          * incnt reached that far.  GRR said, "but it's required:  why?"  This
@@ -617,7 +638,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 
 
 
-#ifdef USE_ZLIB
+#if defined(USE_ZLIB) || defined(USE_BZIP2)
 
 /************************/
 /* Function fillinbuf() */
@@ -647,7 +668,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
 
 } /* end function fillinbuf() */
 
-#endif /* USE_ZLIB */
+#endif /* USE_ZLIB || USE_BZIP2 */
 
 
 
@@ -689,25 +710,24 @@ int seek_zipf(__G__ abs_offset)
              G.zipfn, LoadFarString(ReportMsg)));
         return(PK_BADERR);
     } else if (bufstart != G.cur_zipfile_bufstart) {
-
         Trace((stderr,
           "fpos_zip: abs_offset = %s, G.extra_bytes = %s\n",
-          fzofft( abs_offset, NULL, NULL),
-          fzofft( G.extra_bytes, NULL, NULL)));
+          FmZofft(abs_offset, NULL, NULL),
+          FmZofft(G.extra_bytes, NULL, NULL)));
 #ifdef USE_STRM_INPUT
-        fseek(G.zipfd, (LONGINT)bufstart, SEEK_SET);
-        G.cur_zipfile_bufstart = ftell(G.zipfd);
+        zfseeko(G.zipfd, (Z_OFF_T)bufstart, SEEK_SET);
+        G.cur_zipfile_bufstart = zftello(G.zipfd);
 #else /* !USE_STRM_INPUT */
         G.cur_zipfile_bufstart = zlseek(G.zipfd, bufstart, SEEK_SET);
 #endif /* ?USE_STRM_INPUT */
         Trace((stderr,
           "       request = %s, (abs+extra) = %s, inbuf_offset = %s\n",
-          fzofft( request, NULL, NULL),
-          fzofft( (abs_offset+G.extra_bytes), NULL, NULL),
-          fzofft( inbuf_offset, NULL, NULL)));
+          FmZofft(request, NULL, NULL),
+          FmZofft((abs_offset+G.extra_bytes), NULL, NULL),
+          FmZofft(inbuf_offset, NULL, NULL)));
         Trace((stderr, "       bufstart = %s, cur_zipfile_bufstart = %s\n",
-          fzofft( bufstart, NULL, NULL),
-          fzofft( G.cur_zipfile_bufstart, NULL, NULL)));
+          FmZofft(bufstart, NULL, NULL),
+          FmZofft(G.cur_zipfile_bufstart, NULL, NULL)));
         if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) <= 0)
             return(PK_EOF);
         G.incnt -= (int)inbuf_offset;
@@ -1380,7 +1400,15 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
 #endif
             if ((error = WriteError(q, size, outfp)) != 0)
                 return error;
+
+/*
+   2005-09-16 SMS.
+   See note at "WriteError()", above.
+/*
+#ifndef VMS
             fflush(outfp);
+#endif /* ndef VMS */
+
             if (MSG_STDERR(flag) && ((Uz_Globs *)pG)->UzO.tflag &&
                 !isatty(1) && isatty(2))
             {
@@ -1597,6 +1625,15 @@ void handler(signal)   /* upon interrupt, turn on echo and exit cleanly */
         EXIT(PK_BADERR);
     }
 #endif /* SIGBUS */
+
+#ifdef SIGILL
+    if (signal == SIGILL) {
+        Info(slide, 0x421, ((char *)slide, LoadFarString(ZipfileCorrupt),
+          "illegal instruction"));
+        DESTROYGLOBALS();
+        EXIT(PK_BADERR);
+    }
+#endif /* SIGILL */
 
 #ifdef SIGSEGV
     if (signal == SIGSEGV) {
@@ -2199,10 +2236,11 @@ int do_string(__G__ length, option)   /* return PK-type error code */
              * so don't correct for it twice: */
             seek_zipf(__G__ G.cur_zipfile_bufstart - G.extra_bytes +
                       (G.inptr-G.inbuf) + length);
-        } else
+        } else {
             if (readbuf(__G__ (char *)G.extra_field, length) == 0)
                 return PK_EOF;
-        getZip64Data(__G__ G.extra_field, length);
+            getZip64Data(__G__ G.extra_field, length);
+        }
         break;
 
 #ifdef AMIGA
@@ -2279,10 +2317,12 @@ ulg makelong(sig)
      * host format.  This routine also takes care of byte-ordering.
      */
     return (((ulg)sig[3]) << 24)
-        + (((ulg)sig[2]) << 16)
-        + (((ulg)sig[1]) << 8)
-        + ((ulg)sig[0]);
+         + (((ulg)sig[2]) << 16)
+         + (ulg)((((unsigned)sig[1]) << 8)
+               + ((unsigned)sig[0]));
 }
+
+
 
 
 
@@ -2290,7 +2330,7 @@ ulg makelong(sig)
 /* Function makeint64() */
 /************************/
 
-zoff_t makeint64(sig)
+zusz_t makeint64(sig)
     ZCONST uch *sig;
 {
 #ifdef LARGE_FILE_SUPPORT
@@ -2298,26 +2338,79 @@ zoff_t makeint64(sig)
      * Convert intel style 'int64' variable to non-Intel non-16-bit
      * host format.  This routine also takes care of byte-ordering.
      */
-    return (((zoff_t)sig[7]) << 56)
-        + (((zoff_t)sig[6]) << 48)
-        + (((zoff_t)sig[4]) << 32)
-        + (((zoff_t)sig[3]) << 24)
-        + (((zoff_t)sig[2]) << 16)
-        + (((zoff_t)sig[1]) << 8)
-        + ((zoff_t)sig[0]);
+    return (((zusz_t)sig[7]) << 56)
+        + (((zusz_t)sig[6]) << 48)
+        + (((zusz_t)sig[4]) << 32)
+        + (zusz_t)((((ulg)sig[3]) << 24)
+                 + (((ulg)sig[2]) << 16)
+                 + (((unsigned)sig[1]) << 8)
+                 + (sig[0]));
 
-#else /* def LARGE_FILE_SUPPORT */
+#else /* !LARGE_FILE_SUPPORT */
 
-    if ((sig[7]| sig[6]| sig[5]| sig[4]) != 0)
+    if ((sig[7] | sig[6] | sig[5] | sig[4]) != 0)
         return 0xffffffff;
     else
-        return (((zoff_t)sig[3]) << 24)
-            + (((zoff_t)sig[2]) << 16)
-            + (((zoff_t)sig[1]) << 8)
-            + ((zoff_t)sig[0]);
+        return (zusz_t)((((ulg)sig[3]) << 24)
+                      + (((ulg)sig[2]) << 16)
+                      + (((unsigned)sig[1]) << 8)
+                      + (sig[0]));
 
-#endif /* def LARGE_FILE_SUPPORT */
+#endif /* ?LARGE_FILE_SUPPORT */
 }
+
+
+
+
+
+/*********************/
+/* Function fzofft() */
+/*********************/
+
+/* Format a zoff_t value in a cylindrical buffer set. */
+char *fzofft(__GPRO__ zoff_t val, ZCONST char *pre, ZCONST char *post)
+{
+    /* Storage cylinder. (now in globals.h) */
+    /*static char fzofft_buf[FZOFFT_NUM][FZOFFT_LEN];*/
+    /*static int fzofft_index = 0;*/
+
+    /* Temporary format string storage. */
+    char fmt[16];
+
+    /* Assemble the format string. */
+    fmt[0] = '%';
+    fmt[1] = '\0';             /* Start after initial "%". */
+    if (pre == FZOFFT_HEX_WID)  /* Special hex width. */
+    {
+        strcat(fmt, FZOFFT_HEX_WID_VALUE);
+    }
+    else if (pre == FZOFFT_HEX_DOT_WID) /* Special hex ".width". */
+    {
+        strcat(fmt, ".");
+        strcat(fmt, FZOFFT_HEX_WID_VALUE);
+    }
+    else if (pre != NULL)       /* Caller's prefix (width). */
+    {
+        strcat(fmt, pre);
+    }
+
+    strcat(fmt, FZOFFT_FMT);   /* Long or long-long or whatever. */
+
+    if (post == NULL)
+        strcat(fmt, "d");      /* Default radix = decimal. */
+    else
+        strcat(fmt, post);     /* Caller's radix. */
+
+    /* Advance the cylinder. */
+    G.fzofft_index = (G.fzofft_index + 1) % FZOFFT_NUM;
+
+    /* Write into the current chamber. */
+    sprintf(G.fzofft_buf[G.fzofft_index], fmt, val);
+
+    /* Return a pointer to this chamber. */
+    return G.fzofft_buf[G.fzofft_index];
+}
+
 
 
 

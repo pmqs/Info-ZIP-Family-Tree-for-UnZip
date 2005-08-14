@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -22,6 +22,7 @@
              close_outfile()
              dos_to_unix_time()         (TIMESTAMP only)
              stamp_file()               (TIMESTAMP only)
+             vms_msg_text()
              do_wild()
              mapattr()
              mapname()
@@ -120,10 +121,6 @@ static unsigned loccnt = 0;
 static uch *locptr;
 static char got_eol = 0;
 
-static char vms_msgbuf[ 256];           /* VMS-specific error message. */
-static $DESCRIPTOR( vms_msgbuf_dscr, vms_msgbuf);
-
-
 struct bufdsc
 {
     struct bufdsc *next;
@@ -165,6 +162,8 @@ static unsigned find_eol(uch *p, unsigned n, unsigned *l);
 static time_t mkgmtime(struct tm *tm);
 static void uxtime2vmstime(time_t utimeval, long int binval[2]);
 #endif /* TIMESTAMP */
+static int vms_msg_fetch(int status);
+static void vms_msg(__GPRO__ char *string, int status);
 
 
 /*
@@ -408,39 +407,6 @@ static int get_rms_defaults()
 }
 
 
-char *vms_msg_text( void)
-{
-    return vms_msgbuf;
-}
-
-
-static int vms_msg_only( int status)
-{
-    int msglen = 0;
-    int sts;
-
-    sts = lib$sys_getmsg( &status, &msglen, &vms_msgbuf_dscr, 0, 0);
-
-    vms_msgbuf[ msglen] = '\0';
-    return sts;
-}
-
-
-static void vms_msg(__GPRO__ char *string, int status)
-{
-    int msglen = 0;
-
-    if (ERR(lib$sys_getmsg(&status, &msglen, &vms_msgbuf_dscr, 0, 0)))
-        Info(slide, 1, ((char *)slide,
-             "%s[ VMS status = %d ]\n", string, status));
-    else
-    {
-        vms_msgbuf[msglen] = '\0';
-        Info(slide, 1, ((char *)slide, "%s[ %s ]\n", string, vms_msgbuf));
-    }
-}
-
-
 int check_format(__G)
     __GDEF
 {
@@ -458,7 +424,7 @@ int check_format(__G)
     fab.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
     fab.fab$l_fna = (char *) -1;    /* Using NAML for file name. */
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
     FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNA = G.zipfn;
     FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNS = strlen(G.zipfn);
@@ -692,7 +658,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         fileblk.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
         fileblk.fab$l_fna = (char *) -1;    /* Using NAML for file name. */
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
         FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNA = G.filename;
         FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNS = strlen(G.filename);
@@ -871,7 +837,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         outfab->fab$l_fna = G.filename;
         outfab->fab$b_fns = strlen(G.filename);
 
-#endif /* def NAML$C_MAXRSS [else] */
+#endif /* ?NAML$C_MAXRSS */
 
         /* If no XAB date/time, use attributes from non-VMS fields. */
         if (!(xabdat && xabrdt))
@@ -1027,8 +993,8 @@ static char res_nam[NAM_MAXRSS];
 
 /* Special ODS5-QIO-compatible name storage. */
 #ifdef NAML$C_MAXRSS
-static char sys_nam[ NAML$C_MAXRSS];    /* Probably need less here. */
-#endif /* def NAML$C_MAXRSS */
+static char sys_nam[NAML$C_MAXRSS];     /* Probably need less here. */
+#endif /* NAML$C_MAXRSS */
 
 #define PK_PRINTABLE_RECTYP(x)   ( (x) == FAT$C_VARIABLE \
                                 || (x) == FAT$C_STREAMLF \
@@ -1104,7 +1070,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         nam.naml$l_filesys_name = sys_nam;
         nam.naml$l_filesys_name_alloc = sizeof( sys_nam);
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
         /* VMS-format file name, derived from archive. */
         FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNA = G.filename;
@@ -1146,7 +1112,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         pka_fnam.dsc$a_pointer = nam.naml$l_filesys_name;
         pka_fnam.dsc$w_length = nam.naml$l_filesys_name_size;
 
-#else /* def NAML$C_MAXRSS */
+#else /* !NAML$C_MAXRSS */
 
         /* Extract only the name.type;version.
            2005-02-14 SMS.
@@ -1174,7 +1140,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             pka_fnam.dsc$w_length += nam.NAM_B_VER;
 #endif /* 0 */
 
-#endif /* def NAML$C_MAXRSS [else] */
+#endif /* ?NAML$C_MAXRSS */
 
         /* Move the directory ID from the NAM[L] to the FIB.
            Clear the FID in the FIB, as we're using the name.
@@ -1297,7 +1263,7 @@ static int replace(__GPRO)
                 outfab->fab$l_nam = NULL;
                 G.filename[outfab->fab$b_fns = nam.NAM_RSL] = '\0';
 
-#endif /* def NAML$C_MAXRSS [else] */
+#endif /* ?NAML$C_MAXRSS */
             }
             break;
         case 'o':
@@ -2558,7 +2524,7 @@ int stamp_file(fname, modtime)
     nam.naml$l_filesys_name = sys_nam;
     nam.naml$l_filesys_name_alloc = sizeof( sys_nam);
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
     FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNA = (char *)fname;
     FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNS = strlen(fname);
@@ -2599,13 +2565,13 @@ int stamp_file(fname, modtime)
     pka_fnam.dsc$a_pointer = nam.naml$l_filesys_name;
     pka_fnam.dsc$w_length = nam.naml$l_filesys_name_size;
 
-#else /* def NAML$C_MAXRSS */
+#else /* !NAML$C_MAXRSS */
 
     /* Extract only the name.type;version. */
     pka_fnam.dsc$a_pointer = nam.NAM_L_NAME;
     pka_fnam.dsc$w_length = nam.NAM_B_NAME + nam.NAM_B_TYPE + nam.NAM_B_VER;
 
-#endif /* def NAML$C_MAXRSS [else] */
+#endif /* ?NAML$C_MAXRSS */
 
     /* Move the directory ID from the NAM[L] to the FIB.
        Clear the FID in the FIB, as we're using the name.
@@ -2756,6 +2722,40 @@ void dump_rms_block(p)
 
 
 
+static char vms_msgbuf[256];            /* VMS-specific error message. */
+static $DESCRIPTOR(vms_msgbuf_dscr, vms_msgbuf);
+
+
+char *vms_msg_text(void)
+{
+    return vms_msgbuf;
+}
+
+
+static int vms_msg_fetch(int status)
+{
+    int msglen = 0;
+    int sts;
+
+    sts = lib$sys_getmsg(&status, &msglen, &vms_msgbuf_dscr, 0, 0);
+
+    vms_msgbuf[msglen] = '\0';
+    return sts;
+}
+
+
+static void vms_msg(__GPRO__ char *string, int status)
+{
+    if (ERR(vms_msg_fetch(status)))
+        Info(slide, 1, ((char *)slide,
+             "%s[ VMS status = %d ]\n", string, status));
+    else
+        Info(slide, 1, ((char *)slide,
+             "%s[ %s ]\n", string, vms_msgbuf));
+}
+
+
+
 #ifndef SFX
 
 /* 2004-11-23 SMS.
@@ -2765,7 +2765,22 @@ void dump_rms_block(p)
  *    cannot find either fred.zip;4 or fred.zip;4.zip.
  * when it wasn't really looking for "fred.zip;4.zip".
  */
-
+/* 2005-08-11 SPC.
+ * The calling interface for the VMS version of do_wild() differs from all
+ * other implementations in the way it returns status info.
+ * There are three return states:
+ * a) pointer to buffer with non-zero-length string
+ *    - canonical full filespec of existing file (search succeeded).
+ * b) pointer to buffer with zero-length string
+ *    - initial file search has failed, extended VMS error info is available
+ *      through call to vms_msg_text().
+ * c) NULL pointer
+ *    - repeated file search has failed, because
+ *      i)   the list of matches for the pattern has been exhausted after at
+ *           least one successful attempt.
+ *      ii)  a second attempt for a failed initial pattern (where do_wild()
+ *           has returned a zero-length string) was tried and failed again.
+ */
 char *do_wild( __G__ wld )
     __GDEF
     ZCONST char *wld;
@@ -2795,7 +2810,7 @@ char *do_wild( __G__ wld )
         fab.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
         fab.fab$l_fna = (char *) -1;    /* Using NAML for file name. */
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
         FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNA = (char *) deflt;
         FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNS = sizeof(deflt) - 1;
@@ -2808,52 +2823,37 @@ char *do_wild( __G__ wld )
         nam.NAM_RSA = filenam;
         nam.NAM_RSS = NAM_MAXRSS;
 
-        nam.NAM_NOP = NAM_M_SYNCHK; /* Syntax-only analysis. */
+        nam.NAM_NOP = NAM_M_SYNCHK;     /* Syntax-only analysis. */
 
         first_call = 0;
 
         /* 2005-08-08 SMS.
          * Parse the file spec.  If sys$parse() fails, save the VMS
-         * error message for later use, and return a null string.
+         * error message for later use, and return an empty string.
          */
-        status = sys$parse( &fab);
-        if (!OK( status))
+        if ( !OK(status = sys$parse(&fab)) )
         {
-            vms_msg_only(__G__ status);
-            filenam[0] = '\0';
+            vms_msg_fetch(status);
+            filenam[0] = '\0';          /* Initialization failed */
             return filenam;
-#if 0
-            return (char *)NULL;     /* Initialization failed */
-#endif /* 0 */
         }
 
-        /* 2004-11-23 SMS.
-         * Don't do this.  I see no good reason to lie about the file
-         * being sought just because it wasn't found.  If you find one,
-         * please explain it here when you change this code back.  I'll
-         * admit that the full file spec from sys$parse() may be ugly,
-         * but at least it's never misleading.
-         */
         status = sys$search(&fab);
         if ( !OK(status) )
         {
             /* Save the VMS error message for later use. */
-            vms_msg_only(__G__ status);
-#if 0
-            strcpy( filenam, wld );
-            return filenam;
-#endif /* 0 */
+            vms_msg_fetch(status);
         }
     }
     else
     {
         if ( !OK(sys$search(&fab)) )
         {
-            first_call = 1;        /* Reinitialize next time */
+            first_call = 1;             /* Reinitialize next time */
             return (char *)NULL;
         }
     }
-    filenam[nam.NAM_RSL] = 0;         /* Add the NUL terminator. */
+    filenam[nam.NAM_RSL] = '\0';        /* Add the NUL terminator. */
     return filenam;
 
 } /* end function do_wild() */
@@ -3080,7 +3080,7 @@ int dest_struct_level(char *path)
     fab.fab$l_dna = (char *) -1;        /* Using NAML for default name. */
     fab.fab$l_fna = (char *) -1;        /* Using NAML for file name. */
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
     FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNA = PATH_DEFAULT;
     FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNS = strlen(PATH_DEFAULT);
@@ -3120,13 +3120,13 @@ int dest_struct_level(char *path)
         acp_code = -1;
     }
 
-#else /* def DVI$C_ACP_F11V5 */
+#else /* !DVI$C_ACP_F11V5 */
 
 /* Too old for ODS5 file system.  Return level 2. */
 
     acp_code = DVI$C_ACP_F11V2;
 
-#endif /* def DVI$C_ACP_F11V5 [else] */
+#endif /* ?DVI$C_ACP_F11V5 */
 
     return acp_code;
 }
@@ -3355,6 +3355,7 @@ static void adj_file_name_ods5(char *dest, char *src)
     }
     *dest = '\0';                               /* Terminate destination. */
 }
+
 
 
 #   define FN_MASK   7
@@ -3773,7 +3774,7 @@ int checkdir(__G__ pathcomp, fcn)
             fab.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
             fab.fab$l_fna = (char *) -1;    /* Using NAML for file name. */
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
             FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNA = pathptr;
             FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNS = end - pathptr;
