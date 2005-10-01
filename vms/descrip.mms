@@ -1,4 +1,4 @@
-#                                               22 February 2005.  SMS.
+#                                               5 October 2005.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -32,7 +32,7 @@
 #                      VAX C without DEC C RTL (DEC C not installed).
 #
 #    "LOCAL_UNZIP= c_macro_1=value1 [, c_macro_2=value2 [...]]"
-#                   Compile with these additional C macros defined. 
+#                   Compile with these additional C macros defined.
 #
 # VAX-specific optional macros:
 #
@@ -132,21 +132,21 @@ CLEAN :
 CLEAN_ALL :
 	if (f$search( "[.ALPHA*]*.*") .nes. "") then -
 	 delete [.ALPHA*]*.*;*
-	if (f$search( "ALPHA*.dir") .nes. "") then -
+	if (f$search( "ALPHA*.dir", 1) .nes. "") then -
 	 set protection = w:d ALPHA*.dir;*
-	if (f$search( "ALPHA*.dir") .nes. "") then -
+	if (f$search( "ALPHA*.dir", 2) .nes. "") then -
 	 delete ALPHA*.dir;*
 	if (f$search( "[.IA64*]*.*") .nes. "") then -
 	 delete [.IA64*]*.*;*
-	if (f$search( "IA64*.dir") .nes. "") then -
+	if (f$search( "IA64*.dir", 1) .nes. "") then -
 	 set protection = w:d IA64*.dir;*
-	if (f$search( "IA64*.dir") .nes. "") then -
+	if (f$search( "IA64*.dir", 2) .nes. "") then -
 	 delete IA64*.dir;*
 	if (f$search( "[.VAX*]*.*") .nes. "") then -
 	 delete [.VAX*]*.*;*
-	if (f$search( "VAX*.dir") .nes. "") then -
+	if (f$search( "VAX*.dir", 1) .nes. "") then -
 	 set protection = w:d VAX*.dir;*
-	if (f$search( "VAX*.dir") .nes. "") then -
+	if (f$search( "VAX*.dir", 2) .nes. "") then -
 	 delete VAX*.dir;*
 	if (f$search( "[.vms]ZIP_CLI.RNH") .nes. "") then -
 	 delete [.vms]ZIP_CLI.RNH;*
