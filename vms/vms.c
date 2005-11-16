@@ -22,6 +22,7 @@
              close_outfile()
              dos_to_unix_time()         (TIMESTAMP only)
              stamp_file()               (TIMESTAMP only)
+             vms_msg_text()
              do_wild()
              mapattr()
              mapname()
@@ -49,6 +50,12 @@
 
 #include <lib$routines.h>
 #include <stsdef.h>
+
+#ifndef EEXIST
+#  include <errno.h>    /* For mkdir() status codes */
+#endif
+
+#include <fscndef.h> /* for filescan */
 
 /* On VAX, define Goofy VAX Type-Cast to obviate /standard = vaxc.
    Otherwise, lame system headers on VAX cause compiler warnings.
@@ -154,6 +161,7 @@ static unsigned find_eol(uch *p, unsigned n, unsigned *l);
 static time_t mkgmtime(struct tm *tm);
 static void uxtime2vmstime(time_t utimeval, long int binval[2]);
 #endif /* TIMESTAMP */
+static int vms_msg_fetch(int status);
 static void vms_msg(__GPRO__ char *string, int status);
 
 /* 2004-11-23 SMS.
@@ -168,7 +176,7 @@ static void vms_msg(__GPRO__ char *string, int status);
  *       rab$b_mbf         multi-buffer count (used with rah and wbh).
  */
 
-#define DIAG_FLAG (uO.vflag >= 2)
+#define DIAG_FLAG (uO.vflag >= 3)
 
 /* Default RMS parameter values.
  * The default extend quantity (deq) should not matter much here, as the
@@ -506,41 +514,41 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         rab = cc$rms_rab;       /* fill RAB with default values */
         fileblk = cc$rms_fab;   /* fill FAB with default values */
 
-        outfab = &fileblk;
-        outfab->fab$l_xab = NULL;
+        fileblk.fab$l_xab = NULL;       /* No XABs. */
+        rab.rab$l_fab = &fileblk;       /* Point RAB to FAB. */
 
+        outfab = &fileblk;              /* Set pointers used elsewhere. */
         outrab = &rab;
-        rab.rab$l_fab = outfab;
 
         if (text_output)
         {   /* Default format for output `real' text file */
 
-            outfab->fab$b_rfm = FAB$C_VAR;      /* variable length records */
-            outfab->fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
+            fileblk.fab$b_rfm = FAB$C_VAR;      /* variable length records */
+            fileblk.fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
         }
         else if (bin_fixed)
         {   /* Default format for output `real' binary file */
 
-            outfab->fab$b_rfm = FAB$C_FIX;      /* fixed length record format */
-            outfab->fab$w_mrs = 512;            /* record size 512 bytes */
-            outfab->fab$b_rat = 0;              /* no carriage ctrl */
+            fileblk.fab$b_rfm = FAB$C_FIX;      /* fixed length record format */
+            fileblk.fab$w_mrs = 512;            /* record size 512 bytes */
+            fileblk.fab$b_rat = 0;              /* no carriage ctrl */
         }
         else
         {   /* Default format for output misc (bin or text) file */
 
-            outfab->fab$b_rfm = FAB$C_STMLF;    /* stream-LF record format */
-            outfab->fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
+            fileblk.fab$b_rfm = FAB$C_STMLF;    /* stream-LF record format */
+            fileblk.fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
         }
 
-        outfab->fab$l_fna = G.filename;
-        outfab->fab$b_fns = strlen(outfab->fab$l_fna);
+        fileblk.fab$l_fna = G.filename;
+        fileblk.fab$b_fns = strlen(G.filename);
 
         set_default_datetime_XABs(__G);
-        dattim.xab$l_nxt = outfab->fab$l_xab;
-        outfab->fab$l_xab = (void *) &dattim;
+        dattim.xab$l_nxt = fileblk.fab$l_xab;
+        fileblk.fab$l_xab = (void *) &dattim;
 
-        outfab->fab$w_ifi = 0;  /* Clear IFI. It may be nonzero after ZIP */
-        outfab->fab$b_fac = FAB$M_BRO | FAB$M_PUT;  /* {block|record} output */
+        fileblk.fab$w_ifi = 0;  /* Clear IFI. It may be nonzero after ZIP */
+        fileblk.fab$b_fac = FAB$M_BRO | FAB$M_PUT;  /* {block|record} output */
 
         /* 2004-11-23 SMS.
          * If RMS_DEFAULT values have been determined, and have not been
@@ -560,19 +568,19 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         if (rms_defaults_known > 0)
         {
             /* Set the FAB/RAB parameters accordingly. */
-            outfab-> fab$w_deq = rms_ext_active;
-            outrab-> rab$b_mbc = rms_mbc_active;
-            outrab-> rab$b_mbf = rms_mbf_active;
+            fileblk.fab$w_deq = rms_ext_active;
+            rab.rab$b_mbc = rms_mbc_active;
+            rab.rab$b_mbf = rms_mbf_active;
 
 #ifdef OLD_FABDEF
 
             /* Truncate at EOF on close, as we may over-extend. */
-            outfab-> fab$l_fop |= FAB$M_TEF ;
+            fileblk.fab$l_fop |= FAB$M_TEF ;
 
             /* If using multiple buffers, enable write-behind. */
             if (rms_mbf_active > 1)
             {
-                outrab-> rab$l_rop |= RAB$M_WBH;
+                rab.rab$l_rop |= RAB$M_WBH;
             }
         }
 
@@ -582,18 +590,18 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
          * enabled, allocating space for a large file may lock the
          * disk for a long time (minutes).
          */
-        outfab-> fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
-        outfab-> fab$l_fop |= FAB$M_SQO;
+        fileblk.fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
+        fileblk.fab$l_fop |= FAB$M_SQO;
 
 #else /* !OLD_FABDEF */
 
             /* Truncate at EOF on close, as we may over-extend. */
-            outfab-> fab$v_tef = 1;
+            fileblk.fab$v_tef = 1;
 
             /* If using multiple buffers, enable write-behind. */
             if (rms_mbf_active > 1)
             {
-                outrab-> rab$v_wbh = 1;
+                rab.rab$v_wbh = 1;
             }
         }
 
@@ -603,12 +611,12 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
          * enabled, allocating space for a large file may lock the
          * disk for a long time (minutes).
          */
-        outfab-> fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
-        outfab-> fab$v_sqo = 1;
+        fileblk.fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
+        fileblk.fab$v_sqo = 1;
 
 #endif /* ?OLD_FABDEF */
 
-        ierr = sys$create(outfab);
+        ierr = sys$create(&fileblk);
         if (ierr == RMS$_FEX)
             ierr = replace(__G);
 
@@ -619,9 +627,10 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         {
             char buf[256];
 
-            sprintf(buf, "[ Cannot create output file %s ]\n", G.filename);
+            sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
+              G.filename);
             vms_msg(__G__ buf, ierr);
-            vms_msg(__G__ "", outfab->fab$l_stv);
+            vms_msg(__G__ "", fileblk.fab$l_stv);
             free_up();
             return PK_WARN;
         }
@@ -632,14 +641,15 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         }
         rab.rab$b_rac = RAB$C_SEQ;
 
-        if ((ierr = sys$connect(outrab)) != RMS$_NORMAL)
+        if ((ierr = sys$connect(&rab)) != RMS$_NORMAL)
         {
 #ifdef DEBUG
             vms_msg(__G__ "create_default_output: sys$connect failed.\n", ierr);
-            vms_msg(__G__ "", outfab->fab$l_stv);
+            vms_msg(__G__ "", fileblk.fab$l_stv);
 #endif
             Info(slide, 1, ((char *)slide,
-                 "Can't create output file:  %s\n", FnFilter1(G.filename)));
+                 "Cannot create ($connect) output file:  %s\n",
+                 FnFilter1(G.filename)));
             free_up();
             return PK_WARN;
         }
@@ -682,13 +692,13 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
     }
     else                        /* Redirect output */
     {
-        rab = cc$rms_rab;       /* fill RAB with default values */
+        rab = cc$rms_rab;               /* Initialize RAB. */
 
         /* The output FAB has already been initialized with the values
-         * found in the Zip file's "VMS attributes" extra field */
+         * found in the Zip file's "VMS attributes" extra field. */
 
         outfab->fab$l_fna = G.filename;
-        outfab->fab$b_fns = strlen(outfab->fab$l_fna);
+        outfab->fab$b_fns = strlen(G.filename);
 
         /* If no XAB date/time, use attributes from non-VMS fields. */
         if (!(xabdat && xabrdt))
@@ -727,7 +737,8 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         {
             char buf[256];
 
-            sprintf(buf, "[ Cannot create output file %s ]\n", G.filename);
+            sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
+              G.filename);
             vms_msg(__G__ buf, ierr);
             vms_msg(__G__ "", outfab->fab$l_stv);
             free_up();
@@ -763,7 +774,8 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             vms_msg(__G__ "", outfab->fab$l_stv);
 #endif
             Info(slide, 1, ((char *)slide,
-                 "Can't create output file:  %s\n", FnFilter1(G.filename)));
+                 "Cannot create ($connect) output file:  %s\n",
+                 FnFilter1(G.filename)));
             free_up();
             return PK_WARN;
         }
@@ -835,6 +847,7 @@ static struct dsc$descriptor_s  pka_devdsc =
 static struct dsc$descriptor_s  pka_fnam =
 {   0, DSC$K_DTYPE_T, DSC$K_CLASS_S, NULL  };
 
+/* Expanded and resultant name storage. */
 static char exp_nam[NAM$C_MAXRSS];
 static char res_nam[NAM$C_MAXRSS];
 
@@ -899,12 +912,15 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
     else                        /* !(uO.cflag) : redirect output */
     {
 
-        fileblk = cc$rms_fab;
+        fileblk = cc$rms_fab;           /* Initialize FAB. */
+        nam = cc$rms_nam;               /* Initialize NAM. */
+        fileblk.fab$l_nam = &nam;       /* Point FAB to NAM. */
+
+        /* VMS-format file name, derived from archive. */
         fileblk.fab$l_fna = G.filename;
         fileblk.fab$b_fns = strlen(G.filename);
 
-        nam = cc$rms_nam;
-        fileblk.fab$l_nam = &nam;
+        /* Expanded and resultant name storage. */
         nam.nam$l_esa = exp_nam;
         nam.nam$b_ess = sizeof(exp_nam);
         nam.nam$l_rsa = res_nam;
@@ -929,10 +945,13 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         if ( uO.V_flag /* keep versions */ )
             pka_fnam.dsc$w_length += nam.nam$b_ver;
 
-        for (i=0;i<3;i++)
+        /* Move the directory ID from the NAM to the FIB.
+           Clear the FID in the FIB, as we're using the name.
+        */
+        for (i = 0; i < 3; i++)
         {
-            pka_fib.FIB$W_DID[i]=nam.nam$w_did[i];
-            pka_fib.FIB$W_FID[i]=0;
+            pka_fib.FIB$W_DID[i] = nam.nam$w_did[i];
+            pka_fib.FIB$W_FID[i] = 0;
         }
 
         /* 2004-11-23 SMS.
@@ -2278,12 +2297,13 @@ int stamp_file(fname, modtime)
         {0, 0, 0}
     };
 
-    fileblk = cc$rms_fab;
+    fileblk = cc$rms_fab;               /* Initialize FAB. */
+    nam = cc$rms_nam;                   /* Initialize NAM[L]. */
+    fileblk.fab$l_nam = &nam;           /* Point FAB to NAM. */
+
     fileblk.fab$l_fna = (char *)fname;
     fileblk.fab$b_fns = strlen(fname);
 
-    nam = cc$rms_nam;
-    fileblk.fab$l_nam = &nam;
     nam.nam$l_esa = exp_nam;
     nam.nam$b_ess = sizeof(exp_nam);
     nam.nam$l_rsa = res_nam;
@@ -2297,19 +2317,21 @@ int stamp_file(fname, modtime)
 
     pka_devdsc.dsc$w_length = (unsigned short)nam.nam$t_dvi[0];
 
-    if ( ERR(status = sys$assign(&pka_devdsc,&pka_devchn,0,0)) )
+    if ( ERR(status = sys$assign(&pka_devdsc, &pka_devchn, 0, 0)) )
     {
         vms_msg(__G__ "stamp_file: sys$assign failed.\n", status);
         return -1;
     }
 
+    /* Load the descriptor with the appropriate name data: */
+    /* Extract only the name.type;version. */
     pka_fnam.dsc$a_pointer = nam.nam$l_name;
     pka_fnam.dsc$w_length  = nam.nam$b_name + nam.nam$b_type + nam.nam$b_ver;
 
-    for (i=0;i<3;i++)
+    for (i = 0; i < 3; i++)
     {
-        pka_fib.FIB$W_DID[i]=nam.nam$w_did[i];
-        pka_fib.FIB$W_FID[i]=nam.nam$w_fid[i];
+        pka_fib.FIB$W_DID[i] = nam.nam$w_did[i];
+        pka_fib.FIB$W_FID[i] = nam.nam$w_fid[i];
     }
 
     /* Use the IO$_ACCESS function to return info about the file */
@@ -2332,12 +2354,12 @@ int stamp_file(fname, modtime)
     uxtime2vmstime(modtime, Cdate);
     memcpy(Rdate, Cdate, sizeof(Cdate));
 
-    /* note, part of the FIB was cleared by earlier QIOW, so reset it */
+    /* Note: Part of the FIB was cleared by earlier QIOW, so reset it. */
     pka_fib.FIB$L_ACCTL = FIB$M_NORECORD;
-    for (i=0;i<3;i++)
+    for (i = 0; i < 3; i++)
     {
-        pka_fib.FIB$W_DID[i]=nam.nam$w_did[i];
-        pka_fib.FIB$W_FID[i]=nam.nam$w_fid[i];
+        pka_fib.FIB$W_DID[i] = nam.nam$w_did[i];
+        pka_fib.FIB$W_FID[i] = nam.nam$w_fid[i];
     }
 
     /* Use the IO$_MODIFY function to change info about the file */
@@ -2447,21 +2469,36 @@ void dump_rms_block(p)
 
 
 
+static char vms_msgbuf[256];            /* VMS-specific error message. */
+static $DESCRIPTOR(vms_msgbuf_dscr, vms_msgbuf);
+
+
+char *vms_msg_text(void)
+{
+    return vms_msgbuf;
+}
+
+
+static int vms_msg_fetch(int status)
+{
+    int msglen = 0;
+    int sts;
+
+    sts = lib$sys_getmsg(&status, &msglen, &vms_msgbuf_dscr, 0, 0);
+
+    vms_msgbuf[msglen] = '\0';
+    return sts;
+}
+
+
 static void vms_msg(__GPRO__ char *string, int status)
 {
-    static char msgbuf[256];
-
-    $DESCRIPTOR(msgd, msgbuf);
-    int msglen = 0;
-
-    if (ERR(lib$sys_getmsg(&status, &msglen, &msgd, 0, 0)))
+    if (ERR(vms_msg_fetch(status)))
         Info(slide, 1, ((char *)slide,
              "%s[ VMS status = %d ]\n", string, status));
     else
-    {
-        msgbuf[msglen] = '\0';
-        Info(slide, 1, ((char *)slide, "%s[ %s ]\n", string, msgbuf));
-    }
+        Info(slide, 1, ((char *)slide,
+             "%s[ %s ]\n", string, vms_msgbuf));
 }
 
 
@@ -2475,7 +2512,22 @@ static void vms_msg(__GPRO__ char *string, int status)
  *    cannot find either fred.zip;4 or fred.zip;4.zip.
  * when it wasn't really looking for "fred.zip;4.zip".
  */
-
+/* 2005-08-11 SPC.
+ * The calling interface for the VMS versiom of do_wild() differs from all
+ * other implementations in the way it returns status info.
+ * There are three return states:
+ * a) pointer to buffer with non-zero-length string
+ *    - canonical full filespec of existing file (search succeeded).
+ * b) pointer to buffer with zero-length string
+ *    - initial file search has failed, extended VMS error info is available
+ *      through call to vms_msg_text().
+ * c) NULL pointer
+ *    - repeated file search has failed, because
+ *      i)   the list of matches for the pattern has been exhausted after at
+ *           least one successful attempt.
+ *      ii)  a second attempt for a failed initial pattern (where do_wild()
+ *           has returned a zero-length string) was tried and failed again.
+ */
 char *do_wild( __G__ wld )
     __GDEF
     ZCONST char *wld;
@@ -2487,58 +2539,71 @@ char *do_wild( __G__ wld )
     static char last_wild[256];
     static struct FAB fab;
     static struct NAM nam;
-    static int first_call=1;
+    static int first_call = 1;
     static ZCONST char deflt[] = "[]*.zip";
 
     if ( first_call || strcmp(wld, last_wild) )
     {   /* (Re)Initialize everything */
 
         strcpy( last_wild, wld );
-        first_call = 1;            /* New wild spec */
+        first_call = 1;                 /* New wild spec */
 
-        fab = cc$rms_fab;
-        fab.fab$l_fna = last_wild;
-        fab.fab$b_fns = strlen(last_wild);
+        fab = cc$rms_fab;               /* Initialize FAB. */
+        nam = cc$rms_nam;               /* Initialize NAM. */
+        fab.fab$l_nam = &nam;           /* Point FAB to NAM. */
+
         fab.fab$l_dna = (char *) deflt;
         fab.fab$b_dns = sizeof(deflt)-1;
-        fab.fab$l_nam = &nam;
-        nam = cc$rms_nam;
+
+        fab.fab$l_fna = last_wild;
+        fab.fab$b_fns = strlen(last_wild);
+
         nam.nam$l_esa = efn;
         nam.nam$b_ess = sizeof(efn)-1;
         nam.nam$l_rsa = filenam;
         nam.nam$b_rss = sizeof(filenam)-1;
 
-        if ( !OK(sys$parse(&fab)) )
-            return (char *)NULL;     /* Initialization failed */
-
         first_call = 0;
 
-        /* 2004-11-23 SMS.
-         * Don't do this.  I see no good reason to lie about the file
-         * being sought just because it wasn't found.  If you find one,
-         * please explain it here when you change this code back.  I'll
-         * admit that the full file spec from sys$parse() may be ugly,
-         * but at least it's never misleading.
+        /* 2005-08-08 SMS.
+         * Parse the file spec.  If sys$parse() fails, save the VMS
+         * error message for later use, and return an empty string.
          */
-        status = sys$search(&fab);
-        if ( !OK(status) )
+        nam.nam$b_nop = NAM$M_SYNCHK;   /* Syntax-only analysis. */
+        status = sys$parse( &fab);
+        if (!OK( status))
         {
-#if 0
-            strcpy( filenam, wld );
+            vms_msg_fetch(status);
+            filenam[0] = '\0';          /* Initialization failed */
             return filenam;
-#endif /* 0 */
         }
 
+        /* 2005-11-16 SMS.
+         * If syntax-only parse worked, re-parse normally so that
+         * sys$search() will work properly.  Regardless of parse error,
+         * leave filenam[] as-was.
+         */
+        nam.nam$b_nop = 0;              /* Normal analysis. */
+        if ( OK(status = sys$parse(&fab)) )
+        {
+            status = sys$search(&fab);
+        }
+
+        if ( !OK(status) )
+        {
+            /* Save the VMS error message for later use. */
+            vms_msg_fetch(status);
+        }
     }
     else
     {
         if ( !OK(sys$search(&fab)) )
         {
-            first_call = 1;        /* Reinitialize next time */
+            first_call = 1;             /* Reinitialize next time */
             return (char *)NULL;
         }
     }
-    filenam[nam.nam$b_rsl] = 0;         /* Add the NUL terminator. */
+    filenam[nam.nam$b_rsl] = '\0';      /* Add the NUL terminator. */
     return filenam;
 
 } /* end function do_wild() */
@@ -2729,12 +2794,6 @@ int mapattr(__G)
 } /* end function mapattr() */
 
 
-
-#ifndef EEXIST
-#  include <errno.h>    /* For mkdir() status codes */
-#endif
-
-#include <fscndef.h> /* for filescan */
 
 #   define FN_MASK   7
 #   define USE_DEFAULT  (FN_MASK+1)
@@ -2947,14 +3006,14 @@ int checkdir(__G__ pathcomp, fcn)
 {
     int function=fcn & FN_MASK;
     static char pathbuf[FILNAMSIZ];
-    static char lastdir[FILNAMSIZ]="\t"; /* directory created last time */
-                                         /* initially - impossible dir. spec. */
-    static char *pathptr=pathbuf;        /* For debugger */
+    /* previously created directory (initialized to impossible dir. spec.) */
+    static char lastdir[FILNAMSIZ]="\t";
+    static char *pathptr = pathbuf;     /* For debugger */
     static char *devptr, *dirptr, *namptr;
     static int  devlen, dirlen, namlen;
     static int  root_dirlen;
     static char *end;
-    static int  first_comp,root_has_dir;
+    static int  first_comp, root_has_dir;
     static int  rootlen=0;
     static char *rootend;
     static int  mkdir_failed=0;
@@ -3134,15 +3193,16 @@ int checkdir(__G__ pathcomp, fcn)
             struct        NAM nam;
 
             fab = cc$rms_fab;
-            fab.fab$l_fna = G.filename;
-            fab.fab$b_fns = strlen(G.filename);
+            nam = cc$rms_nam;
+            fab.fab$l_nam = &nam;
+
             fab.fab$l_dna = pathptr;
             fab.fab$b_dns = end-pathptr;
+            fab.fab$l_fna = G.filename;
+            fab.fab$b_fns = strlen(G.filename);
 
-            fab.fab$l_nam = &nam;
-            nam = cc$rms_nam;
             nam.nam$l_esa = pathcomp;
-            nam.nam$b_ess = 255;            /* Assume large enaugh */
+            nam.nam$b_ess = 255;            /* Assume large enough */
 
             if (!OK(status = sys$parse(&fab)) && status == RMS$_DNF )
                                          /* Directory not found: */
@@ -3177,17 +3237,17 @@ int checkdir(__G__ pathcomp, fcn)
                  *  Don't waste time creating directory that was created
                  *  last time.
                  */
-                if ( STRICMP(lastdir,pathbuf) )
+                if ( STRICMP(lastdir, pathbuf) )
                 {
                     mkdir_failed = 0;
-                    if ( mkdir(pathbuf,0) )
+                    if ( mkdir(pathbuf, 0) )
                     {
                         if ( errno != EEXIST )
                             mkdir_failed = 1;   /* Mine for GETPATH */
                     }
                     else
                         created_dir = TRUE;
-                    strcpy(lastdir,pathbuf);
+                    strcpy(lastdir, pathbuf);
                 }
             }
             else
@@ -3261,9 +3321,10 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
     fab  = cc$rms_fab;
     xdat = cc$rms_xabdat;
 
-    fab.fab$l_xab = (char *) &xdat;
     fab.fab$l_fna = filenam;
     fab.fab$b_fns = strlen(filenam);
+
+    fab.fab$l_xab = (char *) &xdat;
     fab.fab$l_fop = FAB$M_GET | FAB$M_UFO;
 
     if ((sys$open(&fab) & 1) == 0)       /* open failure:  report exists and */
