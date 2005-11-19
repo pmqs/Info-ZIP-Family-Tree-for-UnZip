@@ -1,6 +1,6 @@
 __________________________________________________________________________
 
-   This is the Info-ZIP file ``WHERE,'' last updated on 17 February 2005.
+   This is the Info-ZIP file ``WHERE,'' last updated on 12 March 2005.
 __________________________________________________________________________
 
    The latest version of this file can be found online at:
@@ -39,7 +39,7 @@ and have better information than what you are reading:
 
 The related zlib package by Info-ZIP's Jean-loup Gailly and Mark Adler is at:
 
-   http://www.zlib.org/
+   http://www.zlib.net/
 
 Source-code archives for Info-ZIP's portable Zip, UnZip, and related
 utilities:
@@ -63,8 +63,9 @@ utilities:
                      the MacZip main-app.  To build MacZip successfully, both
                      the Zip 2.31 and UnZip 5.52 sources are required, too.
 
-   wiz502.zip        WiZ 5.02, Windows 9x/NT GUI front-end for Info-ZIP DLLs
-   wiz502+dlls.zip   WiZ 5.02, Windows 9x/NT GUI front-end plus DLL sources
+   wiz503.zip        WiZ 5.03, Windows 9x/NT GUI front-end for Info-ZIP's DLLs,
+                     as well as the source code and project files for the DLLs,
+                     and static libraries.
 
 [*] Unreducing is disabled by default, but is available as add-on.
     As of July 2004, Unisys's LZW patent was expired worldwide, and
@@ -168,7 +169,7 @@ systems on the part of Info-ZIP members.
    MacZip106c.hqx    Macintosh combined Zip&UnZip application with GUI,
                      executables and docs (with encryption)
 
-   wiz502xN.exe      WiZ 5.02 32-bit (Win9x/NT/2K/XP/2K3) app+docs (self-extr.)
+   wiz503xN.exe      WiZ 5.03 32-bit (Win9x/NT/2K/XP/2K3) app+docs (self-extr.)
 
    UnzpHist.zip      complete changes-history of UnZip and its precursors
    ZipHist.zip       complete changes-history of Zip

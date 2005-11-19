@@ -1,0 +1,65 @@
+
+  VMS (OpenVMS):
+
+     On VMS, two build methods are provided: a command procedure, and
+     description files for MMS or MMK.  Both methods must be run from
+     the main directory, not the [.VMS] subdirectory.
+
+     A simple build using the command procedure looks like this:
+          @ [.VMS]BUILD_UNZIP.COM
+
+     A simple build using MMS or MMK looks like this:
+          MMS /DESCRIP = [.VMS]DESCRIP.MMS      ! Or, with MMK, ...
+          MMK /DESCRIP = [.VMS]DESCRIP.MMS
+
+     Various options for each build method are explained in comments in
+     the main builder file, either BUILD_UNZIP.COM or DESCRIP.MMS.
+
+     Here are some more complex build examples:
+
+     o Build with the large-file option enabled (non-VAX only):
+
+          @ [.VMS]BUILD_UNZIP LARGE
+       or:
+          MMS /DESC = [.VMS] /MACRO = LARGE=1
+
+     o Re-link the executables (small-file and large-file):
+
+          @ [.VMS]BUILD_UNZIP LINK
+          @ [.VMS]BUILD_UNZIP LARGE LINK
+       or
+          MMK /DESC = [.VMS] CLEAN_EXE  ! Deletes existing executables.
+          MMK /DESC = [.VMS]            ! Builds new executables.
+          MMK /DESC = [.VMS] /MACRO = LARGE=1 CLEAN_EXE
+          MMK /DESC = [.VMS] /MACRO = LARGE=1 
+
+     o Build a large-file product from scratch, for debug, getting
+       compiler listings and link maps:
+
+          mms /desc = [.vms] clean
+          mms /desc = [.vms] /macro = (DBG=1, LARGE=1. LIST=1)
+
+     On VAX, the builders attempt to cope with the various available C
+     compilers, DEC/Compaq/HP C, VAX C, or GNU C.  If DEC/Compaq/HP C is
+     not available or not desired, comments in the relevant builder file
+     explain the command-line options used to select a different
+     compiler.
+
+     System-architecture-specific files (like objects and executables)
+     are placed in separate directories, such as [.ALPHA], [.IA64], or
+     [.VAX].  Large-file products get their own directories, [.ALPHAL]
+     or [.IA64L].  On VAX, VAX C products are placed in [.VAXV], GNU C
+     products in [.VAXG].  Each product builder announces what the
+     destination directory will be when it is run.
+
+     Common files, such as the help libraries (UNZIP.HLP for the default
+     UNIX-like command-line interface, UNZIP_CLI.HLP for the VMS-like
+     command-line interface), are placed in the main directory.  With a
+     mixed-architecture VMS cluster, the same main directory on a shared
+     disk may may be used by all system types.  (Using the NOHELP option
+     with BUILD_UNZIP.COM can keep it from making the same help files
+     repeatedly.)
+
+     Some further information may be found in the files [.VMS]README.
+     and [.VMS]00BINARY.VMS, though much of what's there is now
+     obsolete.

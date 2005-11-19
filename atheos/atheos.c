@@ -902,8 +902,6 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     ush z_uidgid[2];
     int have_uidgid_flg;
 
-    fclose(G.outfile);
-
 /*---------------------------------------------------------------------------
     If symbolic links are supported, allocate storage for a symlink control
     structure, put the uncompressed "data" and other required info in it, and
@@ -914,7 +912,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 
 #ifdef SYMLINKS
     if (G.symlnk) {
-        unsigned ucsize = (unsigned)G.lrec.ucsize;
+        extent ucsize = (extent)G.lrec.ucsize;
         unsigned AtheOSef_len = 0;
         extent slnk_entrysize;
         uch *AtheOS_exfld = NULL;
@@ -932,10 +930,11 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         slnk_entrysize = sizeof(slinkentry) + AtheOSef_len + ucsize +
                          strlen(G.filename);
 
-        if ((unsigned)slnk_entrysize < ucsize) {
+        if (slnk_entrysize < ucsize) {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: mem alloc overflow\n",
               FnFilter1(G.filename)));
+            fclose(G.outfile);
             return;
         }
 
@@ -943,6 +942,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: no mem\n",
               FnFilter1(G.filename)));
+            fclose(G.outfile);
             return;
         }
         slnk_entry->next = NULL;
@@ -955,11 +955,10 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             /* AtheOS_exfld should not be NULL because AtheOSef_len > 0 */
             memcpy(slnk_entry->buf, AtheOS_exfld, AtheOSef_len);
 
-        /* reopen the "link data" file for reading */
-        G.outfile = fopen(G.filename, FOPR);
+        /* move back to the start of the file to re-read the "link data" */
+        rewind(G.outfile);
 
-        if (!G.outfile ||
-            fread(slnk_entry->target, 1, ucsize, G.outfile) != (int)ucsize)
+        if (fread(slnk_entry->target, 1, ucsize, G.outfile) != ucsize)
         {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed\n",
@@ -982,6 +981,8 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         return;
     }
 #endif /* SYMLINKS */
+
+    fclose(G.outfile);
 
     /* handle the AtheOS extra field if present */
     if (!uO.J_flag) {

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -377,10 +377,19 @@ int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
 
 #endif /* !SFX */
 
-
+/*
+    With the advent of 64 bit support, for now I am assuming that
+    if the size of the file is greater than an unsigned long, there
+    will simply not be enough memory to handle it, and am returning
+    FALSE.
+*/
 int redirect_outfile(__G)
      __GDEF
 {
+#ifdef ZIP64_SUPPORT
+    __int64 check_conversion;
+#endif
+
     if (G.redirect_size != 0 || G.redirect_buffer != NULL)
         return FALSE;
 
@@ -389,15 +398,27 @@ int redirect_outfile(__G)
 #endif
 #if (lenEOL != 1)
     if (G.pInfo->textmode) {
-        G.redirect_size = G.lrec.ucsize * lenEOL;
+        G.redirect_size = (ulg)(G.lrec.ucsize * lenEOL);
         if (G.redirect_size < G.lrec.ucsize)
-            G.redirect_size = ((G.lrec.ucsize > (ulg)-2L) ?
-                               G.lrec.ucsize : (ulg)-2L);
+            G.redirect_size = (ulg)((G.lrec.ucsize > (ulg)-2L) ?
+                                    G.lrec.ucsize : -2L);
+#ifdef ZIP64_SUPPORT
+        check_conversion = G.lrec.ucsize * lenEOL;
+#endif
     } else
 #endif
     {
-        G.redirect_size = G.lrec.ucsize;
+        G.redirect_size = (ulg)G.lrec.ucsize;
+#ifdef ZIP64_SUPPORT
+        check_conversion = (__int64)G.lrec.ucsize;
+#endif
     }
+
+#ifdef ZIP64_SUPPORT
+    if ((__int64)G.redirect_size != check_conversion)
+        return FALSE;
+#endif
+
 #ifdef __16BIT__
     if ((ulg)((extent)G.redirect_size) != G.redirect_size)
         return FALSE;

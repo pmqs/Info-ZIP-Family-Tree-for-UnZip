@@ -20,7 +20,7 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "28 February 2005 (v5.52)" "Info-ZIP"
+.TH UNZIP 1L "15 November 2005 (v6.0)" "Info-ZIP"
 .SH NAME
 unzip \- list, test and extract compressed files in a ZIP archive
 .PD
@@ -78,7 +78,7 @@ or modified by the operating system.
 .IP [\fB\-x\fP\ \fIxfile(s)\fP]
 An optional list of archive members to be excluded from processing.
 Since wildcard characters normally match (`/') directory separators
-(for exeptions see the option \fb\-W\fp\), this option may be used
+(for exceptions see the option \fB\-W\fP), this option may be used
 to exclude any files that are in subdirectories.  For
 example, ``\fCunzip foo *.[ch] -x */*\fR'' would extract all C source files
 in the main directory, but none in any subdirectories.  Without the \fB\-x\fP
@@ -167,16 +167,17 @@ extracts those files that do not already exist on disk.  See \fB\-f\fP
 above for information on setting the timezone properly.
 .TP
 .B \-v
-be verbose or print diagnostic version info.  This option has evolved and
-now behaves as both an option and a modifier.  As an option it has two
-purposes:  when a zipfile is specified with no other options, \fB\-v\fP lists
-archive files verbosely, adding to the basic \fB\-l\fP info the compression
-method, compressed size, compression ratio and 32-bit CRC.  In contrast to
-most of the competing utilities, \fIunzip\fP removes the 12 additional header
-bytes of encrypted entries from the compressed size numbers.  Therefore,
+list archive files (verbose format) or show diagnostic version info.
+This option has evolved and now behaves as both an option and a modifier.
+As an option it has two purposes:  when a zipfile is specified with no
+other options, \fB\-v\fP lists archive files verbosely, adding to the
+basic \fB\-l\fP info the compression method, compressed size,
+compression ratio and 32-bit CRC.  In contrast to most of the competing
+utilities, \fIunzip\fP removes the 12 additional header bytes of
+encrypted entries from the compressed size numbers.  Therefore,
 compressed size and compression ratio figures are independent of the entry's
 encryption status and show the correct compression performance.  (The complete
-size of the encryped compressed data stream for zipfile entries is reported
+size of the encrypted compressed data stream for zipfile entries is reported
 by the more verbose \fIzipinfo\fP(1L) reports, see the separate manual.)
 When no zipfile is specified (that is, the complete command is simply
 ``\fCunzip \-v\fR''), a diagnostic screen is printed.  In addition to
@@ -258,7 +259,7 @@ example above, all three files would then match ``\fCmakefile\fR''
 (or ``\fCmake*\fR'', or similar).  The \fB\-C\fP option affects
 file specs in both the normal file list and the excluded-file list (xlist).
 .IP
-Please note that the \fB\-L\fP option does neither affect the search for
+Please note that the \fB\-C\fP option does neither affect the search for
 the zipfile(s) nor the matching of archive entries to existing files on
 the extraction path.  On a case-sensitive file system, \fIunzip\fP will
 never try to overwrite a file ``FOO'' when extracting an entry ``foo''!
@@ -397,7 +398,7 @@ includes the directory separator in its matched characters.)  Examples:
 This modified behaviour is equivalent to the pattern matching style
 used by the shells of some of UnZip's supported target OSs (one
 example is Acorn RISC OS).  This option may not be available on systems
-where the Zip archive's interal directory separator character `/' is
+where the Zip archive's internal directory separator character `/' is
 allowed as regular character in native operating system filenames.
 (Currently, UnZip uses the same pattern matching rules for both wildcard
 zipfile specifications and zip entry selection patterns in most ports.
@@ -419,6 +420,14 @@ on some operating systems.  [NT's access control lists do not appear to be
 especially compatible with OS/2's, so no attempt is made at cross-platform
 portability of access privileges.  It is not clear under what conditions this
 would ever be useful anyway.]
+.TP
+.B \-Y
+[VMS] treat archived file name endings of ``.nnn'' (where ``nnn'' is a
+decimal  number) as if they were VMS version numbers (``;nnn'').
+(The default is to treat them as file types.)  Example:
+.EX
+     "a.b.3" -> "a.b;3".
+.EE
 .TP
 .B \-$
 .\" Amiga support possible eventually, but not yet
@@ -446,9 +455,16 @@ extraction folder.  This option does not enable writing explicitly to the
 root directory (``/'').  To achieve this, it is necessary to set the
 extraction target folder to root (e.g. \fB\-d / \fP).  However, when the
 \fB\-:\fP option is specified, it is still possible to implicitly write to
-the root directory by specifiying enough ``../'' path components within the
+the root directory by specifying enough ``../'' path components within the
 zip archive.
 Use this option with extreme caution.
+.TP
+.B \-2
+[VMS] force unconditionally conversion of file names to ODS2-compatible
+names.  The default is to exploit the destination file system, preserving
+case and extended file name characters on an ODS5 destination file system;
+and applying the ODS2-compatibility file name filtering on an ODS2 destination
+file system.
 .PD
 .\" =========================================================================
 .SH "ENVIRONMENT OPTIONS"
@@ -472,7 +488,7 @@ setenv UNZIP \-qq
 set UNZIP=\-qq
 .TP
   VMS (quotes for \fIlowercase\fP):
-define UNZIP_OPTS ""\-qq""
+define UNZIP_OPTS "\-qq"
 .PP
 Environment options are, in effect, considered to be just like any other
 command-line options, except that they are effectively the first options
@@ -926,5 +942,7 @@ Info-ZIP (Zip-Bugs subgroup, SPC)
 .IP "v5.51\t22 May 04"
 Info-ZIP (Zip-Bugs subgroup, SPC)
 .IP "v5.52\t28 Feb 05"
+Info-ZIP (Zip-Bugs subgroup, SPC)
+.IP "v6.0\t15 Nov 05"
 Info-ZIP (Zip-Bugs subgroup, SPC)
 .PD

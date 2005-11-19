@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -13,8 +13,8 @@
  * library dependencies need to have the correct module name.
  */
 #if 0
-# define module_name VMS_UNZIP_CMDLINE
-# define module_ident "02-010"
+#define module_name VMS_UNZIP_CMDLINE
+#define module_ident "02-011"
 #endif /* 0 */
 
 /*
@@ -33,7 +33,9 @@
 **
 **  Modified by:
 **
-**      02-010          Steven Schweda          14-FEB-2005
+**      02-011          Christian Spieler       21-Apr-2005 01:23
+**              Added /FULL=DIAGNOSTICS option modifier.
+**      02-010          Steven Schweda          14-FEB-2005 20:04
 **              Added /DOT_VERSION (-Y) and /ODS2 (-2) qualifiers.
 **      02-009          Steven Schweda          28-JAN-2005 16:16
 **              Added /TIMESTAMP (-T) qualifier.
@@ -83,11 +85,11 @@
  * library dependencies need to have the correct module name.
  */
 #if 0
-# if defined(__DECC) || defined(__GNUC__)
-#  pragma module module_name module_ident
-# else
-#  module module_name module_ident
-# endif
+#if defined(__DECC) || defined(__GNUC__)
+#pragma module module_name module_ident
+#else
+#module module_name module_ident
+#endif
 #endif /* 0 */
 
 #define UNZIP_INTERNAL
@@ -159,6 +161,7 @@ $DESCRIPTOR(cli_lowercase,      "LOWERCASE");           /* -L */
 $DESCRIPTOR(cli_list,           "LIST");                /* -l */
 $DESCRIPTOR(cli_brief,          "BRIEF");               /* -l */
 $DESCRIPTOR(cli_full,           "FULL");                /* -v */
+$DESCRIPTOR(cli_full_diags,     "FULL.DIAGNOSTICS");    /* -vv */
 $DESCRIPTOR(cli_overwrite,      "OVERWRITE");           /* -o, -n */
 $DESCRIPTOR(cli_quiet,          "QUIET");               /* -q */
 $DESCRIPTOR(cli_super_quiet,    "QUIET.SUPER");         /* -qq */
@@ -169,9 +172,6 @@ $DESCRIPTOR(cli_timestamp,      "TIMESTAMP");           /* -T */
 $DESCRIPTOR(cli_uppercase,      "UPPERCASE");           /* -U */
 $DESCRIPTOR(cli_update,         "UPDATE");              /* -u */
 $DESCRIPTOR(cli_version,        "VERSION");             /* -V */
-$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v */
-$DESCRIPTOR(cli_verbose_more,   "VERBOSE.MORE");        /* -vv */
-$DESCRIPTOR(cli_verbose_debug,  "VERBOSE.DEBUG");       /* -vvv */
 $DESCRIPTOR(cli_restore,        "RESTORE");             /* -X */
 $DESCRIPTOR(cli_dot_version,    "DOT_VERSION");         /* -Y */
 $DESCRIPTOR(cli_comment,        "COMMENT");             /* -z */
@@ -183,6 +183,7 @@ $DESCRIPTOR(cli_information,    "ZIPINFO");             /* -Z */
 $DESCRIPTOR(cli_short,          "SHORT");               /* -Zs */
 $DESCRIPTOR(cli_medium,         "MEDIUM");              /* -Zm */
 $DESCRIPTOR(cli_long,           "LONG");                /* -Zl */
+$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -Zv */
 $DESCRIPTOR(cli_header,         "HEADER");              /* -Zh */
 $DESCRIPTOR(cli_totals,         "TOTALS");              /* -Zt */
 $DESCRIPTOR(cli_times,          "TIMES");               /* -ZT */
@@ -263,7 +264,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     unsigned long cmdl_len;             /* used size of buffer */
     char *ptr;
     int  x, len, zipinfo, exclude_list;
-    int v_already = 0;
 
     int new_argc;
     char **new_argv;
@@ -342,17 +342,8 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             *ptr++ = 'm';
         if (cli$present(&cli_long) & 1)
             *ptr++ = 'l';
-        if (cli$present(&cli_verbose) & 1) {
+        if (cli$present(&cli_verbose) & 1)
             *ptr++ = 'v';
-            if ((status = cli$present(&cli_verbose_more)) & 1)
-                /* /VERBOSE = MORE */
-                *ptr++ = 'v';
-            if ((status = cli$present(&cli_verbose_debug)) & 1) {
-                /* /VERBOSE = DEBUG */
-                *ptr++ = 'v';
-                *ptr++ = 'v';
-            }
-        }
         if (cli$present(&cli_header) & 1)
             *ptr++ = 'h';
         if (cli$present(&cli_comment) & 1)
@@ -361,10 +352,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             *ptr++ = 't';
         if (cli$present(&cli_times) & 1)
             *ptr++ = 'T';
-        if (cli$present(&cli_dot_version) & 1)
-            *ptr++ = 'Y';
-        if (cli$present(&cli_ods2) & 1)
-            *ptr++ = '2';
+
     }
     else {
 
@@ -457,15 +445,15 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         *ptr++ = 'j';
 
     /*
-    **  List contents (/BRIEF or /FULL (default))
+    **  List contents (/BRIEF (default) or /FULL)
     */
     status = cli$present(&cli_list);
     if (status & 1) {
         if (cli$present(&cli_full) & 1) {
            *ptr++ = 'v';
-           v_already = 1;
-        }
-        else
+           if (cli$present(&cli_full_diags) & 1)
+               *ptr++ = 'v';
+        } else
            *ptr++ = 'l';
     }
 
@@ -520,6 +508,24 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         *ptr++ = 'T';
 
     /*
+    **  Extract "foo.ext.###" as "foo.ext;###" (treat .### as version number)
+    */
+    status = cli$present(&cli_dot_version);
+    if (status == CLI$_NEGATED)
+        *ptr++ = '-';
+    if (status != CLI$_ABSENT)
+        *ptr++ = 'Y';
+
+    /*
+    **  Force conversion of extracted file names to old ODS2 conventions
+    */
+    status = cli$present(&cli_ods2);
+    if (status == CLI$_NEGATED)
+        *ptr++ = '-';
+    if (status != CLI$_ABSENT)
+        *ptr++ = '2';
+
+    /*
     **  Traverse directories (don't skip "../" path components)
     */
     status = cli$present(&cli_traverse);
@@ -563,23 +569,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         *ptr++ = '-';
     if (status != CLI$_ABSENT)
         *ptr++ = 'V';
-
-    /*
-    **  Verbose.
-    */
-    if (cli$present(&cli_verbose) & 1) {
-        /* Skip a signgle "-v" if /FULL already added one. */
-        if (!v_already)
-            *ptr++ = 'v';
-        if ((status = cli$present(&cli_verbose_more)) & 1)
-            /* /VERBOSE = MORE */
-            *ptr++ = 'v';
-        if ((status = cli$present(&cli_verbose_debug)) & 1) {
-            /* /VERBOSE = DEBUG */
-            *ptr++ = 'v';
-            *ptr++ = 'v';
-        }
-    }
 
     /*
     **  Restore owner/protection info

@@ -197,10 +197,15 @@ int UZ_EXP CheckForAbort2(zvoid *pG, int fnflag, ZCONST char *zfn,
                           ZCONST char *efn, ZCONST zvoid *details);
 int WINAPI UzpReplace(LPSTR szFile);
 void WINAPI UzpSound(void);
-void WINAPI SendAppMsg(ulg dwSize, ulg dwCompressedSize, unsigned ratio,
+#ifdef Z_UINT8_DEFINED
+void WINAPI SendAppMsg(z_uint8 dwSize, z_uint8 dwCompressedSize,
+#else
+void WINAPI SendAppMsg(ulg dwSize, ulg dwCompressedSize,
+#endif
+                       unsigned ratio,
                        unsigned month, unsigned day, unsigned year,
                        unsigned hour, unsigned minute, char uppercase,
-                       LPSTR szPath, LPSTR szMethod, ulg dwCRC, char chCrypt);
+                       LPCSTR szPath, LPCSTR szMethod, ulg dwCRC, char chCrypt);
 
 } // extern "C"
 
@@ -448,6 +453,7 @@ static Uz_Globs* InitGlobals(LPCSTR szZipFile)
    pG->lpUserFunctions->replace                = UzpReplace;
    pG->lpUserFunctions->sound                  = UzpSound;
    pG->lpUserFunctions->SendApplicationMessage = SendAppMsg;
+   pG->lpUserFunctions->SendApplicationMessage_i32 = NULL;
 
 #if CRYPT
    pG->decr_passwd = UzpPassword;
@@ -553,7 +559,7 @@ static unsigned __stdcall ExtractOrTestFilesThread(void *lpv)
    }
 
    // Invalidate our file offset to show that we are starting a new operation.
-   g_pExtractInfo->dwFileOffset = 0xFFFFFFFF;
+   g_pExtractInfo->uzFileOffset = ~(zusz_t)0;
 
    // We wrap some exception handling around the entire Info-ZIP engine to be
    // safe.  Since we are running on a device with tight memory configurations,
@@ -607,11 +613,11 @@ static unsigned __stdcall ExtractOrTestFilesThread(void *lpv)
 static void SetCurrentFile(__GPRO)
 {
    // Reset all our counters as we about to process a new file.
-   g_pExtractInfo->dwFileOffset = (DWORD)G.pInfo->offset;
+   g_pExtractInfo->uzFileOffset = (zusz_t)G.pInfo->offset;
    g_pExtractInfo->dwFile++;
-   g_pExtractInfo->dwBytesWrittenThisFile = 0;
-   g_pExtractInfo->dwBytesWrittenPreviousFiles += g_pExtractInfo->dwBytesTotalThisFile;
-   g_pExtractInfo->dwBytesTotalThisFile = G.lrec.ucsize;
+   g_pExtractInfo->uzBytesWrittenThisFile = 0;
+   g_pExtractInfo->uzBytesWrittenPreviousFiles += g_pExtractInfo->uzBytesTotalThisFile;
+   g_pExtractInfo->uzBytesTotalThisFile = G.lrec.ucsize;
    g_pExtractInfo->szFile = G.filename;
    g_pExtractInfo->fNewLineOfText = TRUE;
 
@@ -696,7 +702,7 @@ int UZ_EXP UzpMessagePrnt2(zvoid *pG, uch *buffer, ulg size, int flag)
    // When extracting, mapname() will get called for every file which in turn
    // will call SetCurrentFile().  For testing though, mapname() never gets
    // called so we need to be on the lookout for a new file.
-   if (g_pExtractInfo->dwFileOffset != (DWORD)((Uz_Globs*)pG)->pInfo->offset) {
+   if (g_pExtractInfo->uzFileOffset != (zusz_t)((Uz_Globs*)pG)->pInfo->offset) {
       SetCurrentFile((Uz_Globs*)pG);
    }
 
@@ -840,7 +846,8 @@ int UZ_EXP CheckForAbort2(zvoid *pG, int fnflag, ZCONST char *zfn,
 //******************************************************************************
 int WINAPI UzpReplace(LPSTR szFile) {
    // Pass control to our GUI thread which will prompt the user to overwrite.
-   return SendMessage(g_hWndMain, WM_PRIVATE, MSG_PROMPT_TO_REPLACE, (LPARAM)szFile);
+   return SendMessage(g_hWndMain, WM_PRIVATE, MSG_PROMPT_TO_REPLACE,
+                      (LPARAM)szFile);
 }
 
 //******************************************************************************
@@ -850,10 +857,15 @@ void WINAPI UzpSound(void) {
 
 //******************************************************************************
 // Called from LIST.C
-void WINAPI SendAppMsg(ulg dwSize, ulg dwCompressedSize, unsigned ratio,
+#ifdef Z_UINT8_DEFINED
+void WINAPI SendAppMsg(z_uint8 uzSize, z_uint8 uzCompressedSize,
+#else
+void WINAPI SendAppMsg(ulg uzSize, ulg uzCompressedSize,
+#endif
+                       unsigned ratio,
                        unsigned month, unsigned day, unsigned year,
                        unsigned hour, unsigned minute, char uppercase,
-                       LPSTR szPath, LPSTR szMethod, ulg dwCRC, char chCrypt)
+                       LPCSTR szPath, LPCSTR szMethod, ulg dwCRC, char chCrypt)
 {
    // If we are out of memory, then just bail since we will only make things worse.
    if (g_fOutOfMemory) {
@@ -879,8 +891,8 @@ void WINAPI SendAppMsg(ulg dwSize, ulg dwCompressedSize, unsigned ratio,
    }
 
    // Fill in our node.
-   g_pFileLast->dwSize           = dwSize;
-   g_pFileLast->dwCompressedSize = dwCompressedSize;
+   g_pFileLast->uzSize           = (zusz_t)uzSize;
+   g_pFileLast->uzCompressedSize = (zusz_t)uzCompressedSize;
    g_pFileLast->dwCRC            = dwCRC;
    g_pFileLast->szComment        = NULL;
    g_pFileLast->szType           = NULL;
@@ -935,7 +947,7 @@ int win_fprintf(zvoid *pG, FILE *file, unsigned int dwCount, char far *buffer)
 #endif
 
       // Update our bytes written count.
-      g_pExtractInfo->dwBytesWrittenThisFile += dwBytesWritten;
+      g_pExtractInfo->uzBytesWrittenThisFile += dwBytesWritten;
 
       // Pass control to our GUI thread to do a partial update our progress dialog.
       SendMessage(g_hWndMain, WM_PRIVATE, MSG_UPDATE_PROGRESS_PARTIAL,
@@ -1243,7 +1255,7 @@ static BOOL IsOldFileSystem(char *szPath) {
 }
 
 //******************************************************************************
-int SetFileSize(FILE *file, ulg filesize)
+int SetFileSize(FILE *file, zusz_t filesize)
 {
 #if (defined(_WIN32_WCE) || defined(__RSXNT__))
     // For native Windows CE, it is not known whether the API supports
@@ -1257,6 +1269,9 @@ int SetFileSize(FILE *file, ulg filesize)
       rommel@ars.de
      */
     HANDLE os_fh;
+#ifdef Z_UINT8_DEFINED
+    LARGE_INTEGER fsbuf;
+#endif
 
     /* Win9x supports FAT file system, only; presetting file size does
        not help to prevent fragmentation. */
@@ -1270,7 +1285,13 @@ int SetFileSize(FILE *file, ulg filesize)
      */
     os_fh = (HANDLE)_get_osfhandle(fileno(file));
     /* move file pointer behind the last byte of the expected file size */
+#ifdef Z_UINT8_DEFINED
+    fsbuf.QuadPart = filesize;
+    if ((SetFilePointer(os_fh, fsbuf.LowPart, &fsbuf.HighPart, FILE_BEGIN)
+         == 0xFFFFFFFF) && GetLastError() != NO_ERROR)
+#else
     if (SetFilePointer(os_fh, filesize, 0, FILE_BEGIN) == 0xFFFFFFFF)
+#endif
         return -1;
     /* extend/truncate file to the current position */
     if (SetEndOfFile(os_fh) == 0)

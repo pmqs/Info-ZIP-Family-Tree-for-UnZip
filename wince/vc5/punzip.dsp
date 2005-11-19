@@ -1664,6 +1664,10 @@ NODEP_CPP_PROCE=\
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\windll\structs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\ttyio.c
 
 !IF  "$(CFG)" == "punzip - Win32 Release"

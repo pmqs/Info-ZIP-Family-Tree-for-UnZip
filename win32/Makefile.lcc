@@ -1,6 +1,6 @@
 # Makefile for UnZip, fUnZip and UnZipSFX using LCC-Win32.
 # By E-Yen Tan (3 June 1998).
-# Last updated 30 May 2004 (Christian Spieler).
+# Last updated 08 May 2005 (Christian Spieler).
 #
 # This version includes rules to build the 32-bit windll DLL.
 
@@ -58,11 +58,11 @@ CFLAGS_GX = $(CFLAGS) -I./windll -I./windll/guisfx -DSFX
 
 
 # The system specific files are defined here:
-OBJUS=win32$(OBJ) nt$(OBJ)
-OBJXS=win32_$(OBJ) nt_$(OBJ)
-OBJFS=win32f$(OBJ)
-OBJDS=win32l$(OBJ) ntl$(OBJ)
-OBLXS=win32g$(OBJ) ntg$(OBJ) windllg$(OBJ)
+OBJUS=win32$(OBJ) win32i64$(OBJ) nt$(OBJ)
+OBJXS=win32_$(OBJ) win32i64_$(OBJ) nt_$(OBJ)
+OBJFS=win32f$(OBJ) win32i64f$(OBJ)
+OBJDS=win32l$(OBJ) win32i64l$(OBJ) ntl$(OBJ)
+OBLXS=win32g$(OBJ) win32i64g$(OBJ) ntg$(OBJ) windllg$(OBJ)
 OSDEP_H=win32/w32cfg.h
 WINDLL_H=windll/windll.h windll/structs.h windll/decs.h
 DLLDEF=.\windll\windll_lc.def	# lcclink requires backslashes as dir-sep!!
@@ -164,6 +164,9 @@ uzexampl$(OBJ):	windll/uzexampl.c windll/uzexampl.h
 win32$(OBJ):	win32/win32.c $(UNZIP_H) win32/nt.h unzvers.h
 	$(CC) -c $(CFLAGS_UN) -Iwin32 $(OUT)$@ win32/win32.c
 
+win32i64$(OBJ):	win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(CFLAGS_UN) -Iwin32 $(OUT)$@ win32/win32i64.c
+
 nt$(OBJ):	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_UN) -Iwin32 $(OUT)$@ win32/nt.c
 
@@ -190,6 +193,9 @@ ttyiof$(OBJ):	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 
 win32f$(OBJ):	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_FU) -Iwin32 $(OUT)$@ win32/win32.c
+
+win32i64f$(OBJ):	win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(CFLAGS_FU) -Iwin32 $(OUT)$@ win32/win32i64.c
 
 crc32_$(OBJ):	crc32.c $(UNZIP_H) zip.h
 	$(CC) -c $(CFLAGS_SX) $(OUT)$@ crc32.c
@@ -226,6 +232,9 @@ unzipsf_$(OBJ):	unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
 
 win32_$(OBJ):	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_SX) -Iwin32 $(OUT)$@ win32/win32.c
+
+win32i64_$(OBJ):	win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(CFLAGS_SX) -Iwin32 $(OUT)$@ win32/win32i64.c
 
 nt_$(OBJ):	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_SX) -Iwin32 $(OUT)$@ win32/nt.c
@@ -279,6 +288,9 @@ zipinfol$(OBJ):	zipinfo.c $(UNZIP_H)
 win32l$(OBJ):	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_DL) -Iwin32 $(OUT)$@ win32/win32.c
 
+win32i64l$(OBJ):	win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(CFLAGS_DL) -Iwin32 $(OUT)$@ win32/win32i64.c
+
 ntl$(OBJ):	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_DL) -Iwin32 $(OUT)$@ win32/nt.c
 
@@ -321,6 +333,9 @@ processg$(OBJ):	process.c $(UNZIP_H) $(WINDLL_H)
 
 win32g$(OBJ):	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_SL) -Iwin32 $(OUT)$@ win32/win32.c
+
+win32i64g$(OBJ):	win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(CFLAGS_SL) -Iwin32 $(OUT)$@ win32/win32i64.c
 
 ntg$(OBJ):	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(CFLAGS_SL) -Iwin32 $(OUT)$@ win32/nt.c

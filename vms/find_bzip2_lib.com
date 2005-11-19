@@ -1,4 +1,4 @@
-$!                                              28 December 2006.  SMS.
+$!                                              17 November 2005.  SMS.
 $!
 $! Info-ZIP VMS accessory procedure.
 $!
@@ -6,12 +6,12 @@ $! Find the BZIP2 object library under P1, starting in the [.'P2']
 $! destination directory.  (We assume, initially, that the BZIP2
 $! directory has a destination directory structure like ours.)
 $!
-$! Set the P4 logical name to the directory where it was found.
-$! P5 and P6 may be used for qualifiers on the DEFINE command.
+$! Set the P3 logical name to the directory where it was found.
+$! P4 and P5 may be used for qualifiers on the DEFINE command.
 $!
 $ bz_orig = p1
 $ dest = p2
-$ libbz2 = p3
+$ libbz2 = "libbz2.olb"
 $!
 $! Remove any trailing colon, to allow logical name translation.
 $!
@@ -61,11 +61,11 @@ $ endif
 $!
 $ if (bz_dev_dir .nes. "")
 $ then
-$     if (p4 .eqs. "")
+$     if (p3 .eqs. "")
 $     then
 $         write sys$output bz_dev_dir
 $     else
-$         define 'p5' 'p4' 'bz_dev_dir' 'p6'
+$         define 'p4' 'p3' 'bz_dev_dir' 'p5'
 $     endif
 $ endif
 $!

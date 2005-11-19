@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2000 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -27,9 +27,10 @@
 /* initialization of sigs is completed at runtime so unzip(sfx) executable
  * won't look like a zipfile
  */
-char central_hdr_sig[4] = {0, 0, 0x01, 0x02};
-char local_hdr_sig[4]   = {0, 0, 0x03, 0x04};
-char end_central_sig[4] = {0, 0, 0x05, 0x06};
+char central_hdr_sig[4]   = {0, 0, 0x01, 0x02};
+char local_hdr_sig[4]     = {0, 0, 0x03, 0x04};
+char end_central_sig[4]   = {0, 0, 0x05, 0x06};
+char end_central64_sig[4] = {0, 0, 0x06, 0x06};
 /* extern char extd_local_sig[4] = {0, 0, 0x07, 0x08};  NOT USED YET */
 
 ZCONST char *fnames[2] = {"*", NULL};   /* default filenames vector */

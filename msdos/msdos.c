@@ -64,6 +64,7 @@ static void maskDOSdevice(__GPRO__ char *pathcomp, char *last_dot);
 static int isfloppy OF((int nDrive));
 static int z_dos_chmod OF((__GPRO__ ZCONST char *fname, int attributes));
 static int volumelabel OF((ZCONST char *newlabel));
+static int is_running_on_windows OF((void));
 
 static int created_dir;        /* used by mapname(), checkdir() */
 static int renamed_fullpath;   /* ditto */
@@ -102,6 +103,11 @@ static ZCONST char Far PathTooLongTrunc[] =
 #endif
 static ZCONST char Far AttribsMayBeWrong[] =
   "\nwarning:  file attributes may not be correct\n";
+#if (!defined(SFX) && !defined(WINDLL))
+   static ZCONST char Far WarnUsedOnWindows[] =
+     "\n%s warning: You are using the MSDOS version on Windows.\n"
+     "Please try the native Windows version before reporting any problems.\n";
+#endif
 
 
 
@@ -1733,6 +1739,52 @@ int dateformat()
 
 
 #ifndef WINDLL
+
+/**************************************/
+/*  Function is_running_on_windows()  */
+/**************************************/
+
+static int is_running_on_windows(void)
+{
+    char *var = getenv("OS");
+
+    /* if the OS env.var says 'Windows_NT' then */
+    /* we're likely running on a variant of WinNT */
+    if ((var != NULL) && (strcmp("Windows_NT", var) == 0))
+        return TRUE;
+
+    /* if the windir env.var is non-null then */
+    /* we're likely running on a variant of Win9x */
+    /* DOS mode of Win9x doesn't define windir, only winbootdir */
+    /* NT's command.com can't see lowercase env. vars */
+    var = getenv("windir");
+    if ((var != NULL) && (var[0] != '\0'))
+        return TRUE;
+
+    return FALSE;
+}
+
+
+/**********************************/
+/*  Function check_for_windows()  */
+/**********************************/
+
+void check_for_windows(ZCONST char *app)
+{
+#ifdef SMALL_MEM
+    char msg_str[160];          /* enough space for two 79-char-lines  */
+
+    (void)zfstrcpy(msg_buf, WarnUsedOnWindows)
+#else
+#   define msg_str WarnUsedOnWindows
+#endif
+    /* Print a warning for users running under Windows */
+    /* to reduce bug reports due to running DOS version */
+    /* under Windows, when Windows version usually works correctly */
+    if (is_running_on_windows())
+        printf(msg_str, app);
+} /* end function check_for_windows() */
+
 
 /************************/
 /*  Function version()  */

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -64,6 +64,7 @@
                                     get_tree() failed).
     c17b 16 Feb 02  C. Spieler      changed type of the "extra lengths" array
                                     "extra" from ush into uch (to save space)
+            Aug 04                  file sizes and offsets use zoff_t.
  */
 
 
@@ -255,7 +256,7 @@ unsigned bdl;                   /* number of distance low bits */
 /* Decompress the imploded data using coded literals and a sliding
    window (of size 2^(6+bdl) bytes). */
 {
-  ulg s;                /* bytes to decompress */
+  zoff_t s;             /* bytes to decompress */
   register unsigned e;  /* table entry flag/number of extra bits */
   unsigned n, d;        /* length and index for copy */
   unsigned w;           /* current window position */
@@ -310,7 +311,7 @@ unsigned bdl;                   /* number of distance low bits */
       }
 
       /* do the copy */
-      s = (s > (ulg)n ? s - (ulg)n : 0);
+      s = (s > (zoff_t)n ? s - (zoff_t)n : 0);
       do {
 #if (defined(DLL) && !defined(NO_SLIDE_REDIR))
         if (G.redirect_slide) {
@@ -373,7 +374,7 @@ unsigned bdl;           /* number of distance low bits */
 /* Decompress the imploded data using uncoded literals and a sliding
    window (of size 2^(6+bdl) bytes). */
 {
-  ulg s;                /* bytes to decompress */
+  zoff_t s;             /* bytes to decompress */
   register unsigned e;  /* table entry flag/number of extra bits */
   unsigned n, d;        /* length and index for copy */
   unsigned w;           /* current window position */
@@ -428,7 +429,7 @@ unsigned bdl;           /* number of distance low bits */
       }
 
       /* do the copy */
-      s = (s > (ulg)n ? s - (ulg)n : 0);
+      s = (s > (zoff_t)n ? s - (zoff_t)n : 0);
       do {
 #if (defined(DLL) && !defined(NO_SLIDE_REDIR))
         if (G.redirect_slide) {

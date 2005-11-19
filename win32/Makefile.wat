@@ -1,5 +1,5 @@
 # WMAKE makefile for Windows 95 and Windows NT (Intel only)
-# using Watcom C/C++ v11.0+, by Paul Kienitz, last revised 24 Jan 05.
+# using Watcom C/C++ v11.0+, by Paul Kienitz, last revised 08 May 05.
 # Makes UnZip.exe, fUnZip.exe, and UnZipSFX.exe.
 #
 # Invoke from UnZip source dir with "WMAKE -F WIN32\MAKEFILE.WAT [targets]"
@@ -80,25 +80,25 @@ OBJU1 = $(O)unzip.obj $(crcob) $(O)crctab.obj $(O)crypt.obj $(O)envargs.obj
 OBJU2 = $(O)explode.obj $(O)extract.obj $(O)fileio.obj $(O)globals.obj
 OBJU3 = $(O)inflate.obj $(O)list.obj $(O)match.obj $(O)process.obj
 OBJU4 = $(O)ttyio.obj $(O)unreduce.obj $(O)unshrink.obj $(O)zipinfo.obj
-OBJUS = $(O)win32.obj $(O)nt.obj $(TIMEZONE_OBJU)
+OBJUS = $(O)win32.obj $(O)win32i64.obj $(O)nt.obj $(TIMEZONE_OBJU)
 OBJU  = $(OBJU1) $(OBJU2) $(OBJU3) $(OBJU4) $(OBJUS)
 
 OBJX1 = $(O)unzip.obx $(crcob) $(O)crctab.obx $(O)crypt.obx $(O)extract.obx
 OBJX2 = $(O)fileio.obx $(O)globals.obx $(O)inflate.obx $(O)match.obx
 OBJX3 = $(O)process.obx $(O)ttyio.obx
-OBJXS = $(O)win32.obx $(O)nt.obx $(TIMEZONE_OBJX)
+OBJXS = $(O)win32.obx $(O)win32i64.obx $(O)nt.obx $(TIMEZONE_OBJX)
 OBJX  = $(OBJX1) $(OBJX2) $(OBJX3) $(OBJXS)
 
 OBJF1 = $(O)funzip.obj $(crcob) $(O)cryptf.obj $(O)globalsf.obj
 OBJF2 = $(O)inflatef.obj $(O)ttyiof.obj
-OBJFS = $(O)win32f.obj
+OBJFS = $(O)win32f.obj $(O)win32i64f.obj
 OBJF  = $(OBJF1) $(OBJF2) $(OBJFS)
 
 OBJD1 = $(O)api.obj $(crcob) $(O)crctabl.obj $(O)cryptl.obj $(O)explodel.obj
 OBJD2 = $(O)extractl.obj $(O)fileiol.obj $(O)globalsl.obj $(O)inflatel.obj
 OBJD3 = $(O)listl.obj $(O)matchl.obj $(O)processl.obj
 OBJD4 = $(O)unreducl.obj $(O)unshrnkl.obj $(O)zipinfol.obj
-OBJDS = $(O)win32l.obj $(O)ntl.obj $(O)windll.obj $(TIMEZONE_OBJD)
+OBJDS = $(O)win32l.obj $(O)win32i64l.obj $(O)ntl.obj $(O)windll.obj $(TIMEZONE_OBJD)
 OBJD  = $(OBJD1) $(OBJD2) $(OBJD3) $(OBJD4) $(OBJDS)
 
 UNZIP_H = unzip.h unzpriv.h globals.h win32/w32cfg.h
@@ -213,6 +213,12 @@ $(O)win32.obj:    win32\win32.c $(UNZIP_H) win32\nt.h
 $(O)win32.obx:    win32\win32.c $(UNZIP_H) win32\nt.h
 	$(cc) $(cdebux) $(cflags) $(cvars) -DSFX win32\win32.c -fo=$@
 
+$(O)win32i64.obj: win32\win32i64.c $(UNZIP_H)
+	$(cc) $(cdebug) $(cflags) $(cvars) win32\win32i64.c -fo=$@
+
+$(O)win32i64.obx: win32\win32i64.c $(UNZIP_H)
+	$(cc) $(cdebux) $(cflags) $(cvars) -DSFX win32\win32i64.c -fo=$@
+
 $(O)nt.obj:    win32\nt.c $(UNZIP_H) win32\nt.h
 	$(cc) $(cdebug) $(cflags) $(cvars) win32\nt.c -fo=$@
 
@@ -238,6 +244,9 @@ $(O)ttyiof.obj:   ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 
 $(O)win32f.obj:   win32\win32.c $(UNZIP_H)
 	$(cc) $(CFLAGS_FU) win32\win32.c -fo=$@
+
+$(O)win32i64f.obj: win32\win32i64.c $(UNZIP_H)
+	$(cc) $(CFLAGS_FU) win32\win32i64.c -fo=$@
 
 # DLL compilation section
 $(O)api.obj:      api.c $(UNZIP_H) $(WINDLL_H) unzvers.h
@@ -275,6 +284,9 @@ $(O)zipinfol.obj: zipinfo.c $(UNZIP_H)
 
 $(O)win32l.obj:	  win32\win32.c $(UNZIP_H) win32\nt.h
 	$(cc) $(CFLAGS_DL) -I. win32\win32.c -fo=$@
+
+$(O)win32i64l.obj: win32\win32i64.c $(UNZIP_H)
+	$(cc) $(CFLAGS_DL) -I. win32\win32i64.c -fo=$@
 
 $(O)ntl.obj:      win32\nt.c $(UNZIP_H) win32\nt.h
 	$(cc) $(CFLAGS_DL) -I. win32\nt.c -fo=$@

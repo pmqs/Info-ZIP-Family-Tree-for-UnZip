@@ -2799,7 +2799,6 @@ char *do_wild( __G__ wld )
     {   /* (Re)Initialize everything */
 
         strcpy( last_wild, wld );
-        first_call = 1;            /* New wild spec */
 
         fab = cc$rms_fab;               /* Initialize FAB. */
         nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
@@ -2823,14 +2822,13 @@ char *do_wild( __G__ wld )
         nam.NAM_RSA = filenam;
         nam.NAM_RSS = NAM_MAXRSS;
 
-        nam.NAM_NOP = NAM_M_SYNCHK;     /* Syntax-only analysis. */
-
         first_call = 0;
 
         /* 2005-08-08 SMS.
          * Parse the file spec.  If sys$parse() fails, save the VMS
          * error message for later use, and return an empty string.
          */
+        nam.NAM_NOP = NAM_M_SYNCHK;     /* Syntax-only analysis. */
         if ( !OK(status = sys$parse(&fab)) )
         {
             vms_msg_fetch(status);
@@ -2838,7 +2836,17 @@ char *do_wild( __G__ wld )
             return filenam;
         }
 
-        status = sys$search(&fab);
+        /* 2005-11-16 SMS.
+         * If syntax-only parse worked, re-parse normally so that
+         * sys$search() will work properly.  Regardless of parse error,
+         * leave filenam[] as-was.
+         */
+        nam.NAM_NOP = 0;                /* Normal analysis. */
+        if ( OK(status = sys$parse(&fab)) )
+        {
+            status = sys$search(&fab);
+        }
+
         if ( !OK(status) )
         {
             /* Save the VMS error message for later use. */

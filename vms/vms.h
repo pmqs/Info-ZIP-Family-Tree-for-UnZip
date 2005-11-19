@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2000 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in zip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -34,6 +34,9 @@
 #endif
 #ifndef __IODEF_LOADED
 #include <iodef.h>
+#endif
+#if !defined(_RMS_H) && !defined(__RMS_LOADED)
+#include <rms.h>
 #endif
 
 #define ERR(s) !((s) & 1)       /* VMS system error */
@@ -93,7 +96,7 @@ struct XAB {                    /* This definition may be skipped */
 
 /* Define macros for use with either NAM or NAML. */
 
-#ifdef NAML$C_MAXRSS            /* NAML is not available.  Use NAM. */
+#ifdef NAML$C_MAXRSS            /* NAML is available (ODS5 support...) */
 
 #  ifndef NAM_MAXRSS            /* May have been defined before. */
 #    define NAM_MAXRSS NAML$C_MAXRSS
@@ -101,7 +104,7 @@ struct XAB {                    /* This definition may be skipped */
 
 #  define NAM_STRUCT NAML
 
-#  define FAB_OR_NAM( fab, nam) nam
+#  define FAB_OR_NAM(fab, nam) nam
 #  define FAB_OR_NAM_DNA naml$l_long_defname
 #  define FAB_OR_NAM_DNS naml$l_long_defname_size
 #  define FAB_OR_NAM_FNA naml$l_long_filename
@@ -136,7 +139,7 @@ struct XAB {                    /* This definition may be skipped */
 #  define NAM_B_VER naml$l_long_ver_size
 #  define NAM_L_VER naml$l_long_ver
 
-#else /* def NAML$C_MAXRSS */   /* NAML is not available.  Use NAM. */
+#else /* !NAML$C_MAXRSS */      /* NAML is not available.  Use NAM. */
 
 #  ifndef NAM_MAXRSS            /* May have been defined before. */
 #    define NAM_MAXRSS NAM$C_MAXRSS
@@ -144,7 +147,7 @@ struct XAB {                    /* This definition may be skipped */
 
 #  define NAM_STRUCT NAM
 
-#  define FAB_OR_NAM( fab, nam) fab
+#  define FAB_OR_NAM(fab, nam) fab
 #  define FAB_OR_NAM_DNA fab$l_dna
 #  define FAB_OR_NAM_DNS fab$b_dns
 #  define FAB_OR_NAM_FNA fab$l_fna
@@ -179,7 +182,7 @@ struct XAB {                    /* This definition may be skipped */
 #  define NAM_B_VER nam$b_ver
 #  define NAM_L_VER nam$l_ver
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* ?NAML$C_MAXRSS */
 
 
 #ifndef EB_IZVMS_BCMASK
@@ -283,7 +286,7 @@ struct iosb
  *  apply structure padding, since this is explicitely forbidden in
  *  the specification (APPNOTE.TXT) for the PK VMS extra field.
  */
-struct PK_info
+typedef struct PK_info
 {
     ush tag_ra; ush len_ra;     byte ra[ATR$S_RECATTR];
     ush tag_uc; ush len_uc;     byte uc[ATR$S_UCHAR];
@@ -296,7 +299,7 @@ struct PK_info
     ush tag_ui; ush len_ui;     byte ui[ATR$S_UIC];
     ush tag_fp; ush len_fp;     byte fp[ATR$S_FPRO];
     ush tag_rp; ush len_rp;     byte rp[ATR$S_RPRO];
-};
+} PK_info_t;
 #else /* !VMS_ORIGINAL_PK_LAYOUT */
 /*  The Info-ZIP support for the PK VMS extra field uses a reordered
  *  field layout to achieve ``natural alignment'' of the PK_info structure
@@ -306,7 +309,7 @@ struct PK_info
  *  should use the field tag to identify the ATR$ field rather than
  *  assuming a fixed order of ATR$ fields in the PK VMS extra field.)
  */
-struct PK_info
+typedef struct PK_info
 {
     ush tag_ra; ush len_ra;     byte ra[ATR$S_RECATTR];
     ush tag_uc; ush len_uc;     byte uc[ATR$S_UCHAR];
@@ -319,7 +322,7 @@ struct PK_info
     ush tag_fp; ush len_fp;     byte fp[ATR$S_FPRO];
     ush tag_rp; ush len_rp;     byte rp[ATR$S_RPRO];
     ush tag_jr; ush len_jr;     byte jr[ATR$S_JOURNAL];
-};
+} PK_info_t;
 #endif /* ?VMS_ORIGINAL_PK_LAYOUT */
 
 #if defined(__DECC) || defined(__DECCXX)
@@ -357,22 +360,5 @@ struct PK_header
 };
 
 #define PK_HEADER_SIZE  8
-
-#ifdef VMS_ZIP
-/* File description structure for Zip low level I/O */
-struct ioctx
-{
-    struct iosb         iosb;
-    long                vbn;
-    long                size;
-    long                rest;
-    int                 status;
-    ush                 chan;
-    ush                 chan_pad;       /* alignment member */
-    long                acllen;
-    uch                 aclbuf[ATR$S_READACL];
-    struct PK_info      PKi;
-};
-#endif /* VMS_ZIP */
 
 #endif /* !__vms_h */

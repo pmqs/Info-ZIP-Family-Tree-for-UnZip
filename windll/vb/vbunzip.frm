@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.1#0"; "COMDLG32.OCX"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.1#0"; "comdlg32.ocx"
 Begin VB.Form VBUnzFrm 
    AutoRedraw      =   -1  'True
    Caption         =   "VBUnzFrm"
@@ -20,7 +20,7 @@ Begin VB.Form VBUnzFrm
    ScaleHeight     =   4785
    ScaleWidth      =   9375
    StartUpPosition =   1  'Fenstermitte
-   Begin VB.TextBox txtZipFName 
+   Begin VB.TextBox ZipFName 
       BeginProperty Font 
          Name            =   "Courier New"
          Size            =   9.75
@@ -36,7 +36,7 @@ Begin VB.Form VBUnzFrm
       Top             =   240
       Width           =   4335
    End
-   Begin VB.TextBox txtExtractRoot 
+   Begin VB.TextBox ExtractRoot 
       BeginProperty Font 
          Name            =   "Courier New"
          Size            =   9.75
@@ -52,7 +52,7 @@ Begin VB.Form VBUnzFrm
       Top             =   960
       Width           =   4335
    End
-   Begin VB.CommandButton cmdStartUnz 
+   Begin VB.CommandButton StartUnz 
       Caption         =   "Start"
       Height          =   495
       Left            =   240
@@ -60,7 +60,7 @@ Begin VB.Form VBUnzFrm
       Top             =   1800
       Width           =   3255
    End
-   Begin VB.TextBox txtMsgOut 
+   Begin VB.TextBox MsgOut 
       BeginProperty Font 
          Name            =   "Courier New"
          Size            =   9
@@ -79,7 +79,7 @@ Begin VB.Form VBUnzFrm
       Top             =   2520
       Width           =   8895
    End
-   Begin VB.CommandButton cmdQuitVBUnz 
+   Begin VB.CommandButton QuitVBUnz 
       Caption         =   "Quit"
       Height          =   495
       Left            =   6240
@@ -87,7 +87,7 @@ Begin VB.Form VBUnzFrm
       Top             =   1800
       Width           =   2895
    End
-   Begin VB.CommandButton cmdSearchZfile 
+   Begin VB.CommandButton SearchZfile 
       Caption         =   "..."
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -109,7 +109,7 @@ Begin VB.Form VBUnzFrm
       Top             =   1800
       _ExtentX        =   847
       _ExtentY        =   847
-      _Version        =   393216
+      _Version        =   327681
    End
    Begin VB.Label Label1 
       Caption         =   "Complete path-name of Zip-archive:"
@@ -156,7 +156,7 @@ Option Explicit
 '---------------------------------------------------
 '-- Please Do Not Remove These Comment Lines!
 '----------------------------------------------------------------
-'-- Sample VB 5 / VB 6 code to drive unzip32.dll
+'-- Sample VB 5 code to drive unzip32.dll
 '-- Contributed to the Info-ZIP project by Mike Le Voi
 '--
 '-- Contact me at: mlevoi@modemss.brisnet.org.au
@@ -193,20 +193,15 @@ Option Explicit
 '-- Modified August 17, 1998
 '-- by Christian Spieler
 '-- (added sort of a "windows oriented" user interface)
-'-- Modified May 11, 2003
-'-- by Christian Spieler
-'-- (use late binding for referencing the common dialog)
 '--
 '---------------------------------------------------------------
 
-Private mCommDlgCtrl As Object
-
-Private Sub cmdStartUnz_Click()
+Private Sub StartUnz_Click()
 
     Dim MsgTmp As String
     
     Cls
-    txtMsgOut.Text = ""
+    MsgOut.Text = ""
     
     '-- Init Global Message Variables
     uZipInfo = ""
@@ -238,8 +233,8 @@ Private Sub cmdStartUnz_Click()
     
     '-- Change The Next 2 Lines As Required!
     '-- These Should Point To Your Directory
-    uZipFileName = txtZipFName.Text
-    uExtractDir = txtExtractRoot.Text
+    uZipFileName = ZipFName.Text
+    uExtractDir = ExtractRoot.Text
     If uExtractDir <> "" Then uExtractList = 0 ' unzip if dir specified
     
     
@@ -261,7 +256,7 @@ Private Sub cmdStartUnz_Click()
         MsgTmp = MsgTmp & vbNewLine & "Number Of Files: " & Str(uZipNumber)
     End If
     
-    txtMsgOut.Text = txtMsgOut.Text & MsgTmp & vbNewLine
+    MsgOut.Text = MsgOut.Text & MsgTmp & vbNewLine
     
     
 End Sub
@@ -269,67 +264,22 @@ End Sub
 
 Private Sub Form_Load()
     
-    '-- To work around compatibility issues between different versions of
-    '-- Visual Basic, we use a late bound untyped object variable to reference
-    '-- the common dialog ActiveX-control object at runtime.
-    On Error Resume Next
-    Set mCommDlgCtrl = CommonDialog1
-    On Error GoTo 0
-    '-- Disable the "call openfile dialog" button, when the common dialog
-    '-- object is not available
-    cmdSearchZfile.Visible = Not (mCommDlgCtrl Is Nothing)
-    
-    txtZipFName.Text = vbNullString
-    txtExtractRoot.Text = vbNullString
+    ZipFName.Text = vbNullString
+    ExtractRoot.Text = vbNullString
     Me.Show
     
 End Sub
 
-Private Sub Form_Unload(Cancel As Integer)
-    '-- remove runtime reference to common dialog control object
-    Set mCommDlgCtrl = Nothing
-End Sub
 
-
-Private Sub cmdQuitVBUnz_Click()
+Private Sub QuitVBUnz_Click()
     Unload Me
 End Sub
 
 
-Private Sub cmdSearchZfile_Click()
-    If mCommDlgCtrl Is Nothing Then Exit Sub
-    mCommDlgCtrl.CancelError = False
-    mCommDlgCtrl.DialogTitle = "Open Zip-archive"
-    '-- The following property is not supported in the first version(s)
-    '-- of the common dialog controls. But this feature is of minor
-    '-- relevance in our context, so we simply skip over the statement
-    '-- in case of errors.
-    On Error Resume Next
-    mCommDlgCtrl.DefaultExt = ".zip"
-    On Error GoTo err_deactivateControl
-    '-- Initialize the file name with the current setting of the filename
-    '-- text box.
-    mCommDlgCtrl.FileName = txtZipFName.Text
-    '-- Provide reasonable filter settings for selecting Zip archives.
-    mCommDlgCtrl.Filter = "Zip archives (*.zip)|*.zip|All files (*.*)|*.*"
-    mCommDlgCtrl.ShowOpen
-    '-- In case the user closed the dialog via cancel, the FilenName
-    '-- property contains its initial setting and no change occurs.
-    txtZipFName.Text = mCommDlgCtrl.FileName
-    Exit Sub
-
-err_deactivateControl:
-    '-- Emit a warning message.
-    MsgBox "Unexpected error #" & CStr(Err.Number) & " in call to ComDLG32" _
-         & " FileOpen dialog:" & vbNewLine & Err.Description & vbNewLine _
-         & vbNewLine & "The version of the COMDLG32.OCX control installed" _
-         & " on your system seems to be too old. Please consider upgrading" _
-         & " to a recent release of the Common Dialog ActiveX control." _
-         & vbNewLine & "The ""Choose File from List"" dialog functionality" _
-         & " has been disabled for this session.", _
-         vbCritical + vbOKOnly, "FileOpen Dialog incompatible"
-    '-- Deactivate the control and prevent further usage in this session.
-    Set mCommDlgCtrl = Nothing
-    cmdSearchZfile.Enabled = False
+Private Sub SearchZfile_Click()
+    CommonDialog1.DialogTitle = "Open Zip-archive"
+    CommonDialog1.DefaultExt = ".zip"
+    CommonDialog1.ShowOpen
+    ZipFName.Text = CommonDialog1.filename
 End Sub
 

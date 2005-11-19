@@ -1,18 +1,19 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
-  (the contents of which are also included in zip.h) for terms of use.
+  See the accompanying file LICENSE, version 2005-Feb-10 or later
+  (the contents of which are also included in (un)zip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 /*
   crypt.h (full version) by Info-ZIP.   Last revised:  [see CR_VERSION_DATE]
 
-  This encryption/decryption source code for Info-Zip software was
-  originally written in Europe.  The whole source package can be
-  freely distributed, including from the USA.  (Prior to January 2000,
-  re-export from the US was a violation of US law.)
+  The main encryption/decryption source code for Info-Zip software was
+  originally written in Europe.  To the best of our knowledge, it can
+  be freely distributed in both source and object forms from any country,
+  including the USA under License Exception TSU of the U.S. Export
+  Administration Regulations (section 740.13(e)) of 6 June 2002.
 
   NOTE on copyright history:
   Previous versions of this source package (up to version 2.8) were
@@ -45,7 +46,7 @@
 #  define CRYPT  1  /* full version */
 #else
 #if !defined(SFX)
-#  define CRYPT  1  /* full version for zip and main unzip*/
+#  define CRYPT  1  /* full version for zip and main unzip */
 #else
 #  define CRYPT  0  /* dummy version for unzip sfx */
 #endif
@@ -60,13 +61,13 @@
 #endif
 
 #define CR_MAJORVER        2
-#define CR_MINORVER        9
+#define CR_MINORVER        10
 #ifdef CR_BETA
 #  define CR_BETA_VER      "a BETA"
-#  define CR_VERSION_DATE  "05 May 2000"       /* last real code change */
+#  define CR_VERSION_DATE  "02 Mar 2005"       /* last real code change */
 #else
 #  define CR_BETA_VER      ""
-#  define CR_VERSION_DATE  "05 May 2000"       /* last public release date */
+#  define CR_VERSION_DATE  "02 Mar 2005"       /* last public release date */
 #  define CR_RELEASE
 #endif
 

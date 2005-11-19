@@ -1,4 +1,4 @@
-#                                               5 October 2005.  SMS.
+#                                               17 November 2005.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -10,6 +10,17 @@
 # distribution directory, not from the [.VMS] subdirectory.
 #
 # Optional macros:
+#
+#    IZ_BZIP2=dev:[dir]  Build with optional BZIP2 support.  The macro
+#                        value ("dev:[dir]", or a suitable logical name)
+#                   tells where to find "bzlib.h".  The BZIP2 object
+#                   library (LIBBZ2.OLB) is expected to be in a
+#                   "[.dest]" directory under that one
+#                   ("dev:[dir.ALPHAL]", for example), or in that
+#                   directory itself.
+#                   By default, the SFX programs are built without BZIP2
+#                   support.  Add "BZIP2_SFX=1" to the LOCAL_UNZIP C
+#                   macros to enable it.  (See LOCAL_UNZIP, below.)
 #
 #    CCOPTS=xxx     Compile with CC options xxx.  For example:
 #                   CCOPTS=/ARCH=HOST
@@ -279,6 +290,7 @@ $(UNZIP) : [.$(DEST)]unzip.obj \
            $(LIB_UNZIP) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP) /library, -
+	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
 	 $(NOSHARE_OPTS)
@@ -289,6 +301,7 @@ $(UNZIP_CLI) : [.$(DEST)]unzipcli.obj \
                $(LIB_UNZIP_CLI) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP_CLI) /library, $(LIB_UNZIP) /library, -
+	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
 	 $(NOSHARE_OPTS)
@@ -299,6 +312,7 @@ $(UNZIPSFX) : [.$(DEST)]unzipsfx.obj \
               $(LIB_UNZIPSFX) $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX) /library, -
+	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
 	 $(NOSHARE_OPTS)
@@ -310,6 +324,7 @@ $(UNZIPSFX_CLI) : [.$(DEST)]unzsxcli.obj \
                   $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX_CLI) /library, $(LIB_UNZIPSFX) /library, -
+	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
 	 $(NOSHARE_OPTS)

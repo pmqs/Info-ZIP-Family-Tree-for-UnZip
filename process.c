@@ -53,6 +53,7 @@ static int    rec_find           OF((__GPRO__ zoff_t, char *, int));
 static int    check_ecrec_zip64  OF((__GPRO));
 static int    find_ecrec64       OF((__GPRO__ zoff_t searchlen));
 static int    find_ecrec         OF((__GPRO__ zoff_t searchlen));
+static int    get_cdir_ent       OF((__GPRO));
 
 
 static ZCONST char Far CannotAllocateBuffers[] =
@@ -95,20 +96,20 @@ static ZCONST char Far CannotAllocateBuffers[] =
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find or open %s, %s.zip or %s.\n";
 # else /* !UNIX */
-#  ifndef AMIGA
+# ifndef AMIGA
    static ZCONST char Far CannotFindWildcardMatch[] =
      "%s:  cannot find any matches for wildcard specification \"%s\".\n";
-#  endif /* !AMIGA */
+# endif /* !AMIGA */
    static ZCONST char Far CannotFindZipfileDirMsg[] =
      "%s:  cannot find zipfile directory in %s,\n\
         %sand cannot find %s, period.\n";
-#  ifdef VMS
+# ifdef VMS
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find %s (%s).\n";
-#  else /* def VMS */
+# else /* !VMS */
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find either %s or %s.\n";
-#  endif /* def VMS [else] */
+# endif /* ?VMS */
 # endif /* ?UNIX */
    extern ZCONST char Far Zipnfo[];       /* in unzip.c */
 #ifndef WINDLL
@@ -223,7 +224,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
 #endif /* !VMS */
 
 #if 0 /* CRC_32_TAB has been NULLified by CONSTRUCTGLOBALS !!!! */
-    /* allocate the CRC table only later when we know we have a zipfile */
+    /* allocate the CRC table later when we know we can read zipfile data */
     CRC_32_TAB = NULL;
 #endif /* 0 */
 
@@ -358,7 +359,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
             ++NumMissDirs;
         else if (error == PK_NOZIP)
             ++NumMissFiles;
-        else if (error)
+        else if (error != PK_OK)
             ++NumLoseFiles;
         else
             ++NumWinFiles;
@@ -384,17 +385,14 @@ int process_zipfiles(__G)    /* return PK-type error code */
                 NumMissDirs = NumMissFiles = 0;
                 error_in_archive = PK_COOL;
                 Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotFindWildcardMatch), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  LoadFarString(CannotFindWildcardMatch),
+                  LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn));
             }
         } else
 #endif
         {
-            char *p = lastzipfn + strlen(lastzipfn);
-
-            G.zipfn = lastzipfn;
-
+#ifndef VMS
             /* 2004-11-24 SMS.
              * VMS has already tried a default file type of ".zip" in
              * do_wild(), so adding ZSUFX here only causes confusion by
@@ -402,9 +400,18 @@ int process_zipfiles(__G)    /* return PK-type error code */
              * Complaining below about "fred;4.zip" is unlikely to be
              * helpful to the victim.
              */
-#ifndef VMS
-            strcpy(p, ZSUFX);
-#endif /* ndef VMS */
+            /* 2005-08-14 Chr. Spieler
+             * Although we already "know" the failure result, we call
+             * do_seekable() again with the same zipfile name (and the
+             * lastchance flag set), just to trigger the error report...
+             */
+#if defined(UNIX) || defined(QDOS)
+            char *p =
+#endif
+              strcpy(lastzipfn + strlen(lastzipfn), ZSUFX);
+#endif /* !VMS */
+
+            G.zipfn = lastzipfn;
 
             NumMissDirs = NumMissFiles = 0;
             error_in_archive = PK_COOL;
@@ -617,41 +624,34 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
 #if defined(UNIX) || defined(QDOS)
             if (G.no_ecrec)
                 Info(slide, 1, ((char *)slide,
-                  LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  LoadFarString(CannotFindZipfileDirMsg),
+                  LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, uO.zipinfo_mode? "  " : "", G.wildzipfn,
                   G.zipfn));
             else
                 Info(slide, 1, ((char *)slide,
-                  LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  LoadFarString(CannotFindEitherZipfile),
+                  LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, G.wildzipfn, G.zipfn));
 #else /* !(UNIX || QDOS) */
-# ifdef VMS
             if (G.no_ecrec)
                 Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
-                  G.wildzipfn, uO.zipinfo_mode? "  " : "",
-                  (*G.zipfn ? G.zipfn : vms_msg_text())));
-            else
-                Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
-                  G.wildzipfn,
-                  (*G.zipfn ? G.zipfn : vms_msg_text())));
-# else /* def VMS */
-            if (G.no_ecrec)
-                Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotFindZipfileDirMsg), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  LoadFarString(CannotFindZipfileDirMsg),
+                  LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, uO.zipinfo_mode? "  " : "", G.zipfn));
             else
+#ifdef VMS
                 Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotFindEitherZipfile), uO.zipinfo_mode?
-                  LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                  LoadFarString(CannotFindEitherZipfile),
+                  LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
+                  G.wildzipfn,
+                  (*G.zipfn ? G.zipfn : vms_msg_text())));
+#else /* !VMS */
+                Info(slide, 0x401, ((char *)slide,
+                  LoadFarString(CannotFindEitherZipfile),
+                  LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, G.zipfn));
-# endif /* def VMS [else] */
+#endif /* ?VMS */
 #endif /* ?(UNIX || QDOS) */
         }
 #endif /* !SFX */
@@ -688,27 +688,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         CLOSE_INFILE();
         return PK_ERRBF;
     }
-#endif /* !DO_SAFECHECK_2GB */
-
-    /* initialize the CRC table pointer (once) */
-    if (CRC_32_TAB == NULL) {
-        if ((CRC_32_TAB = get_crc_table()) == NULL) {
-            CLOSE_INFILE();
-            return PK_MEM;
-        }
-    }
-
-#if (!defined(SFX) || defined(SFX_EXDIR))
-    /* check out if specified extraction root directory exists */
-    if (uO.exdir != (char *)NULL && G.extract_flag) {
-        G.create_dirs = !uO.fflag;
-        if ((error = checkdir(__G__ uO.exdir, ROOT)) > MPN_INF_SKIP) {
-            /* out of memory, or file in way */
-            CLOSE_INFILE();
-            return (error == MPN_NOMEM ? PK_MEM : PK_ERR);
-        }
-    }
-#endif /* !SFX || SFX_EXDIR */
+#endif /* DO_SAFECHECK_2GB */
 
 /*---------------------------------------------------------------------------
     Find and process the end-of-central-directory header.  UnZip need only
@@ -1462,7 +1442,7 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
 /* Function get_cdir_ent() */
 /***************************/
 
-int get_cdir_ent(__G)   /* return PK-type error code */
+static int get_cdir_ent(__G)    /* return PK-type error code */
     __GDEF
 {
     cdir_byte_hdr byterec;
@@ -1634,7 +1614,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
     }
 
     return PK_COOL;
-}
+} /* end function getZip64Data() */
 
 
 #ifdef USE_EF_UT_TIME

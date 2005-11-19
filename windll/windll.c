@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -36,6 +36,7 @@
 #ifdef __BORLANDC__
 #include <dir.h>
 #endif
+#include <malloc.h>
 #define UNZIP_INTERNAL
 #include "../unzip.h"
 #include "../crypt.h"
@@ -75,6 +76,10 @@ static int UZ_EXP Wiz_StatReportCB(zvoid *pG, int fnflag, ZCONST char *zfn,
 
 /* Dummy sound function for those applications that don't use sound */
 static void WINAPI DummySound(void);
+
+static int UnzipAllocMemory(unsigned, char *, char *, char ***, unsigned *);
+static int UnzipParseString(LPCSTR, unsigned *, char ***);
+static void UnzipFreeArguments(unsigned, char ***);
 
 #ifndef UNZIPLIB
 /*  DLL Entry Point */
@@ -134,6 +139,147 @@ int FAR PASCAL WEP ( int bSystemExit )
 return 1;
 }
 #endif /* !UNZIPLIB */
+
+static int UnzipAllocMemory(unsigned int i, char *cmd, char *str,
+                            char ***pargVee, unsigned int *pargCee)
+{
+if (((*pargVee)[i] = (char *)malloc(sizeof(char) * strlen(cmd)+1 )) == NULL)
+    {
+    if (pargCee != NULL)
+        *pargCee++;
+    UnzipFreeArguments(*pargCee, pargVee);
+    fprintf(stdout, "Unable to allocate memory in unzip library at %s\n",
+            str);
+    return PK_MEM;
+    }
+strcpy((*pargVee)[i], cmd);
+*pargCee++;
+return PK_OK;
+}
+
+static void UnzipFreeArguments(unsigned int argCee, char ***pargVee)
+{
+unsigned i;
+
+/* Free the arguments in the arrays */
+for (i = 0; i < argCee; i++)
+    {
+    free ((*pargVee)[i]);
+    (*pargVee)[i] = NULL;
+    }
+
+/* Then free the arrays themselves */
+free(*pargVee);
+}
+
+
+static int UnzipParseString(LPCSTR s, unsigned int *pargCee, char ***pargVee)
+{
+unsigned int i = 0;
+char *str1, *str2, *str3;
+size_t size;
+
+str1 = (char *) malloc(lstrlen(s)+4);
+lstrcpy(str1, s);
+lstrcat(str1, " @");
+
+str2 = strchr(str1, '\"'); // get first occurance of double quote
+
+while ((str3 = strchr(str1, '\t')) != NULL)
+    {
+    str3[0] = ' '; // Change tabs into a single space
+    }
+
+/* Note that if a quoted string contains multiple adjacent spaces, they
+   will not be removed, because they could well point to a valid
+   folder/file name.
+ */
+while ((str2 = strchr(str1, '\"')) != NULL) // Found a double quote if not NULL
+    {
+    str3 = strchr(str2+1, '\"'); // Get the second quote
+    if (str3 == NULL)
+        {
+        free(str1);
+        return PK_PARAM; /* Something is screwy with the
+                            string, bail out */
+        }
+    str3[0] = '\0';  // terminate str2 with a NULL
+
+    size = _msize(*pargVee);
+    if ((*pargVee = (char **)realloc(*pargVee, size + sizeof(char *))) == NULL)
+        {
+        fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+        return PK_MEM;
+        }
+    // argCee is incremented in UnzipAllocMemory
+    if (UnzipAllocMemory(i, str2+1, "Creating file list from string",
+                         pargVee, pargCee) != PK_OK)
+        {
+        free(str1);
+        return PK_MEM;
+        }
+    i++;
+    str3+=2;  // Point past the whitespace character
+    str2[0] = '\0'; // Terminate str1
+    lstrcat(str1, str3);
+    }    // end while
+
+/* points to first occurance of a space */
+str2 = strchr(str1, ' ');
+
+/*  Go through the string character by character, looking for instances
+    of two spaces together. Terminate when you find the trailing @
+*/
+while ((str2[0] != '\0') && (str2[0] != '@'))
+    {
+    while ((str2[0] == ' ') && (str2[1] == ' '))
+        {
+        str3 = &str2[1];
+        str2[0] = '\0';
+        lstrcat(str1, str3);
+        }
+    str2++;
+    }
+
+/* Do we still have a leading space? */
+if (str1[0] == ' ')
+    {
+    str3 = &str1[1];
+    lstrcpy(str1, str3); // Dump the leading space
+    }
+
+
+/* Okay, now we have gotten rid of any tabs and replaced them with
+   spaces, and have replaced multiple spaces with a single space. We
+   couldn't do this before because the folder names could have actually
+   contained these characters.
+*/
+
+str2 = str3 = str1;
+
+while ((str2[0] != '\0') && (str3[0] != '@'))
+    {
+    str3 = strchr(str2+1, ' ');
+    str3[0] = '\0';
+    size = _msize(pargVee);
+    if ((*pargVee = (char **)realloc(*pargVee, size + sizeof(char *))) == NULL)
+        {
+        fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+        return PK_MEM;
+        }
+    if (UnzipAllocMemory(i, str2, "Creating file list from string",
+                         pargVee, pargCee) != PK_OK)
+        {
+        free(str1);
+        return PK_MEM;
+        }
+    i++;
+    str3++;
+    str2 = str3;
+    }
+free(str1);
+return PK_OK;
+}
 
 /* DLL calls */
 
@@ -427,6 +573,24 @@ return retcode;
 }
 
 
+/*
+ifnc       = number of file names being passed. If all files are to be
+             extracted, then this can be zero.
+ifnv       = file names to be unarchived. Wildcard patterns are recognized
+             and expanded. If all files are to be extracted, then this can
+             be NULL.
+xfnc       = number of "file names to be excluded from processing" being
+             passed. If all files are to be extracted, set this to zero.
+xfnv       = file names to be excluded from the unarchiving process. Wildcard
+             characters are allowed and expanded. If all files are to be
+             extracted, set this argument to NULL.
+lpDCL      = pointer to a structure with the flags for setting the
+             various options, as well as the zip file name.
+lpUserFunc = pointer to a structure that contains pointers to functions
+             in the calling application, as well as sizes passed back to
+             the calling application etc.
+*/
+
 int WINAPI Wiz_SingleEntryUnzip(int ifnc, char **ifnv, int xfnc, char **xfnv,
    LPDCL lpDCL, LPUSERFUNCTIONS lpUserFunc)
 {
@@ -457,12 +621,78 @@ G.zipfn = lpDCL->lpszZipFN;
 G.argv0 = lpDCL->lpszZipFN;
 #endif
 
+
 /* Here is the actual call to "unzip" the files (or whatever else you
  * are doing.)
  */
 retcode = Wiz_Unzip((zvoid *)&G, ifnc, ifnv, xfnc, xfnv);
 
 DESTROYGLOBALS();
+return retcode;
+}
+
+
+/*
+This calling wrapper provided a method to pass file lists as plain strings
+instead of the usual string arrays. For VB Users only...
+ifnc       = number of file names being passed. If all files are to be
+             extracted, then this can be zero.
+ExtList    = Pointer to a list of file names to be extracted, separated by
+             white space. If all files are to be extracted, then this should
+             be NULL. Parameter ifnc should have an accurate count of the
+             number of filenames being passed in.
+xfnc       = number of "file names to be excluded from processing" being
+             passed. If all files are to be extracted, set this to zero.
+ExcList    = Pointer to a list of file names to be excluded from processing.
+             Parameter xfnc should have an accurate count of the number of
+             the number of filenames being passed in.
+lpDCL      = pointer to a structure with the flags for setting the
+             various options, as well as the zip file name.
+lpUserFunc = pointer to a structure that contains pointers to functions
+             in the calling application, as well as sizes passed back to
+             the calling application etc.
+*/
+
+int WINAPI Wiz_SingleEntryUnzipList(unsigned int ifnc, LPCSTR ExtList,
+   unsigned int xfnc, LPCSTR ExcList,
+   LPDCL lpDCL, LPUSERFUNCTIONS lpUserFunc)
+{
+int retcode;
+char **argVExt, **argVExc;
+unsigned int argCExt, argCExc;
+
+argCExt = argCExc = 0;
+
+if (ExtList != NULL)
+    {
+    if ((argVExt = (char **)malloc((ifnc)*sizeof(char *))) == NULL)
+       {
+       fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+       return PK_MEM;
+       }
+    if ((retcode = UnzipParseString(ExtList, &argCExt, &argVExt)) != PK_OK)
+        return retcode;
+    }
+
+if (ExcList != NULL)
+    {
+    if ((argVExc = (char **)malloc((ifnc)*sizeof(char *))) == NULL)
+        {
+        fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+        UnzipFreeArguments(argCExt, &argVExt);
+        return PK_MEM;
+        }
+    if ((retcode = UnzipParseString(ExcList, &argCExc, &argVExc)) != PK_OK)
+        {
+        UnzipFreeArguments(argCExt, &argVExt);
+	return retcode;
+        }
+    }
+
+retcode = Wiz_SingleEntryUnzip(argCExt, argVExt, argCExc, argVExc,
+                               lpDCL, lpUserFunc);
+UnzipFreeArguments(argCExc, &argVExc);
+UnzipFreeArguments(argCExt, &argVExt);
 return retcode;
 }
 
@@ -535,7 +765,7 @@ int UZ_EXP UzpPassword(pG, rcnt, pwbuf, size, zfn, efn)
     ZCONST char *efn;   /* name of archiv entry being processed */
 {
 #if CRYPT
-    LPSTR m;
+    LPCSTR m;
 
     if (*rcnt == 0) {
         *rcnt = 2;
@@ -545,7 +775,7 @@ int UZ_EXP UzpPassword(pG, rcnt, pwbuf, size, zfn, efn)
         m = "Password incorrect--reenter: ";
     }
 
-    return (*G.lpUserFunctions->password)((LPSTR)pwbuf, size, m, (LPSTR)efn);
+    return (*G.lpUserFunctions->password)((LPSTR)pwbuf, size, m, (LPCSTR)efn);
 #else /* !CRYPT */
     return IZ_PW_ERROR; /* internal error, function should never get called */
 #endif /* ?CRYPT */
@@ -581,8 +811,25 @@ static int WINAPI Wiz_StatReportCB(zvoid *pG, int fnflag, ZCONST char *zfn,
         if ((G.lpUserFunctions->ServCallBk != NULL) &&
             (*G.lpUserFunctions->ServCallBk)(efn,
                                              (details == NULL ? 0L :
-                                              *((unsigned long *)details))))
+#ifdef Z_UINT8_DEFINED
+                                              (z_uint8)(*((zusz_t *)details))
+#else
+                                              *((zusz_t *)details)
+#endif
+                                             )))
             rval = UZ_ST_BREAK;
+        else if (G.lpUserFunctions->ServCallBk_i32 != NULL) {
+             unsigned long siz_u4L = 0L;
+             unsigned long siz_u4H = 0L;
+             if (details != NULL) {
+                 siz_u4L = (unsigned long)(*(zusz_t *)details);
+#ifdef ZIP64_SUPPORT
+                 siz_u4H = (unsigned long)((*(zusz_t *)details) >> 32);
+#endif
+             }
+             if ((*G.lpUserFunctions->ServCallBk_i32)(efn, siz_u4L, siz_u4H))
+                 rval = UZ_ST_BREAK;
+        }
         break;
       case UZ_ST_IN_PROGRESS:
         break;

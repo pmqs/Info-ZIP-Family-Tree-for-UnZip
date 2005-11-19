@@ -369,4 +369,174 @@ int screensize(int *tt_rows, int *tt_cols);
 #define SCREENLWRAP 1
 #define TABSIZE 8
 
+
+/* 64-bit-Integers & Large File Support
+ * (pasted here from Zip 3b, osdep.h - Myles Bennett 7-jun-2004)
+ * (updated from Zip 3.0d - Ed Gordon 6-oct-2004)
+ *
+ *  If this is set it is assumed that the port
+ *  supports 64-bit file calls.  The types are
+ *  defined here.  Any local implementations are
+ *  in w32i64.c and the protypes for the calls are
+ *  in unzip.h.  Note that a port must support
+ *  these calls fully or should not set
+ *  LARGE_FILE_SUPPORT.
+ */
+
+/* Automatically set ZIP64_SUPPORT if supported */
+
+#ifndef NO_ZIP64_SUPPORT
+# ifndef ZIP64_SUPPORT
+#   if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
+#     define ZIP64_SUPPORT
+#   elif defined(__LCC__)
+      /* LCC links against crtdll.dll -> no support of 64-bit offsets :( */
+#   elif (defined(__WATCOMC__) && (__WATCOMC__ >= 1100))
+#     define ZIP64_SUPPORT
+#   elif (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0520))
+      /* Borland C RTL lacks any support to get/set 64-bit file pointer :( */
+#   endif
+# endif
+#endif
+
+#ifdef ZIP64_SUPPORT
+  /* base type for file offsets and file sizes */
+# if (defined(__GNUC__) || defined(ULONG_LONG_MAX))
+    typedef long long    zoff_t;
+# else
+    /* all other compilers use this as intrinsic 64-bit type */
+    typedef __int64      zoff_t;
+# endif
+# define ZOFF_T_DEFINED
+
+  /* user-defined types and format strings for 64-bit numbers and
+   * file pointer functions  (these depend on the rtl library and library
+   * headers used; they are NOT compiler-specific)
+   */
+# if defined(_MSC_VER) || defined(__MINGW32__) || defined(__LCC__)
+    /* MS C and VC, MinGW32, lcc32 */
+    /* these systems use the Microsoft C RTL */
+
+    /* 64-bit stat struct */
+    typedef struct _stati64 z_stat;
+#   define Z_STAT_DEFINED
+
+#   ifdef __LCC__
+      /* The LCC headers lack these declarations of MSC rtl functions in
+         sys/stat.h. */
+      struct _stati64 {
+        unsigned int st_dev;
+        unsigned short st_ino;
+        unsigned short st_mode;
+        short st_nlink;
+        short st_uid;
+        short st_gid;
+        unsigned int st_rdev;
+        __int64 st_size;
+        time_t st_atime;
+        time_t st_mtime;
+        time_t st_ctime;
+      };
+      int _stati64(const char *, struct _stati64 *);
+      int _fstati64(int, struct _stati64 *);
+       __int64 _lseeki64(int, __int64, int);
+#   endif /* __LCC__ */
+
+    /* printf format size prefix for zoff_t values */
+#   define FZOFFT_FMT "I64"
+#   define FZOFFT_HEX_WID_VALUE "16"
+
+#   define SHORTHDRSTATS "%9I64u  %02u%c%02u%c%02u %02u:%02u  %c"
+#   define SHORTFILETRAILER " --------                   -------\n%9I64u                   %9lu file%s\n"
+
+# elif (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0520))
+    /* Borland C 5.2 or newer */
+
+    /* 64-bit stat struct */
+    typedef struct stati64 z_stat;
+#   define Z_STAT_DEFINED
+
+    /* Borland C does not provide a 64-bit-capable _lseeki64(), so we
+       need to use the stdio.h stream functions instead. */
+#   ifndef USE_STRM_INPUT
+#     define USE_STRM_INPUT
+#   endif
+
+    /* printf format size prefix for zoff_t values */
+#   define FZOFFT_FMT "L"
+#   define FZOFFT_HEX_WID_VALUE "16"
+
+#   define SHORTHDRSTATS "%9Lu  %02u%c%02u%c%02u %02u:%02u  %c"
+#   define SHORTFILETRAILER " --------                   -------\n%9Lu                   %9lu file%s\n"
+
+# elif (defined(__WATCOMC__) && (__WATCOMC__ >= 1100))
+    /* WATCOM C */
+
+    /* 64-bit stat struct */
+    typedef struct _stati64 z_stat;
+#   define Z_STAT_DEFINED
+
+    /* printf format size prefix for zoff_t values */
+#   define FZOFFT_FMT "ll"
+#   define FZOFFT_HEX_WID_VALUE "16"
+
+#   define SHORTHDRSTATS "%9llu  %02u%c%02u%c%02u %02u:%02u  %c"
+#   define SHORTFILETRAILER " --------                   -------\n%9llu                   %9lu file%s\n"
+
+# elif (defined(__IBMC__) && (__IBMC__ >= 350))
+    /* IBM C */
+
+    /* 64-bit stat struct */
+
+    /* printf format size prefix for zoff_t values */
+#   define FZOFFT_FMT "I64"
+#   define FZOFFT_HEX_WID_VALUE "16"
+
+#   define SHORTHDRSTATS "%9I64u  %02u%c%02u%c%02u %02u:%02u  %c"
+#   define SHORTFILETRAILER " --------                   -------\n%9I64u                   %9lu file%s\n"
+
+# endif
+
+#endif
+
+/* If port has LARGE_FILE_SUPPORT then define here
+   to make automatic unless overridden */
+
+#ifndef LARGE_FILE_SUPPORT
+# ifndef NO_LARGE_FILE_SUPPORT
+#   if defined(_MSC_VER) || defined(__MINGW32__)
+#     define LARGE_FILE_SUPPORT
+#   elif defined(__LCC__)
+      /* LCC links against crtdll.dll -> no support of 64-bit offsets :( */
+#   elif defined(__CYGWIN__)
+#     define LARGE_FILE_SUPPORT
+#   elif (defined(__WATCOMC__) && (__WATCOMC__ >= 1100))
+#     define LARGE_FILE_SUPPORT
+#   elif (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0520))
+      /* Borland C RTL lacks any support to get/set 64-bit file pointer :( */
+#   endif
+# endif
+#endif
+
+
+#ifndef LARGE_FILE_SUPPORT
+  /* No Large File Support */
+
+  /* base type for file offsets and file sizes */
+  typedef long zoff_t;
+# define ZOFF_T_DEFINED
+
+  /* stat struct */
+  typedef struct stat z_stat;
+# define Z_STAT_DEFINED
+
+#  define FZOFFT_FMT "l"
+#  define FZOFFT_HEX_WID_VALUE "8"
+
+
+#  define SHORTHDRSTATS "%9lu  %02u%c%02u%c%02u %02u:%02u  %c"
+#  define SHORTFILETRAILER " --------                   -------\n%9lu                   %9lu file%s\n"
+
+#endif /* LARGE_FILE_SUPPORT */
+
 #endif /* !__w32cfg_h */

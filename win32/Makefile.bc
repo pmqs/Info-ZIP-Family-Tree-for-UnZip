@@ -4,7 +4,7 @@
 #
 # Tested with Borland C++ 5.5 (may work with older C++Builder 3.0, too)
 #
-# Last revised: 20 Feb 2005 (Christian Spieler)
+# Last revised: 08 May 2005 (Christian Spieler)
 #
 #
 
@@ -145,24 +145,24 @@ OB = $(OBDIR)/
 OBJU1 = unzip.obj $(CRC32).obj crctab.obj crypt.obj envargs.obj explode.obj
 OBJU2 = extract.obj fileio.obj globals.obj inflate.obj list.obj match.obj
 OBJU3 = process.obj ttyio.obj unreduce.obj unshrink.obj zipinfo.obj
-OBJUS = win32.obj nt.obj $(TIMEZONE_OBJU)
+OBJUS = win32.obj win32i64.obj nt.obj $(TIMEZONE_OBJU)
 OBJU  = $(OBJU1) $(OBJU2) $(OBJU3) $(OBJUS)
 OBJF  = funzip.obj $(CRC32F).obj cryptf.obj globalsf.obj inflatef.obj \
-	ttyiof.obj win32f.obj
+	ttyiof.obj win32f.obj win32i64f.obj
 OBJX1 = unzipsfx.obj $(CRC32X).obj crctabx.obj cryptx.obj
 OBJX2 = extractx.obj fileiox.obj globalsx.obj inflatex.obj matchx.obj
 OBJX3 = processx.obj ttyiox.obj
-OBJXS = win32x.obj ntx.obj $(TIMEZONE_OBJX)
+OBJXS = win32x.obj win32i64x.obj ntx.obj $(TIMEZONE_OBJX)
 OBJX  = $(OBJX1) $(OBJX2) $(OBJX3) $(OBJXS)
 OBJD1 = api.obj $(CRC32L).obj crctabl.obj cryptl.obj explodel.obj
 OBJD2 = extractl.obj fileiol.obj globalsl.obj inflatel.obj listl.obj matchl.obj
 OBJD3 = processl.obj unreducl.obj unshrnkl.obj zipinfol.obj
-OBJDS = win32l.obj ntl.obj windll.obj $(ASMOBJS) $(TIMEZONE_OBJD)
+OBJDS = win32l.obj win32i64l.obj ntl.obj windll.obj $(ASMOBJS) $(TIMEZONE_OBJD)
 OBJD  = $(OBJD1) $(OBJD2) $(OBJD3) $(OBJDS)
 OBLX1 = apig.obj $(CRC32G).obj crctabg.obj cryptg.obj
 OBLX2 = extractg.obj fileiog.obj globalsg.obj inflateg.obj
 OBLX3 = matchg.obj processg.obj
-OBLXS = win32g.obj ntg.obj windllg.obj $(TIMEZONE_OBLX)
+OBLXS = win32g.obj win32i64g.obj ntg.obj windllg.obj $(TIMEZONE_OBLX)
 OBLX  = $(OBLX1) $(OBLX2) $(OBLX3) $(OBLXS)
 OBGX  = sfxwiz.obj
 OBJLIB = $(OB)windllb.obj $(OB)apib.obj
@@ -170,7 +170,7 @@ OBJB1 = $(CRC32B).obj $(OB)crctabb.obj $(OB)cryptb.obj
 OBJB2 = $(OB)explodeb.obj $(OB)extractb.obj $(OB)fileiob.obj $(OB)globalsb.obj
 OBJB3 = $(OB)inflateb.obj $(OB)listb.obj $(OB)matchb.obj $(OB)processb.obj
 OBJB4 = $(OB)unreducb.obj $(OB)unshrnkb.obj $(OB)zipinfob.obj
-OBJBS = $(OB)win32b.obj $(OB)ntb.obj $(TIMEZONE_OBJB)
+OBJBS = $(OB)win32b.obj $(OB)win32i64b.obj $(OB)ntb.obj $(TIMEZONE_OBJB)
 OBJB  = $(OBJLIB) $(OBJB1) $(OBJB2) $(OBJB3) $(OBJB4) $(OBJBS)
 
 UNZIP_H = unzip.h unzpriv.h globals.h win32/w32cfg.h
@@ -286,6 +286,9 @@ crc_i386.obj:	win32/crc_i386.c
 win32.obj:      win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(UNFLAGS) win32/win32.c
 
+win32i64.obj:   win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(UNFLAGS) win32/win32i64.c
+
 nt.obj:         win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(UNFLAGS) win32/nt.c
 
@@ -309,6 +312,9 @@ ttyiof.obj:     ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 
 win32f.obj:     win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(FUFLAGS) -o$@ win32/win32.c
+
+win32i64f.obj:  win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(FUFLAGS) -o$@ win32/win32i64.c
 
 unzipsfx.obj:   unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
 	$(CC) -c $(SXFLAGS) -o$@ unzip.c
@@ -348,6 +354,9 @@ ttyiox.obj:     ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 
 win32x.obj:     win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(SXFLAGS) -o$@ win32/win32.c
+
+win32i64x.obj:  win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(SXFLAGS) -o$@ win32/win32i64.c
 
 ntx.obj:        win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(SXFLAGS) -o$@ win32/nt.c
@@ -407,6 +416,9 @@ zipinfol.obj:   zipinfo.c $(UNZIP_H)
 win32l.obj:     win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(DLFLAGS) -o$@ win32/win32.c
 
+win32i64l.obj:  win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(DLFLAGS) -o$@ win32/win32i64.c
+
 ntl.obj:        win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(DLFLAGS) -o$@ win32/nt.c
 
@@ -455,6 +467,9 @@ timezong.obj:   timezone.c $(UNZIP_H) zip.h timezone.h
 
 win32g.obj:     win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(SLFLAGS) -o$@ win32/win32.c
+
+win32i64g.obj:  win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(SLFLAGS) -o$@ win32/win32i64.c
 
 ntg.obj:        win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(SLFLAGS) -o$@ win32/nt.c
@@ -519,6 +534,9 @@ $(OB)zipinfob.obj:  zipinfo.c $(UNZIP_H)
 
 $(OB)win32b.obj:    win32/win32.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(LBFLAGS) -o$@ win32/win32.c
+
+$(OB)win32i64b.obj: win32/win32i64.c $(UNZIP_H)
+	$(CC) -c $(LBFLAGS) -o$@ win32/win32i64.c
 
 $(OB)ntb.obj:       win32/nt.c $(UNZIP_H) win32/nt.h
 	$(CC) -c $(LBFLAGS) -o$@ win32/nt.c

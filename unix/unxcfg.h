@@ -13,8 +13,58 @@
 #ifndef __unxcfg_h
 #define __unxcfg_h
 
+
+/* LARGE FILE SUPPORT - 10/6/04 EG */
+/* This needs to be set before the includes so they set the right sizes */
+
+#ifdef NO_LARGE_FILE_SUPPORT
+# ifdef LARGE_FILE_SUPPORT
+#  undef LARGE_FILE_SUPPORT
+# endif
+#endif
+
+/* Automatically set ZIP64_SUPPORT if LFS */
+
+#ifdef LARGE_FILE_SUPPORT
+# ifndef NO_ZIP64_SUPPORT
+#   ifndef ZIP64_SUPPORT
+#     define ZIP64_SUPPORT
+#   endif
+# else
+#   ifdef ZIP64_SUPPORT
+#     undef ZIP64_SUPPORT
+#   endif
+# endif
+#endif
+
+#ifdef LARGE_FILE_SUPPORT
+  /* 64-bit Large File Support */
+
+  /* The following Large File Summit (LFS) defines turn on large file support on
+     Linux (probably 2.4 or later kernel) and many other unixen */
+
+  /* These have to be before any include that sets types so the large file
+     versions of the types are set in the includes */
+
+# define _LARGEFILE_SOURCE      /* some OSes need this for fseeko */
+# define _LARGEFILE64_SOURCE
+# define _FILE_OFFSET_BITS 64   /* select default interface as 64 bit */
+# define _LARGE_FILES           /* some OSes need this for 64-bit off_t */
+# define __USE_LARGEFILE64
+#endif
+
+
 #include <sys/types.h>          /* off_t, time_t, dev_t, ... */
 #include <sys/stat.h>
+
+#ifdef NO_OFF_T
+  typedef long zoff_t;
+#else
+  typedef off_t zoff_t;
+#endif
+#define ZOFF_T_DEFINED
+typedef struct stat z_stat;
+#define Z_STAT_DEFINED
 
 #ifndef COHERENT
 #  include <fcntl.h>            /* O_BINARY for open() w/o CR/LF translation */

@@ -122,6 +122,7 @@ ZIP digest *should* now be listed here, but oversights are entirely possible.
   Peter Kunath           DLL bugfixes, MSVC __asm support
   Russell Lang           OS/2 DLL calling-convention bugfix
   Michael Lawler         Borland version() info; process.c string fix; DOS fixes
+  Rudolf Lechleitner     inflate memory leak fix
   Johnny Lee             Macintosh port; Win3.1 port; far strings; fixes; etc.
   Alexander Lehmann      makefile.tc bugfix; MS-DOS mapname() bugfix
   Marty Leisner          Unix perms fix for non-Unix dirs; man pages fonts; etc.
@@ -145,6 +146,7 @@ ZIP digest *should* now be listed here, but oversights are entirely possible.
   Rafal Maszkowski       Convex unzip.h fixes; Unix makefile entry
   Jim Mathies            signal handler installing bugfix
   Eberhard Mattes        handler() bugfix; docs update
+  Adrian Maull           .NET C# example projects for Zip and UnZip dll
   Peter Mauzey           Unix makefile entry
   Scott Maxwell          version.h; massive reentrancy fixes; OS/2 DLL port
   Bob Maynard            16-bit OS/2 pathname bugfix

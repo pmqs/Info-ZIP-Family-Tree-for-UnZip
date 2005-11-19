@@ -88,25 +88,6 @@
    feed the fprintf clone no more than 16K chunks at a time. This should
    be valid for anything up to 64K (and probably beyond, assuming your
    buffers are that big).
-
-   2005-09-16 SMS.
-   On VMS, when output is redirected to a file, as in a command like
-   "PIPE UNZIP -v > X.OUT", the output file is created with VFC record
-   format, and multiple calls to write() will produce multiple records,
-   even when there's no newline terminator in the buffer.  The result is
-   unsightly output with spurious newlines.  Using fprintf() instead of
-   write() here, and disabling an fflush() below, together seem to solve
-   the problem.  (If there's a better method, be my guest.)
-
-   According to the C RTL manual, "The write and decc$record_write
-   functions always generate at least one record."  Also, "[T]he fwrite
-   function always generates at least <number_items> records."  So,
-   "fwrite(buf, len, 1, strm)" is much better ("1" record) than
-   "fwrite(buf, 1, len, strm)" ("len" (1-character) records, _really_
-   ugly), but neither is good.  Similarly, "The fflush function always
-   generates a record if there is unwritten data in the buffer." 
-   Apparently fprintf() buffers the stuff somewhere, and puts out a
-   record (only) when it sees a newline.
 */
 #ifdef WINDLL
 #  define WriteError(buf,len,strm) \
@@ -116,15 +97,37 @@
 #    define WriteError(buf,len,strm) \
      ((extent)fwrite((char *)(buf),1,(extent)(len),strm) != (extent)(len))
 #  else
-#    ifdef VMS
-#      define WriteError(buf,len,strm) \
-        (fprintf( strm, "%.*s", len, buf) != (int)(len))
-#    else /* def VMS */
-#      define WriteError(buf,len,strm) \
+#    define WriteError(buf,len,strm) \
      ((extent)write(fileno(strm),(char *)(buf),(extent)(len)) != (extent)(len))
-#    endif /* def VMS [else] */
 #  endif
 #endif /* ?WINDLL */
+
+/*
+   2005-09-16 SMS.
+   On VMS, when output is redirected to a file, as in a command like
+   "PIPE UNZIP -v > X.OUT", the output file is created with VFC record
+   format, and multiple calls to write() or fwrite() will produce multiple
+   records, even when there's no newline terminator in the buffer.
+   The result is unsightly output with spurious newlines.  Using fprintf()
+   instead of write() here, and disabling a fflush(stdout) in UzpMessagePrnt()
+   below, together seem to solve the problem.
+
+   According to the C RTL manual, "The write and decc$record_write
+   functions always generate at least one record."  Also, "[T]he fwrite
+   function always generates at least <number_items> records."  So,
+   "fwrite(buf, len, 1, strm)" is much better ("1" record) than
+   "fwrite(buf, 1, len, strm)" ("len" (1-character) records, _really_
+   ugly), but neither is better than write().  Similarly, "The fflush
+   function always generates a record if there is unwritten data in the
+   buffer."  Apparently fprintf() buffers the stuff somewhere, and puts
+   out a record (only) when it sees a newline.
+*/
+#ifdef VMS
+#  define WriteTxtErr(buf,len,strm) \
+   ((extent)fprintf(strm, "%.*s", len, buf) != (extent)(len))
+#else
+#  define WriteTxtErr(buf,len,strm)  WriteError(buf,len,strm)
+#endif
 
 #if (defined(USE_DEFLATE64) && defined(__16BIT__))
 static int partflush OF((__GPRO__ uch *rawbuf, ulg size, int unshrink));
@@ -436,7 +439,23 @@ int open_outfile(__G)         /* return 1 if fail */
 #endif /* NOVELL_BUG_FAILSAFE */
     Trace((stderr, "open_outfile:  doing fopen(%s) for writing\n",
       FnFilter1(G.filename)));
-    if ((G.outfile = zfopen(G.filename, FOPW)) == (FILE *)NULL) {
+    {
+#if defined(ATH_BE_UNX) || defined(AOS_VS) || defined(QDOS) || defined(TANDEM)
+        mode_t umask_sav = umask(0077);
+#endif
+#if defined(SYMLINKS) || defined(QLZIP)
+        /* These features require the ability to re-read extracted data from
+           the output files. Output files are created with Read&Write access.
+         */
+        G.outfile = zfopen(G.filename, FOPWR);
+#else
+        G.outfile = zfopen(G.filename, FOPW);
+#endif
+#if defined(ATH_BE_UNX) || defined(AOS_VS) || defined(QDOS) || defined(TANDEM)
+        umask(umask_sav);
+#endif
+    }
+    if (G.outfile == (FILE *)NULL) {
         Info(slide, 0x401, ((char *)slide, LoadFarString(CannotCreateFile),
           FnFilter1(G.filename)));
         return 1;
@@ -747,7 +766,7 @@ int seek_zipf(__G__ abs_offset)
 
 /********************/
 /* Function flush() */   /* returns PK error codes: */
-/********************/   /* if cflag => always 0; PK_DISK if write error */
+/********************/   /* if tflag => always 0; PK_DISK if write error */
 
 int flush(__G__ rawbuf, size, unshrink)
     __GDEF
@@ -775,7 +794,7 @@ int flush(__G__ rawbuf, size, unshrink)
 
 /************************/
 /* Function partflush() */  /* returns PK error codes: */
-/************************/  /* if cflag => always 0; PK_DISK if write error */
+/************************/  /* if tflag => always 0; PK_DISK if write error */
 
 static int partflush(__G__ rawbuf, size, unshrink)
     __GDEF
@@ -1379,7 +1398,7 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
                 ++((Uz_Globs *)pG)->lines;
                 if (((Uz_Globs *)pG)->lines >= ((Uz_Globs *)pG)->height)
                 {
-                    if ((error = WriteError(q, p-q+1, outfp)) != 0)
+                    if ((error = WriteTxtErr(q, p-q+1, outfp)) != 0)
                         return error;
                     fflush(outfp);
                     ((Uz_Globs *)pG)->sol = TRUE;
@@ -1398,22 +1417,16 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
 #ifdef OS2DLL
         if (!((Uz_Globs *)pG)->redirect_text) {
 #endif
-            if ((error = WriteError(q, size, outfp)) != 0)
+            if ((error = WriteTxtErr(q, size, outfp)) != 0)
                 return error;
-
-/*
-   2005-09-16 SMS.
-   See note at "WriteError()", above.
-/*
-#ifndef VMS
+#ifndef VMS     /* 2005-09-16 SMS.  See note at "WriteTxtErr()", above. */
             fflush(outfp);
-#endif /* ndef VMS */
-
+#endif
             if (MSG_STDERR(flag) && ((Uz_Globs *)pG)->UzO.tflag &&
                 !isatty(1) && isatty(2))
             {
                 /* error output from testing redirected:  also send to stderr */
-                if ((error = WriteError(q, size, stderr)) != 0)
+                if ((error = WriteTxtErr(q, size, stderr)) != 0)
                     return error;
                 fflush(stderr);
             }

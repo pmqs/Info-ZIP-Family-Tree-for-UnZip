@@ -4,7 +4,7 @@
 #   J. Lee 8/95 (johnnyl@microsoft.com)
 #   C. Spieler 03/99
 #
-# Last revised:  20 Feb 2005
+# Last revised:  08 May 2005
 #
 # Tested with VC++ 2.0 for NT for MIPS and Alpha, Visual C++ 2.2 for Intel CPUs
 # Revision tested with VC++ 5.0 and 6.0 for Intel CPUs
@@ -24,11 +24,57 @@ APPLY_ASMCRC=1
 !endif
 !endif
 
+
+# Options to decide whether using zlib as decompression library.
+# Specify USEZLIBDLL or USEZLIBSTAT to replace UnZip's built-in inflation code
+# by the inflate service of the zlib library.
+# (The option USEZLIB is currently set as a synonym for USEZLIBSTAT.)
+!if defined(USEZLIBSTAT) || defined(USEZLIBDLL)
+USEZLIB=1
+!endif
+
 !ifdef USEZLIB
-!undef DLLSTANDALONE
+!if defined(USEZLIBSTAT) && defined(USEZLIBDLL)
+!ERROR Conflicting options USEZLIBSTAT and USEZLIBDLL requested!
+!endif
+# Set static zlib linkage as default in case nothing is specified.
+!if !defined(USEZLIBSTAT) && !defined(USEZLIBDLL)
+USEZLIBSTAT=1
+!endif
 !undef USEASM
 APPLY_ASMCRC=0
+ZLIBLIB=zlib
+ZLIBLIBDLL=zdll
+!else # !USEZLIB
+ZLIBLIB=
+ZLIBLIBDLL=
+!endif # ?USEZLIB
+
+
+# Options to include optional support for bzip2 decompression
+!if defined(USEBZIP2STAT) || defined(USEBZIP2DLL)
+USEBZIP2=1
 !endif
+
+!ifdef USEBZIP2
+!if defined(USEBZIP2STAT) && defined(USEBZIP2DLL)
+!ERROR Conflicting options USEBZIP2STAT and USEBZIP2DLL requested!
+!endif
+# Set static bzip2 linkage as default in case nothing is specified.
+!if !defined(USEBZIP2STAT) && !defined(USEBZIP2DLL)
+USEBZIP2STAT=1
+!endif
+!IFNDEF debug
+BZIPLIB=libbz2.lib
+BZIPLIBDLL=libbz2.lib
+!ELSE
+BZIPLIB=libbz2d.lib
+BZIPLIBDLL=libbz2d.lib
+!ENDIF
+!else # !USEBZIP2
+BZIPLIB=
+BZIPLIBDLL=
+!endif # ?USEBZIP2
 
 !ifndef APPLY_ASMCRC
 #default ASM CRC code (inline asm in C source) for now...
@@ -67,34 +113,34 @@ OB = $(OBDIR)/
 OBJU1 = unzip.obj $(CRC32).obj crctab.obj crypt.obj envargs.obj explode.obj
 OBJU2 = extract.obj fileio.obj globals.obj inflate.obj list.obj match.obj
 OBJU3 = process.obj ttyio.obj unreduce.obj unshrink.obj zipinfo.obj
-OBJUS = win32.obj nt.obj $(TIMEZONE_OBJU)
+OBJUS = win32.obj win32i64.obj nt.obj $(TIMEZONE_OBJU)
 OBJU  = $(OBJU1) $(OBJU2) $(OBJU3) $(OBJUS)
 OBJX1 = unzipsfx.obj $(CRC32X).obj crctab_.obj crypt_.obj
 OBJX2 = extract_.obj fileio_.obj globals_.obj inflate_.obj
 OBJX3 = match_.obj process_.obj ttyio_.obj
-OBJXS = win32_.obj nt_.obj $(TIMEZONE_OBJX)
+OBJXS = win32_.obj win32i64_.obj nt_.obj $(TIMEZONE_OBJX)
 OBJX  = $(OBJX1) $(OBJX2) $(OBJX3) $(OBJXS)
 OBJF1 = funzip.obj $(CRC32F).obj cryptf.obj globalsf.obj
 OBJF2 = inflatef.obj ttyiof.obj
-OBJFS = win32f.obj
+OBJFS = win32f.obj win32i64f.obj
 OBJF  = $(OBJF1) $(OBJF2) $(OBJFS)
 OBJD1 = api.obj $(CRC32L).obj crctabl.obj cryptl.obj explodel.obj
 OBJD2 = extractl.obj fileiol.obj globalsl.obj inflatel.obj
 OBJD3 = listl.obj matchl.obj processl.obj
 OBJD4 = unreducl.obj unshrnkl.obj zipinfol.obj
-OBJDS = win32l.obj ntl.obj windll.obj $(TIMEZONE_OBJD)
+OBJDS = win32l.obj win32i64l.obj ntl.obj windll.obj $(TIMEZONE_OBJD)
 OBJD  = $(OBJD1) $(OBJD2) $(OBJD3) $(OBJD4) $(OBJDS)
 OBLX1 = apig.obj $(CRC32G).obj crctabg.obj cryptg.obj
 OBLX2 = extractg.obj fileiog.obj globalsg.obj inflateg.obj
 OBLX3 = matchg.obj processg.obj
-OBLXS = win32g.obj ntg.obj windllg.obj $(TIMEZONE_OBLX)
+OBLXS = win32g.obj win32i64g.obj ntg.obj windllg.obj $(TIMEZONE_OBLX)
 OBLX  = $(OBLX1) $(OBLX2) $(OBLX3) $(OBLXS)
 OBGX  = sfxwiz.obj
 OBJB1 = $(OB)apib.obj $(OB)$(CRC32B).obj $(OB)crctabb.obj $(OB)cryptb.obj
 OBJB2 = $(OB)explodeb.obj $(OB)extractb.obj $(OB)fileiob.obj $(OB)globalsb.obj
 OBJB3 = $(OB)inflateb.obj $(OB)listb.obj $(OB)matchb.obj $(OB)processb.obj
 OBJB4 = $(OB)unreducb.obj $(OB)unshrnkb.obj $(OB)zipinfob.obj
-OBJBS = $(OB)win32b.obj $(OB)ntb.obj $(OB)windllb.obj $(TIMEZONE_OBJB)
+OBJBS = $(OB)win32b.obj $(OB)win32i64b.obj $(OB)ntb.obj $(OB)windllb.obj $(TIMEZONE_OBJB)
 OBJB  = $(OBJB1) $(OBJB2) $(OBJB3) $(OBJB4) $(OBJBS)
 
 UNZIP_H = unzip.h unzpriv.h globals.h win32/w32cfg.h
@@ -114,6 +160,9 @@ LOCAL_UNZIP = -DW32_USE_IZ_TIMEZONE $(LOCAL_UNZIP)
 
 !ifdef USEZLIB
 LOCAL_UNZIP = -DUSE_ZLIB $(LOCAL_UNZIP)
+!endif
+!ifdef USEBZIP2
+LOCAL_UNZIP = -DUSE_BZIP2 $(LOCAL_UNZIP)
 !endif
 
 #CF_LOC = -nologo -J -D_MBCS $(CFVARS_ASM) -DREENTRANT
@@ -166,37 +215,51 @@ cdbgsz = $(cdebug)
 ldebug = $(ldebug) /PROFILE
 !endif
 
-!IFDEF USEZLIB
-# Using zlib as decompression core implies linking all executables
-# against the DLL version of the C runtime library.
+!ifdef SYM
+ldebug = $(ldebug) /DEBUG:FULL /DEBUGTYPE:CV
+cdebug = $(cdebug) -Zi
+cdbgsz = $(cdbgsz) -Zi
+!endif
+
+# When using zlib and/or bzip2 external decompression code DLLs, we want
+# to link against the dll version of the C runtime library.
+!IF defined(USEZLIBDLL) || defined(USEBZIP2DLL) || defined(USE_DLLRUNTIME)
+LINK_CRTDLL=1
+!UNDEF DLLSTANDALONE
+!ELSE
+LINK_CRTDLL=0
+!ENDIF
+
+!IF $(LINK_CRTDLL) == 1
+# Using zlib DLL as decompression core (and/or bzip2 decompression dll)
+# implies linking all executables against the DLL version of the C RTL.
 cvars_iz = $(cvarsdll) $(CF_LOC)
 cvars_izdll = $(cvarsdll) $(CF_LOC)
-conlibs_iz = $(conlibsdll) zlib.lib
-conlibs_izdll = $(conlibsdll) zdll.lib
-guilibs_iz = $(guilibsdll) zlib.lib
+conlibs_iz = $(conlibsdll) $(ZLIBLIBDLL) $(BZIPLIBDLL)
+conlibs_izdll = $(conlibsdll) $(ZLIBLIBDLL) $(BZIPLIBDLL)
+guilibs_iz = $(guilibsdll) $(ZLIBLIBDLL) $(BZIPLIBDLL)
 !ELSE
-# With the default setup (using Info-ZIP's own inflate code), the
-# executables are linked against the single-thread static C-RTL library to
-# get self-contained programs.
+# With the default setup (using Info-ZIP's own inflate code and or static
+# external decompression code), the executables are linked against the
+# single-thread static C-RTL library to get self-contained programs.
 cvars_iz = $(cvars) $(CF_LOC)
-conlibs_iz = $(conlibs)
-guilibs_iz = $(guilibs)
+conlibs_iz = $(conlibs) $(ZLIBLIB) $(BZIPLIB)
+guilibs_iz = $(guilibs) $(ZLIBLIB) $(BZIPLIB)
 
 !IFDEF DLLSTANDALONE
 # The standalone variant of unzip32.dll is linked against the
 # multithread-safe static C runtime library.
 cvars_izdll = $(cvarsmt) $(CF_LOC)
-conlibs_izdll = $(conlibsmt)
+conlibs_izdll = $(conlibsmt) $(ZLIBLIB) $(BZIPLIB)
 !ELSE
 # The (normal) variant of unzip32.dll is linked against the import library
 # of the multithread-safe C runtime dll.
 # -> smaller dll size; efficient use of shared resources,
 #    but requires the C RTL DLL msvcrt.dll to be installed at runtime
 cvars_izdll = $(cvarsdll) $(CF_LOC)
-conlibs_izdll = $(conlibsdll)
+conlibs_izdll = $(conlibsdll) $(ZLIBLIBDLL) $(BZIPLIBDLL)
 !ENDIF
-
-!ENDIF # !USEZLIB
+!ENDIF # ?(LINK_CRTDLL == 1)
 
 CFLAGS_UN = $(cdebug) $(cflags) $(cvars_iz)
 CFLAGS_SX = $(cdbgsz) $(cflags) $(cvars_iz) -DSFX
@@ -272,6 +335,9 @@ zipinfo.obj:	zipinfo.c $(UNZIP_H)
 win32.obj:	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_UN) -I. win32/win32.c -Fo$@
 
+win32i64.obj:	win32/win32i64.c $(UNZIP_H)
+	$(cc) $(CFLAGS_UN) -I. win32/win32i64.c -Fo$@
+
 nt.obj:		win32/nt.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_UN) -I. win32/nt.c -Fo$@
 
@@ -293,6 +359,12 @@ win32_.obj:	win32/win32.c $(UNZIP_H) win32/nt.h		# unzipsfx only
 
 win32f.obj:	win32/win32.c $(UNZIP_H) win32/nt.h		# funzip only
 	$(cc) $(CFLAGS_FU) -I. win32/win32.c -Fo$@
+
+win32i64_.obj:	win32/win32i64.c $(UNZIP_H)			# unzipsfx only
+	$(cc) $(CFLAGS_SX) -I. win32/win32i64.c -Fo$@
+
+win32i64f.obj:	win32/win32i64.c $(UNZIP_H)			# funzip only
+	$(cc) $(CFLAGS_FU) -I. win32/win32i64.c -Fo$@
 
 nt_.obj:	win32/nt.c $(UNZIP_H) win32/nt.h		# unzipsfx only
 	$(cc) $(CFLAGS_SX) -I. win32/nt.c -Fo$@
@@ -385,6 +457,9 @@ zipinfol.obj:	zipinfo.c $(UNZIP_H)
 win32l.obj:	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_DL) -I. win32/win32.c -Fo$@
 
+win32i64l.obj:	win32/win32i64.c $(UNZIP_H)
+	$(cc) $(CFLAGS_DL) -I. win32/win32i64.c -Fo$@
+
 ntl.obj:	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_DL) -I. win32/nt.c -Fo$@
 
@@ -436,6 +511,9 @@ timezong.obj:	timezone.c $(UNZIP_H) zip.h timezone.h
 
 win32g.obj:	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_SL) -I. win32/win32.c -Fo$@
+
+win32i64g.obj:	win32/win32i64.c $(UNZIP_H)
+	$(cc) $(CFLAGS_SL) -I. win32/win32i64.c -Fo$@
 
 ntg.obj:	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_SL) -I. win32/nt.c -Fo$@
@@ -499,6 +577,9 @@ $(OB)zipinfob.obj:	zipinfo.c $(UNZIP_H)
 $(OB)win32b.obj:	win32/win32.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_LB) -I. win32/win32.c -Fo$@
 
+$(OB)win32i64b.obj:	win32/win32i64.c $(UNZIP_H)
+	$(cc) $(CFLAGS_LB) -I. win32/win32i64.c -Fo$@
+
 $(OB)ntb.obj:	win32/nt.c $(UNZIP_H) win32/nt.h
 	$(cc) $(CFLAGS_LB) -I. win32/nt.c -Fo$@
 
@@ -524,8 +605,12 @@ $(OBDIR):
 clean:
 	-del *.obj
 	-del unzip.exe
+	-del unzip.pdb
 	-del funzip.exe
+	-del funzip.pdb
 	-del unzipsfx.exe
+	-del unzipsfx.pdb
+	-del vc60.pdb
 	-del sfxwiz.res
 	-del SFXWiz32.exe
 	-del windll.res

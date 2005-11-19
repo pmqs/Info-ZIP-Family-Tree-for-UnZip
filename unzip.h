@@ -2,7 +2,7 @@
 
   unzip.h (new)
 
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -11,23 +11,24 @@
 
   ---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------
-This is version 2004-May-22 of the Info-ZIP copyright and license.
+This is version 2005-Feb-10 of the Info-ZIP copyright and license.
 The definitive version of this document should be available at
 ftp://ftp.info-zip.org/pub/infozip/license.html indefinitely.
 
 
-Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
 For the purposes of this copyright and license, "Info-ZIP" is defined as
 the following set of individuals:
 
    Mark Adler, John Bush, Karl Davis, Harald Denker, Jean-Michel Dubois,
-   Jean-loup Gailly, Hunter Goatley, Ian Gorman, Chris Herborth, Dirk Haase,
-   Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz, David Kirschbaum,
-   Johnny Lee, Onno van der Linden, Igor Mandrichenko, Steve P. Miller,
-   Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs, Kai Uwe Rommel,
-   Steve Salisbury, Dave Smith, Christian Spieler, Antoine Verheijen,
-   Paul von Behren, Rich Wales, Mike White
+   Jean-loup Gailly, Hunter Goatley, Ed Gordon, Ian Gorman, Chris Herborth,
+   Dirk Haase, Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz,
+   David Kirschbaum, Johnny Lee, Onno van der Linden, Igor Mandrichenko,
+   Steve P. Miller, Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs,
+   Kai Uwe Rommel, Steve Salisbury, Dave Smith, Steven M. Schweda,
+   Christian Spieler, Cosmin Truta, Antoine Verheijen, Paul von Behren,
+   Rich Wales, Mike White
 
 This software is provided "as is," without warranty of any kind, express
 or implied.  In no event shall Info-ZIP or its contributors be held liable
@@ -200,7 +201,7 @@ freely, subject to the following restrictions:
 /* use prototypes and ANSI libraries if __STDC__, or MS-DOS, or OS/2, or Win32,
  * or IBM C Set/2, or Borland C, or Watcom C, or GNU gcc (emx or Cygwin),
  * or Macintosh, or Sequent, or Atari, or IBM RS/6000, or Silicon Graphics,
- * or Convex?, or BeOS.
+ * or Convex?, or AtheOS, or BeOS.
  */
 #if (defined(__STDC__) || defined(MSDOS) || defined(OS2) || defined(WIN32))
 #  ifndef PROTO
@@ -243,7 +244,8 @@ freely, subject to the following restrictions:
 #    define MODERN
 #  endif
 #endif
-#if (defined(CMS_MVS) || defined(__BEOS__) || defined(__ATHEOS__))  /* || defined(CONVEX) */
+#if (defined(CMS_MVS) || defined(__ATHEOS__) || defined(__BEOS__))
+/* || defined(CONVEX) ? */
 #  ifndef PROTO
 #    define PROTO
 #  endif
@@ -285,8 +287,6 @@ freely, subject to the following restrictions:
 #endif
 
 #ifdef WINDLL
-   /* for large file defines */
-#  include "win32/w32i64.h"
    /* for UnZip, the "basic" part of the win32 api is sufficient */
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
@@ -344,6 +344,9 @@ freely, subject to the following restrictions:
 #  define UZ_EXP
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*---------------------------------------------------------------------------
     Public typedefs.
@@ -452,8 +455,11 @@ typedef struct _UzpOpts {
     int scanimage;      /* -I: scan image files */
 #endif
     int jflag;          /* -j: junk pathnames (unzip) */
-#if (defined(__BEOS__) || defined(MACOS) || defined(__ATHEOS__))
-    int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS extra field info (unzip) */
+#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS))
+    int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS e. f. info (unzip) */
+#endif
+#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
+    int K_flag;         /* -K: keep setuid/setgid/tacky permissions */
 #endif
     int lflag;          /* -12slmv: listing format (zipinfo) */
     int L_flag;         /* -L: convert filenames from some OSes to lowercase */
@@ -482,22 +488,27 @@ typedef struct _UzpOpts {
     int uflag;          /* -u: "update" (extract only newer/brand-new files) */
     int vflag;          /* -v: (verbosely) list directory */
     int V_flag;         /* -V: don't strip VMS version numbers */
-#if (defined(__BEOS__) || defined(TANDEM) || defined(THEOS) || defined(UNIX) || defined (__ATHEOS__))
+    int W_flag;         /* -W: wildcard '*' won't match '/' dir separator */
+#if (defined (__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
+    int X_flag;         /* -X: restore owner/protection or UID/GID or ACLs */
+#else
+#if (defined(TANDEM) || defined(THEOS))
     int X_flag;         /* -X: restore owner/protection or UID/GID or ACLs */
 #else
 #if (defined(OS2) || defined(VMS) || defined(WIN32))
     int X_flag;         /* -X: restore owner/protection or UID/GID or ACLs */
 #endif
 #endif
+#endif
 #ifdef VMS
     int Y_flag;         /* -Y: treat ".nnn" as ";nnn" version */
-#endif /* def VMS */
+#endif
     int zflag;          /* -z: display the zipfile comment (only, for unzip) */
-#if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
-    int ddotflag;       /* -:: don't skip over "../" path elements */
 #ifdef VMS
     int ods2_flag;      /* -2: force names to conform to ODS2 */
-#endif /* def VMS */
+#endif
+#if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
+    int ddotflag;       /* -:: don't skip over "../" path elements */
 #endif
 #endif /* !FUNZIP */
 } UzpOpts;
@@ -536,10 +547,33 @@ typedef struct _UzpVer2 {
 } UzpVer2;
 
 
+typedef struct _Uzp_Siz64 {
+    unsigned long lo32;
+    unsigned long hi32;
+} Uzp_Siz64;
+
+typedef struct _Uzp_cdir_Rec {
+    uch version_made_by[2];
+    uch version_needed_to_extract[2];
+    ush general_purpose_bit_flag;
+    ush compression_method;
+    ulg last_mod_dos_datetime;
+    ulg crc32;
+    Uzp_Siz64 csize;
+    Uzp_Siz64 ucsize;
+    ush filename_length;
+    ush extra_field_length;
+    ush file_comment_length;
+    ush disk_number_start;
+    ush internal_file_attributes;
+    ulg external_file_attributes;
+    Uzp_Siz64 relative_offset_local_header;
+} Uzp_cdir_Rec;
+
 
 #define UZPINIT_LEN   sizeof(UzpInit)
 #define UZPVER_LEN    sizeof(UzpVer)
-#define cbList(func)  int (* UZ_EXP func)(char *filename, cdir_file_hdr *crec)
+#define cbList(func)  int (* UZ_EXP func)(char *filename, Uzp_cdir_Rec *crec)
 
 
 /*---------------------------------------------------------------------------
@@ -621,6 +655,10 @@ int      UZ_EXP UzpPassword      OF((zvoid *pG, int *rcnt, char *pwbuf,
                                      int size, ZCONST char *zfn,
                                      ZCONST char *efn));
 
+#ifdef __cplusplus
+}
+#endif
+
 
 /*---------------------------------------------------------------------------
     Remaining private stuff for UnZip compilation.
@@ -630,23 +668,5 @@ int      UZ_EXP UzpPassword      OF((zvoid *pG, int *rcnt, char *pwbuf,
 #  include "unzpriv.h"
 #endif
 
-/* Default fzofft() format selection. */
-
-#ifndef FZOFFT_FMT
-
-#  ifdef LARGE_FILE_SUPPORT
-#    define FZOFFT_FMT "ll"
-#    define FZOFFT_HEX_WID_VALUE "16"
-#  else /* def LARGE_FILE_SUPPORT */
-#    define FZOFFT_FMT "l"
-#    define FZOFFT_HEX_WID_VALUE "8"
-#  endif /* def LARGE_FILE_SUPPORT */
-
-#endif /* ndef FZOFFT_FMT */
-
-#define FZOFFT_HEX_WID ((char *) -1)
-#define FZOFFT_HEX_DOT_WID ((char *) -2)
-
-char *fzofft       OF((zoff_t, char *, char*));
 
 #endif /* !__unzip_h */

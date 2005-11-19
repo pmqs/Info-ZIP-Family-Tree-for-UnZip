@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -18,8 +18,6 @@
 
 #ifndef __vmscfg_h   /* Prevent (unlikely) multiple inclusions. */
 #define __vmscfg_h
-
-#ifdef VMS
 
 /* LARGE FILE SUPPORT - 10/6/04 EG */
 /* This needs to be set before the includes so they set the right sizes */
@@ -114,8 +112,10 @@
 #else
   typedef off_t zoff_t;
 #endif
+#define ZOFF_T_DEFINED
 
 typedef struct stat z_stat;
+#define Z_STAT_DEFINED
 
 /* LARGE_FILE_SUPPORT implies ZIP64_SUPPORT,
    unless explicitly disabled by NO_ZIP64_SUPPORT.
@@ -153,15 +153,12 @@ extern int acc_cb();
  * Callback function (DEC C only) sets deq, mbc, mbf, rah, wbh, ...
  */
 
-#  define OPENR O_RDONLY, 0, "ctx=stm", "acc", acc_cb, &openr_id
+#  define OPNZIP_RMS_ARGS "ctx=stm", "acc", acc_cb, &openr_id
 
-#else /* def __DECC */ /* (So, GNU C, VAX C, ...)*/
+#else /* !__DECC */ /* (So, GNU C, VAX C, ...)*/
 
-#  define OPENR O_RDONLY, 0, "ctx=stm"
+#  define OPNZIP_RMS_ARGS "ctx=stm"
 
-#endif /* def __DECC */
+#endif /* ?__DECC */
 
-#endif /* def VMS */
-
-#endif /* ndef __vmscfg_h */
-
+#endif /* !__vmscfg_h */

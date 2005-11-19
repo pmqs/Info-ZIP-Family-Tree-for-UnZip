@@ -68,9 +68,7 @@ DWORD dwPlatformId = 0xFFFFFFFF;
 int WINAPI DisplayBuf(LPSTR, unsigned long);
 int WINAPI GetReplaceDlgRetVal(LPSTR);
 int WINAPI password(LPSTR, int, LPCSTR, LPCSTR);
-void WINAPI ReceiveDllMessage(unsigned long, unsigned long, unsigned,
-    unsigned, unsigned, unsigned, unsigned, unsigned,
-    char, LPSTR, LPSTR, unsigned long, char);
+
 _DLL_UNZIP pWiz_SingleEntryUnzip;
 
 static void FreeUpMemory(void);
@@ -336,10 +334,17 @@ if (hUF)
    is actually never called in this example, but a dummy procedure had to
    be put in, so this was used.
  */
+#ifdef Z_UINT8_DEFINED
+void WINAPI ReceiveDllMessage(z_uint8 ucsize, z_uint8 csiz,
+    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr,
+    unsigned hh, unsigned mm, char c, LPCSTR filename,
+    LPCSTR methbuf, unsigned long crc, char fCrypt)
+#else
 void WINAPI ReceiveDllMessage(unsigned long ucsize, unsigned long csiz,
     unsigned cfactor,
     unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
-    char c, LPSTR filename, LPSTR methbuf, unsigned long crc, char fCrypt)
+    char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt)
+#endif
 {
 char psLBEntry[_MAX_PATH];
 char LongHdrStats[] =

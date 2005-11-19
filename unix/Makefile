@@ -1,6 +1,6 @@
 #==============================================================================
 # Makefile for UnZip, UnZipSFX and fUnZip:  Unix and MS-DOS ("real" makes only)
-# Version:  5.52                                                    04 Feb 2005
+# Version:  6.0                                                     02 Oct 2005
 #==============================================================================
 
 
@@ -113,7 +113,7 @@ INSTALLEDMAN = $(MANDIR)/funzip.$(manext) $(MANDIR)/unzip.$(manext) \
 
 # Solaris 2.x stuff:
 PKGDIR = IZunzip
-VERSION = Version 5.52
+VERSION = Version 6.0
 
 UNZIPS = unzip$E funzip$E unzipsfx$E
 # this is a little ugly...well, OK, it's a lot ugly:
@@ -121,7 +121,7 @@ MANS = man/funzip.1 man/unzip.1 man/unzipsfx.1 man/zipgrep.1 man/zipinfo.1
 DOCS = funzip.txt unzip.txt unzipsfx.txt zipgrep.txt zipinfo.txt
 
 # list of supported systems/targets in this version
-SYSTEMSG = generic generic2 generic3 generic_zlib generic_shlib
+SYSTEMSG = generic generic1 generic2 generic3 generic_zlib generic_shlib
 SYSTEMS1 = 386i 3Bx 7300 7300_gcc aix aix_rt amdahl amdahl_eft apollo aviion
 SYSTEMS2 = bsd bsdi bsdi_noasm bull coherent convex cray cray_opt cyber_sgi
 SYSTEMS3 = cygwin dec dnix encore eta freebsd gcc gould hk68 hp hpux
@@ -142,32 +142,26 @@ SYSTEMS9 = vax v7 wombat xenix xos
 
 help:
 	@echo ""
-	@echo\
- "  If you're not sure about the characteristics of your system, try typing"
-	@echo\
- '  "make generic".  If the compiler barfs and says something unpleasant about'
-	@echo\
- '  "timezone redefined," try typing "make clean" followed by "make generic2".'
-	@echo\
- '  If, on the other hand, it complains about an undefined symbol _ftime, try'
-	@echo\
- '  typing "make clean" followed by "make generic3".  One of these actions'
-	@echo\
- '  should produce a working copy of unzip on most Unix systems.  If you know'
-	@echo\
- '  a bit more about the machine on which you work, you might try "make list"'
-	@echo\
- '  for a list of the specific systems supported herein.  (Many of them do'
-	@echo\
- "  exactly the same thing, so don't agonize too much over which to pick if"
-	@echo\
- '  two or more sound equally likely.)  Also check out the INSTALL file for'
-	@echo\
- '  notes on compiling various targets.  As a last resort, feel free to read'
-	@echo\
- '  the numerous comments within the Makefile itself.'
-	@echo\
- '  Have a mostly pretty good day.'
+	@echo "  If you're not sure about the characteristics of your system, try typing"
+	@echo "  \"make generic\".  This is new and uses the configure script, though it is"
+	@echo "  still being worked on."
+	@echo ""
+	@echo "  If that does not do it, try the original generic which is \"make generic1\"."
+	@echo ""
+	@echo "  If the compiler barfs and says something unpleasant about \"timezone redefined\","
+	@echo "  try typing \"make clean\" followed by \"make generic2\".  If, on the other"
+	@echo "  hand, it complains about an undefined symbol _ftime, try typing \"make clean\""
+	@echo "  followed by \"make generic3\"."
+	@echo ""
+	@echo "  One of these actions should produce a working copy of unzip on most Unix"
+	@echo "  systems.  If you know a bit more about the machine on which you work, you"
+	@echo "  might try \"make list\" for a list of the specific systems supported herein."
+	@echo "  (Many of them do exactly the same thing, so don't agonize too much over"
+	@echo "  which to pick if two or more sound equally likely.)  Also check out the"
+	@echo "  INSTALL file for notes on compiling various targets.  As a last resort,"
+	@echo "  feel free to read the numerous comments within the Makefile itself."
+	@echo ""
+	@echo "  Have a mostly pretty good day."
 	@echo ""
 
 list:
@@ -237,19 +231,19 @@ generic_msg:
 # systems...
 
 funzip.txt:	man/funzip.1
-	nroff -Tascii -man man/funzip.1 | col -b | uniq | expand > $@
+	nroff -Tascii -man man/funzip.1 | col -bx | uniq | expand > $@
 
 unzip.txt:	man/unzip.1
-	nroff -Tascii -man man/unzip.1 | col -b | uniq | expand > $@
+	nroff -Tascii -man man/unzip.1 | col -bx | uniq | expand > $@
 
 unzipsfx.txt:	man/unzipsfx.1
-	nroff -Tascii -man man/unzipsfx.1 | col -b | uniq | expand > $@
+	nroff -Tascii -man man/unzipsfx.1 | col -bx | uniq | expand > $@
 
 zipgrep.txt:	man/zipgrep.1
-	nroff -Tascii -man man/zipgrep.1 | col -b | uniq | expand > $@
+	nroff -Tascii -man man/zipgrep.1 | col -bx | uniq | expand > $@
 
 zipinfo.txt:	man/zipinfo.1
-	nroff -Tascii -man man/zipinfo.1 | col -b | uniq | expand > $@
+	nroff -Tascii -man man/zipinfo.1 | col -bx | uniq | expand > $@
 
 
 all:		generic_msg generic
@@ -303,75 +297,47 @@ unzip$O:	unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
 zipinfo$O:	zipinfo.c $(UNZIP_H)
 
 unzipsfx$O:	unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h	# unzipsfx only
-	-$(CP) unzip.c unzipsfx.c
-	$(CC) -c $(CF) -DSFX unzipsfx.c
-	$(RM) unzipsfx.c
+	$(CC) -c $(CF) -DSFX -o $@ unzip.c
 
 crctab_$O:	crctab.c $(UNZIP_H) zip.h
-	-$(CP) crctab.c crctab_.c
-	$(CC) -c $(CF) -DSFX crctab_.c
-	$(RM) crctab_.c
+	$(CC) -c $(CF) -DSFX -o $@ crctab.c
 
 crypt_$O:	crypt.c $(UNZIP_H) zip.h crypt.h ttyio.h	# unzipsfx only
-	-$(CP) crypt.c crypt_.c
-	$(CC) -c $(CF) -DSFX crypt_.c
-	$(RM) crypt_.c
+	$(CC) -c $(CF) -DSFX -o $@ crypt.c
 
 extract_$O:	extract.c $(UNZIP_H) crypt.h			# unzipsfx only
-	-$(CP) extract.c extract_.c
-	$(CC) -c $(CF) -DSFX extract_.c
-	$(RM) extract_.c
+	$(CC) -c $(CF) -DSFX -o $@ extract.c
 
 fileio_$O:	fileio.c $(UNZIP_H) crypt.h ttyio.h ebcdic.h
-	-$(CP) fileio.c fileio_.c
-	$(CC) -c $(CF) -DSFX fileio_.c
-	$(RM) fileio_.c
+	$(CC) -c $(CF) -DSFX -o $@ fileio.c
 
 globals_$O:	globals.c $(UNZIP_H)				# unzipsfx only
-	-$(CP) globals.c globals_.c
-	$(CC) -c $(CF) -DSFX globals_.c
-	$(RM) globals_.c
+	$(CC) -c $(CF) -DSFX -o $@ globals.c
 
 inflate_$O:	inflate.c inflate.h $(UNZIP_H) crypt.h		# unzipsfx only
-	-$(CP) inflate.c inflate_.c
-	$(CC) -c $(CF) -DSFX inflate_.c
-	$(RM) inflate_.c
+	$(CC) -c $(CF) -DSFX -o $@ inflate.c
 
 match_$O:	match.c $(UNZIP_H)				# unzipsfx only
-	-$(CP) match.c match_.c
-	$(CC) -c $(CF) -DSFX match_.c
-	$(RM) match_.c
+	$(CC) -c $(CF) -DSFX -o $@ match.c
 
 process_$O:	process.c $(UNZIP_H)				# unzipsfx only
-	-$(CP) process.c process_.c
-	$(CC) -c $(CF) -DSFX process_.c
-	$(RM) process_.c
+	$(CC) -c $(CF) -DSFX -o $@ process.c
 
 ttyio_$O:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h	# unzipsfx only
-	-$(CP) ttyio.c ttyio_.c
-	$(CC) -c $(CF) -DSFX ttyio_.c
-	$(RM) ttyio_.c
+	$(CC) -c $(CF) -DSFX -o $@ ttyio.c
 
 
 cryptf$O:	crypt.c $(UNZIP_H) zip.h crypt.h ttyio.h	# funzip only
-	-$(CP) crypt.c cryptf.c
-	$(CC) -c $(CF) -DFUNZIP cryptf.c
-	$(RM) cryptf.c
+	$(CC) -c $(CF) -DFUNZIP -o $@ crypt.c
 
 globalsf$O:	globals.c $(UNZIP_H)				# funzip only
-	-$(CP) globals.c globalsf.c
-	$(CC) -c $(CF) -DFUNZIP globalsf.c
-	$(RM) globalsf.c
+	$(CC) -c $(CF) -DFUNZIP -o $@ globals.c
 
 inflatef$O:	inflate.c inflate.h $(UNZIP_H) crypt.h		# funzip only
-	-$(CP) inflate.c inflatef.c
-	$(CC) -c $(CF) -DFUNZIP inflatef.c
-	$(RM) inflatef.c
+	$(CC) -c $(CF) -DFUNZIP -o $@ inflate.c
 
 ttyiof$O:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h	# funzip only
-	-$(CP) ttyio.c ttyiof.c
-	$(CC) -c $(CF) -DFUNZIP ttyiof.c
-	$(RM) ttyiof.c
+	$(CC) -c $(CF) -DFUNZIP -o $@ ttyio.c
 
 
 # optional assembler replacements
@@ -404,9 +370,7 @@ unix$O:		unix/unix.c $(UNZIP_H) unzvers.h		# Unix only
 	$(CC) -c $(CF) unix/unix.c
 
 unix_$O:	unix/unix.c $(UNZIP_H)				# Unix unzipsfx
-	-$(CP) unix/unix.c unix_.c
-	$(CC) -c $(CF) -DSFX unix_.c
-	$(RM) unix_.c
+	$(CC) -c $(CF) -DSFX -o $@ unix/unix.c
 
 unix.pic.o:	unix/unix.c $(UNZIP_H) unzvers.h		# Unix shlib
 	$(CC) -c $(CF) -o $@ unix/unix.c
@@ -425,6 +389,7 @@ clean:
 	rm -f $(UNZIPS) $(OBJS) $(OBJF) $(OBJX) api$O apihelp$O crc_gcc$O \
 	  crc_sysv$O unzipstb$O crypt_.c extract_.c globals_.c inflate_.c \
 	  ttyio_.c crc_i386s.s msdos_.c process_.c unix_.c unzipsfx.c
+	rm flags
 	rm -rf ./$(PKGDIR)
 
 # Package generation interface (by J.Bush).  Originally tested under Sun
@@ -466,6 +431,9 @@ install:	$(MANS)
 uninstall:
 	$(RM) $(INSTALLEDBIN) $(INSTALLEDMAN)
 
+# added 10/28/04 EG
+flags:  unix/configure
+	sh unix/configure "${CC}" "${CF}"
 
 # the test zipfile
 TESTZIP = testmake.zip
@@ -537,7 +505,12 @@ check:
 #  Generic targets (can't assume make utility groks "$(MAKE)")
 #----------------------------------------------------------------------------
 
-generic:	unzips	   # first try if unknown
+# Well, try MAKE and see.  By now everyone may be happy.  10/28/04 EG
+generic:	flags	   # now try autoconfigure first
+	eval make -f unix/Makefile unzips `cat flags`
+#	make -f unix/Makefile unzips CF="${CF} `cat flags`"
+
+generic1:	unzips	   # first try if unknown
 
 generic2:	unix_make  # second try if unknown:  hope make is called "make"
 	make -f unix/Makefile unzips CF="$(CF) -DBSD"
@@ -655,11 +628,11 @@ _v7:
 
 # AT&T 7300 (M68000/SysV.3) (add -DSYSV? -DNO_LIMITS?)
 7300:		unix_make
-	$(MAKE) unzips CF="$(CF) -DNO_DIR -DNO_MKDIR -DNO_STRNICMP -DNO_UID_GID -DCBREAK=2"
+	$(MAKE) unzips CF="$(CF) -DNO_DIR -DNO_MKDIR -DNO_STRNICMP -DNO_UID_GID -DNO_FCHMOD -DCBREAK=2"
 
 7300_gcc:	unix_make
 	$(MAKE) unzips CC=gcc LD=gcc LF2="" \
-	 CF="-O2 -I. -DNO_DIR -DNO_MKDIR -DNO_STDLIB_H -DNO_STRNICMP -DNO_UID_GID -DCBREAK=2 $(LOC)"
+	 CF="-O2 -I. -DNO_DIR -DNO_MKDIR -DNO_STDLIB_H -DNO_STRNICMP -DNO_UID_GID -DNO_FCHMOD -DCBREAK=2 $(LOC)"
 	$(STRIP) $(UNZIPS)
 
 # IBM AIX 3.x on an RS/6000:  see rs6000 target below

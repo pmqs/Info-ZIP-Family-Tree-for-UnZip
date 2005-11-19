@@ -1,26 +1,26 @@
 # Microsoft Developer Studio Project File - Name="unzip" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** NICHT BEARBEITEN **
+# ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
 
 CFG=unzip - Win32 ASM Debug
-!MESSAGE Dies ist kein gültiges Makefile. Zum Erstellen dieses Projekts mit NMAKE
-!MESSAGE verwenden Sie den Befehl "Makefile exportieren" und führen Sie den Befehl
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
 !MESSAGE 
 !MESSAGE NMAKE /f "unzip.mak".
 !MESSAGE 
-!MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
-!MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
 !MESSAGE NMAKE /f "unzip.mak" CFG="unzip - Win32 ASM Debug"
 !MESSAGE 
-!MESSAGE Für die Konfiguration stehen zur Auswahl:
+!MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "unzip - Win32 Release" (basierend auf  "Win32 (x86) Console Application")
-!MESSAGE "unzip - Win32 Debug" (basierend auf  "Win32 (x86) Console Application")
-!MESSAGE "unzip - Win32 ASM Release" (basierend auf  "Win32 (x86) Console Application")
-!MESSAGE "unzip - Win32 ASM Debug" (basierend auf  "Win32 (x86) Console Application")
+!MESSAGE "unzip - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "unzip - Win32 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "unzip - Win32 ASM Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "unzip - Win32 ASM Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -213,6 +213,10 @@ SOURCE=..\..\unzip.c
 # Begin Source File
 
 SOURCE=..\win32.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\win32i64.c
 # End Source File
 # Begin Source File
 

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
+  See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -142,6 +142,10 @@
 #  endif
 #endif
 
+#ifdef USE_BZIP2
+#  include "bzlib.h"
+#endif
+
 
 /*************/
 /*  Globals  */
@@ -183,8 +187,8 @@ typedef struct Globals {
     int newzip;           /* reset in extract.c; used in crypt.c */
     zoff_t   real_ecrec_offset;
     zoff_t   expect_ecrec_offset;
-    long     csize;       /* used by decompr. (NEXTBYTE): must be signed */
-    long     used_csize;  /* used by extract_or_test_member(), explode() */
+    zoff_t   csize;       /* used by decompr. (NEXTBYTE): must be signed */
+    zoff_t   used_csize;  /* used by extract_or_test_member(), explode() */
 
 #ifdef DLL
      int fValidate;       /* true if only validating an archive */
@@ -233,7 +237,7 @@ typedef struct Globals {
 #endif
     uch       *inbuf;               /* input buffer (any size is OK) */
     uch       *inptr;               /* pointer into input buffer */
-    long      incnt;
+    int       incnt;
 
 #ifndef FUNZIP
     ulg       bitbuf;
@@ -332,6 +336,10 @@ typedef struct Globals {
 #endif /* ?USE_ZLIB */
 
 #ifndef FUNZIP
+    /* cylindric buffer space for formatting zoff_t values (fileio static) */
+    char fzofft_buf[FZOFFT_NUM][FZOFFT_LEN];
+    int fzofft_index;
+
 #ifdef SMALL_MEM
     char rgchBigBuffer[512];
     char rgchSmallBuffer[96];
@@ -347,7 +355,7 @@ typedef struct Globals {
     LPUSERFUNCTIONS lpUserFunctions;
 #endif
 
-    long incnt_leftover;    /* so improved NEXTBYTE does not waste input */
+    int incnt_leftover;       /* so improved NEXTBYTE does not waste input */
     uch *inptr_leftover;
 
 #ifdef VMS_TEXT_CONV

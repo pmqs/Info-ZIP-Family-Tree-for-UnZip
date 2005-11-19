@@ -3,7 +3,7 @@ Option Explicit
 
 '-- Please Do Not Remove These Comment Lines!
 '----------------------------------------------------------------
-'-- Sample VB 5 / VB 6 code to drive unzip32.dll
+'-- Sample VB 5 code to drive unzip32.dll
 '-- Contributed to the Info-ZIP project by Mike Le Voi
 '--
 '-- Contact me at: mlevoi@modemss.brisnet.org.au
@@ -40,9 +40,6 @@ Option Explicit
 '-- Modified August 17, 1998
 '-- by Christian Spieler
 '-- (implemented sort of a "real" user interface)
-'-- Modified May 11, 2003
-'-- by Christian Spieler
-'-- (use late binding for referencing the common dialog)
 '--
 '---------------------------------------------------------------
 
@@ -261,22 +258,18 @@ Public Function UZDLLServ(ByRef mname As UNZIPCBChar, ByVal x As Long) As Long
 
     Dim s0 As String
     Dim xx As Long
-
+    
     '-- Always Put This In Callback Routines!
     On Error Resume Next
-
-    ' Parameter x contains the size of the extracted archive entry.
-    ' This information may be used for some kind of progress display...
-
+    
     s0 = ""
     '-- Get Zip32.DLL Message For processing
-    For xx = 0 To UBound(mname.ch)
+    For xx = 0 To x - 1
         If mname.ch(xx) = 0 Then Exit For
         s0 = s0 & Chr$(mname.ch(xx))
     Next
     ' At this point, s0 contains the message passed from the DLL
     ' It is up to the developer to code something useful here :)
-
     UZDLLServ = 0 ' Setting this to 1 will abort the zip!
 
 End Function
@@ -462,5 +455,5 @@ Public Sub VBUnZip32()
   MsgStr$ = MsgStr$ & vbNewLine & "Num Of Members  : " & UZUSER.NumMembers
   MsgStr$ = MsgStr$ & vbNewLine & "--------------"
 
-  VBUnzFrm.txtMsgOut.Text = VBUnzFrm.txtMsgOut.Text & MsgStr$ & vbNewLine
+  VBUnzFrm.MsgOut.Text = VBUnzFrm.MsgOut.Text & MsgStr$ & vbNewLine$
 End Sub

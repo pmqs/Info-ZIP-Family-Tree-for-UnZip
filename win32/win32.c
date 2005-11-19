@@ -992,7 +992,7 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
 /* Function SetFileSize() */
 /**************************/
 
-int SetFileSize(FILE *file, ulg filesize)
+int SetFileSize(FILE *file, zusz_t filesize)
 {
 #ifdef __RSXNT__
     /* RSXNT environment lacks a translation function from C file pointer
@@ -1003,6 +1003,9 @@ int SetFileSize(FILE *file, ulg filesize)
       rommel@ars.de
      */
     HANDLE os_fh;
+#ifdef Z_UINT8_DEFINED
+    LARGE_INTEGER fsbuf;
+#endif
 
     /* Win9x supports FAT file system, only; presetting file size does
        not help to prevent fragmentation. */
@@ -1016,7 +1019,13 @@ int SetFileSize(FILE *file, ulg filesize)
      */
     os_fh = (HANDLE)_get_osfhandle(fileno(file));
     /* move file pointer behind the last byte of the expected file size */
-    if (SetFilePointer(os_fh, filesize, 0, FILE_BEGIN) == 0xFFFFFFFF)
+#ifdef Z_UINT8_DEFINED
+    fsbuf.QuadPart = filesize;
+    if ((SetFilePointer(os_fh, fsbuf.LowPart, &fsbuf.HighPart, FILE_BEGIN)
+         == 0xFFFFFFFF) && GetLastError() != NO_ERROR)
+#else
+    if (SetFilePointer(os_fh, (ulg)filesize, 0, FILE_BEGIN) == 0xFFFFFFFF)
+#endif
         return -1;
     /* extend/truncate file to the current position */
     if (SetEndOfFile(os_fh) == 0)
@@ -1919,7 +1928,7 @@ static void maskDOSdevice(__G__ pathcomp)
 #endif
 
 #ifdef DEBUG
-    if (stat(pathcomp, &G.statbuf) == 0) {
+    if (zstat(pathcomp, &G.statbuf) == 0) {
         Trace((stderr,
                "maskDOSdevice() stat(\"%s\", buf) st_mode result: %X, %o\n",
                FnFilter1(pathcomp), G.statbuf.st_mode, G.statbuf.st_mode));
@@ -1928,7 +1937,7 @@ static void maskDOSdevice(__G__ pathcomp)
                FnFilter1(pathcomp)));
     }
 #endif
-    if (stat(pathcomp, &G.statbuf) == 0 && S_ISCHR(G.statbuf.st_mode)) {
+    if (zstat(pathcomp, &G.statbuf) == 0 && S_ISCHR(G.statbuf.st_mode)) {
         extent i;
 
         /* pathcomp contains a name of a DOS character device (builtin or
@@ -2622,7 +2631,7 @@ int screensize(int *tt_rows, int *tt_cols)
  * are not stable but vary according to the seasonal change of "daylight
  * saving time in effect / not in effect".
  *
- * Other C runtime libs (CygWin, or the crtdll.dll supplied with Win9x/NT
+ * Other C runtime libs (CygWin), or the crtdll.dll supplied with Win9x/NT
  * return the unix-time equivalent of the UTC FILETIME values as got back
  * from the Win32 API call. This time, return values from NTFS are correct
  * whereas utimes from files on (V)FAT volumes vary according to the DST
@@ -2645,9 +2654,9 @@ int screensize(int *tt_rows, int *tt_cols)
  * detects the case and fills in reasonable values.  Otherwise we get    *
  * effects like failure to extract to a root dir because it's not found. */
 
-int zstat_win32(__W32STAT_GLOBALS__ const char *path, struct stat *buf)
+int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
 {
-    if (!stat(path, buf))
+    if (!zstat(path, buf))
     {
         /* stat was successful, now redo the time-stamp fetches */
 #ifndef NO_W32TIMES_IZFIX
@@ -2734,7 +2743,7 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, struct stat *buf)
         if (flags != 0xFFFFFFFF && flags & FILE_ATTRIBUTE_DIRECTORY) {
             Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
                    FnFilter1(path)));
-            memset(buf, 0, sizeof(struct stat));
+            memset(buf, 0, sizeof(z_stat));
             buf->st_atime = buf->st_ctime = buf->st_mtime =
               dos_to_unix_time(DOSTIME_MINIMUM);        /* 1-1-80 */
             buf->st_mode = S_IFDIR | S_IREAD |
@@ -2874,3 +2883,21 @@ int getch_win32(void)
   return ret;
 }
 #endif /* !WINDLL */
+
+
+
+/* --------------------------------------------------- */
+/* Large File Support
+ *
+ * Initial functions by E. Gordon and R. Nausedat
+ * 9/10/2003
+ * Lifted from Zip 3b, win32.c and place here by Myles Bennett
+ * 7/6/2004
+ *
+ * These implement 64-bit file support for Windows.  The
+ * defines and headers are in win32/w32cfg.h.
+ *
+ * Moved to win32i64.c by Mike White to avoid conflicts in
+ * same name functions in WiZ using UnZip and Zip libraries.
+ * 9/25/2003
+ */

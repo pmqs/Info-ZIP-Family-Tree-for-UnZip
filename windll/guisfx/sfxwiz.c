@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2000 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -55,10 +55,22 @@ HWND hWnd;
 int WINAPI password(LPSTR p, int n, LPCSTR m, LPCSTR name);
 int WINAPI DisplayBuf(TCHAR far *buf, unsigned long size);
 int WINAPI GetReplaceDlgRetVal(TCHAR *filename);
+#ifdef Z_UINT8_DEFINED
+void WINAPI ReceiveDllMessage(z_uint8 ucsize, z_uint8 csiz,
+    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
+    unsigned mm, TCHAR c, LPCSTR filename, LPCSTR methbuf, unsigned long crc,
+    TCHAR fCrypt);
+#else
 void WINAPI ReceiveDllMessage(unsigned long ucsize, unsigned long csiz,
-   unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
-   unsigned mm, TCHAR c, LPSTR filename, LPSTR methbuf, unsigned long crc,
-   TCHAR fCrypt);
+    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
+    unsigned mm, TCHAR c, LPCSTR filename, LPCSTR methbuf, unsigned long crc,
+    TCHAR fCrypt);
+#endif
+void WINAPI ReceiveDllMessage_NO_INT64(unsigned long ucsize_low,
+    unsigned long ucsize_high, unsigned long csiz_low, unsigned long csiz_high,
+    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
+    unsigned mm, TCHAR c, LPCSTR filename, LPCSTR methbuf, unsigned long crc,
+    TCHAR fCrypt);
 
 char szAppName[_MAX_PATH];
 char szTarget[_MAX_PATH];
@@ -463,9 +475,25 @@ return ReplaceDlgRetVal;
 #ifdef __BORLANDC__
 #pragma argsused
 #endif
+#ifdef Z_UINT8_DEFINED
+void WINAPI ReceiveDllMessage(z_uint8 ucsize, z_uint8 csiz,
+    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
+    unsigned mm, TCHAR c, LPCSTR filename, LPCSTR methbuf, unsigned long crc,
+    TCHAR fCrypt)
+{
+}
+#else
 void WINAPI ReceiveDllMessage(unsigned long ucsize, unsigned long csiz,
+    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
+    unsigned mm, TCHAR c, LPCSTR filename, LPCSTR methbuf, unsigned long crc,
+    TCHAR fCrypt)
+{
+}
+#endif
+void WINAPI ReceiveDllMessage_NO_INT64(unsigned long ucsize_low,
+   unsigned long ucsize_high, unsigned long csiz_low, unsigned long csiz_high,
    unsigned cfactor, unsigned mo, unsigned dy, unsigned yr, unsigned hh,
-   unsigned mm, TCHAR c, LPSTR filename, LPSTR methbuf, unsigned long crc,
+   unsigned mm, TCHAR c, LPCSTR filename, LPCSTR methbuf, unsigned long crc,
    TCHAR fCrypt)
 {
 }
@@ -508,6 +536,7 @@ lpUserFunctions->print = DisplayBuf;
 lpUserFunctions->sound = NULL;
 lpUserFunctions->replace = GetReplaceDlgRetVal;
 lpUserFunctions->SendApplicationMessage = ReceiveDllMessage;
+lpUserFunctions->SendApplicationMessage_i32 = ReceiveDllMessage_NO_INT64;
 lpUserFunctions->ServCallBk = NULL;
 
 

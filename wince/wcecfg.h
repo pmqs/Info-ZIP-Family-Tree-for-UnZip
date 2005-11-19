@@ -208,6 +208,74 @@ int getch_win32  OF((void));
 
 #endif /* ?POCKET_UNZIP */
 
+
+#ifndef _WIN32_WCE /* native Windows CE does not support 64-bit filesizes */
+
+/* 64-bit-Integers & Large File Support
+ *
+ *  If this is set it is assumed that the port
+ *  supports 64-bit file calls.  The types are
+ *  defined here.  Any local implementations are
+ *  in w32i64.c and the protypes for the calls are
+ *  in unzip.h.  Note that a port must support
+ *  these calls fully or should not set
+ *  LARGE_FILE_SUPPORT.
+ */
+
+/* Automatically set ZIP64_SUPPORT if supported */
+
+#ifndef NO_ZIP64_SUPPORT
+# ifndef ZIP64_SUPPORT
+#   if defined(_MSC_VER)
+#     define ZIP64_SUPPORT
+#   endif
+# endif
+#endif
+
+#ifdef ZIP64_SUPPORT
+  /* base type for file offsets and file sizes */
+# if (defined(__GNUC__) || defined(ULONG_LONG_MAX))
+    typedef long long    zoff_t;
+# else
+    /* all other compilers use this as intrinsic 64-bit type */
+    typedef __int64      zoff_t;
+# endif
+# define ZOFF_T_DEFINED
+
+  /* user-defined types and format strings for 64-bit numbers and
+   * file pointer functions  (these depend on the rtl library and library
+   * headers used; they are NOT compiler-specific)
+   */
+# if defined(_MSC_VER)
+    /* MS C and VC */
+    /* these systems use the Microsoft C RTL */
+
+    /* 64-bit stat struct */
+    typedef struct _stati64 z_stat;
+#   define Z_STAT_DEFINED
+
+    /* printf format size prefix for zoff_t values */
+#   define FZOFFT_FMT "I64"
+#   define FZOFFT_HEX_WID_VALUE "16"
+
+# endif
+
+#endif
+
+/* If port has LARGE_FILE_SUPPORT then define here
+   to make automatic unless overridden */
+
+#ifndef LARGE_FILE_SUPPORT
+# ifndef NO_LARGE_FILE_SUPPORT
+#   if defined(_MSC_VER)
+#     define LARGE_FILE_SUPPORT
+#   endif
+# endif
+#endif
+
+#endif /* !_WIN32_WCE */
+
+
 //******************************************************************************
 //***** Global headers
 //******************************************************************************

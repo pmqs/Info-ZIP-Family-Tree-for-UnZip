@@ -3,7 +3,8 @@ There are now several entry points to the dll.
 There is a single "unzipping" entry point of:
 
 int WINAPI Wiz_SingleEntryUnzip(int ifnc, char **ifnv, int xfnc, char **xfnv,
-                                LPDCL lpDCL, LPUSERFUNCTIONS lpUserFunc)
+                                LPDCL lpDCL, LPUSERFUNCTIONS lpUserFunc,
+                                LPSTR AltExtList, LPSTR AltExcList)
 
 where the arguments are:
 
@@ -23,6 +24,21 @@ lpUserFunc = pointer to a structure that contains pointers to functions
              in the calling application, as well as sizes passed back to
              the calling application etc. See below for a detailed description
              of all the parameters.
+AltExtList = Pointer to a list of file names to be extracted, separated by
+             white space. If all files are to be extracted, then this should
+             be NULL. Parameter ifnc should have an accurate count of the
+             number of filenames being passed in. For VB users only, All
+             others should set this to null.
+AltExcList = Pointer to a list of file names to be excluded from processing.
+             Parameter xfnc should have an accurate count of the number of
+             the number of filenames being passed in. For VB users only.
+             All others should set this to NULL.
+
+NOTE: It is imperative that you understand that if you use the string pointers
+AltExtList and AltExcList, you will destroy any information that you try to
+pass in, in ifnc, ifnv, xfnc, xfnv, and it will be overwritten with information
+from AltExtList and AltExcList.
+
 
 The DCL structure is shown below:
 
@@ -101,13 +117,22 @@ are shown immediately below.
 
 typedef unsigned short ush;
 typedef int (WINAPI DLLPRNT) (LPSTR, unsigned long);
-typedef int (WINAPI DLLPASSWORD) (LPSTR, int, LPCSTR, LPCSTR);
-typedef int (WINAPI DLLSERVICE) (LPSTR, unsigned long);
+typedef int (WINAPI DLLPASSWORD) (LPSTR pwbuf, int bufsiz,
+    LPCSTR promptmsg, LPCSTR entryname);
+typedef int (WINAPI DLLSERVICE)(LPCSTR entryname, z_uint8 uncomprsiz);
+typedef int (WINAPI DLLSERVICE_I32) (LPCSTR entryname,
+    unsigned long ucsz_lo, unsigned long ucsz_hi);
 typedef void (WINAPI DLLSND) (void);
-typedef int (WINAPI DLLREPLACE)(LPSTR);
-typedef void (WINAPI DLLMESSAGE)(unsigned long, unsigned long, unsigned,
-   unsigned, unsigned, unsigned, unsigned, unsigned,
-   char, LPSTR, LPSTR, unsigned long, char);
+typedef int (WINAPI DLLREPLACE) (LPSTR efnam);
+typedef void (WINAPI DLLMESSAGE) (z_uint8 ucsize, z_uint8 csize,
+    unsigned cfactor,
+    unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
+    char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
+typedef void (WINAPI DLLMESSAGE_I32) (unsigned long ucsiz_l,
+    unsigned long ucsiz_h, unsigned long csiz_l, unsigned long csiz_h,
+    unsigned cfactor,
+    unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
+    char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
 
 Structure USERFUNCTIONS
 
@@ -116,7 +141,13 @@ DLLPRNT *print;         = a pointer to the application's print routine.
 DLLSND *sound;          = a pointer to the application's sound routine. This
                           can be NULL if your application doesn't use
                           sound.
-DLLREPLACE *replace     = a pointer to the application's replace routine.
+DLLREPLACE *replace     = a pointer to the application's replace routine. The
+                          replace routine may modify the content of the efnam
+                          string buffer, but must not write beyond its fixed
+                          size of FILNAMSIZ! (This is a potential security
+                          leak of the windll interface.) When modifying the
+                          efnam buffer, the replace routine should return
+                          the status IDM_REPLACE_RENAME.
 DLLPASSWORD *password   = a pointer to the application's password routine.
 DLLMESSAGE *SendApplicationMessage = a pointer to the application's routine
                           for displaying information about specific files
@@ -128,21 +159,31 @@ DLLSERVICE *ServCallBk  = Callback function designed to be used for
                           option of a progress indicator. If this function
                           returns a non-zero value, then it will terminate
                           what it is doing. It provides the application with
-                          the name of the name of the archive member it has
-                          just processed, as well as it's original size.
-NOTE: The values below are filled in only when listing the contents of an
-      archive.
-
-unsigned long TotalSizeComp = value to be filled in by the dll for the
+                          the name of the archive member it has just processed,
+                          as well as it's original size.
+DLLMESSAGE_I32 *SendApplicationMessage_i32 = variant of SendApplicationMessage
+                          callback, for environments that do not support the
+                          64-bit integer types required to transfer "large"
+                          ZIP64-compatible sizes.
+DLLSERVICE_I32 *ServCallBk_i32  = variant of the ServCallBk callback function,
+                          for environments that do not support 64-bit integers.
+[NOTE: The _i32 variants of the SendApplicationMessage and ServCallBk callback
+       functions are only called when the corresponding "regular" callback
+       function pointers are set to NULL.  For the i386 architecture, the
+       "..._i32" calling interfaces are binary identical with the corresponding
+       regular __int64-aware interfaces.]
+[NOTE: The values below are filled in only when listing the contents of an
+       archive.]
+z_uint8 TotalSizeComp   = value to be filled in by the dll for the
                           compressed total size of the archive. Note this
                           value does not include the size of the archive
                           header and central directory list.
-unsigned long TotalSize = value to be filled in by the dll for the total
+z_uint8 TotalSize       = value to be filled in by the dll for the total
                           size of all files in the archive.
-unsigned long CompFactor = value to be filled in by the dll for the overall
+z_uint8 NumMembers      = total number of files in the archive.
+unsigned CompFactor     = value to be filled in by the dll for the overall
                           compression factor. This could actually be computed
                           from the other values, but it is available.
-unsigned long NumMembers = total number of files in the archive.
 WORD cchComment;        = flag to be set if archive has a comment
 } USERFUNCTIONS, far * LPUSERFUNCTIONS;
 
@@ -314,6 +355,6 @@ the "series" of calls, make sure that Wiz_SetOpts and Wiz_Unzip are always
 used together! When successfully called, Wiz_SetOpts has allocated some
 internal structures which are in turn free'd by Wiz_Unzip.
 
-Last revised February 27, 2005.
+Last revised May 08, 2005.
 
 Mike White, Christian Spieler

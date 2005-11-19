@@ -51,7 +51,20 @@ extern int hFile;                 /* file handle             */
 int WINAPI DisplayBuf(LPSTR, unsigned long);
 
 /* Procedure Calls */
-void WINAPI ReceiveDllMessage(unsigned long, unsigned long, unsigned,
-    unsigned, unsigned, unsigned, unsigned, unsigned,
-    char, LPSTR, LPSTR, unsigned long, char);
+#ifdef Z_UINT8_DEFINED
+void WINAPI ReceiveDllMessage(z_uint8 ucsize, z_uint8 csize,
+    unsigned cfactor,
+    unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
+    char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
+#else
+void WINAPI ReceiveDllMessage(unsigned long ucsize, unsigned long csize,
+    unsigned cfactor,
+    unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
+    char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
+#endif
+void WINAPI ReceiveDllMessage_NO_INT64(unsigned long ucsiz_l,
+    unsigned long ucsiz_h, unsigned long csiz_l, unsigned long csiz_h,
+    unsigned cfactor,
+    unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
+    char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
 #endif /* _UZEXAMPL_H */

@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -30,6 +30,8 @@ BOOL    WINAPI Wiz_SetOpts(zvoid *, LPDCL);
 int     WINAPI Wiz_Unzip(zvoid *, int, char **, int, char **);
 int     WINAPI Wiz_SingleEntryUnzip(int, char **, int, char **,
                                     LPDCL, LPUSERFUNCTIONS);
+int     WINAPI Wiz_SingleEntryUnzipList(unsigned, LPCSTR, unsigned, LPCSTR,
+                                        LPDCL, LPUSERFUNCTIONS);
 
 int     WINAPI Wiz_UnzipToMemory(LPSTR zip, LPSTR file,
                                  LPUSERFUNCTIONS lpUserFunctions,

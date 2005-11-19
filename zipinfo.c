@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -120,7 +120,7 @@
 
 #define LFLAG  3   /* short "ls -l" type listing */
 
-static int   zi_long   OF((__GPRO__ ulg *pEndprev));
+static int   zi_long   OF((__GPRO__ zusz_t *pEndprev));
 static int   zi_short  OF((__GPRO));
 static void  zi_showMacTypeCreator
                        OF((__GPRO__ uch *ebfield));
@@ -135,28 +135,30 @@ static char *zi_time   OF((__GPRO__ ZCONST ulg *datetimez,
 static ZCONST char nullStr[] = "";
 static ZCONST char PlurSufx[] = "s";
 
-static ZCONST char Far LongHeader[] = "Archive:  %s   %ld bytes   %u file%s\n";
-static ZCONST char Far ShortHeader[] = "Archive:  %s   %ld   %u\n";
+static ZCONST char Far LongHeader[] = "Archive:  %s   %s bytes   %s file%s\n";
+static ZCONST char Far ShortHeader[] = "Archive:  %s   %s   %s\n";
 static ZCONST char Far EndCentDirRec[] = "\nEnd-of-central-directory record:\n";
 static ZCONST char Far LineSeparators[] = "-------------------------------\n\n";
 static ZCONST char Far ActOffsetCentDir[] = "\
-  Actual offset of end-of-central-dir record:   %9ld (%.8lXh)\n\
-  Expected offset of end-of-central-dir record: %9ld (%.8lXh)\n\
+  Actual end-cent-dir record offset:   %s (%sh)\n\
+  Expected end-cent-dir record offset: %s (%sh)\n\
   (based on the length of the central directory and its expected offset)\n\n";
 static ZCONST char Far SinglePartArchive1[] = "\
   This zipfile constitutes the sole disk of a single-part archive; its\n\
-  central directory contains %u %s.  The central directory is %lu\n\
-  (%.8lXh) bytes long, and its (expected) offset in bytes from the\n";
+  central directory contains %s %s.\n\
+  The central directory is %s (%sh) bytes long,\n";
 static ZCONST char Far SinglePartArchive2[] = "\
-  beginning of the zipfile is %lu (%.8lXh).\n\n";
+  and its (expected) offset in bytes from the beginning of the zipfile\n\
+  is %s (%sh).\n\n";
 static ZCONST char Far MultiPartArchive1[] = "\
-  This zipfile constitutes disk %u of a multi-part archive.  The central\n\
-  directory starts on disk %u; %u of its entries %s contained within\n";
+  This zipfile constitutes disk %lu of a multi-part archive.  The central\n\
+  directory starts on disk %lu; %s of its entries %s contained within\n";
 static ZCONST char Far MultiPartArchive2[] = "\
-  this zipfile, out of a total of %u %s.  The entire central\n\
-  directory is %lu (%.8lXh) bytes long, and its offset in bytes from\n";
+  this zipfile, out of a total of %s %s.  The entire central\n\
+  directory is %s (%sh) bytes long, and its offset\n";
 static ZCONST char Far MultiPartArchive3[] = "\
-  the beginning of the zipfile in which it begins is %lu (%.8lXh).\n\n";
+  in bytes from the beginning of the zipfile in which it begins\n\
+  is %s (%sh).\n\n";
 static ZCONST char Far NoZipfileComment[] = "  There is no zipfile comment.\n";
 static ZCONST char Far ZipfileCommentDesc[] =
   "  The zipfile comment is %u bytes long and contains the following text:\n\n";
@@ -172,7 +174,7 @@ static ZCONST char Far ZipfileCommTruncMsg[] =
 static ZCONST char Far CentralDirEntry[] =
   "\nCentral directory entry #%lu:\n---------------------------\n\n";
 static ZCONST char Far ZipfileStats[] =
-  "%lu file%s, %lu bytes uncompressed, %lu bytes compressed:  %s%d.%d%%\n";
+  "%lu file%s, %s bytes uncompressed, %s bytes compressed:  %s%d.%d%%\n";
 
 /* zi_long() strings */
 static ZCONST char Far OS_FAT[] = "MS-DOS, OS/2 or NT FAT";
@@ -220,74 +222,80 @@ static ZCONST char Far DeflFast[] = "fast";
 static ZCONST char Far DeflSFast[] = "superfast";
 
 static ZCONST char Far ExtraBytesPreceding[] =
-  "  There are an extra %ld bytes preceding this file.\n\n";
+  "  There are an extra %s bytes preceding this file.\n\n";
 
 static ZCONST char Far UnknownNo[] = "unknown (%d)";
 
-static ZCONST char Far LocalHeaderOffset[] =
-  "\n  offset of local header from start of archive:     %lu (%.8lXh) bytes\n";
+#ifdef ZIP64_SUPPORT
+  static ZCONST char Far LocalHeaderOffset[] =
+    "\n  offset of local header from start of archive:   %s\n\
+                                                  (%sh) bytes\n";
+#else
+  static ZCONST char Far LocalHeaderOffset[] =
+    "\n  offset of local header from start of archive:   %s (%sh) bytes\n";
+#endif
 static ZCONST char Far HostOS[] =
-  "  file system or operating system of origin:        %s\n";
+  "  file system or operating system of origin:      %s\n";
 static ZCONST char Far EncodeSWVer[] =
-  "  version of encoding software:                     %u.%u\n";
+  "  version of encoding software:                   %u.%u\n";
 static ZCONST char Far MinOSCompReq[] =
-  "  minimum file system compatibility required:       %s\n";
+  "  minimum file system compatibility required:     %s\n";
 static ZCONST char Far MinSWVerReq[] =
-  "  minimum software version required to extract:     %u.%u\n";
+  "  minimum software version required to extract:   %u.%u\n";
 static ZCONST char Far CompressMethod[] =
-  "  compression method:                               %s\n";
+  "  compression method:                             %s\n";
 static ZCONST char Far SlideWindowSizeImplode[] =
-  "  size of sliding dictionary (implosion):           %cK\n";
+  "  size of sliding dictionary (implosion):         %cK\n";
 static ZCONST char Far ShannonFanoTrees[] =
-  "  number of Shannon-Fano trees (implosion):         %c\n";
+  "  number of Shannon-Fano trees (implosion):       %c\n";
 static ZCONST char Far CompressSubtype[] =
-  "  compression sub-type (deflation):                 %s\n";
+  "  compression sub-type (deflation):               %s\n";
 static ZCONST char Far FileSecurity[] =
-  "  file security status:                             %sencrypted\n";
+  "  file security status:                           %sencrypted\n";
 static ZCONST char Far ExtendedLocalHdr[] =
-  "  extended local header:                            %s\n";
+  "  extended local header:                          %s\n";
 static ZCONST char Far FileModDate[] =
-  "  file last modified on (DOS date/time):            %s\n";
+  "  file last modified on (DOS date/time):          %s\n";
 #ifdef USE_EF_UT_TIME
   static ZCONST char Far UT_FileModDate[] =
-    "  file last modified on (UT extra field modtime):   %s %s\n";
+    "  file last modified on (UT extra field modtime): %s %s\n";
   static ZCONST char Far LocalTime[] = "local";
 #ifndef NO_GMTIME
   static ZCONST char Far GMTime[] = "UTC";
 #endif
 #endif /* USE_EF_UT_TIME */
 static ZCONST char Far CRC32Value[] =
-  "  32-bit CRC value (hex):                           %.8lx\n";
+  "  32-bit CRC value (hex):                         %.8lx\n";
 static ZCONST char Far CompressedFileSize[] =
-  "  compressed size:                                  %lu bytes\n";
+  "  compressed size:                                %s bytes\n";
 static ZCONST char Far UncompressedFileSize[] =
-  "  uncompressed size:                                %lu bytes\n";
+  "  uncompressed size:                              %s bytes\n";
 static ZCONST char Far FilenameLength[] =
-  "  length of filename:                               %u characters\n";
+  "  length of filename:                             %u characters\n";
 static ZCONST char Far ExtraFieldLength[] =
-  "  length of extra field:                            %u bytes\n";
+  "  length of extra field:                          %u bytes\n";
 static ZCONST char Far FileCommentLength[] =
-  "  length of file comment:                           %u characters\n";
+  "  length of file comment:                         %u characters\n";
 static ZCONST char Far FileDiskNum[] =
-  "  disk number on which file begins:                 disk %u\n";
+  "  disk number on which file begins:               disk %lu\n";
 static ZCONST char Far ApparentFileType[] =
-  "  apparent file type:                               %s\n";
+  "  apparent file type:                             %s\n";
 static ZCONST char Far VMSFileAttributes[] =
-  "  VMS file attributes (%06o octal):               %s\n";
+  "  VMS file attributes (%06o octal):             %s\n";
 static ZCONST char Far AmigaFileAttributes[] =
-  "  Amiga file attributes (%06o octal):             %s\n";
+  "  Amiga file attributes (%06o octal):           %s\n";
 static ZCONST char Far UnixFileAttributes[] =
-  "  Unix file attributes (%06o octal):              %s\n";
+  "  Unix file attributes (%06o octal):            %s\n";
 static ZCONST char Far NonMSDOSFileAttributes[] =
-  "  non-MSDOS external file attributes:               %06lX hex\n";
+  "  non-MSDOS external file attributes:             %06lX hex\n";
 static ZCONST char Far MSDOSFileAttributes[] =
-  "  MS-DOS file attributes (%02X hex):                  none\n";
+  "  MS-DOS file attributes (%02X hex):                none\n";
 static ZCONST char Far MSDOSFileAttributesRO[] =
-  "  MS-DOS file attributes (%02X hex):                  read-only\n";
+  "  MS-DOS file attributes (%02X hex):                read-only\n";
 static ZCONST char Far MSDOSFileAttributesAlpha[] =
-  "  MS-DOS file attributes (%02X hex):                  %s%s%s%s%s%s%s%s\n";
+  "  MS-DOS file attributes (%02X hex):                %s%s%s%s%s%s%s%s\n";
 static ZCONST char Far TheosFileAttributes[] =
-  "  Theos file attributes (%04X hex):                 %s\n";
+  "  Theos file attributes (%04X hex):               %s\n";
 
 static ZCONST char Far TheosFTypLib[] = "Library     ";
 static ZCONST char Far TheosFTypDir[] = "Directory   ";
@@ -630,7 +638,8 @@ int zi_end_central(__G)   /* return PK-type error code */
     if (uO.hflag)
         Info(slide, 0, ((char *)slide, ((int)strlen(G.zipfn) < 39)?
           LoadFarString(LongHeader) : LoadFarString(ShortHeader), G.zipfn,
-          (long)G.ziplen, G.ecrec.total_entries_central_dir,
+          FmZofft(G.ziplen, NULL, NULL),
+          FmZofft(G.ecrec.total_entries_central_dir, NULL, "u"),
           (G.ecrec.total_entries_central_dir==1)?
           nullStr : PlurSufx));
 
@@ -640,32 +649,37 @@ int zi_end_central(__G)   /* return PK-type error code */
         Info(slide, 0, ((char *)slide, LoadFarString(LineSeparators)));
 
         Info(slide, 0, ((char *)slide, LoadFarString(ActOffsetCentDir),
-          (long)G.real_ecrec_offset, (long)G.real_ecrec_offset,
-          (long)G.expect_ecrec_offset, (long)G.expect_ecrec_offset));
+          FmZofft(G.real_ecrec_offset, "9", "u"),
+          FmZofft(G.real_ecrec_offset, FZOFFT_HEX_DOT_WID, "X"),
+          FmZofft(G.expect_ecrec_offset, "9", "u"),
+          FmZofft(G.expect_ecrec_offset, FZOFFT_HEX_DOT_WID, "X")));
 
         if (G.ecrec.number_this_disk == 0) {
             Info(slide, 0, ((char *)slide, LoadFarString(SinglePartArchive1),
-              G.ecrec.total_entries_central_dir,
+              FmZofft(G.ecrec.total_entries_central_dir, NULL, "u"),
               (G.ecrec.total_entries_central_dir == 1)? "entry" : "entries",
-              G.ecrec.size_central_directory,
-              G.ecrec.size_central_directory));
+              FmZofft(G.ecrec.size_central_directory, NULL, "u"),
+              FmZofft(G.ecrec.size_central_directory,
+                      FZOFFT_HEX_DOT_WID, "X")));
             Info(slide, 0, ((char *)slide, LoadFarString(SinglePartArchive2),
-              G.ecrec.offset_start_central_directory,
-              G.ecrec.offset_start_central_directory));
+              FmZofft(G.ecrec.offset_start_central_directory, NULL, "u"),
+              FmZofft(G.ecrec.offset_start_central_directory,
+                      FZOFFT_HEX_DOT_WID, "X")));
         } else {
             Info(slide, 0, ((char *)slide, LoadFarString(MultiPartArchive1),
-              G.ecrec.number_this_disk + 1,
-              G.ecrec.num_disk_start_cdir + 1,
-              G.ecrec.num_entries_centrl_dir_ths_disk,
+              (ulg)(G.ecrec.number_this_disk + 1),
+              (ulg)(G.ecrec.num_disk_start_cdir + 1),
+              FmZofft(G.ecrec.num_entries_centrl_dir_ths_disk, NULL, "u"),
               (G.ecrec.num_entries_centrl_dir_ths_disk == 1)? "is" : "are"));
             Info(slide, 0, ((char *)slide, LoadFarString(MultiPartArchive2),
-              G.ecrec.total_entries_central_dir,
+              FmZofft(G.ecrec.total_entries_central_dir, NULL, "u"),
               (G.ecrec.total_entries_central_dir == 1) ? "entry" : "entries",
-              G.ecrec.size_central_directory,
-              G.ecrec.size_central_directory));
+              FmZofft(G.ecrec.size_central_directory, NULL, "u"),
+              FmZofft(G.ecrec.size_central_directory, NULL, "u")));
             Info(slide, 0, ((char *)slide, LoadFarString(MultiPartArchive3),
-              G.ecrec.offset_start_central_directory,
-              G.ecrec.offset_start_central_directory));
+              FmZofft(G.ecrec.offset_start_central_directory, NULL, "u"),
+              FmZofft(G.ecrec.offset_start_central_directory,
+                      FZOFFT_HEX_DOT_WID, "X")));
         }
 
     /*-----------------------------------------------------------------------
@@ -715,9 +729,9 @@ int zipinfo(__G)   /* return PK-type error code */
     int do_this_file=FALSE, error, error_in_archive=PK_COOL;
     int *fn_matched=NULL, *xn_matched=NULL;
     ulg j, members=0L;
-    ulg tot_csize=0L, tot_ucsize=0L;
-    ulg endprev;   /* buffers end of previous entry for zi_long()'s check
-                    *  of extra bytes */
+    zusz_t tot_csize=0L, tot_ucsize=0L;
+    zusz_t endprev;   /* buffers end of previous entry for zi_long()'s check
+                       *  of extra bytes */
 
 
 /*---------------------------------------------------------------------------
@@ -759,13 +773,20 @@ int zipinfo(__G)   /* return PK-type error code */
         if (readbuf(__G__ G.sig, 4) == 0)
             return PK_EOF;
         if (strncmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
-            if (((unsigned)(j - 1) & (unsigned)0xFFFF) ==
-                (unsigned)G.ecrec.total_entries_central_dir) {
-                /* "j modulus 64k" matches the reported 16-bit-unsigned
+            /* no new central directory entry
+             * -> is the number of processed entries compatible with the
+             *    number of entries as stored in the end_central record?
+             */
+            if (((j - 1) &
+                 (ulg)(G.ecrec.is_zip64_archive ? MASK_ZUCN64 : MASK_ZUCN16))
+                == (ulg)G.ecrec.total_entries_central_dir)
+            {
+                /* "j modulus 4T/64k" matches the reported 64/16-bit-unsigned
                  * number of directory entries -> probably, the regular
                  * end of the central directory has been reached
                  */
                 break;
+
             } else {
                 Info(slide, 0x401,
                      ((char *)slide, LoadFarString(CentSigMsg), j));
@@ -820,11 +841,32 @@ int zipinfo(__G)   /* return PK-type error code */
 
         if (G.process_all_files || do_this_file) {
 
+            /* Read the extra field, if any.  The extra field info is required
+             * for resolving the Zip64 sizes/offsets and may be used in more
+             * analysis of the entry below.
+             */
+            if ((error = do_string(__G__ G.crec.extra_field_length,
+                                   EXTRA_FIELD)) != 0)
+            {
+                if (G.extra_field != NULL) {
+                    free(G.extra_field);
+                    G.extra_field = NULL;
+                }
+                error_in_archive = error;
+                /* The premature return in case of a "fatal" error (PK_EOF) is
+                 * delayed until we analyze the extra field contents.
+                 * This allows us to display all the other info that has been
+                 * successfully read in.
+                 */
+            }
+
             switch (uO.lflag) {
                 case 1:
                 case 2:
                     fnprint(__G);
-                    SKIP_(G.crec.extra_field_length)
+                    /* Handle a "fatal" error from extra field reading */
+                    if (error > PK_WARN)
+                        return error;
                     SKIP_(G.crec.file_comment_length)
                     break;
 
@@ -849,7 +891,9 @@ int zipinfo(__G)   /* return PK-type error code */
                     break;
 
                 default:
-                    SKIP_(G.crec.extra_field_length)
+                    /* Handle a "fatal" error from extra field reading */
+                    if (error > PK_WARN)
+                        return error;
                     SKIP_(G.crec.file_comment_length)
                     break;
 
@@ -879,6 +923,7 @@ int zipinfo(__G)   /* return PK-type error code */
         } else {        /* not listing this file */
             SKIP_(G.crec.extra_field_length)
             SKIP_(G.crec.file_comment_length)
+            if (endprev != 0) endprev = 0;
 
         } /* end if (list member?) */
 
@@ -897,8 +942,10 @@ int zipinfo(__G)   /* return PK-type error code */
             cfactor = -cfactor;
         }
         Info(slide, 0, ((char *)slide, LoadFarString(ZipfileStats),
-          members, (members==1L)? nullStr:PlurSufx, tot_ucsize,
-          tot_csize, sgn, cfactor/10, cfactor%10));
+          members, (members==1L)? nullStr:PlurSufx,
+          FmZofft(tot_ucsize, NULL, "u"),
+          FmZofft(tot_csize, NULL, "u"),
+          sgn, cfactor/10, cfactor%10));
     }
 
 /*---------------------------------------------------------------------------
@@ -925,9 +972,12 @@ int zipinfo(__G)   /* return PK-type error code */
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
 
-    if (strncmp(G.sig, end_central_sig, 4)) {   /* just to make sure again */
+    if (strncmp(G.sig,
+                (G.ecrec.is_zip64_archive ?
+                 end_central64_sig : end_central_sig),
+                4) != 0) {              /* just to make sure again */
         Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
-        error_in_archive = PK_WARN;   /* didn't find sig */
+        error_in_archive = PK_WARN;     /* didn't find sig */
     }
     if (members == 0 && error_in_archive <= PK_WARN)
         error_in_archive = PK_FIND;
@@ -949,7 +999,7 @@ int zipinfo(__G)   /* return PK-type error code */
 
 static int zi_long(__G__ pEndprev)   /* return PK-type error code */
     __GDEF
-    ulg *pEndprev;                   /* for zi_long() check of extra bytes */
+    zusz_t *pEndprev;                /* for zi_long() check of extra bytes */
 {
 #ifdef USE_EF_UT_TIME
     iztimes z_utime;
@@ -989,31 +1039,14 @@ static int zi_long(__G__ pEndprev)   /* return PK-type error code */
           G.crec.relative_offset_local_header, *pEndprev));
          */
         Info(slide, 0, ((char *)slide, LoadFarString(ExtraBytesPreceding),
-          (long)G.crec.relative_offset_local_header - (long)(*pEndprev)));
+          FmZofft((G.crec.relative_offset_local_header - (*pEndprev)),
+          NULL, NULL)));
     }
 
     /* calculate endprev for next time around (problem:  extra fields may
      * differ in length between local and central-directory records) */
     *pEndprev = G.crec.relative_offset_local_header + (4L + LREC_SIZE) +
       G.crec.filename_length + G.crec.extra_field_length + G.crec.csize;
-
-/*---------------------------------------------------------------------------
-    Read the extra field, if any. It may be used to get UNIX style modtime.
-  ---------------------------------------------------------------------------*/
-
-    if ((error = do_string(__G__ G.crec.extra_field_length, EXTRA_FIELD)) != 0)
-    {
-        if (G.extra_field != NULL) {
-            free(G.extra_field);
-            G.extra_field = NULL;
-        }
-        error_in_archive = error;
-        /* The premature return in case of a "fatal" error (PK_EOF) is
-         * delayed until we analyze the extra field contents.
-         * This allows us to display all the other info that has been
-         * successfully read in.
-         */
-    }
 
 /*---------------------------------------------------------------------------
     Print out various interesting things about the compressed file.
@@ -1028,8 +1061,8 @@ static int zi_long(__G__ pEndprev)   /* return PK-type error code */
     (*G.message)((zvoid *)&G, (uch *)"  ", 2L, 0);  fnprint(__G);
 
     Info(slide, 0, ((char *)slide, LoadFarString(LocalHeaderOffset),
-      G.crec.relative_offset_local_header,
-      G.crec.relative_offset_local_header));
+      FmZofft(G.crec.relative_offset_local_header, NULL, "u"),
+      FmZofft(G.crec.relative_offset_local_header, FZOFFT_HEX_DOT_WID, "X")));
 
     if (hostnum >= NUM_HOSTS) {
         sprintf(unkn, LoadFarString(UnknownNo),
@@ -1117,9 +1150,9 @@ static int zi_long(__G__ pEndprev)   /* return PK-type error code */
 
     Info(slide, 0, ((char *)slide, LoadFarString(CRC32Value), G.crec.crc32));
     Info(slide, 0, ((char *)slide, LoadFarString(CompressedFileSize),
-      G.crec.csize));
+      FmZofft(G.crec.csize, NULL, "u")));
     Info(slide, 0, ((char *)slide, LoadFarString(UncompressedFileSize),
-      G.crec.ucsize));
+      FmZofft(G.crec.ucsize, NULL, "u")));
     Info(slide, 0, ((char *)slide, LoadFarString(FilenameLength),
       G.crec.filename_length));
     Info(slide, 0, ((char *)slide, LoadFarString(ExtraFieldLength),
@@ -1127,7 +1160,7 @@ static int zi_long(__G__ pEndprev)   /* return PK-type error code */
     Info(slide, 0, ((char *)slide, LoadFarString(FileCommentLength),
       G.crec.file_comment_length));
     Info(slide, 0, ((char *)slide, LoadFarString(FileDiskNum),
-      G.crec.disk_number_start + 1));
+      (ulg)(G.crec.disk_number_start + 1)));
     Info(slide, 0, ((char *)slide, LoadFarString(ApparentFileType),
       (G.crec.internal_file_attributes & 1)? "text"
          : (G.crec.internal_file_attributes & 2)? "ebcdic"
@@ -1337,7 +1370,7 @@ static int zi_long(__G__ pEndprev)   /* return PK-type error code */
 
         if (error_in_archive > PK_WARN)   /* fatal:  can't continue */
             /* delayed "fatal error" return from extra field reading */
-            return error;
+            return error_in_archive;
         if (G.extra_field == (uch *)NULL)
             return PK_ERR;   /* not consistent with crec length */
 
@@ -1358,6 +1391,14 @@ static int zi_long(__G__ pEndprev)   /* return PK-type error code */
             switch (eb_id) {
                 case EF_PKSZ64:
                     ef_fieldname = efPKSZ64;
+                    if ((G.crec.relative_offset_local_header
+                         & (~(zusz_t)0xFFFFFFFFL)) != 0) {
+                        /* Subtract the size of the 64bit local offset from
+                           the local e.f. size, local Z64 e.f. block has no
+                           offset; when only local offset present, the entire
+                           local PKSZ64 block is missing. */
+                        *pEndprev -= (eb_datalen == 8 ? 12 : 8);
+                    }
                     break;
                 case EF_AV:
                     ef_fieldname = efAV;
@@ -1805,7 +1846,6 @@ static int zi_short(__G)   /* return PK-type error code */
         "def#", "d64#", "dcli", "u011", "bzp2", "u###"
     };
 
-
 /*---------------------------------------------------------------------------
     Print out various interesting things about the compressed file.
   ---------------------------------------------------------------------------*/
@@ -2025,15 +2065,15 @@ static int zi_short(__G)   /* return PK-type error code */
     } /* end switch (hostnum: external attributes format) */
 
 #ifdef OLD_THEOS_EXTRA
-    Info(slide, 0, ((char *)slide, "%s %s %8lu ", attribs,
+    Info(slide, 0, ((char *)slide, "%s %s %s ", attribs,
       LoadFarStringSmall(((hostnum == FS_VFAT_ && hostver == 20) ?
                           os_TheosOld :
                           os[hostnum])),
-      G.crec.ucsize));
+      FmZofft(G.crec.ucsize, "8", "u")));
 #else
-    Info(slide, 0, ((char *)slide, "%s %s %8lu ", attribs,
+    Info(slide, 0, ((char *)slide, "%s %s %s ", attribs,
       LoadFarStringSmall(os[hostnum]),
-      G.crec.ucsize));
+      FmZofft(G.crec.ucsize, "8", "u")));
 #endif
     Info(slide, 0, ((char *)slide, "%c",
       (G.crec.general_purpose_bit_flag & 1)?
@@ -2049,30 +2089,15 @@ static int zi_short(__G)   /* return PK-type error code */
       /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ extended local header or not */
 
     if (uO.lflag == 4) {
-        ulg csiz = G.crec.csize;
+        zusz_t csiz = G.crec.csize;
 
         if (G.crec.general_purpose_bit_flag & 1)
             csiz -= 12;    /* if encrypted, don't count encryption header */
         Info(slide, 0, ((char *)slide, "%3d%%",
           (ratio(G.crec.ucsize,csiz)+5)/10));
     } else if (uO.lflag == 5)
-        Info(slide, 0, ((char *)slide, " %8lu", G.crec.csize));
-
-    /* Read the extra field, if any.  The extra field info may be used
-     * in the file modification time section, below.
-     */
-    if ((error = do_string(__G__ G.crec.extra_field_length, EXTRA_FIELD)) != 0)
-    {
-        if (G.extra_field != NULL) {
-            free(G.extra_field);
-            G.extra_field = NULL;
-        }
-        error_in_archive = error;
-        /* We do not return prematurely in case of a "fatal" error (PK_EOF).
-         * This does not hurt here, because we do not need to read from the
-         * zipfile again before the end of this function.
-         */
-    }
+        Info(slide, 0, ((char *)slide, " %s",
+          FmZofft(G.crec.csize, "8", "u")));
 
     /* For printing of date & time, a "char d_t_buf[16]" is required.
      * To save stack space, we reuse the "char attribs[16]" buffer whose

@@ -1,4 +1,4 @@
-Contents of the "windll" subdirectory for UnZip 5.52 and later:
+Contents of the "windll" subdirectory for UnZip 6.0 and later:
 
   Contents       this file
   decs.h         Exported function declarations.
@@ -27,6 +27,8 @@ Contents of the "windll" subdirectory for UnZip 5.52 and later:
     sfxwiz16.mak   makefile for 16-bit GUISFX stub (Borland C++ 4.52)
     unzsfx16.def   linker definition file for 16-bit unzipsfx static library
 
+  csharp\        example files for using the Visual C++ DLL with C# under the
+                 .NET framework 1.1
   vb\            example files for using the Visual C++ DLL with Visual Basic
 
   vc5\dll\       directory with DLL project for Visual C++ 5.0

@@ -1,10 +1,14 @@
-This is the README file for the 28 February 2005 public release of the
+This is an internal beta release of UnZip, version 6.00c,  2005 November 19
+
+      DO NOT DISTRIBUTE THIS ARCHIVE OUTSIDE THE INFO-ZIP GROUP!!
+______________________ Cut here for public release _______________________
+This is the README file for the 21 December 2005 public release of the
 Info-ZIP group's portable UnZip zipfile-extraction program (and related
 utilities).
 
-unzip552.zip       portable UnZip, version 5.52, source code distribution
-unzip552.tar.Z     same as above, but compress'd tar format
-unzip552.tar.gz    same as above, but gzip'd tar format
+unzip60.zip       portable UnZip, version 6.0, source code distribution
+unzip60.tar.Z     same as above, but compress'd tar format
+unzip60.tar.gz    same as above, but gzip'd tar format
 
 __________________________________________________________________________
 
@@ -53,6 +57,22 @@ vms/descrip.mms.
 
 CHANGES AND NEW FEATURES
 ------------------------
+UnZip 6.0 finally supports nowadays "large" files of sizes > 2GB!
+This is the first release containing support for the PKWARE Zip64
+enhancements.
+Major changes are:
+   - Support PKWARE ZIP64 extensions, allowing Zip archives and Zip archive
+     entries larger than 4 GBytes and more than 65536 entries within a single
+     Zip archive. This support is currently only available for Unix,
+     OpenVMS and Win32/Win64.
+   - Support for BZip2 compression method.
+   - Support for ODS5 extended filename syntax on new OpenVMS systems.
+   - Added "wrong implementation used" warning to error messages of the MSDOS
+     port when used under Win32, in an attempt to reduce false bug reports.
+   - Fixed "Time of Creation/Time of Use" vulnerability when setting attributes
+     of extracted files, for Unix and Unix-like ports.
+   - Fixed memory leak when processing invalid deflated data.
+
 The 5.52 maintenance release fixes a few minor problems found in the 5.51
 release, closes some more security holes, adds a new AtheOS port, and
 contains a Win32 extra-field code cleanup that was not finished earlier.

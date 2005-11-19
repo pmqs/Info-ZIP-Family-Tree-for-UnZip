@@ -13,28 +13,28 @@
 #ifndef __unzvers_h     /* don't include more than once */
 #define __unzvers_h
 
-#ifdef BETA
-#  undef BETA           /* undefine BETA for public releases */
+#ifndef BETA
+#  define BETA          /* undefine BETA for public releases */
 #endif
 
 #ifdef BETA
-#  define UZ_BETALEVEL      "j BETA"
-#  define UZ_VERSION_DATE   "27 Feb 05"         /* internal beta version */
+#  define UZ_BETALEVEL      "c BETA"
+#  define UZ_VERSION_DATE   "19 Nov 05"         /* internal beta version */
 #else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "28 February 2005"  /* official release version */
+#  define UZ_VERSION_DATE   "21 December 2005"  /* official release version */
 #  define RELEASE
 #endif
 
-#define UZ_MAJORVER    5   /* UnZip */
-#define UZ_MINORVER    5
+#define UZ_MAJORVER    6   /* UnZip */
+#define UZ_MINORVER    0
 
-#define ZI_MAJORVER    2   /* ZipInfo */
-#define ZI_MINORVER    4
+#define ZI_MAJORVER    3   /* ZipInfo */
+#define ZI_MINORVER    0
 
-#define UZ_PATCHLEVEL  2
+#define UZ_PATCHLEVEL  0
 
-#define UZ_VER_STRING  "5.52"         /* keep in sync with Version numbers! */
+#define UZ_VER_STRING  "6.0"          /* keep in sync with Version numbers! */
 
 #ifndef IZ_COMPANY_NAME               /* might be already defined... */
 #  define IZ_COMPANY_NAME "Info-ZIP"

@@ -1045,6 +1045,7 @@
 #  define FOPR  "r","ctx=stm"
 #  define FOPM  "r+","ctx=stm","rfm=fix","mrs=512"
 #  define FOPW  "w","ctx=stm","rfm=fix","mrs=512"
+#  define FOPWR "w+","ctx=stm","rfm=fix","mrs=512"
 #endif /* VMS */
 
 #ifdef CMS_MVS
@@ -1081,6 +1082,9 @@
 #  ifndef FOPWT
 #    define FOPWT "wt"
 #  endif
+#  ifndef FOPWR
+#    define FOPWR "w+b"
+#  endif
 #else /* !MODERN */
 #  ifndef FOPR
 #    define FOPR "r"
@@ -1093,6 +1097,9 @@
 #  endif
 #  ifndef FOPWT
 #    define FOPWT "w"
+#  endif
+#  ifndef FOPWR
+#    define FOPWR "w+"
 #  endif
 #endif /* ?MODERN */
 
@@ -1772,7 +1779,7 @@
   typedef  z_uint8              zusz_t;     /* zipentry sizes & offsets */
   typedef  z_uint8              zucn_t;     /* archive entry counts */
   typedef  z_uint4              zuvl_t;     /* multivolume numbers */
-# define MASK_ZUCN64            ((zucn_t)0xFFFFFFFFFFFFFFFF)
+# define MASK_ZUCN64            (~(zucn_t)0 & (zucn_t)0xFFFFFFFFFFFFFFFF)
 #else
   typedef  ulg                  zusz_t;     /* zipentry sizes & offsets */
   typedef  unsigned int         zucn_t;     /* archive entry counts */
@@ -2054,7 +2061,6 @@ void     free_G_buffers          OF((__GPRO));
 /* static int    find_ecrec      OF((__GPRO__ long searchlen)); */
 int      uz_end_central          OF((__GPRO));
 int      process_cdir_file_hdr   OF((__GPRO));
-int      get_cdir_ent            OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
 int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
                                      unsigned ef_len));
@@ -2245,7 +2251,11 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
     MSDOS-only functions:
   ---------------------------------------------------------------------------*/
 
-#if (defined(MSDOS) && (defined(__GO32__) || defined(__EMX__)))
+#ifdef MSDOS
+#if (!defined(FUNZIP) && !defined(SFX) && !defined(WINDLL))
+   void     check_for_windows     OF((ZCONST char *app));         /* msdos.c */
+#endif
+#if (defined(__GO32__) || defined(__EMX__))
    unsigned _dos_getcountryinfo(void *);                          /* msdos.c */
 #if (!defined(__DJGPP__) || (__DJGPP__ < 2))
    unsigned _dos_setftime(int, unsigned, unsigned);               /* msdos.c */
@@ -2254,6 +2264,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    void _dos_getdrive(unsigned *);                                /* msdos.c */
    unsigned _dos_close(int);                                      /* msdos.c */
 #endif /* !__DJGPP__ || (__DJGPP__ < 2) */
+#endif /* __GO32__ || __EMX__ */
 #endif
 
 /*---------------------------------------------------------------------------
@@ -2321,16 +2332,16 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* int    open_outfile        OF((__GPRO));           * (see fileio.c) vms.c */
 /* int    flush               OF((__GPRO__ uch *rawbuf, unsigned size,
                                   int final_flag));   * (see fileio.c) vms.c */
-   char * vms_msg_text        OF((__GPRO));                         /* vms.c */
-# ifdef RETURN_CODES
+   char  *vms_msg_text        OF((void));                           /* vms.c */
+#ifdef RETURN_CODES
    void   return_VMS          OF((__GPRO__ int zip_error));         /* vms.c */
-# else
+#else
    void   return_VMS          OF((int zip_error));                  /* vms.c */
-# endif
-# ifdef VMSCLI
+#endif
+#ifdef VMSCLI
    ulg    vms_unzip_cmdline   OF((int *, char ***));            /* cmdline.c */
    int    VMSCLI_usage        OF((__GPRO__ int error));         /* cmdline.c */
-# endif
+#endif
 #endif
 
 /*---------------------------------------------------------------------------

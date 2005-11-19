@@ -775,8 +775,6 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 #endif
     ztimbuf tp;
 
-    fclose(G.outfile);
-
 /*---------------------------------------------------------------------------
     If symbolic links are supported, allocate storage for a symlink control
     structure, put the uncompressed "data" and other required info in it, and
@@ -793,15 +791,16 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
      *      link fails?
      */
     if (G.symlnk) {
-        unsigned ucsize = (unsigned)G.lrec.ucsize;
+        extent ucsize = (extent)G.lrec.ucsize;
         extent slnk_entrysize = sizeof(slinkentry) + ucsize +
                                 strlen(G.filename);
         slinkentry *slnk_entry;
 
-        if ((unsigned)slnk_entrysize < ucsize) {
+        if (slnk_entrysize < ucsize) {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: mem alloc overflow\n",
               FnFilter1(G.filename)));
+            fclose(G.outfile);
             return;
         }
 
@@ -809,6 +808,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: no mem\n",
               FnFilter1(G.filename)));
+            fclose(G.outfile);
             return;
         }
         slnk_entry->next = NULL;
@@ -818,11 +818,10 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         slnk_entry->fname = slnk_entry->target + ucsize + 1;
         strcpy(slnk_entry->fname, G.filename);
 
-        /* reopen the "link data" file for reading */
-        G.outfile = fopen(G.filename, FOPR);
+        /* move back to the start of the file to re-read the "link data" */
+        rewind(G.outfile);
 
-        if (!G.outfile ||
-            fread(slnk_entry->target, 1, ucsize, G.outfile) != (int)ucsize)
+        if (fread(slnk_entry->target, 1, ucsize, G.outfile) != ucsize)
         {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed\n",
@@ -844,6 +843,8 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         G.slink_last = slnk_entry;
         return;
     }
+
+    fclose(G.outfile);
 
 /*---------------------------------------------------------------------------
     Convert from MSDOS-format local time and date to Unix-format 32-bit GMT
@@ -895,7 +896,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 
 #ifndef NO_CHMOD
     if (chmod(G.filename, 0xffff & G.pInfo->file_attr))
-            perror("chmod (file attributes) error");
+        perror("chmod (file attributes) error");
 #endif
 
 } /* end function close_outfile() */

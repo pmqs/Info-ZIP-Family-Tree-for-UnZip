@@ -1,4 +1,4 @@
-Contents of the "vms" sub-archive for UnZip 5.3 and later:
+Contents of the "vms" sub-archive for UnZip 5.53 and later:
 
   Contents            this file
   README              general VMS info about using UnZip and zipfiles
@@ -17,6 +17,8 @@ Contents of the "vms" sub-archive for UnZip 5.3 and later:
   unzip.opt           options file used for linking unzip
   unzipsfx.opt        options file used for linking unzipsfx
   makesfx.com         command file to create self-extracting archives
+  bzlib.h             VMS wrapper header file for the bzip2 library definitions
+  find_bzip2_lib.com  command procedure to set up environment for bzip2 support
 
 MAKE/VMS is no longer supported since MMK (MMS clone by Matt Madison/MadGoat
 Enterprises, compatible with descrip.mms) is both free and becoming quite

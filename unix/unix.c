@@ -1295,30 +1295,16 @@ void version(__G)
     char cc_namebuf[40];
     char cc_versbuf[40];
 #else
-#  if (defined( __SUNPRO_C))
-    char cc_versbuf[17];
-#  else
-#    if (defined( __HP_cc))
-    char cc_versbuf[25];
-#    else
-#    if (defined( __DECC_VER))
-    char cc_versbuf[17];
-    int cc_verstyp;
-#      else
-#        if (defined(CRAY) && defined(_RELEASE))
+#if (defined(CRAY) && defined(_RELEASE))
     char cc_versbuf[40];
-#        endif
-#      endif
-#    endif
-#  endif
 #endif
-
+#endif
 #if ((defined(CRAY) || defined(cray)) && defined(_UNICOS))
     char os_namebuf[40];
 #else
-#  if defined(__NetBSD__)
+#if defined(__NetBSD__)
     char os_namebuf[40];
-#  endif
+#endif
 #endif
 
     /* Pyramid, NeXT have problems with huge macro expansion, too:  no Info() */
@@ -1335,44 +1321,20 @@ void version(__G)
       "gcc ", __VERSION__,
 #  endif
 #else
-#  if defined(__SUNPRO_C)
-      "Sun C ", (sprintf( cc_versbuf, "version %x", __SUNPRO_C), cc_versbuf),
-#  else
-#    if (defined( __HP_cc))
-      "HP C ",
-      (((__HP_cc% 100) == 0) ?
-      (sprintf( cc_versbuf, "version A.%02d.%02d",
-      (__HP_cc/ 10000), ((__HP_cc% 10000)/ 100))) :
-      (sprintf( cc_versbuf, "version A.%02d.%02d.%02d",
-      (__HP_cc/ 10000), ((__HP_cc% 10000)/ 100), (__HP_cc% 100))),
-      cc_versbuf),
-#    else
-#    if (defined( __DECC_VER))
-      "DEC C ",
-      (sprintf( cc_versbuf, "%c%d.%d-%03d",
-               ((cc_verstyp = (__DECC_VER / 10000) % 10) == 6 ? 'T' :
-                (cc_verstyp == 8 ? 'S' : 'V')),
-               __DECC_VER / 10000000,
-               (__DECC_VER % 10000000) / 100000, __DECC_VER % 1000),
-               cc_versbuf),
-#      else
-#        if defined(CRAY) && defined(_RELEASE)
+#  if defined(CRAY) && defined(_RELEASE)
       "cc ", (sprintf(cc_versbuf, "version %d", _RELEASE), cc_versbuf),
-#        else
-#          ifdef __VERSION__
-#            ifndef IZ_CC_NAME
-#              define IZ_CC_NAME "cc "
-#            endif
+#  else
+#  ifdef __VERSION__
+#   ifndef IZ_CC_NAME
+#    define IZ_CC_NAME "cc "
+#   endif
       IZ_CC_NAME, __VERSION__
-#          else
-#            ifndef IZ_CC_NAME
-#              define IZ_CC_NAME "cc"
-#            endif
+#  else
+#   ifndef IZ_CC_NAME
+#    define IZ_CC_NAME "cc"
+#   endif
       IZ_CC_NAME, "",
-#          endif
-#        endif
-#      endif
-#    endif
+#  endif
 #  endif
 #endif /* ?__GNUC__ */
 
@@ -1404,7 +1366,7 @@ void version(__G)
 #  endif
 #else
 #ifdef __hpux
-      " (HP-UX)",
+      " (HP/UX)",
 #else
 #ifdef __osf__
       " (DEC OSF/1)",
@@ -1550,7 +1512,7 @@ void version(__G)
 #endif /* RT/AIX */
 #endif /* AIX */
 #endif /* OSF/1 */
-#endif /* HP-UX */
+#endif /* HP/UX */
 #endif /* Sun */
 #endif /* SGI */
 
@@ -1699,7 +1661,7 @@ static void qlfix(__G__ ef_ptr, ef_len)
 
             if ((long)LG(dlen) > 0)
             {
-                fseek(G.outfile, -8, SEEK_END);
+                zfseeko(G.outfile, -8, SEEK_END);
                 fread(&ntc, 8, 1, G.outfile);
                 if(ntc.id != *(long *)"XTcc")
                 {
@@ -1723,34 +1685,3 @@ static void qlfix(__G__ ef_ptr, ef_len)
     }
 }
 #endif /* QLZIP */
-
-
-/* 2006-03-23 SMS.
- * Emergency replacement for strerror().  (Useful on SunOS 4.*.)
- * Enable by specifying "LOCAL_UNZIP=-DNEED_STRERROR=1" on the "make"
- * command line.
- */
-
-#ifdef NEED_STRERROR
-
-char *strerror( err)
-  int err;
-{
-    extern char *sys_errlist[];
-    extern int sys_nerr;
-
-    static char no_msg[ 64];
-
-    if ((err >= 0) && (err < sys_nerr))
-    {
-        return sys_errlist[ err];
-    }
-    else
-    {
-        sprintf( no_msg, "(no message, code = %d.)", err);
-        return no_msg;
-    }
-}
-
-#endif /* def NEED_STRERROR */
-

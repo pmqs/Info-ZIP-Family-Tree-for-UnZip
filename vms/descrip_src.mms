@@ -1,4 +1,4 @@
-#                                               21 December 2004.  SMS.
+#                                               17 November 2005.  SMS.
 #
 #    Zip 3.0 for VMS - MMS (or MMK) Source Description File.
 #
@@ -108,7 +108,7 @@ NON_VAX_CMPL = 1
 
 # Complain if warranted.  Otherwise, show destination directory.
 # Make the destination directory, if necessary.
-				
+
 .IFDEF UNK_DEST                 # UNK_DEST
 .FIRST
 	@ write sys$output -
@@ -148,15 +148,44 @@ NON_VAX_CMPL = 1
 	@ write sys$output ""
 	I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 .ELSE                                       # LARGE_VAX
+.IFDEF IZ_BZIP2                                 # IZ_BZIP2
+.FIRST
+	@ write sys$output "   Destination: [.$(DEST)]"
+	@ write sys$output ""
+	@ define incl_bzip2 $(IZ_BZIP2)
+	@ @[.vms]find_bzip2_lib.com $(IZ_BZIP2) $(DEST) lib_bzip2
+	@ if (f$trnlnm( "lib_bzip2") .nes. "") then -
+	   write sys$output "   BZIP2 dir: ''f$trnlnm( "lib_bzip2")'"
+	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	   write sys$output "   Can not find BZIP2 object library."
+	@ write sys$output ""
+	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	 I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+	if (f$search( "$(DEST).DIR;1") .eqs. "") then -
+	 create /directory [.$(DEST)]
+.ELSE                                           # IZ_BZIP2
 .FIRST
 	@ write sys$output "   Destination: [.$(DEST)]"
 	@ write sys$output ""
 	if (f$search( "$(DEST).DIR;1") .eqs. "") then -
 	 create /directory [.$(DEST)]
+.ENDIF                                          # IZ_BZIP2
 .ENDIF                                      # LARGE_VAX
 .ENDIF                                  # NON_VAX_CMPL
 .ENDIF                              # VAX_MULTI_CMPL
 .ENDIF                          # UNK_DEST
+
+# BZIP2 options.
+
+.IFDEF IZ_BZIP2                            # IZ_BZIP2
+CDEFS_BZIP2 = , USE_BZIP2
+CFLAGS_INCL = /include = ([], [.VMS])
+LIB_BZIP2_OPTS = lib_bzip2:libbz2.olb /library,
+.ELSE                                   # IZ_BZIP2
+CDEFS_BZIP2 =
+CFLAGS_INCL = /include = []
+LIB_BZIP2_OPTS =
+.ENDIF                                  # IZ_BZIP2
 
 # DBG options.
 
@@ -184,7 +213,7 @@ C_LOCAL_UNZIP = , $(LOCAL_UNZIP)
 C_LOCAL_UNZIP =
 .ENDIF
 
-CDEFS = VMS $(CDEFS_LARGE) $(C_LOCAL_UNZIP)
+CDEFS = VMS $(CDEFS_BZIP2) $(CDEFS_LARGE) $(C_LOCAL_UNZIP)
 
 CDEFS_UNX = /define = ($(CDEFS))
 
@@ -195,8 +224,6 @@ CDEFS_SFX = /define = ($(CDEFS), SFX)
 CDEFS_SFX_CLI = /define = ($(CDEFS), SFX, VMSCLI)
 
 # Other C compiler options.
-
-CFLAGS_INCL = /include = []
 
 .IFDEF DECC                             # DECC
 CFLAGS_ARCH = /decc /prefix = (all)
@@ -322,7 +349,7 @@ MODS_OBJS_LIB_UNZIP_N = \
  zipinfo=[.$(DEST)]zipinfo.obj
 
 #    Primary object library, [.vms].
-                    
+
 MODS_OBJS_LIB_UNZIP_V = \
  vms=[.$(DEST)]vms.obj
 
@@ -332,7 +359,7 @@ MODS_OBJS_LIB_UNZIP = $(MODS_OBJS_LIB_UNZIP_N) $(MODS_OBJS_LIB_UNZIP_V)
 
 MODS_OBJS_LIB_UNZIPCLI_C_V = \
  CMDLINE=[.$(DEST)]cmdline.obj
- 
+
 MODS_OBJS_LIB_UNZIPCLI_CLD_V = \
  VMS_UNZIP_CLD=[.$(DEST)]unz_cli.obj
 
@@ -355,7 +382,7 @@ MODS_OBJS_LIB_UNZIPSFX_N = \
  ttyio$(GCC_)=[.$(DEST)]ttyio_.obj
 
 # SFX object library, [.vms].
-                    
+
 MODS_OBJS_LIB_UNZIPSFX_V = \
  vms$(GCC_)=[.$(DEST)]vms_.obj
 
@@ -364,7 +391,7 @@ MODS_OBJS_LIB_UNZIPSFX = \
  $(MODS_OBJS_LIB_UNZIPSFX_V)
 
 # SFX object library, [.vms] (no []).
-                    
+
 MODS_OBJS_LIB_UNZIPSFX_CLI_C_V = \
  CMDLINE$(GCC_)=[.$(DEST)]cmdline_.obj
 

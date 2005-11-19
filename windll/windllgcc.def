@@ -4,7 +4,7 @@ DESCRIPTION 'Windows Info-ZIP UnZip32 DLL by Mike White'
 
 
 EXPORTS
-     Wiz_SingleEntryUnzip=Wiz_SingleEntryUnzip@24
+     Wiz_SingleEntryUnzip=Wiz_SingleEntryUnzip@32
      UzpVersion=UzpVersion@0
      Wiz_Init=Wiz_Init@8
      Wiz_SetOpts=Wiz_SetOpts@8
