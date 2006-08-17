@@ -3,7 +3,7 @@ $ !
 $ !     Command procedure to (re)link the VMS versions of
 $ !     UnZip/ZipInfo and UnZipSFX
 $ !
-$ !     last updated:  13 February 2001
+$ !     Last updated:  2005-11-18  SMS.
 $ !
 $ !     Command args:
 $ !     - select compiler environment: "VAXC", "DECC", "GNUC"
@@ -11,6 +11,14 @@ $ !     - select installation of CLI interface version of unzip:
 $ !       "VMSCLI" or "CLI"
 $ !     - force installation of UNIX interface version of unzip
 $ !       (override LOCAL_UNZIP environment): "NOVMSCLI" or "NOCLI"
+$ !     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
+$ !       (or a suitable logical name) tells where to find "bzlib.h".
+$ !       The BZIP2 object library (LIBBZ2.OLB) is expected to be in a
+$ !       "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
+$ !       example), or in that directory itself.
+$ !       By default, the SFX programs are built without BZIP2 support.
+$ !       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
+$ !       (See LOCAL_UNZIP, below.)
 $ !
 $ !
 $ on error then goto error
@@ -52,6 +60,7 @@ $ unzx_cli = "unzip_cli"
 $ unzsfx_unx = "unzipsfx"
 $ unzsfx_cli = "unzipsfx_cli"
 $!
+$ IZ_BZIP2 = ""
 $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
 $!
@@ -81,6 +90,12 @@ $  IF (curr_arg .eqs. "NOVMSCLI") .or. (curr_arg .eqs. "NOCLI")
 $  THEN
 $    CLI_IS_DEFAULT = 0
 $  ENDIF
+$  if f$extract( 0, 7, curr_arg) .eqs. "IZ_BZIP"
+$  then
+$    opts = f$edit( curr_arg, "COLLAPSE")
+$    eq = f$locate( "=", opts)
+$    IZ_BZIP2 = f$extract( (eq+ 1), 1000, opts)
+$  endif
 $  arg_cnt = arg_cnt + 1
 $ GOTO argloop
 $ argloop_out:
@@ -99,7 +114,11 @@ $ !
 $ my_name = f$env("procedure")
 $ workdir = f$env("default")
 $ here = f$parse(workdir,,,"device") + f$parse(workdir,,,"directory")
-$ axp = f$getsyi("HW_MODEL").ge.1024
+$!
+$ hw_model = f$getsyi("HW_MODEL")
+$ axp = (hw_model .ge. 1024) .and. (hw_model .lt. 4096)
+$ i64 = (hw_model .ge. 4096)
+$!
 $ if axp
 $ then
 $       ! Alpha AXP
@@ -123,6 +142,29 @@ $       ARCH_CC_P = ARCH_PREF
 $       opts = ""
 $       say "Linking on AXP using DEC C"
 $ else
+$     if (i64)
+$     then
+$       ! IA64
+$       ARCH_NAME == "IA64"
+$       ARCH_PREF = "I64_"
+$       HAVE_DECC_VAX = 0
+$       USE_DECC_VAX = 0
+$       IF (f$search("SYS$DISK:[]UNZIP.''ARCH_PREF'OLB").eqs."")
+$       THEN
+$         say "Cannot find any IA64 object library for UnZip."
+$         say "  You must keep all binary files of the object distribution"
+$         say "  in the current directory !"
+$         goto error
+$       ENDIF
+$       if MAY_USE_GNUC
+$       then say "GNU C has not yet been ported to OpenVMS IA64."
+$            say "You must use DEC C to build UnZip."
+$            goto error
+$       endif
+$       ARCH_CC_P = ARCH_PREF
+$       opts = ""
+$       say "Linking on IA64 using DEC C"
+$     else
 $       ! VAX
 $       ARCH_NAME == "VAX"
 $       ARCH_PREF = "VAX_"
@@ -161,7 +203,26 @@ $               ARCH_CC_P = "''ARCH_PREF'VAXC_"
 $               say "Linking on VAX using VAX C"
 $         endif
 $       ENDIF
+$     endif
 $ endif
+$!
+$! If BZIP2 support was selected, find the object library.
+$! Complain if things fail.
+$!
+$ lib_bzip2_opts = ""
+$ if (IZ_BZIP2 .nes. "")
+$ then
+$     @ [.vms]find_bzip2_lib.com 'IZ_BZIP2' 'ARCH_NAME' lib_bzip2
+$     if (f$trnlnm( "lib_bzip2") .eqs. "")
+$     then
+$         say "Can't find BZIP2 object library.  Can't link."
+$         goto error
+$     else
+$         say "BZIP2 dir = ''f$trnlnm( "lib_bzip2")'"
+$         lib_bzip2_opts = ", lib_bzip2:libbz2.olb /library"
+$     endif
+$ endif
+$!
 $ LFLAGS = "/notrace"
 $ if (opts .nes. "") .and. (f$search("[.vms]vaxcshr.opt") .eqs. "")
 $ then  create [.vms]vaxcshr.opt
@@ -173,21 +234,29 @@ $ tmp = f$verify(1)     ! Turn echo on to see what's happening
 $ !
 $ link'LFLAGS'/exe='unzx_unx'.'ARCH_CC_P'exe -
         unzip.'ARCH_CC_P'olb;/incl=(unzip)/lib -
-        'opts', [.VMS]unzip.opt/opt
+        'lib_bzip2_opts' -
+        'opts', -
+        [.VMS]unzip.opt/opt
 $ !
 $ link'LFLAGS'/exe='unzx_cli'.'ARCH_CC_P'exe -
         unzipcli.'ARCH_CC_P'olb;/incl=(unzip)/lib, -
         unzip.'ARCH_CC_P'olb;/lib -
-        'opts', [.VMS]unzip.opt/opt
+        'lib_bzip2_opts' -
+        'opts', -
+        [.VMS]unzip.opt/opt
 $ !
 $ link'LFLAGS'/exe='unzsfx_unx'.'ARCH_CC_P'exe -
         unzipsfx.'ARCH_CC_P'olb;/lib/incl=unzip -
-        'opts', [.VMS]unzipsfx.opt/opt
+        'lib_bzip2_opts' -
+        'opts', -
+        [.VMS]unzipsfx.opt/opt
 $ !
 $ link'LFLAGS'/exe='unzsfx_cli'.'ARCH_CC_P'exe -
         unzsxcli.'ARCH_CC_P'olb;/lib/incl=unzip, -
         unzipsfx.'ARCH_CC_P'olb;/lib -
-        'opts', [.VMS]unzipsfx.opt/opt
+        'lib_bzip2_opts' -
+        'opts', -
+        [.VMS]unzipsfx.opt/opt
 $ !
 $ ! Next line:  put similar lines (full pathname for unzip.'ARCH_CC_P'exe) in
 $ ! login.com.  Remember to include the leading "$" before disk name.
@@ -196,5 +265,13 @@ $ unzip   == "$''here'''UNZEXEC'.''ARCH_CC_P'exe"
 $ zipinfo == "$''here'''UNZEXEC'.''ARCH_CC_P'exe ""-Z"""
 $ !
 $error:
+$!
 $ tmp = f$verify(OLD_VERIFY)
+$!
+$ if (f$trnlnm( "lib_bzip2") .nes. "")
+$ then
+$     deassign lib_bzip2
+$ endif
+$!
 $ exit
+$!

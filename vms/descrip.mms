@@ -1,5 +1,5 @@
 !==========================================================================
-! MMS description file for UnZip/UnZipSFX 5.5 or later            23 Mar 01
+! MMS description file for UnZip/UnZipSFX 5.5x (x >= 3)          2005-11-18
 !==========================================================================
 !
 ! To build UnZip that uses shared libraries, edit the USER CUSTOMIZATION
@@ -23,11 +23,22 @@
 ! you have to specify your compiling environment, too. These are:
 !
 !	$ MMS/MACRO=(__ALPHA__=1)		! Alpha AXP, (DEC C)
+!	$ MMS/MACRO=(__IA64__=1)		! IA64, (DEC C)
 !	$ MMS/MACRO=(__DECC__=1)		! VAX, using DEC C
 !	$ MMS/MACRO=(__FORCE_VAXC__=1)		! VAX, prefering VAXC over DECC
 !	$ MMS/MACRO=(__VAXC__=1)		! VAX, where VAXC is default
 !	$ MMS/MACRO=(__GNUC__=1)		! VAX, using GNU C
 !
+
+! To add BZIP2 support, add the MMS macro "IZ_BZIP2=dev:[dir]", where
+! the macro value ("dev:[dir]", or a suitable logical name) tells where
+! to find "bzlib.h".  The BZIP2 object library (LIBBZ2.OLB) is expected
+! to be in a "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
+! example), or in that directory itself.
+!
+! By default, the SFX programs are built without BZIP2 support.  Add
+! "BZIP2_SFX=1" to the COMMON_DEFS C macros to enable it.  (See
+! COMMON_DEFS below.)
 
 ! To build UnZip without shared libraries,
 !	mms noshare
@@ -37,45 +48,80 @@
 
 DO_THE_BUILD :
 	@ decc = f$search("SYS$SYSTEM:DECC$COMPILER.EXE").nes.""
-	@ axp = f$getsyi("HW_MODEL").ge.1024
+	@ axp = (f$getsyi("HW_MODEL") .ge. 1024) .and. -
+	   (f$getsyi("HW_MODEL") .lt. 4096)
+	@ i64 = f$getsyi("HW_MODEL") .ge. 4096
 	@ macro = "/MACRO=("
+.IFDEF IZ_BZIP2
+	@ macro = macro + "IZ_BZIP2=$(IZ_BZIP2),"
+.ENDIF
 	@ if decc then macro = macro + "__DECC__=1,"
 	@ if axp then macro = macro + "__ALPHA__=1,"
-	@ if .not.(axp.or.decc) then macro = macro + "__VAXC__=1,"
+	@ if i64 then macro = macro + "__IA64__=1,"
+	@ if .not.(axp .or. i64 .or. decc) then macro = macro + "__VAXC__=1,"
 	@ macro = f$extract(0,f$length(macro)-1,macro)+ ")"
 	$(MMS)$(MMSQUALIFIERS)'macro' default
 
-.IFDEF __ALPHA__
+# Define MMK architecture macros when using MMS.
+
+.IFDEF __MMK__                  # __MMK__
+.ELSE                           # __MMK__
+ALPHA_X_ALPHA = 1
+IA64_X_IA64 = 1
+VAX_X_VAX = 1
+.IFDEF $(MMS$ARCH_NAME)_X_ALPHA     # $(MMS$ARCH_NAME)_X_ALPHA
+__ALPHA__ = 1
+.ENDIF                              # $(MMS$ARCH_NAME)_X_ALPHA
+.IFDEF $(MMS$ARCH_NAME)_X_IA64      # $(MMS$ARCH_NAME)_X_IA64
+__IA64__ = 1
+.ENDIF                              # $(MMS$ARCH_NAME)_X_IA64
+.IFDEF $(MMS$ARCH_NAME)_X_VAX       # $(MMS$ARCH_NAME)_X_VAX
+__VAX__ = 1
+.ENDIF                              # $(MMS$ARCH_NAME)_X_VAX
+.ENDIF                          # __MMK__
+
+.IFDEF __ALPHA__                # __ALPHA__
+DEST = ALPHA
 E = .AXP_EXE
 O = .AXP_OBJ
 A = .AXP_OLB
-.ELSE
-.IFDEF __DECC__
+.ELSE                           # __ALPHA__
+.IFDEF __IA64__                     # __IA64__
+DEST = IA64
+E = .I64_EXE
+O = .I64_OBJ
+A = .I64_OLB
+.ELSE                               # __IA64__
+.IFDEF __DECC__                         # __DECC__
+DEST = VAX
 E = .VAX_DECC_EXE
 O = .VAX_DECC_OBJ
 A = .VAX_DECC_OLB
-.ENDIF
-.IFDEF __FORCE_VAXC__
+.ENDIF                                  # __DECC__
+.IFDEF __FORCE_VAXC__                   # __FORCE_VAXC__
 __VAXC__ = 1
-.ENDIF
-.IFDEF __VAXC__
+.ENDIF                                  # __FORCE_VAXC__
+.IFDEF __VAXC__                         # __VAXC__
+DEST = VAX
 E = .VAX_VAXC_EXE
 O = .VAX_VAXC_OBJ
 A = .VAX_VAXC_OLB
-.ENDIF
-.IFDEF __GNUC__
+.ENDIF                                  # __VAXC__
+.IFDEF __GNUC__                         # __GNUC__
+DEST = VAX
 E = .VAX_GNUC_EXE
 O = .VAX_GNUC_OBJ
 A = .VAX_GNUC_OLB
-.ENDIF
-.ENDIF
-.IFDEF O
-.ELSE
+.ENDIF                                  # __GNUC__
+.ENDIF                              # __IA64__
+.ENDIF                          # __ALPHA__
+.IFDEF O                        # O
+.ELSE                           # O
 !If EXE and OBJ extensions aren't defined, define them
 E = .EXE
 O = .OBJ
 A = .OLB
-.ENDIF
+.ENDIF                          # O
 
 !The following preprocessor macros are set to enable the VMS CLI$ interface:
 CLI_DEFS = VMSCLI,
@@ -98,35 +144,77 @@ CC = cc
 LIBS =
 .ENDIF
 
-CFLAGS = /NOLIST/INCL=(SYS$DISK:[])
+CFLAGS = /NOLIST
 
 OPTFILE = sys$disk:[.vms]vaxcshr.opt
 
-.IFDEF __ALPHA__
+.IFDEF __ALPHA__                # __ALPHA__
 CC_OPTIONS = /STANDARD=RELAX/PREFIX=ALL/ANSI
 CC_DEFS = MODERN,
 OPTFILE_LIST =
 OPTIONS = $(LIBS)
 NOSHARE_OPTS = $(LIBS)/NOSYSSHR
-.ELSE
-.IFDEF __DECC__
+.ELSE                           # __ALPHA__
+.IFDEF __IA64__                     # __IA64__
+CC_OPTIONS = /STANDARD=RELAX/PREFIX=ALL/ANSI
+CC_DEFS = MODERN,
+OPTFILE_LIST =
+OPTIONS = $(LIBS)
+NOSHARE_OPTS = $(LIBS)/NOSYSSHR
+.ELSE                               # __IA64__
+.IFDEF __DECC__                         # __DECC__
 CC_OPTIONS = /DECC/STANDARD=VAXC/PREFIX=ALL
 CC_DEFS = MODERN,
 OPTFILE_LIST =
 OPTIONS = $(LIBS)
 NOSHARE_OPTS = $(LIBS),SYS$LIBRARY:DECCRTL.OLB/LIB/INCL=(CMA$TIS)/NOSYSSHR
-.ELSE
-.IFDEF __FORCE_VAXC__		!Select VAXC on systems where DEC C exists
+.ELSE                                   # __DECC__
+.IFDEF __FORCE_VAXC__                       # __FORCE_VAXC__
+!Select VAXC on systems where DEC C exists
 CC_OPTIONS = /VAXC
-.ELSE				!No flag allowed/needed on a pure VAXC system
+.ELSE                                       # __FORCE_VAXC__
+!No flag allowed/needed on a pure VAXC system
 CC_OPTIONS =
-.ENDIF
+.ENDIF                                      # __FORCE_VAXC__
 CC_DEFS =
 OPTFILE_LIST = ,$(OPTFILE)
 OPTIONS = $(LIBS),$(OPTFILE)/OPTIONS
 NOSHARE_OPTS = $(LIBS),SYS$LIBRARY:VAXCRTL.OLB/LIB/NOSYSSHR
-.ENDIF
-.ENDIF
+.ENDIF                                  # __DECC__
+.ENDIF                              # __IA64__
+.ENDIF                          # __ALPHA__
+
+!
+! The .FIRST target is needed only if we're serious about building,
+! and then, only if BZIP2 support was requested.
+!
+.IFDEF MMSTARGETS               # MMSTARGETS
+.IFDEF IZ_BZIP2                     # IZ_BZIP2
+CC_DEFS2 = USE_BZIP2,
+CFLAGS_INCL = /INCLUDE = ([], [.VMS])
+LIB_BZIP2_OPTS = lib_bzip2:libbz2.olb /library,
+
+.FIRST
+	@ define incl_bzip2 $(IZ_BZIP2)
+	@ @[.vms]find_bzip2_lib.com $(IZ_BZIP2) $(DEST) lib_bzip2
+	@ write sys$output ""
+	@ if (f$trnlnm( "lib_bzip2") .nes. "") then -
+	   write sys$output "   BZIP2 dir: ''f$trnlnm( "lib_bzip2")'"
+	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	   write sys$output "   Can not find BZIP2 object library."
+	@ write sys$output ""
+	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+.ELSE                               # IZ_BZIP2
+CC_DEFS2 =
+CFLAGS_INCL = /INCLUDE = []
+LIB_BZIP2_OPTS =
+.ENDIF                              # IZ_BZIP2
+.ELSE                           # MMSTARGETS
+CC_DEFS2 =
+CFLAGS_INCL = /INCLUDE = []
+LIB_BZIP2_OPTS =
+.ENDIF                          # MMSTARGETS
 
 .IFDEF __DEBUG__
 CDEB = /DEBUG/NOOPTIMIZE
@@ -136,14 +224,14 @@ CDEB =
 LDEB = /NOTRACE
 .ENDIF
 
-CFLAGS_ALL  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) -
-              /def=($(CC_DEFS) $(COMMON_DEFS) VMS)
-CFLAGS_SFX  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) -
-              /def=($(CC_DEFS) $(COMMON_DEFS) SFX, VMS)
-CFLAGS_CLI  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) -
-              /def=($(CC_DEFS) $(COMMON_DEFS) $(CLI_DEFS) VMS)
-CFLAGS_SXC = $(CC_OPTIONS) $(CFLAGS) $(CDEB) -
-              /def=($(CC_DEFS) $(COMMON_DEFS) $(CLI_DEFS) SFX, VMS)
+CFLAGS_ALL  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) VMS)
+CFLAGS_SFX  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) SFX, VMS)
+CFLAGS_CLI  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) $(CLI_DEFS) VMS)
+CFLAGS_SXC = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) $(CLI_DEFS) SFX, VMS)
 
 LINKFLAGS   = $(LDEB)
 
@@ -229,31 +317,37 @@ noshare :	$(UNZIPS_NOSHARE), $(UNZIPHELPS)
 $(UNZX_UNX)$(E) : $(OLBUNZ)($(OBJS))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
 	$(OLBUNZ)/INCLUDE=UNZIP/LIBRARY$(OPTIONS), -
+	$(LIB_BZIP2_OPTS) -
 	sys$disk:[.vms]unzip.opt/OPT
 
 $(UNZX_CLI)$(E) : $(OLBCLI)($(OBJSCLI)),$(OLBUNZ)($(OBJUNZLIB))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
 	$(OLBCLI)/INCLUDE=UNZIP/LIBRARY, $(OLBUNZ)/LIBRARY$(OPTIONS), -
+	$(LIB_BZIP2_OPTS) -
 	sys$disk:[.vms]unzip.opt/OPT
 
 $(UNZSFX_DEF)$(E) : $(OLBSFX)($(OBJX))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
 	$(OLBSFX)/INCLUDE=UNZIP/LIBRARY$(OPTIONS), -
+	$(LIB_BZIP2_OPTS) -
 	sys$disk:[.vms]unzipsfx.opt/OPT
 
 $(UNZSFX_CLI)$(E) : $(OLBSXC)($(OBJXCLI)),$(OLBSFX)($(OBJSFXLIB))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
 	$(OLBSXC)/INCLUDE=UNZIP/LIBRARY, $(OLBSFX)/LIBRARY$(OPTIONS), -
+	$(LIB_BZIP2_OPTS) -
 	sys$disk:[.vms]unzipsfx.opt/OPT
 
 $(UNZX_UNX)_noshare$(E) :	$(OLBUNZ)($(OBJS))
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
 	$(OLBUNZ)/INCLUDE=UNZIP/LIBRARY$(NOSHARE_OPTS), -
+	$(LIB_BZIP2_OPTS) -
 	sys$disk:[.vms]unzip.opt/OPT
 
 $(UNZSFX_DEF)_noshare$(E) :	$(OLBSFX)($(OBJX))
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
 	$(OLBSFX)/INCLUDE=UNZIP/LIBRARY$(NOSHARE_OPTS), -
+	$(LIB_BZIP2_OPTS) -
 	sys$disk:[.vms]unzipsfx.opt/OPT
 
 $(OPTFILE) :
@@ -307,8 +401,6 @@ clean.com :
 	@ close tmp
 
 clean : clean.com
-	! delete *$(O);*, *$(A);*, unzip$(exe);*, unzipsfx$(exe);*, -
-	!  unzip.hlp;*, [.vms]unzip.rnh;*
 	@clean "$(OBJM)"
 	@clean "$(COMMON_OBJS1)"
 	@clean "$(COMMON_OBJS2)"

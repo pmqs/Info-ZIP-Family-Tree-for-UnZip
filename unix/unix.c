@@ -1042,8 +1042,6 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     ush z_uidgid[2];
     int have_uidgid_flg;
 
-    fclose(G.outfile);
-
 /*---------------------------------------------------------------------------
     If symbolic links are supported, allocate storage for a symlink control
     structure, put the uncompressed "data" and other required info in it, and
@@ -1054,15 +1052,16 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 
 #ifdef SYMLINKS
     if (G.symlnk) {
-        unsigned ucsize = (unsigned)G.lrec.ucsize;
+        extent ucsize = (extent)G.lrec.ucsize;
         extent slnk_entrysize = sizeof(slinkentry) + ucsize +
                                 strlen(G.filename);
         slinkentry *slnk_entry;
 
-        if ((unsigned)slnk_entrysize < ucsize) {
+        if (slnk_entrysize < ucsize) {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: mem alloc overflow\n",
               FnFilter1(G.filename)));
+            fclose(G.outfile);
             return;
         }
 
@@ -1070,6 +1069,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: no mem\n",
               FnFilter1(G.filename)));
+            fclose(G.outfile);
             return;
         }
         slnk_entry->next = NULL;
@@ -1079,11 +1079,10 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         slnk_entry->fname = slnk_entry->target + ucsize + 1;
         strcpy(slnk_entry->fname, G.filename);
 
-        /* reopen the "link data" file for reading */
-        G.outfile = fopen(G.filename, FOPR);
+        /* move back to the start of the file to re-read the "link data" */
+        rewind(G.outfile);
 
-        if (!G.outfile ||
-            fread(slnk_entry->target, 1, ucsize, G.outfile) != (int)ucsize)
+        if (fread(slnk_entry->target, 1, ucsize, G.outfile) != ucsize)
         {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed\n",
@@ -1115,12 +1114,20 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     }
 #endif
 
+#if (defined(NO_FCHOWN) || defined(NO_FCHMOD))
+    fclose(G.outfile);
+#endif
+
     have_uidgid_flg = get_extattribs(__G__ &(zt.t3), z_uidgid);
 
     /* if -X option was specified and we have UID/GID info, restore it */
     if (have_uidgid_flg) {
         TTrace((stderr, "close_outfile:  restoring Unix UID/GID info\n"));
+#if (defined(NO_FCHOWN) || defined(NO_FCHMOD))
         if (chown(G.filename, (uid_t)z_uidgid[0], (gid_t)z_uidgid[1]))
+#else
+        if (fchown(fileno(G.outfile), (uid_t)z_uidgid[0], (gid_t)z_uidgid[1]))
+#endif
         {
             if (uO.qflag)
                 Info(slide, 0x201, ((char *)slide,
@@ -1132,6 +1139,18 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
                   z_uidgid[0], z_uidgid[1]));
         }
     }
+
+#if (!defined(NO_FCHOWN) && !defined(NO_FCHMOD))
+/*---------------------------------------------------------------------------
+    Change the file permissions from default ones to those stored in the
+    zipfile.
+  ---------------------------------------------------------------------------*/
+
+    if (fchmod(fileno(G.outfile), filtattr(__G__ G.pInfo->file_attr)))
+        perror("chmod (file attributes) error");
+
+    fclose(G.outfile);
+#endif /* !NO_FCHOWN && !NO_FCHMOD */
 
     /* set the file's access and modification times */
     if (utime(G.filename, &(zt.t2))) {
@@ -1151,6 +1170,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 #endif /* ?AOS_VS */
     }
 
+#if (defined(NO_FCHOWN) || defined(NO_FCHMOD))
 /*---------------------------------------------------------------------------
     Change the file permissions from default ones to those stored in the
     zipfile.
@@ -1160,6 +1180,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
         perror("chmod (file attributes) error");
 #endif
+#endif /* NO_FCHOWN || NO_FCHMOD */
 
 } /* end function close_outfile() */
 
@@ -1274,16 +1295,30 @@ void version(__G)
     char cc_namebuf[40];
     char cc_versbuf[40];
 #else
-#if (defined(CRAY) && defined(_RELEASE))
+#  if (defined( __SUNPRO_C))
+    char cc_versbuf[17];
+#  else
+#    if (defined( __HP_cc))
+    char cc_versbuf[25];
+#    else
+#    if (defined( __DECC_VER))
+    char cc_versbuf[17];
+    int cc_verstyp;
+#      else
+#        if (defined(CRAY) && defined(_RELEASE))
     char cc_versbuf[40];
+#        endif
+#      endif
+#    endif
+#  endif
 #endif
-#endif
+
 #if ((defined(CRAY) || defined(cray)) && defined(_UNICOS))
     char os_namebuf[40];
 #else
-#if defined(__NetBSD__)
+#  if defined(__NetBSD__)
     char os_namebuf[40];
-#endif
+#  endif
 #endif
 
     /* Pyramid, NeXT have problems with huge macro expansion, too:  no Info() */
@@ -1300,20 +1335,44 @@ void version(__G)
       "gcc ", __VERSION__,
 #  endif
 #else
-#  if defined(CRAY) && defined(_RELEASE)
+#  if defined(__SUNPRO_C)
+      "Sun C ", (sprintf( cc_versbuf, "version %x", __SUNPRO_C), cc_versbuf),
+#  else
+#    if (defined( __HP_cc))
+      "HP C ",
+      (((__HP_cc% 100) == 0) ?
+      (sprintf( cc_versbuf, "version A.%02d.%02d",
+      (__HP_cc/ 10000), ((__HP_cc% 10000)/ 100))) :
+      (sprintf( cc_versbuf, "version A.%02d.%02d.%02d",
+      (__HP_cc/ 10000), ((__HP_cc% 10000)/ 100), (__HP_cc% 100))),
+      cc_versbuf),
+#    else
+#    if (defined( __DECC_VER))
+      "DEC C ",
+      (sprintf( cc_versbuf, "%c%d.%d-%03d",
+               ((cc_verstyp = (__DECC_VER / 10000) % 10) == 6 ? 'T' :
+                (cc_verstyp == 8 ? 'S' : 'V')),
+               __DECC_VER / 10000000,
+               (__DECC_VER % 10000000) / 100000, __DECC_VER % 1000),
+               cc_versbuf),
+#      else
+#        if defined(CRAY) && defined(_RELEASE)
       "cc ", (sprintf(cc_versbuf, "version %d", _RELEASE), cc_versbuf),
-#  else
-#  ifdef __VERSION__
-#   ifndef IZ_CC_NAME
-#    define IZ_CC_NAME "cc "
-#   endif
+#        else
+#          ifdef __VERSION__
+#            ifndef IZ_CC_NAME
+#              define IZ_CC_NAME "cc "
+#            endif
       IZ_CC_NAME, __VERSION__
-#  else
-#   ifndef IZ_CC_NAME
-#    define IZ_CC_NAME "cc"
-#   endif
+#          else
+#            ifndef IZ_CC_NAME
+#              define IZ_CC_NAME "cc"
+#            endif
       IZ_CC_NAME, "",
-#  endif
+#          endif
+#        endif
+#      endif
+#    endif
 #  endif
 #endif /* ?__GNUC__ */
 
@@ -1345,7 +1404,7 @@ void version(__G)
 #  endif
 #else
 #ifdef __hpux
-      " (HP/UX)",
+      " (HP-UX)",
 #else
 #ifdef __osf__
       " (DEC OSF/1)",
@@ -1491,7 +1550,7 @@ void version(__G)
 #endif /* RT/AIX */
 #endif /* AIX */
 #endif /* OSF/1 */
-#endif /* HP/UX */
+#endif /* HP-UX */
 #endif /* Sun */
 #endif /* SGI */
 
@@ -1640,7 +1699,6 @@ static void qlfix(__G__ ef_ptr, ef_len)
 
             if ((long)LG(dlen) > 0)
             {
-                G.outfile = fopen(G.filename,"r+");
                 fseek(G.outfile, -8, SEEK_END);
                 fread(&ntc, 8, 1, G.outfile);
                 if(ntc.id != *(long *)"XTcc")
@@ -1650,7 +1708,6 @@ static void qlfix(__G__ ef_ptr, ef_len)
                     fwrite (&ntc, 8, 1, G.outfile);
                 }
                 Info(slide, 0x201, ((char *)slide, "QData = %d", LG(dlen)));
-                fclose(G.outfile);
             }
             return;     /* finished, cancel further extra field scanning */
           }
@@ -1666,3 +1723,34 @@ static void qlfix(__G__ ef_ptr, ef_len)
     }
 }
 #endif /* QLZIP */
+
+
+/* 2006-03-23 SMS.
+ * Emergency replacement for strerror().  (Useful on SunOS 4.*.)
+ * Enable by specifying "LOCAL_UNZIP=-DNEED_STRERROR=1" on the "make"
+ * command line.
+ */
+
+#ifdef NEED_STRERROR
+
+char *strerror( err)
+  int err;
+{
+    extern char *sys_errlist[];
+    extern int sys_nerr;
+
+    static char no_msg[ 64];
+
+    if ((err >= 0) && (err < sys_nerr))
+    {
+        return sys_errlist[ err];
+    }
+    else
+    {
+        sprintf( no_msg, "(no message, code = %d.)", err);
+        return no_msg;
+    }
+}
+
+#endif /* def NEED_STRERROR */
+

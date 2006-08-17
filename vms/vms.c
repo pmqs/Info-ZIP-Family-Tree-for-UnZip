@@ -312,17 +312,20 @@ int check_format(__G)
     __GDEF
 {
     int rtype;
+    int sts;
     struct FAB fab;
 
     fab = cc$rms_fab;
     fab.fab$l_fna = G.zipfn;
     fab.fab$b_fns = strlen(G.zipfn);
 
-    if ((sys$open(&fab) & 1) == 0)
+    sts = sys$open( &fab);
+    if ((sts & STS$M_SUCCESS) == 0)
     {
         Info(slide, 1, ((char *)slide, "\n\
-     error:  cannot open zipfile [ %s ] (access denied?).\n\n",
+     error:  cannot open zipfile [ %s ].\n",
           FnFilter1(G.zipfn)));
+        vms_msg(__G__ "     sys$open() error: ", sts);
         return PK_ERR;
     }
     rtype = fab.fab$b_rfm;
@@ -2546,7 +2549,6 @@ char *do_wild( __G__ wld )
     {   /* (Re)Initialize everything */
 
         strcpy( last_wild, wld );
-        first_call = 1;                 /* New wild spec */
 
         fab = cc$rms_fab;               /* Initialize FAB. */
         nam = cc$rms_nam;               /* Initialize NAM. */
@@ -2570,8 +2572,7 @@ char *do_wild( __G__ wld )
          * error message for later use, and return an empty string.
          */
         nam.nam$b_nop = NAM$M_SYNCHK;   /* Syntax-only analysis. */
-        status = sys$parse( &fab);
-        if (!OK( status))
+        if ( !OK(status = sys$parse(&fab)) )
         {
             vms_msg_fetch(status);
             filenam[0] = '\0';          /* Initialization failed */
@@ -3937,9 +3938,9 @@ globaldef {"LIB$INITIALIZE"} readonly _align (LONGWORD)
 /* Fake reference to ensure loading the LIB$INITIALIZE PSECT. */
 
 #pragma extern_model save
-int lib$initialize(void);
+int LIB$INITIALIZE( void);
 #pragma extern_model strict_refdef
-int dmy_lib$initialize = (int)lib$initialize;
+int dmy_lib$initialize = (int)LIB$INITIALIZE;
 #pragma extern_model restore
 
 #pragma standard

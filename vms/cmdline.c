@@ -175,6 +175,10 @@ $DESCRIPTOR(unzip_command,      "unzip ");
 
 static int show_VMSCLI_usage;
 
+#if !defined(vms_unzip_cld)
+#  define vms_unzip_cld VMS_UNZIP_CLD
+#endif
+
 #if defined(__DECC) || defined(__GNUC__)
 extern void *vms_unzip_cld;
 #else
@@ -182,6 +186,16 @@ globalref void *vms_unzip_cld;
 #endif
 
 /* extern unsigned long LIB$GET_INPUT(void), LIB$SIG_TO_RET(void); */
+
+#ifndef cli$dcl_parse
+#  define cli$dcl_parse CLI$DCL_PARSE
+#endif
+#ifndef cli$present
+#  define cli$present CLI$PRESENT
+#endif
+#ifndef cli$get_value
+#  define cli$get_value CLI$GET_VALUE
+#endif
 
 extern unsigned long cli$dcl_parse ();
 extern unsigned long cli$present ();

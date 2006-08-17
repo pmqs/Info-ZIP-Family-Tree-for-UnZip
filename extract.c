@@ -131,9 +131,12 @@ static ZCONST char Far ComprMsgNum[] =
    static ZCONST char Far CmprDeflate[]    = "deflate";
    static ZCONST char Far CmprDeflat64[]   = "deflate64";
    static ZCONST char Far CmprDCLImplode[] = "DCL implode";
+   static ZCONST char Far CmprPKReserved[] = "PK-reserved(#11)";
+   static ZCONST char Far CmprBzip[]       = "bzip2";
    static ZCONST char Far *ComprNames[NUM_METHODS] = {
      CmprNone, CmprShrink, CmprReduce, CmprReduce, CmprReduce, CmprReduce,
-     CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode
+     CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode,
+     CmprPKReserved, CmprBzip
    };
 #endif /* !SFX */
 static ZCONST char Far FilNamMsg[] =
@@ -242,6 +245,9 @@ static ZCONST char Far ErrUnzipNoFile[] = "\n  error:  %s%s\n";
 static ZCONST char Far NotEnoughMem[] = "not enough memory to ";
 static ZCONST char Far InvalidComprData[] = "invalid compressed data to ";
 static ZCONST char Far Inflate[] = "inflate";
+#ifdef USE_BZIP2
+  static ZCONST char Far BUnzip[] = "bunzip";
+#endif
 
 #ifndef SFX
    static ZCONST char Far Explode[] = "explode";
@@ -315,6 +321,30 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     unsigned num_dirs=0;
     direntry *dirlist=(direntry *)NULL, **sorted_dirlist=(direntry **)NULL;
 #endif
+
+    /*
+     * First, two general initializations are applied. These have been moved
+     * here from process_zipfiles() because they are only needed for accessing
+     * and/or extracting the data content of the zip archive.
+     */
+
+    /* a) initialize the CRC table pointer (once) */
+    if (CRC_32_TAB == NULL) {
+        if ((CRC_32_TAB = get_crc_table()) == NULL) {
+            return PK_MEM;
+        }
+    }
+
+#if (!defined(SFX) || defined(SFX_EXDIR))
+    /* b) check out if specified extraction root directory exists */
+    if (uO.exdir != (char *)NULL && G.extract_flag) {
+        G.create_dirs = !uO.fflag;
+        if ((error = checkdir(__G__ uO.exdir, ROOT)) > MPN_INF_SKIP) {
+            /* out of memory, or file in way */
+            return (error == MPN_NOMEM ? PK_MEM : PK_ERR);
+        }
+    }
+#endif /* !SFX || SFX_EXDIR */
 
 /*---------------------------------------------------------------------------
     The basic idea of this function is as follows.  Since the central di-
@@ -537,8 +567,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
          */
 
 #ifdef USE_STRM_INPUT
-        fseek((FILE *)G.zipfd, cd_bufstart, SEEK_SET);
-        G.cur_zipfile_bufstart = ftell((FILE *)G.zipfd);
+        fseek(G.zipfd, cd_bufstart, SEEK_SET);
+        G.cur_zipfile_bufstart = ftell(G.zipfd);
 #else /* !USE_STRM_INPUT */
         G.cur_zipfile_bufstart =
           lseek(G.zipfd, cd_bufstart, SEEK_SET);
@@ -753,14 +783,21 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 static int store_info(__G)   /* return 0 if skipping, 1 if OK */
     __GDEF
 {
+#ifdef USE_BZIP2
+#  define UNKN_BZ2 (G.crec.compression_method!=BZIPPED)
+#else
+#  define UNKN_BZ2 TRUE       /* bzip2 unknown */
+#endif
+
 #ifdef SFX
 #  ifdef USE_DEFLATE64
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method<DEFLATED \
-      && G.crec.compression_method>ENHDEFLATED)
+      && G.crec.compression_method>ENHDEFLATED && UNKN_BZ2)
 #  else
 #    define UNKN_COMPR \
-     (G.crec.compression_method!=STORED && G.crec.compression_method!=DEFLATED)
+     (G.crec.compression_method!=STORED && G.crec.compression_method!=DEFLATED\
+      && UNKN_BZ2)
 #  endif
 #else
 #  ifdef COPYRIGHT_CLEAN  /* no reduced files */
@@ -777,12 +814,19 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #  ifdef USE_DEFLATE64
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
-     G.crec.compression_method>ENHDEFLATED)
+     (G.crec.compression_method>ENHDEFLATED && UNKN_BZ2))
 #  else
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
-     G.crec.compression_method>DEFLATED)
+     (G.crec.compression_method>DEFLATED && UNKN_BZ2))
 #  endif
+#endif
+
+#if (defined(USE_BZIP2) && (UNZIP_VERSION < UNZIP_BZ2VERS))
+    int unzvers_support = (UNKN_BZ2 ? UNZIP_VERSION : UNZIP_BZ2VERS);
+#   define UNZVERS_SUPPORT  unzvers_support
+#else
+#   define UNZVERS_SUPPORT  UNZIP_VERSION
 #endif
 
 /*---------------------------------------------------------------------------
@@ -828,13 +872,13 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
         }
 #endif /* !VMS */
     /* usual file type:  don't need VMS to extract */
-    } else if (G.crec.version_needed_to_extract[0] > UNZIP_VERSION) {
+    } else if (G.crec.version_needed_to_extract[0] > UNZVERS_SUPPORT) {
         if (!((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2)))
             Info(slide, 0x401, ((char *)slide, LoadFarString(VersionMsg),
               FnFilter1(G.filename), "PK",
               G.crec.version_needed_to_extract[0] / 10,
               G.crec.version_needed_to_extract[0] % 10,
-              UNZIP_VERSION / 10, UNZIP_VERSION % 10));
+              UNZVERS_SUPPORT / 10, UNZVERS_SUPPORT % 10));
         return 0;
     }
 
@@ -978,8 +1022,8 @@ static int extract_or_test_entrylist(__G__ numchunk,
         if (bufstart != G.cur_zipfile_bufstart) {
             Trace((stderr, "debug: bufstart != cur_zipfile_bufstart\n"));
 #ifdef USE_STRM_INPUT
-            fseek((FILE *)G.zipfd, bufstart, SEEK_SET);
-            G.cur_zipfile_bufstart = ftell((FILE *)G.zipfd);
+            fseek(G.zipfd, bufstart, SEEK_SET);
+            G.cur_zipfile_bufstart = ftell(G.zipfd);
 #else /* !USE_STRM_INPUT */
             G.cur_zipfile_bufstart =
               lseek(G.zipfd, bufstart, SEEK_SET);
@@ -1345,6 +1389,13 @@ reprompt:
                         /* skip file */
                         skip_entry = SKIP_Y_EXISTING;
                         break;
+                    case '\n':
+                    case '\r':
+                        /* Improve echo of '\n' and/or '\r'
+                           (sizeof(G.answerbuf) == 10 (see globals.h), so
+                           there is enough space for the provided text...) */
+                        strcpy(G.answerbuf, "{ENTER}");
+                        /* fall through ... */
                     default:
                         Info(slide, 1, ((char *)slide,
                           LoadFarString(InvalidResponse), *G.answerbuf));
@@ -1657,6 +1708,37 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 }
             }
             break;
+
+#ifdef USE_BZIP2
+        case BZIPPED:
+            if (!uO.tflag && QCOND2) {
+                Info(slide, 0, ((char *)slide, LoadFarString(ExtractMsg),
+                  "bzipp", FnFilter1(G.filename),
+                  (uO.aflag != 1 /* && G.pInfo->textfile==G.pInfo->textmode */)?
+                  "" : (G.pInfo->textfile? txt : bin), uO.cflag? NEWLINE : ""));
+            }
+            if ((r = UZbunzip2(__G)) != 0) {
+                if (r < PK_DISK) {
+                    if ((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))
+                        Info(slide, 0x401, ((char *)slide,
+                          LoadFarStringSmall(ErrUnzipFile), r == 3?
+                          LoadFarString(NotEnoughMem) :
+                          LoadFarString(InvalidComprData),
+                          LoadFarStringSmall2(BUnzip),
+                          FnFilter1(G.filename)));
+                    else
+                        Info(slide, 0x401, ((char *)slide,
+                          LoadFarStringSmall(ErrUnzipNoFile), r == 3?
+                          LoadFarString(NotEnoughMem) :
+                          LoadFarString(InvalidComprData),
+                          LoadFarStringSmall2(BUnzip)));
+                    error = (r == 3)? PK_MEM3 : PK_ERR;
+                } else {
+                    error = r;
+                }
+            }
+            break;
+#endif /* USE_BZIP2 */
 
         default:   /* should never get to this point */
             Info(slide, 0x401, ((char *)slide,
@@ -2247,7 +2329,7 @@ static void set_deferred_symlink(__G__ slnk_entry)
     __GDEF
     slinkentry *slnk_entry;
 {
-    unsigned ucsize = slnk_entry->targetlen;
+    extent ucsize = slnk_entry->targetlen;
     char *linkfname = slnk_entry->fname;
     char *linktarget = (char *)malloc(ucsize+1);
 
@@ -2267,13 +2349,14 @@ static void set_deferred_symlink(__G__ slnk_entry)
      *    stored in the symlink control structure.
      */
     if (!G.outfile ||
-        fread(linktarget, 1, ucsize+1, G.outfile) != (int)ucsize ||
+        fread(linktarget, 1, ucsize+1, G.outfile) != ucsize ||
         strcmp(slnk_entry->target, linktarget))
     {
         Info(slide, 0x201, ((char *)slide,
           LoadFarString(SymLnkWarnInvalid), FnFilter1(linkfname)));
         free(linktarget);
-        fclose(G.outfile);
+        if (G.outfile)
+            fclose(G.outfile);
         return;
     }
     fclose(G.outfile);                  /* close "data" file for good... */
@@ -2367,30 +2450,133 @@ static int Cdecl dircomp(a, b)  /* used by qsort(); swiped from Zip */
  /* return namecmp((*(direntry **)b)->fn, (*(direntry **)a)->fn); */
 }
 
+#endif /* SET_DIR_ATTRIB */
 
 
-#if 0   /* not used in Unix, but maybe for future OSes? */
+#ifdef USE_BZIP2
 
-/************************/
-/*  Function namecmp()  */
-/************************/
+/**************************/
+/*  Function UZbunzip2()  */
+/**************************/
 
-static int namecmp(s1, s2)   /* [not] used by dircomp(); swiped from Zip */
-    ZCONST char *s1, *s2;
+int UZbunzip2(__G)
+__GDEF
+/* decompress a bzipped entry using the libbz2 routines */
 {
-    int d;
+    int retval = 0;     /* return code: 0 = "no error" */
+    int err=BZ_OK;
+    int repeated_buf_err;
+    bz_stream bstrm;
 
-    for (;;) {
-        d = (int)(uch)case_map(*s1)
-          - (int)(uch)case_map(*s2);
+#if (defined(DLL) && !defined(NO_SLIDE_REDIR))
+    if (G.redirect_slide)
+        wsize = G.redirect_size, redirSlide = G.redirect_buffer;
+    else
+        wsize = WSIZE, redirSlide = slide;
+#endif
 
-        if (d || *s1 == 0 || *s2 == 0)
-            return d;
+    bstrm.next_out = (char *) redirSlide;
+    bstrm.avail_out = wsize;
 
-        s1++;
-        s2++;
+    bstrm.next_in = (char *) G.inptr;
+    bstrm.avail_in = G.incnt;
+
+    {
+        /* local buffer for efficiency */
+        /* $TODO Check for BZIP LIB version? */
+
+        bstrm.bzalloc = NULL;
+        bstrm.bzfree = NULL;
+        bstrm.opaque = NULL;
+
+        Trace((stderr, "initializing bzlib()\n"));
+        err = BZ2_bzDecompressInit(&bstrm, 0, 0);
+
+        if (err == BZ_MEM_ERROR)
+            return 3;
+        else if (err != BZ_OK)
+            Trace((stderr, "oops!  (BZ2_bzDecompressInit() err = %d)\n", err));
     }
+
+#ifdef FUNZIP
+    while (err != BZ_STREAM_END) {
+#else /* !FUNZIP */
+    while (G.csize > 0) {
+        Trace((stderr, "first loop:  G.csize = %ld\n", G.csize));
+#endif /* ?FUNZIP */
+        while (bstrm.avail_out > 0) {
+            err = BZ2_bzDecompress(&bstrm);
+
+            if (err == BZ_DATA_ERROR) {
+                retval = 2; goto uzbunzip_cleanup_exit;
+            } else if (err == BZ_MEM_ERROR) {
+                retval = 3; goto uzbunzip_cleanup_exit;
+            } else if (err != BZ_OK && err != BZ_STREAM_END)
+                Trace((stderr, "oops!  (bzip(first loop) err = %d)\n", err));
+
+#ifdef FUNZIP
+            if (err == BZ_STREAM_END)    /* "END-of-entry-condition" ? */
+#else /* !FUNZIP */
+            if (G.csize <= 0L)          /* "END-of-entry-condition" ? */
+#endif /* ?FUNZIP */
+                break;
+
+            if (bstrm.avail_in == 0) {
+                if (fillinbuf(__G) == 0) {
+                    /* no "END-condition" yet, but no more data */
+                    retval = 2; goto uzbunzip_cleanup_exit;
+                }
+
+                bstrm.next_in = (char *) G.inptr;
+                bstrm.avail_in = G.incnt;
+            }
+            Trace((stderr, "     avail_in = %u\n", bstrm.avail_in));
+        }
+        /* flush slide[] */
+        if ((retval = FLUSH(wsize - bstrm.avail_out)) != 0)
+            goto uzbunzip_cleanup_exit;
+        Trace((stderr, "inside loop:  flushing %ld bytes (ptr diff = %ld)\n",
+          (long)(wsize - bstrm.avail_out),
+          (long)(bstrm.next_out-(char *)redirSlide)));
+        bstrm.next_out = (char *) redirSlide;
+        bstrm.avail_out = wsize;
+    }
+
+    /* no more input, so loop until we have all output */
+    Trace((stderr, "beginning final loop:  err = %d\n", err));
+    repeated_buf_err = FALSE;
+    while (err != BZ_STREAM_END) {
+        err = BZ2_bzDecompress(&bstrm);
+        if (err == BZ_DATA_ERROR) {
+            retval = 2; goto uzbunzip_cleanup_exit;
+        } else if (err == BZ_MEM_ERROR) {
+            retval = 3; goto uzbunzip_cleanup_exit;
+        } else if (err != BZ_OK && err != BZ_STREAM_END) {
+            Trace((stderr, "oops!  (bzip(final loop) err = %d)\n", err));
+            DESTROYGLOBALS();
+            EXIT(PK_MEM3);
+        }
+        /* final flush of slide[] */
+        if ((retval = FLUSH(wsize - bstrm.avail_out)) != 0)
+            goto uzbunzip_cleanup_exit;
+        Trace((stderr, "final loop:  flushing %ld bytes (ptr diff = %ld)\n",
+          (long)(wsize - bstrm.avail_out),
+          (long)(bstrm.next_out-(char *)redirSlide)));
+        bstrm.next_out = (char *) redirSlide;
+        bstrm.avail_out = wsize;
+    }
+    Trace((stderr, "total in = %lu, total out = %lu\n", bstrm.total_in_lo32,
+      bstrm.total_out_lo32));
+
+    G.inptr = (uch *)bstrm.next_in;
+    G.incnt = (G.inbuf + INBUFSIZ) - G.inptr;  /* reset for other routines */
+
+uzbunzip_cleanup_exit:
+    err = BZ2_bzDecompressEnd(&bstrm);
+    if (err != BZ_OK)
+        Trace((stderr, "oops!  (BZ2_bzDecompressEnd() err = %d)\n", err));
+
+    return retval;
 }
 
-#endif /* 0 */
-#endif /* SET_DIR_ATTRIB */
+#endif /* USE_BZIP2 */
