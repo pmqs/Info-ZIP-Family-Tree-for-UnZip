@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -67,6 +67,57 @@
 #  define FIB$W_EXCTL   fib$r_exctl_overlay.fib$w_exctl
 #endif
 #undef variant_union
+
+
+/* To prepare the integration of ODS5 extended filename syntax support,
+ * in future UnZip versions, the affected filename related structures
+ * are now defined as macros.
+ */
+
+/* Define macros for use with NAM (not NAML). */
+
+#  ifndef NAM_MAXRSS            /* May have been defined before. */
+#    define NAM_MAXRSS NAM$C_MAXRSS
+#  endif
+
+#  define NAM_STRUCT NAM
+
+#  define FAB_OR_NAM(fab, nam) (fab)
+#  define FAB_OR_NAM_DNA fab$l_dna
+#  define FAB_OR_NAM_DNS fab$b_dns
+#  define FAB_OR_NAM_FNA fab$l_fna
+#  define FAB_OR_NAM_FNS fab$b_fns
+
+#  define CC_RMS_NAM cc$rms_nam
+#  define FAB_NAM fab$l_nam
+#  define NAME_DNA fab$l_dna
+#  define NAME_DNS fab$b_dns
+#  define NAME_FNA fab$l_fna
+#  define NAME_FNS fab$b_fns
+#  define NAM_DID nam$w_did
+#  define NAM_DVI nam$t_dvi
+#  define NAM_ESA nam$l_esa
+#  define NAM_ESL nam$b_esl
+#  define NAM_ESS nam$b_ess
+#  define NAM_FID nam$w_fid
+#  define NAM_FNB nam$l_fnb
+#  define NAM_RSA nam$l_rsa
+#  define NAM_RSL nam$b_rsl
+#  define NAM_RSS nam$b_rss
+#  define NAM_NOP nam$b_nop
+#  define NAM_M_SYNCHK NAM$M_SYNCHK
+#  define NAM_B_DEV nam$b_dev
+#  define NAM_L_DEV nam$l_dev
+#  define NAM_B_DIR nam$b_dir
+#  define NAM_L_DIR nam$l_dir
+#  define NAM_B_NAME nam$b_name
+#  define NAM_L_NAME nam$l_name
+#  define NAM_B_TYPE nam$b_type
+#  define NAM_L_TYPE nam$l_type
+#  define NAM_B_VER nam$b_ver
+#  define NAM_L_VER nam$l_ver
+
+/* end of non-ODS5-aware structure definitions (no NAML) */
 
 
 struct EB_header    /* Common header of extra block */

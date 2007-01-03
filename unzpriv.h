@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -42,12 +42,15 @@
 #  ifdef DLL
 #    undef DLL
 #  endif
-#  ifdef SFX    /* fUnZip is NOT the sfx stub! */
+#  ifdef SFX            /* fUnZip is NOT the sfx stub! */
 #    undef SFX
+#  endif
+#  ifdef USE_BZIP2      /* fUnZip does not support bzip2 decompression */
+#    undef USE_BZIP2
 #  endif
 #endif
 
-#if (defined(USE_ZLIB) && !defined(NO_DEFLATE64))
+#if (defined(USE_ZLIB) && !defined(HAVE_ZL_INFLAT64) && !defined(NO_DEFLATE64))
    /* zlib does not (yet?) provide Deflate64(tm) support */
 #  define NO_DEFLATE64
 #endif
@@ -62,6 +65,11 @@
 #  if (!defined(USE_DEFLATE64) && !defined(SFX))
 #    define USE_DEFLATE64
 #  endif
+#endif
+
+/* disable BZip2 support for SFX stub, unless explicitely requested */
+#if (defined(SFX) && !defined(BZIP2_SFX) && defined(USE_BZIP2))
+#  undef USE_BZIP2
 #endif
 
 #if (defined(NO_VMS_TEXT_CONV) || defined(VMS))
@@ -605,10 +613,11 @@
 #  include <file.h>                     /* same things as fcntl.h has */
 #  include <unixio.h>
 #  include <rms.h>
-#  define _MAX_PATH (NAM$C_MAXRSS+1)    /* to define FILNAMSIZ below */
-#  ifndef HAVE_STRNICMP                 /* use our private zstrnicmp() */
-#    define NO_STRNICMP                 /*  unless explicitely overridden */
+   /* Define maximum path length according to NAM member size. */
+#  ifndef NAM_MAXRSS
+#    define NAM_MAXRSS NAM$C_MAXRSS
 #  endif
+#  define _MAX_PATH (NAM$C_MAXRSS+1)    /* to define FILNAMSIZ below */
 #  ifdef RETURN_CODES  /* VMS interprets standard PK return codes incorrectly */
 #    define RETURN(ret) return_VMS(__G__ (ret))   /* verbose version */
 #    define EXIT(ret)   return_VMS(__G__ (ret))
@@ -642,11 +651,32 @@
 #    if (!defined(NO_EF_UT_TIME) && !defined(USE_EF_UT_TIME))
 #      define USE_EF_UT_TIME
 #    endif
+#    if (!defined(HAVE_STRNICMP) && !defined(NO_STRNICMP))
+#      define HAVE_STRNICMP
+#      ifdef STRNICMP
+#        undef STRNICMP
+#      endif
+#      define STRNICMP  strncasecmp
+#    endif
+#  endif
+#  ifndef HAVE_STRNICMP                 /* use our private zstrnicmp() */
+#    define NO_STRNICMP                 /*  unless explicitely overridden */
 #  endif
 #  if (!defined(NOTIMESTAMP) && !defined(TIMESTAMP))
 #    define TIMESTAMP
 #  endif
 #  define RESTORE_UIDGID
+   /* VMS is run on little-endian processors with 4-byte ints:
+    * enable the optimized CRC-32 code */
+#  ifdef IZ_CRC_BE_OPTIMIZ
+#    undef IZ_CRC_BE_OPTIMIZ
+#  endif
+#  if !defined(IZ_CRC_LE_OPTIMIZ) && !defined(NO_CRC_OPTIMIZ)
+#    define IZ_CRC_LE_OPTIMIZ
+#  endif
+#  if !defined(IZ_CRCOPTIM_UNFOLDTBL) && !defined(NO_CRC_OPTIMIZ)
+#    define IZ_CRCOPTIM_UNFOLDTBL
+#  endif
 #  ifdef __DECC
      /* File open callback ID values. */
 #    define OPENR_ID 1
@@ -689,6 +719,7 @@
 /*  Defines  */
 /*************/
 
+#define UNZIP_BZ2VERS   46
 #ifdef USE_DEFLATE64
 #  define UNZIP_VERSION   21   /* compatible with PKUNZIP 4.0 */
 #else
@@ -926,6 +957,20 @@
 #  undef ASM_CRC
 #endif
 
+#ifdef USE_ZLIB
+#  ifdef IZ_CRC_BE_OPTIMIZ
+#    undef IZ_CRC_BE_OPTIMIZ
+#  endif
+#  ifdef IZ_CRC_LE_OPTIMIZ
+#    undef IZ_CRC_LE_OPTIMIZ
+#  endif
+#endif
+#if (!defined(IZ_CRC_BE_OPTIMIZ) && !defined(IZ_CRC_LE_OPTIMIZ))
+#  ifdef IZ_CRCOPTIM_UNFOLDTBL
+#    undef IZ_CRCOPTIM_UNFOLDTBL
+#  endif
+#endif
+
 #ifndef INBUFSIZ
 #  if (defined(MED_MEM) || defined(SMALL_MEM))
 #    define INBUFSIZ  2048  /* works for MS-DOS small model */
@@ -938,7 +983,7 @@
    /* For environments using 16-bit integers OUTBUFSIZ must be limited to
     * less than 64k (do_string() uses "unsigned" in calculations involving
     * OUTBUFSIZ).  This is achieved by defining MED_MEM when WSIZE = 64k (aka
-    * Deflate64 support enabled) or EOL markers consist multiple characters.
+    * Deflate64 support enabled) or EOL markers contain multiple characters.
     * (The rule gets applied AFTER the default rule for INBUFSIZ because it
     * is not neccessary to reduce INBUFSIZE in this case.)
     */
@@ -1081,6 +1126,7 @@
 #  define FOPR  "r","ctx=stm"
 #  define FOPM  "r+","ctx=stm","rfm=fix","mrs=512"
 #  define FOPW  "w","ctx=stm","rfm=fix","mrs=512"
+#  define FOPWR "w+","ctx=stm","rfm=fix","mrs=512"
 #endif /* VMS */
 
 #ifdef CMS_MVS
@@ -1117,6 +1163,9 @@
 #  ifndef FOPWT
 #    define FOPWT "wt"
 #  endif
+#  ifndef FOPWR
+#    define FOPWR "w+b"
+#  endif
 #else /* !MODERN */
 #  ifndef FOPR
 #    define FOPR "r"
@@ -1129,6 +1178,9 @@
 #  endif
 #  ifndef FOPWT
 #    define FOPWT "w"
+#  endif
+#  ifndef FOPWR
+#    define FOPWR "w+"
 #  endif
 #endif /* ?MODERN */
 
@@ -1411,11 +1463,14 @@
 #define DEFLATED          8
 #define ENHDEFLATED       9
 #define DCLIMPLODED      10
-#define PKRESMOD11       11
-#define BZIP2ED          12
-#define NUM_METHODS      13    /* index of last method + 1 */
-/* don't forget to update list_files(), extract.c and zipinfo.c appropriately
- * if NUM_METHODS changes */
+#define BZIPPED          12
+#define LZMAED           14
+#define IBMTERSED        18
+#define IBMLZ77ED        19
+#define PPMDED           98
+#define NUM_METHODS      16    /* number of known method IDs */
+/* don't forget to update list.c (list_files()), extract.c and zipinfo.c
+ * appropriately if NUM_METHODS changes */
 
 /* (the PK-class error codes are public and have been moved into unzip.h) */
 
@@ -1429,10 +1484,21 @@
 /* extra-field ID values, all little-endian: */
 #define EF_PKSZ64    0x0001    /* PKWARE's 64-bit filesize extensions */
 #define EF_AV        0x0007    /* PKWARE's authenticity verification */
+#define EF_EFS       0x0008    /* PKWARE's extended language encoding */
 #define EF_OS2       0x0009    /* OS/2 extended attributes */
 #define EF_PKW32     0x000a    /* PKWARE's Win95/98/WinNT filetimes */
 #define EF_PKVMS     0x000c    /* PKWARE's VMS */
 #define EF_PKUNIX    0x000d    /* PKWARE's Unix */
+#define EF_PKFORK    0x000e    /* PKWARE's future stream/fork descriptors */
+#define EF_PKPATCH   0x000f    /* PKWARE's patch descriptor */
+#define EF_PKPKCS7   0x0014    /* PKWARE's PKCS#7 store for X.509 Certs */
+#define EF_PKFX509   0x0015    /* PKWARE's file X.509 Cert&Signature ID */
+#define EF_PKCX509   0x0016    /* PKWARE's central dir X.509 Cert ID */
+#define EF_PKENCRHD  0x0017    /* PKWARE's Strong Encryption header */
+#define EF_PKRMCTL   0x0018    /* PKWARE's Record Management Controls*/
+#define EF_PKLSTCS7  0x0019    /* PKWARE's PKCS#7 Encr. Recipient Cert List */
+#define EF_PKIBM     0x0065    /* PKWARE's IBM S/390 & AS/400 attributes */
+#define EF_PKIBM2    0x0066    /* PKWARE's IBM S/390 & AS/400 compr. attribs */
 #define EF_IZVMS     0x4d49    /* Info-ZIP's VMS ("IM") */
 #define EF_IZUNIX    0x5855    /* Info-ZIP's old Unix[1] ("UX") */
 #define EF_IZUNIX2   0x7855    /* Info-ZIP's new Unix[2] ("Ux") */
@@ -1584,6 +1650,29 @@
 /**************/
 /*  Typedefs  */
 /**************/
+
+#ifndef Z_UINT4_DEFINED
+# if (defined(MODERN) && !defined(NO_LIMITS_H))
+#  if (defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL))
+     typedef unsigned int       z_uint4;
+#    define Z_UINT4_DEFINED
+#  else
+#  if (defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL))
+     typedef unsigned long      z_uint4;
+#    define Z_UINT4_DEFINED
+#  else
+#  if (defined(USHRT_MAX) && (USHRT_MAX == 0xffffffffUL))
+     typedef unsigned short     z_uint4;
+#    define Z_UINT4_DEFINED
+#  endif
+#  endif
+#  endif
+# endif /* MODERN && !NO_LIMITS_H */
+#endif /* !Z_UINT4_DEFINED */
+#ifndef Z_UINT4_DEFINED
+  typedef ulg                   z_uint4;
+# define Z_UINT4_DEFINED
+#endif
 
 #ifdef NO_UID_GID
 #  ifdef UID_USHORT
@@ -1757,31 +1846,31 @@ typedef struct VMStimbuf {
 
 #if 0
    typedef struct central_directory_file_header {     /* CENTRAL */
+       ulg csize;
+       ulg ucsize;
+       ulg relative_offset_local_header;
+       ulg last_mod_dos_datetime;
+       ulg crc32;
+       ulg external_file_attributes;
+       ush disk_number_start;
+       ush internal_file_attributes;
        uch version_made_by[2];
        uch version_needed_to_extract[2];
        ush general_purpose_bit_flag;
        ush compression_method;
-       ulg last_mod_dos_datetime;
-       ulg crc32;
-       ulg csize;
-       ulg ucsize;
        ush filename_length;
        ush extra_field_length;
        ush file_comment_length;
-       ush disk_number_start;
-       ush internal_file_attributes;
-       ulg external_file_attributes;
-       ulg relative_offset_local_header;
    } cdir_file_hdr;
 #endif /* 0 */
 
    typedef struct end_central_dir_record {            /* END CENTRAL */
-       ush number_this_disk;
-       ush num_disk_start_cdir;
-       ush num_entries_centrl_dir_ths_disk;
-       ush total_entries_central_dir;
        ulg size_central_directory;
        ulg offset_start_central_directory;
+       ush num_entries_centrl_dir_ths_disk;
+       ush total_entries_central_dir;
+       ush number_this_disk;
+       ush num_disk_start_cdir;
        ush zipfile_comment_length;
    } ecdir_rec;
 
@@ -1851,7 +1940,6 @@ void     free_G_buffers          OF((__GPRO));
 /* static int    find_ecrec      OF((__GPRO__ long searchlen)); */
 int      uz_end_central          OF((__GPRO));
 int      process_cdir_file_hdr   OF((__GPRO));
-int      get_cdir_ent            OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
@@ -1966,6 +2054,9 @@ int    extract_or_test_files     OF((__GPRO));
 /* static int   TestExtraField   OF((__GPRO__ uch *ef, unsigned ef_len)); */
 /* static int   test_OS2         OF((__GPRO__ uch *eb, unsigned eb_size)); */
 /* static int   test_NT          OF((__GPRO__ uch *eb, unsigned eb_size)); */
+#ifndef SFX
+  unsigned find_compr_idx        OF((ush compr_methodnum));
+#endif
 int    memextract                OF((__GPRO__ uch *tgt, ulg tgtsize,
                                      ZCONST uch *src, ulg srcsize));
 int    memflush                  OF((__GPRO__ ZCONST uch *rawbuf, ulg size));
@@ -2006,6 +2097,25 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #endif /* !LZW_CLEAN */
 #endif /* !SFX && !FUNZIP */
 
+#ifdef USE_BZIP2
+   int    UZbunzip2              OF((__GPRO));                  /* extract.c */
+
+/* On VMS, bzip2 is built using /NAMES = AS_IS, but UnZip is not,
+ * leading to a messy interface.
+ */
+#ifdef VMS
+#  pragma names save
+#  pragma names as_is
+#endif /* def VMS */
+
+   void   bz_internal_error      OF((int errcode));             /* ubz2err.c */
+
+#ifdef VMS
+#  pragma names restore
+#endif /* def VMS */
+
+#endif /* def USE_BZIP2 */
+
 /*---------------------------------------------------------------------------
     Internal API functions (only included in DLL versions):
   ---------------------------------------------------------------------------*/
@@ -2034,7 +2144,11 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
     MSDOS-only functions:
   ---------------------------------------------------------------------------*/
 
-#if (defined(MSDOS) && (defined(__GO32__) || defined(__EMX__)))
+#ifdef MSDOS
+#if (!defined(FUNZIP) && !defined(SFX) && !defined(WINDLL))
+   void     check_for_windows     OF((ZCONST char *app));         /* msdos.c */
+#endif
+#if (defined(__GO32__) || defined(__EMX__))
    unsigned _dos_getcountryinfo(void *);                          /* msdos.c */
 #if (!defined(__DJGPP__) || (__DJGPP__ < 2))
    unsigned _dos_setftime(int, unsigned, unsigned);               /* msdos.c */
@@ -2043,6 +2157,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    void _dos_getdrive(unsigned *);                                /* msdos.c */
    unsigned _dos_close(int);                                      /* msdos.c */
 #endif /* !__DJGPP__ || (__DJGPP__ < 2) */
+#endif /* __GO32__ || __EMX__ */
 #endif
 
 /*---------------------------------------------------------------------------
@@ -2110,6 +2225,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* int    open_outfile        OF((__GPRO));           * (see fileio.c) vms.c */
 /* int    flush               OF((__GPRO__ uch *rawbuf, unsigned size,
                                   int final_flag));   * (see fileio.c) vms.c */
+   char  *vms_msg_text        OF((void));                           /* vms.c */
 #ifdef RETURN_CODES
    void   return_VMS          OF((__GPRO__ int zip_error));         /* vms.c */
 #else
@@ -2154,13 +2270,8 @@ int      match           OF((ZCONST char *s, ZCONST char *p,
                              int ic __WDLPRO));                   /* match.c */
 int      iswild          OF((ZCONST char *p));                    /* match.c */
 
-#ifdef DYNALLOC_CRCTAB
-   void     free_crc_table  OF((void));                          /* crctab.c */
-#endif
-#ifndef USE_ZLIB
-   ZCONST ulg near *get_crc_table  OF((void));         /* funzip.c, crctab.c */
-   ulg      crc32           OF((ulg crc, ZCONST uch *buf, extent len));
-#endif /* !USE_ZLIB */                        /* assembler source or crc32.c */
+/* declarations of public CRC-32 functions have been moved into crc32.h
+   (free_crc_table(), get_crc_table(), crc32())                      crc32.c */
 
 int      dateformat      OF((void));                                /* local */
 char     dateseparator   OF((void));                                /* local */
@@ -2267,13 +2378,13 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
  * UnZip. Otherwise, to get the same behaviour as for (*G.message)(), the
  * Info() definition for "FUNZIP" would have to be corrected:
  * #define Info(buf,flag,sprf_arg) \
- *      (fprintf((flag)&1? stderr : stdout, \
- *               (char *)(sprintf sprf_arg, (buf))) == EOF)
+ *      (fputs((char *)(sprintf sprf_arg, (buf)), \
+               (flag)&1? stderr : stdout) < 0)
  */
 #ifndef Info   /* may already have been defined for redirection */
 #  ifdef FUNZIP
 #    define Info(buf,flag,sprf_arg) \
-     fprintf((flag)&1? stderr : stdout, (char *)(sprintf sprf_arg, (buf)))
+     fputs((char *)(sprintf sprf_arg, (buf)), (flag)&1? stderr : stdout)
 #  else
 #    ifdef INT_SPRINTF  /* optimized version for "int sprintf()" flavour */
 #      define Info(buf,flag,sprf_arg) \

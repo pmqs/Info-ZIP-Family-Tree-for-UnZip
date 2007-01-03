@@ -2,7 +2,7 @@ $ ! MAKE_UNZ.COM
 $ !
 $ !     "Makefile" for VMS versions of UnZip/ZipInfo and UnZipSFX
 $ !
-$ !     Last updated:  2005-11-18  SMS.
+$ !     Last updated:  2006-12-29  SMS.
 $ !
 $ !     Command args:
 $ !     - select compiler environment: "VAXC", "DECC", "GNUC"
@@ -12,8 +12,8 @@ $ !     - force installation of UNIX interface version of unzip
 $ !       (override LOCAL_UNZIP environment): "NOVMSCLI" or "NOCLI"
 $ !     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
 $ !       (or a suitable logical name) tells where to find "bzlib.h".
-$ !       The BZIP2 object library (LIBBZ2.OLB) is expected to be in a
-$ !       "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
+$ !       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
+$ !       a "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
 $ !       example), or in that directory itself.
 $ !       By default, the SFX programs are built without BZIP2 support.
 $ !       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
@@ -106,12 +106,12 @@ $  IF (curr_arg .eqs. "NOVMSCLI") .or. (curr_arg .eqs. "NOCLI")
 $  THEN
 $    CLI_IS_DEFAULT = 0
 $  ENDIF
-$  if f$extract( 0, 7, curr_arg) .eqs. "IZ_BZIP"
-$  then
-$    opts = f$edit( curr_arg, "COLLAPSE")
-$    eq = f$locate( "=", opts)
-$    IZ_BZIP2 = f$extract( (eq+ 1), 1000, opts)
-$  endif
+$  IF f$extract(0, 7, curr_arg) .eqs. "IZ_BZIP"
+$  THEN
+$    opts = f$edit(curr_arg, "COLLAPSE")
+$    eq = f$locate("=", opts)
+$    IZ_BZIP2 = f$extract((eq+ 1), 1000, opts)
+$  ENDIF
 $  arg_cnt = arg_cnt + 1
 $ GOTO argloop
 $ argloop_out:
@@ -153,8 +153,8 @@ $       defs = "''local_unzip'MODERN"
 $       opts = ""
 $       say "Compiling on AXP using DEC C"
 $ else
-$     if (i64)
-$     then
+$   if (i64)
+$   then
 $       ! IA64
 $       ARCH_NAME == "IA64"
 $       ARCH_PREF = "I64_"
@@ -170,7 +170,7 @@ $       cc = "cc/standard=relax/prefix=all/ansi"
 $       defs = "''local_unzip'MODERN"
 $       opts = ""
 $       say "Compiling on AXP using DEC C"
-$     else
+$   else
 $       ! VAX
 $       ARCH_NAME == "VAX"
 $       ARCH_PREF = "VAX_"
@@ -182,7 +182,7 @@ $       THEN
 $         ! We use DECC:
 $         USE_DECC_VAX = 1
 $         ARCH_CC_P = "''ARCH_PREF'DECC_"
-$         cc = "cc/decc/standard=vaxc/prefix=all"
+$         cc = "cc/decc/standard=relax/prefix=all"
 $         defs = "''local_unzip'MODERN"
 $         opts = ""
 $         say "Compiling on VAX using DEC C"
@@ -208,25 +208,29 @@ $               endif
 $               say "Compiling on VAX using VAX C"
 $         endif
 $       ENDIF
-$     endif
+$   endif
 $ endif
 $!
 $! If BZIP2 support was selected, find the object library.
 $! Complain if things fail.
 $!
+$ incl_bzip2_m = ""
+$ incl_bzip2_q = ""
 $ lib_bzip2_opts = ""
 $ if (IZ_BZIP2 .nes. "")
 $ then
 $     define incl_bzip2 'IZ_BZIP2'
 $     defs = "''defs', USE_BZIP2"
-$     @ [.vms]find_bzip2_lib.com 'IZ_BZIP2' 'ARCH_NAME' lib_bzip2
-$     if (f$trnlnm( "lib_bzip2") .eqs. "")
+$     @ [.vms]find_bzip2_lib.com 'IZ_BZIP2' 'ARCH_NAME' LIBBZ2_NS.OLB lib_bzip2
+$     if (f$trnlnm("lib_bzip2") .eqs. "")
 $     then
 $         say "Can't find BZIP2 object library.  Can't link."
 $         goto error
 $     else
-$         say "BZIP2 dir = ''f$trnlnm( "lib_bzip2")'"
-$         lib_bzip2_opts = ", lib_bzip2:libbz2.olb /library"
+$         say "BZIP2 dir = ''f$trnlnm("lib_bzip2")'"
+$         lib_bzip2_opts = ", lib_bzip2:LIBBZ2_NS.OLB /library"
+$         incl_bzip2_m = ", ubz2err"
+$         incl_bzip2_q = "/include = (ubz2err)"
 $     endif
 $ endif
 $!
@@ -252,6 +256,10 @@ $ ! just append "'x'" to the respective source file specification.
 $! x = f$search("SYS$LIBRARY:SYS$LIB_C.TLB")
 $! if x .nes. "" then x = "+" + x
 $ !
+$ ! Reveal the actual "cc" command.
+$ !
+$ say "cc = ''cc'"
+$ !
 $ tmp = f$verify(1)     ! Turn echo on to see what's happening
 $ !
 $ !------------------------------- UnZip section ------------------------------
@@ -260,7 +268,6 @@ $ runoff/out=unzip.hlp [.vms]unzip_def.rnh
 $ !
 $ cc/NOLIST'DEF_UNX' /OBJ=unzip.'ARCH_CC_P'obj unzip.c
 $ cc/NOLIST'DEF_UNX' /OBJ=crc32.'ARCH_CC_P'obj crc32.c
-$ cc/NOLIST'DEF_UNX' /OBJ=crctab.'ARCH_CC_P'obj crctab.c
 $ cc/NOLIST'DEF_UNX' /OBJ=crypt.'ARCH_CC_P'obj crypt.c
 $ cc/NOLIST'DEF_UNX' /OBJ=envargs.'ARCH_CC_P'obj envargs.c
 $ cc/NOLIST'DEF_UNX' /OBJ=explode.'ARCH_CC_P'obj explode.c
@@ -272,6 +279,7 @@ $ cc/NOLIST'DEF_UNX' /OBJ=list.'ARCH_CC_P'obj list.c
 $ cc/NOLIST'DEF_UNX' /OBJ=match.'ARCH_CC_P'obj match.c
 $ cc/NOLIST'DEF_UNX' /OBJ=process.'ARCH_CC_P'obj process.c
 $ cc/NOLIST'DEF_UNX' /OBJ=ttyio.'ARCH_CC_P'obj ttyio.c
+$ cc/NOLIST'DEF_UNX' /OBJ=ubz2err.'ARCH_CC_P'obj ubz2err.c
 $ cc/NOLIST'DEF_UNX' /OBJ=unreduce.'ARCH_CC_P'obj unreduce.c
 $ cc/NOLIST'DEF_UNX' /OBJ=unshrink.'ARCH_CC_P'obj unshrink.c
 $ cc/NOLIST'DEF_UNX' /OBJ=zipinfo.'ARCH_CC_P'obj zipinfo.c
@@ -281,20 +289,21 @@ $ if f$search("unzip.''ARCH_CC_P'olb") .eqs. "" then -
         lib/obj/create unzip.'ARCH_CC_P'olb
 $ lib/obj/replace unzip.'ARCH_CC_P'olb -
         unzip.'ARCH_CC_P'obj;, crc32.'ARCH_CC_P'obj;, -
-        crctab.'ARCH_CC_P'obj;, crypt.'ARCH_CC_P'obj;, -
+        crypt.'ARCH_CC_P'obj;, -
         envargs.'ARCH_CC_P'obj;, explode.'ARCH_CC_P'obj;, -
         extract.'ARCH_CC_P'obj;, fileio.'ARCH_CC_P'obj;, -
         globals.'ARCH_CC_P'obj;, inflate.'ARCH_CC_P'obj;, -
         list.'ARCH_CC_P'obj;, match.'ARCH_CC_P'obj;, -
         process.'ARCH_CC_P'obj;, ttyio.'ARCH_CC_P'obj;, -
+        ubz2err.'ARCH_CC_P'obj;, -
         unreduce.'ARCH_CC_P'obj;, unshrink.'ARCH_CC_P'obj;, -
         zipinfo.'ARCH_CC_P'obj;, vms.'ARCH_CC_P'obj;
 $ !
 $ link'LFLAGS'/exe='unzx_unx'.'ARCH_CC_P'exe -
-        unzip.'ARCH_CC_P'olb;/incl=(unzip)/lib -
+        unzip.'ARCH_CC_P'olb;/incl=(unzip 'incl_bzip2_m')/lib -
         'lib_bzip2_opts' -
         'opts', -
-        [.VMS]unzip.opt/opt
+        SYS$DISK:[.VMS]unzip.opt/opt
 $ !
 $ !----------------------- UnZip (CLI interface) section ----------------------
 $ !
@@ -316,16 +325,15 @@ $ lib/obj/replace unzipcli.'ARCH_CC_P'olb -
 $ !
 $ link'LFLAGS'/exe='unzx_cli'.'ARCH_CC_P'exe -
         unzipcli.'ARCH_CC_P'olb;/incl=(unzip)/lib, -
-        unzip.'ARCH_CC_P'olb;/lib -
+        unzip.'ARCH_CC_P'olb;/lib 'incl_bzip2_q' -
         'lib_bzip2_opts' -
         'opts', -
-        [.VMS]unzip.opt/opt
+        SYS$DISK:[.VMS]unzip.opt/opt
 $ !
 $ !-------------------------- UnZipSFX section --------------------------------
 $ !
 $ cc/NOLIST'DEF_SXUNX' /OBJ=unzipsfx.'ARCH_CC_P'obj unzip.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=crc32_.'ARCH_CC_P'obj crc32.c
-$ cc/NOLIST'DEF_SXUNX' /OBJ=crctab_.'ARCH_CC_P'obj crctab.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=crypt_.'ARCH_CC_P'obj crypt.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=extract_.'ARCH_CC_P'obj extract.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=fileio_.'ARCH_CC_P'obj fileio.c
@@ -334,23 +342,25 @@ $ cc/NOLIST'DEF_SXUNX' /OBJ=inflate_.'ARCH_CC_P'obj inflate.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=match_.'ARCH_CC_P'obj match.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=process_.'ARCH_CC_P'obj process.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=ttyio_.'ARCH_CC_P'obj ttyio.c
+$ cc/NOLIST'DEF_SXUNX' /OBJ=ubz2err_.'ARCH_CC_P'obj ubz2err.c
 $ cc/NOLIST'DEF_SXUNX' /OBJ=vms_.'ARCH_CC_P'obj; -
         [.vms]vms.c
 $ if f$search("unzipsfx.''ARCH_CC_P'olb") .eqs. "" then -
         lib/obj/create unzipsfx.'ARCH_CC_P'olb
 $ lib/obj/replace unzipsfx.'ARCH_CC_P'olb -
         unzipsfx.'ARCH_CC_P'obj, crc32_.'ARCH_CC_P'obj, -
-        crctab_.'ARCH_CC_P'obj, crypt_.'ARCH_CC_P'obj, -
+        crypt_.'ARCH_CC_P'obj, -
         extract_.'ARCH_CC_P'obj, fileio_.'ARCH_CC_P'obj, -
         globals_.'ARCH_CC_P'obj, inflate_.'ARCH_CC_P'obj, -
         match_.'ARCH_CC_P'obj, process_.'ARCH_CC_P'obj, -
-        ttyio_.'ARCH_CC_P'obj, vms_.'ARCH_CC_P'obj
+        ttyio_.'ARCH_CC_P'obj, ubz2err_.'ARCH_CC_P'obj, -
+        vms_.'ARCH_CC_P'obj
 $ !
 $ link'LFLAGS'/exe='unzsfx_unx'.'ARCH_CC_P'exe -
-        unzipsfx.'ARCH_CC_P'olb;/lib/incl=unzip -
+        unzipsfx.'ARCH_CC_P'olb;/lib/incl=(unzip 'incl_bzip2_m') -
         'lib_bzip2_opts' -
         'opts', -
-        [.VMS]unzipsfx.opt/opt
+        SYS$DISK:[.VMS]unzipsfx.opt/opt
 $ !
 $ !--------------------- UnZipSFX (CLI interface) section ---------------------
 $ !
@@ -365,10 +375,10 @@ $ lib/obj/replace unzsxcli.'ARCH_CC_P'olb -
 $ !
 $ link'LFLAGS'/exe='unzsfx_cli'.'ARCH_CC_P'exe -
         unzsxcli.'ARCH_CC_P'olb;/lib/incl=unzip, -
-        unzipsfx.'ARCH_CC_P'olb;/lib -
+        unzipsfx.'ARCH_CC_P'olb;/lib 'incl_bzip2_q' -
         'lib_bzip2_opts' -
         'opts', -
-        [.VMS]unzipsfx.opt/opt
+        SYS$DISK:[.VMS]unzipsfx.opt/opt
 $ !
 $ !----------------------------- Symbols section ------------------------------
 $ !
@@ -383,12 +393,12 @@ $ if here .nes. "" then set default 'here'
 $!
 $ tmp = f$verify(OLD_VERIFY)
 $!
-$ if (f$trnlnm( "incl_bzip2") .nes. "")
+$ if (f$trnlnm("incl_bzip2") .nes. "")
 $ then
 $     deassign incl_bzip2
 $ endif
 $!
-$ if (f$trnlnm( "lib_bzip2") .nes. "")
+$ if (f$trnlnm("lib_bzip2") .nes. "")
 $ then
 $     deassign lib_bzip2
 $ endif

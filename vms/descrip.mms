@@ -1,5 +1,5 @@
 !==========================================================================
-! MMS description file for UnZip/UnZipSFX 5.5x (x >= 3)          2005-11-18
+! MMS description file for UnZip/UnZipSFX 5.5x (x >= 3)          2006-12-29
 !==========================================================================
 !
 ! To build UnZip that uses shared libraries, edit the USER CUSTOMIZATION
@@ -30,11 +30,11 @@
 !	$ MMS/MACRO=(__GNUC__=1)		! VAX, using GNU C
 !
 
-! To add BZIP2 support, add the MMS macro "IZ_BZIP2=dev:[dir]", where
-! the macro value ("dev:[dir]", or a suitable logical name) tells where
-! to find "bzlib.h".  The BZIP2 object library (LIBBZ2.OLB) is expected
-! to be in a "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
-! example), or in that directory itself.
+! To activate BZIP2 support, add the MMS macro "IZ_BZIP2=dev:[dir]",
+! where the macro value ("dev:[dir]", or a suitable logical name) tells
+! where to find "bzlib.h".  The BZIP2 object library (LIBBZ2_NS.OLB) is
+! expected ! to be in a "[.dest]" directory under that one
+! ("dev:[dir.ALPHAL]", for example), or in that directory itself.
 !
 ! By default, the SFX programs are built without BZIP2 support.  Add
 ! "BZIP2_SFX=1" to the COMMON_DEFS C macros to enable it.  (See
@@ -163,7 +163,7 @@ OPTIONS = $(LIBS)
 NOSHARE_OPTS = $(LIBS)/NOSYSSHR
 .ELSE                               # __IA64__
 .IFDEF __DECC__                         # __DECC__
-CC_OPTIONS = /DECC/STANDARD=VAXC/PREFIX=ALL
+CC_OPTIONS = /DECC/STANDARD=RELAX/PREFIX=ALL
 CC_DEFS = MODERN,
 OPTFILE_LIST =
 OPTIONS = $(LIBS)
@@ -192,18 +192,20 @@ NOSHARE_OPTS = $(LIBS),SYS$LIBRARY:VAXCRTL.OLB/LIB/NOSYSSHR
 .IFDEF IZ_BZIP2                     # IZ_BZIP2
 CC_DEFS2 = USE_BZIP2,
 CFLAGS_INCL = /INCLUDE = ([], [.VMS])
-LIB_BZIP2_OPTS = lib_bzip2:libbz2.olb /library,
+INCL_BZIP2_M = , ubz2err
+INCL_BZIP2_Q = /include = (ubz2err)
+LIB_BZIP2_OPTS = LIB_BZIP2:LIBBZ2_NS.OLB /library,
 
 .FIRST
 	@ define incl_bzip2 $(IZ_BZIP2)
-	@ @[.vms]find_bzip2_lib.com $(IZ_BZIP2) $(DEST) lib_bzip2
+	@ @[.vms]find_bzip2_lib.com $(IZ_BZIP2) $(DEST) LIBBZ2_NS.OLB lib_bzip2
 	@ write sys$output ""
-	@ if (f$trnlnm( "lib_bzip2") .nes. "") then -
-	   write sys$output "   BZIP2 dir: ''f$trnlnm( "lib_bzip2")'"
-	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	@ if (f$trnlnm("lib_bzip2") .nes. "") then -
+	   write sys$output "   BZIP2 dir: ''f$trnlnm("lib_bzip2")'"
+	@ if (f$trnlnm("lib_bzip2") .eqs. "") then -
 	   write sys$output "   Can not find BZIP2 object library."
 	@ write sys$output ""
-	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	@ if (f$trnlnm("lib_bzip2") .eqs. "") then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 .ELSE                               # IZ_BZIP2
 CC_DEFS2 =
@@ -237,19 +239,20 @@ LINKFLAGS   = $(LDEB)
 
 
 OBJM =		unzip$(O), unzcli$(O), unzipsfx$(O), unzsxcli$(O)
-COMMON_OBJS1 =	crc32$(O),crctab$(O),crypt$(O),envargs$(O),-
+COMMON_OBJS1 =	crc32$(O),crypt$(O),envargs$(O),-
 		explode$(O),extract$(O),fileio$(O),globals$(O)
 COMMON_OBJS2 =	inflate$(O),list$(O),match$(O),process$(O),ttyio$(O),-
-		unreduce$(O),unshrink$(O),zipinfo$(O),-
+		ubz2err$(O),unreduce$(O),unshrink$(O),zipinfo$(O),-
 		vms$(O)
 OBJUNZLIB =	$(COMMON_OBJS1),$(COMMON_OBJS2)
 
-COMMON_OBJX1 =	CRC32=crc32_$(O),CRCTAB=crctab_$(O),CRYPT=crypt_$(O),-
+COMMON_OBJX1 =	CRC32=crc32_$(O),CRYPT=crypt_$(O),-
 		EXTRACT=extract_$(O),-
 		FILEIO=fileio_$(O),GLOBALS=globals_$(O)
 COMMON_OBJX2 =	INFLATE=inflate_$(O),MATCH=match_$(O),-
 		PROCESS=process_$(O),-
 		TTYIO=ttyio_$(O),-
+		UBZ2ERR=ubz2err_$(O),-
 		VMS=vms_$(O)
 OBJSFXLIB =	$(COMMON_OBJX1),$(COMMON_OBJX2)
 
@@ -316,39 +319,41 @@ noshare :	$(UNZIPS_NOSHARE), $(UNZIPHELPS)
 
 $(UNZX_UNX)$(E) : $(OLBUNZ)($(OBJS))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
-	$(OLBUNZ)/INCLUDE=UNZIP/LIBRARY$(OPTIONS), -
-	$(LIB_BZIP2_OPTS) -
-	sys$disk:[.vms]unzip.opt/OPT
+	 $(OLBUNZ)/INCLUDE=(UNZIP $(INCL_BZIP2_M))/LIBRARY$(OPTIONS), -
+	 $(LIB_BZIP2_OPTS) -
+	 sys$disk:[.vms]unzip.opt/OPT
 
 $(UNZX_CLI)$(E) : $(OLBCLI)($(OBJSCLI)),$(OLBUNZ)($(OBJUNZLIB))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
-	$(OLBCLI)/INCLUDE=UNZIP/LIBRARY, $(OLBUNZ)/LIBRARY$(OPTIONS), -
-	$(LIB_BZIP2_OPTS) -
-	sys$disk:[.vms]unzip.opt/OPT
+	 $(OLBCLI)/INCLUDE=UNZIP/LIBRARY, -
+	 $(OLBUNZ)/LIBRARY$(OPTIONS) $(INCL_BZIP2_Q), -
+	 $(LIB_BZIP2_OPTS) -
+	 sys$disk:[.vms]unzip.opt/OPT
 
 $(UNZSFX_DEF)$(E) : $(OLBSFX)($(OBJX))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
-	$(OLBSFX)/INCLUDE=UNZIP/LIBRARY$(OPTIONS), -
-	$(LIB_BZIP2_OPTS) -
-	sys$disk:[.vms]unzipsfx.opt/OPT
+	 $(OLBSFX)/INCLUDE=(UNZIP $(INCL_BZIP2_M))/LIBRARY$(OPTIONS), -
+	 $(LIB_BZIP2_OPTS) -
+	 sys$disk:[.vms]unzipsfx.opt/OPT
 
 $(UNZSFX_CLI)$(E) : $(OLBSXC)($(OBJXCLI)),$(OLBSFX)($(OBJSFXLIB))$(OPTFILE_LIST)
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
-	$(OLBSXC)/INCLUDE=UNZIP/LIBRARY, $(OLBSFX)/LIBRARY$(OPTIONS), -
-	$(LIB_BZIP2_OPTS) -
-	sys$disk:[.vms]unzipsfx.opt/OPT
+	 $(OLBSXC)/INCLUDE=UNZIP/LIBRARY, -
+	 $(OLBSFX)/LIBRARY$(OPTIONS) $(INCL_BZIP2_Q), -
+	 $(LIB_BZIP2_OPTS) -
+	 sys$disk:[.vms]unzipsfx.opt/OPT
 
 $(UNZX_UNX)_noshare$(E) :	$(OLBUNZ)($(OBJS))
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
-	$(OLBUNZ)/INCLUDE=UNZIP/LIBRARY$(NOSHARE_OPTS), -
-	$(LIB_BZIP2_OPTS) -
-	sys$disk:[.vms]unzip.opt/OPT
+	 $(OLBUNZ)/INCLUDE=(UNZIP $(INCL_BZIP2_M))/LIBRARY$(NOSHARE_OPTS), -
+	 $(LIB_BZIP2_OPTS) -
+	 sys$disk:[.vms]unzip.opt/OPT
 
 $(UNZSFX_DEF)_noshare$(E) :	$(OLBSFX)($(OBJX))
 	$(LINK)$(LINKFLAGS) /EXE=$(MMS$TARGET) -
-	$(OLBSFX)/INCLUDE=UNZIP/LIBRARY$(NOSHARE_OPTS), -
-	$(LIB_BZIP2_OPTS) -
-	sys$disk:[.vms]unzipsfx.opt/OPT
+	 $(OLBSFX)/INCLUDE=(UNZIP $(INCL_BZIP2_M))/LIBRARY$(NOSHARE_OPTS), -
+	 $(LIB_BZIP2_OPTS) -
+	 sys$disk:[.vms]unzipsfx.opt/OPT
 
 $(OPTFILE) :
 	@ open/write tmp $(MMS$TARGET)
@@ -416,19 +421,19 @@ clean : clean.com
 	@clean "$(UNZIPHELPS)"
 	- delete/noconfirm/nolog clean.com;*
 
-crc32$(O)		: crc32.c $(UNZIP_H) zip.h
-crctab$(O)		: crctab.c $(UNZIP_H) zip.h
-crypt$(O)		: crypt.c $(UNZIP_H) zip.h crypt.h ttyio.h
+crc32$(O)		: crc32.c $(UNZIP_H) zip.h crc32.h
+crypt$(O)		: crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
 envargs$(O)		: envargs.c $(UNZIP_H)
 explode$(O)		: explode.c $(UNZIP_H)
-extract$(O)		: extract.c $(UNZIP_H) crypt.h
-fileio$(O)		: fileio.c $(UNZIP_H) crypt.h ttyio.h ebcdic.h
+extract$(O)		: extract.c $(UNZIP_H) crc32.h crypt.h
+fileio$(O)		: fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h
 globals$(O)		: globals.c $(UNZIP_H)
 inflate$(O)		: inflate.c inflate.h $(UNZIP_H)
 list$(O)		: list.c $(UNZIP_H)
 match$(O)		: match.c $(UNZIP_H)
-process$(O)		: process.c $(UNZIP_H)
+process$(O)		: process.c $(UNZIP_H) crc32.h
 ttyio$(O)		: ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
+ubz2err$(O)		: ubz2err.c $(UNZIP_H)
 unreduce$(O)		: unreduce.c $(UNZIP_H)
 unshrink$(O)		: unshrink.c $(UNZIP_H)
 unzip$(O)		: unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
@@ -446,19 +451,16 @@ unz_cli$(O)		: [.vms]unz_cli.cld
 cmdline_$(O)		: [.vms]cmdline.c $(UNZIP_H) unzvers.h
 	$(CC) $(CFLAGS_SXC) /OBJ=$(MMS$TARGET) [.vms]cmdline.c
 
-crc32_$(O)		: crc32.c $(UNZIP_H) zip.h
+crc32_$(O)		: crc32.c $(UNZIP_H) zip.h crc32.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) crc32.c
 
-crctab_$(O)		: crctab.c $(UNZIP_H) zip.h
-	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) crctab.c
-
-crypt_$(O)		: crypt.c $(UNZIP_H) zip.h crypt.h ttyio.h
+crypt_$(O)		: crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) crypt.c
 
-extract_$(O)		: extract.c $(UNZIP_H) crypt.h
+extract_$(O)		: extract.c $(UNZIP_H) crc32.h crypt.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) extract.c
 
-fileio_$(O)		: fileio.c $(UNZIP_H) crypt.h ttyio.h ebcdic.h
+fileio_$(O)		: fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) fileio.c
 
 globals_$(O)		: globals.c $(UNZIP_H)
@@ -470,11 +472,14 @@ inflate_$(O)		: inflate.c inflate.h $(UNZIP_H)
 match_$(O)		: match.c $(UNZIP_H)
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) match.c
 
-process_$(O)		: process.c $(UNZIP_H)
+process_$(O)		: process.c $(UNZIP_H) crc32.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) process.c
 
 ttyio_$(O)		: ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) ttyio.c
+
+ubz2err_$(O)		: ubz2err.c $(UNZIP_H)
+	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) ubz2err.c
 
 unzipsfx$(O)		: unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
 	$(CC) $(CFLAGS_SFX) /OBJ=$(MMS$TARGET) unzip.c

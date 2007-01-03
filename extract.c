@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -16,6 +16,7 @@
 
   Contains:  extract_or_test_files()
              store_info()
+             find_compr_idx()
              extract_or_test_entrylist()
              extract_or_test_member()
              TestExtraField()
@@ -25,6 +26,8 @@
              extract_izvms_block()    (VMS or VMS_TEXT_CONV)
              set_deferred_symlink()   (SYMLINKS only)
              fnfilter()
+             dircomp()                (SET_DIR_ATTRIB only)
+             UZbunzip2()              (USE_BZIP2 only)
 
   ---------------------------------------------------------------------------*/
 
@@ -39,6 +42,7 @@
 #    include "windll/windll.h"
 #  endif
 #endif
+#include "crc32.h"
 #include "crypt.h"
 
 #define GRRDUMP(buf,len) { \
@@ -131,12 +135,20 @@ static ZCONST char Far ComprMsgNum[] =
    static ZCONST char Far CmprDeflate[]    = "deflate";
    static ZCONST char Far CmprDeflat64[]   = "deflate64";
    static ZCONST char Far CmprDCLImplode[] = "DCL implode";
-   static ZCONST char Far CmprPKReserved[] = "PK-reserved(#11)";
    static ZCONST char Far CmprBzip[]       = "bzip2";
+   static ZCONST char Far CmprLZMA[]       = "LZMA";
+   static ZCONST char Far CmprIBMTerse[]   = "IBM/Terse";
+   static ZCONST char Far CmprIBMLZ77[]    = "IBM LZ77";
+   static ZCONST char Far CmprPPMd[]       = "PPMd";
    static ZCONST char Far *ComprNames[NUM_METHODS] = {
      CmprNone, CmprShrink, CmprReduce, CmprReduce, CmprReduce, CmprReduce,
      CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode,
-     CmprPKReserved, CmprBzip
+     CmprBzip, CmprLZMA, CmprIBMTerse, CmprIBMLZ77, CmprPPMd
+   };
+   static ZCONST ush ComprIDs[NUM_METHODS] = {
+     STORED, SHRUNK, REDUCED1, REDUCED2, REDUCED3, REDUCED4,
+     IMPLODED, TOKENIZED, DEFLATED, ENHDEFLATED, DCLIMPLODED,
+     BZIPPED, LZMAED, IBMTERSED, IBMLZ77ED, PPMDED
    };
 #endif /* !SFX */
 static ZCONST char Far FilNamMsg[] =
@@ -311,7 +323,10 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     uch *cd_inptr;
     int cd_incnt;
     ulg filnum=0L, blknum=0L;
-    int reached_end, no_endsig_found;
+    int reached_end;
+#ifndef SFX
+    int no_endsig_found;
+#endif
     int error, error_in_archive=PK_COOL;
     int *fn_matched=NULL, *xn_matched=NULL;
     unsigned members_processed;
@@ -394,7 +409,9 @@ int extract_or_test_files(__G)    /* return PK-type error code */
   ---------------------------------------------------------------------------*/
 
     members_processed = 0;
+#ifndef SFX
     no_endsig_found = FALSE;
+#endif
     reached_end = FALSE;
     while (!reached_end) {
         j = 0;
@@ -423,10 +440,12 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                  */
                 if ((members_processed & (unsigned)0xFFFF) ==
                     (unsigned)G.ecrec.total_entries_central_dir) {
+#ifndef SFX
                     /* yes, so look if we ARE back at the end_central record
                      */
                     no_endsig_found =
                       (strncmp(G.sig, end_central_sig, 4) != 0);
+#endif /* !SFX */
                 } else {
                     /* no; we have found an error in the central directory
                      * -> report it and stop searching for more Zip entries
@@ -743,9 +762,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                 Info(slide, 0, ((char *)slide, LoadFarString(FilesSkipBadPasswd)
                   , num_bad_pwd, (num_bad_pwd==1L)? "":"s"));
 #endif /* CRYPT */
-        } else if ((uO.qflag == 0) && !error_in_archive && (num == 0))
-            Info(slide, 0, ((char *)slide, LoadFarString(ZeroFilesTested),
-              G.zipfn));
+        }
     }
 
     /* give warning if files not tested or extracted (first condition can still
@@ -789,15 +806,21 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #  define UNKN_BZ2 TRUE       /* bzip2 unknown */
 #endif
 
+#ifdef USE_PPMD
+#  define UNKN_PPMD (G.crec.compression_method!=PPMDED)
+#else
+#  define UNKN_PPMD TRUE      /* PPMd unknown */
+#endif
+
 #ifdef SFX
 #  ifdef USE_DEFLATE64
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method<DEFLATED \
-      && G.crec.compression_method>ENHDEFLATED && UNKN_BZ2)
+      && G.crec.compression_method>ENHDEFLATED && UNKN_BZ2 && UNKN_PPMD)
 #  else
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method!=DEFLATED\
-      && UNKN_BZ2)
+      && UNKN_BZ2 && UNKN_PPMD)
 #  endif
 #else
 #  ifdef COPYRIGHT_CLEAN  /* no reduced files */
@@ -814,11 +837,11 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #  ifdef USE_DEFLATE64
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
-     (G.crec.compression_method>ENHDEFLATED && UNKN_BZ2))
+     (G.crec.compression_method>ENHDEFLATED && UNKN_BZ2 && UNKN_PPMD))
 #  else
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
-     (G.crec.compression_method>DEFLATED && UNKN_BZ2))
+     (G.crec.compression_method>DEFLATED && UNKN_BZ2 && UNKN_PPMD))
 #  endif
 #endif
 
@@ -882,13 +905,16 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
         return 0;
     }
 
-    if UNKN_COMPR {
+    if (UNKN_COMPR) {
         if (!((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))) {
 #ifndef SFX
-            if (G.crec.compression_method < NUM_METHODS)
+            unsigned cmpridx;
+
+            if ((cmpridx = find_compr_idx(G.crec.compression_method))
+                < NUM_METHODS)
                 Info(slide, 0x401, ((char *)slide, LoadFarString(ComprMsgName),
                   FnFilter1(G.filename),
-                  LoadFarStringSmall(ComprNames[G.crec.compression_method])));
+                  LoadFarStringSmall(ComprNames[cmpridx])));
             else
 #endif
                 Info(slide, 0x401, ((char *)slide, LoadFarString(ComprMsgNum),
@@ -923,6 +949,29 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
     return 1;
 
 } /* end function store_info() */
+
+
+
+
+
+#ifndef SFX
+/*******************************/
+/*  Function find_compr_idx()  */
+/*******************************/
+
+unsigned find_compr_idx(OFT(ush) compr_methodnum)
+#ifndef PROTO
+    ush compr_methodnum;
+#endif /* ndef PROTO */
+{
+   unsigned i;
+
+   for (i = 0; i < NUM_METHODS; i++) {
+      if (ComprIDs[i] == compr_methodnum) break;
+   }
+   return i;
+}
+#endif /* !SFX */
 
 
 
@@ -1463,6 +1512,13 @@ reprompt:
 
 
 
+/* wsize is used in extract_or_test_member() and UZbunzip2() */
+#if (defined(DLL) && !defined(NO_SLIDE_REDIR))
+#  define wsize G._wsize    /* wsize is a variable */
+#else
+#  define wsize WSIZE       /* wsize is a constant */
+#endif
+
 /***************************************/
 /*  Function extract_or_test_member()  */
 /***************************************/
@@ -1476,11 +1532,6 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
 #endif
     register int b;
     int r, error=PK_COOL;
-#if (defined(DLL) && !defined(NO_SLIDE_REDIR))
-    ulg wsize;
-#else
-#   define wsize WSIZE
-#endif
 
 
 /*---------------------------------------------------------------------------
@@ -2475,10 +2526,10 @@ __GDEF
         wsize = WSIZE, redirSlide = slide;
 #endif
 
-    bstrm.next_out = (char *) redirSlide;
+    bstrm.next_out = (char *)redirSlide;
     bstrm.avail_out = wsize;
 
-    bstrm.next_in = (char *) G.inptr;
+    bstrm.next_in = (char *)G.inptr;
     bstrm.avail_in = G.incnt;
 
     {
@@ -2527,7 +2578,7 @@ __GDEF
                     retval = 2; goto uzbunzip_cleanup_exit;
                 }
 
-                bstrm.next_in = (char *) G.inptr;
+                bstrm.next_in = (char *)G.inptr;
                 bstrm.avail_in = G.incnt;
             }
             Trace((stderr, "     avail_in = %u\n", bstrm.avail_in));
@@ -2538,7 +2589,7 @@ __GDEF
         Trace((stderr, "inside loop:  flushing %ld bytes (ptr diff = %ld)\n",
           (long)(wsize - bstrm.avail_out),
           (long)(bstrm.next_out-(char *)redirSlide)));
-        bstrm.next_out = (char *) redirSlide;
+        bstrm.next_out = (char *)redirSlide;
         bstrm.avail_out = wsize;
     }
 
@@ -2562,7 +2613,7 @@ __GDEF
         Trace((stderr, "final loop:  flushing %ld bytes (ptr diff = %ld)\n",
           (long)(wsize - bstrm.avail_out),
           (long)(bstrm.next_out-(char *)redirSlide)));
-        bstrm.next_out = (char *) redirSlide;
+        bstrm.next_out = (char *)redirSlide;
         bstrm.avail_out = wsize;
     }
     Trace((stderr, "total in = %lu, total out = %lu\n", bstrm.total_in_lo32,
@@ -2577,6 +2628,5 @@ uzbunzip_cleanup_exit:
         Trace((stderr, "oops!  (BZ2_bzDecompressEnd() err = %d)\n", err));
 
     return retval;
-}
-
+} /* end function UZbunzip2() */
 #endif /* USE_BZIP2 */

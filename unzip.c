@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -114,6 +114,8 @@ static void  show_version_info  OF((__GPRO));
   static ZCONST char Far NoMemArguments[] =
     "envargs:  cannot get memory for arguments";
 #endif /* !_WIN32_WCE */
+  static ZCONST char Far CmdLineParamTooLong[] =
+    "error:  command line parameter #%d exceeds internal size limit\n";
 #endif /* !SFX */
 
 #if (defined(REENTRANT) && !defined(NO_EXCEPT_SIGNALS))
@@ -171,12 +173,12 @@ static ZCONST char Far IgnoreOOptionMsg[] =
 #endif /* ?VMS */
 
 /* local1[]:  command options */
-#if (defined(DLL) && defined(API_DOC))
+#if defined(TIMESTAMP)
    static ZCONST char Far local1[] =
-     "  -A  print extended help for API functions";
-#else /* !(DLL && API_DOC) */
+     "  -T  timestamp archive to latest";
+#else /* !TIMESTAMP */
    static ZCONST char Far local1[] = "";
-#endif /* ?(DLL && API_DOC) */
+#endif /* ?TIMESTAMP */
 
 /* local2[] and local3[]:  modifier options */
 #ifdef DOS_FLX_H68_OS2_W32
@@ -360,7 +362,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #ifndef _WIN32_WCE /* Win CE does not support environment variables */
    static ZCONST char Far EnvOptions[] =
      "\nUnZip and ZipInfo environment options:\n";
-   static ZCONST char Far EnvOptFormat[] = "%16s:  %s\n";
+   static ZCONST char Far EnvOptFormat[] = "%16s:  %.1024s\n";
 #endif
    static ZCONST char Far None[] = "[none]";
 #  ifdef ACORN_FTYPE_NFS
@@ -468,6 +470,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  ifdef USE_ZLIB
      static ZCONST char Far UseZlib[] =
      "USE_ZLIB (compiled with version %s; using version %s)";
+#  endif
+#  ifdef USE_BZIP2
+     static ZCONST char Far UseBZip2[] =
+     "USE_BZIP2 (PKZIP 4.6+, using bzip2 lib version %s)";
 #  endif
 #  ifdef VMS_TEXT_CONV
      static ZCONST char Far VmsTextConv[] = "VMS_TEXT_CONV";
@@ -579,31 +585,31 @@ Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
 static ZCONST char Far UnzipUsageLine3[] = "\n\
   -d  extract files into exdir               -l  list files (short format)\n\
   -f  freshen existing files, create none    -t  test compressed archive data\n\
-  -u  update files, create if necessary      -z  display archive comment\n\
-%s\n";
+  -u  update files, create if necessary      -z  display archive comment only\n\
+  -v  list verbosely/show version info     %s\n";
 #else /* !MACOS */
 #ifdef VM_CMS
 static ZCONST char Far UnzipUsageLine3[] = "\n\
   -p  extract files to pipe, no messages     -l  list files (short format)\n\
   -f  freshen existing files, create none    -t  test compressed archive data\n\
-  -u  update files, create if necessary      -z  display archive comment\n\
-  -x  exclude files that follow (in xlist)   -d  extract files onto disk fm\n\
-%s\n";
+  -u  update files, create if necessary      -z  display archive comment only\n\
+  -v  list verbosely/show version info     %s\n\
+  -x  exclude files that follow (in xlist)   -d  extract files onto disk fm\n";
 #else /* !VM_CMS */
 static ZCONST char Far UnzipUsageLine3[] = "\n\
   -p  extract files to pipe, no messages     -l  list files (short format)\n\
   -f  freshen existing files, create none    -t  test compressed archive data\n\
-  -u  update files, create if necessary      -z  display archive comment\n\
-  -x  exclude files that follow (in xlist)   -d  extract files into exdir\n\
-%s\n";
+  -u  update files, create if necessary      -z  display archive comment only\n\
+  -v  list verbosely/show version info     %s\n\
+  -x  exclude files that follow (in xlist)   -d  extract files into exdir\n";
 #endif /* ?VM_CMS */
 #endif /* ?MACOS */
 
 static ZCONST char Far UnzipUsageLine4[] = "\
-modifiers:                                   -q  quiet mode (-qq => quieter)\n\
-  -n  never overwrite existing files         -a  auto-convert any text files\n\
-  -o  overwrite files WITHOUT prompting      -aa treat ALL files as text\n \
- -j  junk paths (do not make directories)   -v  be verbose/print version info\n\
+modifiers:\n\
+  -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
+  -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
+  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
  %c-C%c match filenames case-insensitively    %c-L%c make (some) names \
 lowercase\n %-42s %c-V%c retain VMS version numbers\n%s";
 
@@ -649,7 +655,7 @@ int unzip(__G__ argc, argv)
 #ifndef NO_ZIPINFO
     char *p;
 #endif
-#ifdef DOS_FLX_H68_NLM_OS2_W32
+#if (defined(DOS_FLX_H68_NLM_OS2_W32) || !defined(SFX))
     int i;
 #endif
     int retcode, error=FALSE;
@@ -707,8 +713,17 @@ int unzip(__G__ argc, argv)
 #ifdef SIGTERM                 /* some systems really have no SIGTERM */
     SET_SIGHANDLER(SIGTERM, handler);
 #endif
+#if defined(SIGABRT) && !(defined(AMIGA) && defined(__SASC))
+    SET_SIGHANDLER(SIGABRT, handler);
+#endif
+#ifdef SIGBREAK
+    SET_SIGHANDLER(SIGBREAK, handler);
+#endif
 #ifdef SIGBUS
     SET_SIGHANDLER(SIGBUS, handler);
+#endif
+#ifdef SIGILL
+    SET_SIGHANDLER(SIGILL, handler);
 #endif
 #ifdef SIGSEGV
     SET_SIGHANDLER(SIGSEGV, handler);
@@ -843,9 +858,7 @@ int unzip(__G__ argc, argv)
         if ((error = envargs(&argc, &argv, LoadFarStringSmall(EnvZipInfo),
                              LoadFarStringSmall2(EnvZipInfo2))) != PK_OK)
             perror(LoadFarString(NoMemArguments));
-        else
 #endif
-            error = zi_opts(__G__ &argc, &argv);
     } else
 #endif /* !NO_ZIPINFO */
     {
@@ -854,8 +867,30 @@ int unzip(__G__ argc, argv)
         if ((error = envargs(&argc, &argv, LoadFarStringSmall(EnvUnZip),
                              LoadFarStringSmall2(EnvUnZip2))) != PK_OK)
             perror(LoadFarString(NoMemArguments));
-        else
 #endif
+    }
+
+    if (!error) {
+        /* Check the length of all passed command line parameters.
+         * Command arguments might get sent through the Info() message
+         * system, which uses the sliding window area as string buffer.
+         * As arguments may additionally get fed through one of the FnFilter
+         * macros, we require all command line arguments to be shorter than
+         * WSIZE/4 (and ca. 2 standard line widths for fixed message text).
+         */
+        for (i = 1 ; i < argc; i++) {
+           if (strlen(argv[i]) > ((WSIZE>>2) - 160)) {
+               Info(slide, 0x401, ((char *)slide,
+                 LoadFarString(CmdLineParamTooLong), i));
+               retcode = PK_PARAM;
+               goto cleanup_and_exit;
+           }
+        }
+#ifndef NO_ZIPINFO
+        if (uO.zipinfo_mode)
+            error = zi_opts(__G__ &argc, &argv);
+        else
+#endif /* !NO_ZIPINFO */
             error = uz_opts(__G__ &argc, &argv);
     }
 
@@ -892,8 +927,8 @@ int unzip(__G__ argc, argv)
                 *q = '/';
             INCSTR(q);
         }
-        ++G.pfnames;
 #endif /* ?__human68k__ */
+        ++G.pfnames;
     }
 #endif /* DOS_FLX_H68_NLM_OS2_W32 */
 
@@ -1026,6 +1061,10 @@ cleanup_and_exit:
         free(G.area.Slide);
         G.area.Slide = (uch *)NULL;
     }
+#endif
+#if (defined(MSDOS) && !defined(SFX) && !defined(WINDLL))
+    if (retcode != PK_OK)
+        check_for_windows("UnZip");
 #endif
     return(retcode);
 
@@ -1536,7 +1575,7 @@ int uz_opts(__G__ pargc, pargv)
 opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
 #endif
 
-    if ((uO.cflag && uO.tflag) || (uO.cflag && uO.uflag) ||
+    if ((uO.cflag && (uO.tflag || uO.uflag)) ||
         (uO.tflag && uO.uflag) || (uO.fflag && uO.overwrite_none))
     {
         Info(slide, 0x401, ((char *)slide, LoadFarString(InvalidOptionsMsg)));
@@ -1571,7 +1610,7 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
             return PK_OK;
         }
         if (!G.noargs && !error)
-            error = PK_PARAM;   /* had options (not -h or -v) but no zipfile */
+            error = TRUE;       /* had options (not -h or -v) but no zipfile */
 #endif /* !SFX */
         return USAGE(error);
     }
@@ -1940,6 +1979,13 @@ static void show_version_info(__G)
 #ifdef USE_ZLIB
         sprintf((char *)(slide+256), LoadFarStringSmall(UseZlib),
           ZLIB_VERSION, zlibVersion());
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          (char *)(slide+256)));
+        ++numopts;
+#endif
+#ifdef USE_BZIP2
+        sprintf((char *)(slide+256), LoadFarStringSmall(UseBZip2),
+          BZ2_bzlibVersion());
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           (char *)(slide+256)));
         ++numopts;

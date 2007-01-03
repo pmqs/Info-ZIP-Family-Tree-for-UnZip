@@ -262,8 +262,10 @@ freely, subject to the following restrictions:
 /* used to remove arguments in function prototypes for non-ANSI C */
 #ifdef PROTO
 #  define OF(a) a
+#  define OFT(a) a
 #else
 #  define OF(a) ()
+#  define OFT(a)
 #endif
 
 /* enable the "const" keyword only if MODERN and if not otherwise instructed */

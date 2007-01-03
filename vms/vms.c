@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -20,6 +20,8 @@
              find_vms_attrs()
              flush()
              close_outfile()
+             defer_dir_attribs()
+             set_direc_attribs()
              dos_to_unix_time()         (TIMESTAMP only)
              stamp_file()               (TIMESTAMP only)
              vms_msg_text()
@@ -40,6 +42,7 @@
 #define UNZIP_INTERNAL
 
 #include "unzip.h"
+#include "crc32.h"
 #include "vms.h"
 #include "vmsdefs.h"
 
@@ -54,8 +57,6 @@
 #ifndef EEXIST
 #  include <errno.h>    /* For mkdir() status codes */
 #endif
-
-#include <fscndef.h> /* for filescan */
 
 /* On VAX, define Goofy VAX Type-Cast to obviate /standard = vaxc.
    Otherwise, lame system headers on VAX cause compiler warnings.
@@ -89,26 +90,45 @@
 #define BUFSALLOC (BUFS512 * 2 > BUFSMAXREC ? BUFS512 * 2 : BUFSMAXREC)
         /* locbuf size */
 
-#define OK(s)   ((s)&1)         /* VMS success or warning status */
+/* VMS success or warning status */
+#define OK(s)   (((s) & STS$M_SUCCESS) != 0)
 #define STRICMP(s1,s2)  STRNICMP(s1,s2,2147483647)
+
+#ifdef SET_DIR_ATTRIB
+/* Structure for holding directory attribute data for final processing
+ * after all files are in place.
+ */
+typedef struct vmsdirattr {
+    struct vmsdirattr *next;            /* link to next in (linked) list */
+    char *fn;                           /* file (directory) name */
+
+    /* Non-VMS attributes data */
+    ulg mod_dos_datetime;               /* G.lrec.last_mod_dos_datetime */
+    unsigned perms;                     /* same as min_info.file_attr */
+
+    unsigned xlen;                      /* G.lrec.extra_field_length */
+    char buf[1];                        /* data buffer (extra_field, fn) */
+} vmsdirattr;
+#define VmsAtt(d)  ((vmsdirattr *)d)    /* typecast shortcut */
+#endif /* SET_DIR_ATTRIB */
 
 /*
  *   Local static storage
  */
-static struct FAB       fileblk;
-static struct XABDAT    dattim;
-static struct XABRDT    rdt;
-static struct RAB       rab;
-static struct NAM       nam;
+static struct FAB        fileblk;       /* File Access Block */
+static struct XABDAT     dattim;        /* date-time XAB */
+static struct XABRDT     rdt;           /* revision date-time XAB */
+static struct RAB        rab;           /* Record Access Block */
+static struct NAM_STRUCT nam;           /* name block */
 
 static struct FAB *outfab = NULL;
 static struct RAB *outrab = NULL;
-static struct XABFHC *xabfhc = NULL;
-static struct XABDAT *xabdat = NULL;
-static struct XABRDT *xabrdt = NULL;
-static struct XABPRO *xabpro = NULL;
-static struct XABKEY *xabkey = NULL;
-static struct XABALL *xaball = NULL;
+static struct XABFHC *xabfhc = NULL;    /* file header characteristics */
+static struct XABDAT *xabdat = NULL;    /* date-time */
+static struct XABRDT *xabrdt = NULL;    /* revision date-time */
+static struct XABPRO *xabpro = NULL;    /* protection */
+static struct XABKEY *xabkey = NULL;    /* key (indexed) */
+static struct XABALL *xaball = NULL;    /* allocation */
 static struct XAB *first_xab = NULL, *last_xab = NULL;
 
 static char query = '\0';
@@ -156,13 +176,16 @@ static void free_up(void);
 #ifdef CHECK_VERSIONS
 static int  get_vms_version(char *verbuf, int len);
 #endif /* CHECK_VERSIONS */
-static unsigned find_eol(uch *p, unsigned n, unsigned *l);
+static unsigned find_eol(ZCONST uch *p, unsigned n, unsigned *l);
+#ifdef SET_DIR_ATTRIB
+static char *vms_path_fixdown(ZCONST char *dir_spec, char *dir_file)
+#endif
 #ifdef TIMESTAMP
 static time_t mkgmtime(struct tm *tm);
 static void uxtime2vmstime(time_t utimeval, long int binval[2]);
 #endif /* TIMESTAMP */
 static int vms_msg_fetch(int status);
-static void vms_msg(__GPRO__ char *string, int status);
+static void vms_msg(__GPRO__ ZCONST char *string, int status);
 
 /* 2004-11-23 SMS.
  *
@@ -254,7 +277,7 @@ static int get_rms_defaults()
     /* Get process RMS_DEFAULT values. */
 
     sts = sys$getjpiw(0, 0, 0, &jpi_itm_lst, 0, 0, 0);
-    if ((sts& STS$M_SEVERITY) != STS$M_SUCCESS)
+    if ((sts & STS$M_SEVERITY) != STS$K_SUCCESS)
     {
         /* Failed.  Don't try again. */
         rms_defaults_known = -1;
@@ -315,12 +338,11 @@ int check_format(__G)
     int sts;
     struct FAB fab;
 
-    fab = cc$rms_fab;
-    fab.fab$l_fna = G.zipfn;
-    fab.fab$b_fns = strlen(G.zipfn);
+    fab = cc$rms_fab;                   /* Initialize FAB. */
+    FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNA = G.zipfn;
+    FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNS = strlen(G.zipfn);
 
-    sts = sys$open( &fab);
-    if ((sts & STS$M_SUCCESS) == 0)
+    if (ERR(sts = sys$open(&fab)))
     {
         Info(slide, 1, ((char *)slide, "\n\
      error:  cannot open zipfile [ %s ].\n",
@@ -514,8 +536,8 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
     if (!uO.cflag)              /* Redirect output */
     {
-        rab = cc$rms_rab;       /* fill RAB with default values */
-        fileblk = cc$rms_fab;   /* fill FAB with default values */
+        rab = cc$rms_rab;               /* fill RAB with default values */
+        fileblk = cc$rms_fab;           /* fill FAB with default values */
 
         fileblk.fab$l_xab = NULL;       /* No XABs. */
         rab.rab$l_fab = &fileblk;       /* Point RAB to FAB. */
@@ -543,8 +565,8 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
             fileblk.fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
         }
 
-        fileblk.fab$l_fna = G.filename;
-        fileblk.fab$b_fns = strlen(G.filename);
+        FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNA = G.filename;
+        FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNS = strlen(G.filename);
 
         set_default_datetime_XABs(__G);
         dattim.xab$l_nxt = fileblk.fab$l_xab;
@@ -628,7 +650,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
         if (ERR(ierr))
         {
-            char buf[256];
+            char buf[NAM_MAXRSS + 128]; /* Name length + message length. */
 
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
@@ -682,7 +704,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
     rfm = outfab->fab$b_rfm;    /* Use record format from VMS extra field */
 
-    if (uO.cflag)
+    if (uO.cflag)               /* SYS$OUTPUT */
     {
         if (text_output && !PRINTABLE_FORMAT(rfm))
         {
@@ -693,13 +715,17 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             return PK_WARN;
         }
     }
-    else                        /* Redirect output */
+    else                        /* File output */
     {
         rab = cc$rms_rab;               /* Initialize RAB. */
 
         /* The output FAB has already been initialized with the values
-         * found in the Zip file's "VMS attributes" extra field. */
+         * found in the Zip file's "VMS attributes" extra field.
+         */
 
+        /* Because of the pointer-FAB and structure-NAM[L] mismatch,
+           the difference-hiding FAB_OR_NAM macros are not used here.
+        */
         outfab->fab$l_fna = G.filename;
         outfab->fab$b_fns = strlen(G.filename);
 
@@ -738,7 +764,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         if (ERR(ierr))
         {
-            char buf[256];
+            char buf[NAM_MAXRSS + 128]; /* Name length + message length. */
 
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
@@ -753,7 +779,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             ierr = sys$extend(outfab);
             if (ERR(ierr))
             {
-                char buf[256];
+                char buf[NAM_MAXRSS + 128];    /* Name length + msg length. */
 
                 sprintf(buf, "[ Cannot allocate space for %s ]\n", G.filename);
                 vms_msg(__G__ buf, ierr);
@@ -845,14 +871,14 @@ static struct dsc$descriptor    pka_fibdsc =
 {   sizeof(pka_fib), DSC$K_DTYPE_Z, DSC$K_CLASS_S, (void *) &pka_fib  };
 
 static struct dsc$descriptor_s  pka_devdsc =
-{   0, DSC$K_DTYPE_T, DSC$K_CLASS_S, &nam.nam$t_dvi[1]  };
+{   0, DSC$K_DTYPE_T, DSC$K_CLASS_S, &nam.NAM_DVI[1]  };
 
 static struct dsc$descriptor_s  pka_fnam =
 {   0, DSC$K_DTYPE_T, DSC$K_CLASS_S, NULL  };
 
 /* Expanded and resultant name storage. */
-static char exp_nam[NAM$C_MAXRSS];
-static char res_nam[NAM$C_MAXRSS];
+static char exp_nam[NAM_MAXRSS];
+static char res_nam[NAM_MAXRSS];
 
 #define PK_PRINTABLE_RECTYP(x)   ( (x) == FAT$C_VARIABLE \
                                 || (x) == FAT$C_STREAMLF \
@@ -916,18 +942,18 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
     {
 
         fileblk = cc$rms_fab;           /* Initialize FAB. */
-        nam = cc$rms_nam;               /* Initialize NAM. */
-        fileblk.fab$l_nam = &nam;       /* Point FAB to NAM. */
+        nam = CC_RMS_NAM;               /* Initialize NAM. */
+        fileblk.FAB_NAM = &nam;         /* Point FAB to NAM. */
 
         /* VMS-format file name, derived from archive. */
-        fileblk.fab$l_fna = G.filename;
-        fileblk.fab$b_fns = strlen(G.filename);
+        FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNA = G.filename;
+        FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNS = strlen(G.filename);
 
         /* Expanded and resultant name storage. */
-        nam.nam$l_esa = exp_nam;
-        nam.nam$b_ess = sizeof(exp_nam);
-        nam.nam$l_rsa = res_nam;
-        nam.nam$b_rss = sizeof(res_nam);
+        nam.NAM_ESA = exp_nam;
+        nam.NAM_ESS = sizeof(exp_nam);
+        nam.NAM_RSA = res_nam;
+        nam.NAM_RSS = sizeof(res_nam);
 
         if ( ERR(status = sys$parse(&fileblk)) )
         {
@@ -935,7 +961,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             return PK_WARN;
         }
 
-        pka_devdsc.dsc$w_length = (unsigned short)nam.nam$t_dvi[0];
+        pka_devdsc.dsc$w_length = (unsigned short)nam.NAM_DVI[0];
 
         if ( ERR(status = sys$assign(&pka_devdsc,&pka_devchn,0,0)) )
         {
@@ -943,17 +969,17 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             return PK_WARN;
         }
 
-        pka_fnam.dsc$a_pointer = nam.nam$l_name;
-        pka_fnam.dsc$w_length  = nam.nam$b_name + nam.nam$b_type;
+        pka_fnam.dsc$a_pointer = nam.NAM_L_NAME;
+        pka_fnam.dsc$w_length = nam.NAM_B_NAME + nam.NAM_B_TYPE;
         if ( uO.V_flag /* keep versions */ )
-            pka_fnam.dsc$w_length += nam.nam$b_ver;
+            pka_fnam.dsc$w_length += nam.NAM_B_VER;
 
         /* Move the directory ID from the NAM to the FIB.
            Clear the FID in the FIB, as we're using the name.
         */
         for (i = 0; i < 3; i++)
         {
-            pka_fib.FIB$W_DID[i] = nam.nam$w_did[i];
+            pka_fib.FIB$W_DID[i] = nam.NAM_DID[i];
             pka_fib.FIB$W_FID[i] = 0;
         }
 
@@ -1012,7 +1038,7 @@ static int replace(__GPRO)
                          *      File exists. Inquire user about further action.
                          */
     char answ[10];
-    struct NAM nam;
+    struct NAM_STRUCT nam;
     int ierr;
 
     if (query == '\0')
@@ -1041,18 +1067,21 @@ static int replace(__GPRO)
             ierr = 0;
             break;
         case 'v':
-            nam = cc$rms_nam;
-            nam.nam$l_rsa = G.filename;
-            nam.nam$b_rss = FILNAMSIZ - 1;
+            nam = CC_RMS_NAM;
+            nam.NAM_RSA = G.filename;
+            nam.NAM_RSS = FILNAMSIZ - 1;
 
             outfab->fab$l_fop |= FAB$M_MXV;
-            outfab->fab$l_nam = &nam;
+            outfab->FAB_NAM = &nam;
 
             ierr = sys$create(outfab);
             if (!ERR(ierr))
             {
-                outfab->fab$l_nam = NULL;
-                G.filename[outfab->fab$b_fns = nam.nam$b_rsl] = '\0';
+            /* Because of the pointer-FAB and structure-NAM[L] mismatch,
+               the difference-hiding FAB_OR_NAM macros are not used here.
+            */
+                outfab->FAB_NAM = NULL;
+                G.filename[outfab->fab$b_fns = nam.NAM_RSL] = '\0';
             }
             break;
         case 'o':
@@ -1070,13 +1099,17 @@ static int replace(__GPRO)
 #define EQL_L(a,b)      ( L(a) == L(b) )
 #define EQL_W(a,b)      ( W(a) == W(b) )
 
-/****************************************************************
- * Function find_vms_attrs scans ZIP entry extra field if any   *
- * and looks for VMS attribute records. Returns 0 if either no  *
- * attributes found or no fab given.                            *
- ****************************************************************/
-static int find_vms_attrs(__G)
-    __GDEF
+/**********************************************************************
+ * Function find_vms_attrs() scans the ZIP entry extra field, if any,
+ * and looks for VMS attribute records.
+ * For a set of IZ records, a FAB and various XABs are created and
+ * chained together.
+ * For a PK record, the pka_atr[] attribute descriptor array is
+ * populated.
+ * The return value is a VAT_* value, according to the type of extra
+ * field attribute data found.
+ **********************************************************************/
+static int find_vms_attrs(__GPRO)
 {
     uch *scan = G.extra_field;
     struct  EB_header *hdr;
@@ -1110,7 +1143,7 @@ static int find_vms_attrs(__G)
         if (EQL_W(&hdr->tag, IZ_SIGNATURE))
         {
             /*
-             *  Info-ZIP style extra block decoding
+             *  Info-ZIP-style extra block decoding
              */
             uch *blk;
             unsigned siz;
@@ -1239,12 +1272,13 @@ static int find_vms_attrs(__G)
         scan += hdr->size + EB_HEADSIZE;
     }
 
-
     if ( type == VAT_IZ )
     {
         if (outfab != NULL)
-        {   /* Do not link XABPRO,XABRDT now. Leave them for sys$close() */
-
+        {
+            /* Do not link XABPRO or XABRDT now.
+             * Leave them for sys$close() resp. set_direc_attribs().
+             */
             outfab->fab$l_xab = NULL;
             if (xabfhc != NULL)
             {
@@ -1273,7 +1307,7 @@ static int find_vms_attrs(__G)
 static void free_up()
 {
     /*
-     * Free up all allocated xabs
+     * Free up all allocated XABs.
      */
     if (xabdat != NULL) free(xabdat);
     if (xabpro != NULL) free(xabpro);
@@ -1287,6 +1321,7 @@ static void free_up()
         free(first_xab);
         first_xab = x;
     }
+    /* Free FAB storage, if not the static one. */
     if (outfab != NULL && outfab != &fileblk)
         free(outfab);
 }
@@ -1734,12 +1769,12 @@ static unsigned find_eol(p,n,l)
  *  zero if sequence end not seen, i.e. CR or LF is last char
  *  in the buffer.
  */
-    uch *p;
+    ZCONST uch *p;
     unsigned n;
     unsigned *l;
 {
     unsigned off = n;
-    uch *q;
+    ZCONST uch *q;
 
     *l = 0;
 
@@ -2028,7 +2063,7 @@ static int _close_rms(__GPRO)
     int status;
     struct XABPRO pro;
 
-    /* Link XABRDT, XABDAT and optionally XABPRO */
+    /* Link XABRDT, XABDAT, and (optionally) XABPRO. */
     if (xabrdt != NULL)
     {
         xabrdt->xab$l_nxt = NULL;
@@ -2127,6 +2162,376 @@ static int _close_qio(__GPRO)
     }
     return PK_COOL;
 }
+
+
+
+#ifdef SET_DIR_ATTRIB
+
+/*
+ * 2006-10-04 SMS.
+ * vms_path_fixdown().
+ *
+ * Convert VMS directory spec to VMS directory file name.  That is,
+ * change "dev:[a.b.c.e]" to "dev:[a.b.c]e.DIR;1".  The result (always
+ * larger than the source) is returned in the user's buffer.
+ */
+
+#define DIR_TYPE_VER ".DIR;1"
+
+static char *vms_path_fixdown(ZCONST char *dir_spec, char *dir_file)
+{
+    char dir_close;
+    char dir_open;
+    unsigned i;
+    unsigned dir_spec_len;
+
+    dir_spec_len = strlen(dir_spec);
+    if (dir_spec_len == 0) return NULL;
+    i = dir_spec_len - 1;
+    dir_close = dir_spec[i];
+
+    /* Identify the directory delimiters (which must exist). */
+    if (dir_close == ']')
+    {
+        dir_open = '[';
+    }
+    else if (dir_close == '>')
+    {
+        dir_open = '<';
+    }
+    else
+    {
+        return NULL;
+    }
+
+    /* Find the beginning of the last directory name segment. */
+    while ((i > 0) && (dir_spec[i - 1] != '^') &&
+           (dir_spec[i] != '.') && (dir_spec[i] != dir_open))
+    {
+        i--;
+    }
+
+    /* Form the directory file name from the pieces. */
+    if (dir_spec[i] == dir_open)
+    {
+        /* Top-level directory. */
+        sprintf(dir_file, "%.*s000000%c%.*s%s",
+        /*  "dev:[" "000000" "]" */
+         (i + 1), dir_spec, dir_close,
+        /*  "a" ".DIR;1" */
+         (dir_spec_len - i - 2), (dir_spec + i + 1), DIR_TYPE_VER);
+    }
+    else
+    {
+        /* Non-top-level directory. */
+        sprintf(dir_file, "%.*s%c%.*s%s",
+        /*  "dev:[a.b.c" "]" */
+         i, dir_spec, dir_close,
+        /*  "e" ".DIR;1" */
+         (dir_spec_len - i - 2), (dir_spec + i + 1), DIR_TYPE_VER);
+    }
+    return dir_file;
+} /* end function vms_path_fixdown(). */
+
+
+
+/* Save directory attributes (as the archive's extra field). */
+
+/* 2006-12-13 SMS.
+ * This could probably be made more efficient by analyzing the data
+ * here, extracting the important data, and saving only what's needed.
+ * Given the existing code, it seemed simpler to save them all here, and
+ * deal with what's important in set_direc_attribs().
+ */
+
+int defer_dir_attribs(__G__ pd)
+    __GDEF
+    direntry **pd;
+{
+    vmsdirattr *d_entry;
+    unsigned fnlen;
+    unsigned xlen;
+
+    /* Allocate space to save the file (directory) name, the extra
+     * block, and all the other data needed by the extra-block data
+     * scanner functions.  If that works, save the data.
+     */
+    fnlen = strlen(G.filename);
+    xlen = G.lrec.extra_field_length;
+    d_entry = (vmsdirattr *) malloc(sizeof(vmsdirattr) + fnlen + xlen);
+    *pd = (direntry *) d_entry;
+    if (d_entry == (vmsdirattr *) NULL)
+    {
+        return PK_MEM;
+    }
+
+    /* Save extra block length and data. */
+    d_entry->xlen = xlen;
+    memcpy(d_entry->buf, G.extra_field, xlen);
+
+    /* Set pointer to file (directory) name. */
+    d_entry->fn = d_entry->buf + xlen;
+
+    /* Save file (directory) name. */
+    strcpy(d_entry->fn, G.filename);
+    /* Strip the closing ']' char, to allow proper sorting. */
+    d_entry->fn[fnlen - 1] = '\0';
+
+    /* Save generic permission data from mapattr(). */
+    d_entry->perms = G.pInfo->file_attr;
+
+    /* Save G.lrec.last_mod_dos_datetime. */
+    d_entry->mod_dos_datetime = G.lrec.last_mod_dos_datetime;
+
+    return PK_OK;
+} /* end function defer_dir_attribs() */
+
+
+
+int set_direc_attribs(__G__ d)
+    __GDEF
+    direntry *d;
+{
+    uch *sav_ef_ptr;
+    int i;
+    int status;
+    int type;
+    ush attr;
+    struct XABPRO pro;
+    char dir_name[NAM_MAXRSS + 1];
+    char warnmsg[NAM_MAXRSS + 128]; /* Name length + message length. */
+    int retcode = PK_OK;
+
+    /* Re-append the closing ']' character which has been stripped in
+     * defer_dir_attribs() for compatibility with generic sorting code.
+     */
+    strcat(VmsAtt(d)->fn, "]");
+
+    /* Convert "[a.b.c]" form into "[a.b]c.DIR;1" */
+    vms_path_fixdown(VmsAtt(d)->fn, dir_name);
+
+    /* Dummy up critical global (G) data from the preserved directory
+     * attribute data.
+     */
+    sav_ef_ptr = G.extra_field;
+    G.extra_field = (uch *)((VmsAtt(d)->xlen > 0) ? VmsAtt(d)->buf : NULL);
+    G.lrec.extra_field_length = VmsAtt(d)->xlen;
+
+    /* Extract the VMS file attributes from the preserved attribute
+     * data, if they exist, and restore the date-time stamps.
+     */
+    type = find_vms_attrs(__G);
+
+    /* Arrange FAB-NAM for file (directory) access. */
+    if (type != VAT_NONE)
+    {
+        if (outfab == NULL)
+        {
+            /* PK scheme needs a FAB.  (IZ supplies one.) */
+            outfab = &fileblk;
+        }
+        nam = CC_RMS_NAM;               /* Initialize NAM. */
+        outfab->FAB_NAM = &nam;         /* Point FAB to NAM. */
+
+        if (type == VAT_IZ)
+        {
+            /* Make an attribute descriptor list for the VMS creation and
+             * revision dates (which were stored in the IZ XABs by
+             * find_vms_attrs()).
+             */
+            pka_idx = 0;
+
+            if (xabrdt != NULL)
+            {
+                /* Revision date-time from XABRDT. */
+                pka_atr[pka_idx].atr$w_size = 8;
+                pka_atr[pka_idx].atr$w_type = ATR$C_REVDATE;
+                pka_atr[pka_idx].atr$l_addr = GVTC &xabrdt->xab$q_rdt;
+                ++pka_idx;
+            }
+            if (xabdat != NULL)
+            {
+                /* Trust the XABRDT value for revision date. */
+                if (xabrdt == NULL)
+                {
+                    /* Revision date-time from XABDAT. */
+                    pka_atr[pka_idx].atr$w_size = 8;
+                    pka_atr[pka_idx].atr$w_type = ATR$C_REVDATE;
+                    pka_atr[pka_idx].atr$l_addr = GVTC &xabdat->xab$q_rdt;
+                    ++pka_idx;
+                }
+                /* Creation date-time from XABDAT. */
+                pka_atr[pka_idx].atr$w_size = 8;
+                pka_atr[pka_idx].atr$w_type = ATR$C_CREDATE;
+                pka_atr[pka_idx].atr$l_addr = GVTC &xabdat->xab$q_cdt;
+                ++pka_idx;
+            }
+            if (xabpro != NULL)
+            {
+                if ( uO.X_flag ) {
+                    pka_atr[pka_idx].atr$w_size = 4;
+                    pka_atr[pka_idx].atr$w_type = ATR$C_UIC;
+                    pka_atr[pka_idx].atr$l_addr = GVTC &xabpro->xab$l_uic;
+                    ++pka_idx;
+                }
+                attr = xabpro->xab$w_pro;
+            }
+            else
+            {
+                /* Revoke directory Delete permission for all. */
+                attr = VmsAtt(d)->perms
+                      | (((1<< XAB$V_NODEL)<< XAB$V_SYS)|
+                         ((1<< XAB$V_NODEL)<< XAB$V_OWN)|
+                         ((1<< XAB$V_NODEL)<< XAB$V_GRP)|
+                         ((1<< XAB$V_NODEL)<< XAB$V_WLD));
+            }
+            pka_atr[pka_idx].atr$w_size = 2;
+            pka_atr[pka_idx].atr$w_type = ATR$C_FPRO;
+            pka_atr[pka_idx].atr$l_addr = GVTC &attr;
+            ++pka_idx;
+        }
+    }
+    else
+    {
+        /* No VMS attribute data were found.  Prepare to assemble
+         * non-VMS attribute data.
+         */
+        pka_idx = 0;
+
+        /* Default scheme needs a FAB. */
+        outfab = &fileblk;
+
+        /* Get the (already converted) non-VMS permissions. */
+        attr = VmsAtt(d)->perms;        /* Use right-sized prot storage. */
+
+        /* Revoke directory Delete permission for all. */
+        attr |= (((1<< XAB$V_NODEL)<< XAB$V_SYS)|
+                 ((1<< XAB$V_NODEL)<< XAB$V_OWN)|
+                 ((1<< XAB$V_NODEL)<< XAB$V_GRP)|
+                 ((1<< XAB$V_NODEL)<< XAB$V_WLD));
+
+        pka_atr[pka_idx].atr$w_size = 2;
+        pka_atr[pka_idx].atr$w_type = ATR$C_FPRO;
+        pka_atr[pka_idx].atr$l_addr = GVTC &attr;
+        ++pka_idx;
+
+        /* Set the directory date-time from the non-VMS data.
+         * Dummy up the DOS-style modification date into global (G) data
+         * from the preserved directory attribute data.
+         */
+        G.lrec.last_mod_dos_datetime = VmsAtt(d)->mod_dos_datetime;
+
+        /* Extract date-time data from the normal attribute data. */
+        set_default_datetime_XABs(__G);
+
+        /* Make an attribute descriptor list for the VMS creation and
+         * revision dates (which were stored in the XABs by
+         * set_default_datetime_XABs()).
+         */
+        pka_atr[pka_idx].atr$w_size = 8;
+        pka_atr[pka_idx].atr$w_type = ATR$C_CREDATE;
+        pka_atr[pka_idx].atr$l_addr = GVTC &dattim.xab$q_cdt;
+        ++pka_idx;
+        pka_atr[pka_idx].atr$w_size = 8;
+        pka_atr[pka_idx].atr$w_type = ATR$C_REVDATE;
+        pka_atr[pka_idx].atr$l_addr = GVTC &rdt.xab$q_rdt;
+        ++pka_idx;
+
+        /* Set the directory protection from the non-VMS data. */
+
+        /* Terminate the attribute descriptor list. */
+        pka_atr[pka_idx].atr$w_size = 0;    /* End of list */
+        pka_atr[pka_idx].atr$w_type = 0;
+        pka_atr[pka_idx].atr$l_addr = 0; /* NULL when DECC VAX gets fixed. */
+    }
+
+    /* Point the FAB-NAM to the VMS-format directory file name. */
+
+    /* Because of the pointer-FAB and structure-NAM[L] mismatch,
+       the difference-hiding FAB_OR_NAM macros are not used here.
+    */
+    outfab->fab$l_fna = dir_name;
+    outfab->fab$b_fns = strlen( dir_name);
+
+    /* Expanded and resultant name storage. */
+    nam.NAM_ESA = exp_nam;
+    nam.NAM_ESS = sizeof(exp_nam);
+    nam.NAM_RSA = res_nam;
+    nam.NAM_RSS = sizeof(res_nam);
+
+    status = sys$parse(outfab);
+    if ( ERR(status) )
+    {
+        sprintf(warnmsg,
+          "warning: set-dir-attributes failed ($parse) for %s.\n",
+          dir_name);
+        vms_msg(__G__ warnmsg, status);
+        retcode = PK_WARN;
+        goto cleanup_exit;
+    }
+
+    /* Set the length in the device name descriptor. */
+    pka_devdsc.dsc$w_length = (unsigned short) nam.NAM_DVI[0];
+
+    /* Open a channel to the disk device. */
+    status = sys$assign(&pka_devdsc, &pka_devchn, 0, 0);
+    if ( ERR(status) )
+    {
+        sprintf(warnmsg,
+          "warning: set-dir-attributes failed ($assign) for %s.\n",
+          dir_name);
+        vms_msg(__G__ warnmsg, status);
+        retcode = PK_WARN;
+        goto cleanup_exit;
+    }
+
+    /* Move the directory ID from the NAM to the FIB.
+       Clear the FID in the FIB, as we're using the name.
+    */
+    for (i = 0; i < 3; i++)
+    {
+        pka_fib.FIB$W_DID[i] = nam.NAM_DID[i];
+        pka_fib.FIB$W_FID[i] = 0;
+    }
+
+    pka_fnam.dsc$a_pointer = nam.NAM_L_NAME;
+    pka_fnam.dsc$w_length = nam.NAM_B_NAME + nam.NAM_B_TYPE + nam.NAM_B_VER;
+
+    /* Modify the file (directory) attributes. */
+    status = sys$qiow(0,                            /* event flag */
+                      pka_devchn,                   /* channel */
+                      IO$_MODIFY,                   /* function code */
+                      &pka_acp_sb,                  /* IOSB */
+                      0,                            /* AST address */
+                      0,                            /* AST parameter */
+                      &pka_fibdsc,                  /* P1 = FIB dscr */
+                      &pka_fnam,                    /* P2 = File name */
+                      0,                            /* P3 = Rslt nm str */
+                      0,                            /* P4 = Rslt nm len */
+                      &pka_atr,                     /* P5 = Attributes */
+                      0);                           /* P6 (not used) */
+
+    /* If initial success, then get the final status from the IOSB. */
+    if ( !ERR(status) )
+        status = pka_acp_sb.status;
+
+    if ( ERR(status) )
+    {
+        sprintf(warnmsg,
+          "warning: set-dir-attributes failed ($qiow) for %s.\n",
+          dir_name);
+        vms_msg(__G__ warnmsg, status);
+        retcode = PK_WARN;
+    }
+    sys$dassgn(pka_devchn);
+cleanup_exit:
+    free_up();                          /* Free FAB, XAB storage. */
+    free(d);                            /* Free directory attribute storage. */
+    G.extra_field = sav_ef_ptr;         /* Restore original pointer. */
+    return retcode;
+} /* end function set_direc_attribs() */
+
+#endif /* SET_DIR_ATTRIB */
 
 
 
@@ -2301,16 +2706,16 @@ int stamp_file(fname, modtime)
     };
 
     fileblk = cc$rms_fab;               /* Initialize FAB. */
-    nam = cc$rms_nam;                   /* Initialize NAM[L]. */
-    fileblk.fab$l_nam = &nam;           /* Point FAB to NAM. */
+    nam = CC_RMS_NAM;                   /* Initialize NAM. */
+    fileblk.FAB_NAM = &nam;             /* Point FAB to NAM. */
 
-    fileblk.fab$l_fna = (char *)fname;
-    fileblk.fab$b_fns = strlen(fname);
+    FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNA = (char *)fname;
+    FAB_OR_NAM(fileblk, nam).FAB_OR_NAM_FNS = strlen(fname);
 
-    nam.nam$l_esa = exp_nam;
-    nam.nam$b_ess = sizeof(exp_nam);
-    nam.nam$l_rsa = res_nam;
-    nam.nam$b_rss = sizeof(res_nam);
+    nam.NAM_ESA = exp_nam;
+    nam.NAM_ESS = sizeof(exp_nam);
+    nam.NAM_RSA = res_nam;
+    nam.NAM_RSS = sizeof(res_nam);
 
     if ( ERR(status = sys$parse(&fileblk)) )
     {
@@ -2318,7 +2723,7 @@ int stamp_file(fname, modtime)
         return -1;
     }
 
-    pka_devdsc.dsc$w_length = (unsigned short)nam.nam$t_dvi[0];
+    pka_devdsc.dsc$w_length = (unsigned short)nam.NAM_DVI[0];
 
     if ( ERR(status = sys$assign(&pka_devdsc, &pka_devchn, 0, 0)) )
     {
@@ -2328,18 +2733,20 @@ int stamp_file(fname, modtime)
 
     /* Load the descriptor with the appropriate name data: */
     /* Extract only the name.type;version. */
-    pka_fnam.dsc$a_pointer = nam.nam$l_name;
-    pka_fnam.dsc$w_length  = nam.nam$b_name + nam.nam$b_type + nam.nam$b_ver;
+    pka_fnam.dsc$a_pointer = nam.NAM_L_NAME;
+    pka_fnam.dsc$w_length = nam.NAM_B_NAME + nam.NAM_B_TYPE + nam.NAM_B_VER;
 
+    /* Move the directory ID from the NAM to the FIB. */
     for (i = 0; i < 3; i++)
     {
-        pka_fib.FIB$W_DID[i] = nam.nam$w_did[i];
-        pka_fib.FIB$W_FID[i] = nam.nam$w_fid[i];
+        pka_fib.FIB$W_DID[i] = nam.NAM_DID[i];
+        pka_fib.FIB$W_FID[i] = nam.NAM_FID[i];
     }
 
-    /* Use the IO$_ACCESS function to return info about the file */
-    /* Note, used this way, the file is not opened, and the expiration */
-    /* and revision dates are not modified */
+    /* Use the IO$_ACCESS function to return info about the file.
+       This way, the file is not opened, and the expiration and
+       revision dates are not modified.
+    */
     status = sys$qiow(0, pka_devchn, IO$_ACCESS,
                       &pka_acp_sb, 0, 0,
                       &pka_fibdsc, &pka_fnam, 0, 0, &Atr, 0);
@@ -2361,8 +2768,8 @@ int stamp_file(fname, modtime)
     pka_fib.FIB$L_ACCTL = FIB$M_NORECORD;
     for (i = 0; i < 3; i++)
     {
-        pka_fib.FIB$W_DID[i] = nam.nam$w_did[i];
-        pka_fib.FIB$W_FID[i] = nam.nam$w_fid[i];
+        pka_fib.FIB$W_DID[i] = nam.NAM_DID[i];
+        pka_fib.FIB$W_FID[i] = nam.NAM_FID[i];
     }
 
     /* Use the IO$_MODIFY function to change info about the file */
@@ -2494,7 +2901,7 @@ static int vms_msg_fetch(int status)
 }
 
 
-static void vms_msg(__GPRO__ char *string, int status)
+static void vms_msg(__GPRO__ ZCONST char *string, int status)
 {
     if (ERR(vms_msg_fetch(status)))
         Info(slide, 1, ((char *)slide,
@@ -2516,7 +2923,7 @@ static void vms_msg(__GPRO__ char *string, int status)
  * when it wasn't really looking for "fred.zip;4.zip".
  */
 /* 2005-08-11 SPC.
- * The calling interface for the VMS versiom of do_wild() differs from all
+ * The calling interface for the VMS version of do_wild() differs from all
  * other implementations in the way it returns status info.
  * There are three return states:
  * a) pointer to buffer with non-zero-length string
@@ -2537,13 +2944,13 @@ char *do_wild( __G__ wld )
 {
     int status;
 
-    static char filenam[256];
-    static char efn[256];
-    static char last_wild[256];
+    static char filenam[NAM_MAXRSS + 1];
+    static char efn[NAM_MAXRSS];
+    static char last_wild[NAM_MAXRSS + 1];
     static struct FAB fab;
-    static struct NAM nam;
+    static struct NAM_STRUCT nam;
     static int first_call = 1;
-    static ZCONST char deflt[] = "[]*.zip";
+    static ZCONST char deflt[] = "[]*.ZIP";
 
     if ( first_call || strcmp(wld, last_wild) )
     {   /* (Re)Initialize everything */
@@ -2551,19 +2958,19 @@ char *do_wild( __G__ wld )
         strcpy( last_wild, wld );
 
         fab = cc$rms_fab;               /* Initialize FAB. */
-        nam = cc$rms_nam;               /* Initialize NAM. */
-        fab.fab$l_nam = &nam;           /* Point FAB to NAM. */
+        nam = CC_RMS_NAM;               /* Initialize NAM. */
+        fab.FAB_NAM = &nam;             /* Point FAB to NAM. */
 
-        fab.fab$l_dna = (char *) deflt;
-        fab.fab$b_dns = sizeof(deflt)-1;
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNA = (char *) deflt;
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNS = sizeof(deflt) - 1;
 
-        fab.fab$l_fna = last_wild;
-        fab.fab$b_fns = strlen(last_wild);
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNA = last_wild;
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNS = strlen(last_wild);
 
-        nam.nam$l_esa = efn;
-        nam.nam$b_ess = sizeof(efn)-1;
-        nam.nam$l_rsa = filenam;
-        nam.nam$b_rss = sizeof(filenam)-1;
+        nam.NAM_ESA = efn;
+        nam.NAM_ESS = sizeof(efn)-1;
+        nam.NAM_RSA = filenam;
+        nam.NAM_RSS = sizeof(filenam)-1;
 
         first_call = 0;
 
@@ -2571,7 +2978,7 @@ char *do_wild( __G__ wld )
          * Parse the file spec.  If sys$parse() fails, save the VMS
          * error message for later use, and return an empty string.
          */
-        nam.nam$b_nop = NAM$M_SYNCHK;   /* Syntax-only analysis. */
+        nam.NAM_NOP = NAM_M_SYNCHK;     /* Syntax-only analysis. */
         if ( !OK(status = sys$parse(&fab)) )
         {
             vms_msg_fetch(status);
@@ -2584,7 +2991,7 @@ char *do_wild( __G__ wld )
          * sys$search() will work properly.  Regardless of parse error,
          * leave filenam[] as-was.
          */
-        nam.nam$b_nop = 0;              /* Normal analysis. */
+        nam.NAM_NOP = 0;                /* Normal analysis. */
         if ( OK(status = sys$parse(&fab)) )
         {
             status = sys$search(&fab);
@@ -2604,7 +3011,7 @@ char *do_wild( __G__ wld )
             return (char *)NULL;
         }
     }
-    filenam[nam.nam$b_rsl] = '\0';      /* Add the NUL terminator. */
+    filenam[nam.NAM_RSL] = '\0';        /* Add the NUL terminator. */
     return filenam;
 
 } /* end function do_wild() */
@@ -2795,6 +3202,7 @@ int mapattr(__G)
 } /* end function mapattr() */
 
 
+#define PATH_DEFAULT "SYS$DISK:[]"
 
 #   define FN_MASK   7
 #   define USE_DEFAULT  (FN_MASK+1)
@@ -2810,7 +3218,7 @@ int mapattr(__G)
  *      END         -   free dynamically allocated space prior to program exit
  */
 
-static  int created_dir;
+static int created_dir;
 
 int mapname(__G__ renamed)
         /* returns: */
@@ -3008,7 +3416,7 @@ int checkdir(__G__ pathcomp, fcn)
     int function=fcn & FN_MASK;
     static char pathbuf[FILNAMSIZ];
     /* previously created directory (initialized to impossible dir. spec.) */
-    static char lastdir[FILNAMSIZ]="\t";
+    static char lastdir[FILNAMSIZ] = "\t";
     static char *pathptr = pathbuf;     /* For debugger */
     static char *devptr, *dirptr, *namptr;
     static int  devlen, dirlen, namlen;
@@ -3019,99 +3427,120 @@ int checkdir(__G__ pathcomp, fcn)
     static char *rootend;
     static int  mkdir_failed=0;
     int status;
+    struct FAB fab;
+    struct NAM_STRUCT nam;
+
 
 /************
  *** ROOT ***
  ************/
 
 #if (!defined(SFX) || defined(SFX_EXDIR))
-    if (function==ROOT)
-    {        /*  Assume VMS root spec */
-        char  *p = pathcomp;
-        char  *q;
+    if (function == ROOT)
+    {   /*  Assume VMS root spec */
+        /* 2006-01-20 SMS.
+           Changed to use sys$parse() instead of sys$filescan() for analysis
+           of the user-specified destination directory.  Previously, various
+           values behaved badly, without complaint, e.g. "-d sys$scratch".
+        */
 
-        struct
-        {
-            short  len;
-            short  code;
-            char   *addr;
-        } itl [4] =
-        {
-            {  0,  FSCN$_DEVICE,    NULL  },
-            {  0,  FSCN$_ROOT,      NULL  },
-            {  0,  FSCN$_DIRECTORY, NULL  },
-            {  0,  0,               NULL  }   /* End of itemlist */
-        };
-        int fields = 0;
-        struct dsc$descriptor  pthcmp;
-
-        if (rootlen > 0)        /* rootpath was already set, nothing to do */
+        /* If the root path has already been set, return immediately. */
+        if (rootlen > 0)
             return MPN_OK;
 
-        /*
-         *  Initialize everything
-         */
-        end = devptr = dirptr = rootend = pathbuf;
-        devlen = dirlen = rootlen = 0;
+        /* Initialization. */
+        root_has_dir = 0;           /* Root includes a directory. */
+        fab = cc$rms_fab;           /* Initialize FAB. */
+        nam = CC_RMS_NAM;           /* Initialize NAM. */
+        fab.FAB_NAM = &nam;         /* Point FAB to NAM. */
 
-        pthcmp.dsc$a_pointer = pathcomp;
-        if ( (pthcmp.dsc$w_length = strlen(pathcomp)) > 255 )
-            return MPN_ERR_TOOLONG;
+        /* Specified file spec. */
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNA = pathcomp;
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNS = strlen(pathcomp);
 
-        status = sys$filescan(&pthcmp, itl, &fields);
-        if ( !OK(status) )
+        /* Default file spec. */
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNA = PATH_DEFAULT;
+        FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNS = strlen(PATH_DEFAULT);
+
+        /* Expanded file spec. */
+        nam.NAM_ESA = pathbuf;
+        nam.NAM_ESS = NAM_MAXRSS;
+
+        status = sys$parse(&fab);
+
+        /* OK so far, if OK or if directory not found. */
+        if (((status & STS$M_SEVERITY) != STS$K_SUCCESS) &&
+            (status != RMS$_DNF))
+        {
+            /* Invalid destination directory specified. */
+            Info(slide, 1, ((char *)slide,
+              "Invalid destination directory (parse error): %s\n",
+              FnFilter1(pathcomp)));
             return MPN_ERR_SKIP;
-
-        if ( fields & FSCN$M_DEVICE )
-        {
-            strncpy(devptr = end, itl[0].addr, itl[0].len);
-            dirptr = (end += (devlen = itl[0].len));
         }
 
-        root_has_dir = 0;
-
-        if ( fields & FSCN$M_ROOT )
+        /* Should be only a device:[directory], so name+type+version
+           should have length 2 (".;").
+        */
+        if (nam.NAM_B_NAME+ nam.NAM_B_TYPE+ nam.NAM_B_VER > 2)
         {
-            int   len;
+            Info(slide, 1, ((char *)slide,
+              "Invalid destination directory (includes file name): %s\n",
+              FnFilter1(nam.NAM_ESA)));
+            return MPN_ERR_SKIP;
+        }
 
-            strncpy(dirptr = end, itl[1].addr,
-                len = itl[1].len - 1);        /* Cut out trailing ']' */
-            end += len;
+        /* Truncate at name, leaving only "dev:[dir]". */
+        *nam.NAM_L_NAME = '\0';
+        rootlen = nam.NAM_L_NAME - nam.NAM_ESA;
+
+        /* Remove any trailing dots in directory. */
+        if ((nam.NAM_ESA[rootlen-1] == ']') &&
+            (nam.NAM_ESA[rootlen-2] != '^'))
+        {
             root_has_dir = 1;
-        }
-
-        if ( fields & FSCN$M_DIRECTORY )
-        {
-            char  *ptr;
-            int   len;
-
-            len = itl[2].len-1;
-            ptr = itl[2].addr;
-
-            if ( root_has_dir /* i.e. root specified */ )
+            rootlen -= 2;
+            while ((nam.NAM_ESA[rootlen] == '.') &&
+                   (nam.NAM_ESA[rootlen-1] != '^'))
             {
-                --len;                            /* Cut out leading dot */
-                ++ptr;                            /* ??? [a.b.c.][.d.e] */
+                rootlen--;
             }
-
-            strncpy(dirptr=end, ptr, len);  /* Replace trailing ']' */
-            *(end+=len) = '.';                    /* ... with dot */
-            ++end;
-            root_has_dir = 1;
+            nam.NAM_ESA[++rootlen] = ']';
+            nam.NAM_ESA[++rootlen] = '\0';
         }
 
-        /* When user specified "[a.b.c.]" or "[qq...]", we have too many
-        *  trailing dots. Let's cut them out. Now we surely have at least
-        *  one trailing dot and "end" points just behind it. */
+        devlen = nam.NAM_L_DIR - nam.NAM_ESA;
 
-        dirlen = end - dirptr;
-        while ( dirlen > 1 && end[-2] == '.' )
-            --dirlen,--end;
+        /* If directory not found, then create it. */
+        if (status == RMS$_DNF)
+        {
+            if (status = mkdir(nam.NAM_ESA, 0))
+            {
+                Info(slide, 1, ((char *)slide,
+                  "Can not create destination directory: %s\n",
+                  FnFilter1(nam.NAM_ESA)));
 
+                /* path didn't exist, tried to create, and failed. */
+                return MPN_ERR_SKIP;
+            }
+        }
+
+        /* Save the (valid) device:[directory] spec. */
+        strcpy(pathbuf, nam.NAM_ESA);
+
+        /* Replace trailing "]" with ".", for later appending. */
+        if ((pathbuf[rootlen-1] == ']') || (pathbuf[rootlen-1] == '>'))
+        {
+            pathbuf[rootlen-1] = '.';
+        }
+
+        /* Set various pointers and lengths. */
+        devptr = pathbuf;
+        dirptr = pathbuf + (nam.NAM_L_DIR - nam.NAM_ESA);
+        rootend = pathbuf + rootlen;
+        *(end = rootend) = '\0';
+        root_dirlen = dirlen = rootlen - devlen;
         first_comp = !root_has_dir;
-        root_dirlen = end - dirptr;
-        *(rootend = end) = '\0';
-        rootlen = rootend - devptr;
         return MPN_OK;
     }
 #endif /* !SFX || SFX_EXDIR */
@@ -3123,7 +3552,7 @@ int checkdir(__G__ pathcomp, fcn)
 
     if ( function == INIT )
     {
-        if ( strlen(G.filename) + rootlen + 13 > 255 )
+        if ( strlen(G.filename) + rootlen + 13 > NAM_MAXRSS )
             return MPN_ERR_TOOLONG;
 
         if ( rootlen == 0 )     /* No root given, reset everything. */
@@ -3167,7 +3596,7 @@ int checkdir(__G__ pathcomp, fcn)
             *end++ = '.';
         }
 
-        else if ( cmplen + (end-pathptr) > 255 )
+        else if ( cmplen + (end-pathptr) > NAM_MAXRSS )
             return MPN_ERR_TOOLONG;
 
         else
@@ -3193,17 +3622,18 @@ int checkdir(__G__ pathcomp, fcn)
             struct        FAB fab;
             struct        NAM nam;
 
-            fab = cc$rms_fab;
-            nam = cc$rms_nam;
-            fab.fab$l_nam = &nam;
+            fab = cc$rms_fab;           /* Initialize FAB. */
+            nam = CC_RMS_NAM;           /* Initialize NAM. */
+            fab.FAB_NAM = &nam;         /* Point FAB to NAM. */
 
-            fab.fab$l_dna = pathptr;
-            fab.fab$b_dns = end-pathptr;
-            fab.fab$l_fna = G.filename;
-            fab.fab$b_fns = strlen(G.filename);
+            FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNA = pathptr;
+            FAB_OR_NAM(fab, nam).FAB_OR_NAM_DNS = end - pathptr;
 
-            nam.nam$l_esa = pathcomp;
-            nam.nam$b_ess = 255;            /* Assume large enough */
+            FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNA = G.filename;
+            FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNS = strlen(G.filename);
+
+            nam.NAM_ESA = pathcomp;
+            nam.NAM_ESS = NAM_MAXRSS;   /* Assume large enough */
 
             if (!OK(status = sys$parse(&fab)) && status == RMS$_DNF )
                                          /* Directory not found: */
@@ -3212,10 +3642,10 @@ int checkdir(__G__ pathcomp, fcn)
                 char    *dirend;
                 int     mkdir_failed;
 
-                dirend = (char*)nam.nam$l_dir + nam.nam$b_dir;
+                dirend = (char*)nam.NAM_L_DIR + nam.NAM_B_DIR;
                 save = *dirend;
                 *dirend = '\0';
-                if ( (mkdir_failed = mkdir(nam.nam$l_dev, 0)) &&
+                if ( (mkdir_failed = mkdir(nam.NAM_L_DEV, 0)) &&
                      errno == EEXIST )
                     mkdir_failed = 0;
                 *dirend = save;
@@ -3223,7 +3653,7 @@ int checkdir(__G__ pathcomp, fcn)
                     return 3;
                 created_dir = TRUE;
             }                                /* if (sys$parse... */
-            pathcomp[nam.nam$b_esl] = '\0';
+            pathcomp[nam.NAM_ESL] = '\0';
             return MPN_OK;
         }                                /* if (USE_DEFAULT) */
         else
@@ -3256,9 +3686,9 @@ int checkdir(__G__ pathcomp, fcn)
                  * Target directory unspecified.
                  * Try to create "sys$disk:[]"
                  */
-                if ( strcmp(lastdir,"sys$disk:[]") )
+                if ( strcmp(lastdir, PATH_DEFAULT) )
                 {
-                    strcpy(lastdir,"sys$disk:[]");
+                    strcpy(lastdir, PATH_DEFAULT);
                     mkdir_failed = 0;
                     if ( mkdir(lastdir,0) && errno != EEXIST )
                         mkdir_failed = 1;   /* Mine for GETPATH */
@@ -3319,16 +3749,16 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
     if (stat(filenam, &G.statbuf))
         return DOES_NOT_EXIST;
 
-    fab  = cc$rms_fab;
-    xdat = cc$rms_xabdat;
+    fab  = cc$rms_fab;                  /* Initialize FAB. */
+    xdat = cc$rms_xabdat;               /* Initialize XAB. */
 
-    fab.fab$l_fna = filenam;
-    fab.fab$b_fns = strlen(filenam);
+    FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNA = filenam;
+    FAB_OR_NAM(fab, nam).FAB_OR_NAM_FNS = strlen(filenam);
 
     fab.fab$l_xab = (char *) &xdat;
     fab.fab$l_fop = FAB$M_GET | FAB$M_UFO;
 
-    if ((sys$open(&fab) & 1) == 0)       /* open failure:  report exists and */
+    if (ERR(sys$open(&fab)))             /* open failure:  report exists and */
         return EXISTS_AND_OLDER;         /*  older so new copy will be made  */
     sys$numtim(&timbuf,&xdat.xab$q_cdt);
     fab.fab$l_xab = NULL;
@@ -3576,7 +4006,7 @@ static int getscreeninfo(int *tt_rows, int *tt_cols, int *tt_wrap)
 
     /* assign a channel to standard output */
     status = sys$assign(&OutDevDesc, &OutDevChan, 0, 0);
-    if (status & 1)
+    if (OK(status))
     {
         /* use sys$qiow and the IO$_SENSEMODE function to determine
          * the current tty status.
@@ -3587,7 +4017,7 @@ static int getscreeninfo(int *tt_rows, int *tt_cols, int *tt_wrap)
         (void) sys$dassgn(OutDevChan);
     }
 
-    if ( (status & 1) && ((status = iosb[0]) & 1) ) {
+    if ( OK(status) && OK(status = iosb[0]) ) {
         if (tt_rows != NULL)
             *tt_rows = ( (ttmode.ttdef_area.ttdef_bits.pagelength >= 5)
                         ? (int) (ttmode.ttdef_area.ttdef_bits.pagelength)
@@ -3609,7 +4039,7 @@ static int getscreeninfo(int *tt_rows, int *tt_cols, int *tt_wrap)
             *tt_wrap = FALSE;
     }
 
-    return ((status & 1) != 0);
+    return (OK(status));
 }
 
 int screensize(int *tt_rows, int *tt_cols)
@@ -3938,7 +4368,7 @@ globaldef {"LIB$INITIALIZE"} readonly _align (LONGWORD)
 /* Fake reference to ensure loading the LIB$INITIALIZE PSECT. */
 
 #pragma extern_model save
-int LIB$INITIALIZE( void);
+int LIB$INITIALIZE(void);
 #pragma extern_model strict_refdef
 int dmy_lib$initialize = (int)LIB$INITIALIZE;
 #pragma extern_model restore
