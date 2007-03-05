@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -145,7 +145,7 @@ static ZCONST char Far ComprMsgNum[] =
      CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode,
      CmprBzip, CmprLZMA, CmprIBMTerse, CmprIBMLZ77, CmprPPMd
    };
-   static ZCONST ush ComprIDs[NUM_METHODS] = {
+   static ZCONST unsigned ComprIDs[NUM_METHODS] = {
      STORED, SHRUNK, REDUCED1, REDUCED2, REDUCED3, REDUCED4,
      IMPLODED, TOKENIZED, DEFLATED, ENHDEFLATED, DCLIMPLODED,
      BZIPPED, LZMAED, IBMTERSED, IBMLZ77ED, PPMDED
@@ -959,10 +959,8 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 /*  Function find_compr_idx()  */
 /*******************************/
 
-unsigned find_compr_idx(OFT(ush) compr_methodnum)
-#ifndef PROTO
-    ush compr_methodnum;
-#endif /* ndef PROTO */
+unsigned find_compr_idx(compr_methodnum)
+    unsigned compr_methodnum;
 {
    unsigned i;
 
@@ -1545,15 +1543,10 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
     G.crc32val = CRCVAL_INITIAL;
 
 #ifdef SYMLINKS
-    /* if file came from Unix and is a symbolic link and we are extracting
-     * to disk, prepare to restore the link */
-    if (S_ISLNK(G.pInfo->file_attr) &&
-        (G.pInfo->hostnum == UNIX_ || G.pInfo->hostnum == ATARI_ ||
-         G.pInfo->hostnum == ATHEOS_ || G.pInfo->hostnum == BEOS_) &&
-        !uO.tflag && !uO.cflag && (G.lrec.ucsize > 0))
-        G.symlnk = TRUE;
-    else
-        G.symlnk = FALSE;
+    /* If file is a (POSIX-compatible) symbolic link and we are extracting
+     * to disk, prepare to restore the link. */
+    G.symlnk = (G.pInfo->symlink &&
+                !uO.tflag && !uO.cflag && (G.lrec.ucsize > 0));
 #endif /* SYMLINKS */
 
     if (uO.tflag) {
@@ -2167,7 +2160,7 @@ int memextract(__G__ tgt, tgtsize, src, srcsize)  /* extract compressed */
     switch (method) {
         case STORED:
             memcpy((char *)tgt, (char *)G.inptr, (extent)G.incnt);
-            G.outcnt = G.csize;   /* for CRC calculation */
+            G.outcnt = (ulg)G.csize;    /* for CRC calculation */
             break;
         case DEFLATED:
 #ifdef USE_DEFLATE64
