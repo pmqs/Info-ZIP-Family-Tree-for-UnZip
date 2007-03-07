@@ -2,7 +2,7 @@
   Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-4 or later
-  (the contents of which are also included in zip.h) for terms of use.
+  (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
@@ -596,7 +596,7 @@ Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
 
 #ifdef VMS
    static ZCONST char Far VMSusageLine2b[] = "\
-=> define foreign command symbol in LOGIN.COM:  $ unzip :== $dev:[dir]unzip.exe\
+  Define foreign command symbol in LOGIN.COM: $ unzip :== $ dev:[dir]unzip.exe\
 \n";
 #endif
 
@@ -624,6 +624,16 @@ static ZCONST char Far UnzipUsageLine3[] = "\n\
 #endif /* ?VM_CMS */
 #endif /* ?MACOS */
 
+#ifdef UNICODE_SUPPORT
+static ZCONST char Far UnzipUsageLine4[] = "\
+modifiers:\n\
+  -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
+  -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
+  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
+  -H  use escapes for all non-ASCII Unicode  -U  ignore any Unicode fields\n\
+  -C  match filenames case-insensitively     -L  make (some) names \
+lowercase\n %-42s  -V  retain VMS version numbers\n%s";
+#else
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
@@ -631,6 +641,7 @@ modifiers:\n\
   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
+#endif
 
 static ZCONST char Far UnzipUsageLine5[] = "\
 Examples (see unzip.txt for more info):\n\
@@ -700,7 +711,7 @@ int unzip(__G__ argc, argv)
       char *loc = setlocale(LC_CTYPE, "en_GB.UTF-8");
 
       if ((loc != NULL) && strcmp(loc, "en_GB.UTF-8") == 0) {
-        /* Successfully set UTF-8 */
+		 /* Successfully set UTF-8 */
       }
 
 #  if 0 /* That code from Zip does not fit into the UnZip environment */
@@ -1162,7 +1173,10 @@ int unzip(__G__ argc, argv)
 #endif /* ?(SFX && !SFX_EXDIR) */
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32)
-  /* check if this Win32 OS has support for wide character calls */
+    /* set Unicode escape all if option -H used */
+    if (uO.H_flag)
+      G.unicode_escape_all = 1;
+    /* check if this Win32 OS has support for wide character calls */
     G.has_win32_wide = has_win32_wide();
 #endif
 
@@ -1410,6 +1424,14 @@ int uz_opts(__G__ pargc, pargv)
                 case ('h'):    /* just print help message and quit */
                     *pargc = -1;
                     return USAGE(PK_OK);
+#ifdef UNICODE_SUPPORT
+                case ('H'):    /* escape all non-ASCII in paths */
+                    if (negative)
+                        uO.H_flag = FALSE, negative = 0;
+                    else
+                        uO.H_flag = TRUE;
+                    break;
+#endif
 #ifdef MACOS
                 case ('i'): /* -i [MacOS] ignore filenames stored in Mac ef */
                     if( negative ) {
@@ -1607,7 +1629,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.uflag = TRUE;
                     break;
 #ifdef UNICODE_SUPPORT
-                case ('U'):    /* obsolete; to be removed in version 6.0 */
+                case ('U'):    /* No Unicode paths */
                     if (negative)
                         uO.U_flag = TRUE, negative = 0;
                     else
