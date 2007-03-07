@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -43,6 +43,9 @@
 #ifdef DYNALLOC_CRCTAB
 #  include "crc32.h"
 #endif
+#ifdef UNICODE_SUPPORT
+#  include <wchar.h>
+#endif /* def UNICODE_SUPPORT */
 
 static int    do_seekable        OF((__GPRO__ int lastchance));
 #ifdef DO_SAFECHECK_2GB
@@ -1190,8 +1193,7 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
        ecrec with nothing in between.  We back up the size of the ecrec64
        locator and check.  */
 
-    ecloc64_start_offset = G.real_ecrec_offset - ECLOC64_SIZE - 4;
-
+    ecloc64_start_offset = G.real_ecrec_offset - (ECLOC64_SIZE+4);
     if (ecloc64_start_offset < 0)
       /* Seeking would go past beginning, so probably empty archive */
       return PK_COOL;
@@ -1203,8 +1205,8 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
     G.cur_zipfile_bufstart = zlseek(G.zipfd, ecloc64_start_offset, SEEK_SET);
 #endif /* ?USE_STRM_INPUT */
 
-    if ((G.incnt = read(G.zipfd, (char *)byterecL, ECLOC64_SIZE + 4))
-        != ECLOC64_SIZE + 4) {
+    if ((G.incnt = read(G.zipfd, (char *)byterecL, ECLOC64_SIZE+4))
+        != (ECLOC64_SIZE+4)) {
       if (uO.qflag || uO.zipinfo_mode)
           Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
       Info(slide, 0x401, ((char *)slide,
@@ -1223,13 +1225,24 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
     ecloc64_total_disks = (zuvl_t)makelong(&byterecL[NUM_THIS_DISK_LOC64]);
 
     /* Check for consistency */
+#ifdef TEST
+    fprintf(stdout,"\nnumber of disks (ECR) %u, (ECLOC64) %lu\n",
+            G.ecrec.number_this_disk, ecloc64_total_disks); fflush(stdout);
+#endif
     if ((G.ecrec.number_this_disk != 0xFFFF) &&
-        (G.ecrec.number_this_disk + 1 != ecloc64_total_disks)) {
+        (G.ecrec.number_this_disk != ecloc64_total_disks - 1)) {
+      /* Note: For some unknown reason, the developers at PKWARE decided to
+         store the "zip64 total disks" value as a counter starting from 1,
+         whereas all other "split/span volume" related fields use 0-based
+         volume numbers. Sigh... */
       /* When the total number of disks as found in the traditional ecrec
          is not 0xFFFF, the disk numbers in ecrec and ecloc64 must match.
          When this is not the case, the found ecrec64 locator cannot be valid.
          -> This is not a Zip64 archive.
        */
+      Trace((stderr,
+             "\ninvalid ECLOC64, differing disk# (ECR %u, ECL64 %lu)\n",
+             G.ecrec.number_this_disk, ecloc64_total_disks - 1));
       return PK_COOL;
     }
 
@@ -1259,8 +1272,8 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
     G.cur_zipfile_bufstart = zlseek(G.zipfd, ecrec64_start_offset, SEEK_SET);
 #endif /* ?USE_STRM_INPUT */
 
-    if ((G.incnt = read(G.zipfd, (char *)byterec, ECREC64_SIZE + 4))
-        != ECREC64_SIZE + 4) {
+    if ((G.incnt = read(G.zipfd, (char *)byterec, ECREC64_SIZE+4))
+        != (ECREC64_SIZE+4)) {
       if (uO.qflag || uO.zipinfo_mode)
           Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
       Info(slide, 0x401, ((char *)slide,
@@ -1312,13 +1325,7 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
         return PK_COOL;
 
     /* Now, we are (almost) sure that we have a Zip64 archive. */
-    /* By definition if ecrec64 exists it is a Zip64 archive, even
-       if none of the below fields need Zip64 (a central directory
-       entry may still need Zip64) */
     G.ecrec.have_ecr64 = 1;
-
-    /* THIS IS A KLUGE, but apparently needed */
-    G.ecrec.is_zip64_archive = TRUE;
 
     /* Update the "end-of-central-dir offset" for later checks. */
     G.real_ecrec_offset = ecrec64_start_offset;
@@ -1455,30 +1462,8 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
 
     /* Next: Check for existence of Zip64 end-of-cent-dir locator
        ECLOC64. This structure must reside on the same volume as the
-       classic ECREC, at exactly (ECLOC64_SIZE + 4) bytes in front
+       classic ECREC, at exactly (ECLOC64_SIZE+4) bytes in front
        of the ECREC.
-     */
-
-    /* This is an internal comment.  Remove before the next public beta.
-
-       Below check does not catch when an entry requires Zip64, as
-       when the uncompressed size is larger than 4 GB, but the
-       standard fields in ecrec (called EOCDR in the Zip source)
-       are sufficient, as when the file compresses under the Zip64
-       limit.  In such cases ecrec64 (called Zip64 EOCDR in Zip)
-       will exist to flag the archive as Zip64, even though none
-       of the ecrec values are set to the FFFF or FFFFFFFF flag
-       values.
-
-      if(check_ecrec_zip64(__G)){
-        need_zip64 = TRUE;
-      }
-
-       In fact, this check is not needed, as ecrec64 will ALWAYS
-       exist for a proper Zip64 archive, as the Version Needed To Extract
-       field is required to be set to 4.5 or higher.
-
-       End of internal comment.
      */
 
     /* The ecrec64 will ALWAYS exist for a proper Zip64 archive, as
@@ -1764,7 +1749,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
     if (ef_len == 0 || ef_buf == NULL)
         return PK_COOL;
 
-    TTrace((stderr,"\ngetZip64Data: scanning extra field of length %u\n",
+    Trace((stderr,"\ngetZip64Data: scanning extra field of length %u\n",
       ef_len));
 
     while (ef_len >= EB_HEADSIZE) {
@@ -1773,7 +1758,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
 
         if (eb_len > (ef_len - EB_HEADSIZE)) {
             /* discovered some extra field inconsistency! */
-            TTrace((stderr,
+            Trace((stderr,
               "getZip64Data: block length %u > rest ef_size %u\n", eb_len,
               ef_len - EB_HEADSIZE));
             break;
@@ -1834,10 +1819,12 @@ int getUnicodeData(__G__ ef_buf, ef_len)
     Return PK_COOL if no error.
   ---------------------------------------------------------------------------*/
 
+    G.unipath_filename = NULL;
+
     if (ef_len == 0 || ef_buf == NULL)
         return PK_COOL;
 
-    TTrace((stderr,"\ngetUnicodeData: scanning extra field of length %u\n",
+    Trace((stderr,"\ngetUnicodeData: scanning extra field of length %u\n",
       ef_len));
 
     while (ef_len >= EB_HEADSIZE) {
@@ -1846,7 +1833,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
 
         if (eb_len > (ef_len - EB_HEADSIZE)) {
             /* discovered some extra field inconsistency! */
-            TTrace((stderr,
+            Trace((stderr,
               "getUnicodeData: block length %u > rest ef_size %u\n", eb_len,
               ef_len - EB_HEADSIZE));
             break;
@@ -1874,7 +1861,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
            * Compute 32-bit crc
            */
 
-          chksum = crc32(chksum, (uch *)(G.filename), strlen(G.filename));
+          chksum = crc32(chksum, (uch *)(G.filename_full), strlen(G.filename_full));
 
           /* If the checksums's don't match then likely filename has been modified and
            * the Unicode Path is no longer valid
@@ -1899,10 +1886,9 @@ int getUnicodeData(__G__ ef_buf, ef_len)
             G.unipath_filename[0] = '\0';
           } else {
             /* UTF-8 path */
-            strncpy(G.unipath_filename, offset + ef_buf, ULen);
+            strncpy(G.unipath_filename, (ZCONST char *) (offset + ef_buf), ULen);
             G.unipath_filename[ULen] = '\0';
           }
-          G.unipath_escapedfilename = utf8_to_escaped_string(G.unipath_filename);
         }
 
         /* Skip this extra field block */
@@ -2269,6 +2255,36 @@ zwchar escape_string_to_wide(escape_string)
     }
   }
   return w;
+}
+
+char *wchar_to_local_string(wchar_string)
+  wchar_t *wchar_string;
+{
+  zwchar *wide_string = wchar_to_wide_string(wchar_string);
+  char *local_string = wide_to_local_string(wide_string);
+
+  free(wide_string);
+
+  return local_string;
+}
+
+zwchar *wchar_to_wide_string(wchar_string)
+  wchar_t *wchar_string;
+{
+  int i;
+  int wchar_len;
+  zwchar *wide_string;
+
+  wchar_len = wcslen(wchar_string);
+
+  if ((wide_string = malloc((wchar_len + 1) * sizeof(zwchar))) == NULL) {
+    return NULL;
+  }
+  for (i = 0; i <= wchar_len; i++) {
+    wide_string[i] = wchar_string[i];
+  }
+
+  return wide_string;
 }
 
 char *utf8_to_escaped_string(utf8_string)
@@ -2828,7 +2844,7 @@ zvoid *getRISCOSexfield(ef_buf, ef_len)
     if (ef_len == 0 || ef_buf == NULL)
         return NULL;
 
-    TTrace((stderr,"\ngetRISCOSexfield: scanning extra field of length %u\n",
+    Trace((stderr,"\ngetRISCOSexfield: scanning extra field of length %u\n",
       ef_len));
 
     while (ef_len >= EB_HEADSIZE) {
@@ -2837,7 +2853,7 @@ zvoid *getRISCOSexfield(ef_buf, ef_len)
 
         if (eb_len > (ef_len - EB_HEADSIZE)) {
             /* discovered some extra field inconsistency! */
-            TTrace((stderr,
+            Trace((stderr,
               "getRISCOSexfield: block length %u > rest ef_size %u\n", eb_len,
               ef_len - EB_HEADSIZE));
             break;

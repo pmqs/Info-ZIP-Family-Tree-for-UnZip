@@ -699,7 +699,7 @@ int unzip(__G__ argc, argv)
     {
       char *loc = setlocale(LC_CTYPE, "en_GB.UTF-8");
 
-      if (strcmp(loc, "en_GB.UTF-8") == 0) {
+      if ((loc != NULL) && strcmp(loc, "en_GB.UTF-8") == 0) {
         /* Successfully set UTF-8 */
       }
 

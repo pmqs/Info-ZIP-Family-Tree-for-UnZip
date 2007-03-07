@@ -1147,6 +1147,18 @@
 
 #define FILNAMSIZ  PATH_MAX
 
+/* 2007-09-18 SMS.
+ * Include <locale.h> here if it will be needed later for Unicode.
+ * Otherwise, SETLOCALE may be defined here, and then defined again
+ * (differently) when <locale.h> is read later.
+ */
+#ifdef UNICODE_SUPPORT
+# if defined( UNIX) || defined( VMS)
+#   include <locale.h>
+# endif /* defined( UNIX) || defined( VMS) */
+# include <wchar.h>
+#endif /* def UNICODE_SUPPORT */
+
 /* DBCS support for Info-ZIP  (mainly for japanese (-: )
  * by Yoshioka Tsuneo (QWF00133@nifty.ne.jp,tsuneo-y@is.aist-nara.ac.jp)
  */
@@ -1181,7 +1193,9 @@
 #  define lastchar(ptr, len) (ptr[(len)-1])
 #  define MBSCHR(str, c) strchr(str, c)
 #  define MBSRCHR(str, c) strrchr(str, c)
-#  define SETLOCALE(category, locale)
+#  ifndef SETLOCALE
+#    define SETLOCALE(category, locale)
+#  endif /* ndef SETLOCALE */
 #endif /* ?_MBCS */
 #define INCSTR(ptr) PREINCSTR(ptr)
 
@@ -1298,6 +1312,9 @@
     /* 64-bit stat functions */
 #     define zstat _stati64
 #     define zfstat _fstati64
+#  ifdef UNICODE_SUPPORT
+#     define zstatw _wstati64
+#  endif
 
     /* 64-bit lseek */
 #     define zlseek _lseeki64
@@ -1312,6 +1329,9 @@
 
     /* 64-bit fopen */
 #     define zfopen fopen
+#   if defined(UNICODE_SUPPORT) && defined(WIN32)
+#     define zfopenw _wfopen
+#   endif
 #     define zfdopen fdopen
 
 #   endif /* _MSC_VER || __MINGW__ || __LCC__ */
@@ -1844,7 +1864,7 @@
   typedef  unsigned short       zuvl_t;     /* multivolume numbers */
 #endif
 #define MASK_ZUCN16             ((zucn_t)0xFFFF)
-#define MASK_ZUCN64             (~(zucn_t)0)
+#define MASK_ZUCN64            (~(zucn_t)0)
 
 #ifdef NO_UID_GID
 #  ifdef UID_USHORT
@@ -1877,6 +1897,13 @@ typedef struct iztimes {
        char *fn;                /* filename of directory */
        char buf[1];             /* start of system-specific internal data */
    } direntry;
+# if defined(WIN32) && defined(UNICODE_SUPPORT)
+   typedef struct direntryw {    /* head of system-specific struct holding */
+       struct direntryw *next;   /*  defered directory attributes info */
+       wchar_t *fnw;                /* filename of directory */
+       wchar_t buf[1];             /* start of system-specific internal data */
+   } direntryw;
+# endif
 #endif /* SET_DIR_ATTRIB */
 
 #ifdef SYMLINKS
@@ -2437,6 +2464,10 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #ifdef W32_STAT_BANDAID
    int   zstat_win32    OF((__W32STAT_GLOBALS__
                             const char *path, z_stat *buf));      /* win32.c */
+# ifdef UNICODE_SUPPORT
+   int   zstat_win32w   OF((__W32STAT_GLOBALS__
+                            const wchar_t *pathw, z_stat *buf));      /* win32.c */
+# endif
 #endif
 #endif
 
@@ -2454,6 +2485,9 @@ void     mksargs         OF((int *argcp, char ***argvp));       /* envargs.c */
 int      match           OF((ZCONST char *s, ZCONST char *p,
                              int ic __WDLPRO));                   /* match.c */
 int      iswild          OF((ZCONST char *p));                    /* match.c */
+#if defined(UNICODE_SUPPORT) && defined(WIN32)
+int      iswildw         OF((ZCONST wchar_t *pw));                /* match.c */
+#endif
 
 /* declarations of public CRC-32 functions have been moved into crc32.h
    (free_crc_table(), get_crc_table(), crc32())                      crc32.c */
@@ -2466,6 +2500,10 @@ char     dateseparator   OF((void));                                /* local */
 int      mapattr         OF((__GPRO));                              /* local */
 int      mapname         OF((__GPRO__ int renamed));                /* local */
 int      checkdir        OF((__GPRO__ char *pathcomp, int flag));   /* local */
+#if defined(WIN32) && defined(UNICODE_SUPPORT)
+  int    mapnamew        OF((__GPRO__ int renamed));                /* local */
+  int    checkdirw       OF((__GPRO__ wchar_t *pathcomp, int flag));   /* local */
+#endif
 char    *do_wild         OF((__GPRO__ ZCONST char *wildzipfn));     /* local */
 char    *GetLoadPath     OF((__GPRO));                              /* local */
 #if (defined(MORE) && (defined(ATH_BEO_UNX) || defined(QDOS) || defined(VMS)))
@@ -2486,6 +2524,10 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #ifdef SET_DIR_ATTRIB
    int   defer_dir_attribs  OF((__GPRO__ direntry **pd));           /* local */
    int   set_direc_attribs  OF((__GPRO__ direntry *d));             /* local */
+# if defined(WIN32) && defined(UNICODE_SUPPORT)
+   int   defer_dir_attribsw  OF((__GPRO__ direntryw **pd));           /* local */
+   int   set_direc_attribsw  OF((__GPRO__ direntryw *d));             /* local */
+# endif
 #endif
 #ifdef TIMESTAMP
 # ifdef WIN32
@@ -2948,6 +2990,10 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 
   /* convert UTF-8 string to wide string */
   zwchar *utf8_to_wide_string OF((char *));
+
+  char *wchar_to_local_string OF((wchar_t *));
+
+  zwchar *wchar_to_wide_string OF((wchar_t *));
 
   /* convert wide string to multi-byte string */
   char *wide_to_local_string OF((zwchar *));

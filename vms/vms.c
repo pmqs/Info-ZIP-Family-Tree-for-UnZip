@@ -2853,6 +2853,8 @@ int set_direc_attribs(__G__ d)
             /* PK scheme needs a FAB.  (IZ supplies one.) */
             outfab = &fileblk;
         }
+        nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
+        outfab->FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
 
         if (type == VAT_IZ)
         {
@@ -2965,9 +2967,6 @@ int set_direc_attribs(__G__ d)
         pka_atr[pka_idx].atr$w_type = 0;
         pka_atr[pka_idx].atr$l_addr = 0; /* NULL when DECC VAX gets fixed. */
     }
-
-    nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
-    outfab->FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
 
     /* Point the FAB-NAM[L] to the VMS-format directory file name. */
 
@@ -5209,7 +5208,7 @@ void version(__G)
 #  if defined(__alpha)
       "OpenVMS",
       (sprintf(buf, " (%s Alpha)", vms_vers), buf),
-#  elif defined(__IA64)
+#  elif defined(__ia64)
       "OpenVMS",
       (sprintf(buf, " (%s IA64)", vms_vers), buf),
 #  else /* VAX */

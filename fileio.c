@@ -168,6 +168,8 @@ static ZCONST char Far CannotOpenZipfile[] =
 static ZCONST char Far ReadError[] = "error:  zipfile read error\n";
 static ZCONST char Far FilenameTooLongTrunc[] =
   "warning:  filename too long--truncating.\n";
+static ZCONST char Far UFilenameTooLongTrunc[] =
+  "warning:  Converted unicode filename too long--truncating.\n";
 static ZCONST char Far ExtraFieldTooLong[] =
   "warning:  extra field too long (%d).  Ignoring...\n";
 
@@ -379,10 +381,22 @@ int open_outfile(__G)         /* return 1 if fail */
             /* Give the file read/write permission (non-POSIX shortcut) */
             chmod(G.filename, 0);
 #endif /* NLM */
-            if (unlink(G.filename) != 0) {
-                Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotDeleteOldFile), FnFilter1(G.filename)));
-                return 1;
+#if defined(UNICODE_SUPPORT) && defined(WIN32)
+            if (G.has_win32_wide) {
+              if (_wunlink(G.unipath_widefilename) != 0) {
+                  Info(slide, 0x401, ((char *)slide,
+                    LoadFarString(CannotDeleteOldFile), FnFilter1(G.filename)));
+                  return 1;
+              }
+            }
+            else
+#endif
+            {
+              if (unlink(G.filename) != 0) {
+                  Info(slide, 0x401, ((char *)slide,
+                    LoadFarString(CannotDeleteOldFile), FnFilter1(G.filename)));
+                  return 1;
+              }
             }
             Trace((stderr, "open_outfile:  %s now deleted\n",
               FnFilter1(G.filename)));
@@ -2427,6 +2441,27 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
     case DS_FN:
     case DS_FN_L:
+#ifdef UNICODE_SUPPORT
+        /* get the whole filename as need it for Unicode checksum */
+        G.filename_full = malloc(length + 1);
+        if (G.filename_full == NULL)
+            return PK_MEM;
+        if (readbuf(__G__ G.filename_full, length) == 0)
+            return PK_EOF;
+        G.filename_full[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+        
+        /* if needed, chop off end so standard filename is a valid length */
+        if (length >= FILNAMSIZ) {
+            Info(slide, 0x401, ((char *)slide,
+              LoadFarString(FilenameTooLongTrunc)));
+            error = PK_WARN;
+            length = FILNAMSIZ - 1;
+        }
+        /* no excess size */
+        block_len = 0;
+        strncpy(G.filename, G.filename_full, length);
+        G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+#else
         if (length >= FILNAMSIZ) {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(FilenameTooLongTrunc)));
@@ -2440,6 +2475,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         if (readbuf(__G__ G.filename, length) == 0)
             return PK_EOF;
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+#endif
 
         /* translate the Zip entry filename coded in host-dependent "extended
            ASCII" into the compiler's (system's) internal text code page */
@@ -2502,18 +2538,34 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 #ifdef UNICODE_SUPPORT
             G.unipath_filename = NULL;
             if (!G.UzO.U_flag) {
-              /* Get the Unicode fields if exist */
-              getUnicodeData(__G__ G.extra_field, length);
-              if (G.unipath_filename) {
+              /* check if GPB11 (General Purpuse Bit 11) is set indicating
+                 the standard path and comment are UTF-8 */
+              if (G.crec.general_purpose_bit_flag & (1 << 11)) {
+                /* if GPB11 set then filename_full is untruncated UTF-8 */
+                G.unipath_filename = G.filename_full;
+                /* get legal local string from unicode path */
+                G.filename_full = utf8_to_local_string(G.unipath_filename);
+                /* copy to filename, truncating if needed */
+                strncpy(G.filename, G.filename_full, FILNAMSIZ - 1);
+                G.filename[FILNAMSIZ - 1] = '\0';
+              } else {
+                /* Get the Unicode fields if exist */
+                getUnicodeData(__G__ G.extra_field, length);
+                if (G.unipath_filename) {
                   char *fn;
                   /* convert UTF-8 to local character set */
                   fn = utf8_to_local_string(G.unipath_filename);
                   /* make sure filename is short enough */
-                  if (strlen(fn) >= FILNAMSIZ)
+                  if (strlen(fn) >= FILNAMSIZ) {
                     fn[FILNAMSIZ - 1] = '\0';
+                    Info(slide, 0x401, ((char *)slide,
+                      LoadFarString(UFilenameTooLongTrunc)));
+                    error = PK_WARN;
+                  }
                   /* replace filename with converted UTF-8 */
                   strcpy(G.filename, fn);
                   free(fn);
+                }
               }
 # ifdef WIN32
               G.unipath_widefilename = NULL;
@@ -2533,9 +2585,9 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                         p[-1] = *p;  /* disk label, and 8th char is dot:  remove dot */
                 }
               }
+# endif /* def WIN32 */
             }
-# endif
-#endif
+#endif /* def UNICODE_SUPPORT */
         }
         break;
 
