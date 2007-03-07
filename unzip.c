@@ -1,8 +1,8 @@
 /*
   Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
-  (the contents of which are also included in unzip.h) for terms of use.
+  See the accompanying file LICENSE, version 2007-Mar-4 or later
+  (the contents of which are also included in zip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
@@ -23,8 +23,8 @@
   the many (near infinite) contributors, see "CONTRIBS" in the UnZip source
   distribution.
 
-  UnZip 6.0 adds support for archives larger than 2 GB using the Zip64
-  extentions.
+  UnZip 6.0 adds support for archives larger than 4 GB using the Zip64
+  extensions.
 
   ---------------------------------------------------------------------------
 
@@ -492,9 +492,9 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
      static ZCONST char Far UseZlib[] =
      "USE_ZLIB (compiled with version %s; using version %s)";
 #  endif
-#  ifdef BZIP2_SUPPORT
+#  ifdef USE_BZIP2
      static ZCONST char Far UseBZip2[] =
-     "BZIP2_SUPPORT (PKZIP 4.6+, bzip2 library version %s)";
+     "USE_BZIP2 (PKZIP 4.6+, using bzip2 lib version %s)";
 #  endif
 #  ifdef VMS_TEXT_CONV
      static ZCONST char Far VmsTextConv[] = "VMS_TEXT_CONV";
@@ -699,6 +699,10 @@ int unzip(__G__ argc, argv)
     {
       char *loc = setlocale(LC_CTYPE, "en_GB.UTF-8");
 
+      if (strcmp(loc, "en_GB.UTF-8") == 0) {
+        /* Successfully set UTF-8 */
+      }
+
 #  if 0 /* That code from Zip does not fit into the UnZip environment */
       printf("langinfo %s\n", nl_langinfo(CODESET));
 
@@ -841,7 +845,8 @@ int unzip(__G__ argc, argv)
         Claus.
   ---------------------------------------------------------------------------*/
 
-#ifdef DEBUG
+/* #ifdef DEBUG */
+/* Keep? */
 # ifdef LARGE_FILE_SUPPORT
   /* test if we can support large files - 10/6/04 EG */
     if (sizeof(zoff_t) < 8) {
@@ -878,7 +883,7 @@ int unzip(__G__ argc, argv)
     */
     {
         int test_char;
-        uch test_buf[ 2] = { 'a', 'b' };
+        static uch test_buf[ 2] = { 'a', 'b' };
 
         G.inptr = test_buf;
         G.incnt = 1;
@@ -897,7 +902,7 @@ int unzip(__G__ argc, argv)
             goto cleanup_and_exit;
         }
     }
-#endif /* DEBUG */
+/* #endif */ /* DEBUG */
 
 /*---------------------------------------------------------------------------
     First figure out if we're running in UnZip mode or ZipInfo mode, and put
@@ -1155,6 +1160,12 @@ int unzip(__G__ argc, argv)
     if (uO.exdir != (char *)NULL && !G.extract_flag)    /* -d ignored */
         Info(slide, 0x401, ((char *)slide, LoadFarString(NotExtracting)));
 #endif /* ?(SFX && !SFX_EXDIR) */
+
+#if defined(UNICODE_SUPPORT) && defined(WIN32)
+  /* check if this Win32 OS has support for wide character calls */
+    G.has_win32_wide = has_win32_wide();
+#endif
+
 
 /*---------------------------------------------------------------------------
     Okey dokey, we have everything we need to get started.  Let's roll.
@@ -1595,6 +1606,14 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.uflag = TRUE;
                     break;
+#ifdef UNICODE_SUPPORT
+                case ('U'):    /* obsolete; to be removed in version 6.0 */
+                    if (negative)
+                        uO.U_flag = TRUE, negative = 0;
+                    else
+                        uO.U_flag = FALSE;
+                    break;
+#else
 #ifndef CMS_MVS
                 case ('U'):    /* obsolete; to be removed in version 6.0 */
                     if (negative)
@@ -1603,6 +1622,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.L_flag = FALSE;
                     break;
 #endif /* !CMS_MVS */
+#endif
 #ifndef SFX
                 case ('v'):    /* verbose */
                     if (negative) {
@@ -2143,7 +2163,7 @@ static void show_version_info(__G)
           (char *)(slide+256)));
         ++numopts;
 #endif
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
         sprintf((char *)(slide+256), LoadFarStringSmall(UseBZip2),
           BZ2_bzlibVersion());
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
