@@ -1,4 +1,4 @@
-$!                                              24 May 2005.  SMS.
+$!                                              1 December 2006.  SMS.
 $!
 $! Info-ZIP VMS accessory procedure.
 $!
@@ -14,8 +14,8 @@ $! immediate evaluation of a macro invocation.
 $!
 $ prefix = f$edit( p4, "COLLAPSE")
 $!
-$ dev_lose = f$parse( p5, , , "DEVICE", "SYNTAX_ONLY")
-$ dir_lose = f$parse( p5, , , "DIRECTORY", "SYNTAX_ONLY")
+$ dev_lose = f$edit( f$parse( p5, , , "DEVICE", "SYNTAX_ONLY"), "UPCASE")
+$ dir_lose = f$edit( f$parse( p5, , , "DIRECTORY", "SYNTAX_ONLY"), "UPCASE")
 $ suffix = ".VMS]"
 $ suffix_loc = f$locate( suffix, dir_lose)
 $ if (suffix_loc .lt f$length( dir_lose))
@@ -63,7 +63,7 @@ $!
 $    open /read /error = end_subs deps_in 'file'
 $    loop_subs_top:
 $       read /error = loop_subs_end deps_in line
-$       line_reduced = f$edit( line, "COMPRESS, TRIM")
+$       line_reduced = f$edit( line, "COMPRESS, TRIM, UPCASE")
 $       colon = f$locate( " : ", line_reduced)
 $       d_d_l_loc = f$locate( dev_dir_lose, -
          f$extract( (colon+ 3), 1000, line_reduced))

@@ -1,4 +1,4 @@
-#                                               17 November 2005.  SMS.
+#                                               4 March 2007.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -14,7 +14,7 @@
 #    IZ_BZIP2=dev:[dir]  Build with optional BZIP2 support.  The macro
 #                        value ("dev:[dir]", or a suitable logical name)
 #                   tells where to find "bzlib.h".  The BZIP2 object
-#                   library (LIBBZ2.OLB) is expected to be in a
+#                   library (LIBBZ2_NS.OLB) is expected to be in a
 #                   "[.dest]" directory under that one
 #                   ("dev:[dir.ALPHAL]", for example), or in that
 #                   directory itself.
@@ -101,18 +101,18 @@
 # Include primary product description file.
 
 INCL_DESCRIP_SRC = 1
-.INCLUDE [.vms]descrip_src.mms
+.INCLUDE [.VMS]DESCRIP_SRC.MMS
 
 # Object library names.
 
-LIB_UNZIP = [.$(DEST)]unzip.olb
-LIB_UNZIP_CLI = [.$(DEST)]unzipcli.olb
-LIB_UNZIPSFX = [.$(DEST)]unzipsfx.olb
-LIB_UNZIPSFX_CLI = [.$(DEST)]unzsxcli.olb
+LIB_UNZIP = [.$(DEST)]UNZIP.OLB
+LIB_UNZIP_CLI = [.$(DEST)]UNZIPCLI.OLB
+LIB_UNZIPSFX = [.$(DEST)]UNZIPSFX.OLB
+LIB_UNZIPSFX_CLI = [.$(DEST)]UNZSXCLI.OLB
 
 # Help file names.
 
-UNZIP_HELP = unzip.hlp unzip_cli.hlp
+UNZIP_HELP = UNZIP.HLP UNZIP_CLI.HLP
 
 
 # TARGETS.
@@ -159,16 +159,16 @@ CLEAN_ALL :
 	 set protection = w:d VAX*.dir;*
 	if (f$search( "VAX*.dir", 2) .nes. "") then -
 	 delete VAX*.dir;*
-	if (f$search( "[.vms]ZIP_CLI.RNH") .nes. "") then -
-	 delete [.vms]ZIP_CLI.RNH;*
+	if (f$search( "[.VMS]ZIP_CLI.RNH") .nes. "") then -
+	 delete [.VMS]ZIP_CLI.RNH;*
 	if (f$search( "ZIP_CLI.HLP") .nes. "") then -
 	 delete ZIP_CLI.HLP;*
 	if (f$search( "ZIP.HLP") .nes. "") then -
 	 delete ZIP.HLP;*
 	if (f$search( "*.MMSD") .nes. "") then -
 	 delete *.MMSD;*
-	if (f$search( "[.vms]*.MMSD") .nes. "") then -
-	 delete [.vms]*.MMSD;*
+	if (f$search( "[.VMS]*.MMSD") .nes. "") then -
+	 delete [.VMS]*.MMSD;*
 	@ write sys$output ""
 	@ write sys$output "Note:  This procedure will not"
 	@ write sys$output "   DELETE [.VMS]DESCRIP_DEPS.MMS;*"
@@ -185,8 +185,8 @@ CLEAN_ALL :
 # CLEAN_EXE target.  Delete the executables in [.$(DEST)].
 
 CLEAN_EXE :
-        if (f$search( "[.$(DEST)]*.exe") .nes. "") then -
-         delete [.$(DEST)]*.exe;*
+        if (f$search( "[.$(DEST)]*.EXE") .nes. "") then -
+         delete [.$(DEST)]*.EXE;*
 
 
 # Object library module dependencies.
@@ -206,8 +206,8 @@ $(LIB_UNZIPSFX_CLI) : $(LIB_UNZIPSFX_CLI)($(MODS_OBJS_LIB_UNZIPSFX_CLI))
 
 # Module ID options files.
 
-OPT_ID = SYS$DISK:[.vms]unzip.opt
-OPT_ID_SFX = SYS$DISK:[.vms]unzipsfx.opt
+OPT_ID = SYS$DISK:[.VMS]UNZIP.OPT
+OPT_ID_SFX = SYS$DISK:[.VMS]UNZIPSFX.OPT
 
 # Default C compile rule.
 
@@ -217,62 +217,62 @@ OPT_ID_SFX = SYS$DISK:[.vms]unzipsfx.opt
 
 # Normal sources in [.VMS].
 
-[.$(DEST)]vms.obj : [.vms]vms.c
+[.$(DEST)]VMS.OBJ : [.VMS]VMS.C
 
 # Command-line interface files.
 
-[.$(DEST)]cmdline.obj : [.vms]cmdline.c
+[.$(DEST)]CMDLINE.OBJ : [.VMS]CMDLINE.C
 	$(CC) $(CFLAGS) $(CDEFS_CLI) $(MMS$SOURCE)
 
-[.$(DEST)]unzipcli.obj : unzip.c
+[.$(DEST)]UNZIPCLI.OBJ : UNZIP.C
 	$(CC) $(CFLAGS) $(CDEFS_CLI) $(MMS$SOURCE)
 
-[.$(DEST)]unz_cli.obj : [.vms]unz_cli.cld
+[.$(DEST)]UNZ_CLI.OBJ : [.VMS]UNZ_CLI.CLD
 
 # SFX variant sources.
 
-[.$(DEST)]crc32_.obj : crc32.c
+[.$(DEST)]CRC32_.OBJ : CRC32.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]crctab_.obj : crctab.c
+[.$(DEST)]CRYPT_.OBJ : CRYPT.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]crypt_.obj : crypt.c
+[.$(DEST)]EXTRACT_.OBJ : EXTRACT.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]extract_.obj : extract.c
+[.$(DEST)]FILEIO_.OBJ : FILEIO.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]fileio_.obj : fileio.c
+[.$(DEST)]GLOBALS_.OBJ : GLOBALS.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]globals_.obj : globals.c
+[.$(DEST)]INFLATE_.OBJ : INFLATE.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]inflate_.obj : inflate.c
+[.$(DEST)]MATCH_.OBJ : MATCH.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]match_.obj : match.c
+[.$(DEST)]PROCESS_.OBJ : PROCESS.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]process_.obj : process.c
+[.$(DEST)]TTYIO_.OBJ : TTYIO.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]ttyio_.obj : ttyio.c
+[.$(DEST)]UBZ2ERR_.OBJ : UBZ2ERR.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]vms_.obj : [.vms]vms.c
+[.$(DEST)]VMS_.OBJ : [.VMS]VMS.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
-[.$(DEST)]unzipsfx.obj : unzip.c
+[.$(DEST)]UNZIPSFX.OBJ : UNZIP.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
 # SFX CLI variant sources.
 
-[.$(DEST)]cmdline_.obj : [.vms]cmdline.c
+[.$(DEST)]CMDLINE_.OBJ : [.VMS]CMDLINE.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX_CLI) $(MMS$SOURCE)
 
-[.$(DEST)]unzsxcli.obj : unzip.c
+[.$(DEST)]UNZSXCLI.OBJ : UNZIP.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX_CLI) $(MMS$SOURCE)
 
 # VAX C LINK options file.
@@ -286,10 +286,10 @@ $(OPT_FILE) :
 
 # Normal UnZip executable.
 
-$(UNZIP) : [.$(DEST)]unzip.obj \
+$(UNZIP) : [.$(DEST)]UNZIP.OBJ \
            $(LIB_UNZIP) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
-	 $(LIB_UNZIP) /library, -
+	 $(LIB_UNZIP) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
@@ -297,10 +297,11 @@ $(UNZIP) : [.$(DEST)]unzip.obj \
 
 # CLI Zip executable.
 
-$(UNZIP_CLI) : [.$(DEST)]unzipcli.obj \
+$(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
                $(LIB_UNZIP_CLI) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
-	 $(LIB_UNZIP_CLI) /library, $(LIB_UNZIP) /library, -
+	 $(LIB_UNZIP_CLI) /library, -
+	 $(LIB_UNZIP) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
@@ -308,10 +309,10 @@ $(UNZIP_CLI) : [.$(DEST)]unzipcli.obj \
 
 # SFX UnZip executable.
 
-$(UNZIPSFX) : [.$(DEST)]unzipsfx.obj \
+$(UNZIPSFX) : [.$(DEST)]UNZIPSFX.OBJ \
               $(LIB_UNZIPSFX) $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
-	 $(LIB_UNZIPSFX) /library, -
+	 $(LIB_UNZIPSFX) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
@@ -319,11 +320,12 @@ $(UNZIPSFX) : [.$(DEST)]unzipsfx.obj \
 
 # SFX CLI UnZip executable.
 
-$(UNZIPSFX_CLI) : [.$(DEST)]unzsxcli.obj \
+$(UNZIPSFX_CLI) : [.$(DEST)]UNZSXCLI.OBJ \
                   $(LIB_UNZIPSFX_CLI) $(LIB_UNZIPSFX) \
                   $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
-	 $(LIB_UNZIPSFX_CLI) /library, $(LIB_UNZIPSFX) /library, -
+	 $(LIB_UNZIPSFX_CLI) /library, -
+	 $(LIB_UNZIPSFX) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
@@ -332,18 +334,18 @@ $(UNZIPSFX_CLI) : [.$(DEST)]unzsxcli.obj \
 
 # Help files.
 
-unzip.hlp : [.vms]unzip_def.rnh
+UNZIP.HLP : [.VMS]UNZIP_DEF.RNH
 	runoff /output = $(MMS$TARGET) $(MMS$SOURCE)
 
-unzip_cli.hlp : [.vms]unzip_cli.help [.vms]cvthelp.tpu
-	edit /tpu /nosection /nodisplay /command = [.vms]cvthelp.tpu -
+UNZIP_CLI.HLP : [.VMS]UNZIP_CLI.HELP [.VMS]CVTHELP.TPU
+	edit /tpu /nosection /nodisplay /command = [.VMS]CVTHELP.TPU -
 	 $(MMS$SOURCE)
-	rename unzip_cli.rnh [.vms]
-        purge /nolog /keep = 1 [.vms]unzip_cli.rnh
-	runoff /output = $(MMS$TARGET) [.vms]unzip_cli.rnh
+	rename UNZIP_CLI.RNH [.VMS]
+        purge /nolog /keep = 1 [.VMS]UNZIP_CLI.RNH
+	runoff /output = $(MMS$TARGET) [.VMS]UNZIP_CLI.RNH
 
 # Include generated source dependencies.
 
 INCL_DESCRIP_DEPS = 1
-.INCLUDE [.vms]descrip_deps.mms
+.INCLUDE [.VMS]DESCRIP_DEPS.MMS
 

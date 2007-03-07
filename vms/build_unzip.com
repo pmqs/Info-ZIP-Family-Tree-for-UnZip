@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX
 $!
-$!     Last revised:  2005-11-17  SMS.
+$!     Last revised:  2007-03-05  SMS.
 $!
 $!     Command args:
 $!     - suppress help file processing: "NOHELP"
@@ -10,8 +10,8 @@ $!     - select link-only: "LINK"
 $!     - select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
 $!       (or a suitable logical name) tells where to find "bzlib.h".
-$!       The BZIP2 object library (LIBBZ2.OLB) is expected to be in a
-$!       "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
+$!       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
+$!       a "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
 $!       example), or in that directory itself.
 $!       By default, the SFX programs are built without BZIP2 support.
 $!       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
@@ -99,10 +99,10 @@ $ delete /symbol /local len_local_unzip
 $!
 $!##################### Customizing section #############################
 $!
-$ unzx_unx = "unzip"
-$ unzx_cli = "unzip_cli"
-$ unzsfx_unx = "unzipsfx"
-$ unzsfx_cli = "unzipsfx_cli"
+$ unzx_unx = "UNZIP"
+$ unzx_cli = "UNZIP_CLI"
+$ unzsfx_unx = "UNZIPSFX"
+$ unzsfx_cli = "UNZIPSFX_CLI"
 $!
 $ CCOPTS = ""
 $ IZ_BZIP2 = ""
@@ -343,20 +343,23 @@ $! If BZIP2 support was selected, find the header file and object
 $! library.  Complain if things fail.
 $!
 $ lib_bzip2_opts = ""
+$ incl_bzip2_q = ""
 $ if (IZ_BZIP2 .nes. "")
 $ then
+$     bz2_olb = "LIBBZ2_NS.OLB"
+$     incl_bzip2_q = "/include = (UBZ2ERR)"
 $     if (.not. LINK_ONLY)
 $     then
 $         define incl_bzip2 'IZ_BZIP2'
 $     endif
 $!
-$     @ [.vms]find_bzip2_lib.com 'IZ_BZIP2' 'dest' lib_bzip2
+$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_BZIP2' 'dest' 'bz2_olb' lib_bzip2
 $     if (f$trnlnm( "lib_bzip2") .eqs. "")
 $     then
 $         say "Can't find BZIP2 object library.  Can't link."
 $         goto error
 $     else
-$         lib_bzip2_opts = "lib_bzip2:libbz2.olb /library,"
+$         lib_bzip2_opts = "lib_bzip2:''bz2_olb' /library,"
 $     endif
 $ endif
 $!
@@ -388,7 +391,7 @@ $     endif
 $!
 $! Define compiler command.
 $!
-$     cc = cc+ " /include = ([], [.vms])"+ LISTING+ CCOPTS
+$     cc = cc+ " /include = ([], [.VMS])"+ LISTING+ CCOPTS
 $!
 $ endif
 $!
@@ -400,9 +403,9 @@ $! Make a VAXCRTL options file for GNU C or VAC C, if needed.
 $!
 $ if ((opts .nes. "") .and. -
    (f$locate( "VAXCSHR", f$edit( opts, "UPCASE")) .lt. f$length( opts)) .and. -
-   (f$search( "[.''dest']vaxcshr.opt") .eqs. ""))
+   (f$search( "[.''dest']VAXCSHR.OPT") .eqs. ""))
 $ then
-$     open /write opt_file_ln [.'dest']vaxcshr.opt
+$     open /write opt_file_ln [.'dest']VAXCSHR.OPT
 $     write opt_file_ln "SYS$SHARE:VAXCRTL.EXE /SHARE"
 $     close opt_file_ln
 $ endif
@@ -441,64 +444,64 @@ $! Process the help file, if desired.
 $!
 $     if (MAKE_HELP)
 $     then
-$         runoff /out = unzip.hlp [.vms]unzip_def.rnh
+$         runoff /out = UNZIP.HLP [.VMS]UNZIP_DEF.RNH
 $     endif
 $!
 $! Compile the sources.
 $!
-$     cc 'DEF_UNX' /object = [.'dest']unzip.obj unzip.c
-$     cc 'DEF_UNX' /object = [.'dest']crc32.obj crc32.c
-$     cc 'DEF_UNX' /object = [.'dest']crctab.obj crctab.c
-$     cc 'DEF_UNX' /object = [.'dest']crypt.obj crypt.c
-$     cc 'DEF_UNX' /object = [.'dest']envargs.obj envargs.c
-$     cc 'DEF_UNX' /object = [.'dest']explode.obj explode.c
-$     cc 'DEF_UNX' /object = [.'dest']extract.obj extract.c
-$     cc 'DEF_UNX' /object = [.'dest']fileio.obj fileio.c
-$     cc 'DEF_UNX' /object = [.'dest']globals.obj globals.c
-$     cc 'DEF_UNX' /object = [.'dest']inflate.obj inflate.c
-$     cc 'DEF_UNX' /object = [.'dest']list.obj list.c
-$     cc 'DEF_UNX' /object = [.'dest']match.obj match.c
-$     cc 'DEF_UNX' /object = [.'dest']process.obj process.c
-$     cc 'DEF_UNX' /object = [.'dest']ttyio.obj ttyio.c
-$     cc 'DEF_UNX' /object = [.'dest']unreduce.obj unreduce.c
-$     cc 'DEF_UNX' /object = [.'dest']unshrink.obj unshrink.c
-$     cc 'DEF_UNX' /object = [.'dest']zipinfo.obj zipinfo.c
-$     cc 'DEF_UNX' /object = [.'dest']vms.obj [.vms]vms.c
+$     cc 'DEF_UNX' /object = [.'dest']UNZIP.OBJ UNZIP.C
+$     cc 'DEF_UNX' /object = [.'dest']CRC32.OBJ CRC32.C
+$     cc 'DEF_UNX' /object = [.'dest']CRYPT.OBJ CRYPT.C
+$     cc 'DEF_UNX' /object = [.'dest']ENVARGS.OBJ ENVARGS.C
+$     cc 'DEF_UNX' /object = [.'dest']EXPLODE.OBJ EXPLODE.C
+$     cc 'DEF_UNX' /object = [.'dest']EXTRACT.OBJ EXTRACT.C
+$     cc 'DEF_UNX' /object = [.'dest']FILEIO.OBJ FILEIO.C
+$     cc 'DEF_UNX' /object = [.'dest']GLOBALS.OBJ GLOBALS.C
+$     cc 'DEF_UNX' /object = [.'dest']INFLATE.OBJ INFLATE.C
+$     cc 'DEF_UNX' /object = [.'dest']LIST.OBJ LIST.C
+$     cc 'DEF_UNX' /object = [.'dest']MATCH.OBJ MATCH.C
+$     cc 'DEF_UNX' /object = [.'dest']PROCESS.OBJ PROCESS.C
+$     cc 'DEF_UNX' /object = [.'dest']TTYIO.OBJ TTYIO.C
+$     cc 'DEF_UNX' /object = [.'dest']UBZ2ERR.OBJ UBZ2ERR.C
+$     cc 'DEF_UNX' /object = [.'dest']UNREDUCE.OBJ UNREDUCE.C
+$     cc 'DEF_UNX' /object = [.'dest']UNSHRINK.OBJ UNSHRINK.C
+$     cc 'DEF_UNX' /object = [.'dest']ZIPINFO.OBJ ZIPINFO.C
+$     cc 'DEF_UNX' /object = [.'dest']VMS.OBJ [.VMS]VMS.C
 $!
 $! Create the object library.
 $!
-$     if (f$search( "[.''dest']unzip.olb") .eqs. "") then -
-       libr /object /create [.'dest']unzip.olb
+$     if (f$search( "[.''dest']UNZIP.OLB") .eqs. "") then -
+       libr /object /create [.'dest']UNZIP.OLB
 $!
-$     libr /object /replace [.'dest']unzip.olb -
-       [.'dest']crc32.obj, -
-       [.'dest']crctab.obj, -
-       [.'dest']crypt.obj, -
-       [.'dest']envargs.obj, -
-       [.'dest']explode.obj, -
-       [.'dest']extract.obj, -
-       [.'dest']fileio.obj, -
-       [.'dest']globals.obj, -
-       [.'dest']inflate.obj, -
-       [.'dest']list.obj, -
-       [.'dest']match.obj, -
-       [.'dest']process.obj, -
-       [.'dest']ttyio.obj, -
-       [.'dest']unreduce.obj, -
-       [.'dest']unshrink.obj, -
-       [.'dest']zipinfo.obj, -
-       [.'dest']vms.obj
+$     libr /object /replace [.'dest']UNZIP.OLB -
+       [.'dest']CRC32.OBJ, -
+       [.'dest']CRYPT.OBJ, -
+       [.'dest']ENVARGS.OBJ, -
+       [.'dest']EXPLODE.OBJ, -
+       [.'dest']EXTRACT.OBJ, -
+       [.'dest']FILEIO.OBJ, -
+       [.'dest']GLOBALS.OBJ, -
+       [.'dest']INFLATE.OBJ, -
+       [.'dest']LIST.OBJ, -
+       [.'dest']MATCH.OBJ, -
+       [.'dest']PROCESS.OBJ, -
+       [.'dest']TTYIO.OBJ, -
+       [.'dest']UBZ2ERR.OBJ, -
+       [.'dest']UNREDUCE.OBJ, -
+       [.'dest']UNSHRINK.OBJ, -
+       [.'dest']ZIPINFO.OBJ, -
+       [.'dest']VMS.OBJ
 $!
 $ endif
 $!
 $! Link the executable.
 $!
-$ link /executable = [.'dest']'unzx_unx'.exe -
-   [.'dest']unzip.obj, -
-   [.'dest']unzip.olb /library, -
+$ link /executable = [.'dest']'unzx_unx'.EXE -
+   [.'dest']UNZIP.OBJ, -
+   [.'dest']UNZIP.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
    'opts' -
-   [.VMS]unzip.opt /options
+   SYS$DISK:[.VMS]UNZIP.OPT /options
 $!
 $!----------------------- UnZip (CLI interface) section ----------------------
 $!
@@ -509,43 +512,43 @@ $! Process the CLI help file, if desired.
 $!
 $     if (MAKE_HELP)
 $     then
-$         set default [.vms]
-$         edit /tpu /nosection /nodisplay /command = cvthelp.tpu -
-           unzip_cli.help
+$         set default [.VMS]
+$         edit /tpu /nosection /nodisplay /command = CVTHELP.TPU -
+           UNZIP_CLI.HELP
 $         set default [-]
-$         runoff /output = unzip_cli.hlp [.vms]unzip_cli.rnh
+$         runoff /output = UNZIP_CLI.HLP [.VMS]UNZIP_CLI.RNH
 $     endif
 $!
 $! Compile the CLI sources.
 $!
-$     cc 'DEF_CLI' /object = [.'dest']unzipcli.obj unzip.c
-$     cc 'DEF_CLI' /object = [.'dest']cmdline.obj -
-       [.vms]cmdline.c
+$     cc 'DEF_CLI' /object = [.'dest']UNZIPCLI.OBJ UNZIP.C
+$     cc 'DEF_CLI' /object = [.'dest']CMDLINE.OBJ -
+       [.VMS]CMDLINE.C
 $!
 $! Create the command definition object file.
 $!
-$     set command /object = [.'dest']unz_cli.obj [.vms]unz_cli.cld
+$     set command /object = [.'dest']UNZ_CLI.OBJ [.VMS]UNZ_CLI.CLD
 $!
 $! Create the CLI object library.
 $!
-$     if (f$search( "[.''dest']unzipcli.olb") .eqs. "") then -
-       libr /object /create [.'dest']unzipcli.olb
+$     if (f$search( "[.''dest']UNZIPCLI.OLB") .eqs. "") then -
+       libr /object /create [.'dest']UNZIPCLI.OLB
 $!
-$     libr /object /replace [.'dest']unzipcli.olb -
-       [.'dest']cmdline.obj, -
-       [.'dest']unz_cli.obj
+$     libr /object /replace [.'dest']UNZIPCLI.OLB -
+       [.'dest']CMDLINE.OBJ, -
+       [.'dest']UNZ_CLI.OBJ
 $!
 $ endif
 $!
 $! Link the CLI executable.
 $!
-$ link /executable = [.'dest']'unzx_cli'.exe -
-   [.'dest']unzipcli.obj, -
-   [.'dest']unzipcli.olb /library, -
-   [.'dest']unzip.olb /library, -
+$ link /executable = [.'dest']'unzx_cli'.EXE -
+   [.'dest']UNZIPCLI.OBJ, -
+   [.'dest']UNZIPCLI.OLB /library, -
+   [.'dest']UNZIP.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
    'opts' -
-   [.VMS]unzip.opt /options
+   SYS$DISK:[.VMS]UNZIP.OPT /options
 $!
 $!-------------------------- UnZipSFX section --------------------------------
 $!
@@ -554,47 +557,47 @@ $ then
 $!
 $! Compile the variant SFX sources.
 $!
-$     cc 'DEF_SXUNX' /object = [.'dest']unzipsfx.obj unzip.c
-$     cc 'DEF_SXUNX' /object = [.'dest']crc32_.obj crc32.c
-$     cc 'DEF_SXUNX' /object = [.'dest']crctab_.obj crctab.c
-$     cc 'DEF_SXUNX' /object = [.'dest']crypt_.obj crypt.c
-$     cc 'DEF_SXUNX' /object = [.'dest']extract_.obj extract.c
-$     cc 'DEF_SXUNX' /object = [.'dest']fileio_.obj fileio.c
-$     cc 'DEF_SXUNX' /object = [.'dest']globals_.obj globals.c
-$     cc 'DEF_SXUNX' /object = [.'dest']inflate_.obj inflate.c
-$     cc 'DEF_SXUNX' /object = [.'dest']match_.obj match.c
-$     cc 'DEF_SXUNX' /object = [.'dest']process_.obj process.c
-$     cc 'DEF_SXUNX' /object = [.'dest']ttyio_.obj ttyio.c
-$     cc 'DEF_SXUNX' /object = [.'dest']vms_.obj [.vms]vms.c
+$     cc 'DEF_SXUNX' /object = [.'dest']UNZIPSFX.OBJ UNZIP.C
+$     cc 'DEF_SXUNX' /object = [.'dest']CRC32_.OBJ CRC32.C
+$     cc 'DEF_SXUNX' /object = [.'dest']CRYPT_.OBJ CRYPT.C
+$     cc 'DEF_SXUNX' /object = [.'dest']EXTRACT_.OBJ EXTRACT.C
+$     cc 'DEF_SXUNX' /object = [.'dest']FILEIO_.OBJ FILEIO.C
+$     cc 'DEF_SXUNX' /object = [.'dest']GLOBALS_.OBJ GLOBALS.C
+$     cc 'DEF_SXUNX' /object = [.'dest']INFLATE_.OBJ INFLATE.C
+$     cc 'DEF_SXUNX' /object = [.'dest']MATCH_.OBJ MATCH.C
+$     cc 'DEF_SXUNX' /object = [.'dest']PROCESS_.OBJ PROCESS.C
+$     cc 'DEF_SXUNX' /object = [.'dest']TTYIO_.OBJ TTYIO.C
+$     cc 'DEF_SXUNX' /object = [.'dest']UBZ2ERR_.OBJ UBZ2ERR.C
+$     cc 'DEF_SXUNX' /object = [.'dest']VMS_.OBJ [.VMS]VMS.C
 $!
 $! Create the SFX object library.
 $!
-$     if f$search( "[.''dest']unzipsfx.olb") .eqs. "" then -
-       libr /object /create [.'dest']unzipsfx.olb
+$     if f$search( "[.''dest']UNZIPSFX.OLB") .eqs. "" then -
+       libr /object /create [.'dest']UNZIPSFX.OLB
 $!
-$     libr /object /replace [.'dest']unzipsfx.olb -
-       [.'dest']crc32_.obj, -
-       [.'dest']crctab_.obj, -
-       [.'dest']crypt_.obj, -
-       [.'dest']extract_.obj, -
-       [.'dest']fileio_.obj, -
-       [.'dest']globals_.obj, -
-       [.'dest']inflate_.obj, -
-       [.'dest']match_.obj, -
-       [.'dest']process_.obj, -
-       [.'dest']ttyio_.obj, -
-       [.'dest']vms_.obj
+$     libr /object /replace [.'dest']UNZIPSFX.OLB -
+       [.'dest']CRC32_.OBJ, -
+       [.'dest']CRYPT_.OBJ, -
+       [.'dest']EXTRACT_.OBJ, -
+       [.'dest']FILEIO_.OBJ, -
+       [.'dest']GLOBALS_.OBJ, -
+       [.'dest']INFLATE_.OBJ, -
+       [.'dest']MATCH_.OBJ, -
+       [.'dest']PROCESS_.OBJ, -
+       [.'dest']TTYIO_.OBJ, -
+       [.'dest']UBZ2ERR_.OBJ, -
+       [.'dest']VMS_.OBJ
 $!
 $ endif
 $!
 $! Link the SFX executable.
 $!
-$ link /executable = [.'dest']'unzsfx_unx'.exe -
-   [.'dest']unzipsfx.obj, -
-   [.'dest']unzipsfx.olb /library, -
+$ link /executable = [.'dest']'unzsfx_unx'.EXE -
+   [.'dest']UNZIPSFX.OBJ, -
+   [.'dest']UNZIPSFX.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
    'opts' -
-   [.VMS]unzipsfx.opt /options
+   SYS$DISK:[.VMS]UNZIPSFX.OPT /options
 $!
 $!--------------------- UnZipSFX (CLI interface) section ---------------------
 $!
@@ -603,30 +606,30 @@ $ then
 $!
 $! Compile the SFX CLI sources.
 $!
-$     cc 'DEF_SXCLI' /object = [.'dest']unzsxcli.obj unzip.c
-$     cc 'DEF_SXCLI' /object = [.'dest']cmdline_.obj -
-       [.vms]cmdline.c
+$     cc 'DEF_SXCLI' /object = [.'dest']UNZSXCLI.OBJ UNZIP.C
+$     cc 'DEF_SXCLI' /object = [.'dest']CMDLINE_.OBJ -
+       [.VMS]CMDLINE.C
 $!
 $! Create the SFX CLI object library.
 $!
-$     if (f$search( "[.''dest']unzsxcli.olb") .eqs. "") then -
-       libr /object /create [.'dest']unzsxcli.olb
+$     if (f$search( "[.''dest']UNZSXCLI.OLB") .eqs. "") then -
+       libr /object /create [.'dest']UNZSXCLI.OLB
 $!
-$     libr /object /replace [.'dest']unzsxcli.olb -
-       [.'dest']cmdline_.obj, -
-       [.'dest']unz_cli.obj
+$     libr /object /replace [.'dest']UNZSXCLI.OLB -
+       [.'dest']CMDLINE_.OBJ, -
+       [.'dest']UNZ_CLI.OBJ
 $!
 $ endif
 $!
 $! Link the SFX CLI executable.
 $!
-$ link /executable = [.'dest']'unzsfx_cli'.exe -
-   [.'dest']unzsxcli.obj, -
-   [.'dest']unzsxcli.olb /library, -
-   [.'dest']unzipsfx.olb /library, -
+$ link /executable = [.'dest']'unzsfx_cli'.EXE -
+   [.'dest']UNZSXCLI.OBJ, -
+   [.'dest']UNZSXCLI.OLB /library, -
+   [.'dest']UNZIPSFX.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
    'opts' -
-   [.VMS]unzipsfx.opt /options
+   SYS$DISK:[.VMS]UNZIPSFX.OPT /options
 $!
 $!----------------------------- Symbols section ------------------------------
 $!
@@ -635,8 +638,8 @@ $!
 $! Define the foreign command symbols.  Similar commands may be useful
 $! in SYS$MANAGER:SYLOGIN.COM and/or users' LOGIN.COM.
 $!
-$ unzip   == "$''there'''UNZEXEC'.exe"
-$ zipinfo == "$''there'''UNZEXEC'.exe ""-Z"""
+$ unzip   == "$''there'''unzexec'.EXE"
+$ zipinfo == "$''there'''unzexec'.EXE ""-Z"""
 $!
 $! Restore the original default directory, deassign the temporary
 $! logical names, and restore the DCL verify status.

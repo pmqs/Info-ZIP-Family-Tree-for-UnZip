@@ -1,4 +1,4 @@
-#                                               17 November 2005.  SMS.
+#                                               5 March 2007.  SMS.
 #
 #    Zip 3.0 for VMS - MMS (or MMK) Source Description File.
 #
@@ -149,11 +149,14 @@ NON_VAX_CMPL = 1
 	I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 .ELSE                                       # LARGE_VAX
 .IFDEF IZ_BZIP2                                 # IZ_BZIP2
+BZ2_OLB = LIBBZ2_NS.OLB
+INCL_BZIP2_M = , UBZ2ERR
+INCL_BZIP2_Q = /include = (UBZ2ERR)
 .FIRST
 	@ write sys$output "   Destination: [.$(DEST)]"
 	@ write sys$output ""
 	@ define incl_bzip2 $(IZ_BZIP2)
-	@ @[.vms]find_bzip2_lib.com $(IZ_BZIP2) $(DEST) lib_bzip2
+	@ @[.VMS]FIND_BZIP2_LIB.COM $(IZ_BZIP2) $(DEST) $(BZ2_OLB) lib_bzip2
 	@ if (f$trnlnm( "lib_bzip2") .nes. "") then -
 	   write sys$output "   BZIP2 dir: ''f$trnlnm( "lib_bzip2")'"
 	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
@@ -180,7 +183,7 @@ NON_VAX_CMPL = 1
 .IFDEF IZ_BZIP2                            # IZ_BZIP2
 CDEFS_BZIP2 = , USE_BZIP2
 CFLAGS_INCL = /include = ([], [.VMS])
-LIB_BZIP2_OPTS = lib_bzip2:libbz2.olb /library,
+LIB_BZIP2_OPTS = lib_bzip2:$(BZ2_OLB) /library,
 .ELSE                                   # IZ_BZIP2
 CDEFS_BZIP2 =
 CFLAGS_INCL = /include = []
@@ -247,7 +250,7 @@ CFLAGS_ARCH =
 OPT_FILE =
 LFLAGS_ARCH =
 .ELSE                                       # NOSHARE
-OPT_FILE = [.$(DEST)]vaxcshr.opt
+OPT_FILE = [.$(DEST)]VAXCSHR.OPT
 LFLAGS_ARCH = $(OPT_FILE) /options,
 .ENDIF                                      # NOSHARE
 .ELSE                                   # VAXC_OR_FORCE_VAXC
@@ -257,7 +260,7 @@ LFLAGS_GNU = GNU_CC:[000000]GCCLIB.OLB /LIBRARY
 OPT_FILE =
 LFLAGS_ARCH = $(LFLAGS_GNU),
 .ELSE                                           # NOSHARE
-OPT_FILE = [.$(DEST)]vaxcshr.opt
+OPT_FILE = [.$(DEST)]VAXCSHR.OPT
 LFLAGS_ARCH = $(LFLAGS_GNU), SYS$DISK:$(OPT_FILE) /options,
 .ENDIF                                          # NOSHARE
 .ELSE                                       # GNUC
@@ -331,37 +334,37 @@ LINKFLAGS = \
 #    Primary object library, [].
 
 MODS_OBJS_LIB_UNZIP_N = \
- crc32=[.$(DEST)]crc32.obj \
- crctab=[.$(DEST)]crctab.obj \
- crypt=[.$(DEST)]crypt.obj \
- envargs=[.$(DEST)]envargs.obj \
- explode=[.$(DEST)]explode.obj \
- extract=[.$(DEST)]extract.obj \
- fileio=[.$(DEST)]fileio.obj \
- globals=[.$(DEST)]globals.obj \
- inflate=[.$(DEST)]inflate.obj \
- list=[.$(DEST)]list.obj \
- match=[.$(DEST)]match.obj \
- process=[.$(DEST)]process.obj \
- ttyio=[.$(DEST)]ttyio.obj \
- unreduce=[.$(DEST)]unreduce.obj \
- unshrink=[.$(DEST)]unshrink.obj \
- zipinfo=[.$(DEST)]zipinfo.obj
+ CRC32=[.$(DEST)]CRC32.OBJ \
+ CRYPT=[.$(DEST)]CRYPT.OBJ \
+ ENVARGS=[.$(DEST)]ENVARGS.OBJ \
+ EXPLODE=[.$(DEST)]EXPLODE.OBJ \
+ EXTRACT=[.$(DEST)]EXTRACT.OBJ \
+ FILEIO=[.$(DEST)]FILEIO.OBJ \
+ GLOBALS=[.$(DEST)]GLOBALS.OBJ \
+ INFLATE=[.$(DEST)]INFLATE.OBJ \
+ LIST=[.$(DEST)]LIST.OBJ \
+ MATCH=[.$(DEST)]MATCH.OBJ \
+ PROCESS=[.$(DEST)]PROCESS.OBJ \
+ TTYIO=[.$(DEST)]TTYIO.OBJ \
+ UBZ2ERR=[.$(DEST)]UBZ2ERR.OBJ \
+ UNREDUCE=[.$(DEST)]UNREDUCE.OBJ \
+ UNSHRINK=[.$(DEST)]UNSHRINK.OBJ \
+ ZIPINFO=[.$(DEST)]ZIPINFO.OBJ
 
-#    Primary object library, [.vms].
+#    Primary object library, [.VMS].
 
 MODS_OBJS_LIB_UNZIP_V = \
- vms=[.$(DEST)]vms.obj
+ VMS=[.$(DEST)]VMS.OBJ
 
 MODS_OBJS_LIB_UNZIP = $(MODS_OBJS_LIB_UNZIP_N) $(MODS_OBJS_LIB_UNZIP_V)
 
-#    CLI object library, [.vms].
+#    CLI object library, [.VMS].
 
 MODS_OBJS_LIB_UNZIPCLI_C_V = \
- CMDLINE=[.$(DEST)]cmdline.obj
+ CMDLINE=[.$(DEST)]CMDLINE.OBJ
 
 MODS_OBJS_LIB_UNZIPCLI_CLD_V = \
- VMS_UNZIP_CLD=[.$(DEST)]unz_cli.obj
+ VMS_UNZIP_CLD=[.$(DEST)]UNZ_CLI.OBJ
 
 MODS_OBJS_LIB_UNZIP_CLI = \
  $(MODS_OBJS_LIB_UNZIPCLI_C_V) \
@@ -370,33 +373,33 @@ MODS_OBJS_LIB_UNZIP_CLI = \
 # SFX object library, [].
 
 MODS_OBJS_LIB_UNZIPSFX_N = \
- crc32$(GCC_)=[.$(DEST)]crc32_.obj \
- crctab$(GCC_)=[.$(DEST)]crctab_.obj \
- crypt$(GCC_)=[.$(DEST)]crypt_.obj \
- extract$(GCC_)=[.$(DEST)]extract_.obj \
- fileio$(GCC_)=[.$(DEST)]fileio_.obj \
- globals$(GCC_)=[.$(DEST)]globals_.obj \
- inflate$(GCC_)=[.$(DEST)]inflate_.obj \
- match$(GCC_)=[.$(DEST)]match_.obj \
- process$(GCC_)=[.$(DEST)]process_.obj \
- ttyio$(GCC_)=[.$(DEST)]ttyio_.obj
+ CRC32$(GCC_)=[.$(DEST)]CRC32_.OBJ \
+ CRYPT$(GCC_)=[.$(DEST)]CRYPT_.OBJ \
+ EXTRACT$(GCC_)=[.$(DEST)]EXTRACT_.OBJ \
+ FILEIO$(GCC_)=[.$(DEST)]FILEIO_.OBJ \
+ GLOBALS$(GCC_)=[.$(DEST)]GLOBALS_.OBJ \
+ INFLATE$(GCC_)=[.$(DEST)]INFLATE_.OBJ \
+ MATCH$(GCC_)=[.$(DEST)]MATCH_.OBJ \
+ PROCESS$(GCC_)=[.$(DEST)]PROCESS_.OBJ \
+ TTYIO$(GCC_)=[.$(DEST)]TTYIO_.OBJ \
+ UBZ2ERR$(GCC_)=[.$(DEST)]UBZ2ERR_.OBJ
 
-# SFX object library, [.vms].
+# SFX object library, [.VMS].
 
 MODS_OBJS_LIB_UNZIPSFX_V = \
- vms$(GCC_)=[.$(DEST)]vms_.obj
+ VMS$(GCC_)=[.$(DEST)]VMS_.OBJ
 
 MODS_OBJS_LIB_UNZIPSFX = \
  $(MODS_OBJS_LIB_UNZIPSFX_N) \
  $(MODS_OBJS_LIB_UNZIPSFX_V)
 
-# SFX object library, [.vms] (no []).
+# SFX object library, [.VMS] (no []).
 
 MODS_OBJS_LIB_UNZIPSFX_CLI_C_V = \
- CMDLINE$(GCC_)=[.$(DEST)]cmdline_.obj
+ CMDLINE$(GCC_)=[.$(DEST)]CMDLINE_.OBJ
 
 MODS_OBJS_LIB_UNZIPSFX_CLI_CLD_V = \
- VMS_UNZIP_CLD=[.$(DEST)]unz_cli.obj
+ VMS_UNZIP_CLD=[.$(DEST)]UNZ_CLI.OBJ
 
 MODS_OBJS_LIB_UNZIPSFX_CLI = \
  $(MODS_OBJS_LIB_UNZIPSFX_CLI_C_V) \
@@ -404,11 +407,11 @@ MODS_OBJS_LIB_UNZIPSFX_CLI = \
 
 # Executables.
 
-UNZIP = [.$(DEST)]unzip.exe
+UNZIP = [.$(DEST)]UNZIP.EXE
 
-UNZIP_CLI = [.$(DEST)]unzip_cli.exe
+UNZIP_CLI = [.$(DEST)]UNZIP_CLI.EXE
 
-UNZIPSFX = [.$(DEST)]unzipsfx.exe
+UNZIPSFX = [.$(DEST)]UNZIPSFX.EXE
 
-UNZIPSFX_CLI = [.$(DEST)]unzipsfx_cli.exe
+UNZIPSFX_CLI = [.$(DEST)]UNZIPSFX_CLI.EXE
 

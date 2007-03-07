@@ -1,4 +1,4 @@
-#                                               24 May 2005.  SMS.
+#                                               4 March 2007.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS Dependency Description File.
 #
@@ -6,7 +6,7 @@
 #    dependencies file.  Unsightly errors result when /EXTENDED_SYNTAX
 #    is not specified.  Typical usage:
 #
-#    $ MMS /EXTEND /DESCRIP = [.vms]descrip_mkdeps.mms /SKIP
+#    $ MMS /EXTEND /DESCRIP = [.VMS]DESCRIP_MKDEPS.MMS /SKIP
 #
 # Note that this description file must be used from the main
 # distribution directory, not from the [.VMS] subdirectory.
@@ -34,11 +34,11 @@ COMS = [.VMS]MOD_DEP.COM [.VMS]COLLECT_DEPS.COM
 # Include the source file lists (among other data).
 
 INCL_DESCRIP_SRC = 1
-.INCLUDE [.vms]descrip_src.mms
+.INCLUDE [.VMS]DESCRIP_SRC.MMS
 
 # The ultimate product, a comprehensive dependency list.
 
-DEPS_FILE = [.vms]descrip_deps.mms
+DEPS_FILE = [.VMS]DESCRIP_DEPS.MMS
 
 # Detect valid qualifier and/or macro options.
 
@@ -74,38 +74,38 @@ UNK_MMSD = 1
 
 # In case it's not obvious...
 # To extract module name lists from object library module=object lists:
-# 1.  Transform "module=[.dest]name.obj" into "module=[.dest] name".
-# 2.  For [.vms], add [.vms] to name.
+# 1.  Transform "module=[.dest]name.OBJ" into "module=[.dest] name".
+# 2.  For [.VMS], add [.VMS] to name.
 # 3.  Delete "*]" words.
 #
 # A similar scheme works for executable lists.
 
 MODS_LIB_UNZIP_N = $(FILTER-OUT *], \
- $(PATSUBST *]*.obj, *] *, $(MODS_OBJS_LIB_UNZIP_N)))
+ $(PATSUBST *]*.OBJ, *] *, $(MODS_OBJS_LIB_UNZIP_N)))
 
 MODS_LIB_UNZIP_V = $(FILTER-OUT *], \
- $(PATSUBST *]*.obj, *] [.vms]*, $(MODS_OBJS_LIB_UNZIP_V)))
+ $(PATSUBST *]*.OBJ, *] [.VMS]*, $(MODS_OBJS_LIB_UNZIP_V)))
 
 MODS_LIB_UNZIPCLI_V = $(FILTER-OUT *], \
- $(PATSUBST *]*.obj, *] [.vms]*, $(MODS_OBJS_LIB_UNZIPCLI_C_V)))
+ $(PATSUBST *]*.OBJ, *] [.VMS]*, $(MODS_OBJS_LIB_UNZIPCLI_C_V)))
 
 MODS_LIB_UNZIPSFX_N = $(FILTER-OUT *], \
- $(PATSUBST *]*.obj, *] *, $(MODS_OBJS_LIB_UNZIPSFX_N)))
+ $(PATSUBST *]*.OBJ, *] *, $(MODS_OBJS_LIB_UNZIPSFX_N)))
 
 MODS_LIB_UNZIPSFX_V = $(FILTER-OUT *], \
- $(PATSUBST *]*.obj, *] [.vms]*, $(MODS_OBJS_LIB_UNZIPSFX_V)))
+ $(PATSUBST *]*.OBJ, *] [.VMS]*, $(MODS_OBJS_LIB_UNZIPSFX_V)))
 
 MODS_UNZIP = $(FILTER-OUT *], \
- $(PATSUBST *]*.exe, *] *, $(UNZIP)))
+ $(PATSUBST *]*.EXE, *] *, $(UNZIP)))
 
 MODS_UNZIP_CLI = $(FILTER-OUT *], \
- $(PATSUBST *]*.exe, *] *, $(UNZIP_CLI)))
+ $(PATSUBST *]*.EXE, *] *, $(UNZIP_CLI)))
 
 MODS_UNZIPSFX = $(FILTER-OUT *], \
- $(PATSUBST *]*.exe, *] *, $(UNZIPSFX)))
+ $(PATSUBST *]*.EXE, *] *, $(UNZIPSFX)))
 
 MODS_UNZIPSFX_CLI = $(FILTER-OUT *], \
- $(PATSUBST *]*.exe, *] *, $(UNZIPSFX_CLI)))
+ $(PATSUBST *]*.EXE, *] *, $(UNZIPSFX_CLI)))
 
 # Complete list of C object dependency file names.
 # Note that the CLI UnZip main program object file is a special case.
@@ -134,18 +134,18 @@ $(DEPS_FILE) : $(DEPS) $(COMS)
 #       Note that the space in P4, which prevents immediate macro
 #       expansion, is removed by COLLECT_DEPS.COM.
 #
-        @[.vms]collect_deps.com "UnZip" -
+        @[.VMS]COLLECT_DEPS.COM "UnZip" -
          "$(MMS$TARGET)" "[...]*.mmsd" "[.$ (DEST)]" $(MMSDESCRIPTION_FILE)
         @ write sys$output -
          "Created a new dependency file: $(MMS$TARGET)"
 .IF DELETE_MMSD
 	@ write sys$output -
          "Deleting intermediate .MMSD files..."
-	delete /log *.mmsd;*, [.vms]*.mmsd;*
+	delete /log *.MMSD;*, [.VMS]*.MMSD;*
 .ELSE
 	@ write sys$output -
          "Purging intermediate .MMSD files..."
-	purge /log *.mmsd, [.vms]*.mmsd
+	purge /log *.MMSD, [.VMS]*.MMSD
 .ENDIF
 
 # Explicit dependencies and rules for utility variant modules.
@@ -153,93 +153,93 @@ $(DEPS_FILE) : $(DEPS) $(COMS)
 # The extra dependency on the normal dependency file obviates including
 # the /SKIP warning code in each rule here.
 
-crc32_.mmsd : crc32.c crc32.mmsd
+CRC32_.MMSD : CRC32.C CRC32.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-crctab_.mmsd : crctab.c crc32.mmsd
+CRYPT_.MMSD : CRYPT.C CRYPT.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-crypt_.mmsd : crypt.c crypt.mmsd
+EXTRACT_.MMSD : EXTRACT.C EXTRACT.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-extract_.mmsd : extract.c extract.mmsd
+FILEIO_.MMSD : FILEIO.C FILEIO.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-fileio_.mmsd : fileio.c fileio.mmsd
+GLOBALS_.MMSD : GLOBALS.C GLOBALS.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-globals_.mmsd : globals.c globals.mmsd
+INFLATE_.MMSD : INFLATE.C INFLATE.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-inflate_.mmsd : inflate.c inflate.mmsd
+MATCH_.MMSD : MATCH.C MATCH.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-match_.mmsd : match.c match.mmsd
+PROCESS_.MMSD : PROCESS.C PROCESS.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-process_.mmsd : process.c process.mmsd
+TTYIO_.MMSD : TTYIO.C TTYIO.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-ttyio_.mmsd : ttyio.c ttyio.mmsd
+UBZ2ERR_.MMSD : UBZ2ERR.C UBZ2ERR.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-[.vms]vms_.mmsd : [.vms]vms.c [.vms]vms.mmsd
+[.VMS]VMS_.MMSD : [.VMS]VMS.C [.VMS]VMS.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-unzip_cli.mmsd : unzip.c unzip.mmsd
+UNZIP_CLI.MMSD : UNZIP.C UNZIP.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-unzipsfx.mmsd : unzip.c unzip.mmsd
+UNZIPSFX.MMSD : UNZIP.C UNZIP.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_SFX) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
-unzipsfx_cli.mmsd : unzip.c unzip.mmsd
+UNZIPSFX_CLI.MMSD : UNZIP.C UNZIP.MMSD
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(CFLAGS_SFX) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
 # Special case.  No normal (non-CLI) version.
 
-[.vms]cmdline.mmsd : [.vms]cmdline.c
+[.VMS]CMDLINE.MMSD : [.VMS]CMDLINE.C
 .IF UNK_MMSD
 	@ write sys$output -
  "   /SKIP_INTERMEDIATES is expected on the MMS command line."
@@ -252,5 +252,5 @@ unzipsfx_cli.mmsd : unzip.c unzip.mmsd
 	$(CC) $(CFLAGS_INCL) $(CFLAGS_CLI) $(MMS$SOURCE) -
          /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
          (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
-	@[.vms]mod_dep.com $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
+	@[.VMS]MOD_DEP.COM $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
