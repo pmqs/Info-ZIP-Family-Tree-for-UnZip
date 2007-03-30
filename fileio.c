@@ -657,7 +657,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 
 
 
-#if defined(USE_ZLIB) || defined(BZIP2_SUPPORT)
+#if defined(USE_ZLIB) || defined(USE_BZIP2)
 
 /************************/
 /* Function fillinbuf() */
@@ -687,7 +687,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
 
 } /* end function fillinbuf() */
 
-#endif /* USE_ZLIB || BZIP2_SUPPORT */
+#endif /* USE_ZLIB || USE_BZIP2 */
 
 
 
@@ -2385,7 +2385,11 @@ zusz_t makeint64(sig)
 /*********************/
 
 /* Format a zoff_t value in a cylindrical buffer set. */
-char *fzofft(__GPRO__ zoff_t val, ZCONST char *pre, ZCONST char *post)
+char *fzofft(__G__ val, pre, post)
+    __GDEF
+    zoff_t val;
+    ZCONST char *pre;
+    ZCONST char *post;
 {
     /* Storage cylinder. (now in globals.h) */
     /*static char fzofft_buf[FZOFFT_NUM][FZOFFT_LEN];*/

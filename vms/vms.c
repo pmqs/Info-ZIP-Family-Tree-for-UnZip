@@ -41,6 +41,31 @@
 
 #define UNZIP_INTERNAL
 
+/* Accomodation for /NAMES = AS_IS with old header files. */
+
+#define lib$getsyi LIB$GETSYI
+#define lib$sys_getmsg LIB$SYS_GETMSG
+#define sys$assign SYS$ASSIGN
+#define sys$bintim SYS$BINTIM
+#define sys$close SYS$CLOSE
+#define sys$connect SYS$CONNECT
+#define sys$create SYS$CREATE
+#define sys$dassgn SYS$DASSGN
+#define sys$extend SYS$EXTEND
+#define sys$getjpiw SYS$GETJPIW
+#define sys$numtim SYS$NUMTIM
+#define sys$open SYS$OPEN
+#define sys$parse SYS$PARSE
+#define sys$put SYS$PUT
+#define sys$qio SYS$QIO
+#define sys$qiow SYS$QIOW
+#define sys$read SYS$READ
+#define sys$rewind SYS$REWIND
+#define sys$search SYS$SEARCH
+#define sys$synch SYS$SYNCH
+#define sys$wait SYS$WAIT
+#define sys$write SYS$WRITE
+
 #include "unzip.h"
 #include "crc32.h"
 #include "vms.h"
@@ -463,7 +488,7 @@ int check_format(__G)
     if (ERR(sts = sys$open(&fab)))
     {
         Info(slide, 1, ((char *)slide, "\n\
-     error: cannot open zipfile [ %s ].\n",
+     error:  cannot open zipfile [ %s ].\n",
           FnFilter1(G.zipfn)));
         vms_msg(__G__ "     sys$open() error: ", sts);
         return PK_ERR;
@@ -474,7 +499,7 @@ int check_format(__G)
     if (rtype == FAB$C_VAR || rtype == FAB$C_VFC)
     {
         Info(slide, 1, ((char *)slide, "\n\
-     error: zipfile is in variable-length record format.  Please\n\
+     Error:  zipfile is in variable-length record format.  Please\n\
      run \"bilf l %s\" to convert the zipfile to stream-LF\n\
      record format.  (BILF is available at various VMS archives.)\n\n",
           FnFilter1(G.zipfn)));
@@ -667,11 +692,9 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
     {
         rab = cc$rms_rab;               /* Initialize RAB. */
         fileblk = cc$rms_fab;           /* Initialize FAB. */
-        nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
 
         fileblk.fab$l_xab = NULL;       /* No XABs. */
         rab.rab$l_fab = &fileblk;       /* Point RAB to FAB. */
-        fileblk.FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
 
         outfab = &fileblk;              /* Set pointers used elsewhere. */
         outrab = &rab;
@@ -694,6 +717,9 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         }
 
 #ifdef NAML$C_MAXRSS
+
+        nam = CC_RMS_NAM;               /* Initialize NAML. */
+        fileblk.FAB_NAM = &nam;         /* Point FAB to NAML. */
 
         fileblk.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
         fileblk.fab$l_fna = (char *) -1;    /* Using NAML for file name. */
@@ -814,7 +840,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
             vms_msg(__G__ "", fileblk.fab$l_stv);
 #endif
             Info(slide, 1, ((char *)slide,
-                 "Cannot create ($connect) output file: %s\n",
+                 "Cannot create ($connect) output file:  %s\n",
                  FnFilter1(G.filename)));
             free_up();
             return PK_WARN;
@@ -968,7 +994,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             vms_msg(__G__ "", outfab->fab$l_stv);
 #endif
             Info(slide, 1, ((char *)slide,
-                 "Cannot create ($connect) output file: %s\n",
+                 "Cannot create ($connect) output file:  %s\n",
                  FnFilter1(G.filename)));
             free_up();
             return PK_WARN;
@@ -1010,14 +1036,12 @@ static  unsigned pka_vbn;
 #pragma __member_alignment __save
 #pragma __nomember_alignment
 #endif /* __DECC || __DECCXX */
-
 static struct
 {
     unsigned short  status;
     unsigned int    count;      /* Unaligned ! */
     unsigned short  dummy;
 } pka_io_iosb;
-
 #if defined(__DECC) || defined(__DECCXX)
 #pragma __member_alignment __restore
 #endif /* __DECC || __DECCXX */
@@ -1035,6 +1059,12 @@ static struct atrdef    pka_atr[VMS_MAX_ATRCNT];
 static int              pka_idx;
 static ulg              pka_uchar;
 static struct fatdef    pka_rattr;
+
+/* Directory attribute storage, descriptor (list). */
+static struct atrdef pka_recattr[2] =
+ { { sizeof( pka_rattr), ATR$C_RECATTR, &pka_rattr},    /* RECATTR. */
+   { 0, 0, 0 }                                          /* List terminator. */
+ };
 
 static struct dsc$descriptor    pka_fibdsc =
 {   sizeof(pka_fib), DSC$K_DTYPE_Z, DSC$K_CLASS_S, (void *) &pka_fib  };
@@ -1230,7 +1260,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         status = sys$qiow(0, pka_devchn, IO$_CREATE|IO$M_CREATE|IO$M_ACCESS,
                           &pka_acp_iosb, 0, 0,
-                          &pka_fibdsc, &pka_fnam, 0, 0, &pka_atr, 0);
+                          &pka_fibdsc, &pka_fnam, 0, 0, pka_atr, 0);
 
         if ( !ERR(status) )
             status = pka_acp_iosb.status;
@@ -1275,7 +1305,7 @@ static int replace(__GPRO)
         do
         {
             Info(slide, 0x81, ((char *)slide,
-                 "%s exists: [o]verwrite, new [v]ersion or [n]o extract?\n\
+                 "%s exists:  [o]verwrite, new [v]ersion or [n]o extract?\n\
   (uppercase response [O,V,N] = do same for all files): ",
                  FnFilter1(G.filename)));
             fflush(stderr);
@@ -2383,7 +2413,7 @@ static int _close_rms(__GPRO)
                 if (link_target == NULL)
                 {
                     Info(slide, 0x201, ((char *)slide,
-                      "warning: cannot show symlink (%s) target (rms): no mem\n",
+                      "warning:  cannot show symlink (%s) target, no mem\n",
                       FnFilter1(G.filename)));
                       retcode = PK_MEM;
                 }
@@ -2395,12 +2425,15 @@ static int _close_rms(__GPRO)
                     if (ERR(status))
                     {
                         Info(slide, 0x201, ((char *)slide,
-                          "warning: error reading symlink text (rms1): %s\n",
+                          "warning:  error reading symlink text: %s\n",
                           strerror(EVMSERR, status)));
                         retcode = PK_DISK;
                     }
                     else
                     {
+                        if (ucsize >= (WSIZE>>2))
+                            /* truncate display string at buffer size limit */
+                            strcpy(&link_target[(WSIZE>>2)-4], "...");
                         Info(slide, 0, ((char *)slide, "-> %s ",
                           FnFilter1(link_target)));
                     }
@@ -2419,7 +2452,7 @@ static int _close_rms(__GPRO)
 
             if (slnk_entrysize < ucsize) {
                 Info(slide, 0x201, ((char *)slide,
-                  "warning: symbolic link (%s) failed: mem alloc overflow\n",
+                  "warning:  symbolic link (%s) failed: mem alloc overflow\n",
                   FnFilter1(G.filename)));
                 retcode = PK_ERR;
             }
@@ -2428,7 +2461,7 @@ static int _close_rms(__GPRO)
                 if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize))
                     == NULL) {
                     Info(slide, 0x201, ((char *)slide,
-                      "warning: symbolic link (%s) failed: no mem\n",
+                      "warning:  symbolic link (%s) failed, no mem\n",
                       FnFilter1(G.filename)));
                     retcode = PK_MEM;
                 }
@@ -2448,16 +2481,33 @@ static int _close_rms(__GPRO)
                     if (ERR(status))
                     {
                         Info(slide, 0x201, ((char *)slide,
-                          "warning: error reading symlink text (rms2): %s\n",
+                          "warning:  error reading symlink text (rms): %s\n",
                           strerror(EVMSERR, status)));
                         free(slnk_entry);
                         retcode = PK_DISK;
                     }
                     else
                     {
-                        if (QCOND2)
+                        if (QCOND2) {
+                            char tmpbuf[4];
+
+                            if (ucsize >= (WSIZE>>2)) {
+                                /* truncate display string at buffer size
+                                   limit, save original content */
+                                strncpy(tmpbuf,
+                                        &slnk_entry->target[(WSIZE>>2)-4],
+                                        4);
+                                strcpy(&slnk_entry->target[(WSIZE>>2)-4],
+                                       "...");
+                            }
                             Info(slide, 0, ((char *)slide, "-> %s ",
                               FnFilter1(slnk_entry->target)));
+                            if (ucsize >= (WSIZE>>2))
+                                /* restore original content */
+                                strncpy(&slnk_entry->target[(WSIZE>>2)-4],
+                                        tmpbuf,
+                                        4);
+                        }
 
                         /* Add this symlink record to the list of
                            deferred symlinks. */
@@ -2568,7 +2618,7 @@ static int _close_qio(__GPRO)
         if ((link_target = malloc(ucsize + 1)) == NULL)
         {
             Info(slide, 0x201, ((char *)slide,
-              "warning: cannot show symlink (%s) target (qio): no mem\n",
+              "warning:  cannot show symlink (%s) target, no mem\n",
               FnFilter1(G.filename)));
         }
         else
@@ -2602,11 +2652,14 @@ static int _close_qio(__GPRO)
             if (ERR(status))
             {
                 Info(slide, 0x201, ((char *)slide,
-                  "warning: error reading symlink text (qio): %s\n",
+                  "warning:  error reading symlink text (qio): %s\n",
                   strerror(EVMSERR, status)));
             }
             else
             {
+                if (bytes_read >= (WSIZE>>2))
+                    /* truncate display string at buffer size limit */
+                    strcpy(&link_target[(WSIZE>>2)-4], "...");
                 Info(slide, 0, ((char *)slide, "-> %s ",
                   FnFilter1(link_target)));
             }
@@ -2620,7 +2673,7 @@ static int _close_qio(__GPRO)
     status = sys$qiow(0, pka_devchn, IO$_DEACCESS, &pka_acp_iosb,
                       0, 0,
                       &pka_fibdsc, 0, 0, 0,
-                      &pka_atr, 0);
+                      pka_atr, 0);
 
     sys$dassgn(pka_devchn);
     if ( !ERR(status) )
@@ -2941,7 +2994,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning: set-dir-attributes failed ($parse) for %s.\n",
+          "warning:  set-dir-attributes failed ($parse) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -2956,7 +3009,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning: set-dir-attributes failed ($assign) for %s.\n",
+          "warning:  set-dir-attributes failed ($assign) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -2996,19 +3049,90 @@ int set_direc_attribs(__G__ d)
 
 #endif /* ?NAML$C_MAXRSS */
 
+    /* 2007-07-13 SMS.
+     * Our freshly created directory can easily contain fewer files than
+     * the original archived directory (for example, if not all the
+     * files in the original directory were included in the archive), so
+     * its size may differ from that of the archived directory.  Thus,
+     * simply restoring the original RECATTR attributes structure, which
+     * includes EFBLK (and so on) can cause "SYSTEM-W-BADIRECTORY, bad
+     * directory file format" complaints.  Instead, we overwrite
+     * selected archived attributes with current attributes, to avoid
+     * setting obsolete/inappropriate attributes on the newly created
+     * directory file.
+     *
+     * First, see if there is a RECATTR structure about which we need to
+     * worry.
+     */
+    for (i = 0; pka_atr[i].atr$w_type != 0; i++)
+    {
+        if (pka_atr[i].atr$w_type == ATR$C_RECATTR)
+        {
+            /* We found a RECATTR structure which (we must assume) needs
+             * adjustment.  Retrieve the RECATTR data for the existing
+             * (newly created) directory file.
+             */
+            status = sys$qiow(0,                /* event flag */
+                              pka_devchn,       /* channel */
+                              IO$_ACCESS,       /* function code */
+                              &pka_acp_iosb,    /* IOSB */
+                              0,                /* AST address */
+                              0,                /* AST parameter */
+                              &pka_fibdsc,      /* P1 = FIB dscr */
+                              &pka_fnam,        /* P2 = File name */
+                              0,                /* P3 = Rslt nm str */
+                              0,                /* P4 = Rslt nm len */
+                              pka_recattr,      /* P5 = Attributes */
+                              0);               /* P6 (not used) */
+
+            /* If initial success, then get the final status from the IOSB. */
+            if ( !ERR(status) )
+                status = pka_acp_iosb.status;
+
+            if ( ERR(status) )
+            {
+                sprintf(warnmsg,
+                  "warning:  set-dir-attributes failed ($qiow acc) for %s.\n",
+                  dir_name);
+                vms_msg(__G__ warnmsg, status);
+                retcode = PK_WARN;
+            }
+            else
+            {
+                /* We should have valid RECATTR data.  Overwrite the
+                 * critical bits of the archive RECATTR structure with
+                 * the current bits.  The book says that an attempt to
+                 * modify HIBLK will be ignored, and FFBYTE should
+                 * always be zero, but safety is cheap.
+                 */
+                struct fatdef *ptr_recattr;
+
+                ptr_recattr = (struct fatdef *) pka_atr[i].atr$l_addr;
+                ptr_recattr->fat$l_hiblk =  pka_rattr.fat$l_hiblk;
+                ptr_recattr->fat$l_efblk =  pka_rattr.fat$l_efblk;
+                ptr_recattr->fat$w_ffbyte = pka_rattr.fat$w_ffbyte;
+            }
+        /* There should be only one RECATTR structure in the list, so
+         * escape from the loop after the first/only one has been
+         * processed.
+         */
+        break;
+        }
+    }
+
     /* Modify the file (directory) attributes. */
-    status = sys$qiow(0,                            /* event flag */
-                      pka_devchn,                   /* channel */
-                      IO$_MODIFY,                   /* function code */
-                      &pka_acp_iosb,                /* IOSB */
-                      0,                            /* AST address */
-                      0,                            /* AST parameter */
-                      &pka_fibdsc,                  /* P1 = FIB dscr */
-                      &pka_fnam,                    /* P2 = File name */
-                      0,                            /* P3 = Rslt nm str */
-                      0,                            /* P4 = Rslt nm len */
-                      &pka_atr,                     /* P5 = Attributes */
-                      0);                           /* P6 (not used) */
+    status = sys$qiow(0,                        /* event flag */
+                      pka_devchn,               /* channel */
+                      IO$_MODIFY,               /* function code */
+                      &pka_acp_iosb,            /* IOSB */
+                      0,                        /* AST address */
+                      0,                        /* AST parameter */
+                      &pka_fibdsc,              /* P1 = FIB dscr */
+                      &pka_fnam,                /* P2 = File name */
+                      0,                        /* P3 = Rslt nm str */
+                      0,                        /* P4 = Rslt nm len */
+                      pka_atr,                  /* P5 = Attributes */
+                      0);                       /* P6 (not used) */
 
     /* If initial success, then get the final status from the IOSB. */
     if ( !ERR(status) )
@@ -3017,7 +3141,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning: set-dir-attributes failed ($qiow) for %s.\n",
+          "warning:  set-dir-attributes failed ($qiow mod) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -3870,7 +3994,7 @@ static void adj_dir_name_ods2(char *dest, char *src, int src_len)
 }
 
 
-static void adj_dir_name_ods5( char *dest, char *src, int src_len)
+static void adj_dir_name_ods5(char *dest, char *src, int src_len)
 {
     /* The source string (src) typically extends beyond the directory
        segment of interest, hence the confining src_len argument.
@@ -4203,7 +4327,7 @@ int mapname(__G__ renamed)
     /* Show warning when stripping insecure "parent dir" path components */
     if (killed_ddot && QCOND2) {
         Info(slide, 0, ((char *)slide,
-          "warning: skipped \"../\" path component(s) in %s\n",
+          "warning:  skipped \"../\" path component(s) in %s\n",
           FnFilter1(G.filename)));
         if (!(error & ~MPN_MASK))
             error = (error & MPN_MASK) | PK_WARN;
@@ -4690,7 +4814,7 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
         /* round to nearest sec--may become 60,
            but doesn't matter for compare */
         ss = (unsigned)((float)timbuf[5] + (float)timbuf[6]*.01 + 0.5);
-        TTrace((stderr, "check_for_newer: using Unix extra field mtime\n"));
+        TTrace((stderr, "check_for_newer:  using Unix extra field mtime\n"));
     }
     else
 #endif /* USE_EF_UT_TIME */
@@ -4767,13 +4891,13 @@ void return_VMS(err)
             break;   /* life is fine... */
         case PK_WARN:
             Info(slide, 1, ((char *)slide, "\n\
-[return-code %d: warning error \
+[return-code %d:  warning error \
 (e.g., failed CRC or unknown compression method)]\n", err));
             break;
         case PK_ERR:
         case PK_BADERR:
             Info(slide, 1, ((char *)slide, "\n\
-[return-code %d: error in zipfile \
+[return-code %d:  error in zipfile \
 (e.g., cannot find local file header sig)]\n", err));
             break;
         case PK_MEM:
@@ -4782,56 +4906,56 @@ void return_VMS(err)
         case PK_MEM4:
         case PK_MEM5:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: insufficient memory]\n", err));
+              "\n[return-code %d:  insufficient memory]\n", err));
             break;
         case PK_NOZIP:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: zipfile not found]\n", err));
+              "\n[return-code %d:  zipfile not found]\n", err));
             break;
         case PK_PARAM:   /* exit(PK_PARAM); gives "access violation" */
             Info(slide, 1, ((char *)slide, "\n\
-[return-code %d: bad or illegal parameters specified on command line]\n",
+[return-code %d:  bad or illegal parameters specified on command line]\n",
               err));
             break;
         case PK_FIND:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: no files found to extract/view/etc.]\n",
+              "\n[return-code %d:  no files found to extract/view/etc.]\n",
               err));
             break;
         case PK_DISK:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: disk full or other I/O error]\n", err));
+              "\n[return-code %d:  disk full or other I/O error]\n", err));
             break;
         case PK_EOF:
             Info(slide, 1, ((char *)slide, "\n\
-[return-code %d: unexpected EOF in zipfile (i.e., truncated)]\n", err));
+[return-code %d:  unexpected EOF in zipfile (i.e., truncated)]\n", err));
             break;
         case IZ_CTRLC:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: you hit ctrl-C to terminate]\n", err));
+              "\n[return-code %d:  you hit ctrl-C to terminate]\n", err));
             break;
         case IZ_UNSUP:
             Info(slide, 1, ((char *)slide, "\n\
-[return-code %d: unsupported compression or encryption for all files]\n",
+[return-code %d:  unsupported compression or encryption for all files]\n",
               err));
             break;
         case IZ_BADPWD:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: bad decryption password for all files]\n",
+              "\n[return-code %d:  bad decryption password for all files]\n",
               err));
             break;
         case IZ_ERRBF:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: big-file archive, small-file program]\n",
+              "\n[return-code %d:  big-file archive, small-file program]\n",
               err));
             break;
         case IZ_COMPERR:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: compiler settings error)]\n", err));
+              "\n[return-code %d:  compiler settings error)]\n", err));
             break;
         default:
             Info(slide, 1, ((char *)slide,
-              "\n[return-code %d: unknown return-code (screw-up)]\n", err));
+              "\n[return-code %d:  unknown return-code (screw-up)]\n", err));
             break;
     }
 #endif /* RETURN_CODES */

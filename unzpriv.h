@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -45,8 +45,8 @@
 #  ifdef SFX            /* fUnZip is NOT the sfx stub! */
 #    undef SFX
 #  endif
-#  ifdef BZIP2_SUPPORT  /* fUnZip does not support bzip2 decompression */
-#    undef BZIP2_SUPPORT
+#  ifdef USE_BZIP2      /* fUnZip does not support bzip2 decompression */
+#    undef USE_BZIP2
 #  endif
 #endif
 
@@ -68,8 +68,8 @@
 #endif
 
 /* disable bzip2 support for SFX stub, unless explicitly requested */
-#if (defined(SFX) && !defined(BZIP2_SFX) && defined(BZIP2_SUPPORT))
-#  undef BZIP2_SUPPORT
+#if (defined(SFX) && !defined(BZIP2_SFX) && defined(USE_BZIP2))
+#  undef USE_BZIP2
 #endif
 
 #if (defined(NO_VMS_TEXT_CONV) || defined(VMS))
@@ -433,11 +433,11 @@
 #endif /* MTS */
 
  /*---------------------------------------------------------------------------
-    Novell NLM section
+    Novell Netware NLM section
   ---------------------------------------------------------------------------*/
 
 #ifdef NLM
-#  include "novell/nlmcfg.h"
+#  include "netware/nlmcfg.h"
 #endif
 
  /*---------------------------------------------------------------------------
@@ -656,7 +656,7 @@
 
 #define UNZIP_BZ2VERS   46
 #ifdef ZIP64_SUPPORT
-# ifdef BZIP2_SUPPORT
+# ifdef USE_BZIP2
 #  define UNZIP_VERSION   UNZIP_BZ2VERS
 # else
 #  define UNZIP_VERSION   45
@@ -1791,7 +1791,7 @@
 
 #ifdef ZIP64_SUPPORT
 # ifndef Z_UINT8_DEFINED
-#   if (defined(__GNUC__) || defined(__HP_cc) || defined(__SUNPRO_C))
+#   if (defined(__GNUC__) || defined(__hpux) || defined(__SUNPRO_C))
   typedef unsigned long long    z_uint8;
 #   else
   typedef unsigned __int64      z_uint8;
@@ -2296,7 +2296,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* static void  partial_clear    OF((__GPRO));                  * unshrink.c */
 #endif /* !LZW_CLEAN */
 #endif /* !SFX && !FUNZIP */
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
    int    UZbunzip2              OF((__GPRO));                  /* extract.c */
    void   bz_internal_error      OF((int errcode));             /* ubz2err.c */
 #endif
