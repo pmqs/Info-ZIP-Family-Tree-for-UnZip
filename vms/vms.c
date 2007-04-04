@@ -41,6 +41,31 @@
 
 #define UNZIP_INTERNAL
 
+/* Accomodation for /NAMES = AS_IS with old header files. */
+
+#define lib$getsyi LIB$GETSYI
+#define lib$sys_getmsg LIB$SYS_GETMSG
+#define sys$assign SYS$ASSIGN
+#define sys$bintim SYS$BINTIM
+#define sys$close SYS$CLOSE
+#define sys$connect SYS$CONNECT
+#define sys$create SYS$CREATE
+#define sys$dassgn SYS$DASSGN
+#define sys$extend SYS$EXTEND
+#define sys$getjpiw SYS$GETJPIW
+#define sys$numtim SYS$NUMTIM
+#define sys$open SYS$OPEN
+#define sys$parse SYS$PARSE
+#define sys$put SYS$PUT
+#define sys$qio SYS$QIO
+#define sys$qiow SYS$QIOW
+#define sys$read SYS$READ
+#define sys$rewind SYS$REWIND
+#define sys$search SYS$SEARCH
+#define sys$synch SYS$SYNCH
+#define sys$wait SYS$WAIT
+#define sys$write SYS$WRITE
+
 #include "unzip.h"
 #include "crc32.h"
 #include "vms.h"
@@ -150,27 +175,31 @@ struct bufdsc
 
 static struct bufdsc b1, b2, *curbuf;   /* buffer ring for asynchronous I/O */
 
-static int  _flush_blocks(__GPRO__ uch *rawbuf, unsigned size, int final_flag),
-            _flush_stream(__GPRO__ uch *rawbuf, unsigned size, int final_flag),
-            _flush_varlen(__GPRO__ uch *rawbuf, unsigned size, int final_flag),
-            _flush_qio(__GPRO__ uch *rawbuf, unsigned size, int final_flag),
-            _close_rms(__GPRO),
-            _close_qio(__GPRO),
+static int  _flush_blocks(__GPRO__ uch *rawbuf, unsigned size, int final_flag);
+static int  _flush_stream(__GPRO__ uch *rawbuf, unsigned size, int final_flag);
+static int  _flush_varlen(__GPRO__ uch *rawbuf, unsigned size, int final_flag);
+static int  _flush_qio(__GPRO__ uch *rawbuf, unsigned size, int final_flag);
+static int  _close_rms(__GPRO);
+static int  _close_qio(__GPRO);
 #ifdef ASYNCH_QIO
-            WriteQIO(__GPRO__ uch *buf, unsigned len),
+static int  WriteQIO(__GPRO__ uch *buf, unsigned len);
 #endif
-            WriteBuffer(__GPRO__ uch *buf, unsigned len),
-            WriteRecord(__GPRO__ uch *rec, unsigned len);
+static int  WriteBuffer(__GPRO__ uch *buf, unsigned len);
+static int  WriteRecord(__GPRO__ uch *rec, unsigned len);
 
 static int  (*_flush_routine)(__GPRO__ uch *rawbuf, unsigned size,
-                              int final_flag),
-            (*_close_routine)(__GPRO);
+                              int final_flag);
+static int  (*_close_routine)(__GPRO);
+
+#ifdef SYMLINKS
+static int  _read_link_rms(__GPRO__ int byte_count, char *link_text_buf);
+#endif /* SYMLINKS */
 
 static void init_buf_ring(void);
 static void set_default_datetime_XABs(__GPRO);
-static int  create_default_output(__GPRO),
-            create_rms_output(__GPRO),
-            create_qio_output(__GPRO);
+static int  create_default_output(__GPRO);
+static int  create_rms_output(__GPRO);
+static int  create_qio_output(__GPRO);
 static int  replace(__GPRO);
 static int  find_vms_attrs(__GPRO);
 static void free_up(void);
@@ -179,7 +208,7 @@ static int  get_vms_version(char *verbuf, int len);
 #endif /* CHECK_VERSIONS */
 static unsigned find_eol(ZCONST uch *p, unsigned n, unsigned *l);
 #ifdef SET_DIR_ATTRIB
-static char *vms_path_fixdown(ZCONST char *dir_spec, char *dir_file)
+static char *vms_path_fixdown(ZCONST char *dir_spec, char *dir_file);
 #endif
 #ifdef TIMESTAMP
 static time_t mkgmtime(struct tm *tm);
@@ -518,11 +547,11 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
     /* Extract the file in text format (Variable_length by default,
      * Stream_LF with "-S" (/TEXT = STMLF), when
-     *  a) explicitly requested by the user (through the -a option)
-     *     and entry is not a symbolic link
+     *  a) explicitly requested by the user (through the -a option),
+     *     and it is not a symbolic link,
      * or
      *  b) piping to SYS$OUTPUT, unless "binary" piping was requested
-     *     by the user (through the -b option)
+     *     by the user (through the -b option).
      */
     text_output = (G.pInfo->textmode
 #ifdef SYMLINKS
@@ -532,11 +561,11 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
                   (uO.cflag &&
                    (!uO.bflag || (!(uO.bflag - 1) && G.pInfo->textfile)));
     /* Use fixed length 512 byte record format for disk file when
-     *  a) explicitly requested by the user (-b option)
+     *  a) explicitly requested by the user (-b option),
      * and
-     *  b) entry is not extracted in text mode
+     *  b) it is not a symbolic link,
      * and
-     *  c) entry is not a symbolic link
+     *  c) it is not extracted in text mode.
      */
     bin_fixed = !text_output &&
 #ifdef SYMLINKS
@@ -559,20 +588,17 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
         if (text_output && (!uO.S_flag))
         {   /* Default format for output `real' text file */
-
             fileblk.fab$b_rfm = FAB$C_VAR;      /* variable length records */
             fileblk.fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
         }
         else if (bin_fixed)
         {   /* Default format for output `real' binary file */
-
             fileblk.fab$b_rfm = FAB$C_FIX;      /* fixed length records */
             fileblk.fab$w_mrs = 512;            /* record size 512 bytes */
             fileblk.fab$b_rat = 0;              /* no carriage ctrl */
         }
         else
         {   /* Default format for output misc (bin or text) file */
-
             fileblk.fab$b_rfm = FAB$C_STMLF;    /* stream-LF record format */
             fileblk.fab$b_rat = FAB$M_CR;       /* implied (CR) carriage ctrl */
         }
@@ -586,9 +612,9 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
         fileblk.fab$w_ifi = 0;  /* Clear IFI. It may be nonzero after ZIP */
         fileblk.fab$b_fac = FAB$M_BRO | FAB$M_PUT;  /* {block|record} output */
-#ifdef SYMLINK
+#ifdef SYMLINKS
         if (G.symlnk)
-            /* Allow read access for reading back the symlink target spec. */
+            /* Symlink file is read back to retrieve the link text. */
             fileblk.fab$b_fac |= FAB$M_GET;
 #endif
 
@@ -633,12 +659,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
          * disk for a long time (minutes).
          */
         fileblk.fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
-#ifdef SYMLINKS
-        if (!G.symlnk)
-#endif
-        {
-            fileblk.fab$l_fop |= FAB$M_SQO;
-        }
+        fileblk.fab$l_fop |= FAB$M_SQO;
 
 #else /* !OLD_FABDEF */
 
@@ -659,12 +680,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
          * disk for a long time (minutes).
          */
         fileblk.fab$l_alq = (unsigned) (G.lrec.ucsize+ 511)/ 512;
-#ifdef SYMLINKS
-        if (!G.symlnk)
-#endif
-        {
-            fileblk.fab$v_sqo = 1;
-        }
+        fileblk.fab$v_sqo = 1;
 
 #endif /* ?OLD_FABDEF */
 
@@ -744,18 +760,6 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
     }
     else                        /* File output */
     {
-#ifdef SYMLINKS
-        /* 2007-02-28 SMS.
-         * VMS/RMS symlink properties will be restored naturally when
-         * the link file is recreated this way, so there's no need to do
-         * the symlink post-processing step for this file.  Therefore,
-         * clear the flag here to disable the delayed symlink processing
-         * for this entry.
-         */
-        if (G.symlnk)
-            G.symlnk = FALSE;
-#endif /* SYMLINKS */
-
         rab = cc$rms_rab;               /* Initialize RAB. */
 
         /* The output FAB has already been initialized with the values
@@ -779,6 +783,22 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         outfab->fab$w_ifi = 0;  /* Clear IFI. It may be nonzero after ZIP */
         outfab->fab$b_fac = FAB$M_BIO | FAB$M_PUT;      /* block-mode output */
+#ifdef SYMLINKS
+        /* 2007-02-28 SMS.
+         * VMS/RMS symlink properties will be restored naturally when
+         * the link file is recreated this way, so there's no need to do
+         * the deferred symlink post-processing step for this file.
+         * Therefore, clear the pInfo->symlink flag here, and the symlink
+         * "close file" processor will only display the link text.
+         */
+        if (G.symlnk) {
+            G.pInfo->symlink = 0;
+            if (QCOND2) {
+                /* Symlink file is read back to display the link text. */
+                outfab->fab$b_fac |= FAB$M_GET;
+            }
+        }
+#endif /* SYMLINKS */
 
         /* 2004-11-23 SMS.
          * Set the "sequential access only" flag, as otherwise, on a
@@ -876,26 +896,28 @@ static  int pka_devchn;
 static  int pka_io_pending;
 static  unsigned pka_vbn;
 
+/* IOSB for QIO[W] read and write operations. */
 #if defined(__DECC) || defined(__DECCXX)
 #pragma __member_alignment __save
 #pragma __nomember_alignment
 #endif /* __DECC || __DECCXX */
 static struct
 {
-    short   status;
-    long    count;
-    short   dummy;
-} pka_io_sb;
+    unsigned short  status;
+    unsigned int    count;      /* Unaligned ! */
+    unsigned short  dummy;
+} pka_io_iosb;
 #if defined(__DECC) || defined(__DECCXX)
 #pragma __member_alignment __restore
 #endif /* __DECC || __DECCXX */
 
+/* IOSB for QIO[W] miscellaneous ACP operations. */
 static struct
 {
-    short   status;
-    short   dummy;
-    void    *addr;
-} pka_acp_sb;
+    unsigned short  status;
+    unsigned short  dummy;
+    unsigned int    count;
+} pka_acp_iosb;
 
 static struct fibdef    pka_fib;
 static struct atrdef    pka_atr[VMS_MAX_ATRCNT];
@@ -976,18 +998,6 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
     }
     else                        /* !(uO.cflag) : redirect output */
     {
-#ifdef SYMLINKS
-        /* 2007-02-28 SMS.
-         * VMS/RMS symlink properties will be restored naturally when
-         * the link file is recreated this way, so there's no need to do
-         * the symlink post-processing step for this file.  Therefore,
-         * clear the flag here to disable the delayed symlink processing
-         * for this entry.
-         */
-        if (G.symlnk)
-            G.symlnk = FALSE;
-#endif /* SYMLINKS */
-
         fileblk = cc$rms_fab;           /* Initialize FAB. */
         nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
         fileblk.FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
@@ -1051,11 +1061,11 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         pka_fib.fib$l_exsz = SWAPW(pka_rattr.fat$l_hiblk);
 
         status = sys$qiow(0, pka_devchn, IO$_CREATE|IO$M_CREATE|IO$M_ACCESS,
-                          &pka_acp_sb, 0, 0,
+                          &pka_acp_iosb, 0, 0,
                           &pka_fibdsc, &pka_fnam, 0, 0, &pka_atr, 0);
 
         if ( !ERR(status) )
-            status = pka_acp_sb.status;
+            status = pka_acp_iosb.status;
 
         if ( ERR(status) )
         {
@@ -1274,7 +1284,7 @@ static int find_vms_attrs(__GPRO)
             if (blk->crc32 != crc32(CRCVAL_INITIAL, scn, (extent)len))
             {
                 Info(slide, 1, ((char *)slide,
-                  "[Warning: CRC error, discarding PKWARE extra field]\n"));
+                  "[ Warning: CRC error, discarding PKWARE extra field ]\n"));
                 len = 0;
                 type = VAT_NONE;
             }
@@ -1472,9 +1482,9 @@ static int WriteQIO(__G__ buf, len)
     int status;
 
     if (pka_io_pending) {
-        status = sys$synch(0, &pka_io_sb);
+        status = sys$synch(0, &pka_io_iosb);
         if (!ERR(status))
-            status = pka_io_sb.status;
+            status = pka_io_iosb.status;
         if (ERR(status))
         {
             vms_msg(__G__ "[ WriteQIO: sys$synch found I/O failure ]\n",
@@ -1487,7 +1497,7 @@ static int WriteQIO(__G__ buf, len)
      *   Put content of buffer as a single VB
      */
     status = sys$qio(0, pka_devchn, IO$_WRITEVBLK,
-                     &pka_io_sb, 0, 0,
+                     &pka_io_iosb, 0, 0,
                      buf, len, pka_vbn,
                      0, 0, 0);
     if (ERR(status))
@@ -1585,13 +1595,13 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
                 locbuf[ loccnt] = '\0';
 
             status = sys$qiow(0, pka_devchn, IO$_WRITEVBLK,
-                              &pka_io_sb, 0, 0,
+                              &pka_io_iosb, 0, 0,
                               locbuf,
                               loccnt_even,
                               pka_vbn,
                               0, 0, 0);
             if (!ERR(status))
-                status = pka_io_sb.status;
+                status = pka_io_iosb.status;
             if (ERR(status))
             {
                 vms_msg(__G__ "[ Write QIO failed ]\n", status);
@@ -1620,11 +1630,11 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
         if ( loccnt == 512 )
         {
             status = sys$qiow(0, pka_devchn, IO$_WRITEVBLK,
-                              &pka_io_sb, 0, 0,
+                              &pka_io_iosb, 0, 0,
                               locbuf, loccnt, pka_vbn,
                               0, 0, 0);
             if (!ERR(status))
-                status = pka_io_sb.status;
+                status = pka_io_iosb.status;
             if (ERR(status))
             {
                 vms_msg(__G__ "[ Write QIO failed ]\n", status);
@@ -1646,11 +1656,11 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
          */
         put_cnt = (nblk = size>>9)<<9;
         status = sys$qiow(0, pka_devchn, IO$_WRITEVBLK,
-                          &pka_io_sb, 0, 0,
+                          &pka_io_iosb, 0, 0,
                           out_ptr, put_cnt, pka_vbn,
                           0, 0, 0);
         if (!ERR(status))
-            status = pka_io_sb.status;
+            status = pka_io_iosb.status;
         if (ERR(status))
         {
             vms_msg(__G__ "[ Write QIO failed ]\n", status);
@@ -2088,6 +2098,62 @@ static int WriteRecord(__G__ rec, len)
 
 
 
+#ifdef SYMLINKS
+/* Read symlink text from a still-open rms file. */
+
+static int _read_link_rms(int byte_count, char *link_text_buf)
+{
+    /* Use RMS to read the link text into the user's buffer.
+     * Rewind, then read byte count = byte_count.
+     * NUL-terminate the link text.
+     *
+     * $WAIT may be pointless if not async, but $WAIT elsewhere seems
+     * to be used unconditionally, so what do I know?
+     */
+    int sts;
+    int bytes_read;
+
+    /* Clear the bytes-read count. */
+    bytes_read = 0;
+
+    /* Wait for anything pending. */
+    sts = sys$wait(outrab);
+    {
+        /* Rewind. */
+        sts = sys$rewind(outrab);
+        if (!ERR(sts))
+        {
+            /* Wait for $REWIND. */
+            sts = sys$wait(outrab);
+            if (!ERR(sts))
+            {
+                /* Read the link text. */
+                outrab->rab$w_usz = byte_count;
+                outrab->rab$l_ubf = link_text_buf;
+                sts = sys$read(outrab);
+                if (!ERR(sts))
+                {
+                    /* Wait for $READ. */
+                    sts = sys$wait(outrab);
+
+                    if (!ERR(sts))
+                        /* Set the resultant byte count. */
+                        bytes_read = outrab->rab$w_rsz;
+                }
+            }
+        }
+    }
+
+    /* NUL-terminate the link text. */
+    link_text_buf[bytes_read] = '\0';
+
+    return sts;
+}
+
+#endif /* SYMLINKS */
+
+
+
 void close_outfile(__G)
     __GDEF
 {
@@ -2110,105 +2176,142 @@ static int _close_rms(__GPRO)
     int retcode = PK_OK;
 
 #ifdef SYMLINKS
-    extent ucsize;
-    extent slnk_entrysize;
-    slinkentry *slnk_entry = NULL;
 
 /*----------------------------------------------------------------------
+    UNIX description:
     If symbolic links are supported, allocate storage for a symlink
     control structure, put the uncompressed "data" and other required
     info in it, and add the structure to the "deferred symlinks" chain.
-    unsigned ints with unsigned longs.
-
-    On UNIX, the output file is opened UNIXly, so a rewind()-fread()
-    sequence is good enough to recover the link data.  Here, we use the
-    correspondig VMS RMS services $rewind and $read before closing the
-    link file.
+    Since we know it's a symbolic link to start with, we shouldn't have
+    to worry about overflowing unsigned ints with unsigned longs.
 ----------------------------------------------------------------------*/
 
     if (G.symlnk) {
-        ucsize = (extent)G.lrec.ucsize;
-        slnk_entrysize = sizeof(slinkentry) + ucsize + strlen(G.filename);
+        extent ucsize = (extent)G.lrec.ucsize;
 
-        if (slnk_entrysize < ucsize) {
-            Info(slide, 0x201, ((char *)slide,
-              "warning:  symbolic link (%s) failed: mem alloc overflow\n",
-              FnFilter1(G.filename)));
-            retcode = PK_MEM;
-            goto symlink_fail_cont;
-        }
-
-        if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize)) == NULL) {
-            Info(slide, 0x201, ((char *)slide,
-              "warning:  symbolic link (%s) failed: no mem\n",
-              FnFilter1(G.filename)));
-            retcode = PK_MEM;
-            goto symlink_fail_cont;
-        }
-
-        slnk_entry->next = NULL;
-        slnk_entry->targetlen = ucsize;
-        slnk_entry->attriblen = 0;  /* don't set attributes for symlinks */
-        slnk_entry->target = slnk_entry->buf;
-        slnk_entry->fname = slnk_entry->target + ucsize + 1;
-        strcpy(slnk_entry->fname, G.filename);
-
-# ifdef VMS_SYMLNK_RMS  /* experimental code to re-read target with RMS */
-        status = sys$wait(outrab);
-        if (ERR(status))
-        {
-            vms_msg(__G__ "[ _close_rms (symlnk): sys$wait failed ]\n",
-                    status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
-        }
-        outrab->rab$v_asy = 0;
-        if (ERR(status = sys$rewind(outrab)))
-        {
-            vms_msg(__G__ "[ _close_rms (symlnk): sys$rewind failed ]\n",
-                    status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
-            retcode = PK_DISK
-            goto symlink_fail_cont;
-        };
-
-        /* Now, set up outrab to re-read the content of the "link" file
-           into the already allocated link target buffer.
+        /* 2007-03-03 SMS.
+         * If the symlink is already a symlink (restored with VMS/RMS
+         * symlink attributes), then read the link text from the file,
+         * and close the file (using the appropriate methods), and then
+         * return.
          */
-        outrab->rab$w_rsz = ucsize;
-        outrab->rab$l_rbf = slnk_entry->target;
-        if (ERR(status = sys$read(outrab)))
+        if (G.pInfo->symlink == 0)
         {
-            vms_msg(__G__ "[ _close_rms (symlnk): sys$read failed ]\n",
-                    status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
-            retcode = PK_DISK
-        };
-# endif /* VMS_SYMLNK_RMS */
-symlink_fail_cont:
-        if (retcode != PK_OK) {
-            /* Failed to re-read the symlink target:
-               cleanup the symlink resource.
-             */
-            if (slnk_entry != NULL) {
-                free(slnk_entry);
-                slnk_entry = NULL;
+            if (QCOND2)
+            {
+                /* Link text storage. */
+                char* link_target = malloc(ucsize + 1);
+
+                if (link_target == NULL)
+                {
+                    Info(slide, 0x201, ((char *)slide,
+                      "warning:  cannot show symlink (%s) target, no mem\n",
+                      FnFilter1(G.filename)));
+                      retcode = PK_MEM;
+                }
+                else
+                {
+                    /* Read the link text. */
+                    status = _read_link_rms(ucsize, link_target);
+
+                    if (ERR(status))
+                    {
+                        Info(slide, 0x201, ((char *)slide,
+                          "warning:  error reading symlink text: %s\n",
+                          strerror(EVMSERR, status)));
+                        retcode = PK_DISK;
+                    }
+                    else
+                    {
+                        if (ucsize >= (WSIZE>>2))
+                            /* truncate display string at buffer size limit */
+                            strcpy(&link_target[(WSIZE>>2)-4], "...");
+                        Info(slide, 0, ((char *)slide, "-> %s ",
+                          FnFilter1(link_target)));
+                    }
+
+                    free(link_target);
+                }
             }
         }
-# ifdef VMS_SYMLNK_RMS  /* experimental code to re-read target with RMS */
         else
         {
-            slnk_entry->target[ucsize] = '\0';
-            if (QCOND2)
-                Info(slide, 0, ((char *)slide, "-> %s ",
-                  FnFilter1(slnk_entry->target)));
-            /* Add this symlink record to the list of deferred symlinks. */
-            if (G.slink_last != NULL)
-                G.slink_last->next = slnk_entry;
+            extent slnk_entrysize;
+            slinkentry *slnk_entry;
+
+            /* It's a symlink in need of post-processing. */
+            slnk_entrysize = sizeof(slinkentry) + ucsize + strlen(G.filename);
+
+            if (slnk_entrysize < ucsize) {
+                Info(slide, 0x201, ((char *)slide,
+                  "warning:  symbolic link (%s) failed: mem alloc overflow\n",
+                  FnFilter1(G.filename)));
+                retcode = PK_ERR;
+            }
             else
-                G.slink_head = slnk_entry;
-            G.slink_last = slnk_entry;
+            {
+                if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize))
+                    == NULL) {
+                    Info(slide, 0x201, ((char *)slide,
+                      "warning:  symbolic link (%s) failed, no mem\n",
+                      FnFilter1(G.filename)));
+                    retcode = PK_MEM;
+                }
+                else
+                {
+                    slnk_entry->next = NULL;
+                    slnk_entry->targetlen = ucsize;
+                    /* don't set attributes for symlinks */
+                    slnk_entry->attriblen = 0;
+                    slnk_entry->target = slnk_entry->buf;
+                    slnk_entry->fname = slnk_entry->target + ucsize + 1;
+                    strcpy(slnk_entry->fname, G.filename);
+
+                    /* Read the link text using the appropriate method. */
+                    status = _read_link_rms(ucsize, slnk_entry->target);
+
+                    if (ERR(status))
+                    {
+                        Info(slide, 0x201, ((char *)slide,
+                          "warning:  error reading symlink text (rms): %s\n",
+                          strerror(EVMSERR, status)));
+                        free(slnk_entry);
+                        retcode = PK_DISK;
+                    }
+                    else
+                    {
+                        if (QCOND2) {
+                            char tmpbuf[4];
+
+                            if (ucsize >= (WSIZE>>2)) {
+                                /* truncate display string at buffer size
+                                   limit, save original content */
+                                strncpy(tmpbuf,
+                                        &slnk_entry->target[(WSIZE>>2)-4],
+                                        4);
+                                strcpy(&slnk_entry->target[(WSIZE>>2)-4],
+                                       "...");
+                            }
+                            Info(slide, 0, ((char *)slide, "-> %s ",
+                              FnFilter1(slnk_entry->target)));
+                            if (ucsize >= (WSIZE>>2))
+                                /* restore original content */
+                                strncpy(&slnk_entry->target[(WSIZE>>2)-4],
+                                        tmpbuf,
+                                        4);
+                        }
+
+                        /* Add this symlink record to the list of
+                           deferred symlinks. */
+                        if (G.slink_last != NULL)
+                            G.slink_last->next = slnk_entry;
+                        else
+                            G.slink_head = slnk_entry;
+                        G.slink_last = slnk_entry;
+                    }
+                }
+            }
         }
-# endif /* VMS_SYMLNK_RMS */
     }
 #endif /* SYMLINKS */
 
@@ -2263,51 +2366,6 @@ symlink_fail_cont:
     }
 #endif
     free_up();
-
-#ifdef SYMLINKS
-# ifndef VMS_SYMLNK_RMS  /* working (but unsafe) re-read code via Unix I/O */
-/*----------------------------------------------------------------------
-    On UNIX, the output file is opened UNIXly, so a rewind()-fread()
-    sequence is good enough to recover the link data.  Here, we applied
-    the appropiate VMS RMS $close() service, and then utilize
-    fopen()-fread()-fclose().
-----------------------------------------------------------------------*/
-    if (G.symlnk && retcode <= PK_WARN) {
-        /* Use UNIX open-read-close to recover the link data. */
-        G.outfile = fopen(G.filename, "r");
-        if (G.outfile == NULL) {
-            Info(slide, 0x201, ((char *)slide,
-              "warning:  symbolic link (%s) failed: fopen()\n%s\n",
-              FnFilter1(G.filename), strerror(errno)));
-            free(slnk_entry);
-            return PK_DISK;
-        }
-
-        if (fread(slnk_entry->target, 1, ucsize, G.outfile) != ucsize)
-        {
-            Info(slide, 0x201, ((char *)slide,
-              "warning:  symbolic link (%s) failed: fread()\n%s\n",
-              FnFilter1(G.filename), strerror(errno)));
-            fclose(G.outfile);
-            free(slnk_entry);
-            return PK_DISK;
-        }
-        fclose(G.outfile);              /* Close "link" file. */
-
-        slnk_entry->target[ucsize] = '\0';
-        if (QCOND2)
-            Info(slide, 0, ((char *)slide, "-> %s ",
-              FnFilter1(slnk_entry->target)));
-        /* Add this symlink record to the list of deferred symlinks. */
-        if (G.slink_last != NULL)
-            G.slink_last->next = slnk_entry;
-        else
-            G.slink_head = slnk_entry;
-        G.slink_last = slnk_entry;
-    }
-# endif /* !VMS_SYMLNK_RMS */
-#endif /* SYMLINKS */
-
     return retcode;
 }
 
@@ -2330,9 +2388,9 @@ static int _close_qio(__GPRO)
 
 #ifdef ASYNCH_QIO
     if (pka_io_pending) {
-        status = sys$synch(0, &pka_io_sb);
+        status = sys$synch(0, &pka_io_iosb);
         if (!ERR(status))
-            status = pka_io_sb.status;
+            status = pka_io_iosb.status;
         if (ERR(status))
         {
             vms_msg(__G__ "[ _close_qio: sys$synch found I/O failure ]\n",
@@ -2342,14 +2400,76 @@ static int _close_qio(__GPRO)
     }
 #endif /* ASYNCH_QIO */
 
-    status = sys$qiow(0, pka_devchn, IO$_DEACCESS, &pka_acp_sb,
+#ifdef SYMLINKS
+    if (G.symlnk && QCOND2)
+    {
+        /* Read back the symlink target specification for display purpose. */
+        extent ucsize = (extent)G.lrec.ucsize;
+        char *link_target;   /* Link text storage. */
+
+        if ((link_target = malloc(ucsize + 1)) == NULL)
+        {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  cannot show symlink (%s) target, no mem\n",
+              FnFilter1(G.filename)));
+        }
+        else
+        {
+            unsigned bytes_read = 0;
+
+            status = sys$qiow(0,                /* Event flag */
+                              pka_devchn,       /* Channel */
+                              IO$_READVBLK,     /* Function */
+                              &pka_io_iosb,     /* IOSB */
+                              0,                /* AST address */
+                              0,                /* AST parameter */
+                              link_target,      /* P1 = buffer address */
+                              ucsize,           /* P2 = requested byte count */
+                              1,                /* P3 = VBN (1 = first) */
+                              0,                /* P4 (not used) */
+                              0,                /* P5 (not used) */
+                              0);               /* P6 (not used) */
+
+            if (!ERR(status))
+                /* Final status. */
+                status = pka_io_iosb.status;
+
+            /* Set the resultant byte count. */
+            if (!ERR(status))
+                bytes_read = pka_io_iosb.count;
+
+            /* NUL-terminate the link text. */
+            link_target[bytes_read] = '\0';
+
+            if (ERR(status))
+            {
+                Info(slide, 0x201, ((char *)slide,
+                  "warning:  error reading symlink text (qio): %s\n",
+                  strerror(EVMSERR, status)));
+            }
+            else
+            {
+                if (bytes_read >= (WSIZE>>2))
+                    /* truncate display string at buffer size limit */
+                    strcpy(&link_target[(WSIZE>>2)-4], "...");
+                Info(slide, 0, ((char *)slide, "-> %s ",
+                  FnFilter1(link_target)));
+            }
+
+            free(link_target);
+
+        }
+    }
+#endif /* SYMLINKS */
+
+    status = sys$qiow(0, pka_devchn, IO$_DEACCESS, &pka_acp_iosb,
                       0, 0,
                       &pka_fibdsc, 0, 0, 0,
                       &pka_atr, 0);
 
     sys$dassgn(pka_devchn);
     if ( !ERR(status) )
-        status = pka_acp_sb.status;
+        status = pka_acp_iosb.status;
     if ( ERR(status) )
     {
         vms_msg(__G__ "[ Deaccess QIO failed ]\n", status);
@@ -2655,7 +2775,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning: set-dir-attributes failed ($parse) for %s.\n",
+          "warning:  set-dir-attributes failed ($parse) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -2670,7 +2790,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning: set-dir-attributes failed ($assign) for %s.\n",
+          "warning:  set-dir-attributes failed ($assign) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -2693,7 +2813,7 @@ int set_direc_attribs(__G__ d)
     status = sys$qiow(0,                            /* event flag */
                       pka_devchn,                   /* channel */
                       IO$_MODIFY,                   /* function code */
-                      &pka_acp_sb,                  /* IOSB */
+                      &pka_acp_iosb,                /* IOSB */
                       0,                            /* AST address */
                       0,                            /* AST parameter */
                       &pka_fibdsc,                  /* P1 = FIB dscr */
@@ -2705,12 +2825,12 @@ int set_direc_attribs(__G__ d)
 
     /* If initial success, then get the final status from the IOSB. */
     if ( !ERR(status) )
-        status = pka_acp_sb.status;
+        status = pka_acp_iosb.status;
 
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning: set-dir-attributes failed ($qiow) for %s.\n",
+          "warning:  set-dir-attributes failed ($qiow) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -2940,11 +3060,11 @@ int stamp_file(fname, modtime)
        revision dates are not modified.
     */
     status = sys$qiow(0, pka_devchn, IO$_ACCESS,
-                      &pka_acp_sb, 0, 0,
+                      &pka_acp_iosb, 0, 0,
                       &pka_fibdsc, &pka_fnam, 0, 0, &Atr, 0);
 
     if ( !ERR(status) )
-        status = pka_acp_sb.status;
+        status = pka_acp_iosb.status;
 
     if ( ERR(status) )
     {
@@ -2969,11 +3089,11 @@ int stamp_file(fname, modtime)
     /* normally cause the expiration and revision dates to be modified. */
     /* Using FIB$M_NORECORD prohibits this from happening. */
     status = sys$qiow(0, pka_devchn, IO$_MODIFY,
-                      &pka_acp_sb, 0, 0,
+                      &pka_acp_iosb, 0, 0,
                       &pka_fibdsc, &pka_fnam, 0, 0, &Atr, 0);
 
     if ( !ERR(status) )
-        status = pka_acp_sb.status;
+        status = pka_acp_iosb.status;
 
     if ( ERR(status) )
     {

@@ -19,7 +19,7 @@
 ! (You have to copy the description file to your working directory for MMS,
 ! with MMK you can alternatively use the /DESCR=[.VMS] qualifier.
 !
-! In all other cases where you want to explicitely specify a makefile target,
+! In all other cases where you want to explicitly specify a makefile target,
 ! you have to specify your compiling environment, too. These are:
 !
 !	$ MMS/MACRO=(__ALPHA__=1)		! Alpha AXP, (DEC C)
@@ -54,6 +54,9 @@ DO_THE_BUILD :
 	@ macro = "/MACRO=("
 .IFDEF IZ_BZIP2
 	@ macro = macro + "IZ_BZIP2=$(IZ_BZIP2),"
+.ENDIF
+.IFDEF CCOPTS
+	@ macro = macro + """CCOPTS=$(CCOPTS)"","
 .ENDIF
 	@ if decc then macro = macro + "__DECC__=1,"
 	@ if axp then macro = macro + "__ALPHA__=1,"
@@ -227,13 +230,17 @@ LDEB = /NOTRACE
 .ENDIF
 
 CFLAGS_ALL  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
-              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) VMS)
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) VMS) -
+              $(CCOPTS)
 CFLAGS_SFX  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
-              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) SFX, VMS)
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) SFX, VMS) -
+              $(CCOPTS)
 CFLAGS_CLI  = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
-              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) $(CLI_DEFS) VMS)
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) -
+              $(CLI_DEFS) VMS) $(CCOPTS)
 CFLAGS_SXC = $(CC_OPTIONS) $(CFLAGS) $(CDEB) $(CFLAGS_INCL) -
-              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) $(CLI_DEFS) SFX, VMS)
+              /def=($(CC_DEFS) $(CC_DEFS2) $(COMMON_DEFS) -
+              $(CLI_DEFS) SFX, VMS) $(CCOPTS)
 
 LINKFLAGS   = $(LDEB)
 

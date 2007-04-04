@@ -2,7 +2,7 @@ $ ! MAKE_UNZ.COM
 $ !
 $ !     "Makefile" for VMS versions of UnZip/ZipInfo and UnZipSFX
 $ !
-$ !     Last updated:  2006-12-29  SMS.
+$ !     Last updated:  2007-04-03  SMS.
 $ !
 $ !     Command args:
 $ !     - select compiler environment: "VAXC", "DECC", "GNUC"
@@ -18,6 +18,11 @@ $ !       example), or in that directory itself.
 $ !       By default, the SFX programs are built without BZIP2 support.
 $ !       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
 $ !       (See LOCAL_UNZIP, below.)
+$ !     - supply additional compiler options: "CCOPTS=xxx"  Allows the
+$ !       user to add compiler command options like /ARCHITECTURE or
+$ !       /[NO]OPTIMIZE.  For example, CCOPTS=/ARCH=HOST/OPTI=TUNE=HOST
+$ !       or CCOPTS=/DEBUG/NOOPTI.  These options must be quoted or
+$ !       space-free.
 $ !
 $ !     To define additional options, define the global symbol
 $ !     LOCAL_UNZIP prior to executing MAKE_UNZ.COM, e.g.:
@@ -76,6 +81,7 @@ $ unzx_cli = "unzip_cli"
 $ unzsfx_unx = "unzipsfx"
 $ unzsfx_cli = "unzipsfx_cli"
 $!
+$ CCOPTS = ""
 $ IZ_BZIP2 = ""
 $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
@@ -105,6 +111,12 @@ $  ENDIF
 $  IF (curr_arg .eqs. "NOVMSCLI") .or. (curr_arg .eqs. "NOCLI")
 $  THEN
 $    CLI_IS_DEFAULT = 0
+$  ENDIF
+$  IF f$extract(0, 5, curr_arg) .eqs. "CCOPT"
+$  THEN
+$    opts = f$edit(curr_arg, "COLLAPSE")
+$    eq = f$locate("=", opts)
+$    CCOPTS = f$extract((eq+ 1), 1000, opts)
 $  ENDIF
 $  IF f$extract(0, 7, curr_arg) .eqs. "IZ_BZIP"
 $  THEN
@@ -234,7 +246,7 @@ $         incl_bzip2_q = "/include = (ubz2err)"
 $     endif
 $ endif
 $!
-$ cc = cc+ " /include = ([], [.vms])"
+$ cc = cc+ " /include = ([], [.vms])"+ CCOPTS
 $!
 $ DEF_UNX = "/define=(''defs')"
 $ DEF_CLI = "/define=(''defs',VMSCLI)"

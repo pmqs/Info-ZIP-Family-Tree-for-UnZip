@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -67,7 +67,7 @@
 #  endif
 #endif
 
-/* disable BZip2 support for SFX stub, unless explicitely requested */
+/* disable bzip2 support for SFX stub, unless explicitly requested */
 #if (defined(SFX) && !defined(BZIP2_SFX) && defined(USE_BZIP2))
 #  undef USE_BZIP2
 #endif
@@ -110,7 +110,7 @@
 #    undef FORCE_UNIX_OVER_WIN32
 #  endif
 #  ifdef FORCE_WIN32_OVER_UNIX
-     /* native Win32 support was explicitely requested... */
+     /* native Win32 support was explicitly requested... */
 #    undef UNIX
 #  else
      /* use the POSIX (Unix) emulation features by default... */
@@ -237,24 +237,6 @@
 #  endif /* !AOS_VS */
    typedef unsigned int extent;
 #endif /* ?MODERN */
-
-
-#ifndef MINIX            /* Minix needs it after all the other includes (?) */
-#  include <stdio.h>
-#endif
-#include <ctype.h>       /* skip for VMS, to use tolower() function? */
-#include <errno.h>       /* used in mapname() */
-#ifdef USE_STRINGS_H
-#  include <strings.h>   /* strcpy, strcmp, memcpy, index/rindex, etc. */
-#else
-#  include <string.h>    /* strcpy, strcmp, memcpy, strchr/strrchr, etc. */
-#endif
-#if (defined(MODERN) && !defined(NO_LIMITS_H))
-#  include <limits.h>    /* GRR:  EXPERIMENTAL!  (can be deleted) */
-#endif
-
-/* this include must be down here for SysV.4, for some reason... */
-#include <signal.h>      /* used in unzip.c, fileio.c */
 
 
 /*---------------------------------------------------------------------------
@@ -481,11 +463,11 @@
 #endif /* MTS */
 
  /*---------------------------------------------------------------------------
-    Novell NLM section
+    Novell Netware NLM section
   ---------------------------------------------------------------------------*/
 
 #ifdef NLM
-#  include "novell/nlmcfg.h"
+#  include "netware/nlmcfg.h"
 #endif
 
  /*---------------------------------------------------------------------------
@@ -607,92 +589,7 @@
   ---------------------------------------------------------------------------*/
 
 #ifdef VMS
-#  include <types.h>                    /* GRR:  experimenting... */
-#  include <stat.h>
-#  include <time.h>                     /* the usual non-BSD time functions */
-#  include <file.h>                     /* same things as fcntl.h has */
-#  include <unixio.h>
-#  include <rms.h>
-   /* Define maximum path length according to NAM member size. */
-#  ifndef NAM_MAXRSS
-#    define NAM_MAXRSS NAM$C_MAXRSS
-#  endif
-#  define _MAX_PATH (NAM$C_MAXRSS+1)    /* to define FILNAMSIZ below */
-#  ifdef RETURN_CODES  /* VMS interprets standard PK return codes incorrectly */
-#    define RETURN(ret) return_VMS(__G__ (ret))   /* verbose version */
-#    define EXIT(ret)   return_VMS(__G__ (ret))
-#  else
-#    define RETURN      return_VMS                /* quiet version */
-#    define EXIT        return_VMS
-#  endif
-#  ifdef VMSCLI
-#    define USAGE(ret)  VMSCLI_usage(__G__ (ret))
-#  endif
-#  define DIR_BEG       '['
-#  define DIR_END       ']'
-#  define DIR_EXT       ".dir"
-#  ifndef DATE_FORMAT
-#    define DATE_FORMAT DF_MDY
-#  endif
-#  define lenEOL        1
-#  define PutNativeEOL  *q++ = native(LF);
-#  define SCREENSIZE(ttrows, ttcols)  screensize(ttrows, ttcols)
-#  define SCREENWIDTH   80
-#  define SCREENLWRAP   screenlinewrap()
-#  if (defined(__VMS_VERSION) && !defined(VMS_VERSION))
-#    define VMS_VERSION __VMS_VERSION
-#  endif
-#  if (defined(__VMS_VER) && !defined(__CRTL_VER))
-#    define __CRTL_VER __VMS_VER
-#  endif
-#  if ((!defined(__CRTL_VER)) || (__CRTL_VER < 70000000))
-#    define NO_GMTIME           /* gmtime() of earlier VMS C RTLs is broken */
-#  else
-#    if (!defined(NO_EF_UT_TIME) && !defined(USE_EF_UT_TIME))
-#      define USE_EF_UT_TIME
-#    endif
-#    if (!defined(HAVE_STRNICMP) && !defined(NO_STRNICMP))
-#      define HAVE_STRNICMP
-#      ifdef STRNICMP
-#        undef STRNICMP
-#      endif
-#      define STRNICMP  strncasecmp
-#    endif
-#  endif
-#  ifndef HAVE_STRNICMP                 /* use our private zstrnicmp() */
-#    define NO_STRNICMP                 /*  unless explicitely overridden */
-#  endif
-#  if (!defined(NOTIMESTAMP) && !defined(TIMESTAMP))
-#    define TIMESTAMP
-#  endif
-#  define RESTORE_UIDGID
-   /* VMS is run on little-endian processors with 4-byte ints:
-    * enable the optimized CRC-32 code */
-#  ifdef IZ_CRC_BE_OPTIMIZ
-#    undef IZ_CRC_BE_OPTIMIZ
-#  endif
-#  if !defined(IZ_CRC_LE_OPTIMIZ) && !defined(NO_CRC_OPTIMIZ)
-#    define IZ_CRC_LE_OPTIMIZ
-#  endif
-#  if !defined(IZ_CRCOPTIM_UNFOLDTBL) && !defined(NO_CRC_OPTIMIZ)
-#    define IZ_CRCOPTIM_UNFOLDTBL
-#  endif
-#  ifdef __DECC
-     /* File open callback ID values. */
-#    define OPENR_ID 1
-     /* File open callback ID storage. */
-     extern int openr_id;
-     /* File open callback function. */
-     extern int acc_cb();
-     /* Option macros for open().
-      * General: Stream access
-      *
-      * Callback function (DEC C only) sets deq, mbc, mbf, rah, wbh, ...
-      */
-#    define OPNZIP_RMS_ARGS "ctx=stm", "acc", acc_cb, &openr_id
-#  else /* !__DECC */ /* (So, GNU C, VAX C, ...)*/
-#    define OPNZIP_RMS_ARGS "ctx=stm"
-#  endif /* ?__DECC */
+#  include "vms/vmscfg.h"
 #endif /* VMS */
 
 /*---------------------------------------------------------------------------
@@ -712,7 +609,23 @@
 #endif
 
 
+#ifndef MINIX            /* Minix needs it after all the other includes (?) */
+#  include <stdio.h>
+#endif
 
+#include <ctype.h>       /* skip for VMS, to use tolower() function? */
+#include <errno.h>       /* used in mapname() */
+#ifdef USE_STRINGS_H
+#  include <strings.h>   /* strcpy, strcmp, memcpy, index/rindex, etc. */
+#else
+#  include <string.h>    /* strcpy, strcmp, memcpy, strchr/strrchr, etc. */
+#endif
+#if (defined(MODERN) && !defined(NO_LIMITS_H))
+#  include <limits.h>    /* GRR:  EXPERIMENTAL!  (can be deleted) */
+#endif
+
+/* this include must be down here for SysV.4, for some reason... */
+#include <signal.h>      /* used in unzip.c, fileio.c */
 
 
 /*************/
@@ -1468,7 +1381,7 @@
 #define IBMTERSED        18
 #define IBMLZ77ED        19
 #define PPMDED           98
-#define NUM_METHODS      16    /* number of known method IDs */
+#define NUM_METHODS      16     /* number of known method IDs */
 /* don't forget to update list.c (list_files()), extract.c and zipinfo.c
  * appropriately if NUM_METHODS changes */
 
@@ -1733,6 +1646,9 @@ typedef struct min_info {
     unsigned textmode : 1;   /* file is to be extracted as text */
     unsigned lcflag : 1;     /* convert filename to lowercase */
     unsigned vollabel : 1;   /* "file" is an MS-DOS volume (disk) label */
+#ifdef SYMLINKS
+    unsigned symlink : 1;    /* file is a symbolic link */
+#endif
     unsigned HasUxAtt : 1;   /* crec ext_file_attr has Unix style mode bits */
 #ifndef SFX
     char Far *cfilname;      /* central header version of filename */
@@ -1815,8 +1731,8 @@ typedef struct VMStimbuf {
    typedef uch   ec_byte_rec[ ECREC_SIZE+4 ];
 /*     define SIGNATURE                         0   space-holder only */
 #      define NUMBER_THIS_DISK                  4
-#      define NUM_DISK_WITH_START_CENTRAL_DIR   6
-#      define NUM_ENTRIES_CENTRL_DIR_THS_DISK   8
+#      define NUM_DISK_WITH_START_CEN_DIR       6
+#      define NUM_ENTRIES_CEN_DIR_THS_DISK      8
 #      define TOTAL_ENTRIES_CENTRAL_DIR         10
 #      define SIZE_CENTRAL_DIRECTORY            12
 #      define OFFSET_START_CENTRAL_DIRECTORY    16
@@ -2055,7 +1971,7 @@ int    extract_or_test_files     OF((__GPRO));
 /* static int   test_OS2         OF((__GPRO__ uch *eb, unsigned eb_size)); */
 /* static int   test_NT          OF((__GPRO__ uch *eb, unsigned eb_size)); */
 #ifndef SFX
-  unsigned find_compr_idx        OF((ush compr_methodnum));
+  unsigned find_compr_idx        OF((unsigned compr_methodnum));
 #endif
 int    memextract                OF((__GPRO__ uch *tgt, ulg tgtsize,
                                      ZCONST uch *src, ulg srcsize));
@@ -2096,25 +2012,10 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* static void  partial_clear    OF((__GPRO));                  * unshrink.c */
 #endif /* !LZW_CLEAN */
 #endif /* !SFX && !FUNZIP */
-
 #ifdef USE_BZIP2
    int    UZbunzip2              OF((__GPRO));                  /* extract.c */
-
-/* On VMS, bzip2 is built using /NAMES = AS_IS, but UnZip is not,
- * leading to a messy interface.
- */
-#ifdef VMS
-#  pragma names save
-#  pragma names as_is
-#endif /* def VMS */
-
    void   bz_internal_error      OF((int errcode));             /* ubz2err.c */
-
-#ifdef VMS
-#  pragma names restore
-#endif /* def VMS */
-
-#endif /* def USE_BZIP2 */
+#endif
 
 /*---------------------------------------------------------------------------
     Internal API functions (only included in DLL versions):
@@ -2379,7 +2280,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
  * Info() definition for "FUNZIP" would have to be corrected:
  * #define Info(buf,flag,sprf_arg) \
  *      (fputs((char *)(sprintf sprf_arg, (buf)), \
-               (flag)&1? stderr : stdout) < 0)
+ *             (flag)&1? stderr : stdout) < 0)
  */
 #ifndef Info   /* may already have been defined for redirection */
 #  ifdef FUNZIP
@@ -2414,6 +2315,13 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #  define CRCVAL_INITIAL  crc32(0L, NULL, 0)
 #else
 #  define CRCVAL_INITIAL  0L
+#endif
+
+#ifdef SYMLINKS
+   /* This macro defines the Zip "made by" hosts that are considered
+      to support storing symbolic link entries. */
+#  define SYMLINK_HOST(hn) ((hn) == UNIX_ || (hn) == ATARI_ || \
+      (hn) == ATHEOS_ || (hn) == BEOS_ || (hn) == VMS_)
 #endif
 
 #ifndef TEST_NTSD               /* "NTSD valid?" checking function */
