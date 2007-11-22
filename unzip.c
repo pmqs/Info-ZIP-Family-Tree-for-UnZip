@@ -243,13 +243,16 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
-                                           \
+  -D  restore directory date-times         \
   -M  pipe through \"more\" pager\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
 \n\n";
 #else
    static ZCONST char Far local3[] = "\n\
-  (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)";
+  -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
+  -D  restore directory date-times\n\
+  (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
+\n\n";
 #endif
 #else /* !VMS */
 #ifdef ATH_BEO_UNX
@@ -1396,6 +1399,14 @@ int uz_opts(__G__ pargc, pargv)
                     }
                     break;
 #endif /* !SFX || SFX_EXDIR */
+#ifdef VMS
+                case ('D'):    /* -D:  Restore directory date-time. */
+                    if (negative)
+                        uO.D_flag = FALSE, negative = 0;
+                    else
+                        uO.D_flag = TRUE;
+                    break;
+#endif /* def VMS */
                 case ('e'):    /* just ignore -e, -x options (extract) */
                     break;
 #ifdef MACOS

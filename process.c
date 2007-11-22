@@ -40,7 +40,7 @@
 #    include "windll/windll.h"
 #  endif
 #endif
-#ifdef DYNALLOC_CRCTAB
+#if defined(DYNALLOC_CRCTAB) || defined(UNICODE_SUPPORT)
 #  include "crc32.h"
 #endif
 #ifdef UNICODE_SUPPORT
@@ -553,7 +553,14 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
 #endif
 
     inflate_free(__G);
+#if defined(UNICODE_SUPPORT) && defined(WIN32)
+    if (G.has_win32_wide)
+      checkdirw(__G__ (wchar_t *)NULL, END);
+    else
+      checkdir(__G__ (char *)NULL, END);
+#else
     checkdir(__G__ (char *)NULL, END);
+#endif
 
 #ifdef DYNALLOC_CRCTAB
     if (CRC_32_TAB) {
@@ -2257,11 +2264,12 @@ zwchar escape_string_to_wide(escape_string)
   return w;
 }
 
-char *wchar_to_local_string(wchar_string)
+char *wchar_to_local_string(wchar_string, escape_all)
   wchar_t *wchar_string;
+  int escape_all;
 {
   zwchar *wide_string = wchar_to_wide_string(wchar_string);
-  char *local_string = wide_to_local_string(wide_string);
+  char *local_string = wide_to_local_string(wide_string, escape_all);
 
   free(wide_string);
 
@@ -2287,21 +2295,23 @@ zwchar *wchar_to_wide_string(wchar_string)
   return wide_string;
 }
 
-char *utf8_to_escaped_string(utf8_string)
+char *utf8_to_escaped_string(utf8_string, escape_all)
   char *utf8_string;
+  int escape_all;
 {
   zwchar *wide_string;
   char *escaped_string;
 
   wide_string = utf8_to_wide_string(utf8_string);
-  escaped_string = wide_to_local_string(wide_string);
+  escaped_string = wide_to_local_string(wide_string, escape_all);
   free(wide_string);
   return escaped_string;
 }
 
 /* convert wide character string to multi-byte character string */
-char *wide_to_local_string(wide_string)
+char *wide_to_local_string(wide_string, escape_all)
   zwchar *wide_string;
+  int escape_all;
 {
   int i;
   wchar_t wc;
@@ -2341,7 +2351,7 @@ char *wide_to_local_string(wide_string)
       wc = (wchar_t)wide_string[i];
     }
     b = wctomb(buf, wc);
-    if (G.unicode_escape_all) {
+    if (escape_all) {
       if (b == 1 && (uch)buf[0] <= 0x7f) {
         /* ASCII */
         strncat(buffer, buf, b);
@@ -2405,11 +2415,12 @@ char *local_to_display_string(local_string)
 }
 
 /* UTF-8 to local */
-char *utf8_to_local_string(utf8_string)
+char *utf8_to_local_string(utf8_string, escape_all)
   char *utf8_string;
+  int escape_all;
 {
   zwchar *wide = utf8_to_wide_string(utf8_string);
-  char *loc = wide_to_local_string(wide);
+  char *loc = wide_to_local_string(wide, escape_all);
   free(wide);
   return loc;
 }
@@ -2434,14 +2445,14 @@ zwchar *local_to_wide_string(local_string)
     return NULL;
   }
   wsize = mbstowcs(wc_string, local_string, strlen(local_string) + 1);
-  wc_string[wsize] = (wchar_t) NULL;
+  wc_string[wsize] = (wchar_t) '\0';
 
   /* in case wchar_t is not zwchar */
   if ((wide_string = (zwchar *)malloc((wsize + 1) * sizeof(zwchar))) == NULL) {
     return NULL;
   }
   for (wsize = 0; wide_string[wsize] = (zwchar)wc_string[wsize]; wsize++) ;
-  wide_string[wsize] = (zwchar)NULL;
+  wide_string[wsize] = (zwchar) '\0';
   free(wc_string);
 
   return wide_string;

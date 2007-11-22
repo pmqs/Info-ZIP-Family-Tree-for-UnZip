@@ -1,4 +1,4 @@
-#                                               19 April 2007.  SMS.
+#                                               6 November 2007.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -123,8 +123,8 @@ UNZIP_MSG_OBJ = [.$(DEST)]UNZIP_MSG.OBJ
 
 # TARGETS.
 
-# Default target, ALL.  Build All Zip executables, utility executables,
-# and help files.
+# Default target, ALL.  Build All UnZip executables, utility
+# executables, and help files.
 
 ALL : $(UNZIP) $(UNZIP_CLI) $(UNZIPSFX) $(UNZIPSFX_CLI) $(UNZIP_HELP) \
       $(UNZIP_MSG_EXE)
@@ -166,12 +166,12 @@ CLEAN_ALL :
 	 set protection = w:d VAX*.dir;*
 	if (f$search( "VAX*.dir", 2) .nes. "") then -
 	 delete VAX*.dir;*
-	if (f$search( "[.VMS]ZIP_CLI.RNH") .nes. "") then -
-	 delete [.VMS]ZIP_CLI.RNH;*
-	if (f$search( "ZIP_CLI.HLP") .nes. "") then -
-	 delete ZIP_CLI.HLP;*
-	if (f$search( "ZIP.HLP") .nes. "") then -
-	 delete ZIP.HLP;*
+	if (f$search( "[.VMS]UNZIP_CLI.RNH") .nes. "") then -
+	 delete [.VMS]UNZIP_CLI.RNH;*
+	if (f$search( "UNZIP_CLI.HLP") .nes. "") then -
+	 delete UNZIP_CLI.HLP;*
+	if (f$search( "UNZIP.HLP") .nes. "") then -
+	 delete UNZIP.HLP;*
 	if (f$search( "*.MMSD") .nes. "") then -
 	 delete *.MMSD;*
 	if (f$search( "[.VMS]*.MMSD") .nes. "") then -
@@ -302,7 +302,7 @@ $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
 	 $(OPT_ID) /options -
 	 $(NOSHARE_OPTS)
 
-# CLI Zip executable.
+# CLI UnZip executable.
 
 $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
                $(LIB_UNZIP_CLI) $(OPT_FILE) $(OPT_ID)

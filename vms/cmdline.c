@@ -166,6 +166,7 @@ $DESCRIPTOR(cli_binary_none,    "BINARY.NONE");         /* ---b */
 $DESCRIPTOR(cli_case_insensitive,"CASE_INSENSITIVE");   /* -C */
 $DESCRIPTOR(cli_screen,         "SCREEN");              /* -c */
 $DESCRIPTOR(cli_directory,      "DIRECTORY");           /* -d */
+$DESCRIPTOR(cli_alldates,       "ALLDATES");            /* -D */
 $DESCRIPTOR(cli_freshen,        "FRESHEN");             /* -f */
 $DESCRIPTOR(cli_help,           "HELP");                /* -h */
 $DESCRIPTOR(cli_junk,           "JUNK");                /* -j */
@@ -444,6 +445,15 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         if (status == CLI$_PRESENT) {
             status = cli$get_value(&cli_directory, &output_directory);
         }
+
+        /*
+        **  Restore directory date-times.
+        */
+        status = cli$present(&cli_alldates);
+        if (status == CLI$_NEGATED)
+            *ptr++ = '-';
+        if (status != CLI$_ABSENT)
+            *ptr++ = 'D';
 
         /*
         **  Freshen existing files, create none

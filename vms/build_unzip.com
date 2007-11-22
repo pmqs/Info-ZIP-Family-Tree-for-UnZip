@@ -2,10 +2,11 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX
 $!
-$!     Last revised:  2007-03-05  SMS.
+$!     Last revised:  2007-11-06  SMS.
 $!
 $!     Command args:
 $!     - suppress help file processing: "NOHELP"
+$!     - suppress message file processing: "NOMSG"
 $!     - select link-only: "LINK"
 $!     - select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
@@ -111,6 +112,7 @@ $ LINK_ONLY = 0
 $ LISTING = " /nolist"
 $ LARGE_FILE = 0
 $ MAKE_HELP = 1
+$ MAKE_MSG = 1
 $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
 $!
@@ -169,6 +171,12 @@ $!
 $     if (curr_arg .eqs. "NOHELP")
 $     then
 $         MAKE_HELP = 0
+$         goto argloop_end
+$     endif
+$!
+$     if (curr_arg .eqs. "NOMSG")
+$     then
+$         MAKE_MSG = 0
 $         goto argloop_end
 $     endif
 $!
@@ -413,24 +421,23 @@ $!
 $! Show interesting facts.
 $!
 $ say "   architecture = ''arch' (destination = [.''dest'])"
-$!
 $ if (IZ_BZIP2 .nes. "")
 $ then
 $     say "   BZIP2 dir = ''f$trnlnm( "lib_bzip2")'"
 $ endif
-$!
 $ if (.not. LINK_ONLY)
 $ then
 $     say "   cc = ''cc'"
 $ endif
-$!
 $ say "   link = ''link'"
-$!
 $ if (.not. MAKE_HELP)
 $ then
 $     say "   Not making new help files."
 $ endif
-$!
+$ if (.not. MAKE_MSG)
+$ then
+$     say "   Not making new message files."
+$ endif
 $ say ""
 $!
 $ tmp = f$verify( 1)    ! Turn echo on to see what's happening.
@@ -445,6 +452,15 @@ $!
 $     if (MAKE_HELP)
 $     then
 $         runoff /out = UNZIP.HLP [.VMS]UNZIP_DEF.RNH
+$     endif
+$!
+$! Process the message file, if desired.
+$!
+$     if (MAKE_MSG)
+$     then
+$         message /object = [.'dest']UNZIP_MSG.OBJ /nosymbols -
+           [.VMS]UNZIP_MSG.MSG
+$         link /shareable = [.'dest']UNZIP_MSG.EXE [.'dest']UNZIP_MSG.OBJ
 $     endif
 $!
 $! Compile the sources.

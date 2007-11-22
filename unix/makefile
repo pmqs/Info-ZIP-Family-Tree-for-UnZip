@@ -48,7 +48,8 @@ LD = $(CC)#	Use the C compiler (driver) to do the link.
 AS = as
 LOC = $(D_USE_BZ2) $(LOCAL_UNZIP)
 AF = $(LOC)
-CFLAGS = -O
+###CFLAGS = -O
+CFLAGS =
 CF = $(CFLAGS) -I. -I$(DIR_BZ2LIB) -DUNIX $(LOC)
 LF = -o unzip
 LF2 = -s
@@ -411,7 +412,7 @@ clean:
 	rm -f $(UNZIPS) $(OBJS) $(OBJF) $(OBJX) api$O apihelp$O crc_gcc$O \
 	  crc_sysv$O unzipstb$O crypt_.c extract_.c globals_.c inflate_.c \
 	  ttyio_.c crc_i386s.s msdos_.c process_.c unix_.c unzipsfx.c
-	rm flags
+	rm -f flags
 	rm -rf ./$(PKGDIR)
 
 # Package generation interface (by J.Bush).  Originally tested under Sun

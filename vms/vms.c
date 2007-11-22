@@ -202,7 +202,7 @@ static int  create_default_output(__GPRO);
 static int  create_rms_output(__GPRO);
 static int  create_qio_output(__GPRO);
 static int  replace(__GPRO);
-static int  find_vms_attrs(__GPRO);
+static int  find_vms_attrs(__GPRO__ int set_date_time);
 static void free_up(void);
 #ifdef CHECK_VERSIONS
 static int  get_vms_version(char *verbuf, int len);
@@ -557,7 +557,7 @@ int open_outfile(__G)           /* return 1 (PK_WARN) if fail */
         get_rms_defaults();
     }
 
-    switch (find_vms_attrs(__G))
+    switch (find_vms_attrs(__G__ 1))
     {
         case VAT_NONE:
         default:
@@ -1362,17 +1362,22 @@ static int replace(__GPRO)
 #define EQL_L(a,b)      ( L(a) == L(b) )
 #define EQL_W(a,b)      ( W(a) == W(b) )
 
-/**********************************************************************
+/*
  * Function find_vms_attrs() scans the ZIP entry extra field, if any,
- * and looks for VMS attribute records.
- * For a set of IZ records, a FAB and various XABs are created and
- * chained together.
+ * and looks for VMS attribute records.  Various date-time attributes
+ * are ignored if set_date_time is zero (typically for a directory).
+ *
+ * For an IZ record, a FAB and various XABs are created and chained
+ * together.
+ *
  * For a PK record, the pka_atr[] attribute descriptor array is
  * populated.
+ *
  * The return value is a VAT_* value, according to the type of extra
  * field attribute data found.
- **********************************************************************/
-static int find_vms_attrs(__GPRO)
+ */
+static int find_vms_attrs(__G int set_date_time)
+    __GDEF
 {
     uch *scan = G.extra_field;
     struct  EB_header *hdr;
@@ -1419,28 +1424,32 @@ static int find_vms_attrs(__GPRO)
             block_id = (uch *)(&((struct IZ_block *)hdr)->bid);
 
             if (EQL_L(block_id, FABSIG)) {
-                outfab = (struct FAB *)extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_fab, FABL);
+                outfab = (struct FAB *)extract_izvms_block(__G__ blk,
+                  siz, NULL, (uch *)&cc$rms_fab, FABL);
             } else if (EQL_L(block_id, XALLSIG)) {
-                xaball = (struct XABALL *)extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_xaball, XALLL);
+                xaball = (struct XABALL *)extract_izvms_block(__G__ blk,
+                  siz, NULL, (uch *)&cc$rms_xaball, XALLL);
                 LINK(xaball);
             } else if (EQL_L(block_id, XKEYSIG)) {
-                xabkey = (struct XABKEY *)extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_xabkey, XKEYL);
+                xabkey = (struct XABKEY *)extract_izvms_block(__G__ blk,
+                  siz, NULL, (uch *)&cc$rms_xabkey, XKEYL);
                 LINK(xabkey);
             } else if (EQL_L(block_id, XFHCSIG)) {
-                xabfhc = (struct XABFHC *) extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_xabfhc, XFHCL);
+                xabfhc = (struct XABFHC *) extract_izvms_block(__G__ blk,
+                  siz, NULL, (uch *)&cc$rms_xabfhc, XFHCL);
             } else if (EQL_L(block_id, XDATSIG)) {
-                xabdat = (struct XABDAT *) extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_xabdat, XDATL);
+                if (set_date_time) {
+                    xabdat = (struct XABDAT *) extract_izvms_block(__G__ blk,
+                      siz, NULL, (uch *)&cc$rms_xabdat, XDATL);
+                }
             } else if (EQL_L(block_id, XRDTSIG)) {
-                xabrdt = (struct XABRDT *) extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_xabrdt, XRDTL);
+                if (set_date_time) {
+                    xabrdt = (struct XABRDT *) extract_izvms_block(__G__ blk,
+                      siz, NULL, (uch *)&cc$rms_xabrdt, XRDTL);
+                }
             } else if (EQL_L(block_id, XPROSIG)) {
-                xabpro = (struct XABPRO *) extract_izvms_block(__G__ blk, siz,
-                                        NULL, (uch *)&cc$rms_xabpro, XPROL);
+                xabpro = (struct XABPRO *) extract_izvms_block(__G__ blk,
+                  siz, NULL, (uch *)&cc$rms_xabpro, XPROL);
             } else if (EQL_L(block_id, VERSIG)) {
 #ifdef CHECK_VERSIONS
                 char verbuf[80];
@@ -1514,6 +1523,13 @@ static int find_vms_attrs(__GPRO)
                     case ATR$C_UIC:
                     case ATR$C_ADDACLENT:
                         skip = !uO.X_flag;
+                        break;
+                    case ATR$C_CREDATE:
+                    case ATR$C_REVDATE:
+                    case ATR$C_EXPDATE:
+                    case ATR$C_BAKDATE:
+                    case ATR$C_ASCDATES:
+                        skip = (set_date_time == 0);
                         break;
                 }
 
@@ -2843,7 +2859,7 @@ int set_direc_attribs(__G__ d)
     /* Extract the VMS file attributes from the preserved attribute
      * data, if they exist, and restore the date-time stamps.
      */
-    type = find_vms_attrs(__G);
+    type = find_vms_attrs(__G__ uO.D_flag);
 
     /* Arrange FAB-NAM[L] for file (directory) access. */
     if (type != VAT_NONE)
@@ -2938,27 +2954,31 @@ int set_direc_attribs(__G__ d)
         pka_atr[pka_idx].atr$l_addr = GVTC &attr;
         ++pka_idx;
 
-        /* Set the directory date-time from the non-VMS data.
-         * Dummy up the DOS-style modification date into global (G) data
-         * from the preserved directory attribute data.
-         */
-        G.lrec.last_mod_dos_datetime = VmsAtt(d)->mod_dos_datetime;
+        /* Restore directory date-time only if user requests it (-D). */
+        if (uO.D_flag)
+        {
+            /* Set the directory date-time from the non-VMS data.
+             * Dummy up the DOS-style modification date into global (G)
+             * data from the preserved directory attribute data.
+             */
+            G.lrec.last_mod_dos_datetime = VmsAtt(d)->mod_dos_datetime;
 
-        /* Extract date-time data from the normal attribute data. */
-        set_default_datetime_XABs(__G);
+            /* Extract date-time data from the normal attribute data. */
+            set_default_datetime_XABs(__G);
 
-        /* Make an attribute descriptor list for the VMS creation and
-         * revision dates (which were stored in the XABs by
-         * set_default_datetime_XABs()).
-         */
-        pka_atr[pka_idx].atr$w_size = 8;
-        pka_atr[pka_idx].atr$w_type = ATR$C_CREDATE;
-        pka_atr[pka_idx].atr$l_addr = GVTC &dattim.xab$q_cdt;
-        ++pka_idx;
-        pka_atr[pka_idx].atr$w_size = 8;
-        pka_atr[pka_idx].atr$w_type = ATR$C_REVDATE;
-        pka_atr[pka_idx].atr$l_addr = GVTC &rdt.xab$q_rdt;
-        ++pka_idx;
+            /* Make an attribute descriptor list for the VMS creation
+             * and revision dates (which were stored in the XABs by
+             * set_default_datetime_XABs()).
+             */
+            pka_atr[pka_idx].atr$w_size = 8;
+            pka_atr[pka_idx].atr$w_type = ATR$C_CREDATE;
+            pka_atr[pka_idx].atr$l_addr = GVTC &dattim.xab$q_cdt;
+            ++pka_idx;
+            pka_atr[pka_idx].atr$w_size = 8;
+            pka_atr[pka_idx].atr$w_type = ATR$C_REVDATE;
+            pka_atr[pka_idx].atr$l_addr = GVTC &rdt.xab$q_rdt;
+            ++pka_idx;
+        }
 
         /* Set the directory protection from the non-VMS data. */
 
