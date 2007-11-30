@@ -393,9 +393,11 @@ typedef unsigned long   ulg;    /*  predefined on some systems) & match zip  */
    typedef void  (UZ_EXP UsrIniFn)  (void);
 #else /* !PROTO */
    typedef int   (UZ_EXP MsgFn)     ();
-//# ifdef UNICODE_SUPPORT
-//   typedef int   (UZ_EXP MsgwFn)     ();
-//# endif
+#if 0
+# ifdef UNICODE_SUPPORT
+   typedef int   (UZ_EXP MsgwFn)     ();
+# endif
+#endif /* 0 */
    typedef int   (UZ_EXP InputFn)   ();
    typedef void  (UZ_EXP PauseFn)   ();
    typedef int   (UZ_EXP PasswdFn)  ();

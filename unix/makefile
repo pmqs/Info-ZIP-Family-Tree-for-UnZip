@@ -46,7 +46,7 @@
 ##		to the "make" command line to override.
 LD = $(CC)#	Use the C compiler (driver) to do the link.
 AS = as
-LOC = $(D_USE_BZ2) $(LOCAL_UNZIP)
+LOC = $(LOCAL_UNZIP)
 AF = $(LOC)
 ###CFLAGS = -O
 CFLAGS =
