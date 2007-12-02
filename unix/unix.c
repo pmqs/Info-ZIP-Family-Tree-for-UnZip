@@ -304,7 +304,7 @@ char *do_wild(__G__ wildspec)
 /************************/
 /*  Function filtattr() */
 /************************/
-/* This is used to clear or keep the SUID and GID bits on file permissions.
+/* This is used to clear or keep the SUID and SGID bits on file permissions.
  * It's possible that a file in an archive could have one of these bits set
  * and, unknown to the person unzipping, could allow others to execute the
  * file as the user or group.  The new option -K bypasses this check.
@@ -588,8 +588,11 @@ int mapname(__G__ renamed)
 #endif
 
             default:
-                /* allow European characters in filenames: */
-                if (isprint(workch) || (128 <= workch && workch <= 254))
+                /* disable control character filter when requested,
+                 * else allow 8-bit characters (e.g. UTF-8) in filenames:
+                 */
+                if (uO.cflxflag ||
+                    (isprint(workch) || (128 <= workch && workch <= 254)))
                     *pp++ = (char)workch;
         } /* end switch */
 
@@ -1075,6 +1078,8 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     ush z_uidgid[2];
     int have_uidgid_flg;
 
+    have_uidgid_flg = get_extattribs(__G__ &(zt.t3), z_uidgid);
+
 /*---------------------------------------------------------------------------
     If symbolic links are supported, allocate storage for a symlink control
     structure, put the uncompressed "data" and other required info in it, and
@@ -1086,8 +1091,15 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 #ifdef SYMLINKS
     if (G.symlnk) {
         extent ucsize = (extent)G.lrec.ucsize;
-        extent slnk_entrysize = sizeof(slinkentry) + ucsize +
-                                strlen(G.filename);
+        extent attribsize =
+# ifdef SET_SYMLINK_ATTRIBS
+                            sizeof(unsigned) +
+                            (have_uidgid_flg ? sizeof(z_uidgid) : 0);
+# else
+                            0
+# endif
+        extent slnk_entrysize = sizeof(slinkentry) + attribsize +
+                                ucsize + strlen(G.filename);
         slinkentry *slnk_entry;
 
         if (slnk_entrysize < ucsize) {
@@ -1107,8 +1119,14 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         }
         slnk_entry->next = NULL;
         slnk_entry->targetlen = ucsize;
-        slnk_entry->attriblen = 0;      /* don't set attributes for symlinks */
-        slnk_entry->target = slnk_entry->buf;
+        slnk_entry->attriblen = attribsize;
+# ifdef SET_SYMLINK_ATTRIBS
+        memcpy(slnk_entry->buf, &(G.pInfo->file_attr),
+               sizeof(unsigned));
+        if (have_uidgid_flg)
+            memcpy(slnk_entry->buf + 4, z_uidgid, sizeof(z_uidgid));
+# endif
+        slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
         slnk_entry->fname = slnk_entry->target + ucsize + 1;
         strcpy(slnk_entry->fname, G.filename);
 
@@ -1146,8 +1164,6 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         qlfix(__G__ G.extra_field, G.lrec.extra_field_length);
     }
 #endif
-
-    have_uidgid_flg = get_extattribs(__G__ &(zt.t3), z_uidgid);
 
 #if (defined(NO_FCHOWN))
     fclose(G.outfile);
@@ -1222,6 +1238,42 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 } /* end function close_outfile() */
 
 #endif /* !MTS */
+
+
+#if (defined(SYMLINKS) && defined(SET_SYMLINK_ATTRIBS))
+int set_symlnk_attribs(__G__ slnk_entry)
+    __GDEF
+    slinkentry *slnk_entry;
+{
+    if (slnk_entry->attriblen > 0) {
+# if (!defined(NO_LCHOWN))
+      if (slnk_entry->attriblen > sizeof(unsigned)) {
+        ush *z_uidgid_p = (void *)slnk_entry->buf + sizeof(unsigned);
+        TTrace((stderr,
+                "set_symlnk_attribs:  restoring Unix UID/GID info for\n\t%s\n",
+                FnFilter1(slnk_entry->fname)));
+        if (lchown(slnk_entry->fname,
+                   (uid_t)z_uidgid_p[0], (gid_t)z_uidgid_p[1]))
+        {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  cannot set UID %d and/or GID %d for %s\n",
+              z_uidgid_p[0], z_uidgid_p[1], FnFilter1(slnk_entry->fname)));
+        }
+      }
+# endif /* !NO_LCHOWN */
+# if (!defined(NO_LCHMOD))
+      TTrace((stderr,
+              "set_symlnk_attribs:  restoring Unix attributes for\n\t%s\n",
+              FnFilter1(slnk_entry->fname)));
+      if (lchmod(slnk_entry->fname,
+                 filtattr(__G__ *(unsigned *)(void *)slnk_entry->buf)))
+          perror("lchmod (file attributes) error");
+# endif /* !NO_LCHMOD */
+    }
+    /* currently, no error propagation... */
+    return PK_OK;
+}
+#endif /* SYMLINKS && SET_SYMLINK_ATTRIBS */
 
 
 #ifdef SET_DIR_ATTRIB
@@ -1412,8 +1464,8 @@ void version(__G)
 #    define IZ_CC_NAME "cc"
 #   endif
       IZ_CC_NAME, "",
-#endif /* ?__IBMC__ */
 #endif /* ?__VERSION__ */
+#endif /* ?__IBMC__ */
 #endif /* ?(CRAY && _RELEASE) */
 #endif /* ?__DECC_VER */
 #endif /* ?__HP_cc */

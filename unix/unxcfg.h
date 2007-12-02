@@ -51,7 +51,6 @@
 # define _FILE_OFFSET_BITS 64   /* select default interface as 64 bit */
 # define _LARGE_FILES           /* some OSes need this for 64-bit off_t */
 # define __USE_LARGEFILE64
-# include <unistd.h>            /* Get lseek() prototype. */
 #endif
 
 
@@ -117,7 +116,7 @@ typedef struct stat z_stat;
 #ifdef BSD
 #  include <sys/time.h>
 #  include <sys/timeb.h>
-#  if (defined(_AIX) || defined(__GLIBC__) || defined(__GNUC__))
+#  if (defined(_AIX) || defined(__GLIBC__) || defined(__GNU__))
 #    include <time.h>
 #  endif
 #else
@@ -131,11 +130,11 @@ typedef struct stat z_stat;
 #    include <utime.h>
 #    define GOT_UTIMBUF
 #  endif
-#  if (!defined(GOT_UTIMBUF) && (defined(__HP_cc) || defined(__SUNPRO_C)))
+#  if (!defined(GOT_UTIMBUF) && (defined(__hpux) || defined(__SUNPRO_C)))
 #    include <utime.h>
 #    define GOT_UTIMBUF
 #  endif
-#  if (!defined(GOT_UTIMBUF) && defined(__GNUC__))
+#  if (!defined(GOT_UTIMBUF) && defined(__GNU__))
 #    include <utime.h>
 #    define GOT_UTIMBUF
 #  endif
@@ -175,6 +174,9 @@ typedef struct stat z_stat;
 #define SCREENWIDTH     80
 #define SCREENLWRAP     1
 #define USE_EF_UT_TIME
+#if (!defined(NO_LCHOWN) || !defined(NO_LCHMOD))
+#  define SET_SYMLINK_ATTRIBS
+#endif
 #define SET_DIR_ATTRIB
 #if (!defined(NOTIMESTAMP) && !defined(TIMESTAMP))   /* GRR 970513 */
 #  define TIMESTAMP

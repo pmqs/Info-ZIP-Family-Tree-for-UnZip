@@ -620,7 +620,7 @@
 #  include <string.h>    /* strcpy, strcmp, memcpy, strchr/strrchr, etc. */
 #endif
 #if (defined(MODERN) && !defined(NO_LIMITS_H))
-#  include <limits.h>    /* GRR:  EXPERIMENTAL!  (can be deleted) */
+#  include <limits.h>    /* MAX/MIN constant symbols for system types... */
 #endif
 
 /* this include must be down here for SysV.4, for some reason... */
@@ -1147,18 +1147,6 @@
 
 #define FILNAMSIZ  PATH_MAX
 
-/* 2007-09-18 SMS.
- * Include <locale.h> here if it will be needed later for Unicode.
- * Otherwise, SETLOCALE may be defined here, and then defined again
- * (differently) when <locale.h> is read later.
- */
-#ifdef UNICODE_SUPPORT
-# if defined( UNIX) || defined( VMS)
-#   include <locale.h>
-# endif /* defined( UNIX) || defined( VMS) */
-# include <wchar.h>
-#endif /* def UNICODE_SUPPORT */
-
 /* DBCS support for Info-ZIP  (mainly for japanese (-: )
  * by Yoshioka Tsuneo (QWF00133@nifty.ne.jp,tsuneo-y@is.aist-nara.ac.jp)
  */
@@ -1167,7 +1155,10 @@
    /* Multi Byte Character Set */
 #  define ___MBS_TMP_DEF  char *___tmp_ptr;
 #  define ___TMP_PTR      ___tmp_ptr
-#  define CLEN(ptr) mblen((ZCONST char *)(ptr), MB_CUR_MAX)
+#  ifndef CLEN
+#    define NEED_UZMBCLEN
+#    define CLEN(ptr) (int)uzmbclen((ZCONST unsigned char *)(ptr))
+#  endif
 #  ifndef PREINCSTR
 #    define PREINCSTR(ptr) (ptr += CLEN(ptr))
 #  endif
@@ -1193,9 +1184,7 @@
 #  define lastchar(ptr, len) (ptr[(len)-1])
 #  define MBSCHR(str, c) strchr(str, c)
 #  define MBSRCHR(str, c) strrchr(str, c)
-#  ifndef SETLOCALE
-#    define SETLOCALE(category, locale)
-#  endif /* ndef SETLOCALE */
+#  define SETLOCALE(category, locale)
 #endif /* ?_MBCS */
 #define INCSTR(ptr) PREINCSTR(ptr)
 
@@ -1312,9 +1301,6 @@
     /* 64-bit stat functions */
 #     define zstat _stati64
 #     define zfstat _fstati64
-#  ifdef UNICODE_SUPPORT
-#     define zstatw _wstati64
-#  endif
 
     /* 64-bit lseek */
 #     define zlseek _lseeki64
@@ -1329,9 +1315,6 @@
 
     /* 64-bit fopen */
 #     define zfopen fopen
-#   if defined(UNICODE_SUPPORT) && defined(WIN32)
-#     define zfopenw _wfopen
-#   endif
 #     define zfdopen fdopen
 
 #   endif /* _MSC_VER || __MINGW__ || __LCC__ */
@@ -1614,8 +1597,9 @@
 #define LZMAED           14
 #define IBMTERSED        18
 #define IBMLZ77ED        19
+#define WAVPACKED        97
 #define PPMDED           98
-#define NUM_METHODS      16     /* number of known method IDs */
+#define NUM_METHODS      17     /* number of known method IDs */
 /* don't forget to update list.c (list_files()), extract.c and zipinfo.c
  * appropriately if NUM_METHODS changes */
 
@@ -1858,13 +1842,19 @@
   typedef  z_uint8              zusz_t;     /* zipentry sizes & offsets */
   typedef  z_uint8              zucn_t;     /* archive entry counts */
   typedef  z_uint4              zuvl_t;     /* multivolume numbers */
+# define MASK_ZUCN64            (~(zucn_t)0)
+/* In case we ever get to support an environment where z_uint8 may be WIDER
+   than 64 bit wide, we will have to apply a construct similar to
+     #define MASK_ZUCN64        (~(zucn_t)0 & (zucn_t)0xffffffffffffffffULL)
+   for the 64-bit mask.
+ */
 #else
   typedef  ulg                  zusz_t;     /* zipentry sizes & offsets */
   typedef  unsigned int         zucn_t;     /* archive entry counts */
   typedef  unsigned short       zuvl_t;     /* multivolume numbers */
+# define MASK_ZUCN64            (~(zucn_t)0)
 #endif
 #define MASK_ZUCN16             ((zucn_t)0xFFFF)
-#define MASK_ZUCN64            (~(zucn_t)0)
 
 #ifdef NO_UID_GID
 #  ifdef UID_USHORT
@@ -1897,13 +1887,6 @@ typedef struct iztimes {
        char *fn;                /* filename of directory */
        char buf[1];             /* start of system-specific internal data */
    } direntry;
-# if defined(WIN32) && defined(UNICODE_SUPPORT)
-   typedef struct direntryw {    /* head of system-specific struct holding */
-       struct direntryw *next;   /*  defered directory attributes info */
-       wchar_t *fnw;                /* filename of directory */
-       wchar_t buf[1];             /* start of system-specific internal data */
-   } direntryw;
-# endif
 #endif /* SET_DIR_ATTRIB */
 
 #ifdef SYMLINKS
@@ -2252,6 +2235,9 @@ char    *fzofft               OF((__GPRO__ zoff_t val,
    zvoid *memcpy OF((register zvoid *, register ZCONST zvoid *,
                      register unsigned int));
 #endif
+#ifdef NEED_UZMBCLEN
+   extent uzmbclen(ZCONST unsigned char *ptr);
+#endif
 #ifdef NEED_UZMBSCHR
    unsigned char *uzmbschr  OF((ZCONST unsigned char *str, unsigned int c));
 #endif
@@ -2292,7 +2278,8 @@ int    memflush                  OF((__GPRO__ ZCONST uch *rawbuf, ulg size));
                                      unsigned size, unsigned *retlen,
                                      ZCONST uch *init, unsigned needlen));
 #endif
-char  *fnfilter                  OF((ZCONST char *raw, uch *space));
+char  *fnfilter                  OF((ZCONST char *raw, uch *space,
+                                     extent size));
 
 /*---------------------------------------------------------------------------
     Decompression functions:
@@ -2464,10 +2451,6 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #ifdef W32_STAT_BANDAID
    int   zstat_win32    OF((__W32STAT_GLOBALS__
                             const char *path, z_stat *buf));      /* win32.c */
-# ifdef UNICODE_SUPPORT
-   int   zstat_win32w   OF((__W32STAT_GLOBALS__
-                            const wchar_t *pathw, z_stat *buf));      /* win32.c */
-# endif
 #endif
 #endif
 
@@ -2485,9 +2468,6 @@ void     mksargs         OF((int *argcp, char ***argvp));       /* envargs.c */
 int      match           OF((ZCONST char *s, ZCONST char *p,
                              int ic __WDLPRO));                   /* match.c */
 int      iswild          OF((ZCONST char *p));                    /* match.c */
-#if defined(UNICODE_SUPPORT) && defined(WIN32)
-int      iswildw         OF((ZCONST wchar_t *pw));                /* match.c */
-#endif
 
 /* declarations of public CRC-32 functions have been moved into crc32.h
    (free_crc_table(), get_crc_table(), crc32())                      crc32.c */
@@ -2500,10 +2480,6 @@ char     dateseparator   OF((void));                                /* local */
 int      mapattr         OF((__GPRO));                              /* local */
 int      mapname         OF((__GPRO__ int renamed));                /* local */
 int      checkdir        OF((__GPRO__ char *pathcomp, int flag));   /* local */
-#if defined(WIN32) && defined(UNICODE_SUPPORT)
-  int    mapnamew        OF((__GPRO__ int renamed));                /* local */
-  int    checkdirw       OF((__GPRO__ wchar_t *pathcomp, int flag));   /* local */
-#endif
 char    *do_wild         OF((__GPRO__ ZCONST char *wildzipfn));     /* local */
 char    *GetLoadPath     OF((__GPRO));                              /* local */
 #if (defined(MORE) && (defined(ATH_BEO_UNX) || defined(QDOS) || defined(VMS)))
@@ -2524,10 +2500,6 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #ifdef SET_DIR_ATTRIB
    int   defer_dir_attribs  OF((__GPRO__ direntry **pd));           /* local */
    int   set_direc_attribs  OF((__GPRO__ direntry *d));             /* local */
-# if defined(WIN32) && defined(UNICODE_SUPPORT)
-   int   defer_dir_attribsw  OF((__GPRO__ direntryw **pd));           /* local */
-   int   set_direc_attribsw  OF((__GPRO__ direntryw *d));             /* local */
-# endif
 #endif
 #ifdef TIMESTAMP
 # ifdef WIN32
@@ -2638,8 +2610,9 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
  *  of 'slide' as buffer, since their output is normally fed through the
  *  Info() macro with 'slide' (the start of this area) as message buffer.
  */
-#define FnFilter1(fname)  fnfilter((fname), slide + (WSIZE>>1))
-#define FnFilter2(fname)  fnfilter((fname), slide + ((WSIZE>>1) + (WSIZE>>2)))
+#define FnFilter1(fname)  fnfilter((fname), slide + (WSIZE>>1), (WSIZE>>2))
+#define FnFilter2(fname)  fnfilter((fname), slide + ((WSIZE>>1) + (WSIZE>>2)),\
+                                   (WSIZE>>2))
 
 #ifndef FUNZIP   /* used only in inflate.c */
 #  define MESSAGE(str,len,flag)  (*G.message)((zvoid *)&G,(str),(len),(flag))
@@ -2990,10 +2963,6 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 
   /* convert UTF-8 string to wide string */
   zwchar *utf8_to_wide_string OF((char *));
-
-  char *wchar_to_local_string OF((wchar_t *));
-
-  zwchar *wchar_to_wide_string OF((wchar_t *));
 
   /* convert wide string to multi-byte string */
   char *wide_to_local_string OF((zwchar *));

@@ -271,36 +271,6 @@ else
   fi
 fi
 
-# Added 9/5/2007 EG
-# Check for wide char for Unicode support
-echo Check for wide char support
-cat > conftest.c << _EOF_
-#include <stdlib.h>
-#include <stdio.h>
-int main()
-{
-  int wsize;
-  wchar_t *wide_string;
-
-  if ((wide_string = (wchar_t *)malloc(4 * sizeof(wchar_t))) == NULL) {
-    return 0;
-  }
-  /* get wide string */
-  wsize = mbstowcs(wide_string, "foo", 3);
-  wide_string[wsize] = (wchar_t) NULL;
-  return 1;
-}
-_EOF_
-# compile it
-$CC -o conftest conftest.c >/dev/null 2>/dev/null
-if [ $? -ne 0 ]; then
-  echo -- no Unicode support
-else
-# have wide char support
-  echo -- have wchar_t - enabling Unicode support
-  CFLAGSR="${CFLAGSR} -DUNICODE_SUPPORT"
-fi
-
 # from configure 2.4i (Onno) 12/5/04
 echo Check for gcc no-builtin flag
 # -fno-builtin since version 2
@@ -319,7 +289,7 @@ $CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
 
 # Check for missing functions
 # add NO_'function_name' to flags if missing
-for func in fchmod fchown
+for func in fchmod fchown lchmod lchown
 do
   echo Check for $func
   echo "int main(){ $func(); return 0; }" > conftest.c
@@ -477,14 +447,14 @@ echo "  Check for bzip2 in bzip2 directory"
 if test -f "${DIR_BZ2LIB}/bzlib.c" -a -f "${DIR_BZ2LIB}/bzlib.h"; then
    echo "-- Found bzip2 source in ${DIR_BZ2LIB}/ directory"
    echo "-- Will try to build bzip2 library from source and link in"
-   CFLAGSR="${CFLAGSR} -DUSE_BZIP2"
    LIBBZ2="${DIR_BZ2LIB}/libbz2.a"
+   D_USE_BZ2="-DUSE_BZIP2"
    L_BZ2="-lbz2"
 else
    echo "-- bzip2 sources not found - no bzip2 support"
 fi
 
 
-echo CF=\"${CFLAGSR}\" CRCA_O=\"${CRC32OA}\" AS=\"${CC} -c\" \
-       L_BZ2=\"${L_BZ2}\" LIBBZ2=\"${LIBBZ2}\"  > flags
-#
+echo CF=\"${CFLAGSR} ${D_USE_BZ2}\" CRCA_O=\"${CRC32OA}\" AS=\"${CC} -c\" \
+       D_USE_BZ2=\"${D_USE_BZ2}\" L_BZ2=\"${L_BZ2}\" \
+       LIBBZ2=\"${LIBBZ2}\"  > flags
