@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-4 or later
+  See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -243,14 +243,14 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
-  -D  restore directory date-times         \
+  -D  don't restore dir (-DD: any) timestamps\
   -M  pipe through \"more\" pager\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
 \n\n";
 #else
    static ZCONST char Far local3[] = "\n\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
-  -D  restore directory date-times\n\
+  -D  don't restore dir (-DD: any) timestamps\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
 \n\n";
 #endif
@@ -480,10 +480,6 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
      static ZCONST char Far Use_Zip64[] =
      "ZIP64_SUPPORT (archives using Zip64 for large files supported)";
 #  endif
-#  ifdef SYMLINKS
-     static ZCONST char Far Use_Symlinks[] =
-     "SYMLINK_SUPPORT (symlinks in archives are restored as symlinks)";
-#  endif
 #  if (defined(__DJGPP__) && (__DJGPP__ >= 2))
 #    ifdef USE_DJGPP_ENV
        static ZCONST char Far Use_DJGPP_Env[] = "USE_DJGPP_ENV";
@@ -603,7 +599,7 @@ Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
 
 #ifdef VMS
    static ZCONST char Far VMSusageLine2b[] = "\
-  Define foreign command symbol in LOGIN.COM: $ unzip :== $ dev:[dir]unzip.exe\
+=> define foreign command symbol in LOGIN.COM:  $ unzip :== $dev:[dir]unzip.exe\
 \n";
 #endif
 
@@ -640,7 +636,7 @@ modifiers:\n\
   -H  use escapes for all non-ASCII Unicode  -U  ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#else
+#else /* !UNICODE_SUPPORT */
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
@@ -648,7 +644,7 @@ modifiers:\n\
   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#endif
+#endif /* ?UNICODE_SUPPORT */
 
 static ZCONST char Far UnzipUsageLine5[] = "\
 Examples (see unzip.txt for more info):\n\
@@ -717,9 +713,11 @@ int unzip(__G__ argc, argv)
     {
       char *loc = setlocale(LC_CTYPE, "en_GB.UTF-8");
 
+#  if 0 /* Code template for a locale setting success test. */
       if ((loc != NULL) && strcmp(loc, "en_GB.UTF-8") == 0) {
 		 /* Successfully set UTF-8 */
       }
+#  endif /* 0 */
 
 #  if 0 /* That code from Zip does not fit into the UnZip environment */
       printf("langinfo %s\n", nl_langinfo(CODESET));
@@ -863,13 +861,12 @@ int unzip(__G__ argc, argv)
         Claus.
   ---------------------------------------------------------------------------*/
 
-/* #ifdef DEBUG */
-/* Keep? */
+#ifdef DEBUG
 # ifdef LARGE_FILE_SUPPORT
   /* test if we can support large files - 10/6/04 EG */
     if (sizeof(zoff_t) < 8) {
         Info(slide, 0x401, ((char *)slide, "LARGE_FILE_SUPPORT set but not supported\n"));
-        retcode = IZ_COMPERR;
+        retcode = PK_BADERR;
         goto cleanup_and_exit;
     }
     /* test if we can show 64-bit values */
@@ -890,7 +887,7 @@ int unzip(__G__ argc, argv)
         {
             Info(slide, 0x401, ((char *)slide,
               "Can't show 64-bit values correctly\n"));
-            retcode = IZ_COMPERR;
+            retcode = PK_BADERR;
             goto cleanup_and_exit;
         }
     }
@@ -901,7 +898,7 @@ int unzip(__G__ argc, argv)
     */
     {
         int test_char;
-        static uch test_buf[ 2] = { 'a', 'b' };
+        static uch test_buf[2] = { 'a', 'b' };
 
         G.inptr = test_buf;
         G.incnt = 1;
@@ -916,11 +913,11 @@ int unzip(__G__ argc, argv)
             Info(slide, 0x401, ((char *)slide,
  "NEXTBYTE macro failed.  Try compiling with ALT_NEXTBYTE defined?"));
 
-            retcode = IZ_COMPERR;
+            retcode = PK_BADERR;
             goto cleanup_and_exit;
         }
     }
-/* #endif */ /* DEBUG */
+#endif /* DEBUG */
 
 /*---------------------------------------------------------------------------
     First figure out if we're running in UnZip mode or ZipInfo mode, and put
@@ -1182,9 +1179,7 @@ int unzip(__G__ argc, argv)
 #if defined(UNICODE_SUPPORT) && defined(WIN32)
     /* set Unicode escape all if option -H used */
     if (uO.H_flag)
-      G.unicode_escape_all = 1;
-    /* check if this Win32 OS has support for wide character calls */
-    G.has_win32_wide = has_win32_wide();
+        G.unicode_escape_all = 1;
 #endif
 
 
@@ -1403,14 +1398,17 @@ int uz_opts(__G__ pargc, pargv)
                     }
                     break;
 #endif /* !SFX || SFX_EXDIR */
-#ifdef VMS
-                case ('D'):    /* -D:  Restore directory date-time. */
+#if (!defined(NO_TIMESTAMPS))
+                case ('D'):    /* -D: Skip restoring dir (or any) timestamp. */
                     if (negative)
-                        uO.D_flag = FALSE, negative = 0;
+                    {
+                        uO.D_flag = MAX(uO.D_flag-negative,0);
+                        negative = 0;
+                    }
                     else
-                        uO.D_flag = TRUE;
+                        uO.D_flag++;
                     break;
-#endif /* def VMS */
+#endif /* (!NO_TIMESTAMPS) */
                 case ('e'):    /* just ignore -e, -x options (extract) */
                     break;
 #ifdef MACOS
@@ -1446,7 +1444,7 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.H_flag = TRUE;
                     break;
-#endif
+#endif /* UNICODE_SUPPORT */
 #ifdef MACOS
                 case ('i'): /* -i [MacOS] ignore filenames stored in Mac ef */
                     if( negative ) {
@@ -1650,7 +1648,7 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.U_flag = FALSE;
                     break;
-#else
+#else /* !UNICODE_SUPPORT */
 #ifndef CMS_MVS
                 case ('U'):    /* obsolete; to be removed in version 6.0 */
                     if (negative)
@@ -1659,7 +1657,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.L_flag = FALSE;
                     break;
 #endif /* !CMS_MVS */
-#endif
+#endif /* ?UNICODE_SUPPORT */
 #ifndef SFX
                 case ('v'):    /* verbose */
                     if (negative) {
@@ -1750,7 +1748,7 @@ int uz_opts(__G__ pargc, pargv)
                     break;
 #endif /* DOS_H68_OS2_W32 */
 #if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
-                case (':'):
+                case (':'):    /* allow "parent dir" path components */
                     if (negative) {
                         uO.ddotflag = MAX(uO.ddotflag-negative,0);
                         negative = 0;
@@ -1758,6 +1756,15 @@ int uz_opts(__G__ pargc, pargv)
                         ++uO.ddotflag;
                     break;
 #endif /* !RISCOS && !CMS_MVS && !TANDEM */
+#ifdef UNIX
+                case ('^'):    /* allow control chars in filenames */
+                    if (negative) {
+                        uO.cflxflag = MAX(uO.cflxflag-negative,0);
+                        negative = 0;
+                    } else
+                        ++uO.cflxflag;
+                    break;
+#endif /* UNIX */
                 default:
                     error = TRUE;
                     break;
@@ -1874,10 +1881,18 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
 #    define LOCAL ""
 #  endif
 
-#  ifdef MORE
-#    define SFXOPT1 "M"
+#  ifndef NO_TIMESTAMP
+#    ifdef MORE
+#      define SFXOPT1 "DM"
+#    else
+#      define SFXOPT1 "D"
+#    endif
 #  else
-#    define SFXOPT1 ""
+#    ifdef MORE
+#      define SFXOPT1 "M"
+#    else
+#      define SFXOPT1 ""
+#    endif
 #  endif
 
 int usage(__G__ error)   /* return PK-type error code */
@@ -2174,11 +2189,6 @@ static void show_version_info(__G)
 #ifdef ZIP64_SUPPORT
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(Use_Zip64)));
-        ++numopts;
-#endif
-#ifdef SYMLINKS
-	Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
-          LoadFarStringSmall(Use_Symlinks)));
         ++numopts;
 #endif
 #if (defined(__DJGPP__) && (__DJGPP__ >= 2))

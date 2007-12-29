@@ -14,7 +14,7 @@
  */
 #if 0
 #define module_name VMS_UNZIP_CMDLINE
-#define module_ident "02-012"
+#define module_ident "02-013"
 #endif /* 0 */
 
 /*
@@ -33,6 +33,9 @@
 **
 **  Modified by:
 **
+**      02-013          S. Schweda, C. Spieler  29-Dec-2007 03:34
+**              Extended /RESTORE qualifier to support timestamp restoration
+**              options.
 **      02-012          Steven Schweda          07-Jul-2006 19:04
 **              Added /TEXT=STMLF qualifier option.
 **      02-011          Christian Spieler       21-Apr-2005 01:23
@@ -79,6 +82,16 @@
 **
 */
 
+/*    Stand-alone test procedure:
+ *
+ * cc /define = TEST=1 [.vms]cmdline.c /include = [] /object = [.vms]
+ * set command /object = [.vms]unz_cli.obj [.vms]unz_cli.cld
+ * link /executable = [] [.vms]cmdline.obj, [.vms]unz_cli.obj
+ * EXEC*UTE == "$SYS$DISK:[]'"
+ * exec cmdline [ /qualifiers ...] [parameters ...]
+ */
+
+
 
 
 /* 2004-12-13 SMS.
@@ -93,15 +106,6 @@
 #module module_name module_ident
 #endif
 #endif /* 0 */
-
-/* Accomodation for /NAMES = AS_IS with old header files. */
-
-#define lib$establish LIB$ESTABLISH
-#define lib$get_foreign LIB$GET_FOREIGN
-#define lib$get_input LIB$GET_INPUT
-#define lib$sig_to_ret LIB$SIG_TO_RET
-#define str$concat STR$CONCAT
-#define str$find_first_substring STR$FIND_FIRST_SUBSTRING
 
 #define UNZIP_INTERNAL
 #include "unzip.h"
@@ -166,7 +170,6 @@ $DESCRIPTOR(cli_binary_none,    "BINARY.NONE");         /* ---b */
 $DESCRIPTOR(cli_case_insensitive,"CASE_INSENSITIVE");   /* -C */
 $DESCRIPTOR(cli_screen,         "SCREEN");              /* -c */
 $DESCRIPTOR(cli_directory,      "DIRECTORY");           /* -d */
-$DESCRIPTOR(cli_alldates,       "ALLDATES");            /* -D */
 $DESCRIPTOR(cli_freshen,        "FRESHEN");             /* -f */
 $DESCRIPTOR(cli_help,           "HELP");                /* -h */
 $DESCRIPTOR(cli_junk,           "JUNK");                /* -j */
@@ -186,6 +189,10 @@ $DESCRIPTOR(cli_uppercase,      "UPPERCASE");           /* -U */
 $DESCRIPTOR(cli_update,         "UPDATE");              /* -u */
 $DESCRIPTOR(cli_version,        "VERSION");             /* -V */
 $DESCRIPTOR(cli_restore,        "RESTORE");             /* -X */
+$DESCRIPTOR(cli_restore_own,    "RESTORE.OWNER_PROT");  /* -X */
+$DESCRIPTOR(cli_restore_date,   "RESTORE.DATE");        /* -DD */
+$DESCRIPTOR(cli_restore_date_all, "RESTORE.DATE.ALL");  /* --D */
+$DESCRIPTOR(cli_restore_date_files, "RESTORE.DATE.FILES"); /* -D */
 $DESCRIPTOR(cli_dot_version,    "DOT_VERSION");         /* -Y */
 $DESCRIPTOR(cli_comment,        "COMMENT");             /* -z */
 $DESCRIPTOR(cli_exclude,        "EXCLUDE");             /* -x */
@@ -289,6 +296,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     unsigned long cmdl_len;             /* used size of buffer */
     char *ptr;
     int  x, len, zipinfo, exclude_list;
+    int restore_date;
 
     int new_argc;
     char **new_argv;
@@ -449,11 +457,38 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         /*
         **  Restore directory date-times.
         */
-        status = cli$present(&cli_alldates);
-        if (status == CLI$_NEGATED)
+        restore_date = 0;
+        status = cli$present(&cli_restore_date);
+        if (status != CLI$_ABSENT) {
+            /* Emit "----D" to reset the timestamp restore state "D_flag"
+            ** consistently to 0 (independent of optional environment
+            ** option settings).
+            */
             *ptr++ = '-';
-        if (status != CLI$_ABSENT)
+            *ptr++ = '-';
+            *ptr++ = '-';
             *ptr++ = 'D';
+
+            if (status == CLI$_NEGATED) {
+                /* /RESTORE = NODATE */
+                restore_date = 2;
+            } else {
+                status = cli$present(&cli_restore_date_all);
+                if (status == CLI$_PRESENT) {
+                    /* /RESTORE = DATE = ALL */
+                    restore_date = 0;
+                } else {
+                    /* /RESTORE = DATE = FILES (default) */
+                    restore_date = 1;
+                }
+            }
+
+            /* Emit the required number of (positive) "D" characters. */
+            while (restore_date > 0) {
+                *ptr++ = 'D';
+                restore_date--;
+            }
+        }
 
         /*
         **  Freshen existing files, create none
@@ -609,11 +644,16 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         /*
         **  Restore owner/protection info
         */
-        status = cli$present(&cli_restore);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
+        status = cli$present(&cli_restore_own);
+        if (status != CLI$_ABSENT) {
+            if (status == CLI$_NEGATED) {
+                *ptr++ = '-';
+            } else if ((status = cli$present(&cli_restore))
+                       == CLI$_NEGATED) {
+                *ptr++ = '-';
+            }
             *ptr++ = 'X';
+        }
 
         /*
         **  Display only the archive comment
@@ -1036,7 +1076,8 @@ Major options include (type unzip -h for Unix style flags):\n\
 Modifiers include:\n\
    /BRIEF, /FULL, /[NO]TEXT[=NONE|AUTO|ALL], /[NO]BINARY[=NONE|AUTO|ALL],\n\
    /[NO]OVERWRITE, /[NO]JUNK, /QUIET, /QUIET[=SUPER], /[NO]PAGE,\n\
-   /[NO]CASE_INSENSITIVE, /[NO]LOWERCASE, /[NO]VERSION, /[NO]RESTORE\n\n"));
+   /[NO]CASE_INSENSITIVE, /[NO]LOWERCASE, /[NO]VERSION,\n\
+   /RESTORE=([NO]OWNER_PROT,{NODATE|DATE={ALL|FILES}})\n\n"));
 
         Info(slide, flag, ((char *)slide, "\
 Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n   \

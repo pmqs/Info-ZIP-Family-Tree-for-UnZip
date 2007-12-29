@@ -34,8 +34,8 @@
 .!              Added /[NO]CASE_INSENSITIVE to ZipInfo mode;
 .!              documented the new /PASSWORD="decryption_key" option.
 .!      02-007          Christian Spieler       22-JUL-1997 22:37
-.!              Formatting changes (prevent line wraps).
-.!              Added "Exit_Codes" subtopic (no version number change).
+.!              Formatting changes (prevent line wraps);
+.!              added "Exit_Codes" subtopic (no version number change).
 .!      02-007          Christian Spieler       28-APR-2000 03:22
 .!              Changed references to plaintext UnZip documentation file
 .!              into UNZIP.TXT (no version number change).
@@ -144,18 +144,6 @@ The following qualifiers may be specified with /ZIPINFO:
 |  /[NO]CASE_INSENSITIVE  Match filenames case-insensitively
 |  /[NO]PAGE              Page screen output through built-in "more"
 <LARETIL>
-<QUALIFIER>
-/ALLDATES
-
-/ALLDATES
-<NEXT>
-/NOALLDATES (default)
-
-Selects restoration of directory date-times.  By default (/NOALLDATES),
-UnZip restores the original date-time attributes for files, but not for
-directories.  This agrees with the behavior of VMS BACKUP.  With
-/ALLDATES, original date-time attributes will be restored for all files
-and directories.
 <QUALIFIER>
 /BINARY
 
@@ -341,11 +329,30 @@ operations even more quiet.
 <QUALIFIER>
 /RESTORE
 
-/RESTORE
-<NEXT>
-/NORESTORE
+/RESTORE[=(KEYWORD, ...)]
 
-Restore file owner and protection settings.
+Selects restoration options for some meta-data.
+The optional keywords recognized are:
+<LITERAL>
+|  OWNER_PROT    Restore file owner and protection settings.
+|  NOOWNER_PROT  Do not restore file owner and protection settings.
+|  NODATE        Do not restore any timestamps.
+|  DATE=ALL      Restore timestamps for all extracted entries, files
+|                and directories.
+|  DATE=FILES    Restore timestamps for extracted files.  (Default.)
+<LARETIL>
+
+By default, VMS UnZip restores the original date-time attributes for files,
+but not for directories.  This agrees with the behavior of VMS BACKUP
+(and UnZip versions before 3.0).
+
+For compatibility with UnZip versions before 3.0, the following obsolete
+short forms are still accepted:
+<LITERAL>
+| Obsolete form:        Modern form:
+| /RESTORE              /RESTORE = OWNER_PROT
+| /NORESTORE            /RESTORE = NOOWNER_PROT
+<LARETIL>
 <QUALIFIER>
 /SCREEN
 
@@ -439,12 +446,12 @@ codes with facility code 1954 = %x7A2, and with the inhibit-message
 (%x10000000) and facility-specific (%x00008000) bits set:
 <LITERAL>
 |   %x17A28001                        normal exit
-|   %x17A28000+ 16* Zip_error_code    warnings
-|   %x17A28002+ 16* Zip_error_code    normal errors
-|   %x17A28004+ 16* Zip_error_code    fatal errors
+|   %x17A28000 + 16*UnZip_error_code  warnings
+|   %x17A28002 + 16*UnZip_error_code  normal errors
+|   %x17A28004 + 16*UnZip_error_code  fatal errors
 <LARETIL>
 
-Note that multiplying the UNIX-style Zip error code by 16 places it
+Note that multiplying the UNIX-style UnZip error code by 16 places it
 conveniently in the hexadecimal representation of the VMS exit code,
 "__" in %x17A28__s, where "s" is the severity code.  For example, a
 missing archive might cause UnZip error code 9, which would be
@@ -453,7 +460,7 @@ transformed into the VMS exit status %X17A28092.
 The UnZip VMS exit codes include severity values which approximate those
 defined by PKWARE, as shown in the following table:
 <LITERAL>
-|    VMS      Zip err
+|    VMS     UnZip err
 |  severity    code     Error description
 | ----------+---------+----------------------------------------------
 |  Success       0      Normal.  No errors or warnings detected.
@@ -492,7 +499,6 @@ defined by PKWARE, as shown in the following table:
 |                       password(s).
 |  Fatal        83      Large-file archive could not be processed by
 |                       this small-file program.
-|  Fatal        84      Compiler settings error.
 <LARETIL>
 
 <TOPIC>
@@ -524,6 +530,7 @@ options and modifiers can be provided:
 |  -o   OK to overwrite files without prompting
 |  -q   perform operations quietly (-qq => even quieter)
 |  -C   match filenames case-insensitively
+|  -D   do not restore any timestamps (--D restore timestamps for directories)
 |  -L   convert filenames to lowercase if created on MSDOS, VMS, etc.
 |  -M   page output through built-in "more" function
 |  -P<pwd>  supply decryption password on the command line (insecure!)
@@ -535,8 +542,8 @@ options and modifiers can be provided:
 |  -2   force creation of ODS2-compatible file names
 <LARETIL>
 
-Note that uppercase options such as -C, -L, -M, -P, -S, -T, -V, -X, Y and -Z
-must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
+Note that uppercase options such as -C, -D, -L, -M, -P, -S, -T, -V, -X, Y, and
+-Z must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
 For example:
 
 <LITERAL>
