@@ -35,12 +35,12 @@
 #  ifdef NO_ZIP64_SUPPORT
 #    ifdef ZIP64_SUPPORT
 #      undef ZIP64_SUPPORT
-#    endif /* def ZIP64_SUPPORT */
-#  else /* def NO_ZIP64_SUPPORT */
+#    endif
+#  else
 #    ifndef ZIP64_SUPPORT
 #      define ZIP64_SUPPORT
-#    endif /* ndef ZIP64_SUPPORT */
-#  endif /* def NO_ZIP64_SUPPORT */
+#    endif
+#  endif
 
 #endif /* def LARGE_FILE_SUPPORT */
 
@@ -146,21 +146,6 @@
 
 typedef struct stat z_stat;
 #define Z_STAT_DEFINED
-
-/* LARGE_FILE_SUPPORT implies ZIP64_SUPPORT,
-   unless explicitly disabled by NO_ZIP64_SUPPORT.
-*/
-#ifdef LARGE_FILE_SUPPORT
-#  ifndef NO_ZIP64_SUPPORT
-#    ifndef ZIP64_SUPPORT
-#      define ZIP64_SUPPORT
-#    endif
-#  else
-#    ifdef ZIP64_SUPPORT
-#      undef ZIP64_SUPPORT
-#    endif
-#  endif
-#endif
 
 
 #ifdef __DECC
