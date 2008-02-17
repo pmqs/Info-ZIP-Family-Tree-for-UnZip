@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -27,7 +27,7 @@
              set_deferred_symlink()   (SYMLINKS only)
              fnfilter()
              dircomp()                (SET_DIR_ATTRIB only)
-             UZbunzip2()              (BZIP2_SUPPORT only)
+             UZbunzip2()              (USE_BZIP2 only)
 
   ---------------------------------------------------------------------------*/
 
@@ -139,16 +139,17 @@ static ZCONST char Far ComprMsgNum[] =
    static ZCONST char Far CmprLZMA[]       = "LZMA";
    static ZCONST char Far CmprIBMTerse[]   = "IBM/Terse";
    static ZCONST char Far CmprIBMLZ77[]    = "IBM LZ77";
+   static ZCONST char Far CmprWavPack[]    = "WavPack";
    static ZCONST char Far CmprPPMd[]       = "PPMd";
    static ZCONST char Far *ComprNames[NUM_METHODS] = {
      CmprNone, CmprShrink, CmprReduce, CmprReduce, CmprReduce, CmprReduce,
      CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode,
-     CmprBzip, CmprLZMA, CmprIBMTerse, CmprIBMLZ77, CmprPPMd
+     CmprBzip, CmprLZMA, CmprIBMTerse, CmprIBMLZ77, CmprWavPack, CmprPPMd
    };
    static ZCONST unsigned ComprIDs[NUM_METHODS] = {
      STORED, SHRUNK, REDUCED1, REDUCED2, REDUCED3, REDUCED4,
      IMPLODED, TOKENIZED, DEFLATED, ENHDEFLATED, DCLIMPLODED,
-     BZIPPED, LZMAED, IBMTERSED, IBMLZ77ED, PPMDED
+     BZIPPED, LZMAED, IBMTERSED, IBMLZ77ED, WAVPACKED, PPMDED
    };
 #endif /* !SFX */
 static ZCONST char Far FilNamMsg[] =
@@ -257,7 +258,7 @@ static ZCONST char Far ErrUnzipNoFile[] = "\n  error:  %s%s\n";
 static ZCONST char Far NotEnoughMem[] = "not enough memory to ";
 static ZCONST char Far InvalidComprData[] = "invalid compressed data to ";
 static ZCONST char Far Inflate[] = "inflate";
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
   static ZCONST char Far BUnzip[] = "bunzip";
 #endif
 
@@ -807,10 +808,22 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 static int store_info(__G)   /* return 0 if skipping, 1 if OK */
     __GDEF
 {
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
 #  define UNKN_BZ2 (G.crec.compression_method!=BZIPPED)
 #else
 #  define UNKN_BZ2 TRUE       /* bzip2 unknown */
+#endif
+
+#ifdef USE_LZMA
+#  define UNKN_LZMA (G.crec.compression_method!=LZMAED)
+#else
+#  define UNKN_LZMA TRUE      /* LZMA unknown */
+#endif
+
+#ifdef USE_WAVP
+#  define UNKN_WAVP (G.crec.compression_method!=WAVPACKED)
+#else
+#  define UNKN_WAVP TRUE      /* WavPack unknown */
 #endif
 
 #ifdef USE_PPMD
@@ -823,11 +836,12 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #  ifdef USE_DEFLATE64
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method<DEFLATED \
-      && G.crec.compression_method>ENHDEFLATED && UNKN_BZ2 && UNKN_PPMD)
+      && G.crec.compression_method>ENHDEFLATED \
+      && UNKN_BZ2 && UNKN_LZMA && UNKN_WAVP && UNKN_PPMD)
 #  else
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method!=DEFLATED\
-      && UNKN_BZ2 && UNKN_PPMD)
+      && UNKN_BZ2 && UNKN_LZMA && UNKN_WAVP && UNKN_PPMD)
 #  endif
 #else
 #  ifdef COPYRIGHT_CLEAN  /* no reduced files */
@@ -844,15 +858,17 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #  ifdef USE_DEFLATE64
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
-     (G.crec.compression_method>ENHDEFLATED && UNKN_BZ2 && UNKN_PPMD))
+     (G.crec.compression_method>ENHDEFLATED && UNKN_BZ2 && UNKN_LZMA \
+      && UNKN_WAVP && UNKN_PPMD))
 #  else
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
-     (G.crec.compression_method>DEFLATED && UNKN_BZ2 && UNKN_PPMD))
+     (G.crec.compression_method>DEFLATED && UNKN_BZ2 && UNKN_LZMA \
+      && UNKN_WAVP && UNKN_PPMD))
 #  endif
 #endif
 
-#if (defined(BZIP2_SUPPORT) && (UNZIP_VERSION < UNZIP_BZ2VERS))
+#if (defined(USE_BZIP2) && (UNZIP_VERSION < UNZIP_BZ2VERS))
     int unzvers_support = (UNKN_BZ2 ? UNZIP_VERSION : UNZIP_BZ2VERS);
 #   define UNZVERS_SUPPORT  unzvers_support
 #else
@@ -1156,7 +1172,27 @@ static int extract_or_test_entrylist(__G__ numchunk,
                 continue;   /* go on to next one */
             }
         }
+        if (G.extra_field != (uch *)NULL) {
+            free(G.extra_field);
+            G.extra_field = (uch *)NULL;
+        }
+        if ((error =
+             do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != 0)
+        {
+            if (error > error_in_archive)
+                error_in_archive = error;
+            if (error > PK_WARN) {
+                Info(slide, 0x401, ((char *)slide,
+                  LoadFarString(ExtFieldMsg),
+                  FnFilter1(G.filename), "local"));
+                continue;   /* go on */
+            }
+        }
 #ifndef SFX
+        /* Filename consistency checks must come after reading in the local
+         * extra field, so that a UTF-8 entry name e.f. block has already
+         * been processed.
+         */
         if (G.pInfo->cfilname != (char Far *)NULL) {
             if (zfstrcmp(G.pInfo->cfilname, G.filename) != 0) {
 #  ifdef SMALL_MEM
@@ -1179,22 +1215,6 @@ static int extract_or_test_entrylist(__G__ numchunk,
             G.pInfo->cfilname = (char Far *)NULL;
         }
 #endif /* !SFX */
-        if (G.extra_field != (uch *)NULL) {
-            free(G.extra_field);
-            G.extra_field = (uch *)NULL;
-        }
-        if ((error =
-             do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != 0)
-        {
-            if (error > error_in_archive)
-                error_in_archive = error;
-            if (error > PK_WARN) {
-                Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(ExtFieldMsg),
-                  FnFilter1(G.filename), "local"));
-                continue;   /* go on */
-            }
-        }
         /* Size consistency checks must come after reading in the local extra
          * field, so that any Zip64 extension local e.f. block has already
          * been processed.
@@ -1770,11 +1790,11 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             }
             break;
 
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
         case BZIPPED:
             if (!uO.tflag && QCOND2) {
                 Info(slide, 0, ((char *)slide, LoadFarString(ExtractMsg),
-                  "bzipp", FnFilter1(G.filename),
+                  "bunzipp", FnFilter1(G.filename),
                   (uO.aflag != 1 /* && G.pInfo->textfile==G.pInfo->textmode */)?
                   "" : (G.pInfo->textfile? txt : bin), uO.cflag? NEWLINE : ""));
             }
@@ -1799,7 +1819,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 }
             }
             break;
-#endif /* BZIP2_SUPPORT */
+#endif /* USE_BZIP2 */
 
         default:   /* should never get to this point */
             Info(slide, 0x401, ((char *)slide,
@@ -2443,18 +2463,36 @@ static void set_deferred_symlink(__G__ slnk_entry)
 /*  Function fnfilter()  */        /* here instead of in list.c for SFX */
 /*************************/
 
-char *fnfilter(raw, space)         /* convert name to safely printable form */
+char *fnfilter(raw, space, size)   /* convert name to safely printable form */
     ZCONST char *raw;
     uch *space;
+    extent size;
 {
 #ifndef NATIVE   /* ASCII:  filter ANSI escape codes, etc. */
     ZCONST uch *r=(ZCONST uch *)raw;
     uch *s=space;
+    uch *slim=NULL;
+    uch *se=NULL;
+    int have_overflow = FALSE;
 
+    if (size > 0) {
+        slim = space + size
+#ifdef _MBCS
+                     - (MB_CUR_MAX - 1)
+#endif
+                     - 4;
+    }
     while (*r) {
+        if (size > 0 && s >= slim && se == NULL) {
+            se = s;
+        }
 #ifdef QDOS
         if (qlflag & 2) {
             if (*r == '/' || *r == '.') {
+                if (se != NULL && (s > (space + (size-3)))) {
+                    have_overflow = TRUE;
+                    break;
+                }
                 ++r;
                 *s++ = '_';
                 continue;
@@ -2462,18 +2500,34 @@ char *fnfilter(raw, space)         /* convert name to safely printable form */
         } else
 #endif
         if (*r < 32) {
+            if (se != NULL && (s > (space + (size-4)))) {
+                have_overflow = TRUE;
+                break;
+            }
             *s++ = '^', *s++ = (uch)(64 + *r++);
         } else {
 #ifdef _MBCS
-            unsigned i;
-            for (i = CLEN(r); i > 0; i--)
+            unsigned i = CLEN(r);
+            if (se != NULL && (s > (space + (size-i-2)))) {
+                have_overflow = TRUE;
+                break;
+            }
+            for (; i > 0; i--)
                 *s++ = *r++;
 #else
+            if (se != NULL && (s > (space + (size-3)))) {
+                have_overflow = TRUE;
+                break;
+            }
             *s++ = *r++;
 #endif
          }
     }
-    *s = '\0';
+    if (have_overflow) {
+        strcpy((char *)se, "...");
+    } else {
+        *s = '\0';
+    }
 
 #ifdef WINDLL
     INTERN_TO_ISO((char *)space, (char *)space);  /* translate to ANSI */
@@ -2514,7 +2568,7 @@ static int Cdecl dircomp(a, b)  /* used by qsort(); swiped from Zip */
 #endif /* SET_DIR_ATTRIB */
 
 
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
 
 /**************************/
 /*  Function UZbunzip2()  */
@@ -2639,4 +2693,4 @@ uzbunzip_cleanup_exit:
 
     return retval;
 } /* end function UZbunzip2() */
-#endif /* BZIP2_SUPPORT */
+#endif /* USE_BZIP2 */

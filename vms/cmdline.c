@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -91,7 +91,6 @@
  * exec cmdline [ /qualifiers ...] [parameters ...]
  */
 
-
 
 
 /* 2004-12-13 SMS.
@@ -112,6 +111,17 @@
 #ifndef TEST
 #  include "unzvers.h"  /* for VMSCLI_usage() */
 #endif /* !TEST */
+
+/* Workaround for broken header files of older DECC distributions
+ * that are incompatible with the /NAMES=AS_IS qualifier. */
+/* - lib$routines.h definitions: */
+#define lib$establish LIB$ESTABLISH
+#define lib$get_foreign LIB$GET_FOREIGN
+#define lib$get_input LIB$GET_INPUT
+#define lib$sig_to_ret LIB$SIG_TO_RET
+/* - str$routines.h definitions: */
+#define str$concat STR$CONCAT
+#define str$find_first_substring STR$FIND_FIRST_SUBSTRING
 
 #include <ssdef.h>
 #include <descrip.h>
@@ -468,21 +478,19 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             *ptr++ = '-';
             *ptr++ = '-';
             *ptr++ = 'D';
-
             if (status == CLI$_NEGATED) {
-                /* /RESTORE = NODATE */
+                /* /RESTORE=NODATE */
                 restore_date = 2;
             } else {
                 status = cli$present(&cli_restore_date_all);
                 if (status == CLI$_PRESENT) {
-                    /* /RESTORE = DATE = ALL */
+                    /* /RESTORE=(DATE=ALL) */
                     restore_date = 0;
                 } else {
-                    /* /RESTORE = DATE = FILES (default) */
+                    /* /RESTORE=(DATE=FILES) (default) */
                     restore_date = 1;
                 }
             }
-
             /* Emit the required number of (positive) "D" characters. */
             while (restore_date > 0) {
                 *ptr++ = 'D';
@@ -1077,7 +1085,7 @@ Modifiers include:\n\
    /BRIEF, /FULL, /[NO]TEXT[=NONE|AUTO|ALL], /[NO]BINARY[=NONE|AUTO|ALL],\n\
    /[NO]OVERWRITE, /[NO]JUNK, /QUIET, /QUIET[=SUPER], /[NO]PAGE,\n\
    /[NO]CASE_INSENSITIVE, /[NO]LOWERCASE, /[NO]VERSION,\n\
-   /RESTORE=([NO]OWNER_PROT,{NODATE|DATE={ALL|FILES}})\n\n"));
+   /RESTORE[=([NO]OWNER_PROT[,NODATE|DATE={ALL|FILES}])]\n\n"));
 
         Info(slide, flag, ((char *)slide, "\
 Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n   \

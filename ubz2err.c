@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -19,7 +19,7 @@
   usage for building a monolythic binary of the Windows application "WiZ"
   that supports bzip2 both in compression and decompression operations.
 
-  Contains:  bz_internal_error()      (BZIP2_SUPPORT only)
+  Contains:  bz_internal_error()      (USE_BZIP2 only)
 
   ---------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@
 #  endif
 #endif
 
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
 
 /**********************************/
 /*  Function bz_internal_error()  */
@@ -45,13 +45,13 @@
  * BZ_NO_STDIO), required to handle fatal internal bug-type errors of
  * the bzip2 library.
  */
-void bz_internal_error(errcode)
-    int errcode;
+void bz_internal_error(bzerrcode)
+    int bzerrcode;
 {
     GETGLOBALS();
 
     Info(slide, 0x421, ((char *)slide,
-      "error: internal fatal libbzip2 error number %d\n", errcode));
+      "error: internal fatal libbzip2 error number %d\n", bzerrcode));
 #ifdef WINDLL
     longjmp(dll_error_return, 1);
 #else
@@ -60,4 +60,4 @@ void bz_internal_error(errcode)
 #endif
 } /* end function bz_internal_error() */
 
-#endif /* BZIP2_SUPPORT */
+#endif /* USE_BZIP2 */

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1400,12 +1400,10 @@ int uz_opts(__G__ pargc, pargv)
 #endif /* !SFX || SFX_EXDIR */
 #if (!defined(NO_TIMESTAMPS))
                 case ('D'):    /* -D: Skip restoring dir (or any) timestamp. */
-                    if (negative)
-                    {
+                    if (negative) {
                         uO.D_flag = MAX(uO.D_flag-negative,0);
                         negative = 0;
-                    }
-                    else
+                    } else
                         uO.D_flag++;
                     break;
 #endif /* (!NO_TIMESTAMPS) */

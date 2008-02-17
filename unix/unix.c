@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -81,7 +81,7 @@ typedef struct uxdirattr {      /* struct for holding unix style directory */
     } u;
     unsigned perms;             /* same as min_info.file_attr */
     int have_uidgid;            /* flag */
-    ush uidgid[2];
+    ulg uidgid[2];
     char fnbuf[1];              /* buffer stub for directory name */
 } uxdirattr;
 #define UxAtt(d)  ((uxdirattr *)d)    /* typecast shortcut */
@@ -1008,12 +1008,12 @@ int mkdir(path, mode)
 
 
 #if (!defined(MTS) || defined(SET_DIR_ATTRIB))
-static int get_extattribs OF((__GPRO__ iztimes *pzt, ush z_uidgid[2]));
+static int get_extattribs OF((__GPRO__ iztimes *pzt, ulg z_uidgid[2]));
 
 static int get_extattribs(__G__ pzt, z_uidgid)
     __GDEF
     iztimes *pzt;
-    ush z_uidgid[2];
+    ulg z_uidgid[2];
 {
 /*---------------------------------------------------------------------------
     Convert from MSDOS-format local time and date to Unix-format 32-bit GMT
@@ -1075,7 +1075,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         iztimes t3;             /* mtime, atime, ctime */
         ztimbuf t2;             /* modtime, actime */
     } zt;
-    ush z_uidgid[2];
+    ulg z_uidgid[2];
     int have_uidgid_flg;
 
     have_uidgid_flg = get_extattribs(__G__ &(zt.t3), z_uidgid);
@@ -1098,7 +1098,12 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 # else
                             0
 # endif
-        extent slnk_entrysize = sizeof(slinkentry) + attribsize +
+        /* size of the symlink entry is the sum of
+         *  (struct size + 2 trailing '\0'),
+         *  system specific attribute data size (might be 0),
+         *  and the lengths of name and link target.
+         */
+        extent slnk_entrysize = (sizeof(slinkentry) + 2) + attribsize +
                                 ucsize + strlen(G.filename);
         slinkentry *slnk_entry;
 
@@ -1180,11 +1185,11 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         {
             if (uO.qflag)
                 Info(slide, 0x201, ((char *)slide,
-                  "warning:  cannot set UID %d and/or GID %d for %s\n",
+                  "warning:  cannot set UID %lu and/or GID %lu for %s\n",
                   z_uidgid[0], z_uidgid[1], FnFilter1(G.filename)));
             else
                 Info(slide, 0x201, ((char *)slide,
-                  " (warning) cannot set UID %d and/or GID %d",
+                  " (warning) cannot set UID %lu and/or GID %lu",
                   z_uidgid[0], z_uidgid[1]));
         }
     }
@@ -1205,22 +1210,28 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     fclose(G.outfile);
 #endif /* !NO_FCHOWN && !NO_FCHMOD */
 
-    /* set the file's access and modification times */
-    if (utime(G.filename, &(zt.t2))) {
+    /* skip restoring time stamps on user's request */
+    if (uO.D_flag <= 1) {
+        /* set the file's access and modification times */
+        if (utime(G.filename, &(zt.t2))) {
 #ifdef AOS_VS
-        if (uO.qflag)
-            Info(slide, 0x201, ((char *)slide, "... cannot set time for %s\n",
-              FnFilter1(G.filename)));
-        else
-            Info(slide, 0x201, ((char *)slide, "... cannot set time"));
+            if (uO.qflag)
+                Info(slide, 0x201, ((char *)slide,
+                  "... cannot set time for %s\n",
+                  FnFilter1(G.filename)));
+            else
+                Info(slide, 0x201, ((char *)slide,
+                  "... cannot set time"));
 #else
-        if (uO.qflag)
-            Info(slide, 0x201, ((char *)slide,
-              "warning:  cannot set times for %s\n", FnFilter1(G.filename)));
-        else
-            Info(slide, 0x201, ((char *)slide,
-              " (warning) cannot set times"));
+            if (uO.qflag)
+                Info(slide, 0x201, ((char *)slide,
+                  "warning:  cannot set times for %s\n",
+                  FnFilter1(G.filename)));
+            else
+                Info(slide, 0x201, ((char *)slide,
+                  " (warning) cannot set times"));
 #endif /* ?AOS_VS */
+        }
     }
 
 #if (defined(NO_FCHOWN) || defined(NO_FCHMOD))
@@ -1248,7 +1259,7 @@ int set_symlnk_attribs(__G__ slnk_entry)
     if (slnk_entry->attriblen > 0) {
 # if (!defined(NO_LCHOWN))
       if (slnk_entry->attriblen > sizeof(unsigned)) {
-        ush *z_uidgid_p = (void *)slnk_entry->buf + sizeof(unsigned);
+        ulg *z_uidgid_p = (zvoid *)(slnk_entry->buf + sizeof(unsigned));
         TTrace((stderr,
                 "set_symlnk_attribs:  restoring Unix UID/GID info for\n\t%s\n",
                 FnFilter1(slnk_entry->fname)));
@@ -1256,7 +1267,7 @@ int set_symlnk_attribs(__G__ slnk_entry)
                    (uid_t)z_uidgid_p[0], (gid_t)z_uidgid_p[1]))
         {
             Info(slide, 0x201, ((char *)slide,
-              "warning:  cannot set UID %d and/or GID %d for %s\n",
+              "warning:  cannot set UID %lu and/or GID %lu for %s\n",
               z_uidgid_p[0], z_uidgid_p[1], FnFilter1(slnk_entry->fname)));
         }
       }
@@ -1266,7 +1277,7 @@ int set_symlnk_attribs(__G__ slnk_entry)
               "set_symlnk_attribs:  restoring Unix attributes for\n\t%s\n",
               FnFilter1(slnk_entry->fname)));
       if (lchmod(slnk_entry->fname,
-                 filtattr(__G__ *(unsigned *)(void *)slnk_entry->buf)))
+                 filtattr(__G__ *(unsigned *)(zvoid *)slnk_entry->buf)))
           perror("lchmod (file attributes) error");
 # endif /* !NO_LCHMOD */
     }
@@ -1279,7 +1290,7 @@ int set_symlnk_attribs(__G__ slnk_entry)
 #ifdef SET_DIR_ATTRIB
 /* messages of code for setting directory attributes */
 static ZCONST char Far DirlistUidGidFailed[] =
-  "warning:  cannot set UID %d and/or GID %d for %s\n";
+  "warning:  cannot set UID %lu and/or GID %lu for %s\n";
 static ZCONST char Far DirlistUtimeFailed[] =
   "warning:  cannot set modification, access times for %s\n";
 #  ifndef NO_CHMOD
@@ -1326,11 +1337,15 @@ int set_direc_attribs(__G__ d)
         if (!errval)
             errval = PK_WARN;
     }
-    if (utime(d->fn, &UxAtt(d)->u.t2)) {
-        Info(slide, 0x201, ((char *)slide,
-          LoadFarString(DirlistUtimeFailed), FnFilter1(d->fn)));
-        if (!errval)
-            errval = PK_WARN;
+    /* Skip restoring directory time stamps on user' request. */
+    if (uO.D_flag <= 0) {
+        /* restore directory timestamps */
+        if (utime(d->fn, &UxAtt(d)->u.t2)) {
+            Info(slide, 0x201, ((char *)slide,
+              LoadFarString(DirlistUtimeFailed), FnFilter1(d->fn)));
+            if (!errval)
+                errval = PK_WARN;
+        }
     }
 #ifndef NO_CHMOD
     if (chmod(d->fn, UxAtt(d)->perms)) {

@@ -38,12 +38,12 @@ Define	Verb		UNZIP
 	DisAllow	DIRECTORY and SCREEN
 	DisAllow	BINARY and TEXT.ALL
 	DisAllow	BINARY.ALL and TEXT
-	DisAllow        (neg RESTORE) and RESTORE.DATE
-	DisAllow        (neg RESTORE) and (neg RESTORE.DATE)
-	DisAllow        (neg RESTORE) and RESTORE.OWNER_PROT
-	DisAllow        (neg RESTORE) and (neg RESTORE.OWNER_PROT)
-	DisAllow        (neg RESTORE.DATE) and RESTORE.DATE.ALL
-	DisAllow        (neg RESTORE.DATE) and RESTORE.DATE.FILES
+	DisAllow	(neg RESTORE) and RESTORE.DATE
+	DisAllow	(neg RESTORE) and (neg RESTORE.DATE)
+	DisAllow	(neg RESTORE) and RESTORE.OWNER_PROT
+	DisAllow	(neg RESTORE) and (neg RESTORE.OWNER_PROT)
+	DisAllow	(neg RESTORE.DATE) and RESTORE.DATE.ALL
+	DisAllow	(neg RESTORE.DATE) and RESTORE.DATE.FILES
 	DisAllow	TEXT.ALL and TEXT.AUTO
 	DisAllow	TEXT.AUTO and TEXT.NONE
 	DisAllow	TEXT.NONE and TEXT.ALL
@@ -63,7 +63,7 @@ Define	Type		CONVTXT_KEYWORDS
 	Keyword		STMLF
 
 Define	Type		RESTORE_KEYWORDS
-	Keyword		DATE, VALUE(TYPE=RESTOREDATE_KEYS, REQUIRED),
+	Keyword		DATE, VALUE(TYPE=RESTOREDATE_KEYS, Required),
 			Negatable
 	Keyword		OWNER_PROT, Default, Negatable
 

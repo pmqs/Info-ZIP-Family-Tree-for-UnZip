@@ -4,7 +4,7 @@
 
 # configure: Guess values for system-dependent variables
 # Output the flag definitions to the file "flags".
-# Parameters: $1 = $(CC), $2 = $(CFLAGS), $3 = $(DIR_BZ2LIB)
+# Parameters: $1 = $(CC), $2 = $(CFLAGS), $3 = $(IZ_BZIP2)
 # To construct unzip automatically using this file, type
 # "make -f unix/Makefile generic".
 # If this fails, then type "make list" to get a list of special targets.
@@ -14,7 +14,7 @@ trap "rm -f conftest* core a.out; exit 1" 1 2 3 15
 CC=${1-cc}
 CFLAGS=${2}
 CFLAGSR=${CFLAGS}
-DIR_BZ2LIB=${3-"bzip2"}
+IZ_BZIP2=${3}
 CFLAGS="${CFLAGS} -I. -DUNIX"
 LFLAGS1=""
 LN="ln -s"
@@ -81,7 +81,7 @@ _EOF_
       if test $? -eq 0; then
         CFLAGS_OPT="+O3 +Onolimit"
         echo '  HP-UX ANSI C ($CFLAGS_OPT)'
-      else        
+      else
         echo '  HP-UX Bundled C (no opt)'
       fi
     else
@@ -442,16 +442,55 @@ echo "Check bzip2 support"
 D_USE_BZ2=""
 LIBBZ2=""
 L_BZ2=""
-DIR_BZ2LIB=${3-"bzip2"}
-echo "  Check for bzip2 in bzip2 directory"
-if test -f "${DIR_BZ2LIB}/bzlib.c" -a -f "${DIR_BZ2LIB}/bzlib.h"; then
-   echo "-- Found bzip2 source in ${DIR_BZ2LIB}/ directory"
-   echo "-- Will try to build bzip2 library from source and link in"
-   LIBBZ2="${DIR_BZ2LIB}/libbz2.a"
-   D_USE_BZ2="-DUSE_BZIP2"
-   L_BZ2="-lbz2"
+if test -n "${IZ_BZIP2}" -a "${IZ_BZIP2}" != "bzip2" ; then
+  echo "  Check for bzip2 compiled library in IZ_BZIP2 (${IZ_BZIP2})"
+  if test -f "${IZ_BZIP2}/libbz2.a"; then
+#
+#   A bzip2 library built with BZ_NO_STDIO should have an
+#   unresolved external, "bz_internal_error".  The default,
+#   full-function library will not mention it.
+#
+    nm ${IZ_BZIP2}/libbz2.a | grep bz_internal_error > /dev/null
+    if test $? -eq 0; then
+      echo "    Found bzip2 BZ_NO_STDIO library, ${IZ_BZIP2}/libbz2.a"
+      if test -f "${IZ_BZIP2}/bzlib.h"; then
+        LIBBZ2="${IZ_BZIP2}/libbz2.a"
+        D_USE_BZ2="-DUSE_BZIP2"
+        L_BZ2="-lbz2"
+        echo "-- Found bzip2 library - linking in bzip2"
+      else
+        echo "    ${IZ_BZIP2}/bzlib.h not found"
+        echo "-- Since IZ_BZIP2 defined (!= \"bzip2\"),"
+        echo "-- => skipping OS and bzip2 dir checks."
+        echo "-- NO bzip2 support !"
+      fi
+    else
+      echo "    Found bzip2 library, ${IZ_BZIP2}/libbz2.a,"
+      echo "      but library not compiled with BZ_NO_STDIO."
+      echo "    ERROR: This (default) variant of bzip2 library is NOT"
+      echo "      supported with UnZip because of its incompatible"
+      echo "      error handling!"
+      echo "      Please see the UnZip installation instructions in"
+      echo "      the INSTALL text file."
+      echo "    Skipping bzip2 support..."
+    fi
+  else
+    echo "    ${IZ_BZIP2}/libbz2.a not found"
+    echo "-- Since IZ_BZIP2 defined (!= \"bzip2\"),"
+    echo "-- => skipping OS and bzip2 dir checks."
+    echo "-- NO bzip2 support !"
+  fi
 else
-   echo "-- bzip2 sources not found - no bzip2 support"
+  echo "  Check for bzip2 sources in unzip's bzip2 subdirectory"
+  if test -f "${IZ_BZIP2}/bzlib.c" -a -f "${IZ_BZIP2}/bzlib.h"; then
+    echo "-- Found bzip2 source in ${IZ_BZIP2}/ directory"
+    echo "-- Will try to build bzip2 library from source and link in"
+    LIBBZ2="${IZ_BZIP2}/libbz2.a"
+    D_USE_BZ2="-DUSE_BZIP2"
+    L_BZ2="-lbz2"
+  else
+    echo "-- bzip2 sources not found - no bzip2 support"
+  fi
 fi
 
 

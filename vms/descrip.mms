@@ -1,4 +1,4 @@
-#                                               6 November 2007.  SMS.
+#                                               28 December 2007.  CS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -11,8 +11,14 @@
 #
 # Optional macros:
 #
+#    USEBZ2=1       Build with optional BZIP2 support.  This macro
+#                   is a shortcut for IZ_BZIP2=SYS$DISK:[.BZIP2].
+#                   Additionally, it forces invokation of the UnZip-supplied
+#                   bzip2 make script provided in [.bzip2]descrbz2.mms.
+#                   This results in a "single-command" build of UnZip with
+#                   bzip2 support directly from the sources.
 #    IZ_BZIP2=dev:[dir]  Build with optional BZIP2 support.  The macro
-#                        value ("dev:[dir]", or a suitable logical name)
+#                   value ("dev:[dir]", or a suitable logical name)
 #                   tells where to find "bzlib.h".  The BZIP2 object
 #                   library (LIBBZ2_NS.OLB) is expected to be in a
 #                   "[.dest]" directory under that one
@@ -123,8 +129,8 @@ UNZIP_MSG_OBJ = [.$(DEST)]UNZIP_MSG.OBJ
 
 # TARGETS.
 
-# Default target, ALL.  Build All UnZip executables, utility
-# executables, and help files.
+# Default target, ALL.  Build All executables,
+# and help files.
 
 ALL : $(UNZIP) $(UNZIP_CLI) $(UNZIPSFX) $(UNZIPSFX_CLI) $(UNZIP_HELP) \
       $(UNZIP_MSG_EXE)

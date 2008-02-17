@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -17,7 +17,6 @@
              do_seekable()
              file_size()
              rec_find()
-             check_ecrec_zip64()
              find_ecrec64()
              find_ecrec()
              uz_end_central()
@@ -43,9 +42,6 @@
 #if defined(DYNALLOC_CRCTAB) || defined(UNICODE_SUPPORT)
 #  include "crc32.h"
 #endif
-#ifdef UNICODE_SUPPORT
-#  include <wchar.h>
-#endif /* def UNICODE_SUPPORT */
 
 static int    do_seekable        OF((__GPRO__ int lastchance));
 #ifdef DO_SAFECHECK_2GB
@@ -56,7 +52,6 @@ static zoff_t file_size          OF((int fh));
 # endif
 #endif /* DO_SAFECHECK_2GB */
 static int    rec_find           OF((__GPRO__ zoff_t, char *, int));
-static int    check_ecrec_zip64  OF((__GPRO));
 static int    find_ecrec64       OF((__GPRO__ zoff_t searchlen));
 static int    find_ecrec         OF((__GPRO__ zoff_t searchlen));
 static int    get_cdir_ent       OF((__GPRO));
@@ -174,6 +169,9 @@ static ZCONST char Far CentDirStartNotFound[] =
 static ZCONST char Far Cent64EndSigSearchErr[] =
   "fatal error: read failure while seeking for End-of-centdir-64 signature.\n\
   This zipfile is corrupt.\n";
+static ZCONST char Far Cent64EndSigSearchOff[] =
+  "error: End-of-centdir-64 signature not where expected (prepended bytes?)\n\
+  (attempting to process anyway)\n";
 #ifndef SFX
    static ZCONST char Far CentDirTooLong[] =
      "error [%s]:  reported length of central directory is\n\
@@ -553,14 +551,7 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
 #endif
 
     inflate_free(__G);
-#if defined(UNICODE_SUPPORT) && defined(WIN32)
-    if (G.has_win32_wide)
-      checkdirw(__G__ (wchar_t *)NULL, END);
-    else
-      checkdir(__G__ (char *)NULL, END);
-#else
     checkdir(__G__ (char *)NULL, END);
-#endif
 
 #ifdef DYNALLOC_CRCTAB
     if (CRC_32_TAB) {
@@ -592,6 +583,14 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     if (G.inbuf)
         free(G.inbuf);
     G.inbuf = G.outbuf = (uch *)NULL;
+
+#ifdef UNICODE_SUPPORT
+    if (G.filename_full) {
+        free(G.filename_full);
+        G.filename_full = (char *)NULL;
+        G.fnfull_bufsize = 0;
+    }
+#endif /* UNICODE_SUPPORT */
 
 #ifndef SFX
     for (i = 0; i < DIR_BLKSIZ; i++) {
@@ -821,7 +820,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         }
 #endif /* !SFX */
         if ((G.extra_bytes = G.real_ecrec_offset-G.expect_ecrec_offset) <
-            (Z_OFF_T)0)
+            (zoff_t)0)
         {
             Info(slide, 0x401, ((char *)slide, LoadFarString(MissingBytes),
               G.zipfn, FmZofft((-G.extra_bytes), NULL, NULL)));
@@ -1159,6 +1158,7 @@ static int rec_find(__G__ searchlen, signature, rec_size)
 
 
 
+#if 0
 /********************************/
 /* Function check_ecrec_zip64() */
 /********************************/
@@ -1173,6 +1173,7 @@ static int check_ecrec_zip64(__G)
         || G.ecrec.num_disk_start_cdir             == 0xFFFF
         || G.ecrec.number_this_disk                == 0xFFFF;
 } /* end function check_ecrec_zip64() */
+#endif /* never */
 
 
 
@@ -1289,12 +1290,44 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
     }
 
     if (strncmp((char *)byterec, end_central64_sig, 4) ) {
-      /* not found */
+      /* Zip64 EOCD Record not found */
+      /* Since we already have seen the Zip64 EOCD Locator, it's
+         possible we got here because there are bytes prepended
+         to the archive, like the sfx prefix. */
+
+      /* Make a guess as to where the Zip64 EOCD Record might be */
+      ecrec64_start_offset = ecloc64_start_offset - ECREC64_SIZE - 4;
+
+#ifdef USE_STRM_INPUT
+      zfseeko(G.zipfd, ecrec64_start_offset, SEEK_SET);
+      G.cur_zipfile_bufstart = zftello(G.zipfd);
+#else /* !USE_STRM_INPUT */
+      G.cur_zipfile_bufstart = zlseek(G.zipfd, ecrec64_start_offset, SEEK_SET);
+#endif /* ?USE_STRM_INPUT */
+
+      if ((G.incnt = read(G.zipfd, (char *)byterec, ECREC64_SIZE+4))
+          != (ECREC64_SIZE+4)) {
+        if (uO.qflag || uO.zipinfo_mode)
+            Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
+        Info(slide, 0x401, ((char *)slide,
+          LoadFarString(Cent64EndSigSearchErr)));
+        return PK_ERR;
+      }
+
+      if (strncmp((char *)byterec, end_central64_sig, 4) ) {
+        /* Zip64 EOCD Record not found */
+        /* Probably something not so easy to handle so exit */
+        if (uO.qflag || uO.zipinfo_mode)
+            Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
+        Info(slide, 0x401, ((char *)slide,
+          LoadFarString(Cent64EndSigSearchErr)));
+        return PK_ERR;
+      }
+
       if (uO.qflag || uO.zipinfo_mode)
           Info(slide, 0x401, ((char *)slide, "[%s]\n", G.zipfn));
       Info(slide, 0x401, ((char *)slide,
-        LoadFarString(Cent64EndSigSearchErr)));
-      return PK_ERR;
+        LoadFarString(Cent64EndSigSearchOff)));
     }
 
     /* Check consistency of found ecrec64 with ecloc64 (and ecrec): */
@@ -1471,6 +1504,28 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
        ECLOC64. This structure must reside on the same volume as the
        classic ECREC, at exactly (ECLOC64_SIZE+4) bytes in front
        of the ECREC.
+     */
+
+    /* This is an internal comment.  Remove before the next public beta.
+
+       Below check does not catch when an entry requires Zip64, as
+       when the uncompressed size is larger than 4 GB, but the
+       standard fields in ecrec (called EOCDR in the Zip source)
+       are sufficient, as when the file compresses under the Zip64
+       limit.  In such cases ecrec64 (called Zip64 EOCDR in Zip)
+       will exist to flag the archive as Zip64, even though none
+       of the ecrec values are set to the FFFF or FFFFFFFF flag
+       values.
+
+      if(check_ecrec_zip64(__G)){
+        need_zip64 = TRUE;
+      }
+
+       In fact, this check is not needed, as ecrec64 will ALWAYS
+       exist for a proper Zip64 archive, as the Version Needed To Extract
+       field is required to be set to 4.5 or higher.
+
+       End of internal comment.
      */
 
     /* The ecrec64 will ALWAYS exist for a proper Zip64 archive, as
@@ -1868,7 +1923,8 @@ int getUnicodeData(__G__ ef_buf, ef_len)
            * Compute 32-bit crc
            */
 
-          chksum = crc32(chksum, (uch *)(G.filename_full), strlen(G.filename_full));
+          chksum = crc32(chksum, (uch *)(G.filename_full),
+                         strlen(G.filename_full));
 
           /* If the checksums's don't match then likely filename has been modified and
            * the Unicode Path is no longer valid
@@ -1893,9 +1949,13 @@ int getUnicodeData(__G__ ef_buf, ef_len)
             G.unipath_filename[0] = '\0';
           } else {
             /* UTF-8 path */
-            strncpy(G.unipath_filename, (ZCONST char *) (offset + ef_buf), ULen);
+            strncpy(G.unipath_filename,
+                    (ZCONST char *)(offset + ef_buf), ULen);
             G.unipath_filename[ULen] = '\0';
           }
+# if 0
+          G.unipath_escapedfilename = utf8_to_escaped_string(G.unipath_filename);
+# endif
         }
 
         /* Skip this extra field block */
@@ -2264,37 +2324,6 @@ zwchar escape_string_to_wide(escape_string)
   return w;
 }
 
-char *wchar_to_local_string(wchar_string, escape_all)
-  wchar_t *wchar_string;
-  int escape_all;
-{
-  zwchar *wide_string = wchar_to_wide_string(wchar_string);
-  char *local_string = wide_to_local_string(wide_string, escape_all);
-
-  free(wide_string);
-
-  return local_string;
-}
-
-zwchar *wchar_to_wide_string(wchar_string)
-  wchar_t *wchar_string;
-{
-  int i;
-  int wchar_len;
-  zwchar *wide_string;
-
-  wchar_len = wcslen(wchar_string);
-
-  if ((wide_string = malloc((wchar_len + 1) * sizeof(zwchar))) == NULL) {
-    return NULL;
-  }
-  for (i = 0; i <= wchar_len; i++) {
-    wide_string[i] = wchar_string[i];
-  }
-
-  return wide_string;
-}
-
 char *utf8_to_escaped_string(utf8_string, escape_all)
   char *utf8_string;
   int escape_all;
@@ -2445,14 +2474,14 @@ zwchar *local_to_wide_string(local_string)
     return NULL;
   }
   wsize = mbstowcs(wc_string, local_string, strlen(local_string) + 1);
-  wc_string[wsize] = (wchar_t) '\0';
+  wc_string[wsize] = (wchar_t) 0;
 
   /* in case wchar_t is not zwchar */
   if ((wide_string = (zwchar *)malloc((wsize + 1) * sizeof(zwchar))) == NULL) {
     return NULL;
   }
   for (wsize = 0; wide_string[wsize] = (zwchar)wc_string[wsize]; wsize++) ;
-  wide_string[wsize] = (zwchar) '\0';
+  wide_string[wsize] = (zwchar) 0;
   free(wc_string);
 
   return wide_string;
@@ -2517,7 +2546,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
     int ef_is_c;        /* flag indicating "is central extra field" */
     ulg dos_mdatetime;  /* last_mod_file_date_time in DOS format */
     iztimes *z_utim;    /* return storage: atime, mtime, ctime */
-    ush *z_uidgid;      /* return storage: uid and gid */
+    ulg *z_uidgid;      /* return storage: uid and gid */
 {
     unsigned flags = 0;
     unsigned eb_id;
@@ -2716,8 +2745,16 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                 have_new_type_eb = TRUE;
             }
             if (eb_len >= EB_UX2_MINLEN && z_uidgid != NULL) {
-                z_uidgid[0] = makeword((EB_HEADSIZE+EB_UX2_UID) + ef_buf);
-                z_uidgid[1] = makeword((EB_HEADSIZE+EB_UX2_GID) + ef_buf);
+                z_uidgid[0] = (ulg)makeword((EB_HEADSIZE+EB_UX2_UID) + ef_buf);
+                z_uidgid[1] = (ulg)makeword((EB_HEADSIZE+EB_UX2_GID) + ef_buf);
+                if (eb_len >= EB_UX2_MINLEN + 4) {
+                    z_uidgid[0] |=
+                        (ulg)makeword((EB_HEADSIZE+EB_UX2_UID+4) + ef_buf)
+                        << 16;
+                    z_uidgid[1] |=
+                        (ulg)makeword((EB_HEADSIZE+EB_UX2_GID+4) + ef_buf)
+                        << 16;
+                }
                 flags |= EB_UX2_VALID;   /* signal success */
             }
             break;

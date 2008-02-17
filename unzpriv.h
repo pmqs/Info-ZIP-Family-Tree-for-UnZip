@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1147,6 +1147,18 @@
 
 #define FILNAMSIZ  PATH_MAX
 
+/* 2007-09-18 SMS.
+ * Include <locale.h> here if it will be needed later for Unicode.
+ * Otherwise, SETLOCALE may be defined here, and then defined again
+ * (differently) when <locale.h> is read later.
+ */
+#ifdef UNICODE_SUPPORT
+# include <wchar.h>
+# ifndef _MBCS
+#   include <locale.h>
+# endif
+#endif /* UNICODE_SUPPORT */
+
 /* DBCS support for Info-ZIP  (mainly for japanese (-: )
  * by Yoshioka Tsuneo (QWF00133@nifty.ne.jp,tsuneo-y@is.aist-nara.ac.jp)
  */
@@ -1173,7 +1185,9 @@
 #    define NEED_UZMBSRCHR
 #    define MBSRCHR(str,c) (char *)uzmbsrchr((ZCONST unsigned char *)(str), c)
 #  endif
-#  define SETLOCALE(category, locale) setlocale(category, locale)
+#  ifndef SETLOCALE
+#    define SETLOCALE(category, locale) setlocale(category, locale)
+#  endif
 #else /* !_MBCS */
 #  define ___MBS_TMP_DEF
 #  define ___TMP_PTR
@@ -1184,7 +1198,9 @@
 #  define lastchar(ptr, len) (ptr[(len)-1])
 #  define MBSCHR(str, c) strchr(str, c)
 #  define MBSRCHR(str, c) strrchr(str, c)
-#  define SETLOCALE(category, locale)
+#  ifndef SETLOCALE
+#    define SETLOCALE(category, locale)
+#  endif
 #endif /* ?_MBCS */
 #define INCSTR(ptr) PREINCSTR(ptr)
 
@@ -1634,7 +1650,7 @@
 #define EF_IZUNIX    0x5855    /* Info-ZIP's old Unix[1] ("UX") */
 #define EF_IZUNIX2   0x7855    /* Info-ZIP's new Unix[2] ("Ux") */
 #define EF_TIME      0x5455    /* universal timestamp ("UT") */
-#define EF_UNIPATH   0x7075    /* Info-ZIP Unicode Path */
+#define EF_UNIPATH   0x7075    /* Info-ZIP Unicode Path ("up") */
 #define EF_MAC3      0x334d    /* Info-ZIP's new Macintosh (= "M3") */
 #define EF_JLMAC     0x07c8    /* Johnny Lee's old Macintosh (= 1992) */
 #define EF_ZIPIT     0x2605    /* Thomas Brown's Macintosh (ZipIt) */
@@ -1896,7 +1912,7 @@ typedef struct iztimes {
        extent attriblen;        /* length of system-specific attrib data */
        char *target;            /* pointer to target filespec */
        char *fname;             /* pointer to name of link */
-       char buf[2];             /* name of link, allocs space for 2 '\0's */
+       char buf[];              /* data and name/link buffer */
    } slinkentry;
 #endif /* SYMLINKS */
 
@@ -2150,7 +2166,7 @@ int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
 #endif
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
-                                     iztimes *z_utim, ush *z_uidgid));
+                                     iztimes *z_utim, ulg *z_uidgid));
 #if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
    zvoid *getRISCOSexfield       OF((ZCONST uch *ef_buf, unsigned ef_len));
 #endif
@@ -2312,7 +2328,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #endif /* !SFX && !FUNZIP */
 #ifdef USE_BZIP2
    int    UZbunzip2              OF((__GPRO));                  /* extract.c */
-   void   bz_internal_error      OF((int errcode));             /* ubz2err.c */
+   void   bz_internal_error      OF((int bzerrcode));           /* ubz2err.c */
 #endif
 
 /*---------------------------------------------------------------------------
@@ -2959,13 +2975,13 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
   int is_ascii_string OF((char *));
 
   /* convert UTF-8 string to multi-byte string */
-  char *utf8_to_local_string OF((char *));
+  char *utf8_to_local_string OF((char *, int));
 
   /* convert UTF-8 string to wide string */
   zwchar *utf8_to_wide_string OF((char *));
 
   /* convert wide string to multi-byte string */
-  char *wide_to_local_string OF((zwchar *));
+  char *wide_to_local_string OF((zwchar *, int));
 
   /* convert local string to multi-byte display string */
   char *local_to_display_string OF((char *));
@@ -2976,7 +2992,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
   /* convert escape string to wide character */
   unsigned long escape_string_to_wide OF((char *));
 
-  char *utf8_to_escaped_string OF((char *));
+  char *utf8_to_escaped_string OF((char *, int));
 
   /* convert local to UTF-8 */
   char *local_to_utf8_string OF ((char *));

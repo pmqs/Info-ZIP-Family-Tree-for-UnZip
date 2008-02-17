@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -13,7 +13,8 @@
 #ifndef __vmscfg_h   /* Prevent (unlikely) multiple inclusions. */
 #define __vmscfg_h
 
-/* Accomodation for /NAMES = AS_IS with old header files. */
+/* Workaround for broken header files of older DECC distributions
+ * that are incompatible with the /NAMES=AS_IS qualifier. */
 #define cma$tis_errno_get_addr CMA$TIS_ERRNO_GET_ADDR
 
 /* LARGE FILE SUPPORT - 10/6/04 EG */

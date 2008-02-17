@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2005-Feb-10 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -41,31 +41,6 @@
 
 #define UNZIP_INTERNAL
 
-/* Accomodation for /NAMES = AS_IS with old header files. */
-
-#define lib$getsyi LIB$GETSYI
-#define lib$sys_getmsg LIB$SYS_GETMSG
-#define sys$assign SYS$ASSIGN
-#define sys$bintim SYS$BINTIM
-#define sys$close SYS$CLOSE
-#define sys$connect SYS$CONNECT
-#define sys$create SYS$CREATE
-#define sys$dassgn SYS$DASSGN
-#define sys$extend SYS$EXTEND
-#define sys$getjpiw SYS$GETJPIW
-#define sys$numtim SYS$NUMTIM
-#define sys$open SYS$OPEN
-#define sys$parse SYS$PARSE
-#define sys$put SYS$PUT
-#define sys$qio SYS$QIO
-#define sys$qiow SYS$QIOW
-#define sys$read SYS$READ
-#define sys$rewind SYS$REWIND
-#define sys$search SYS$SEARCH
-#define sys$synch SYS$SYNCH
-#define sys$wait SYS$WAIT
-#define sys$write SYS$WRITE
-
 #include "unzip.h"
 #include "crc32.h"
 #include "vms.h"
@@ -77,9 +52,14 @@
 #include <unixlib.h>
 
 #include <dvidef.h>
-#include <lib$routines.h>
 #include <ssdef.h>
 #include <stsdef.h>
+
+/* Workaround for broken header files of older DECC distributions
+ * that are incompatible with the /NAMES=AS_IS qualifier. */
+#define lib$getsyi LIB$GETSYI
+#define lib$sys_getmsg LIB$SYS_GETMSG
+#include <lib$routines.h>
 
 #ifndef EEXIST
 #  include <errno.h>    /* For mkdir() status codes */
@@ -557,7 +537,7 @@ int open_outfile(__G)           /* return 1 (PK_WARN) if fail */
         get_rms_defaults();
     }
 
-    switch (find_vms_attrs(__G__ 1))
+    switch (find_vms_attrs(__G__ (uO.D_flag <= 1)))
     {
         case VAT_NONE:
         default:
@@ -729,9 +709,12 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         FAB_OR_NAML(fileblk, nam).FAB_OR_NAML_FNA = G.filename;
         FAB_OR_NAML(fileblk, nam).FAB_OR_NAML_FNS = strlen(G.filename);
 
-        set_default_datetime_XABs(__G);
-        dattim.xab$l_nxt = fileblk.fab$l_xab;
-        fileblk.fab$l_xab = (void *) &dattim;
+        /* skip restoring time stamps on user's request */
+        if (uO.D_flag <= 1) {
+            set_default_datetime_XABs(__G);
+            dattim.xab$l_nxt = fileblk.fab$l_xab;
+            fileblk.fab$l_xab = (void *) &dattim;
+        }
 
 /* 2005-02-14 SMS.  What does this mean?  ----vvvvvvvvvvvvvvvvvvvvvvvvvvv */
         fileblk.fab$w_ifi = 0;  /* Clear IFI. It may be nonzero after ZIP */
@@ -903,18 +886,20 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNA = G.filename;
         FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNS = strlen(G.filename);
 
-        /* If no XAB date/time, use attributes from non-VMS fields. */
-        if (!(xabdat && xabrdt))
-        {
-            set_default_datetime_XABs(__G);
-
-            if (xabdat == NULL)
+        /* skip restoring time stamps on user's request */
+        if (uO.D_flag <= 1) {
+            /* If no XAB date/time, use attributes from non-VMS fields. */
+            if (!(xabdat && xabrdt))
             {
-                dattim.xab$l_nxt = outfab->fab$l_xab;
-                outfab->fab$l_xab = (void *) &dattim;
+                set_default_datetime_XABs(__G);
+
+                if (xabdat == NULL)
+                {
+                    dattim.xab$l_nxt = outfab->fab$l_xab;
+                    outfab->fab$l_xab = (void *) &dattim;
+                }
             }
         }
-
 /* 2005-02-14 SMS.  What does this mean?  ----vvvvvvvvvvvvvvvvvvvvvvvvvvv */
         outfab->fab$w_ifi = 0;  /* Clear IFI. It may be nonzero after ZIP */
         outfab->fab$b_fac = FAB$M_BIO | FAB$M_PUT;      /* block-mode output */
@@ -1059,12 +1044,6 @@ static struct atrdef    pka_atr[VMS_MAX_ATRCNT];
 static int              pka_idx;
 static ulg              pka_uchar;
 static struct fatdef    pka_rattr;
-
-/* Directory attribute storage, descriptor (list). */
-static struct atrdef pka_recattr[2] =
- { { sizeof( pka_rattr), ATR$C_RECATTR, &pka_rattr},    /* RECATTR. */
-   { 0, 0, 0 }                                          /* List terminator. */
- };
 
 static struct dsc$descriptor    pka_fibdsc =
 {   sizeof(pka_fib), DSC$K_DTYPE_Z, DSC$K_CLASS_S, (void *) &pka_fib  };
@@ -1260,7 +1239,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         status = sys$qiow(0, pka_devchn, IO$_CREATE|IO$M_CREATE|IO$M_ACCESS,
                           &pka_acp_iosb, 0, 0,
-                          &pka_fibdsc, &pka_fnam, 0, 0, pka_atr, 0);
+                          &pka_fibdsc, &pka_fnam, 0, 0, &pka_atr, 0);
 
         if ( !ERR(status) )
             status = pka_acp_iosb.status;
@@ -1365,10 +1344,10 @@ static int replace(__GPRO)
 /*
  * Function find_vms_attrs() scans the ZIP entry extra field, if any,
  * and looks for VMS attribute records.  Various date-time attributes
- * are ignored if set_date_time is zero (typically for a directory).
+ * are ignored if set_date_time is FALSE.
  *
- * For an IZ record, a FAB and various XABs are created and chained
- * together.
+ * For a set of IZ records, a FAB and various XABs are created and
+ * chained together.
  *
  * For a PK record, the pka_atr[] attribute descriptor array is
  * populated.
@@ -1376,8 +1355,7 @@ static int replace(__GPRO)
  * The return value is a VAT_* value, according to the type of extra
  * field attribute data found.
  */
-static int find_vms_attrs(__G int set_date_time)
-    __GDEF
+static int find_vms_attrs(__GPRO__ int set_date_time)
 {
     uch *scan = G.extra_field;
     struct  EB_header *hdr;
@@ -1529,7 +1507,7 @@ static int find_vms_attrs(__G int set_date_time)
                     case ATR$C_EXPDATE:
                     case ATR$C_BAKDATE:
                     case ATR$C_ASCDATES:
-                        skip = (set_date_time == 0);
+                        skip = (set_date_time == FALSE);
                         break;
                 }
 
@@ -2447,9 +2425,6 @@ static int _close_rms(__GPRO)
                     }
                     else
                     {
-                        if (ucsize >= (WSIZE>>2))
-                            /* truncate display string at buffer size limit */
-                            strcpy(&link_target[(WSIZE>>2)-4], "...");
                         Info(slide, 0, ((char *)slide, "-> %s ",
                           FnFilter1(link_target)));
                     }
@@ -2464,7 +2439,13 @@ static int _close_rms(__GPRO)
             slinkentry *slnk_entry;
 
             /* It's a symlink in need of post-processing. */
-            slnk_entrysize = sizeof(slinkentry) + ucsize + strlen(G.filename);
+            /* size of the symlink entry is the sum of
+             *  (struct size + 2 trailing '\0'),
+             *  system specific attribute data size (might be 0),
+             *  and the lengths of name and link target.
+             */
+            slnk_entrysize = (sizeof(slinkentry) + 2) +
+                             ucsize + strlen(G.filename);
 
             if (slnk_entrysize < ucsize) {
                 Info(slide, 0x201, ((char *)slide,
@@ -2504,26 +2485,9 @@ static int _close_rms(__GPRO)
                     }
                     else
                     {
-                        if (QCOND2) {
-                            char tmpbuf[4];
-
-                            if (ucsize >= (WSIZE>>2)) {
-                                /* truncate display string at buffer size
-                                   limit, save original content */
-                                strncpy(tmpbuf,
-                                        &slnk_entry->target[(WSIZE>>2)-4],
-                                        4);
-                                strcpy(&slnk_entry->target[(WSIZE>>2)-4],
-                                       "...");
-                            }
+                        if (QCOND2)
                             Info(slide, 0, ((char *)slide, "-> %s ",
                               FnFilter1(slnk_entry->target)));
-                            if (ucsize >= (WSIZE>>2))
-                                /* restore original content */
-                                strncpy(&slnk_entry->target[(WSIZE>>2)-4],
-                                        tmpbuf,
-                                        4);
-                        }
 
                         /* Add this symlink record to the list of
                            deferred symlinks. */
@@ -2673,9 +2637,6 @@ static int _close_qio(__GPRO)
             }
             else
             {
-                if (bytes_read >= (WSIZE>>2))
-                    /* truncate display string at buffer size limit */
-                    strcpy(&link_target[(WSIZE>>2)-4], "...");
                 Info(slide, 0, ((char *)slide, "-> %s ",
                   FnFilter1(link_target)));
             }
@@ -2689,7 +2650,7 @@ static int _close_qio(__GPRO)
     status = sys$qiow(0, pka_devchn, IO$_DEACCESS, &pka_acp_iosb,
                       0, 0,
                       &pka_fibdsc, 0, 0, 0,
-                      pka_atr, 0);
+                      &pka_atr, 0);
 
     sys$dassgn(pka_devchn);
     if ( !ERR(status) )
@@ -2859,7 +2820,7 @@ int set_direc_attribs(__G__ d)
     /* Extract the VMS file attributes from the preserved attribute
      * data, if they exist, and restore the date-time stamps.
      */
-    type = find_vms_attrs(__G__ uO.D_flag);
+    type = find_vms_attrs(__G__ (uO.D_flag <= 0));
 
     /* Arrange FAB-NAM[L] for file (directory) access. */
     if (type != VAT_NONE)
@@ -2954,8 +2915,8 @@ int set_direc_attribs(__G__ d)
         pka_atr[pka_idx].atr$l_addr = GVTC &attr;
         ++pka_idx;
 
-        /* Restore directory date-time only if user requests it (-D). */
-        if (uO.D_flag)
+        /* Restore directory date-time unless skipped by user (-D). */
+        if (uO.D_flag <= 0)
         {
             /* Set the directory date-time from the non-VMS data.
              * Dummy up the DOS-style modification date into global (G)
@@ -3069,90 +3030,19 @@ int set_direc_attribs(__G__ d)
 
 #endif /* ?NAML$C_MAXRSS */
 
-    /* 2007-07-13 SMS.
-     * Our freshly created directory can easily contain fewer files than
-     * the original archived directory (for example, if not all the
-     * files in the original directory were included in the archive), so
-     * its size may differ from that of the archived directory.  Thus,
-     * simply restoring the original RECATTR attributes structure, which
-     * includes EFBLK (and so on) can cause "SYSTEM-W-BADIRECTORY, bad
-     * directory file format" complaints.  Instead, we overwrite
-     * selected archived attributes with current attributes, to avoid
-     * setting obsolete/inappropriate attributes on the newly created
-     * directory file.
-     *
-     * First, see if there is a RECATTR structure about which we need to
-     * worry.
-     */
-    for (i = 0; pka_atr[i].atr$w_type != 0; i++)
-    {
-        if (pka_atr[i].atr$w_type == ATR$C_RECATTR)
-        {
-            /* We found a RECATTR structure which (we must assume) needs
-             * adjustment.  Retrieve the RECATTR data for the existing
-             * (newly created) directory file.
-             */
-            status = sys$qiow(0,                /* event flag */
-                              pka_devchn,       /* channel */
-                              IO$_ACCESS,       /* function code */
-                              &pka_acp_iosb,    /* IOSB */
-                              0,                /* AST address */
-                              0,                /* AST parameter */
-                              &pka_fibdsc,      /* P1 = FIB dscr */
-                              &pka_fnam,        /* P2 = File name */
-                              0,                /* P3 = Rslt nm str */
-                              0,                /* P4 = Rslt nm len */
-                              pka_recattr,      /* P5 = Attributes */
-                              0);               /* P6 (not used) */
-
-            /* If initial success, then get the final status from the IOSB. */
-            if ( !ERR(status) )
-                status = pka_acp_iosb.status;
-
-            if ( ERR(status) )
-            {
-                sprintf(warnmsg,
-                  "warning:  set-dir-attributes failed ($qiow acc) for %s.\n",
-                  dir_name);
-                vms_msg(__G__ warnmsg, status);
-                retcode = PK_WARN;
-            }
-            else
-            {
-                /* We should have valid RECATTR data.  Overwrite the
-                 * critical bits of the archive RECATTR structure with
-                 * the current bits.  The book says that an attempt to
-                 * modify HIBLK will be ignored, and FFBYTE should
-                 * always be zero, but safety is cheap.
-                 */
-                struct fatdef *ptr_recattr;
-
-                ptr_recattr = (struct fatdef *) pka_atr[i].atr$l_addr;
-                ptr_recattr->fat$l_hiblk =  pka_rattr.fat$l_hiblk;
-                ptr_recattr->fat$l_efblk =  pka_rattr.fat$l_efblk;
-                ptr_recattr->fat$w_ffbyte = pka_rattr.fat$w_ffbyte;
-            }
-        /* There should be only one RECATTR structure in the list, so
-         * escape from the loop after the first/only one has been
-         * processed.
-         */
-        break;
-        }
-    }
-
     /* Modify the file (directory) attributes. */
-    status = sys$qiow(0,                        /* event flag */
-                      pka_devchn,               /* channel */
-                      IO$_MODIFY,               /* function code */
-                      &pka_acp_iosb,            /* IOSB */
-                      0,                        /* AST address */
-                      0,                        /* AST parameter */
-                      &pka_fibdsc,              /* P1 = FIB dscr */
-                      &pka_fnam,                /* P2 = File name */
-                      0,                        /* P3 = Rslt nm str */
-                      0,                        /* P4 = Rslt nm len */
-                      pka_atr,                  /* P5 = Attributes */
-                      0);                       /* P6 (not used) */
+    status = sys$qiow(0,                            /* event flag */
+                      pka_devchn,                   /* channel */
+                      IO$_MODIFY,                   /* function code */
+                      &pka_acp_iosb,                /* IOSB */
+                      0,                            /* AST address */
+                      0,                            /* AST parameter */
+                      &pka_fibdsc,                  /* P1 = FIB dscr */
+                      &pka_fnam,                    /* P2 = File name */
+                      0,                            /* P3 = Rslt nm str */
+                      0,                            /* P4 = Rslt nm len */
+                      &pka_atr,                     /* P5 = Attributes */
+                      0);                           /* P6 (not used) */
 
     /* If initial success, then get the final status from the IOSB. */
     if ( !ERR(status) )
@@ -3161,7 +3051,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning:  set-dir-attributes failed ($qiow mod) for %s.\n",
+          "warning:  set-dir-attributes failed ($qiow) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -4964,15 +4854,13 @@ void return_VMS(err)
               "\n[return-code %d:  bad decryption password for all files]\n",
               err));
             break;
+#ifdef DO_SAFECHECK_2GB
         case IZ_ERRBF:
             Info(slide, 1, ((char *)slide,
               "\n[return-code %d:  big-file archive, small-file program]\n",
               err));
             break;
-        case IZ_COMPERR:
-            Info(slide, 1, ((char *)slide,
-              "\n[return-code %d:  compiler settings error)]\n", err));
-            break;
+#endif /* DO_SAFECHECK_2GB */
         default:
             Info(slide, 1, ((char *)slide,
               "\n[return-code %d:  unknown return-code (screw-up)]\n", err));

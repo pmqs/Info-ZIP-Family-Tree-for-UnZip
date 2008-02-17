@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -142,7 +142,7 @@
 #  endif
 #endif
 
-#ifdef BZIP2_SUPPORT
+#ifdef USE_BZIP2
 #  include "bzlib.h"
 #endif
 
@@ -231,7 +231,7 @@ typedef struct Globals {
     ulg       crc32val;             /* CRC shift reg. (was static in funzip) */
 
 #ifdef FUNZIP
-    FILE     *in;                   /* file descriptor of compressed stream */
+    FILE      *in;                  /* file descriptor of compressed stream */
 #endif
     uch       *inbuf;               /* input buffer (any size is OK) */
     uch       *inptr;               /* pointer into input buffer */
@@ -293,12 +293,14 @@ typedef struct Globals {
 #ifndef FUNZIP
     char     filename[FILNAMSIZ];  /* also used by NT for temporary SFX path */
 #ifdef UNICODE_SUPPORT
+    char     *filename_full;       /* the full path so Unicode checks work */
+    extent   fnfull_bufsize;       /* size of allocated filename buffer */
     int      unicode_escape_all;
     int      unicode_mismatch;
 
-    int      unipath_version;
-    ulg      unipath_checksum;
-    char     *unipath_filename;
+    int      unipath_version;      /* version of Unicode field */
+    ulg      unipath_checksum;     /* Unicode field checksum */
+    char     *unipath_filename;    /* UTF-8 path */
     char     *unipath_escapedfilename;
 #endif /* UNICODE_SUPPORT */
 

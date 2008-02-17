@@ -52,6 +52,8 @@
 .!      02-009          Christian Spieler       04-MAR-2007 14:37
 .!              Added description for the -S "Stream-LF text files" option;
 .!              updated the documentation of the VMS exit codes.
+.!      02-010          S. Schweda, C. Spieler  28-Dec-2007 21:28
+.!              Added description for the -D "timestamp restoration" option.
 .!
 .noflags
 .lm4 .rm72
@@ -73,7 +75,7 @@ Archive member extraction is implied by the absence of the -c, -p, -t, -l, -v or
 specify a subset of the archive members.
 Format:
 .sk;.lm+1;.literal
-UNZIP [-cfhlptTuvxz[ajnoqCLMSVXY:2]] file[.zip] [list] [-x xlist] [-d out_dir]
+UNZIP [-cfhlptTuvxz[ajnoqCDLMSVXY:2]] file[.zip] [list] [-x xlist] [-d out_dir]
 .end literal;.lm-1
 .!------------------------------------------------------------------------------
 .indent -4
@@ -148,7 +150,7 @@ options and modifiers can be provided:
    -o   OK to overwrite files without prompting
    -q   perform operations quietly (-qq => even quieter)
    -C   match filenames case-insensitively
-   -D   restore directory date-times
+   -D   do not restore any timestamps (--D restore timestamps for directories)
    -L   convert filenames to lowercase if created under DOS, VMS, etc.
    -M   feed screen output through built-in "more" pager
    -P<password> supply decryption password on the command line (insecure!)
@@ -159,7 +161,7 @@ options and modifiers can be provided:
    -:   allow "../" path components that traverse across extract dir root
    -2   force creation of ODS2-compatible file names
 .end literal;.sk
-Note that uppercase options (-C, -D, -L, -M, -P, -S, -T, -V, X, Y, and
+Note that uppercase options (-C, -D, -L, -M, -P, -S, -T, -V, -X, -Y, and
 -Z) must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
 For example:
 .sk;.literal
@@ -200,12 +202,12 @@ codes with facility code 1954 = %x7A2, and with the inhibit-message
 .sk
 .literal
    %x17A28001                        normal exit
-   %x17A28000+ 16* Zip_error_code    warnings
-   %x17A28002+ 16* Zip_error_code    normal errors
-   %x17A28004+ 16* Zip_error_code    fatal errors
+   %x17A28000 + 16*UnZip_error_code  warnings
+   %x17A28002 + 16*UnZip_error_code  normal errors
+   %x17A28004 + 16*UnZip_error_code  fatal errors
 .end literal
 .sk
-Note that multiplying the UNIX-style Zip error code by 16 places it
+Note that multiplying the UNIX-style UnZip error code by 16 places it
 conveniently in the hexadecimal representation of the VMS exit code,
 "__" in %x17A28__s, where "s" is the severity code.  For example, a
 missing archive might cause UnZip error code 9, which would be
@@ -215,7 +217,7 @@ The UnZip VMS exit codes include severity values which approximate those
 defined by PKWARE, as shown in the following table:
 .literal
 
-    VMS      Zip err
+    VMS     UnZip err
   severity    code     Error description
  ----------+---------+----------------------------------------------
   Success       0      Normal.  No errors or warnings detected.
@@ -254,7 +256,6 @@ defined by PKWARE, as shown in the following table:
                        password(s).
   Fatal        83      Large-file archive could not be processed by
                        this small-file program.
-  Fatal        84      Compiler settings error.
 .end literal
 .!------------------------------------------------------------------------------
 .indent -4

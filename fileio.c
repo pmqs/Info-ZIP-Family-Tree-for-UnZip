@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2005-Feb-10 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -169,6 +169,10 @@ static ZCONST char Far CannotOpenZipfile[] =
 static ZCONST char Far ReadError[] = "error:  zipfile read error\n";
 static ZCONST char Far FilenameTooLongTrunc[] =
   "warning:  filename too long--truncating.\n";
+#ifdef UNICODE_SUPPORT
+   static ZCONST char Far UFilenameTooLongTrunc[] =
+     "warning:  Converted unicode filename too long--truncating.\n";
+#endif
 static ZCONST char Far ExtraFieldTooLong[] =
   "warning:  extra field too long (%d).  Ignoring...\n";
 
@@ -2183,6 +2187,36 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
     case DS_FN:
     case DS_FN_L:
+#ifdef UNICODE_SUPPORT
+        /* get the whole filename as need it for Unicode checksum */
+        if (G.fnfull_bufsize <= length) {
+            extent fnbufsiz = FILNAMSIZ;
+
+            if (fnbufsiz <= length)
+                fnbufsiz = length + 1;
+            if (G.filename_full)
+                free(G.filename_full);
+            G.filename_full = malloc(fnbufsiz);
+            if (G.filename_full == NULL)
+                return PK_MEM;
+            G.fnfull_bufsize = fnbufsiz;
+        }
+        if (readbuf(__G__ G.filename_full, length) == 0)
+            return PK_EOF;
+        G.filename_full[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+
+        /* if needed, chop off end so standard filename is a valid length */
+        if (length >= FILNAMSIZ) {
+            Info(slide, 0x401, ((char *)slide,
+              LoadFarString(FilenameTooLongTrunc)));
+            error = PK_WARN;
+            length = FILNAMSIZ - 1;
+        }
+        /* no excess size */
+        block_len = 0;
+        strncpy(G.filename, G.filename_full, length);
+        G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+#else /* !UNICODE_SUPPORT */
         if (length >= FILNAMSIZ) {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(FilenameTooLongTrunc)));
@@ -2196,6 +2230,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         if (readbuf(__G__ G.filename, length) == 0)
             return PK_EOF;
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+#endif /* ?UNICODE_SUPPORT */
 
         /* translate the Zip entry filename coded in host-dependent "extended
            ASCII" into the compiler's (system's) internal text code page */
@@ -2256,8 +2291,35 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             /* Looks like here is where extra fields are read */
             getZip64Data(__G__ G.extra_field, length);
 #ifdef UNICODE_SUPPORT
-            getUnicodeData(__G__ G.extra_field, length);
-#endif
+            G.unipath_filename = NULL;
+            if (!G.UzO.U_flag) {
+              /* check if GPB11 (General Purpuse Bit 11) is set indicating
+                 the standard path and comment are UTF-8 */
+              if (G.crec.general_purpose_bit_flag & (1 << 11)) {
+                /* if GPB11 set then filename_full is untruncated UTF-8 */
+                G.unipath_filename = G.filename_full;
+              } else {
+                /* Get the Unicode fields if exist */
+                getUnicodeData(__G__ G.extra_field, length);
+              }
+              if (G.unipath_filename) {
+                char *fn;
+                /* convert UTF-8 to local character set */
+                fn = utf8_to_local_string(G.unipath_filename,
+                                          G.unicode_escape_all);
+                /* make sure filename is short enough */
+                if (strlen(fn) >= FILNAMSIZ) {
+                  fn[FILNAMSIZ - 1] = '\0';
+                  Info(slide, 0x401, ((char *)slide,
+                    LoadFarString(UFilenameTooLongTrunc)));
+                  error = PK_WARN;
+                }
+                /* replace filename with converted UTF-8 */
+                strcpy(G.filename, fn);
+                free(fn);
+              }
+            }
+#endif /* UNICODE_SUPPORT */
         }
         break;
 
@@ -2636,7 +2698,7 @@ char *plastchar(ptr, len)
 /* Function uzmbclen() */
 /***********************/
 
-extent char *uzmbclen(ptr)
+extent uzmbclen(ptr)
     ZCONST unsigned char *ptr;
 {
     int mbl;

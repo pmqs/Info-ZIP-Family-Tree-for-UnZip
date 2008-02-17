@@ -57,6 +57,8 @@
 .!      02-012          Christian Spieler       04-Mar-2007 14:39
 .!              Changed -s qualifier into -S;
 .!              updated documentation of UnZip's exit codes.
+.!      03-002          S. Schweda, C. Spieler  09-Jan-2008 03:35
+.!              Added documentation of extended /RESTORE=(...) qualifier.
 .!
 <INIT>
 <MAIN>
@@ -339,15 +341,16 @@ The optional keywords recognized are:
 |  NODATE        Do not restore any timestamps.
 |  DATE=ALL      Restore timestamps for all extracted entries, files
 |                and directories.
-|  DATE=FILES    Restore timestamps for extracted files.  (Default.)
+|  DATE=FILES    Restore timestamps for extracted files.  (default)
 <LARETIL>
 
 By default, VMS UnZip restores the original date-time attributes for files,
 but not for directories.  This agrees with the behavior of VMS BACKUP
-(and UnZip versions before 3.0).
+(and UnZip versions before 5.52 where the capability to restore directory
+timestamps was added).
 
-For compatibility with UnZip versions before 3.0, the following obsolete
-short forms are still accepted:
+For compatibility with UnZip versions before 6.0 (5.53), the following
+obsolete short forms are still accepted:
 <LITERAL>
 | Obsolete form:        Modern form:
 | /RESTORE              /RESTORE = OWNER_PROT

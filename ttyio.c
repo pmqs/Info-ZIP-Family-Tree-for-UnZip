@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -114,14 +114,14 @@
 #ifndef HAVE_WORKING_GETCH
    /* include system support for switching of console echo */
 #  ifdef VMS
-/* Accomodation for /NAMES = AS_IS with old header files. */
-#    define sys$assign SYS$ASSIGN
-#    define sys$dassgn SYS$DASSGN
-#    define sys$qiow SYS$QIOW
-
 #    include <descrip.h>
 #    include <iodef.h>
 #    include <ttdef.h>
+     /* Workaround for broken header files of older DECC distributions
+      * that are incompatible with the /NAMES=AS_IS qualifier. */
+#    define sys$assign SYS$ASSIGN
+#    define sys$dassgn SYS$DASSGN
+#    define sys$qiow SYS$QIOW
 #    include <starlet.h>
 #    include <ssdef.h>
 #  else /* !VMS */

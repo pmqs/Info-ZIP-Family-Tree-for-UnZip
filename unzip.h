@@ -2,7 +2,7 @@
 
   unzip.h (new)
 
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -288,6 +288,21 @@ freely, subject to the above disclaimer and the following restrictions:
 #  define ZCONST
 #endif
 
+/* Tell Microsoft Visual C++ 2005 to leave us alone and
+ * let us use standard C functions the way we're supposed to.
+ * (These preprocessor symbols must appear before the first system
+ *  header include. They are located here, because for WINDLL the
+ *  first system header includes follow just below.)
+ */
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#  ifndef _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
+#  endif
+#  ifndef _CRT_NONSTDC_NO_WARNINGS
+#    define _CRT_NONSTDC_NO_WARNINGS
+#  endif
+#endif
+
 
 /*---------------------------------------------------------------------------
     Grab system-specific public include headers.
@@ -393,11 +408,6 @@ typedef unsigned long   ulg;    /*  predefined on some systems) & match zip  */
    typedef void  (UZ_EXP UsrIniFn)  (void);
 #else /* !PROTO */
    typedef int   (UZ_EXP MsgFn)     ();
-#if 0
-# ifdef UNICODE_SUPPORT
-   typedef int   (UZ_EXP MsgwFn)     ();
-# endif
-#endif /* 0 */
    typedef int   (UZ_EXP InputFn)   ();
    typedef void  (UZ_EXP PauseFn)   ();
    typedef int   (UZ_EXP PasswdFn)  ();
@@ -416,9 +426,6 @@ typedef struct _UzpInit {
     /* GRR: can we assume that each of these is a 32-bit pointer?  if not,
      * does it matter? add "far" keyword to make sure? */
     MsgFn *msgfn;
-//#if defined(WIN32) && defined(UNICODE_SUPPORT)
-//    MsgFn *msgwfn;
-//#endif
     InputFn *inputfn;
     PauseFn *pausefn;
     UsrIniFn *userfn;          /* user init function to be called after */
@@ -459,8 +466,8 @@ typedef struct _UzpOpts {
 #endif
     int cflag;          /* -c: output to stdout */
     int C_flag;         /* -C: match filenames case-insensitively */
-#ifdef VMS
-    int D_flag;         /* -D: restore directory date-time. */
+#if (!defined(NO_TIMESTAMPS))
+    int D_flag;         /* -D: don't restore directory (-DD: any) timestamps */
 #endif
 #ifdef MACOS
     int E_flag;         /* -E: [MacOS] show Mac extra field during restoring */
@@ -470,8 +477,8 @@ typedef struct _UzpOpts {
     int acorn_nfs_ext;  /* -F: RISC OS types & NFS filetype extensions */
 #endif
     int hflag;          /* -h: header line (zipinfo) */
-#ifdef UNICODE_SUPPORT
-    int H_flag;         /* -H: escape all non-ASCII text */
+#if defined(UNIX) || defined(VMS) || defined(WIN32)
+    int H_flag;         /* -H: escape all non-ASCII text (UTF8 support) */
 #endif
 #ifdef MACOS
     int i_flag;         /* -i: [MacOS] ignore filenames stored in Mac e.f. */
@@ -514,8 +521,8 @@ typedef struct _UzpOpts {
     int tflag;          /* -t: test (unzip) or totals line (zipinfo) */
     int T_flag;         /* -T: timestamps (unzip) or dec. time fmt (zipinfo) */
     int uflag;          /* -u: "update" (extract only newer/brand-new files) */
-#ifdef UNICODE_SUPPORT
-    int U_flag;         /* -U: No Unicode paths */
+#if defined(UNIX) || defined(VMS) || defined(WIN32)
+    int U_flag;         /* -U: No Unicode paths (UTF8 support) */
 #endif
     int vflag;          /* -v: (verbosely) list directory */
     int V_flag;         /* -V: don't strip VMS version numbers */
@@ -540,6 +547,9 @@ typedef struct _UzpOpts {
 #endif
 #if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
     int ddotflag;       /* -:: don't skip over "../" path elements */
+#endif
+#ifdef UNIX
+    int cflxflag;       /* -^: allow control chars in extracted filenames */
 #endif
 #endif /* !FUNZIP */
 } UzpOpts;
@@ -632,7 +642,6 @@ typedef struct _Uzp_cdir_Rec {
 #define IZ_UNSUP          81   /* no files found: all unsup. compr/encrypt. */
 #define IZ_BADPWD         82   /* no files found: all had bad password */
 #define IZ_ERRBF          83   /* big-file archive, small-file program */
-#define IZ_COMPERR        84   /* compiler settings error */
 
 /* return codes of password fetches (negative = user abort; positive = error) */
 #define IZ_PW_ENTERED      0   /* got some password string; use/try it */

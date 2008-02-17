@@ -2,13 +2,15 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX
 $!
-$!     Last revised:  2007-11-06  SMS.
+$!     Last revised:  2007-12-28  SMS.
 $!
 $!     Command args:
 $!     - suppress help file processing: "NOHELP"
 $!     - suppress message file processing: "NOMSG"
 $!     - select link-only: "LINK"
 $!     - select compiler environment: "VAXC", "DECC", "GNUC"
+$!     - select BZIP2 support: "USEBZ2"
+$!       This qualifier is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]".
 $!     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
 $!       (or a suitable logical name) tells where to find "bzlib.h".
 $!       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
@@ -107,6 +109,7 @@ $ unzsfx_cli = "UNZIPSFX_CLI"
 $!
 $ CCOPTS = ""
 $ IZ_BZIP2 = ""
+$ BUILDBZ2_INTEGRATED = 0
 $ LINKOPTS = "/notraceback"
 $ LINK_ONLY = 0
 $ LISTING = " /nolist"
@@ -137,6 +140,16 @@ $     then
 $         opts = f$edit( curr_arg, "COLLAPSE")
 $         eq = f$locate( "=", opts)
 $         IZ_BZIP2 = f$extract( (eq+ 1), 1000, opts)
+$         goto argloop_end
+$     endif
+$!
+$     if (f$extract( 0, 6, curr_arg) .eqs. "USEBZ2")
+$     then
+$         if (IZ_BZIP2 .eqs. "")
+$         then
+$             IZ_BZIP2 = "SYS$DISK:[.BZIP2]"
+$             BUILDBZ2_INTEGRATED = 1
+$         endif
 $         goto argloop_end
 $     endif
 $!
@@ -315,7 +328,7 @@ $             else
 $                 cc = "cc"
 $             endif
 $             dest = "''dest'V"
-$             cmpl = "VAC C"
+$             cmpl = "VAX C"
 $         endif
 $         opts = "''opts' SYS$DISK:[.''dest']VAXCSHR.OPT /OPTIONS,"
 $     endif
@@ -340,6 +353,11 @@ $     DEF_SXUNX = "/define = (''defs', SFX)"
 $     DEF_SXCLI = "/define = (''defs', VMSCLI, SFX)"
 $ endif
 $!
+$! Keep a copy of the final I/O-size independent destination specification.
+$! (needed for the bzip2 library search)
+$!
+$ destc = "''dest'"
+$!
 $! Change the destination directory, if the large-file option is enabled.
 $!
 $ if (LARGE_FILE .ne. 0)
@@ -359,9 +377,15 @@ $     incl_bzip2_q = "/include = (UBZ2ERR)"
 $     if (.not. LINK_ONLY)
 $     then
 $         define incl_bzip2 'IZ_BZIP2'
+$         if (BUILDBZ2_INTEGRATED .and. (IZ_BZIP2 .eqs. "SYS$DISK:[.BZIP2]"))
+$         then
+$             set def [.BZIP2]
+$             @buildbz2.com
+$             set def [-]
+$         endif
 $     endif
 $!
-$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_BZIP2' 'dest' 'bz2_olb' lib_bzip2
+$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_BZIP2' 'destc' 'bz2_olb' lib_bzip2
 $     if (f$trnlnm( "lib_bzip2") .eqs. "")
 $     then
 $         say "Can't find BZIP2 object library.  Can't link."
@@ -423,7 +447,11 @@ $!
 $ say "   architecture = ''arch' (destination = [.''dest'])"
 $ if (IZ_BZIP2 .nes. "")
 $ then
-$     say "   BZIP2 dir = ''f$trnlnm( "lib_bzip2")'"
+$     if (.not. LINK_ONLY)
+$     then
+$         say "   BZIP2 include dir = ''f$trnlnm( "inc_bzip2")'"
+$     endif
+$     say "   BZIP2 library dir = ''f$trnlnm( "lib_bzip2")'"
 $ endif
 $ if (.not. LINK_ONLY)
 $ then
