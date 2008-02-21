@@ -20,6 +20,7 @@ LFLAGS1=""
 LN="ln -s"
 
 CFLAGS_OPT=''
+CFLAGS_BZ=''
 
 echo 'Check C compiler type (optimization options)'
 # Sun C?
@@ -110,6 +111,7 @@ fi
 # optimization flags
 if test -n "${CFLAGS_OPT}"; then
   CFLAGSR="${CFLAGSR} ${CFLAGS_OPT}"
+  CFLAGS_BZ="${CFLAGS_BZ} ${CFLAGS_OPT}"
 fi
 
 echo Check for the C preprocessor
@@ -442,6 +444,8 @@ echo "Check bzip2 support"
 D_USE_BZ2=""
 LIBBZ2=""
 L_BZ2=""
+CC_BZ="${CC}"
+
 if test -n "${IZ_BZIP2}" -a "${IZ_BZIP2}" != "bzip2" ; then
   echo "  Check for bzip2 compiled library in IZ_BZIP2 (${IZ_BZIP2})"
   if test -f "${IZ_BZIP2}/libbz2.a"; then
@@ -494,6 +498,7 @@ else
 fi
 
 
-echo CF=\"${CFLAGSR} ${D_USE_BZ2}\" CRCA_O=\"${CRC32OA}\" AS=\"${CC} -c\" \
-       D_USE_BZ2=\"${D_USE_BZ2}\" L_BZ2=\"${L_BZ2}\" \
-       LIBBZ2=\"${LIBBZ2}\"  > flags
+echo CC=\"${CC}\" CF=\"${CFLAGSR} ${D_USE_BZ2}\" CRCA_O=\"${CRC32OA}\" \
+       AS=\"${CC} -c\" CC_BZ=\"${CC_BZ}\" CFLAGS_BZ=\"${CFLAGS_BZ}\" \
+       IZ_BZIP2=\"${IZ_BZIP2}\" D_USE_BZ2=\"${D_USE_BZ2}\" \
+       L_BZ2=\"${L_BZ2}\" LIBBZ2=\"${LIBBZ2}\"  > flags

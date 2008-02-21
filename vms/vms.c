@@ -2440,11 +2440,11 @@ static int _close_rms(__GPRO)
 
             /* It's a symlink in need of post-processing. */
             /* size of the symlink entry is the sum of
-             *  (struct size + 2 trailing '\0'),
+             *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
              *  system specific attribute data size (might be 0),
              *  and the lengths of name and link target.
              */
-            slnk_entrysize = (sizeof(slinkentry) + 2) +
+            slnk_entrysize = (sizeof(slinkentry) + 1) +
                              ucsize + strlen(G.filename);
 
             if (slnk_entrysize < ucsize) {
@@ -2705,8 +2705,8 @@ static char *vms_path_fixdown(ZCONST char *dir_spec, char *dir_file)
     }
 
     /* Find the beginning of the last directory name segment. */
-    while ((i > 0) && (dir_spec[i - 1] != '^') &&
-           (dir_spec[i] != '.') && (dir_spec[i] != dir_open))
+    while ((i > 0) && ((dir_spec[i - 1] == '^') ||
+           ((dir_spec[i] != '.') && (dir_spec[i] != dir_open))))
     {
         i--;
     }
