@@ -17,10 +17,17 @@ CFLAGSR=${CFLAGS}
 IZ_BZIP2=${3}
 CFLAGS="${CFLAGS} -I. -DUNIX"
 LFLAGS1=""
+LFLAGS2=""
 LN="ln -s"
 
 CFLAGS_OPT=''
 CFLAGS_BZ=''
+
+D_USE_BZ2=""
+LIBBZ2=""
+L_BZ2=""
+CC_BZ="${CC}"
+BZLF=''
 
 echo 'Check C compiler type (optimization options)'
 # Sun C?
@@ -93,6 +100,12 @@ _EOF_
       if test $? -eq 0; then
         CFLAGS_OPT='-O3'
         echo "  GNU C ($CFLAGS_OPT)"
+	# Special Mac OS X shared library "ld" option?
+        lf='-Wl,-search_paths_first'
+        CC $CFLAGS $lf -c conftest.c > /dev/null 2>/dev/null
+        if test $? -eq 0; then
+          BZLF=${lf}
+        fi
       else
         CFLAGS_OPT='-O'
         echo "  Other-unknown C ($CFLAGS_OPT)"
@@ -280,6 +293,7 @@ int main()
 }
 _EOF_
 $CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
+BFLAG=''
 [ $? -eq 0 ] && BFLAG="-fno-builtin"
 
 # Check for missing functions
@@ -434,10 +448,6 @@ rm -f a.out conftest.c conftest.o conftest null
 # bzip2
 
 echo "Check bzip2 support"
-D_USE_BZ2=""
-LIBBZ2=""
-L_BZ2=""
-CC_BZ="${CC}"
 
 if test -n "${IZ_BZIP2}" -a "${IZ_BZIP2}" != "bzip2" ; then
   echo "  Check for bzip2 compiled library in IZ_BZIP2 (${IZ_BZIP2})"
@@ -453,7 +463,7 @@ if test -n "${IZ_BZIP2}" -a "${IZ_BZIP2}" != "bzip2" ; then
       if test -f "${IZ_BZIP2}/bzlib.h"; then
         LIBBZ2="${IZ_BZIP2}/libbz2.a"
         D_USE_BZ2="-DUSE_BZIP2"
-        L_BZ2="-lbz2"
+        L_BZ2="${BZLF} -lbz2"
         echo "-- Found bzip2 library - linking in bzip2"
       else
         echo "    ${IZ_BZIP2}/bzlib.h not found"
@@ -484,7 +494,7 @@ else
     echo "-- Will try to build bzip2 library from source and link in"
     LIBBZ2="${IZ_BZIP2}/libbz2.a"
     D_USE_BZ2="-DUSE_BZIP2"
-    L_BZ2="-lbz2"
+    L_BZ2="${BZLF} -lbz2"
   else
     echo "-- bzip2 sources not found - no bzip2 support"
   fi

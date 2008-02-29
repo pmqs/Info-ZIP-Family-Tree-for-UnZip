@@ -1047,7 +1047,7 @@ static struct fatdef    pka_rattr;
 
 /* Directory attribute storage, descriptor (list). */
 static struct atrdef pka_recattr[2] =
- { { sizeof( pka_rattr), ATR$C_RECATTR, GVTC &pka_rattr},       /* RECATTR. */
+ { { sizeof(pka_rattr), ATR$C_RECATTR, GVTC &pka_rattr},        /* RECATTR. */
    { 0, 0, 0 }                                          /* List terminator. */
  };
 
@@ -2836,8 +2836,6 @@ int set_direc_attribs(__G__ d)
             /* PK scheme needs a FAB.  (IZ supplies one.) */
             outfab = &fileblk;
         }
-        nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
-        outfab->FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
 
         if (type == VAT_IZ)
         {
@@ -2955,6 +2953,9 @@ int set_direc_attribs(__G__ d)
         pka_atr[pka_idx].atr$l_addr = 0; /* NULL when DECC VAX gets fixed. */
     }
 
+    nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
+    outfab->FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
+
     /* Point the FAB-NAM[L] to the VMS-format directory file name. */
 
 #ifdef NAML$C_MAXRSS
@@ -3059,18 +3060,18 @@ int set_direc_attribs(__G__ d)
              * adjustment.  Retrieve the RECATTR data for the existing
              * (newly created) directory file.
              */
-            status = sys$qiow(0,                /* event flag */
-                              pka_devchn,       /* channel */
-                              IO$_ACCESS,       /* function code */
-                              &pka_acp_iosb,    /* IOSB */
-                              0,                /* AST address */
-                              0,                /* AST parameter */
-                              &pka_fibdsc,      /* P1 = FIB dscr */
-                              &pka_fnam,        /* P2 = File name */
-                              0,                /* P3 = Rslt nm str */
-                              0,                /* P4 = Rslt nm len */
-                              pka_recattr,      /* P5 = Attributes */
-                              0);               /* P6 (not used) */
+            status = sys$qiow(0,                    /* event flag */
+                              pka_devchn,           /* channel */
+                              IO$_ACCESS,           /* function code */
+                              &pka_acp_iosb,        /* IOSB */
+                              0,                    /* AST address */
+                              0,                    /* AST parameter */
+                              &pka_fibdsc,          /* P1 = FIB dscr */
+                              &pka_fnam,            /* P2 = File name */
+                              0,                    /* P3 = Rslt nm str */
+                              0,                    /* P4 = Rslt nm len */
+                              pka_recattr,          /* P5 = Attributes */
+                              0);                   /* P6 (not used) */
 
             /* If initial success, then get the final status from the IOSB. */
             if ( !ERR(status) )
@@ -3108,18 +3109,18 @@ int set_direc_attribs(__G__ d)
     }
 
     /* Modify the file (directory) attributes. */
-    status = sys$qiow(0,                        /* event flag */
-                      pka_devchn,               /* channel */
-                      IO$_MODIFY,               /* function code */
-                      &pka_acp_iosb,            /* IOSB */
-                      0,                        /* AST address */
-                      0,                        /* AST parameter */
-                      &pka_fibdsc,              /* P1 = FIB dscr */
-                      &pka_fnam,                /* P2 = File name */
-                      0,                        /* P3 = Rslt nm str */
-                      0,                        /* P4 = Rslt nm len */
-                      pka_atr,                  /* P5 = Attributes */
-                      0);                       /* P6 (not used) */
+    status = sys$qiow(0,                            /* event flag */
+                      pka_devchn,                   /* channel */
+                      IO$_MODIFY,                   /* function code */
+                      &pka_acp_iosb,                /* IOSB */
+                      0,                            /* AST address */
+                      0,                            /* AST parameter */
+                      &pka_fibdsc,                  /* P1 = FIB dscr */
+                      &pka_fnam,                    /* P2 = File name */
+                      0,                            /* P3 = Rslt nm str */
+                      0,                            /* P4 = Rslt nm len */
+                      pka_atr,                      /* P5 = Attributes */
+                      0);                           /* P6 (not used) */
 
     /* If initial success, then get the final status from the IOSB. */
     if ( !ERR(status) )
@@ -3392,7 +3393,7 @@ int stamp_file(fname, modtime)
     */
     status = sys$qiow(0, pka_devchn, IO$_ACCESS,
                       &pka_acp_iosb, 0, 0,
-                      &pka_fibdsc, &pka_fnam, 0, 0, &Atr, 0);
+                      &pka_fibdsc, &pka_fnam, 0, 0, Atr, 0);
 
     if ( !ERR(status) )
         status = pka_acp_iosb.status;
@@ -3425,7 +3426,7 @@ int stamp_file(fname, modtime)
     /* Using FIB$M_NORECORD prohibits this from happening. */
     status = sys$qiow(0, pka_devchn, IO$_MODIFY,
                       &pka_acp_iosb, 0, 0,
-                      &pka_fibdsc, &pka_fnam, 0, 0, &Atr, 0);
+                      &pka_fibdsc, &pka_fnam, 0, 0, Atr, 0);
 
     if ( !ERR(status) )
         status = pka_acp_iosb.status;
@@ -4931,11 +4932,13 @@ void return_VMS(err)
               "\n[return-code %d:  bad decryption password for all files]\n",
               err));
             break;
+#ifdef DO_SAFECHECK_2GB
         case IZ_ERRBF:
             Info(slide, 1, ((char *)slide,
               "\n[return-code %d:  big-file archive, small-file program]\n",
               err));
             break;
+#endif /* DO_SAFECHECK_2GB */
         default:
             Info(slide, 1, ((char *)slide,
               "\n[return-code %d:  unknown return-code (screw-up)]\n", err));
