@@ -69,19 +69,12 @@ _EOF_
     $CC $CFLAGS -c conftest.c > /dev/null 2>/dev/null
     if test $? -eq 0; then
       # HP-UX, not GCC.  Lame bundled or real ANSI compiler?
-      cat > conftest.c << _EOF_
-int main()
-{
-#ifndef __HP_cc
-   bad code
-#endif
-   return 0;
-}
-_EOF_
-      $CC $CFLAGS -c conftest.c > /dev/null 2>/dev/null
-      if test $? -eq 0; then
-        CFLAGS_OPT="+O3 +Onolimit"
-        echo '  HP-UX ANSI C ($CFLAGS_OPT)'
+      CFLAGS_OPT_TRY="+O3 +Onolimit"
+      $CC $CFLAGS $CFLAGS_OPT_TRY -c conftest.c 2>&1 | \
+       grep '(Bundled)' > /dev/null
+      if test $? -ne 0; then
+        CFLAGS_OPT="$CFLAGS_OPT_TRY"
+        echo "  HP-UX ANSI C ($CFLAGS_OPT)"
       else
         echo '  HP-UX Bundled C (no opt)'
       fi

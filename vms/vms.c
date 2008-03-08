@@ -709,7 +709,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         FAB_OR_NAML(fileblk, nam).FAB_OR_NAML_FNA = G.filename;
         FAB_OR_NAML(fileblk, nam).FAB_OR_NAML_FNS = strlen(G.filename);
 
-        /* skip restoring time stamps on user's request */
+        /* Prepare date-time XABs, unless user requests not to. */
         if (uO.D_flag <= 1) {
             set_default_datetime_XABs(__G);
             dattim.xab$l_nxt = fileblk.fab$l_xab;
@@ -886,7 +886,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNA = G.filename;
         FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNS = strlen(G.filename);
 
-        /* skip restoring time stamps on user's request */
+        /* Prepare date-time XABs, unless user requests not to. */
         if (uO.D_flag <= 1) {
             /* If no XAB date/time, use attributes from non-VMS fields. */
             if (!(xabdat && xabrdt))
@@ -1044,6 +1044,12 @@ static struct atrdef    pka_atr[VMS_MAX_ATRCNT];
 static int              pka_idx;
 static ulg              pka_uchar;
 static struct fatdef    pka_rattr;
+
+/* Directory attribute storage, descriptor (list). */
+static struct atrdef pka_recattr[2] =
+ { { sizeof( pka_rattr), ATR$C_RECATTR, GVTC &pka_rattr},       /* RECATTR. */
+   { 0, 0, 0 }                                          /* List terminator. */
+ };
 
 static struct dsc$descriptor    pka_fibdsc =
 {   sizeof(pka_fib), DSC$K_DTYPE_Z, DSC$K_CLASS_S, (void *) &pka_fib  };
@@ -1239,7 +1245,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         status = sys$qiow(0, pka_devchn, IO$_CREATE|IO$M_CREATE|IO$M_ACCESS,
                           &pka_acp_iosb, 0, 0,
-                          &pka_fibdsc, &pka_fnam, 0, 0, &pka_atr, 0);
+                          &pka_fibdsc, &pka_fnam, 0, 0, pka_atr, 0);
 
         if ( !ERR(status) )
             status = pka_acp_iosb.status;
@@ -1344,7 +1350,7 @@ static int replace(__GPRO)
 /*
  * Function find_vms_attrs() scans the ZIP entry extra field, if any,
  * and looks for VMS attribute records.  Various date-time attributes
- * are ignored if set_date_time is FALSE.
+ * are ignored if set_date_time is FALSE (typically for a directory).
  *
  * For a set of IZ records, a FAB and various XABs are created and
  * chained together.
@@ -2439,7 +2445,7 @@ static int _close_rms(__GPRO)
             slinkentry *slnk_entry;
 
             /* It's a symlink in need of post-processing. */
-            /* size of the symlink entry is the sum of
+            /* Size of the symlink entry is the sum of
              *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
              *  system specific attribute data size (might be 0),
              *  and the lengths of name and link target.
@@ -2650,7 +2656,7 @@ static int _close_qio(__GPRO)
     status = sys$qiow(0, pka_devchn, IO$_DEACCESS, &pka_acp_iosb,
                       0, 0,
                       &pka_fibdsc, 0, 0, 0,
-                      &pka_atr, 0);
+                      pka_atr, 0);
 
     sys$dassgn(pka_devchn);
     if ( !ERR(status) )
@@ -2915,7 +2921,7 @@ int set_direc_attribs(__G__ d)
         pka_atr[pka_idx].atr$l_addr = GVTC &attr;
         ++pka_idx;
 
-        /* Restore directory date-time unless skipped by user (-D). */
+        /* Restore directory date-time if user requests it (-D). */
         if (uO.D_flag <= 0)
         {
             /* Set the directory date-time from the non-VMS data.
@@ -3030,19 +3036,90 @@ int set_direc_attribs(__G__ d)
 
 #endif /* ?NAML$C_MAXRSS */
 
+    /* 2007-07-13 SMS.
+     * Our freshly created directory can easily contain fewer files than
+     * the original archived directory (for example, if not all the
+     * files in the original directory were included in the archive), so
+     * its size may differ from that of the archived directory.  Thus,
+     * simply restoring the original RECATTR attributes structure, which
+     * includes EFBLK (and so on) can cause "SYSTEM-W-BADIRECTORY, bad
+     * directory file format" complaints.  Instead, we overwrite
+     * selected archived attributes with current attributes, to avoid
+     * setting obsolete/inappropriate attributes on the newly created
+     * directory file.
+     *
+     * First, see if there is a RECATTR structure about which we need to
+     * worry.
+     */
+    for (i = 0; pka_atr[i].atr$w_type != 0; i++)
+    {
+        if (pka_atr[i].atr$w_type == ATR$C_RECATTR)
+        {
+            /* We found a RECATTR structure which (we must assume) needs
+             * adjustment.  Retrieve the RECATTR data for the existing
+             * (newly created) directory file.
+             */
+            status = sys$qiow(0,                /* event flag */
+                              pka_devchn,       /* channel */
+                              IO$_ACCESS,       /* function code */
+                              &pka_acp_iosb,    /* IOSB */
+                              0,                /* AST address */
+                              0,                /* AST parameter */
+                              &pka_fibdsc,      /* P1 = FIB dscr */
+                              &pka_fnam,        /* P2 = File name */
+                              0,                /* P3 = Rslt nm str */
+                              0,                /* P4 = Rslt nm len */
+                              pka_recattr,      /* P5 = Attributes */
+                              0);               /* P6 (not used) */
+
+            /* If initial success, then get the final status from the IOSB. */
+            if ( !ERR(status) )
+                status = pka_acp_iosb.status;
+
+            if ( ERR(status) )
+            {
+                sprintf(warnmsg,
+                  "warning:  set-dir-attributes failed ($qiow acc) for %s.\n",
+                  dir_name);
+                vms_msg(__G__ warnmsg, status);
+                retcode = PK_WARN;
+            }
+            else
+            {
+                /* We should have valid RECATTR data.  Overwrite the
+                 * critical bits of the archive RECATTR structure with
+                 * the current bits.  The book says that an attempt to
+                 * modify HIBLK will be ignored, and FFBYTE should
+                 * always be zero, but safety is cheap.
+                 */
+                struct fatdef *ptr_recattr;
+
+                ptr_recattr = (struct fatdef *) pka_atr[i].atr$l_addr;
+                ptr_recattr->fat$l_hiblk =  pka_rattr.fat$l_hiblk;
+                ptr_recattr->fat$l_efblk =  pka_rattr.fat$l_efblk;
+                ptr_recattr->fat$w_ffbyte = pka_rattr.fat$w_ffbyte;
+            }
+        /* There should be only one RECATTR structure in the list, so
+         * escape from the loop after the first/only one has been
+         * processed.
+         */
+        break;
+        }
+    }
+
     /* Modify the file (directory) attributes. */
-    status = sys$qiow(0,                            /* event flag */
-                      pka_devchn,                   /* channel */
-                      IO$_MODIFY,                   /* function code */
-                      &pka_acp_iosb,                /* IOSB */
-                      0,                            /* AST address */
-                      0,                            /* AST parameter */
-                      &pka_fibdsc,                  /* P1 = FIB dscr */
-                      &pka_fnam,                    /* P2 = File name */
-                      0,                            /* P3 = Rslt nm str */
-                      0,                            /* P4 = Rslt nm len */
-                      &pka_atr,                     /* P5 = Attributes */
-                      0);                           /* P6 (not used) */
+    status = sys$qiow(0,                        /* event flag */
+                      pka_devchn,               /* channel */
+                      IO$_MODIFY,               /* function code */
+                      &pka_acp_iosb,            /* IOSB */
+                      0,                        /* AST address */
+                      0,                        /* AST parameter */
+                      &pka_fibdsc,              /* P1 = FIB dscr */
+                      &pka_fnam,                /* P2 = File name */
+                      0,                        /* P3 = Rslt nm str */
+                      0,                        /* P4 = Rslt nm len */
+                      pka_atr,                  /* P5 = Attributes */
+                      0);                       /* P6 (not used) */
 
     /* If initial success, then get the final status from the IOSB. */
     if ( !ERR(status) )
@@ -3051,7 +3128,7 @@ int set_direc_attribs(__G__ d)
     if ( ERR(status) )
     {
         sprintf(warnmsg,
-          "warning:  set-dir-attributes failed ($qiow) for %s.\n",
+          "warning:  set-dir-attributes failed ($qiow mod) for %s.\n",
           dir_name);
         vms_msg(__G__ warnmsg, status);
         retcode = PK_WARN;
@@ -4854,13 +4931,11 @@ void return_VMS(err)
               "\n[return-code %d:  bad decryption password for all files]\n",
               err));
             break;
-#ifdef DO_SAFECHECK_2GB
         case IZ_ERRBF:
             Info(slide, 1, ((char *)slide,
               "\n[return-code %d:  big-file archive, small-file program]\n",
               err));
             break;
-#endif /* DO_SAFECHECK_2GB */
         default:
             Info(slide, 1, ((char *)slide,
               "\n[return-code %d:  unknown return-code (screw-up)]\n", err));

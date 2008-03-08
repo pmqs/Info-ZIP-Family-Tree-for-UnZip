@@ -23,7 +23,7 @@
   the many (near infinite) contributors, see "CONTRIBS" in the UnZip source
   distribution.
 
-  UnZip 6.0 adds support for archives larger than 4 GB using the Zip64
+  UnZip 6.0 adds support for archives larger than 4 GiB using the Zip64
   extensions.
 
   ---------------------------------------------------------------------------
@@ -243,8 +243,7 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
-  -D  don't restore dir (-DD: any) timestamps\
-  -M  pipe through \"more\" pager\n\
+  --D restore dir (-D: no) timestamps        -M  pipe through \"more\" pager\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
 \n\n";
 #else
@@ -474,7 +473,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  endif
 #  ifdef LARGE_FILE_SUPPORT
      static ZCONST char Far Use_LFS[] =
-     "LARGE_FILE_SUPPORT (large files over 2 GB supported)";
+     "LARGE_FILE_SUPPORT (large files over 2 GiB supported)";
 #  endif
 #  ifdef ZIP64_SUPPORT
      static ZCONST char Far Use_Zip64[] =
@@ -560,9 +559,6 @@ Send bug reports using //www.info-zip.org/zip-bug.html; see README for details.\
 # define UnzipUsageLine1v       UnzipUsageLine1
 #endif /* ?VMS */
 
-static ZCONST char Far UnzipUsageCredit[] = "\
-Large File Handling - first port by Myles Bennett.\n\n";
-
 static ZCONST char Far UnzipUsageLine2v[] = "\
 Latest sources and executables are at ftp://ftp.info-zip.org/pub/infozip/ ;\
 \nsee ftp://ftp.info-zip.org/pub/infozip/UnZip.html for other sites.\
@@ -627,13 +623,18 @@ static ZCONST char Far UnzipUsageLine3[] = "\n\
 #endif /* ?VM_CMS */
 #endif /* ?MACOS */
 
-#ifdef UNICODE_SUPPORT
+/* There is not enough space on a standard 80x25 Windows console screen for
+ * the additional line advertising the UTF-8 debugging options. This may
+ * eventually also be the case for other ports. Probably, the -U option need
+ * not be shown on the introductory screen at all. [Chr. Spieler, 2008-02-09]
+ */
+#if (defined(UNICODE_SUPPORT) && !defined(WIN32))
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
   -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
-  -H  use escapes for all non-ASCII Unicode  -U  ignore any Unicode fields\n\
+  -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
 #else /* !UNICODE_SUPPORT */
@@ -1177,9 +1178,9 @@ int unzip(__G__ argc, argv)
 #endif /* ?(SFX && !SFX_EXDIR) */
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32)
-    /* set Unicode escape all if option -H used */
-    if (uO.H_flag)
-        G.unicode_escape_all = 1;
+    /* set Unicode-escape-all if option -U used */
+    if (uO.U_flag == 1)
+        G.unicode_escape_all = TRUE;
 #endif
 
 
@@ -1435,14 +1436,6 @@ int uz_opts(__G__ pargc, pargv)
                 case ('h'):    /* just print help message and quit */
                     *pargc = -1;
                     return USAGE(PK_OK);
-#ifdef UNICODE_SUPPORT
-                case ('H'):    /* escape all non-ASCII in paths */
-                    if (negative)
-                        uO.H_flag = FALSE, negative = 0;
-                    else
-                        uO.H_flag = TRUE;
-                    break;
-#endif /* UNICODE_SUPPORT */
 #ifdef MACOS
                 case ('i'): /* -i [MacOS] ignore filenames stored in Mac ef */
                     if( negative ) {
@@ -1640,11 +1633,12 @@ int uz_opts(__G__ pargc, pargv)
                         uO.uflag = TRUE;
                     break;
 #ifdef UNICODE_SUPPORT
-                case ('U'):    /* No Unicode paths */
-                    if (negative)
-                        uO.U_flag = TRUE, negative = 0;
-                    else
-                        uO.U_flag = FALSE;
+                case ('U'):    /* escape UTF-8, or disable UTF-8 support */
+                    if (negative) {
+                        uO.U_flag = MAX(uO.U_flag-negative,0);
+                        negative = 0;
+                    } else
+                        uO.U_flag++;
                     break;
 #else /* !UNICODE_SUPPORT */
 #ifndef CMS_MVS
@@ -2029,7 +2023,6 @@ static void show_version_info(__G)
         Info(slide, 0, ((char *)slide, LoadFarString(UnzipUsageLine1v),
           UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
           LoadFarStringSmall(VersionDate)));
-        Info(slide, 0, ((char *)slide, LoadFarString(UnzipUsageCredit)));
         Info(slide, 0, ((char *)slide,
           LoadFarString(UnzipUsageLine2v)));
         version(__G);

@@ -74,6 +74,7 @@ E =
 O = .o
 M = unix
 SHELL = /bin/sh
+MAKEF = -f unix/Makefile
 
 # Version info for unix/unix.c
 HOST_VERSINFO=-DIZ_CC_NAME='\"\$$(CC) \"' -DIZ_OS_NAME='\"`uname -a`\"'
@@ -300,14 +301,14 @@ crc32$O:	crc32.c $(UNZIP_H) zip.h crc32.h
 crypt$O:	crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
 envargs$O:	envargs.c $(UNZIP_H)
 explode$O:	explode.c $(UNZIP_H)
-extract$O:	extract.c $(UNZIP_H) crc32.h crypt.h zip.h
-fileio$O:	fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h zip.h
-funzip$O:	funzip.c $(UNZIP_H) crc32.h crypt.h ttyio.h zip.h
+extract$O:	extract.c $(UNZIP_H) crc32.h crypt.h
+fileio$O:	fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h
+funzip$O:	funzip.c $(UNZIP_H) crc32.h crypt.h ttyio.h
 globals$O:	globals.c $(UNZIP_H)
 inflate$O:	inflate.c inflate.h $(UNZIP_H)
 list$O:		list.c $(UNZIP_H)
 match$O:	match.c $(UNZIP_H)
-process$O:	process.c $(UNZIP_H) crc32.h zip.h
+process$O:	process.c $(UNZIP_H) crc32.h
 ttyio$O:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 ubz2err$O:	ubz2err.c $(UNZIP_H)
 unreduce$O:	unreduce.c $(UNZIP_H)
@@ -325,10 +326,10 @@ crc32_$O:	crc32.c $(UNZIP_H) zip.h crc32.h
 crypt_$O:	crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
 	$(CC) -c $(CF) -DSFX -o $@ crypt.c
 
-extract_$O:	extract.c $(UNZIP_H) crc32.h crypt.h zip.h
+extract_$O:	extract.c $(UNZIP_H) crc32.h crypt.h
 	$(CC) -c $(CF) -DSFX -o $@ extract.c
 
-fileio_$O:	fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h zip.h
+fileio_$O:	fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h
 	$(CC) -c $(CF) -DSFX -o $@ fileio.c
 
 globals_$O:	globals.c $(UNZIP_H)
@@ -340,7 +341,7 @@ inflate_$O:	inflate.c inflate.h $(UNZIP_H) crypt.h
 match_$O:	match.c $(UNZIP_H)
 	$(CC) -c $(CF) -DSFX -o $@ match.c
 
-process_$O:	process.c $(UNZIP_H) crc32.h zip.h
+process_$O:	process.c $(UNZIP_H) crc32.h
 	$(CC) -c $(CF) -DSFX -o $@ process.c
 
 ttyio_$O:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
@@ -532,16 +533,19 @@ check:
 
 # Well, try MAKE and see.  By now everyone may be happy.  10/28/04 EG
 generic:	flags	   # now try autoconfigure first
-	eval make -f unix/Makefile unzips `cat flags`
-#	make -f unix/Makefile unzips CF="${CF} `cat flags`"
+	eval $(MAKE) $(MAKEF) unzips `cat flags`
+#	make $(MAKEF) unzips CF="${CF} `cat flags`"
+
+generic_gcc:
+	$(MAKE) $(MAKEF) generic CC=gcc IZ_BZIP2="$(IZ_BZIP2)"
 
 generic1:	unzips	   # first try if unknown
 
 generic2:	unix_make  # second try if unknown:  hope make is called "make"
-	make -f unix/Makefile unzips CF="$(CF) -DBSD"
+	make $(MAKEF) unzips CF="$(CF) -DBSD"
 
 generic3:	unix_make  # third try if unknown:  hope make is called "make"
-	make -f unix/Makefile unzips CF="$(CF) -DSYSV"
+	make $(MAKEF) unzips CF="$(CF) -DSYSV"
 
 # Generic build including bzip2 decompression support for unzip.
 # Requires presence of the bzip2 sources in subdirectory bzip2.
@@ -549,7 +553,7 @@ generic3:	unix_make  # third try if unknown:  hope make is called "make"
 generic_bz2:	unix_make
 	@echo\
  "This target assumes bzip2 sources are available in subfolder bzip2/."
-	$(MAKE) -f unix/Makefile unzips D_USE_BZ2="-DUSE_BZIP2"\
+	$(MAKE) $(MAKEF) unzips D_USE_BZ2="-DUSE_BZIP2"\
 	 L_BZ2="-lbz2" LIBBZ2="$(IZ_OUR_BZIP2_DIR)/libbz2.a" \
 	 CC_BZ="$(CC)" CFLAGS_BZ="$(CFLAGS)"
 
@@ -650,7 +654,7 @@ pixel:		_v7	# Pixel 80, 100 (68000-based, V7/mostly BSD4.1 compat.)
 v7:		_v7	# generic Unix Version 7 box (prob. only Pixel...)
 
 _v7:
-	make -f unix/Makefile unzips \
+	make $(MAKEF) unzips \
 	 CF="$(CF) -DV7 -DNO_PARAM_H -DSHORT_NAMES -DBSD -DZMEM -DNO_LCHOWN -DNO_LCHMOD"
 
 #----------------------------------------------------------------------------
@@ -896,7 +900,7 @@ nextfat:	unix_make
 # IBM OS/390 (formerly MVS) compiled under "OpenEdition" shell
 os390:		unix_make
 	set -x; \
-	$(MAKE) -f unix/Makefile unzips \
+	$(MAKE) $(MAKEF) unzips \
 	 CC=c89 LD="\$$(CC) -Wl,EDIT=NO" \
 	 CF="$(CF) -DSYSV -DUNIX -DOS390 -DEBCDIC -DNO_PARAM_H \
 	 -DNO_LCHOWN -DNO_LCHMOD \
@@ -911,7 +915,7 @@ ptx:		unix_make
 # experimental target!  If it fails, use either pyr_ucb or pyr_att instead.)
 # The make in the BSD half is too stupid to understand $(MAKE), sigh...
 pyramid:	unix_make
-	-make -f unix/Makefile pyr_`universe`
+	-make $(MAKEF) pyr_`universe`
 
 # QNX/Neutrino is "special" because you don't have any native development
 # tools yet.  Set ARCH to "x86", "ppcbe", "ppcle", "mipsbe", or "mipsle"
@@ -921,11 +925,11 @@ qnxnto:		unix_make
 	@if [ "$(ARCH)" = "" ] ; then \
 		echo "You didn't set ARCH; I'll assume you meant ARCH=x86..." ; \
 		echo "" ; \
-		$(MAKE) -f unix/Makefile CC="qcc -Vgcc_ntox86" unzips ; \
+		$(MAKE) $(MAKEF) CC="qcc -Vgcc_ntox86" unzips ; \
 	else \
 		echo "Making unzip for $(ARCH)..." ; \
 		echo "" ; \
-		$(MAKE) -f unix/Makefile CC="qcc -Vgcc_nto$(ARCH)" unzips ; \
+		$(MAKE) $(MAKEF) CC="qcc -Vgcc_nto$(ARCH)" unzips ; \
 	fi
 
 # REGULUS:  68040-based, "real-time" SysV.3 mutant; uses gcc, with "REGULUS"
