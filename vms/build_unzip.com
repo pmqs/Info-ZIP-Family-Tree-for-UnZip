@@ -2,15 +2,16 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX
 $!
-$!     Last revised:  2007-12-28  SMS.
+$!     Last revised:  2008-07-28  SMS.
 $!
-$!     Command args:
+$!     Command arguments:
 $!     - suppress help file processing: "NOHELP"
 $!     - suppress message file processing: "NOMSG"
 $!     - select link-only: "LINK"
 $!     - select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - select BZIP2 support: "USEBZ2"
-$!       This qualifier is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]".
+$!       This option is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]", and
+$!       runs the DCL build procedure there, 
 $!     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
 $!       (or a suitable logical name) tells where to find "bzlib.h".
 $!       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
@@ -19,6 +20,11 @@ $!       example), or in that directory itself.
 $!       By default, the SFX programs are built without BZIP2 support.
 $!       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
 $!       (See LOCAL_UNZIP, below.)
+$!     - use ZLIB compression library: "IZ_ZLIB=dev:[dir]", where
+$!       "dev:[dir]" (or a suitable logical name) tells where to find
+$!       "zlib.h".  The ZLIB object library (LIBZ.OLB) is expected to be
+$!       in a "[.dest]" directory under that one ("dev:[dir.ALPHAL]",
+$!       for example), or in that directory itself.
 $!     - select large-file support: "LARGE"
 $!     - select compiler listings: "LIST"  Note that the whole argument
 $!       is added to the compiler command, so more elaborate options
@@ -35,9 +41,9 @@ $!       must be quoted or space-free.  Default is
 $!       LINKOPTS=/NOTRACEBACK, but if the user specifies a LINKOPTS
 $!       string, /NOTRACEBACK will not be included unless specified by
 $!       the user.
-$!     - select installation of CLI interface version of unzip:
+$!     - select installation of CLI interface version of UnZip:
 $!       "VMSCLI" or "CLI"
-$!     - force installation of UNIX interface version of unzip
+$!     - force installation of UNIX interface version of UnZip
 $!       (override LOCAL_UNZIP environment): "NOVMSCLI" or "NOCLI"
 $!
 $!     To specify additional options, define the symbol LOCAL_UNZIP
@@ -72,28 +78,28 @@ $!##################### Read settings from environment ########################
 $!
 $ if (f$type( LOCAL_UNZIP) .eqs. "")
 $ then
-$     local_unzip = ""
+$     LOCAL_UNZIP = ""
 $ else  ! Trim blanks and append comma if missing
-$     local_unzip = f$edit( local_unzip, "TRIM")
-$     if (f$extract( (f$length( local_unzip)- 1), 1, local_unzip) .nes. ",")
+$     LOCAL_UNZIP = f$edit( LOCAL_UNZIP, "TRIM")
+$     if (f$extract( (f$length( LOCAL_UNZIP)- 1), 1, LOCAL_UNZIP) .nes. ",")
 $     then
-$         local_unzip = local_unzip + ", "
+$         LOCAL_UNZIP = LOCAL_UNZIP + ", "
 $     endif
 $ endif
 $!
-$! Check for the presence of "VMSCLI" in local_unzip.  If yes, we will
+$! Check for the presence of "VMSCLI" in LOCAL_UNZIP.  If yes, we will
 $! define the foreign command for "unzip" to use the executable
 $! containing the CLI interface.
 $!
-$ pos_cli = f$locate( "VMSCLI", local_unzip)
-$ len_local_unzip = f$length( local_unzip)
+$ pos_cli = f$locate( "VMSCLI", LOCAL_UNZIP)
+$ len_local_unzip = f$length( LOCAL_UNZIP)
 $ if (pos_cli .ne. len_local_unzip)
 $ then
 $     CLI_IS_DEFAULT = 1
-$     ! Remove "VMSCLI" macro from local_unzip. The UnZip executable
+$     ! Remove "VMSCLI" macro from LOCAL_UNZIP. The UnZip executable
 $     ! including the CLI interface is now created unconditionally.
-$     local_unzip = f$extract( 0, pos_cli, local_unzip)+ -
-       f$extract( pos_cli+7, len_local_unzip- (pos_cli+ 7), local_unzip)
+$     LOCAL_UNZIP = f$extract( 0, pos_cli, LOCAL_UNZIP)+ -
+       f$extract( pos_cli+7, len_local_unzip- (pos_cli+ 7), LOCAL_UNZIP)
 $ else
 $     CLI_IS_DEFAULT = 0
 $ endif
@@ -109,7 +115,8 @@ $ unzsfx_cli = "UNZIPSFX_CLI"
 $!
 $ CCOPTS = ""
 $ IZ_BZIP2 = ""
-$ BUILDBZ2_INTEGRATED = 0
+$ BUILD_BZIP2 = 0
+$ IZ_ZLIB = ""
 $ LINKOPTS = "/notraceback"
 $ LINK_ONLY = 0
 $ LISTING = " /nolist"
@@ -148,8 +155,16 @@ $     then
 $         if (IZ_BZIP2 .eqs. "")
 $         then
 $             IZ_BZIP2 = "SYS$DISK:[.BZIP2]"
-$             BUILDBZ2_INTEGRATED = 1
+$             BUILD_BZIP2 = 1
 $         endif
+$         goto argloop_end
+$     endif
+$!
+$     if (f$extract( 0, 7, curr_arg) .eqs. "IZ_ZLIB")
+$     then
+$         opts = f$edit( curr_arg, "COLLAPSE")
+$         eq = f$locate( "=", opts)
+$         IZ_ZLIB = f$extract( (eq+ 1), 1000, opts)
 $         goto argloop_end
 $     endif
 $!
@@ -290,7 +305,7 @@ $         goto error
 $     endif
 $!
 $     cc = "cc /standard = relax /prefix = all /ansi"
-$     defs = "''local_unzip'MODERN"
+$     defs = "''LOCAL_UNZIP'MODERN"
 $     if (LARGE_FILE .ne. 0)
 $     then
 $         defs = "LARGE_FILE_SUPPORT, ''defs'"
@@ -309,11 +324,11 @@ $     then
 $         ! We use DECC:
 $         USE_DECC_VAX = 1
 $         cc = "cc /decc /prefix = all"
-$         defs = "''local_unzip'MODERN"
+$         defs = "''LOCAL_UNZIP'MODERN"
 $     else
 $         ! We use VAXC (or GNU C):
 $         USE_DECC_VAX = 0
-$         defs = "''local_unzip'VMS"
+$         defs = "''LOCAL_UNZIP'VMS"
 $         if ((.not. HAVE_VAXC_VAX .and. MAY_HAVE_GNUC) .or. MAY_USE_GNUC)
 $         then
 $             cc = "gcc"
@@ -353,13 +368,10 @@ $     DEF_SXUNX = "/define = (''defs', SFX)"
 $     DEF_SXCLI = "/define = (''defs', VMSCLI, SFX)"
 $ endif
 $!
-$! Keep a copy of the final I/O-size independent destination specification.
-$! (needed for the bzip2 library search)
-$!
-$ destc = "''dest'"
-$!
 $! Change the destination directory, if the large-file option is enabled.
+$! Set the bzip2 directory.
 $!
+$ seek_bz = arch
 $ if (LARGE_FILE .ne. 0)
 $ then
 $     dest = "''dest'L"
@@ -368,6 +380,7 @@ $!
 $! If BZIP2 support was selected, find the header file and object
 $! library.  Complain if things fail.
 $!
+$ cc_incl = "[]"
 $ lib_bzip2_opts = ""
 $ incl_bzip2_q = ""
 $ if (IZ_BZIP2 .nes. "")
@@ -377,7 +390,7 @@ $     incl_bzip2_q = "/include = (UBZ2ERR)"
 $     if (.not. LINK_ONLY)
 $     then
 $         define incl_bzip2 'IZ_BZIP2'
-$         if (BUILDBZ2_INTEGRATED .and. (IZ_BZIP2 .eqs. "SYS$DISK:[.BZIP2]"))
+$         if (BUILD_BZIP2 .and. (IZ_BZIP2 .eqs. "SYS$DISK:[.BZIP2]"))
 $         then
 $             set def [.BZIP2]
 $             @buildbz2.com
@@ -385,13 +398,39 @@ $             set def [-]
 $         endif
 $     endif
 $!
-$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_BZIP2' 'destc' 'bz2_olb' lib_bzip2
+$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_BZIP2' 'seek_bz' 'bz2_olb' lib_bzip2
 $     if (f$trnlnm( "lib_bzip2") .eqs. "")
 $     then
 $         say "Can't find BZIP2 object library.  Can't link."
 $         goto error
 $     else
 $         lib_bzip2_opts = "lib_bzip2:''bz2_olb' /library,"
+$         cc_incl = cc_incl+ ", [.VMS]"
+$     endif
+$ endif
+$!
+$! If ZLIB use was selected, find the object library.
+$! Complain if things fail.
+$!
+$ lib_zlib_opts = ""
+$ if (IZ_ZLIB .nes. "")
+$ then
+$     zlib_olb = "LIBZ.OLB"
+$     define incl_zlib 'IZ_ZLIB'
+$     defs = "''defs', USE_ZLIB"
+$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_ZLIB' 'seek_bz' 'zlib_olb' lib_zlib
+$     if (f$trnlnm( "lib_zlib") .eqs. "")
+$     then
+$         say "Can't find ZLIB object library.  Can't link."
+$         goto error
+$     else
+$         lib_zlib_opts = "lib_zlib:''zlib_olb' /library, "
+$         if (f$locate( "[.VMS]", cc_incl) .ge. f$length( cc_incl))
+$         then
+$             cc_incl = cc_incl+ ", [.VMS]"
+$         endif
+$         @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_ZLIB' -
+           contrib.infback9 infback9.h'zlib_olb' incl_zlib_contrib_infback9
 $     endif
 $ endif
 $!
@@ -423,7 +462,7 @@ $     endif
 $!
 $! Define compiler command.
 $!
-$     cc = cc+ " /include = ([], [.VMS])"+ LISTING+ CCOPTS
+$     cc = cc+ " /include = (''cc_incl')"+ LISTING+ CCOPTS
 $!
 $ endif
 $!
@@ -449,9 +488,17 @@ $ if (IZ_BZIP2 .nes. "")
 $ then
 $     if (.not. LINK_ONLY)
 $     then
-$         say "   BZIP2 include dir = ''f$trnlnm( "inc_bzip2")'"
+$         say "   BZIP2 include dir: ''f$trnlnm( "incl_bzip2")'"
 $     endif
-$     say "   BZIP2 library dir = ''f$trnlnm( "lib_bzip2")'"
+$     say "   BZIP2 library dir: ''f$trnlnm( "lib_bzip2")'"
+$ endif
+$ if (IZ_ZLIB .nes. "")
+$ then
+$     if (.not. LINK_ONLY)
+$     then
+$         say "   ZLIB include dir:  ''f$trnlnm( "incl_zlib")'"
+$     endif
+$     say "   ZLIB library dir:  ''f$trnlnm( "lib_zlib")'"
 $ endif
 $ if (.not. LINK_ONLY)
 $ then
@@ -544,6 +591,7 @@ $ link /executable = [.'dest']'unzx_unx'.EXE -
    [.'dest']UNZIP.OBJ, -
    [.'dest']UNZIP.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
+   'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIP.OPT /options
 $!
@@ -591,6 +639,7 @@ $ link /executable = [.'dest']'unzx_cli'.EXE -
    [.'dest']UNZIPCLI.OLB /library, -
    [.'dest']UNZIP.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
+   'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIP.OPT /options
 $!
@@ -616,7 +665,7 @@ $     cc 'DEF_SXUNX' /object = [.'dest']VMS_.OBJ [.VMS]VMS.C
 $!
 $! Create the SFX object library.
 $!
-$     if f$search( "[.''dest']UNZIPSFX.OLB") .eqs. "" then -
+$     if (f$search( "[.''dest']UNZIPSFX.OLB") .eqs. "") then -
        libr /object /create [.'dest']UNZIPSFX.OLB
 $!
 $     libr /object /replace [.'dest']UNZIPSFX.OLB -
@@ -640,6 +689,7 @@ $ link /executable = [.'dest']'unzsfx_unx'.EXE -
    [.'dest']UNZIPSFX.OBJ, -
    [.'dest']UNZIPSFX.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
+   'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIPSFX.OPT /options
 $!
@@ -672,6 +722,7 @@ $ link /executable = [.'dest']'unzsfx_cli'.EXE -
    [.'dest']UNZSXCLI.OLB /library, -
    [.'dest']UNZIPSFX.OLB /library 'incl_bzip2_q', -
    'lib_bzip2_opts' -
+   'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIPSFX.OPT /options
 $!
@@ -685,10 +736,39 @@ $!
 $ unzip   == "$''there'''unzexec'.EXE"
 $ zipinfo == "$''there'''unzexec'.EXE ""-Z"""
 $!
-$! Restore the original default directory, deassign the temporary
-$! logical names, and restore the DCL verify status.
+$! Deassign the temporary process logical names, restore the original
+$! default directory, and restore the DCL verify status.
 $!
 $ error:
+$!
+$ if (IZ_BZIP2 .nes. "")
+$ then
+$     if (f$trnlnm( "incl_bzip2", "LNM$PROCESS_TABLE") .nes. "")
+$     then
+$         deassign incl_bzip2
+$     endif
+$     if (f$trnlnm( "lib_bzip2", "LNM$PROCESS_TABLE") .nes. "")
+$     then
+$         deassign lib_bzip2
+$     endif
+$ endif
+$!
+$ if (IZ_ZLIB .nes. "")
+$ then
+$     if (f$trnlnm( "incl_zlib", "LNM$PROCESS_TABLE") .nes. "")
+$     then
+$         deassign incl_zlib
+$     endif
+$     if (f$trnlnm( "incl_zlib_contrib_infback9", -
+       "LNM$PROCESS_TABLE") .nes. "")
+$     then
+$         deassign incl_zlib_contrib_infback9
+$     endif
+$     if (f$trnlnm( "lib_zlib", "LNM$PROCESS_TABLE") .nes. "")
+$     then
+$         deassign lib_zlib
+$     endif
+$ endif
 $!
 $ if (f$type( here) .nes. "")
 $ then
@@ -701,16 +781,6 @@ $!
 $ if (f$type( OLD_VERIFY) .nes. "")
 $ then
 $     tmp = f$verify( OLD_VERIFY)
-$ endif
-$!
-$ if (f$trnlnm( "incl_bzip2") .nes. "")
-$ then
-$     deassign incl_bzip2
-$ endif
-$!
-$ if (f$trnlnm( "lib_bzip2") .nes. "")
-$ then
-$     deassign lib_bzip2
 $ endif
 $!
 $ exit

@@ -60,6 +60,9 @@
 .!      03-002          S. Schweda, C. Spieler  09-Jan-2008 03:35
 .!              Added documentation of extended /RESTORE=(...) qualifier.
 .!
+.!                      S. Schweda              25=Jul-2008
+.!              Added /EXISTING.
+.!
 <INIT>
 <MAIN>
 UNZIP
@@ -217,7 +220,38 @@ default is to treat them as file types.)  Example: "a.b.3" -> "a.b;3".
 A comma-separated list of files to exclude when extracting files.
 If multiple files are specified, the list should be included in
 parentheses.
+<QUALIFIER>
+/EXISTING
 
+/EXISTING = keyword
+
+Valid keywords (exactly one must be specified) are:
+<LITERAL>
+|  NEW_VERSION   Create a new version of an existing file.
+|  OVERWRITE     Overwrite the same version of an existing file.
+|                (But only if the archive member name includes a
+|                version number.)
+|  NOEXTRACT     Do not extract.  An existing file is not affected.
+<LARETIL>
+
+When UnZip would extract an archive member, but the destination file
+already exists, UnZip will, by default, ask the user what to do. 
+/EXISTING lets the user specify on the command line what to do in this
+situation, eliminating the interactive question(s).
+
+NOEXTRACT will always stop UnZip from extracting an archive member if
+the destination file already exists.
+
+If an archive member name does not include a VMS version number, or if
+UnZip is run with /NOVERSION (the default, causing it to ignore version
+numbers), then either NEW_VERSION or OVERWRITE will cause UnZip to
+create a new version of the existing file.
+
+If an archive member name does include a VMS version number, and if
+UnZip is run with /VERSION, then NEW_VERSION will cause UnZip to create
+a new version of the existing file, and OVERWRITE will cause UnZip to
+overwrite the existing file which has the version specified by the
+archive member name.
 <QUALIFIER>
 /FRESHEN
 
@@ -291,13 +325,11 @@ upper case.
 <NEXT>
 /NOOVERWRITE
 
-The qualifier /OVERWRITE forces overwriting of existing files when extracting.
-The negation /NOOVERWRITE results in never overwriting an existing file.
-The default action is to prompt for desired action when about to
-overwrite an existing file.
+See /EXISTING.
 
-For VMS, "overwriting" results in the creation of a new version of the file,
-unless version numbers are stored in the archive and /VERSION is specified.
+/OVERWRITE is equivalent to /EXISTING = NEW_VERSION.
+<NEXT>
+/NOOVERWRITE is equivalent to /EXISTING = NOEXTRACT.
 <QUALIFIER>
 /PAGE
 

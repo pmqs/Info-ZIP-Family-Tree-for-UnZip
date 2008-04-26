@@ -75,7 +75,7 @@
 #    endif
 #  endif
 
-#  define _MAX_PATH (NAM_MAXRSS+1)      /* to define FILNAMSIZ below */
+#  define _MAX_PATH (NAM_MAXRSS+ 1)     /* to define FILNAMSIZ below */
 
 #  ifdef RETURN_CODES  /* VMS interprets standard PK return codes incorrectly */
 #    define RETURN(ret) return_VMS(__G__ (ret))   /* verbose version */

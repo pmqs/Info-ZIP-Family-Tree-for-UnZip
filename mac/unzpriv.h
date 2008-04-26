@@ -2494,6 +2494,14 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #endif
 
 /*---------------------------------------------------------------------------
+    Mac-OS-X-only functions:
+  ---------------------------------------------------------------------------*/
+
+#if defined( UNIX) && defined( __APPLE__)
+    int vol_attr_ok( const char *path);
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
+/*---------------------------------------------------------------------------
     Miscellaneous/shared functions:
   ---------------------------------------------------------------------------*/
 

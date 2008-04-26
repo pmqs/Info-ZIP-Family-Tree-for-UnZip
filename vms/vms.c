@@ -101,6 +101,13 @@
 #define OK(s)   (((s) & STS$M_SUCCESS) != 0)
 #define STRICMP(s1,s2)  STRNICMP(s1,s2,2147483647)
 
+/* Interactive inquiry response codes for replace(). */
+
+#define REPL_NO_EXTRACT   0
+#define REPL_NEW_VERSION  1
+#define REPL_OVERWRITE    2
+
+
 #ifdef SET_DIR_ATTRIB
 /* Structure for holding directory attribute data for final processing
  * after all files are in place.
@@ -138,7 +145,7 @@ static struct XABKEY *xabkey = NULL;    /* key (indexed) */
 static struct XABALL *xaball = NULL;    /* allocation */
 static struct XAB *first_xab = NULL, *last_xab = NULL;
 
-static char query = '\0';
+static int replace_code_all = -1;       /* All-file response for replace(). */
 
 static uch rfm;
 
@@ -182,6 +189,8 @@ static int  create_default_output(__GPRO);
 static int  create_rms_output(__GPRO);
 static int  create_qio_output(__GPRO);
 static int  replace(__GPRO);
+static int  replace_rms_newversion(__GPRO);
+static int  replace_rms_overwrite(__GPRO);
 static int  find_vms_attrs(__GPRO__ int set_date_time);
 static void free_up(void);
 #ifdef CHECK_VERSIONS
@@ -791,12 +800,26 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
 #endif /* ?OLD_FABDEF */
 
-        ierr = sys$create(&fileblk);
+        ierr = sys$create( outfab);
         if (ierr == RMS$_FEX)
-            ierr = replace(__G);
-
-        if (ierr == 0)          /* Canceled */
-            return (free_up(), PK_WARN);
+        {
+            /* File exists.
+             * Consider command-line options, or ask the user what to do.
+             */
+            ierr = replace( __G);	
+            switch (ierr)
+            {
+                case REPL_NO_EXTRACT:   /* No extract. */
+                    free_up();
+                    return PK_WARN;
+                case REPL_NEW_VERSION:  /* Create a new version. */
+                    ierr = replace_rms_newversion( __G);
+                    break;
+                case REPL_OVERWRITE:    /* Overwrite the existing file. */
+                    ierr = replace_rms_overwrite( __G);
+                    break;
+            }
+        }
 
         if (ERR(ierr))
         {
@@ -931,12 +954,26 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         outfab-> fab$v_sqo = 1;
 #endif /* ?OLD_FABDEF */
 
-        ierr = sys$create(outfab);
+        ierr = sys$create( outfab);
         if (ierr == RMS$_FEX)
-            ierr = replace(__G);
-
-        if (ierr == 0)          /* Canceled */
-            return (free_up(), PK_WARN);
+        {
+            /* File exists.
+             * Consider command-line options, or ask the user what to do.
+             */
+            ierr = replace( __G);	
+            switch (ierr)
+            {
+                case REPL_NO_EXTRACT:   /* No extract. */
+                    free_up();
+                    return PK_WARN;
+                case REPL_NEW_VERSION:  /* Create a new version. */
+                    ierr = replace_rms_newversion( __G);
+                    break;
+                case REPL_OVERWRITE:    /* Overwrite the existing file. */
+                    ierr = replace_rms_overwrite( __G);
+                    break;
+            }
+        }
 
         if (ERR(ierr))
         {
@@ -1133,6 +1170,9 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
         fileblk.FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
 
+        outfab = &fileblk;              /* Set pointers used elsewhere. */
+        outrab = &rab;
+
 #ifdef NAML$C_MAXRSS
 
         fileblk.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
@@ -1243,14 +1283,84 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         pka_fib.fib$l_exsz = SWAPW(pka_rattr.fat$l_hiblk);
 
-        status = sys$qiow(0, pka_devchn, IO$_CREATE|IO$M_CREATE|IO$M_ACCESS,
-                          &pka_acp_iosb, 0, 0,
-                          &pka_fibdsc, &pka_fnam, 0, 0, pka_atr, 0);
+        status = sys$qiow( 0,               /* Event flag */
+                           pka_devchn,      /* Channel */
+                           IO$_CREATE|IO$M_CREATE|IO$M_ACCESS, /* Funct */
+                           &pka_acp_iosb,   /* IOSB */
+                           0,               /* AST address */
+                           0,               /* AST parameter */
+                           &pka_fibdsc,     /* P1 = File Info Block */
+                           &pka_fnam,       /* P2 = File name (descr) */
+                           0,               /* P3 (= Resulting name len) */
+                           0,               /* P4 (= Resulting name descr) */
+                           pka_atr,         /* P5 = Attribute descr */
+                           0);              /* P6 (not used) */
 
-        if ( !ERR(status) )
+        if (!ERR( status))
             status = pka_acp_iosb.status;
 
-        if ( ERR(status) )
+        if (status == SS$_DUPFILENAME)
+        {
+            /* File exists.  Prepare to ask user what to do. */
+
+            /* Arrange to store the resultant file spec (with new
+             * version?) where the message code will find it.
+             */
+            short res_nam_len;
+            struct dsc$descriptor_s  res_nam_dscr =
+             { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, NULL };
+
+            res_nam_dscr.dsc$a_pointer = G.filename;
+            res_nam_dscr.dsc$w_length = sizeof( G.filename);
+
+            /* File exists.
+             * Consider command-line options, or ask the user what to do.
+             */
+            status = replace( __G);
+            switch (status)
+            {
+                case REPL_NO_EXTRACT:   /* No extract. */
+                    free_up();
+                    return PK_WARN;
+                case REPL_NEW_VERSION:  /* Create a new version. */
+                    pka_fib.fib$v_newver = 1;
+                    break;
+                case REPL_OVERWRITE:    /* Overwrite the existing file. */
+                    pka_fib.fib$v_supersede = 1;
+                    break;
+            }
+
+            /* Retry file creation with new (user-specified) policy. */
+            status = sys$qiow( 0,               /* Event flag */
+                               pka_devchn,      /* Channel */
+                               IO$_CREATE|IO$M_CREATE|IO$M_ACCESS, /* Funct */
+                               &pka_acp_iosb,   /* IOSB */
+                               0,               /* AST address */
+                               0,               /* AST parameter */
+                               &pka_fibdsc,     /* P1 = File Info Block */
+                               &pka_fnam,       /* P2 = File name (descr) */
+                               &res_nam_len,    /* P3 = Resulting name len */
+                               &res_nam_dscr,   /* P4 = Resulting name descr */
+                               pka_atr,         /* P5 = Attribute descr */
+                               0);              /* P6 (not used) */
+
+            if (!ERR( status))
+                status = pka_acp_iosb.status;
+
+            if (res_nam_len > 0)
+            {
+                /* NUL-terminate the resulting file spec. */
+                G.filename[ res_nam_len] = '\0';
+            }
+
+            /* Clear any user-specified version policy flags
+             * (for the next file to be processed).
+             */
+            pka_fib.fib$v_newver = 0;
+            pka_fib.fib$v_supersede = 0;
+        }
+
+        if (ERR( status))
         {
             char buf[NAM_MAXRSS + 128]; /* Name length + message length. */
 
@@ -1276,70 +1386,186 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 }
 
 
+/* 2008-07-23 SMS.
+ * Segregated user query function from file re-open functions/code.
+ *
+ * There was no code in create_qio_output() to deal with an
+ * SS$_DUPFILENAME condition, leading to ugly run-time failures, and its
+ * requirements differ from those of the RMS (non-QIO) functions,
+ * create_default_output() and create_rms_output().
+ *
+ * Whether it makes sense to have a second layer of VMS-specific
+ * querying after the generic UnZip query in extract.c:
+ * extract_or_test_entrylist() is another question, but changing that
+ * looks more scary than just getting the VMS-specific stuff to work
+ * right (better?).
+ */
 
-static int replace(__GPRO)
-{                       /*
-                         *      File exists. Inquire user about further action.
-                         */
-    char answ[10];
-    struct NAM_STRUCT nam;
+/* "File exists" handler(s).  Ask user about further action. */
+
+/* RMS create new version. */
+static int replace_rms_newversion(__GPRO)
+{
     int ierr;
+    struct NAM_STRUCT nam;
 
-    if (query == '\0')
-    {
-        do
-        {
-            Info(slide, 0x81, ((char *)slide,
-                 "%s exists:  [o]verwrite, new [v]ersion or [n]o extract?\n\
-  (uppercase response [O,V,N] = do same for all files): ",
-                 FnFilter1(G.filename)));
-            fflush(stderr);
-        } while (fgets(answ, 9, stderr) == NULL && !isalpha(answ[0])
-                 && tolower(answ[0]) != 'o'
-                 && tolower(answ[0]) != 'v'
-                 && tolower(answ[0]) != 'n');
+    nam = CC_RMS_NAM;           /* Initialize local NAM[L] block. */
+    outfab->FAB_NAM = &nam;     /* Point FAB to local NAM[L]. */
 
-        if (isupper(answ[0]))
-            query = answ[0] = tolower(answ[0]);
-    }
-    else
-        answ[0] = query;
+    /* Arrange to store the resultant file spec (with new version), so
+     * that we can extract the actual file version from it, for later
+     * use in the "extracting:/inflating:/..."  message (G.filename).
+     */
+    nam.NAM_RSA = res_nam;
+    nam.NAM_RSS = sizeof( res_nam);
 
-    switch (answ[0])
-    {
-        case 'n':
-            ierr = 0;
-            break;
-        case 'v':
-            nam = CC_RMS_NAM;
-            nam.NAM_RSA = G.filename;
-            nam.NAM_RSS = FILNAMSIZ - 1;
-
-            outfab->fab$l_fop |= FAB$M_MXV;
-            outfab->FAB_NAM = &nam;
-
-            ierr = sys$create(outfab);
-            if (!ERR(ierr))
-            {
-                G.filename[FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNS
-                           = nam.NAM_RSL] = '\0';
 #ifdef NAML$C_MAXRSS
-                /* Set RMS (long) filename pointer to "nothing". */
-                nam.naml$l_long_filename = NULL;
-#else /* !NAML$C_MAXRSS */
-                /* Set link to RMS NAM structure to "nothing". */
-                outfab->FAB_NAM = NULL;
-#endif /* ?NAML$C_MAXRSS */
-            }
-            break;
-        case 'o':
-            outfab->fab$l_fop |= FAB$M_SUP;
-            ierr = sys$create(outfab);
-            break;
+
+    outfab->fab$l_dna = (char *) -1;    /* Using NAML for default name. */
+    outfab->fab$l_fna = (char *) -1;    /* Using NAML for file name. */
+
+#endif /* def NAML$C_MAXRSS */
+
+    FAB_OR_NAML( *outfab, nam).FAB_OR_NAML_FNA = G.filename;
+    FAB_OR_NAML( *outfab, nam).FAB_OR_NAML_FNS = strlen( G.filename);
+
+    /* Maximize version number. */
+    outfab->fab$l_fop |= FAB$M_MXV;
+
+    /* Create the new-version file. */
+    ierr = sys$create( outfab);
+
+    if (nam.NAM_RSL > 0)
+    {
+        /* File spec version pointers.
+         * Versions must exist, so a simple right-to-left search for ";"
+         * should work, even on ODS5 extended file specs.
+         */
+        char *semi_col_orig;
+        char *semi_col_res;
+
+        /* NUL-terminate the (complete) resultant file spec. */
+        res_nam[ nam.NAM_RSL] = '\0';
+
+        /* Find the versions (";") in the original and resultant file specs. */
+        semi_col_orig = strrchr( G.filename, ';');
+        semi_col_res = strrchr( res_nam, ';');
+
+        if ((semi_col_orig != NULL) && (semi_col_res != NULL))
+        {
+            /* Transfer the resultant version to the original file spec. */
+            strcpy( (semi_col_orig+ 1), (semi_col_res+ 1));
+        }
     }
     return ierr;
 }
 
+
+/* RMS overwrite original version. */
+static int replace_rms_overwrite(__GPRO)
+{
+    int ierr;
+
+    /* Supersede existing file. */
+    outfab->fab$l_fop |= FAB$M_SUP;
+    /* Create (overwrite) the original-version file. */
+    ierr = sys$create( outfab);
+
+    return ierr;
+}
+
+/* Main query function to ask user how to handle an existing file
+ * (unless command-line options already specify what to do).
+ */
+
+static int replace( __GPRO)
+{
+    char answ[ 10];
+    int replace_code;
+
+    if (replace_code_all >= 0)
+    {
+        /* Use the previous all-file response. */
+        replace_code = replace_code_all;
+    }
+    else if (uO.overwrite_none)
+    {
+        /* "-n".  Do not extract this (or any) file. */
+        replace_code = REPL_NO_EXTRACT;
+        replace_code_all = REPL_NO_EXTRACT;
+    }
+    else if (uO.overwrite_all == 1)
+    {
+        /* "-o".  Create a new version of this (or any) file. */
+        replace_code = REPL_NEW_VERSION;
+        replace_code_all = REPL_NEW_VERSION;
+    }
+    else if (uO.overwrite_all > 1)
+    {
+        /* "-oo".  Overwrite (supersede) this (or any) existing file. */
+        replace_code = REPL_OVERWRITE;
+        replace_code_all = REPL_OVERWRITE;
+    }
+    else
+    {
+        replace_code = -1;
+        while (replace_code < 0)
+        {
+            /* Request, accept, and decode a response. */
+            Info(slide, 0x81, ((char *)slide,
+             "%s exists:  new [v]ersion, [o]verwrite, or [n]o extract?\n\
+  (Uppercase response [V,O,N] => Do same for all files): ",
+             FnFilter1(G.filename)));
+            fflush(stderr);
+
+            if (fgets( answ, 9, stdin) == (char *)NULL)
+            {
+                Info(slide, 1, ((char *)slide, AssumeNo));
+                *answ = 'N';
+                if (!G.error_in_archive)
+                    G.error_in_archive = 1;  /* not extracted:  warning */
+            }
+
+            /* Strip off a trailing newline, to avoid corrupt
+             * complaints when displaying the answer.
+             */
+            if (answ[ strlen( answ)- 1] == '\n')
+                answ[ strlen( answ)- 1] = '\0';
+
+            /* Extra newline to avoid having the extracting:/inflating:/...:
+             * message overwritten by the next query.
+             */
+            Info( slide, 1, ((char *)slide, "\n"));
+
+            /* Interpret response.  Store upper-case answer for future use. */
+            switch (answ[ 0])
+            {
+                case 'N':
+                    replace_code_all = REPL_NO_EXTRACT;
+                case 'n':
+                    /* Do not extract this file. */
+                    replace_code = REPL_NO_EXTRACT;
+                    break;
+                case 'O':
+                    replace_code_all = REPL_OVERWRITE;
+                case 'o':
+                    /* Overwrite (supersede) this existing file. */
+                    replace_code = REPL_OVERWRITE;
+                    break;
+                case 'V':
+                    replace_code_all = REPL_NEW_VERSION;
+                case 'v':
+                    /* Create a new version of this file. */
+                    replace_code = REPL_NEW_VERSION;
+                    break;
+                default:
+                    /* Invalid response.  Try again. */
+                    Info( slide, 1, ((char *)slide, InvalidResponse, answ));
+            }
+        }
+    }
+    return replace_code;
+}
 
 
 #define W(p)    (*(unsigned short*)(p))
@@ -2828,15 +3054,19 @@ int set_direc_attribs(__G__ d)
      */
     type = find_vms_attrs(__G__ (uO.D_flag <= 0));
 
+    if (outfab == NULL)
+    {
+        /* Default and PK schemes need a FAB.  (IZ supplies one.)
+         * In a degenerate case, this could be the first use of fileblk,
+         * so we assume that we need to initialize it.
+         */
+        fileblk = cc$rms_fab;           /* Initialize FAB. */
+        outfab = &fileblk;              /* Set pointer used elsewhere. */
+    }
+
     /* Arrange FAB-NAM[L] for file (directory) access. */
     if (type != VAT_NONE)
     {
-        if (outfab == NULL)
-        {
-            /* PK scheme needs a FAB.  (IZ supplies one.) */
-            outfab = &fileblk;
-        }
-
         if (type == VAT_IZ)
         {
             /* Make an attribute descriptor list for the VMS creation and
@@ -2901,9 +3131,6 @@ int set_direc_attribs(__G__ d)
          * non-VMS attribute data.
          */
         pka_idx = 0;
-
-        /* Default scheme needs a FAB. */
-        outfab = &fileblk;
 
         /* Get the (already converted) non-VMS permissions. */
         attr = VmsAtt(d)->perms;        /* Use right-sized prot storage. */
@@ -3060,16 +3287,16 @@ int set_direc_attribs(__G__ d)
              * adjustment.  Retrieve the RECATTR data for the existing
              * (newly created) directory file.
              */
-            status = sys$qiow(0,                    /* event flag */
-                              pka_devchn,           /* channel */
-                              IO$_ACCESS,           /* function code */
+            status = sys$qiow(0,                    /* Event flag */
+                              pka_devchn,           /* Channel */
+                              IO$_ACCESS,           /* Function code */
                               &pka_acp_iosb,        /* IOSB */
                               0,                    /* AST address */
                               0,                    /* AST parameter */
-                              &pka_fibdsc,          /* P1 = FIB dscr */
+                              &pka_fibdsc,          /* P1 = File Info Block */
                               &pka_fnam,            /* P2 = File name */
-                              0,                    /* P3 = Rslt nm str */
-                              0,                    /* P4 = Rslt nm len */
+                              0,                    /* P3 = Rslt nm len */
+                              0,                    /* P4 = Rslt nm str */
                               pka_recattr,          /* P5 = Attributes */
                               0);                   /* P6 (not used) */
 
@@ -3109,16 +3336,16 @@ int set_direc_attribs(__G__ d)
     }
 
     /* Modify the file (directory) attributes. */
-    status = sys$qiow(0,                            /* event flag */
-                      pka_devchn,                   /* channel */
-                      IO$_MODIFY,                   /* function code */
+    status = sys$qiow(0,                            /* Event flag */
+                      pka_devchn,                   /* Channel */
+                      IO$_MODIFY,                   /* Function code */
                       &pka_acp_iosb,                /* IOSB */
                       0,                            /* AST address */
                       0,                            /* AST parameter */
-                      &pka_fibdsc,                  /* P1 = FIB dscr */
+                      &pka_fibdsc,                  /* P1 = File Info Block */
                       &pka_fnam,                    /* P2 = File name */
-                      0,                            /* P3 = Rslt nm str */
-                      0,                            /* P4 = Rslt nm len */
+                      0,                            /* P3 = Rslt nm len */
+                      0,                            /* P4 = Rslt nm str */
                       pka_atr,                      /* P5 = Attributes */
                       0);                           /* P6 (not used) */
 
@@ -4055,14 +4282,24 @@ static void adj_file_name_ods2(char *dest, char *src)
     }
 
     /* Find the last dot (except, perhaps, the version dot).
-       Special case: Last char is a dot.  Zip strips off the normal VMS
-       null type, so if a final dot appears here, it should be replaced
-       by "_", not left for VMS to ignore it.
+       Special cases:
+          Last char is a dot.  Zip strips off the normal VMS null type,
+          so if a final dot appears here, it should be escaped by "^",
+          not left for VMS to ignore it.  "name." -> "name^.".
+          Exceptions:
+             Last dot is the only character.  "." -> ".".
+             Last dot is preceded by another dot.  "X.." -> "X^..".
        Note that if no last dot is found, the non-last-dot test below
        will always fail, but that's not a problem.
     */
-    last_dot = versionp- 1;
-    while ((--last_dot >= src) && (*last_dot != '.'));
+    last_dot = versionp;
+
+    if ((*(versionp- 1) != '.') ||
+     ((versionp- 2 < src) || (*(versionp- 2) == '.')))
+    {
+        /* Not an exception.  Find the real last dot. */
+        while ((--last_dot >= src) && (*last_dot != '.'));
+    }
 
     /* Critical features having been located, transform the name. */
     while ((uchr = *src++) != '\0')     /* Get source character. */
@@ -4074,9 +4311,8 @@ static void adj_file_name_ods2(char *dest, char *src)
         }
         else if ((prop & 4) != 0)       /* Dot. */
         {
-            if ((src <= last_dot) ||    /* Replace non-last dot */
-             (src == versionp))         /* or final dot. */
-            {
+            if (src <= last_dot)        /* Replace non-last dot */
+            {                           /* (with exceptions)    */
                 uchr = '_';             /* with "_". */
             }
         }
@@ -4125,14 +4361,24 @@ static void adj_file_name_ods5(char *dest, char *src)
     }
 
     /* Find the last dot (except, perhaps, the version dot).
-       Special case: Last char is a dot.  Zip strips off the normal VMS
-       null type, so if a final dot appears here, it should be escaped
-       by "^", not left for VMS to ignore it.
+       Special cases:
+          Last char is a dot.  Zip strips off the normal VMS null type,
+          so if a final dot appears here, it should be escaped by "^",
+          not left for VMS to ignore it.  "name." -> "name^.".
+          Exceptions:
+             Last dot is the only character.  "." -> ".".
+             Last dot is preceded by another dot.  "X.." -> "X^..".
        Note that if no last dot is found, the non-last-dot test below
        will always fail, but that's not a problem.
     */
     last_dot = versionp;
-    while ((--last_dot >= src) && (*last_dot != '.'));
+
+    if ((*(versionp- 1) != '.') ||
+     ((versionp- 2 < src) || (*(versionp- 2) == '.')))
+    {
+        /* Not an exception.  Find the real last dot. */
+        while ((--last_dot >= src) && (*last_dot != '.'));
+    }
 
     /* Critical features having been located, transform the name. */
     while ((uchr = *src++) != '\0')             /* Get source character. */
@@ -4155,9 +4401,8 @@ static void adj_file_name_ods5(char *dest, char *src)
         }
         else if ((prop & 4) != 0)               /* Dot. */
         {
-            if ((src <= last_dot) ||            /* Escape non-last dot */
-             (src == versionp))                 /* or final dot. */
-            {
+            if (src <= last_dot)                /* Escape non-last dot */
+            {                                   /* (with exceptions).  */
                 *dest++ = '^';                  /* Insert caret. */
             }
         }
@@ -4208,7 +4453,7 @@ int mapname(__G__ renamed)
     __GDEF
     int renamed;
 {
-    char pathcomp[FILNAMSIZ];       /* Path-component buffer. */
+    char pathcomp[ FILNAMSIZ];      /* Path-component buffer. */
     char *last_slash;               /* Last slash in path. */
     char *next_slash;               /* Next slash in path. */
     int  dir_len;                   /* Length of a directory segment. */
@@ -4376,10 +4621,10 @@ int checkdir(__G__ pathcomp, fcn)
     int fcn;
 {
     int function=fcn & FN_MASK;
-    static char pathbuf[FILNAMSIZ];
+    static char pathbuf[ FILNAMSIZ];
 
     /* previously created directory (initialized to impossible dir. spec.) */
-    static char lastdir[FILNAMSIZ] = "\t";
+    static char lastdir[ FILNAMSIZ] = "\t";
 
     static char *pathptr = pathbuf;     /* For debugger */
     static char *devptr, *dirptr;
@@ -4739,6 +4984,7 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
     iztimes z_utime;
     struct tm *t;
 #endif
+    char *filenam_stat;
     unsigned short timbuf[7];
     unsigned dy, mo, yr, hh, mm, ss, dy2, mo2, yr2, hh2, mm2, ss2;
     struct FAB fab;
@@ -4747,8 +4993,16 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
     struct NAM_STRUCT nam;
 #endif
 
+    /* 2008-07-12 SMS.
+     * Special case for "." as a file name, not as the current directory.
+     * Substitute ".;" to keep stat() from seeing a plain ".".
+    */
+    if (strcmp( filenam, ".") == 0)
+        filenam_stat = ".;";
+    else
+        filenam_stat = filenam;
 
-    if (stat(filenam, &G.statbuf))
+    if (stat(filenam_stat, &G.statbuf))
         return DOES_NOT_EXIST;
 
     fab  = cc$rms_fab;                  /* Initialize FAB. */

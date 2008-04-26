@@ -255,6 +255,17 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #else /* !VMS */
 #ifdef ATH_BEO_UNX
    static ZCONST char Far local2[] = " -X  restore UID/GID info";
+#  ifdef __APPLE__
+#ifdef MORE
+   static ZCONST char Far local3[] = "\
+  -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n\
+  -J  No special AppleDouble file handling\n";
+#else
+   static ZCONST char Far local3[] = "\
+  -K  keep setuid/setgid/tacky permissions   -J  No spec'l AplDbl file handling\
+\n";
+#endif
+#  else /* def __APPLE__ */
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n";
@@ -262,6 +273,7 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
    static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions\n";
 #endif
+#  endif /* def __APPLE__ [else] */
 #else /* !ATH_BEO_UNX */
 #ifdef TANDEM
    static ZCONST char Far local2[] = "\
@@ -368,7 +380,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #else /* !SFX */
    static ZCONST char Far CompileOptions[] =
      "UnZip special compilation options:\n";
-   static ZCONST char Far CompileOptFormat[] = "\t%s\n";
+   static ZCONST char Far CompileOptFormat[] = "        %s\n";
 #ifndef _WIN32_WCE /* Win CE does not support environment variables */
    static ZCONST char Far EnvOptions[] =
      "\nUnZip and ZipInfo environment options:\n";
@@ -533,7 +545,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
        static ZCONST char Far PasswdStdin[] = "PASSWD_FROM_STDIN";
 #    endif
      static ZCONST char Far Decryption[] =
-       "\t[decryption, version %d.%d%s of %s]\n";
+       "        [decryption, version %d.%d%s of %s]\n";
      static ZCONST char Far CryptDate[] = CR_VERSION_DATE;
 #  endif
 #  ifndef __RSXNT__
@@ -1226,6 +1238,10 @@ int unzip(__G__ argc, argv)
 # endif
 #endif
 
+#if defined( UNIX) && defined( __APPLE__)
+    /* Set flag according to the capabilities of the destination volume. */
+    G.exdir_attr_ok = vol_attr_ok( (uO.exdir == NULL) ? "." : uO.exdir);
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /*---------------------------------------------------------------------------
     Okey dokey, we have everything we need to get started.  Let's roll.
@@ -1494,7 +1510,8 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.jflag = TRUE;
                     break;
-#if (defined(ATH_BEO) || defined(MACOS))
+#if (defined(ATH_BEO) || defined(MACOS) || \
+ (defined( UNIX) && defined( __APPLE__)))
                 case ('J'):    /* Junk AtheOS, BeOS or MacOS file attributes */
                     if( negative ) {
                         uO.J_flag = FALSE, negative = 0;
@@ -1502,7 +1519,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.J_flag = TRUE;
                     }
                     break;
-#endif /* ATH_BEO || MACOS */
+#endif /* ATH_BEO || MACOS || defined( UNIX) && defined( __APPLE__) */
 #ifdef ATH_BEO_UNX
                 case ('K'):
                     if (negative) {

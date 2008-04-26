@@ -14,6 +14,8 @@ Define	Verb		UNZIP
 	Qualifier	LIST, Nonnegatable
 	Qualifier	BRIEF, Nonnegatable, Default
 	Qualifier	FULL, VALUE(TYPE=FULL_MODIFIER), Nonnegatable
+	Qualifier	EXISTING, VALUE(REQUIRED, TYPE=EXISTING_KEYWORDS),
+			Nonnegatable
 	Qualifier	OVERWRITE, Negatable
 	Qualifier	QUIET, VALUE(TYPE=QUIET_MODIFIER), Nonnegatable
 	Qualifier	TEST, Negatable
@@ -38,6 +40,7 @@ Define	Verb		UNZIP
 	DisAllow	DIRECTORY and SCREEN
 	DisAllow	BINARY and TEXT.ALL
 	DisAllow	BINARY.ALL and TEXT
+	DisAllow	(OVERWRITE or (neg OVERWRITE)) and EXISTING
 	DisAllow	(neg RESTORE) and RESTORE.DATE
 	DisAllow	(neg RESTORE) and (neg RESTORE.DATE)
 	DisAllow	(neg RESTORE) and RESTORE.OWNER_PROT
@@ -61,6 +64,11 @@ Define	Type		CONVTXT_KEYWORDS
 	Keyword		ALL
 	Keyword		NONE
 	Keyword		STMLF
+
+Define	Type		EXISTING_KEYWORDS
+	Keyword		NEW_VERSION
+	Keyword		OVERWRITE
+	Keyword		NOEXTRACT
 
 Define	Type		RESTORE_KEYWORDS
 	Keyword		DATE, VALUE(TYPE=RESTOREDATE_KEYS, Required),

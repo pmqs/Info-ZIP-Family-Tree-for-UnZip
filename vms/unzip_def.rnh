@@ -143,22 +143,22 @@ options and modifiers can be provided:
  MODIFIERS
    -a   extract text files in standard VMS text file format
    -aa  extract all files as text
-   -b   auto-extract only binary files in VMS fixed 512-byte record format
+   -b   auto-extract only binary files in VMS fixed 512-byte record fmt
    -bb  extract all files as binary in VMS fixed 512-byte record format
    -j   junk paths (don't recreate archive's directory structure)
-   -n   never overwrite existing files; don't prompt
-   -o   OK to overwrite files without prompting
+   -n   never overwrite or make a new version of an existing file
+   -o   always make a new version (-oo: overwrite orig) existing file
    -q   perform operations quietly (-qq => even quieter)
    -C   match filenames case-insensitively
-   -D   do not restore any timestamps (--D restore timestamps for directories)
+   -D   do not restore any timestamps (--D restore timestamps for dirs)
    -L   convert filenames to lowercase if created under DOS, VMS, etc.
    -M   feed screen output through built-in "more" pager
-   -P<password> supply decryption password on the command line (insecure!)
-   -S   use Stream_LF record format to extract text files (-a[a] required)
+   -P<password> supply decryption password on the cmnd line (insecure!)
+   -S   use Stream_LF record format to extract text files (-a[a] req'd)
    -V   retain (VMS) file version numbers
    -X   restore owner/protection info (may require privileges)
-   -Y   treat ".nnn" suffixes as version numbers (e.g. "a.b.3" -> "a.b;3")
-   -:   allow "../" path components that traverse across extract dir root
+   -Y   treat ".nnn" suffix as version number (e.g. "a.b.3" -> "a.b;3")
+   -:   allow "../" path components to traverse across top extract dir
    -2   force creation of ODS2-compatible file names
 .end literal;.sk
 Note that uppercase options (-C, -D, -L, -M, -P, -S, -T, -V, -X, -Y, and

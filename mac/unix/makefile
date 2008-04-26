@@ -82,7 +82,7 @@ HOST_VERSINFO=-DIZ_CC_NAME='\"\$$(CC) \"' -DIZ_OS_NAME='\"`uname -a`\"'
 
 # defaults for crc32 stuff and system dependent headers
 CRCA_O =
-OSDEP_H =
+OSDEP_H = unix/macosx.h
 
 # optional inclusion of bzip2 decompression
 IZ_OUR_BZIP2_DIR = bzip2

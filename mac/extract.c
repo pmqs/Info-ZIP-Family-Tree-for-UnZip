@@ -190,15 +190,20 @@ static ZCONST char Far AbsolutePathWarning[] =
 static ZCONST char Far SkipVolumeLabel[] =
   "   skipping: %-22s  %svolume label\n";
 
+#if defined( UNIX) && defined( __APPLE__)
+static ZCONST char Far AplDblNameTooLong[] =
+  "error:  file name too long with AppleDouble suffix: %s\n";
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 #ifdef SET_DIR_ATTRIB   /* messages of code for setting directory attributes */
    static ZCONST char Far DirlistEntryNoMem[] =
      "warning:  cannot alloc memory for dir times/permissions/UID/GID\n";
    static ZCONST char Far DirlistSortNoMem[] =
      "warning:  cannot alloc memory to sort dir times/perms/etc.\n";
    static ZCONST char Far DirlistSetAttrFailed[] =
-     "warning:  set attribs/times failed for %s\n";
+     "warning:  set times/attribs failed for %s\n";
    static ZCONST char Far DirlistFailAttrSum[] =
-     "     failed setting attribs/times for %lu dir entries";
+     "     failed setting attrib/times for %lu dir entries";
 #endif
 
 #ifdef SYMLINKS         /* messages of the deferred symlinks handler */
@@ -1022,11 +1027,14 @@ static int extract_or_test_entrylist(__G__ numchunk,
 #endif
     int error_in_archive;
 {
+    int cfn;
     unsigned i;
     int renamed, query;
     int skip_entry;
+
     zoff_t bufstart, inbuf_offset, request;
     int error, errcode;
+
 
 /* possible values for local skip_entry flag: */
 #define SKIP_NO         0       /* do not skip this entry */
@@ -1259,6 +1267,130 @@ static int extract_or_test_entrylist(__G__ numchunk,
         }
 #endif /* CRYPT */
 
+#if defined( UNIX) && defined( __APPLE__)
+        /* Unless the user objects, or the destination volume does not
+         * support setattrlist(), detect an AppleDouble file (by name),
+         * and set flags and adjusted file name accordingly.
+         */
+        G.apple_double = 0;
+        if ((!uO.J_flag) && G.exdir_attr_ok)
+        {
+            char *post_sgr_pfx;
+            char *rslash;
+
+            *G.ad_filename = '\0';
+
+            /* Detect, and prepare to ignore, an "__MACOSX/" prefix,
+             * used in a "sequestered" AppleDouble archive.
+             * We could add a warning if we see "__MACOSX/" here,
+             * but not "._" below.  (Does anyone _not_ use the "._"
+             * prefix in a sequestered AppleDouble archive?)
+             */
+            if (strncmp( G.filename,
+             APL_DBL_PFX_SQR, strlen( APL_DBL_PFX_SQR)) == 0)
+            {
+                post_sgr_pfx = G.filename+ strlen( APL_DBL_PFX_SQR);
+
+                /* Skip any sequestration directory, including "__MACOSX/",
+                 * itself.  The files will all be placed into the real
+                 * directories, not the sequestration directories.
+                 */
+                if (post_sgr_pfx[ strlen( post_sgr_pfx)- 1] == '/')
+                {
+                    /* Skip this sequestration directory. */
+                    continue;
+                }
+                else
+                {
+                    /* Replace the sequestered file name with the
+                     * unsequestered file name.
+                     */
+                    memmove( G.filename,
+                     post_sgr_pfx, (strlen( post_sgr_pfx)+ 1));
+                }
+            }
+
+            /* Excise "._" prefix (and set flag), if present. */
+            rslash = strrchr( G.filename, '/');
+            if (rslash == NULL)
+            {
+                /* "._name"? */
+                if (strncmp( G.filename, APL_DBL_PFX,
+                 strlen( APL_DBL_PFX)) == 0)
+                {
+                    G.apple_double = 1;
+                    strcpy( G.ad_filename, (G.filename+ strlen( APL_DBL_PFX)));
+                }
+            }
+            else
+            {
+                /*     v--- rslash (before).
+                 * "dir/._name"?
+                 *      ^--- rslash (after).
+                 */
+                if (strncmp( (++rslash), APL_DBL_PFX,
+                 strlen( APL_DBL_PFX)) == 0)
+                {
+                    G.apple_double = 1;
+                    strncpy( G.ad_filename, G.filename, (rslash- G.filename));
+                    strcpy( (G.ad_filename+ (rslash- G.filename)),
+                     (rslash+ strlen( APL_DBL_PFX)));
+                }
+            }
+
+            if (G.apple_double)
+            {
+                /* Check that the file name will not be too long when the
+                 * "/rsrc" (APL_DBL_SFX) string is appended (fileio.c:
+                 * open_outfile()).  (strlen() ignores its NUL, sizeof() 
+                 * includes its NUL.  FILNAMSIZ includes a NUL.)
+                 */
+                if (strlen( G.ad_filename)+ sizeof( APL_DBL_SFX) > FILNAMSIZ)
+                {
+                    Info(slide, 0x401, ((char *)slide, AplDblNameTooLong,
+                     G.ad_filename));
+                    error_in_archive = PK_ERR;
+                    /* Skip this (doomed) AppleDouble file. */
+                    continue;
+                }
+                /* If current file is the AppleDouble file for the previous
+                 * file (their names match), then arrange to handle this
+                 * AppleDouble file the way the previous file was handled.
+                 */ 
+                else if (strcmp( G.ad_filename, G.pq_filename) == 0)
+                {
+                    if (renamed)
+                    {
+                        /* Replace this AppleDouble file name, too.
+                         * Without extra effort, the "renamed" flag will
+                         * be misleadingly FALSE for mapname() below, but 
+                         * the preceding normal file should have paved
+                         * the way by getting all the directories created
+                         * as needed.
+                         */
+                        strcpy( G.ad_filename, G.pr_filename);
+                    }
+                    else if (skip_entry != SKIP_NO)
+                    {
+                        /* Skip this AppleDouble file, too. */
+                        continue;
+                    }
+                    *G.pq_filename = '\0';  /* Pointless? */
+                    *G.pr_filename = '\0';  /* Pointless? */
+                }
+            }
+            else
+            {
+                /* Save a normal file name for comparison with the next
+                 * AppleDouble file name.
+                 */
+                if (!G.apple_double)
+                    strcpy( G.pq_filename, G.filename);
+            }
+        }
+
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
         /*
          * just about to extract file:  if extracting to disk, check if
          * already exists, and if so, take appropriate action according to
@@ -1272,7 +1404,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
         if (!uO.tflag && !uO.cflag)
 #endif
         {
-            renamed = FALSE;   /* user hasn't renamed output file yet */
+            renamed = FALSE;    /* User hasn't renamed output file yet. */
 
 startover:
             query = FALSE;
@@ -1319,6 +1451,24 @@ startover:
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapname(__G__ renamed);
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* If the destination volume attributes are still a mystery,
+             * and mapname() admits that it made any destination directories,
+             * then try again to determine the volume attributes.
+             * We're hoping that a normal file precedes any AppleDouble
+             * files, so that the flag gets set before it's too late.
+             * We're also ignoring the possibility that a user rename
+             * has sent us onto a volume with different attributes.
+             * Otherwise, we'd need to do more complex, rename-aware
+             * volume attribute determination.
+             */ 
+            if ((G.exdir_attr_ok < 0) && (error& MPN_CREATED_DIR))
+            {
+                G.exdir_attr_ok = vol_attr_ok( uO.exdir);
+            }
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
             if ((errcode = error & ~MPN_MASK) != PK_OK &&
                 error_in_archive < errcode)
                 error_in_archive = errcode;
@@ -1368,7 +1518,29 @@ startover:
 #ifdef QDOS
             QFilename(__G__ G.filename);
 #endif
-            switch (check_for_newer(__G__ G.filename)) {
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* If we are doing special AppleDouble file processing,
+             * and this is an AppleDouble file,
+             * then we should ignore a file-exists test, which may be
+             * expected to succeed.
+             */
+            if (G.apple_double && (!uO.J_flag))
+            {
+                /* Fake a does-not-exist value for this AppleDouble file. */
+                cfn = DOES_NOT_EXIST;
+            }
+            else
+            {
+                /* Do the real test. */
+                cfn = check_for_newer(__G__ G.filename);
+            }
+#else /* defined( UNIX) && defined( __APPLE__) */
+            cfn = check_for_newer(__G__ G.filename);
+#endif /* defined( UNIX) && defined( __APPLE__) [else] */
+
+
+            switch (cfn) {
                 case DOES_NOT_EXIST:
 #ifdef NOVELL_BUG_FAILSAFE
                     G.dne = TRUE;   /* stat() says file DOES NOT EXIST */
@@ -1464,6 +1636,7 @@ startover:
 #  endif /* def VMS */
 
                 extent fnlen;
+
 reprompt:
                 Info(slide, 0x81, ((char *)slide,
                   LoadFarString(ReplaceQuery),
@@ -1547,6 +1720,18 @@ reprompt:
             }
         } /* end if (extracting to disk) */
 
+#if defined( UNIX) && defined( __APPLE__)
+        /* If we are doing special AppleDouble file processing,
+         * and this was a normal file, and the user renamed it,
+         * then save the new name for use on its AppleDouble file
+         * (which should be coming along next).
+         */
+        if (renamed && (!G.apple_double) && (!uO.J_flag))
+        {
+            strcpy( G.pr_filename, G.filename);
+        }
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 #ifdef DLL
         if ((G.statreportcb != NULL) &&
             (*G.statreportcb)(__G__ UZ_ST_START_EXTRACT, G.zipfn,
@@ -1612,7 +1797,6 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
 #endif
     register int b;
     int r, error=PK_COOL;
-
 
 /*---------------------------------------------------------------------------
     Initialize variables, buffers, etc.

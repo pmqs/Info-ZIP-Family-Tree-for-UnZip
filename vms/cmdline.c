@@ -188,6 +188,10 @@ $DESCRIPTOR(cli_list,           "LIST");                /* -l */
 $DESCRIPTOR(cli_brief,          "BRIEF");               /* -l */
 $DESCRIPTOR(cli_full,           "FULL");                /* -v */
 $DESCRIPTOR(cli_full_diags,     "FULL.DIAGNOSTICS");    /* -vv */
+$DESCRIPTOR(cli_existing,       "EXISTING");            /* -o, -oo, -n */
+$DESCRIPTOR(cli_exist_newver,   "EXISTING.NEW_VERSION"); /* -o */
+$DESCRIPTOR(cli_exist_over,     "EXISTING.OVERWRITE");  /* -oo */
+$DESCRIPTOR(cli_exist_noext,    "EXISTING.NOEXTRACT");  /* -n */
 $DESCRIPTOR(cli_overwrite,      "OVERWRITE");           /* -o, -n */
 $DESCRIPTOR(cli_quiet,          "QUIET");               /* -q */
 $DESCRIPTOR(cli_super_quiet,    "QUIET.SUPER");         /* -qq */
@@ -537,8 +541,23 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
-        **  Overwrite files?
+        **  Existing files: new version, overwrite, no extract?
         */
+        status = cli$present(&cli_exist_newver);
+        if (status == CLI$_PRESENT) {
+            *ptr++ = 'o';
+        }
+        status = cli$present(&cli_exist_over);
+        if (status == CLI$_PRESENT) {
+            *ptr++ = 'o';
+            *ptr++ = 'o';
+        }
+        status = cli$present(&cli_exist_noext);
+        if (status == CLI$_PRESENT) {
+            *ptr++ = 'n';
+        }
+
+        /* Deprecated: */
         status = cli$present(&cli_overwrite);
         if (status == CLI$_NEGATED)
             *ptr++ = 'n';
@@ -981,7 +1000,7 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 Valid main options are /TEST, /FRESHEN, /UPDATE, /PIPE, /SCREEN, /COMMENT%s.\n",
       SFXOPT_EXDIR));
     Info(slide, flag, ((char *)slide, "\
-Modifying options are /TEXT, /BINARY, /JUNK, /[NO]OVERWRITE, /QUIET,\n\
+Modifying options are /TEXT, /BINARY, /JUNK, /EXISTING, /QUIET,\n\
                       /CASE_INSENSITIVE, /LOWERCASE, %s/VERSION, /RESTORE.\n",
       SFXOPT1));
 #ifdef BETA
@@ -1083,18 +1102,23 @@ Major options include (type unzip -h for Unix style flags):\n\
    /[NO]COMMENT, /DIRECTORY=directory-spec, /EXCLUDE=(file-spec1,etc.)\n\n\
 Modifiers include:\n\
    /BRIEF, /FULL, /[NO]TEXT[=NONE|AUTO|ALL], /[NO]BINARY[=NONE|AUTO|ALL],\n\
-   /[NO]OVERWRITE, /[NO]JUNK, /QUIET, /QUIET[=SUPER], /[NO]PAGE,\n\
-   /[NO]CASE_INSENSITIVE, /[NO]LOWERCASE, /[NO]VERSION,\n\
-   /RESTORE[=([NO]OWNER_PROT[,NODATE|DATE={ALL|FILES}])]\n\n"));
+   /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT}, /[NO]JUNK, /QUIET,\n\
+   /QUIET[=SUPER], /[NO]PAGE,/[NO]CASE_INSENSITIVE, /[NO]LOWERCASE,\n\
+   /[NO]VERSION, /RESTORE[=([NO]OWNER_PROT[,NODATE|DATE={ALL|FILES}])]\n\n"));
 
         Info(slide, flag, ((char *)slide, "\
-Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n   \
-unzip edit1 /EXCL=joe.jou /CASE_INSENSITIVE    => extract all files except\n   \
-   joe.jou (or JOE.JOU, or any combination of case) from zipfile edit1.zip\n   \
-unzip zip201 \"Makefile.VMS\" vms/*.[ch]         => extract VMS Makefile and\n\
-      *.c and *.h files; must quote uppercase names if /CASE_INSENS not used\n\
-   unzip foo /DIR=tmp:[.test] /JUNK /TEXT /OVER   => extract all files to temp.\
-\n      directory without paths, auto-converting text files and overwriting\
+Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
+   unzip edit1 /EXCL=joe.jou /CASE_INSENSITIVE    => Extract all files except\
+\n\
+      joe.jou (or JOE.JOU, or any combination of case) from zipfile edit1.zip.\
+\n\
+   unzip zip201 \"Makefile.VMS\" vms/*.[ch]       => extract VMS Makefile and\
+\n\
+      *.c and *.h files; must quote uppercase names if /CASE_INSENS not used.\
+\n\
+   unzip foo /DIR=tmp:[.test] /JUNK /TEXT /EXIS=NEW  => extract all files to\
+\n\
+      tmp. dir., flatten hierarchy, auto-conv. text files, create new versions.\
 \n"));
 
     } /* end if (zipinfo_mode) */

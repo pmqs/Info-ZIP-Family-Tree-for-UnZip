@@ -71,6 +71,13 @@
 #  endif
 #endif /* ?DIRENT */
 
+#if defined( UNIX) && defined( __APPLE__)
+#  include <sys/attr.h>
+#  include <sys/mount.h>
+#  include <sys/vnode.h>
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
+
 #ifdef SET_DIR_ATTRIB
 typedef struct uxdirattr {      /* struct for holding unix style directory */
     struct uxdirattr *next;     /*  info until can be sorted and set at end */
@@ -1268,8 +1275,8 @@ int set_symlnk_attribs(__G__ slnk_entry)
       if (slnk_entry->attriblen > sizeof(unsigned)) {
         ulg *z_uidgid_p = (zvoid *)(slnk_entry->buf + sizeof(unsigned));
         TTrace((stderr,
-                "set_symlnk_attribs:  restoring Unix UID/GID info for\n\t%s\n",
-                FnFilter1(slnk_entry->fname)));
+         "set_symlnk_attribs:  restoring Unix UID/GID info for\n        %s\n",
+         FnFilter1(slnk_entry->fname)));
         if (lchown(slnk_entry->fname,
                    (uid_t)z_uidgid_p[0], (gid_t)z_uidgid_p[1]))
         {
@@ -1281,8 +1288,8 @@ int set_symlnk_attribs(__G__ slnk_entry)
 # endif /* !NO_LCHOWN */
 # if (!defined(NO_LCHMOD))
       TTrace((stderr,
-              "set_symlnk_attribs:  restoring Unix attributes for\n\t%s\n",
-              FnFilter1(slnk_entry->fname)));
+       "set_symlnk_attribs:  restoring Unix attributes for\n        %s\n",
+       FnFilter1(slnk_entry->fname)));
       if (lchmod(slnk_entry->fname,
                  filtattr(__G__ *(unsigned *)(zvoid *)slnk_entry->buf)))
           perror("lchmod (file attributes) error");
@@ -1841,3 +1848,61 @@ static void qlfix(__G__ ef_ptr, ef_len)
     }
 }
 #endif /* QLZIP */
+
+
+#if defined( UNIX) && defined( __APPLE__)
+
+/* Determine if the volume where "path" resides supports getattrlist()
+ * and setattrlist(), that is, if we can do the special AppleDouble
+ * file processing using setattrlist().  Otherwise, we should pretend
+ * that "-J" is in effect, to bypass the special AppleDouble processing,
+ * and leave the separate file elements separate.
+ *
+ * Return value   Meaning
+ *           -1   Error.  See errno.
+ *            0   Volume does not support getattrlist() and setattrlist().
+ *            1   Volume does support getattrlist() and setattrlist().
+ */
+int vol_attr_ok( const char *path)
+{
+
+    int sts;
+    struct statfs statfs_buf;
+    struct attrlist attr_list_volattr;
+    struct attr_bufr_volattr {
+        unsigned int  ret_length;
+        vol_capabilities_attr_t  vol_caps;
+    } attr_bufr_volattr;
+
+    /* Get file system info (in particular, the mounted volume name) for
+     * the specified path.
+     */
+    sts = statfs( path, &statfs_buf);
+
+    /* If that worked, get the interesting volume capability attributes. */
+    if (sts == 0)
+    {
+        /* Clear attribute list structure. */
+        memset( &attr_list_volattr, 0, sizeof( attr_list_volattr));
+        /* Set attribute list bits for volume capabilities. */
+        attr_list_volattr.bitmapcount = ATTR_BIT_MAP_COUNT;
+        attr_list_volattr.volattr = ATTR_VOL_INFO| ATTR_VOL_CAPABILITIES;
+
+        sts = getattrlist( statfs_buf.f_mntonname,  /* Path. */
+                           &attr_list_volattr,      /* Attrib list. */
+                           &attr_bufr_volattr,      /* Dest buffer. */
+                           sizeof( attr_bufr_volattr),  /* Dest buffer size. */
+                           0);
+
+        if (sts == 0)
+        {
+            /* Set a valid return value. */
+            sts = ((attr_bufr_volattr.vol_caps.capabilities[
+             VOL_CAPABILITIES_INTERFACES]&
+             VOL_CAP_INT_ATTRLIST) != 0);
+        }
+    }
+    return sts;
+}
+#endif /* defined( UNIX) && defined( __APPLE__) */
+

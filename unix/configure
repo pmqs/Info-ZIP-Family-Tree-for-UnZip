@@ -17,16 +17,11 @@ CFLAGSR=${CFLAGS}
 IZ_BZIP2=${3}
 CFLAGS="${CFLAGS} -I. -DUNIX"
 LFLAGS1=""
-LFLAGS2=""
+LFLAGS2="-s"
 LN="ln -s"
 
 CFLAGS_OPT=''
 CFLAGS_BZ=''
-
-D_USE_BZ2=""
-LIBBZ2=""
-L_BZ2=""
-CC_BZ="${CC}"
 BZLF=''
 
 echo 'Check C compiler type (optimization options)'
@@ -101,10 +96,13 @@ _EOF_
         CFLAGS_OPT='-O3'
         echo "  GNU C ($CFLAGS_OPT)"
 	# Special Mac OS X shared library "ld" option?
-        lf='-Wl,-search_paths_first'
-        CC $CFLAGS $lf -c conftest.c > /dev/null 2>/dev/null
-        if test $? -eq 0; then
-          BZLF=${lf}
+        if test ` uname -s 2> /dev/null ` = 'Darwin'; then
+          lf='-Wl,-search_paths_first'
+          $CC $CFLAGS $lf conftest.c > /dev/null 2>/dev/null
+          if test $? -eq 0; then
+            BZLF=${lf}
+          fi
+          rm -f conftest
         fi
       else
         CFLAGS_OPT='-O'
@@ -279,6 +277,71 @@ else
   fi
 fi
 
+# Added 11/24/2005 EG
+# Check for wide char for Unicode support
+echo Check for wide char support
+cat > conftest.c << _EOF_
+#include <stdlib.h>
+#include <stdio.h>
+#include <wchar.h>
+int main()
+{
+  size_t wsize;
+  wchar_t *wide_string;
+
+  if ((wide_string = (wchar_t *)malloc(4 * sizeof(wchar_t))) == NULL) {
+    return 0;
+  }
+  /* get wide string */
+  wsize = mbstowcs(wide_string, "foo", 3);
+  wide_string[wsize] = (wchar_t) NULL;
+#ifndef __STDC_ISO_10646__
+  return 1;
+#else
+  printf("  __STDC_ISO_10646__ = %d\n", __STDC_ISO_10646__);
+  return 2;
+#endif
+}
+_EOF_
+# compile it
+$CC -o conftest conftest.c >/dev/null 2>/dev/null
+if [ $? -ne 0 ]; then
+  echo -- no Unicode wchar_t support
+else
+# have wide char support
+# run it
+  ./conftest
+  r=$?
+  if [ $r -eq 0 ]; then
+    echo -- no Unicode wchar_t support - wchar_t allocation error
+  elif [ $r -eq 1 ]; then
+    echo -- no Unicode support - wchar_t encoding unspecified
+  elif [ $r -eq 2 ]; then
+    echo -- have wchar_t with known UCS encoding - enabling Unicode support!
+    CFLAGSR="${CFLAGSR} -DUNICODE_SUPPORT -DUNICODE_WCHAR"
+  else
+    echo -- no Unicode support - conftest returned $r
+  fi
+fi
+
+echo "Check for setlocale support (needed for UNICODE Native check)"
+cat > conftest.c << _EOF_
+#include <locale.h>
+int main()
+{
+  char *loc = setlocale(LC_CTYPE, "");
+  return 0;
+}
+_EOF_
+$CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
+if [ $? -eq 0 ]; then
+  echo "-- have setlocale, can check for charset type"
+  echo "--  - enabling UTF8-native support!"
+  CFLAGSR="${CFLAGSR} -DUNICODE_SUPPORT -DUTF8_MAYBE_NATIVE"
+else
+  echo "-- no Unicode (UTF-8 native) support!"
+fi
+
 # from configure 2.4i (Onno) 12/5/04
 echo Check for gcc no-builtin flag
 # -fno-builtin since version 2
@@ -293,7 +356,6 @@ int main()
 }
 _EOF_
 $CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
-BFLAG=''
 [ $? -eq 0 ] && BFLAG="-fno-builtin"
 
 # Check for missing functions
@@ -380,6 +442,16 @@ do
 done
 CFLAGSR="${CFLAGSR} ${OPT}"
 
+echo Check for MBCS include files
+OPT=""
+for inc in mbstring.h mbctype.h
+do
+   echo "#include <$inc>" > conftest.c
+   $CPP conftest.c > /dev/null 2>/dev/null
+   [ $? -eq 0 ] && OPT="-DHAVE_`echo $inc | tr '[a-z]./' '[A-Z]__'`" && break
+done
+CFLAGSR="${CFLAGSR} ${OPT}"
+
 # needed for AIX (and others ?) when mmap is used
 echo Check for valloc
 cat > conftest.c << _EOF_
@@ -448,6 +520,10 @@ rm -f a.out conftest.c conftest.o conftest null
 # bzip2
 
 echo "Check bzip2 support"
+D_USE_BZ2=""
+LIBBZ2=""
+L_BZ2=""
+CC_BZ="${CC}"
 
 if test -n "${IZ_BZIP2}" -a "${IZ_BZIP2}" != "bzip2" ; then
   echo "  Check for bzip2 compiled library in IZ_BZIP2 (${IZ_BZIP2})"
@@ -502,6 +578,7 @@ fi
 
 
 echo CC=\"${CC}\" CF=\"${CFLAGSR} ${D_USE_BZ2}\" CRCA_O=\"${CRC32OA}\" \
-       AS=\"${CC} -c\" CC_BZ=\"${CC_BZ}\" CFLAGS_BZ=\"${CFLAGS_BZ}\" \
+       AS=\"${CC} -c\" LFLAGS1=\"${LFLAGS1}\" LF2=\"${LFLAGS2}\" \
+       CC_BZ=\"${CC_BZ}\" CFLAGS_BZ=\"${CFLAGS_BZ}\" \
        IZ_BZIP2=\"${IZ_BZIP2}\" D_USE_BZ2=\"${D_USE_BZ2}\" \
        L_BZ2=\"${L_BZ2}\" LIBBZ2=\"${LIBBZ2}\"  > flags

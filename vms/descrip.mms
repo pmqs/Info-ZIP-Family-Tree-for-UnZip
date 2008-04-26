@@ -1,4 +1,4 @@
-#                                               28 December 2007.  CS.
+#                                               28 July 2008.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -17,16 +17,26 @@
 #                   bzip2 make script provided in [.bzip2]descrbz2.mms.
 #                   This results in a "single-command" build of UnZip with
 #                   bzip2 support directly from the sources.
-#    IZ_BZIP2=dev:[dir]  Build with optional BZIP2 support.  The macro
-#                   value ("dev:[dir]", or a suitable logical name)
-#                   tells where to find "bzlib.h".  The BZIP2 object
-#                   library (LIBBZ2_NS.OLB) is expected to be in a
-#                   "[.dest]" directory under that one
+#
+#    IZ_BZIP2=dev:[dir]  Build with optional BZIP2 support.  The value
+#                        of the MMS macro, ("dev:[dir]", or a suitable
+#                   logical name) tells where to find "bzlib.h".  The
+#                   BZIP2 object library (LIBBZ2_NS.OLB) is expected to
+#                   be in a "[.dest]" directory under that one
 #                   ("dev:[dir.ALPHAL]", for example), or in that
 #                   directory itself.
 #                   By default, the SFX programs are built without BZIP2
 #                   support.  Add "BZIP2_SFX=1" to the LOCAL_UNZIP C
 #                   macros to enable it.  (See LOCAL_UNZIP, below.)
+#
+#    IZ_ZLIB=dev:[dir]  Use ZLIB compression library instead of internal
+#                       compression routines.  The value of the MMS
+#                   macro ("dev:[dir]", or a suitable logical name)
+#                   tells where to find "zlib.h".  The ZLIB object
+#                   library (LIBZ.OLB) is expected to be in a
+#                   "[.dest]" directory under that one
+#                   ("dev:[dir.ALPHAL]", for example), or in that
+#                   directory itself.
 #
 #    CCOPTS=xxx     Compile with CC options xxx.  For example:
 #                   CCOPTS=/ARCH=HOST
@@ -114,7 +124,7 @@ INCL_DESCRIP_SRC = 1
 LIB_UNZIP = [.$(DEST)]UNZIP.OLB
 LIB_UNZIP_CLI = [.$(DEST)]UNZIPCLI.OLB
 LIB_UNZIPSFX = [.$(DEST)]UNZIPSFX.OLB
-LIB_UNZIPSFX_CLI = [.$(DEST)]UNZSXCLI.OLB
+LIB_UNZIPSFX_CLI = [.$(DEST)]UNZSFXCLI.OLB
 
 # Help file names.
 
@@ -285,7 +295,7 @@ OPT_ID_SFX = SYS$DISK:[.VMS]UNZIPSFX.OPT
 [.$(DEST)]CMDLINE_.OBJ : [.VMS]CMDLINE.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX_CLI) $(MMS$SOURCE)
 
-[.$(DEST)]UNZSXCLI.OBJ : UNZIP.C
+[.$(DEST)]UNZSFXCLI.OBJ : UNZIP.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX_CLI) $(MMS$SOURCE)
 
 # VAX C LINK options file.
@@ -297,13 +307,21 @@ $(OPT_FILE) :
 	close opt_file_ln
 .ENDIF
 
+# Local BZIP2 object library.
+
+$(LIB_BZ2_LOCAL) :
+	$(MMS) $(MMSQUALIFIERS) /DESCR=$(IZ_BZIP2)descrbz2.mms'macro' -
+	   /MACRO = (SRCDIR=$(IZ_BZIP2), DSTDIR=$(BZ2DIR_BIN), -
+	   DEST=$(IZ_BZIP2)$(DESTM)) $(MMSTARGETS)
+
 # Normal UnZip executable.
 
 $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
-           $(LIB_UNZIP) $(OPT_FILE) $(OPT_ID)
+           $(LIB_UNZIP) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
 	 $(NOSHARE_OPTS)
@@ -311,11 +329,12 @@ $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
 # CLI UnZip executable.
 
 $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
-               $(LIB_UNZIP_CLI) $(OPT_FILE) $(OPT_ID)
+               $(LIB_UNZIP_CLI) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP_CLI) /library, -
 	 $(LIB_UNZIP) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
 	 $(NOSHARE_OPTS)
@@ -323,23 +342,25 @@ $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
 # SFX UnZip executable.
 
 $(UNZIPSFX) : [.$(DEST)]UNZIPSFX.OBJ \
-              $(LIB_UNZIPSFX) $(OPT_FILE) $(OPT_ID_SFX)
+              $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
 	 $(NOSHARE_OPTS)
 
 # SFX CLI UnZip executable.
 
-$(UNZIPSFX_CLI) : [.$(DEST)]UNZSXCLI.OBJ \
-                  $(LIB_UNZIPSFX_CLI) $(LIB_UNZIPSFX) \
+$(UNZIPSFX_CLI) : [.$(DEST)]UNZSFXCLI.OBJ \
+                  $(LIB_UNZIPSFX_CLI) $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) \
                   $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX_CLI) /library, -
 	 $(LIB_UNZIPSFX) /library $(INCL_BZIP2_Q), -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
 	 $(NOSHARE_OPTS)
