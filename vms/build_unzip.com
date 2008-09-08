@@ -1,8 +1,8 @@
 $! BUILD_UNZIP.COM
 $!
-$!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX
+$!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2008-07-28  SMS.
+$!     Last revised:  2008-09-12  SMS.
 $!
 $!     Command arguments:
 $!     - suppress help file processing: "NOHELP"
@@ -11,7 +11,7 @@ $!     - select link-only: "LINK"
 $!     - select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - select BZIP2 support: "USEBZ2"
 $!       This option is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]", and
-$!       runs the DCL build procedure there, 
+$!       runs the DCL build procedure there,
 $!     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
 $!       (or a suitable logical name) tells where to find "bzlib.h".
 $!       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
@@ -368,10 +368,23 @@ $     DEF_SXUNX = "/define = (''defs', SFX)"
 $     DEF_SXCLI = "/define = (''defs', VMSCLI, SFX)"
 $ endif
 $!
-$! Change the destination directory, if the large-file option is enabled.
-$! Set the bzip2 directory.
+$! Search directory for BZIP2.
 $!
-$ seek_bz = arch
+$ if (BUILD_BZIP2)
+$ then
+$!    Our own BZIP2 directory.
+$     seek_bz = dest
+$ else
+$!    User-specified BZIP2 directory.
+$     seek_bz = arch
+$ endif
+$!
+$! Search directory for ZLIB.
+$!
+$ seek_zl = arch
+$!
+$! Change the destination directory, if the large-file option is enabled.
+$!
 $ if (LARGE_FILE .ne. 0)
 $ then
 $     dest = "''dest'L"
@@ -418,7 +431,7 @@ $ then
 $     zlib_olb = "LIBZ.OLB"
 $     define incl_zlib 'IZ_ZLIB'
 $     defs = "''defs', USE_ZLIB"
-$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_ZLIB' 'seek_bz' 'zlib_olb' lib_zlib
+$     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_ZLIB' 'seek_zl' 'zlib_olb' lib_zlib
 $     if (f$trnlnm( "lib_zlib") .eqs. "")
 $     then
 $         say "Can't find ZLIB object library.  Can't link."

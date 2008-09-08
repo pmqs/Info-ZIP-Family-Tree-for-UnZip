@@ -146,6 +146,10 @@
 #  include "bzlib.h"
 #endif
 
+#if defined( UNIX) && defined( __APPLE__)
+#  include "unix/macosx.h"
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 
 /*************/
 /*  Globals  */
@@ -189,6 +193,17 @@ typedef struct Globals {
     zoff_t   expect_ecrec_offset;
     zoff_t   csize;       /* used by decompr. (NEXTBYTE): must be signed */
     zoff_t   used_csize;  /* used by extract_or_test_member(), explode() */
+
+#if defined( UNIX) && defined( __APPLE__)
+    int apple_double;     /* True for an AppleDouble file ("._name"). */
+    int apl_dbl_hdr_bytes;/* Non-zero for AplDbl until Finder info is set. */
+    int apl_dbl_hdr_len;  /* Bytes in apl_dbl_hdr. */
+    int exdir_attr_ok;    /* True if destination supports setattrlist(). */
+    char apl_dbl_hdr[ APL_DBL_HDR_SIZE];        /* AppleDouble header buffer. */
+    char ad_filename[ FILNAMSIZ];   /* AppleDouble "/rsrc" file name. */
+    char pq_filename[ FILNAMSIZ];   /* Previous query file name. */
+    char pr_filename[ FILNAMSIZ];   /* Previous rename file name. */
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef DLL
      int fValidate;       /* true if only validating an archive */
@@ -266,7 +281,6 @@ typedef struct Globals {
     int      reported_backslash;   /* extract.c static */
     int      disk_full;
     int      newfile;
-    int      error_in_archive;     /* extract.c, vms/vms.c. */
 
     int      didCRlast;            /* fileio static */
     ulg      numlines;             /* fileio static: number of lines printed */

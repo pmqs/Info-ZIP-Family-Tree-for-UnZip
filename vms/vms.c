@@ -107,6 +107,17 @@
 #define REPL_NEW_VERSION  1
 #define REPL_OVERWRITE    2
 
+/* 2008-09-12 SMS.
+ * Note: InvalidResponse[] should be shared with extract.c, and
+ * AssumeNo[] should look like AssumeNone[] there, but sharing them as
+ * globals seemed to disturb the maintainer.  These should agree with
+ * those, in any case.
+ */
+ZCONST char Far InvalidResponse[] =
+ "error:  invalid response [%.1s]\n";
+ZCONST char Far AssumeNo[] =
+ "\n(EOF or read error, treating as \"[N]o extract (all)\" ...)\n";
+
 
 #ifdef SET_DIR_ATTRIB
 /* Structure for holding directory attribute data for final processing
@@ -243,8 +254,7 @@ char hex_digit[16] = {
       Vertical bar (|)
 
    Characters escaped by "^":
-      SP  !  "  #  %  &  '  (  )  +  ,  .  /  : ;  <   =   >  ?
-      @  [  \  ]  ^  `  {  |  }  ~
+      SP  !  #  %  &  '  (  )  +  ,  .  ;  =  @  [  ]  ^  `  {  }  ~
 
    Either "^_" or "^ " is accepted as a space.  Period (.) is a special
    case.  Note that un-escaped < and > can also confuse a directory
@@ -278,22 +288,22 @@ unsigned char char_prop[256] = {
     0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,
 
 /*  SP  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /  */
-    8, 32, 32, 32, 17, 32, 32, 32,  32, 32,  0, 32, 32, 17,  4, 32,
+    8, 32, 16, 32, 17, 32, 32, 32,  32, 32,  0, 32, 32, 17,  4,  0,
 
 /*  0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?  */
-   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 32, 32, 32, 32, 32, 32,
+   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 16, 32, 32, 32, 32, 32,
 
 /*  @   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O  */
    32, 17, 17, 17, 17, 17, 17, 17,  17, 17, 17, 17, 17, 17, 17, 17,
 
 /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _  */
-   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 17, 32, 32, 32, 32, 17,
+   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 17, 32, 16, 32, 32, 17,
 
 /*  `   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o  */
    32, 18, 18, 18, 18, 18, 18, 18,  18, 18, 18, 18, 18, 18, 18, 18,
 
 /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~  DEL */
-   18, 18, 18, 18, 18, 18, 18, 18,  18, 18, 18, 32, 32, 32, 32, 64,
+   18, 18, 18, 18, 18, 18, 18, 18,  18, 18, 18, 32, 16, 32, 32, 64,
 
    64, 64, 64, 64, 64, 64, 64, 64,  64, 64, 64, 64, 64, 64, 64, 64,
    64, 64, 64, 64, 64, 64, 64, 64,  64, 64, 64, 64, 64, 64, 64, 64,
@@ -829,10 +839,7 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
             vms_msg(__G__ buf, ierr);
-            if (fileblk.fab$l_stv != 0)
-            {
-                vms_msg(__G__ "", fileblk.fab$l_stv);
-            }
+            vms_msg(__G__ "", fileblk.fab$l_stv);
             free_up();
             return PK_WARN;
         }
@@ -986,10 +993,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
             vms_msg(__G__ buf, ierr);
-            if (outfab->fab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outfab->fab$l_stv);
-            }
+            vms_msg(__G__ "", outfab->fab$l_stv);
             free_up();
             return PK_WARN;
         }
@@ -1003,10 +1007,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
                 sprintf(buf, "[ Cannot allocate space for %s ]\n", G.filename);
                 vms_msg(__G__ buf, ierr);
-                if (outfab->fab$l_stv != 0)
-                {
-                    vms_msg(__G__ "", outfab->fab$l_stv);
-                }
+                vms_msg(__G__ "", outfab->fab$l_stv);
                 free_up();
                 return PK_WARN;
             }
@@ -1528,12 +1529,18 @@ static int replace( __GPRO)
              FnFilter1(G.filename)));
             fflush(stderr);
 
-            if (fgets( answ, 9, stdin) == (char *)NULL)
+            if (fgets( answ, sizeof( answ), stdin) == (char *)NULL)
             {
                 Info(slide, 1, ((char *)slide, AssumeNo));
                 *answ = 'N';
+#if 0
+                /* 2008-09-12 SMS.
+                 * Would like to set the error_in_archive indicator
+                 * here, but the maintainer doesn't want it global.
+                 */
                 if (!G.error_in_archive)
                     G.error_in_archive = 1;  /* not extracted:  warning */
+#endif /* 0 */
             }
 
             /* Strip off a trailing newline, to avoid corrupt
@@ -2484,10 +2491,7 @@ static int WriteBuffer(__G__ buf, len)
         if (ERR(status))
         {
             vms_msg(__G__ "[ WriteBuffer: sys$wait failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
         }
 
         /* If odd byte count, then this must be the final record.
@@ -2502,10 +2506,7 @@ static int WriteBuffer(__G__ buf, len)
         if (ERR(status = sys$write(outrab)))
         {
             vms_msg(__G__ "[ WriteBuffer: sys$write failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
             return PK_DISK;
         }
     }
@@ -2531,10 +2532,7 @@ static int WriteRecord(__G__ rec, len)
         if (ERR(status = sys$wait(outrab)))
         {
             vms_msg(__G__ "[ WriteRecord: sys$wait failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
         }
         outrab->rab$w_rsz = len;
         outrab->rab$l_rbf = (char *) rec;
@@ -2542,10 +2540,7 @@ static int WriteRecord(__G__ rec, len)
         if (ERR(status = sys$put(outrab)))
         {
             vms_msg(__G__ "[ WriteRecord: sys$put failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
             return PK_DISK;
         }
     }
@@ -2793,10 +2788,7 @@ static int _close_rms(__GPRO)
     if (ERR(status))
     {
         vms_msg(__G__ "[ _close_rms: sys$wait failed ]\n", status);
-        if (outrab->rab$l_stv != 0)
-        {
-            vms_msg(__G__ "", outrab->rab$l_stv);
-        }
+        vms_msg(__G__ "", outrab->rab$l_stv);
     }
 
     status = sys$close(outfab);
@@ -2806,10 +2798,7 @@ static int _close_rms(__GPRO)
         vms_msg(__G__
           "\r[ Warning: cannot set owner/protection/time attributes ]\n",
           status);
-        if (outfab->fab$l_stv != 0)
-        {
-            vms_msg(__G__ "", outfab->fab$l_stv);
-        }
+        vms_msg(__G__ "", outfab->fab$l_stv);
         retcode = PK_WARN;
     }
 #endif
@@ -4763,7 +4752,7 @@ int checkdir(__G__ pathcomp, fcn)
             if (status = mkdir(nam.NAM_ESA, 0))
             {
                 Info(slide, 1, ((char *)slide,
-                  "Cannot create destination directory: %s\n",
+                  "Can not create destination directory: %s\n",
                   FnFilter1(nam.NAM_ESA)));
 
                 /* path didn't exist, tried to create, and failed. */

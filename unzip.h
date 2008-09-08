@@ -477,9 +477,6 @@ typedef struct _UzpOpts {
     int acorn_nfs_ext;  /* -F: RISC OS types & NFS filetype extensions */
 #endif
     int hflag;          /* -h: header line (zipinfo) */
-#if defined(UNIX) || defined(VMS) || defined(WIN32)
-    int H_flag;         /* -H: escape all non-ASCII text (UTF8 support) */
-#endif
 #ifdef MACOS
     int i_flag;         /* -i: [MacOS] ignore filenames stored in Mac e.f. */
 #endif
@@ -487,7 +484,8 @@ typedef struct _UzpOpts {
     int scanimage;      /* -I: scan image files */
 #endif
     int jflag;          /* -j: junk pathnames (unzip) */
-#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS))
+#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS) || \
+ (defined( UNIX) && defined( __APPLE__)))
     int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS e. f. info (unzip) */
 #endif
 #if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
@@ -522,7 +520,7 @@ typedef struct _UzpOpts {
     int T_flag;         /* -T: timestamps (unzip) or dec. time fmt (zipinfo) */
     int uflag;          /* -u: "update" (extract only newer/brand-new files) */
 #if defined(UNIX) || defined(VMS) || defined(WIN32)
-    int U_flag;         /* -U: No Unicode paths (UTF8 support) */
+    int U_flag;         /* -U: escape non-ASCII, -UU No Unicode paths */
 #endif
     int vflag;          /* -v: (verbosely) list directory */
     int V_flag;         /* -V: don't strip VMS version numbers */

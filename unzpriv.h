@@ -736,7 +736,11 @@
 #  define DIR_END       '/'     /* last char before program name or filename */
 #endif
 #ifndef DATE_FORMAT
+# ifdef DATEFMT_ISO_DEFAULT
+#  define DATE_FORMAT   DF_YMD  /* defaults to invariant ISO-style */
+# else
 #  define DATE_FORMAT   DF_MDY  /* defaults to US convention */
+# endif
 #endif
 #ifndef DATE_SEPCHAR
 #  define DATE_SEPCHAR  '-'
@@ -848,8 +852,13 @@
 #  endif
 #endif
 
-#define DIR_BLKSIZ  64      /* number of directory entries per block
+#if (defined(__16BIT__) || defined(MED_MEM) || defined(SMALL_MEM))
+# define DIR_BLKSIZ  64     /* number of directory entries per block
                              *  (should fit in 4096 bytes, usually) */
+#else
+# define DIR_BLKSIZ 16384   /* use more memory, to reduce long-range seeks */
+#endif
+
 #ifndef WSIZE
 #  ifdef USE_DEFLATE64
 #    define WSIZE   65536L  /* window size--must be a power of two, and */
@@ -1133,15 +1142,16 @@
 #endif
 
 /* 2008-07-22 SMS.
- * Unfortunately, on VMS, <limits.h> exists, and is included by
- * <stdlib.h> (so it's pretty much unavoidable), and it defines PATH_MAX
- * as an erroneously short value (256), rather than one based on the
- * real RMS NAM[L] situation.  So, we artificially undefine it here, to
- * allow the better-defined _MAX_PATH to be used.
+ * Unfortunately, on VMS, <limits.h> exists, and is included by <stdlib.h>
+ * (so it's pretty much unavoidable), and it defines PATH_MAX to a fixed
+ * short value (256, correct only for older systems without ODS-5 support),
+ * rather than one based on the real RMS NAM[L] situation.  So, we
+ * artificially undefine it here, to allow our better-defined _MAX_PATH
+ * (see vms/vmscfg.h) to be used.
  */
 #ifdef VMS
 #  undef PATH_MAX
-#endif /* def VMS */
+#endif
 
 #ifndef PATH_MAX
 #  ifdef MAXPATHLEN
@@ -1159,6 +1169,10 @@
 #  endif /* ?MAXPATHLEN */
 #endif /* !PATH_MAX */
 
+/*
+ * buffer size required to hold the longest legal local filepath
+ * (including the trailing '\0')
+ */
 #define FILNAMSIZ  PATH_MAX
 
 #ifdef UNICODE_SUPPORT
@@ -1454,13 +1468,6 @@
 #    define SSTAT    zstat
 #  endif
 #endif
-#ifdef S_IFLNK
-#  define LSTAT      zlstat
-#  define LSSTAT(n, s)  (linkput ? zlstat((n), (s)) : SSTAT((n), (s)))
-#else
-#  define LSTAT      SSTAT
-#  define LSSTAT     SSTAT
-#endif
 
 
 /* Default fzofft() format selection. */
@@ -1670,10 +1677,12 @@
 #define EF_PKIBM     0x0065    /* PKWARE's IBM S/390 & AS/400 attributes */
 #define EF_PKIBM2    0x0066    /* PKWARE's IBM S/390 & AS/400 compr. attribs */
 #define EF_IZVMS     0x4d49    /* Info-ZIP's VMS ("IM") */
-#define EF_IZUNIX    0x5855    /* Info-ZIP's old Unix[1] ("UX") */
-#define EF_IZUNIX2   0x7855    /* Info-ZIP's new Unix[2] ("Ux") */
+#define EF_IZUNIX    0x5855    /* Info-ZIP's first Unix[1] ("UX") */
+#define EF_IZUNIX2   0x7855    /* Info-ZIP's second Unix[2] ("Ux") */
+#define EF_IZUNIX3   0x7875    /* Info-ZIP's newest Unix[3] ("ux") */
 #define EF_TIME      0x5455    /* universal timestamp ("UT") */
 #define EF_UNIPATH   0x7075    /* Info-ZIP Unicode Path ("up") */
+#define EF_UNICOMNT  0x6375    /* Info-ZIP Unicode Comment ("uc") */
 #define EF_MAC3      0x334d    /* Info-ZIP's new Macintosh (= "M3") */
 #define EF_JLMAC     0x07c8    /* Johnny Lee's old Macintosh (= 1992) */
 #define EF_ZIPIT     0x2605    /* Thomas Brown's Macintosh (ZipIt) */
@@ -1711,6 +1720,8 @@
 #define EB_UX2_UID        0    /* byte offset of UID in "Ux" field data */
 #define EB_UX2_GID        2    /* byte offset of GID in "Ux" field data */
 #define EB_UX2_VALID      (1 << 8)      /* UID/GID present */
+
+#define EB_UX3_MINLEN     7    /* minimal "ux" field size (2-byte UID/GID) */
 
 #define EB_UT_MINLEN      1    /* minimal UT field contains Flags byte */
 #define EB_UT_FLAGS       0    /* byte offset of Flags field */
@@ -2178,7 +2189,7 @@ int      process_zipfiles        OF((__GPRO));
 void     free_G_buffers          OF((__GPRO));
 /* static int    do_seekable     OF((__GPRO__ int lastchance)); */
 /* static int    find_ecrec      OF((__GPRO__ long searchlen)); */
-int      uz_end_central          OF((__GPRO));
+/* static int    process_central_comment OF((__GPRO)); */
 int      process_cdir_file_hdr   OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
 int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
@@ -2204,7 +2215,7 @@ unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
 #ifndef WINDLL
    int   zi_opts                 OF((__GPRO__ int *pargc, char ***pargv));
 #endif
-int      zi_end_central          OF((__GPRO));
+void     zi_end_central          OF((__GPRO));
 int      zipinfo                 OF((__GPRO));
 /* static int      zi_long       OF((__GPRO__ zusz_t *pEndprev)); */
 /* static int      zi_short      OF((__GPRO)); */
@@ -2492,6 +2503,14 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
                             const char *path, z_stat *buf));      /* win32.c */
 #endif
 #endif
+
+/*---------------------------------------------------------------------------
+    Mac-OS-X-only functions:
+  ---------------------------------------------------------------------------*/
+
+#if defined( UNIX) && defined( __APPLE__)
+    int vol_attr_ok( const char *path);
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /*---------------------------------------------------------------------------
     Miscellaneous/shared functions:
@@ -2977,16 +2996,6 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
    extern ZCONST char Far  Zipnfo[];
    extern ZCONST char Far  CompiledWith[];
 #endif /* !SFX */
-
-#ifndef WINDLL
-   extern ZCONST char Far AssumeNone[];
-
-#  ifdef VMS
-   extern ZCONST char Far AssumeNo[];
-#  endif /* def VMS */
-
-   extern ZCONST char Far InvalidResponse[];
-#endif /* ndef WINDLL */
 
 
 

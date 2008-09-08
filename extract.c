@@ -190,15 +190,20 @@ static ZCONST char Far AbsolutePathWarning[] =
 static ZCONST char Far SkipVolumeLabel[] =
   "   skipping: %-22s  %svolume label\n";
 
+#if defined( UNIX) && defined( __APPLE__)
+static ZCONST char Far AplDblNameTooLong[] =
+  "error:  file name too long with AppleDouble suffix: %s\n";
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 #ifdef SET_DIR_ATTRIB   /* messages of code for setting directory attributes */
    static ZCONST char Far DirlistEntryNoMem[] =
      "warning:  cannot alloc memory for dir times/permissions/UID/GID\n";
    static ZCONST char Far DirlistSortNoMem[] =
      "warning:  cannot alloc memory to sort dir times/perms/etc.\n";
    static ZCONST char Far DirlistSetAttrFailed[] =
-     "warning:  set attribs/times failed for %s\n";
+     "warning:  set times/attribs failed for %s\n";
    static ZCONST char Far DirlistFailAttrSum[] =
-     "     failed setting attribs/times for %lu dir entries";
+     "     failed setting times/attribs for %lu dir entries";
 #endif
 
 #ifdef SYMLINKS         /* messages of the deferred symlinks handler */
@@ -215,14 +220,17 @@ static ZCONST char Far SkipVolumeLabel[] =
 #endif
 
 #ifndef WINDLL
-#  ifdef VMS
    static ZCONST char Far ReplaceQuery[] =
-     "New version of %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ";
-#  else /* def VMS */
-   static ZCONST char Far ReplaceQuery[] =
-     "Replace %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ";
-#  endif /* def VMS [else] */
+# ifdef VMS
+     "new version of %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ";
+# else
+     "replace %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ";
+# endif
+   static ZCONST char Far AssumeNone[] =
+     "(EOF or read error, treating as \"[N]one\" ...)\n";
    static ZCONST char Far NewNameQuery[] = "new name: ";
+   static ZCONST char Far InvalidResponse[] =
+     "error:  invalid response [%s]\n";
 #endif /* !WINDLL */
 
 static ZCONST char Far ErrorInArchive[] =
@@ -331,7 +339,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 #ifndef SFX
     int no_endsig_found;
 #endif
-    int error;
+    int error, error_in_archive=PK_COOL;
     int *fn_matched=NULL, *xn_matched=NULL;
     zucn_t members_processed;
     ulg num_skipped=0L, num_bad_pwd=0L;
@@ -433,7 +441,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
             G.pInfo = &G.info[j];
 
             if (readbuf(__G__ G.sig, 4) == 0) {
-                G.error_in_archive = PK_EOF;
+                error_in_archive = PK_EOF;
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
@@ -465,22 +473,22 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                       LoadFarString(CentSigMsg), j + blknum*DIR_BLKSIZ + 1));
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(ReportMsg)));
-                    G.error_in_archive = PK_BADERR;
+                    error_in_archive = PK_BADERR;
                 }
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
             /* process_cdir_file_hdr() sets pInfo->hostnum, pInfo->lcflag */
             if ((error = process_cdir_file_hdr(__G)) != PK_COOL) {
-                G.error_in_archive = error;   /* only PK_EOF defined */
+                error_in_archive = error;   /* only PK_EOF defined */
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
             if ((error = do_string(__G__ G.crec.filename_length, DS_FN)) !=
                  PK_COOL)
             {
-                if (error > G.error_in_archive)
-                    G.error_in_archive = error;
+                if (error > error_in_archive)
+                    error_in_archive = error;
                 if (error > PK_WARN) {  /* fatal:  no more left to do */
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(FilNamMsg),
@@ -492,8 +500,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
             if ((error = do_string(__G__ G.crec.extra_field_length,
                 EXTRA_FIELD)) != 0)
             {
-                if (error > G.error_in_archive)
-                    G.error_in_archive = error;
+                if (error > error_in_archive)
+                    error_in_archive = error;
                 if (error > PK_WARN) {  /* fatal */
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(ExtFieldMsg),
@@ -511,8 +519,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                 != PK_COOL)
 #endif
             {
-                if (error > G.error_in_archive)
-                    G.error_in_archive = error;
+                if (error > error_in_archive)
+                    error_in_archive = error;
                 if (error > PK_WARN) {  /* fatal */
                     Info(slide, 0x421, ((char *)slide,
                       LoadFarString(BadFileCommLength),
@@ -577,12 +585,12 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 #ifdef SET_DIR_ATTRIB
                         &num_dirs, &dirlist,
 #endif
-                        G.error_in_archive);
+                        error_in_archive);
         if (error != PK_COOL) {
-            if (error > G.error_in_archive)
-                G.error_in_archive = error;
+            if (error > error_in_archive)
+                error_in_archive = error;
             /* ...and keep going (unless disk full or user break) */
-            if (G.disk_full > 1 || G.error_in_archive == IZ_CTRLC) {
+            if (G.disk_full > 1 || error_in_archive == IZ_CTRLC) {
                 /* clear reached_end to signal premature stop ... */
                 reached_end = FALSE;
                 /* ... and cancel scanning the central directory */
@@ -678,8 +686,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     ndirs_fail++;
                     Info(slide, 0x201, ((char *)slide,
                       LoadFarString(DirlistSetAttrFailed), d->fn));
-                    if (!G.error_in_archive)
-                        G.error_in_archive = error;
+                    if (!error_in_archive)
+                        error_in_archive = error;
                 }
                 free(d);
             }
@@ -712,8 +720,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                 Info(slide, 1, ((char *)slide,
                   LoadFarString(FilenameNotMatched), G.pfnames[i]));
 #endif
-                if (G.error_in_archive <= PK_WARN)
-                    G.error_in_archive = PK_FIND;   /* some files not found */
+                if (error_in_archive <= PK_WARN)
+                    error_in_archive = PK_FIND;   /* some files not found */
             }
         free((zvoid *)fn_matched);
     }
@@ -732,7 +740,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     skipped in this case.
   ---------------------------------------------------------------------------*/
     if (!reached_end)
-        return G.error_in_archive;
+        return error_in_archive;
 
 /*---------------------------------------------------------------------------
     Double-check that we're back at the end-of-central-directory record, and
@@ -745,17 +753,17 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     if (no_endsig_found) {                      /* just to make sure */
         Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
         Info(slide, 0x401, ((char *)slide, LoadFarString(ReportMsg)));
-        if (!G.error_in_archive)       /* don't overwrite stronger error */
-            G.error_in_archive = PK_WARN;
+        if (!error_in_archive)       /* don't overwrite stronger error */
+            error_in_archive = PK_WARN;
     }
 #endif /* !SFX */
     if (uO.tflag) {
         ulg num = filnum - num_bad_pwd;
 
         if (uO.qflag < 2) {        /* GRR 930710:  was (uO.qflag == 1) */
-            if (G.error_in_archive)
+            if (error_in_archive)
                 Info(slide, 0, ((char *)slide, LoadFarString(ErrorInArchive),
-                  (G.error_in_archive == PK_WARN)? "warning-" : "", G.zipfn));
+                  (error_in_archive == PK_WARN)? "warning-" : "", G.zipfn));
             else if (num == 0L)
                 Info(slide, 0, ((char *)slide, LoadFarString(ZeroFilesTested),
                   G.zipfn));
@@ -779,24 +787,24 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     /* give warning if files not tested or extracted (first condition can still
      * happen if zipfile is empty and no files specified on command line) */
 
-    if ((filnum == 0) && G.error_in_archive <= PK_WARN) {
+    if ((filnum == 0) && error_in_archive <= PK_WARN) {
         if (num_skipped > 0L)
-            G.error_in_archive = IZ_UNSUP; /* unsupport. compression/encryption */
+            error_in_archive = IZ_UNSUP; /* unsupport. compression/encryption */
         else
-            G.error_in_archive = PK_FIND;  /* no files found at all */
+            error_in_archive = PK_FIND;  /* no files found at all */
     }
 #if CRYPT
-    else if ((filnum == num_bad_pwd) && G.error_in_archive <= PK_WARN)
-        G.error_in_archive = IZ_BADPWD;    /* bad passwd => all files skipped */
+    else if ((filnum == num_bad_pwd) && error_in_archive <= PK_WARN)
+        error_in_archive = IZ_BADPWD;    /* bad passwd => all files skipped */
 #endif
-    else if ((num_skipped > 0L) && G.error_in_archive <= PK_WARN)
-        G.error_in_archive = IZ_UNSUP;     /* was PK_WARN; Jean-loup complained */
+    else if ((num_skipped > 0L) && error_in_archive <= PK_WARN)
+        error_in_archive = IZ_UNSUP;     /* was PK_WARN; Jean-loup complained */
 #if CRYPT
-    else if ((num_bad_pwd > 0L) && !G.error_in_archive)
-        G.error_in_archive = PK_WARN;
+    else if ((num_bad_pwd > 0L) && !error_in_archive)
+        error_in_archive = PK_WARN;
 #endif
 
-    return G.error_in_archive;
+    return error_in_archive;
 
 } /* end function extract_or_test_files() */
 
@@ -915,7 +923,7 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
         else if (!uO.tflag && !IS_OVERWRT_ALL) { /* if -o, extract anyway */
             Info(slide, 0x481, ((char *)slide, LoadFarString(VMSFormatQuery),
               FnFilter1(G.filename)));
-            fgets(G.answerbuf, 9, stdin);
+            fgets(G.answerbuf, sizeof(G.answerbuf), stdin);
             if ((*G.answerbuf != 'y') && (*G.answerbuf != 'Y'))
                 return 0;
         }
@@ -1022,6 +1030,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
 #endif
     int error_in_archive;
 {
+    int cfn;
     unsigned i;
     int renamed, query;
     int skip_entry;
@@ -1259,6 +1268,130 @@ static int extract_or_test_entrylist(__G__ numchunk,
         }
 #endif /* CRYPT */
 
+#if defined( UNIX) && defined( __APPLE__)
+        /* Unless the user objects, or the destination volume does not
+         * support setattrlist(), detect an AppleDouble file (by name),
+         * and set flags and adjusted file name accordingly.
+         */
+        G.apple_double = 0;
+        if ((!uO.J_flag) && G.exdir_attr_ok)
+        {
+            char *post_sgr_pfx;
+            char *rslash;
+
+            *G.ad_filename = '\0';
+
+            /* Detect, and prepare to ignore, an "__MACOSX/" prefix,
+             * used in a "sequestered" AppleDouble archive.
+             * We could add a warning if we see "__MACOSX/" here,
+             * but not "._" below.  (Does anyone _not_ use the "._"
+             * prefix in a sequestered AppleDouble archive?)
+             */
+            if (strncmp( G.filename,
+             APL_DBL_PFX_SQR, strlen( APL_DBL_PFX_SQR)) == 0)
+            {
+                post_sgr_pfx = G.filename+ strlen( APL_DBL_PFX_SQR);
+
+                /* Skip any sequestration directory, including "__MACOSX/",
+                 * itself.  The files will all be placed into the real
+                 * directories, not the sequestration directories.
+                 */
+                if (post_sgr_pfx[ strlen( post_sgr_pfx)- 1] == '/')
+                {
+                    /* Skip this sequestration directory. */
+                    continue;
+                }
+                else
+                {
+                    /* Replace the sequestered file name with the
+                     * unsequestered file name.
+                     */
+                    memmove( G.filename,
+                     post_sgr_pfx, (strlen( post_sgr_pfx)+ 1));
+                }
+            }
+
+            /* Excise "._" prefix (and set flag), if present. */
+            rslash = strrchr( G.filename, '/');
+            if (rslash == NULL)
+            {
+                /* "._name"? */
+                if (strncmp( G.filename, APL_DBL_PFX,
+                 strlen( APL_DBL_PFX)) == 0)
+                {
+                    G.apple_double = 1;
+                    strcpy( G.ad_filename, (G.filename+ strlen( APL_DBL_PFX)));
+                }
+            }
+            else
+            {
+                /*     v--- rslash (before).
+                 * "dir/._name"?
+                 *      ^--- rslash (after).
+                 */
+                if (strncmp( (++rslash), APL_DBL_PFX,
+                 strlen( APL_DBL_PFX)) == 0)
+                {
+                    G.apple_double = 1;
+                    strncpy( G.ad_filename, G.filename, (rslash- G.filename));
+                    strcpy( (G.ad_filename+ (rslash- G.filename)),
+                     (rslash+ strlen( APL_DBL_PFX)));
+                }
+            }
+
+            if (G.apple_double)
+            {
+                /* Check that the file name will not be too long when the
+                 * "/rsrc" (APL_DBL_SFX) string is appended (fileio.c:
+                 * open_outfile()).  (strlen() ignores its NUL, sizeof() 
+                 * includes its NUL.  FILNAMSIZ includes a NUL.)
+                 */
+                if (strlen( G.ad_filename)+ sizeof( APL_DBL_SFX) > FILNAMSIZ)
+                {
+                    Info(slide, 0x401, ((char *)slide, AplDblNameTooLong,
+                     G.ad_filename));
+                    error_in_archive = PK_ERR;
+                    /* Skip this (doomed) AppleDouble file. */
+                    continue;
+                }
+                /* If current file is the AppleDouble file for the previous
+                 * file (their names match), then arrange to handle this
+                 * AppleDouble file the way the previous file was handled.
+                 */ 
+                else if (strcmp( G.ad_filename, G.pq_filename) == 0)
+                {
+                    if (renamed)
+                    {
+                        /* Replace this AppleDouble file name, too.
+                         * Without extra effort, the "renamed" flag will
+                         * be misleadingly FALSE for mapname() below, but 
+                         * the preceding normal file should have paved
+                         * the way by getting all the directories created
+                         * as needed.
+                         */
+                        strcpy( G.ad_filename, G.pr_filename);
+                    }
+                    else if (skip_entry != SKIP_NO)
+                    {
+                        /* Skip this AppleDouble file, too. */
+                        continue;
+                    }
+                    *G.pq_filename = '\0';  /* Pointless? */
+                    *G.pr_filename = '\0';  /* Pointless? */
+                }
+            }
+            else
+            {
+                /* Save a normal file name for comparison with the next
+                 * AppleDouble file name.
+                 */
+                if (!G.apple_double)
+                    strcpy( G.pq_filename, G.filename);
+            }
+        }
+
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
         /*
          * just about to extract file:  if extracting to disk, check if
          * already exists, and if so, take appropriate action according to
@@ -1319,6 +1452,24 @@ startover:
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapname(__G__ renamed);
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* If the destination volume attributes are still a mystery,
+             * and mapname() admits that it made any destination directories,
+             * then try again to determine the volume attributes.
+             * We're hoping that a normal file precedes any AppleDouble
+             * files, so that the flag gets set before it's too late.
+             * We're also ignoring the possibility that a user rename
+             * has sent us onto a volume with different attributes.
+             * Otherwise, we'd need to do more complex, rename-aware
+             * volume attribute determination.
+             */ 
+            if ((G.exdir_attr_ok < 0) && (error& MPN_CREATED_DIR))
+            {
+                G.exdir_attr_ok = vol_attr_ok( uO.exdir);
+            }
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
             if ((errcode = error & ~MPN_MASK) != PK_OK &&
                 error_in_archive < errcode)
                 error_in_archive = errcode;
@@ -1368,7 +1519,28 @@ startover:
 #ifdef QDOS
             QFilename(__G__ G.filename);
 #endif
-            switch (check_for_newer(__G__ G.filename)) {
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* If we are doing special AppleDouble file processing,
+             * and this is an AppleDouble file,
+             * then we should ignore a file-exists test, which may be
+             * expected to succeed.
+             */
+            if (G.apple_double && (!uO.J_flag))
+            {
+                /* Fake a does-not-exist value for this AppleDouble file. */
+                cfn = DOES_NOT_EXIST;
+            }
+            else
+            {
+                /* Do the real test. */
+                cfn = check_for_newer(__G__ G.filename);
+            }
+#else /* defined( UNIX) && defined( __APPLE__) */
+            cfn = check_for_newer(__G__ G.filename);
+#endif /* defined( UNIX) && defined( __APPLE__) [else] */
+
+            switch (cfn) {
                 case DOES_NOT_EXIST:
 #ifdef NOVELL_BUG_FAILSAFE
                     G.dne = TRUE;   /* stat() says file DOES NOT EXIST */
@@ -1468,21 +1640,14 @@ reprompt:
                 Info(slide, 0x81, ((char *)slide,
                   LoadFarString(ReplaceQuery),
                   FnFilter1(G.filename)));
-                if (fgets(G.answerbuf, 9, stdin) == (char *)NULL) {
+                if (fgets(G.answerbuf, sizeof(G.answerbuf), stdin)
+                    == (char *)NULL) {
                     Info(slide, 1, ((char *)slide,
                       LoadFarString(AssumeNone)));
                     *G.answerbuf = 'N';
                     if (!error_in_archive)
                         error_in_archive = 1;  /* not extracted:  warning */
                 }
-
-                /* 2008-07-12 SMS.
-                 * Strip off a trailing newline, to avoid corrupt
-                 * complaints when displaying the answer.
-                */
-                if (G.answerbuf[ strlen( G.answerbuf)- 1] == '\n')
-                    G.answerbuf[ strlen( G.answerbuf)- 1] = '\0';
-
                 switch (*G.answerbuf) {
                     case 'r':
                     case 'R':
@@ -1521,6 +1686,12 @@ reprompt:
                         strcpy(G.answerbuf, "{ENTER}");
                         /* fall through ... */
                     default:
+                        /* usually get \n here:  remove it for nice display
+                           (fnlen can be re-used here, we are outside the
+                           "enter new filename" loop) */
+                        fnlen = strlen(G.answerbuf);
+                        if (lastchar(G.answerbuf, fnlen) == '\n')
+                            G.answerbuf[--fnlen] = '\0';
                         Info(slide, 1, ((char *)slide,
                           LoadFarString(InvalidResponse), G.answerbuf));
                         goto reprompt;   /* yet another goto? */
@@ -1546,6 +1717,18 @@ reprompt:
                 continue;
             }
         } /* end if (extracting to disk) */
+
+#if defined( UNIX) && defined( __APPLE__)
+        /* If we are doing special AppleDouble file processing,
+         * and this was a normal file, and the user renamed it,
+         * then save the new name for use on its AppleDouble file
+         * (which should be coming along next).
+         */
+        if (renamed && (!G.apple_double) && (!uO.J_flag))
+        {
+            strcpy( G.pr_filename, G.filename);
+        }
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef DLL
         if ((G.statreportcb != NULL) &&
@@ -1612,7 +1795,6 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
 #endif
     register int b;
     int r, error=PK_COOL;
-
 
 /*---------------------------------------------------------------------------
     Initialize variables, buffers, etc.

@@ -93,6 +93,7 @@ static int setsignalhandler OF((__GPRO__ savsigs_info **p_savedhandler_chain,
                                 int signal_type, void (*newhandler)(int)));
 #endif
 #ifndef SFX
+static void  help_extended      OF((__GPRO));
 static void  show_version_info  OF((__GPRO));
 #endif
 
@@ -255,6 +256,17 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #else /* !VMS */
 #ifdef ATH_BEO_UNX
    static ZCONST char Far local2[] = " -X  restore UID/GID info";
+#  ifdef __APPLE__
+#ifdef MORE
+   static ZCONST char Far local3[] = "\
+  -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n\
+  -J  No special AppleDouble file handling\n";
+#else
+   static ZCONST char Far local3[] = "\
+  -K  keep setuid/setgid/tacky permissions   -J  No spec'l AplDbl file handling\
+\n";
+#endif
+#  else /* def __APPLE__ */
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n";
@@ -262,6 +274,7 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
    static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions\n";
 #endif
+#  endif /* def __APPLE__ [else] */
 #else /* !ATH_BEO_UNX */
 #ifdef TANDEM
    static ZCONST char Far local2[] = "\
@@ -368,7 +381,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #else /* !SFX */
    static ZCONST char Far CompileOptions[] =
      "UnZip special compilation options:\n";
-   static ZCONST char Far CompileOptFormat[] = "\t%s\n";
+   static ZCONST char Far CompileOptFormat[] = "        %s\n";
 #ifndef _WIN32_WCE /* Win CE does not support environment variables */
    static ZCONST char Far EnvOptions[] =
      "\nUnZip and ZipInfo environment options:\n";
@@ -533,7 +546,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
        static ZCONST char Far PasswdStdin[] = "PASSWD_FROM_STDIN";
 #    endif
      static ZCONST char Far Decryption[] =
-       "\t[decryption, version %d.%d%s of %s]\n";
+       "        [decryption, version %d.%d%s of %s]\n";
      static ZCONST char Far CryptDate[] = CR_VERSION_DATE;
 #  endif
 #  ifndef __RSXNT__
@@ -756,7 +769,8 @@ int unzip(__G__ argc, argv)
     /* see if can use UTF-8 Unicode locale */
 # ifdef UTF8_MAYBE_NATIVE
     {
-      char *loc = setlocale(LC_CTYPE, ".UTF-8");
+      /* Note: a "partial" locale specification (".UTF-8") is not valid. */
+      char *loc = setlocale(LC_CTYPE, "en_US.UTF-8");
       char *ploc_coding;
 
       if ((loc != NULL) &&
@@ -1210,8 +1224,6 @@ int unzip(__G__ argc, argv)
     } else
         G.process_all_files = TRUE;      /* for speed */
 
-    G.error_in_archive = PK_COOL;       /* Clear semi-global error flag. */
-
     if (uO.exdir != (char *)NULL && !G.extract_flag)    /* -d ignored */
         Info(slide, 0x401, ((char *)slide, LoadFarString(NotExtracting)));
 #endif /* ?(SFX && !SFX_EXDIR) */
@@ -1226,6 +1238,10 @@ int unzip(__G__ argc, argv)
 # endif
 #endif
 
+#if defined( UNIX) && defined( __APPLE__)
+    /* Set flag according to the capabilities of the destination volume. */
+    G.exdir_attr_ok = vol_attr_ok( (uO.exdir == NULL) ? "." : uO.exdir);
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /*---------------------------------------------------------------------------
     Okey dokey, we have everything we need to get started.  Let's roll.
@@ -1310,7 +1326,7 @@ int uz_opts(__G__ pargc, pargv)
     char ***pargv;
 {
     char **argv, *s;
-    int argc, c, error=FALSE, negative=0;
+    int argc, c, error=FALSE, negative=0, showhelp=0;
 
 
     argc = *pargc;
@@ -1477,8 +1493,17 @@ int uz_opts(__G__ pargc, pargv)
                     break;
 #endif /* RISCOS || ACORN_FTYPE_NFS */
                 case ('h'):    /* just print help message and quit */
-                    *pargc = -1;
-                    return USAGE(PK_OK);
+                    if (showhelp == 0) {
+#ifndef SFX
+                        if (*s == 'h')
+                            showhelp = 2;
+                        else
+#endif /* !SFX */
+                        {
+                            showhelp = 1;
+                        }
+                    }
+                    break;
 #ifdef MACOS
                 case ('i'): /* -i [MacOS] ignore filenames stored in Mac ef */
                     if( negative ) {
@@ -1494,7 +1519,8 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.jflag = TRUE;
                     break;
-#if (defined(ATH_BEO) || defined(MACOS))
+#if (defined(ATH_BEO) || defined(MACOS) || \
+ (defined( UNIX) && defined( __APPLE__)))
                 case ('J'):    /* Junk AtheOS, BeOS or MacOS file attributes */
                     if( negative ) {
                         uO.J_flag = FALSE, negative = 0;
@@ -1502,7 +1528,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.J_flag = TRUE;
                     }
                     break;
-#endif /* ATH_BEO || MACOS */
+#endif /* ATH_BEO || MACOS || defined( UNIX) && defined( __APPLE__) */
 #ifdef ATH_BEO_UNX
                 case ('K'):
                     if (negative) {
@@ -1816,6 +1842,19 @@ int uz_opts(__G__ pargc, pargv)
 opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
 #endif
 
+    if (showhelp > 0) {         /* just print help message and quit */
+        *pargc = -1;
+#ifndef SFX
+        if (showhelp == 2) {
+            help_extended();
+            return PK_OK;
+        } else
+#endif /* !SFX */
+        {
+            return USAGE(PK_OK);
+        }
+    }
+
     if ((uO.cflag && (uO.tflag || uO.uflag)) ||
         (uO.tflag && uO.uflag) || (uO.fflag && uO.overwrite_none))
     {
@@ -2039,6 +2078,101 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
 
 
 #ifndef SFX
+
+/* Print extended help to stdout. */
+static void help_extended(__G)
+    __GDEF
+{
+    extent i;             /* counter for help array */
+
+    /* help array */
+    static ZCONST char *text[] = {
+  "",
+  "Extended Help for UnZip",
+  "",
+  "See the UnZip Manual for more detailed help",
+  "",
+  "",
+  "UnZip lists and extracts files in zip archives.  The default action is to",
+  "extract zipfile entries to the current directory, creating directories as",
+  "needed.  With appropriate options, UnZip lists the contents of archives",
+  "instead.",
+  "",
+  "Basic command line:",
+  "  unzip options archive_name",
+  "",
+  "Some examples:",
+  "",
+  "",
+  "Basic options:",
+  "",
+  "",
+  "Syntax:",
+  "  The full command line syntax is:",
+  "",
+  "",
+  "",
+  "Listing files:",
+  "  -l        list the files in an archive",
+  "",
+  "Wildcards:",
+  "  Internally unzip supports the following wildcards:",
+  "    ?       (or %% or #, depending on OS) matches any single character",
+  "    *       matches any number of characters, including zero",
+  "    [list]  matches char in list (regex), can do range [ac-f], all but [!bf]",
+  "  If port supports [], must escape [ as [[]",
+  "  For shells that expand wildcards, escape (\\* or \"*\") so zip can recurse",
+  "    zip zipfile -r . -i \"*.h\"",
+  "",
+  "",
+  "Include and Exclude:",
+  "  -i pattern pattern ...   include files that match a pattern",
+  "  -x pattern pattern ...   exclude files that match a pattern",
+  "  Patterns are paths with optional wildcards and match paths as stored in",
+  "  archive.  Exclude and include lists end at next option, @, or end of line.",
+  "    unzip archive -x pattern pattern ...",
+  "",
+  "End Of Line Translation (text files only):",
+  "",
+  "Splits (archives created as a set of split files):",
+  "  Currently split archives are not readable by UnZip.  A workaround is",
+  "  to use zip to convert the split archive to a single-file archive and",
+  "  use unzip on that.",
+  "",
+  "",
+  "Streaming (piping into unzip):",
+  "  Currently unzip does not support streaming.  The funzip utility can be",
+  "  used to process the first entry in a stream.",
+  "    cat archive | funzip",
+  "",
+  "",
+  "",
+  "Testing archives:",
+  "  -t        test contents of archive",
+  "",
+  "",
+  "Unicode:",
+  "  If compiled with Unicode support, unzip automatically handles archives",
+  "  with Unicode entries.  Currently Unicode on Win32 systems is limited.",
+  "  Characters not in the current character set are shown as ASCII escapes",
+  "  in the form #Uxxxx where the Unicode character number fits in 16 bits,",
+  "  or #Lxxxxxx where it doesn't, where x is the ASCII character for a hex",
+  "  digit.",
+  "",
+  "Self extractor:",
+  "",
+  "More option highlights (see manual for additional options and details):",
+  ""
+    };
+
+    for (i = 0; i < sizeof(text)/sizeof(char *); i++)
+    {
+        Info(slide, 0, ((char *)slide, "%s\n", text[i]));
+    }
+} /* end function help_extended() */
+
+
+
 
 #ifndef _WIN32_WCE /* Win CE does not support environment variables */
 #if (!defined(MODERN) || defined(NO_STDLIB_H))
