@@ -59,9 +59,8 @@
 .!              updated documentation of UnZip's exit codes.
 .!      03-002          S. Schweda, C. Spieler  09-Jan-2008 03:35
 .!              Added documentation of extended /RESTORE=(...) qualifier.
-.!
-.!                      S. Schweda              25=Jul-2008
-.!              Added /EXISTING.
+.!      03-003          S. Schweda, C. Spieler  13-Sep-2008 20:00
+.!              Added /EXISTING qualifier.
 .!
 <INIT>
 <MAIN>
@@ -235,7 +234,7 @@ Valid keywords (exactly one must be specified) are:
 <LARETIL>
 
 When UnZip would extract an archive member, but the destination file
-already exists, UnZip will, by default, ask the user what to do. 
+already exists, UnZip will, by default, ask the user what to do.
 /EXISTING lets the user specify on the command line what to do in this
 situation, eliminating the interactive question(s).
 
@@ -556,24 +555,24 @@ options and modifiers can be provided:
 |  -z   display only the archive comment
 |
 |MODIFIERS
-|  -a   auto-extract only text files in standard VMS text file format
+|  -a   extract text files in standard VMS text file format
 |  -aa  extract all files as text
-|  -b   auto-extract only binary files in VMS fixed 512 bytes records
-|  -bb  extract all files as binary VMS fixed 512 byte record files
+|  -b   auto-extract only binary files in fixed 512-byte record format
+|  -bb  extract all files as binary in fixed 512-byte record format
 |  -j   junk paths (don't recreate archive's directory structure)
-|  -n   never overwrite existing files; don't prompt
-|  -o   OK to overwrite files without prompting
+|  -n   never overwrite or make a new version of an existing file
+|  -o   always make a new version (-oo: overwrite orig) existing file
 |  -q   perform operations quietly (-qq => even quieter)
 |  -C   match filenames case-insensitively
-|  -D   do not restore any timestamps (--D restore timestamps for directories)
-|  -L   convert filenames to lowercase if created on MSDOS, VMS, etc.
-|  -M   page output through built-in "more" function
-|  -P<pwd>  supply decryption password on the command line (insecure!)
-|  -S   use Stream_LF record format to extract text files (-a[a] required)
+|  -D   do not restore any timestamps (--D restore them even for dirs)
+|  -L   convert filenames to lowercase if created under DOS, VMS, etc.
+|  -M   feed screen output through built-in "more" pager
+|  -P<password> supply decryption password on the cmd line (insecure!)
+|  -S   use Stream_LF record format to extract text files (with -a[a])
 |  -V   retain (VMS) file version numbers
 |  -X   restore owner/protection info (may require privileges)
-|  -Y   treat ".nnn" suffixes as version numbers (e.g. "a.b.3" -> "a.b;3")
-|  -:   allow "../" path components that traverse across extract dir root
+|  -Y   treat ".nnn" suffix as version number ("a.b.3" -> "a.b;3")
+|  -:   allow "../" path components to traverse across top extract dir
 |  -2   force creation of ODS2-compatible file names
 <LARETIL>
 
