@@ -99,24 +99,28 @@
 
 /* VMS success or warning status */
 #define OK(s)   (((s) & STS$M_SUCCESS) != 0)
-#define STRICMP(s1,s2)  STRNICMP(s1,s2,2147483647)
+#define STRICMP(s1, s2)  STRNICMP(s1, s2, 2147483647)
 
 /* Interactive inquiry response codes for replace(). */
 
 #define REPL_NO_EXTRACT   0
 #define REPL_NEW_VERSION  1
 #define REPL_OVERWRITE    2
+#define REPL_ERRLV_WARN   256
+#define REPL_TASKMASK     255
 
-/* 2008-09-12 SMS.
- * Note: InvalidResponse[] should be shared with extract.c, and
- * AssumeNo[] should look like AssumeNone[] there, but sharing them as
- * globals seemed to disturb the maintainer.  These should agree with
- * those, in any case.
+/* 2008-09-13 CS.
+ * Note: In extract.c, there are similar strings "InvalidResponse" and
+ * "AssumeNone" defined.  However, as the UI functionality of the VMS
+ * "version-aware" query is slightly different from the generic variant,
+ * these strings are kept separate for now to allow independent
+ * "fine tuning" without affecting the other variant of the
+ * "overwrite or ..." user query.
  */
 ZCONST char Far InvalidResponse[] =
- "error:  invalid response [%.1s]\n";
+  "error:  invalid response [%.1s]\n";
 ZCONST char Far AssumeNo[] =
- "\n(EOF or read error, treating as \"[N]o extract (all)\" ...)\n";
+  "\n(EOF or read error, treating as \"[N]o extract (all)\" ...)\n";
 
 
 #ifdef SET_DIR_ATTRIB
@@ -254,7 +258,8 @@ char hex_digit[16] = {
       Vertical bar (|)
 
    Characters escaped by "^":
-      SP  !  #  %  &  '  (  )  +  ,  .  ;  =  @  [  ]  ^  `  {  }  ~
+      SP  !  "  #  %  &  '  (  )  +  ,  .  :  ;  =
+       @  [  \  ]  ^  `  {  |  }  ~
 
    Either "^_" or "^ " is accepted as a space.  Period (.) is a special
    case.  Note that un-escaped < and > can also confuse a directory
@@ -288,22 +293,22 @@ unsigned char char_prop[256] = {
     0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,
 
 /*  SP  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /  */
-    8, 32, 16, 32, 17, 32, 32, 32,  32, 32,  0, 32, 32, 17,  4,  0,
+    8, 32, 32, 32, 17, 32, 32, 32,  32, 32,  0, 32, 32, 17,  4,  0,
 
 /*  0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?  */
-   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 16, 32, 32, 32, 32, 32,
+   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 32, 32, 32, 32, 32, 32,
 
 /*  @   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O  */
    32, 17, 17, 17, 17, 17, 17, 17,  17, 17, 17, 17, 17, 17, 17, 17,
 
 /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _  */
-   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 17, 32, 16, 32, 32, 17,
+   17, 17, 17, 17, 17, 17, 17, 17,  17, 17, 17, 32, 32, 32, 32, 17,
 
 /*  `   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o  */
    32, 18, 18, 18, 18, 18, 18, 18,  18, 18, 18, 18, 18, 18, 18, 18,
 
 /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~  DEL */
-   18, 18, 18, 18, 18, 18, 18, 18,  18, 18, 18, 32, 16, 32, 32, 64,
+   18, 18, 18, 18, 18, 18, 18, 18,  18, 18, 18, 32, 32, 32, 32, 64,
 
    64, 64, 64, 64, 64, 64, 64, 64,  64, 64, 64, 64, 64, 64, 64, 64,
    64, 64, 64, 64, 64, 64, 64, 64,  64, 64, 64, 64, 64, 64, 64, 64,
@@ -548,7 +553,13 @@ int check_format(__G)
  *  (simplified, for complete expression see create_default_output() code)
  */
 
-int open_outfile(__G)           /* return 1 (PK_WARN) if fail */
+/* The VMS version of open_outfile() supports special return codes:
+ *      OPENOUT_OK            a file has been opened normally
+ *      OPENOUT_FAILED        the file open process failed
+ *      OPENOUT_SKIPOK        file open skipped at user request, err level OK
+ *      OPENOUT_SKIPWARN      file open skipped at user request, err level WARN
+ */
+int open_outfile(__G)
     __GDEF
 {
     /* Get process RMS_DEFAULT values, if not already done. */
@@ -653,7 +664,13 @@ static void set_default_datetime_XABs(__GPRO)
 }
 
 
-static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
+/* The following return codes are supported:
+ *      OPENOUT_OK            a file has been opened normally
+ *      OPENOUT_FAILED        the file open process failed
+ *      OPENOUT_SKIPOK        file open skipped at user request, err level OK
+ *      OPENOUT_SKIPWARN      file open skipped at user request, err level WARN
+ */
+static int create_default_output(__GPRO)
 {
     int ierr;
     int text_output, bin_fixed;
@@ -811,23 +828,24 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
 #endif /* ?OLD_FABDEF */
 
-        ierr = sys$create( outfab);
+        ierr = sys$create(outfab);
         if (ierr == RMS$_FEX)
         {
             /* File exists.
              * Consider command-line options, or ask the user what to do.
              */
-            ierr = replace( __G);	
-            switch (ierr)
+            ierr = replace(__G);
+            switch (ierr & REPL_TASKMASK)
             {
                 case REPL_NO_EXTRACT:   /* No extract. */
                     free_up();
-                    return PK_WARN;
+                    return ((ierr & REPL_ERRLV_WARN)
+                            ? OPENOUT_SKIPWARN : OPENOUT_SKIPOK);
                 case REPL_NEW_VERSION:  /* Create a new version. */
-                    ierr = replace_rms_newversion( __G);
+                    ierr = replace_rms_newversion(__G);
                     break;
                 case REPL_OVERWRITE:    /* Overwrite the existing file. */
-                    ierr = replace_rms_overwrite( __G);
+                    ierr = replace_rms_overwrite(__G);
                     break;
             }
         }
@@ -839,9 +857,12 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
             vms_msg(__G__ buf, ierr);
-            vms_msg(__G__ "", fileblk.fab$l_stv);
+            if (fileblk.fab$l_stv != 0)
+            {
+                vms_msg(__G__ "", fileblk.fab$l_stv);
+            }
             free_up();
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
 
         if (!text_output)
@@ -854,13 +875,16 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
         {
 #ifdef DEBUG
             vms_msg(__G__ "create_default_output: sys$connect failed.\n", ierr);
-            vms_msg(__G__ "", fileblk.fab$l_stv);
+            if (fileblk.fab$l_stv != 0)
+            {
+                vms_msg(__G__ "", fileblk.fab$l_stv);
+            }
 #endif
             Info(slide, 1, ((char *)slide,
                  "Cannot create ($connect) output file:  %s\n",
                  FnFilter1(G.filename)));
             free_up();
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
     }                   /* end if (!uO.cflag) */
 
@@ -868,12 +892,18 @@ static int create_default_output(__GPRO)      /* return 1 (PK_WARN) if fail */
 
     _flush_routine = text_output ? got_eol=0,_flush_stream : _flush_blocks;
     _close_routine = _close_rms;
-    return PK_COOL;
+    return OPENOUT_OK;
 }
 
 
 
-static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
+/* The following return codes are supported:
+ *      OPENOUT_OK            a file has been opened normally
+ *      OPENOUT_FAILED        the file open process failed
+ *      OPENOUT_SKIPOK        file open skipped at user request, err level OK
+ *      OPENOUT_SKIPWARN      file open skipped at user request, err level WARN
+ */
+static int create_rms_output(__GPRO)
 {
     int ierr;
     int text_output;
@@ -896,7 +926,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
                "[ File %s has illegal record format to put to screen ]\n",
                FnFilter1(G.filename)));
             free_up();
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
     }
     else                        /* File output */
@@ -965,23 +995,24 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         outfab-> fab$v_sqo = 1;
 #endif /* ?OLD_FABDEF */
 
-        ierr = sys$create( outfab);
+        ierr = sys$create(outfab);
         if (ierr == RMS$_FEX)
         {
             /* File exists.
              * Consider command-line options, or ask the user what to do.
              */
-            ierr = replace( __G);	
-            switch (ierr)
+            ierr = replace(__G);
+            switch (ierr & REPL_TASKMASK)
             {
                 case REPL_NO_EXTRACT:   /* No extract. */
                     free_up();
-                    return PK_WARN;
+                    return ((ierr & REPL_ERRLV_WARN)
+                            ? OPENOUT_SKIPWARN : OPENOUT_SKIPOK);
                 case REPL_NEW_VERSION:  /* Create a new version. */
-                    ierr = replace_rms_newversion( __G);
+                    ierr = replace_rms_newversion(__G);
                     break;
                 case REPL_OVERWRITE:    /* Overwrite the existing file. */
-                    ierr = replace_rms_overwrite( __G);
+                    ierr = replace_rms_overwrite(__G);
                     break;
             }
         }
@@ -993,9 +1024,12 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
             vms_msg(__G__ buf, ierr);
-            vms_msg(__G__ "", outfab->fab$l_stv);
+            if (outfab->fab$l_stv != 0)
+            {
+                vms_msg(__G__ "", outfab->fab$l_stv);
+            }
             free_up();
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
 
         if (outfab->fab$b_org & (FAB$C_REL | FAB$C_IDX)) {
@@ -1007,9 +1041,12 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
                 sprintf(buf, "[ Cannot allocate space for %s ]\n", G.filename);
                 vms_msg(__G__ buf, ierr);
-                vms_msg(__G__ "", outfab->fab$l_stv);
+                if (outfab->fab$l_stv != 0)
+                {
+                    vms_msg(__G__ "", outfab->fab$l_stv);
+                }
                 free_up();
-                return PK_WARN;
+                return OPENOUT_FAILED;
             }
         }
 
@@ -1024,13 +1061,16 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         {
 #ifdef DEBUG
             vms_msg(__G__ "create_rms_output: sys$connect failed.\n", ierr);
-            vms_msg(__G__ "", outfab->fab$l_stv);
+            if (outfab->fab$l_stv != 0)
+            {
+                vms_msg(__G__ "", outfab->fab$l_stv);
+            }
 #endif
             Info(slide, 1, ((char *)slide,
                  "Cannot create ($connect) output file:  %s\n",
                  FnFilter1(G.filename)));
             free_up();
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
     }                   /* end if (!uO.cflag) */
 
@@ -1055,7 +1095,7 @@ static int create_rms_output(__GPRO)          /* return 1 (PK_WARN) if fail */
     else
         _flush_routine = _flush_blocks;
     _close_routine = _close_rms;
-    return PK_COOL;
+    return OPENOUT_OK;
 }
 
 
@@ -1123,7 +1163,13 @@ static char sys_nam[NAML$C_MAXRSS];     /* Probably need less here. */
                                 || (x) == FAT$C_STREAM   )
 
 
-static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
+/* The following return codes are supported:
+ *      OPENOUT_OK            a file has been opened normally
+ *      OPENOUT_FAILED        the file open process failed
+ *      OPENOUT_SKIPOK        file open skipped at user request, err level OK
+ *      OPENOUT_SKIPWARN      file open skipped at user request, err level WARN
+ */
+static int create_qio_output(__GPRO)
 {
     int status;
     int i;
@@ -1149,7 +1195,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
                 Info(slide, 1, ((char *)slide,
                    "[ File %s has illegal record format to put to screen ]\n",
                    FnFilter1(G.filename)));
-                return PK_WARN;
+                return OPENOUT_FAILED;
             }
         }
         else
@@ -1181,9 +1227,6 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         nam = CC_RMS_NAM;               /* Initialize NAM[L]. */
         fileblk.FAB_NAM = &nam;         /* Point FAB to NAM[L]. */
 
-        outfab = &fileblk;              /* Set pointers used elsewhere. */
-        outrab = &rab;
-
 #ifdef NAML$C_MAXRSS
 
         fileblk.fab$l_dna = (char *) -1;    /* Using NAML for default name. */
@@ -1191,7 +1234,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         /* Special ODS5-QIO-compatible name storage. */
         nam.naml$l_filesys_name = sys_nam;
-        nam.naml$l_filesys_name_alloc = sizeof( sys_nam);
+        nam.naml$l_filesys_name_alloc = sizeof(sys_nam);
 
 #endif /* NAML$C_MAXRSS */
 
@@ -1208,15 +1251,15 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         if ( ERR(status = sys$parse(&fileblk)) )
         {
             vms_msg(__G__ "create_qio_output: sys$parse failed.\n", status);
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
 
         pka_devdsc.dsc$w_length = (unsigned short)nam.NAM_DVI[0];
 
-        if ( ERR(status = sys$assign(&pka_devdsc,&pka_devchn,0,0)) )
+        if ( ERR(status = sys$assign(&pka_devdsc, &pka_devchn, 0, 0)) )
         {
             vms_msg(__G__ "create_qio_output: sys$assign failed.\n", status);
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
 
 #ifdef NAML$C_MAXRSS
@@ -1294,23 +1337,23 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
 
         pka_fib.fib$l_exsz = SWAPW(pka_rattr.fat$l_hiblk);
 
-        status = sys$qiow( 0,               /* Event flag */
-                           pka_devchn,      /* Channel */
-                           IO$_CREATE|IO$M_CREATE|IO$M_ACCESS, /* Funct */
-                           &pka_acp_iosb,   /* IOSB */
-                           0,               /* AST address */
-                           0,               /* AST parameter */
-                           &pka_fibdsc,     /* P1 = File Info Block */
-                           &pka_fnam,       /* P2 = File name (descr) */
-                           0,               /* P3 (= Resulting name len) */
-                           0,               /* P4 (= Resulting name descr) */
-                           pka_atr,         /* P5 = Attribute descr */
-                           0);              /* P6 (not used) */
+        status = sys$qiow(0,                /* event flag */
+                          pka_devchn,       /* channel */
+                          IO$_CREATE|IO$M_CREATE|IO$M_ACCESS, /* funct */
+                          &pka_acp_iosb,    /* IOSB */
+                          0,                /* AST address */
+                          0,                /* AST parameter */
+                          &pka_fibdsc,      /* P1 = File Info Block */
+                          &pka_fnam,        /* P2 = File name (descr) */
+                          0,                /* P3 (= Resulting name len) */
+                          0,                /* P4 (= Resulting name descr) */
+                          pka_atr,          /* P5 = Attribute descr */
+                          0);               /* P6 (not used) */
 
-        if (!ERR( status))
+        if ( !ERR(status) )
             status = pka_acp_iosb.status;
 
-        if (status == SS$_DUPFILENAME)
+        if ( status == SS$_DUPFILENAME )
         {
             /* File exists.  Prepare to ask user what to do. */
 
@@ -1319,20 +1362,21 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
              */
             short res_nam_len;
             struct dsc$descriptor_s  res_nam_dscr =
-             { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, NULL };
+              { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, NULL };
 
             res_nam_dscr.dsc$a_pointer = G.filename;
-            res_nam_dscr.dsc$w_length = sizeof( G.filename);
+            res_nam_dscr.dsc$w_length = sizeof(G.filename);
 
             /* File exists.
              * Consider command-line options, or ask the user what to do.
              */
-            status = replace( __G);
-            switch (status)
+            status = replace(__G);
+            switch (status & REPL_TASKMASK)
             {
                 case REPL_NO_EXTRACT:   /* No extract. */
                     free_up();
-                    return PK_WARN;
+                    return ((status & REPL_ERRLV_WARN)
+                            ? OPENOUT_SKIPWARN : OPENOUT_SKIPOK);
                 case REPL_NEW_VERSION:  /* Create a new version. */
                     pka_fib.fib$v_newver = 1;
                     break;
@@ -1342,26 +1386,26 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             }
 
             /* Retry file creation with new (user-specified) policy. */
-            status = sys$qiow( 0,               /* Event flag */
-                               pka_devchn,      /* Channel */
-                               IO$_CREATE|IO$M_CREATE|IO$M_ACCESS, /* Funct */
-                               &pka_acp_iosb,   /* IOSB */
-                               0,               /* AST address */
-                               0,               /* AST parameter */
-                               &pka_fibdsc,     /* P1 = File Info Block */
-                               &pka_fnam,       /* P2 = File name (descr) */
-                               &res_nam_len,    /* P3 = Resulting name len */
-                               &res_nam_dscr,   /* P4 = Resulting name descr */
-                               pka_atr,         /* P5 = Attribute descr */
-                               0);              /* P6 (not used) */
+            status = sys$qiow(0,                /* event flag */
+                              pka_devchn,       /* channel */
+                              IO$_CREATE|IO$M_CREATE|IO$M_ACCESS, /* funct */
+                              &pka_acp_iosb,    /* IOSB */
+                              0,                /* AST address */
+                              0,                /* AST parameter */
+                              &pka_fibdsc,      /* P1 = File Info Block */
+                              &pka_fnam,        /* P2 = File name (descr) */
+                              &res_nam_len,     /* P3 = Resulting name len */
+                              &res_nam_dscr,    /* P4 = Resulting name descr */
+                              pka_atr,          /* P5 = Attribute descr */
+                              0);               /* P6 (not used) */
 
-            if (!ERR( status))
+            if ( !ERR(status) )
                 status = pka_acp_iosb.status;
 
             if (res_nam_len > 0)
             {
                 /* NUL-terminate the resulting file spec. */
-                G.filename[ res_nam_len] = '\0';
+                G.filename[res_nam_len] = '\0';
             }
 
             /* Clear any user-specified version policy flags
@@ -1371,7 +1415,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
             pka_fib.fib$v_supersede = 0;
         }
 
-        if (ERR( status))
+        if ( ERR(status) )
         {
             char buf[NAM_MAXRSS + 128]; /* Name length + message length. */
 
@@ -1379,7 +1423,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
               G.filename);
             vms_msg(__G__ buf, status);
             sys$dassgn(pka_devchn);
-            return PK_WARN;
+            return OPENOUT_FAILED;
         }
 
 #ifdef ASYNCH_QIO
@@ -1393,7 +1437,7 @@ static int create_qio_output(__GPRO)          /* return 1 (PK_WARN) if fail */
         _flush_routine = _flush_qio;
         _close_routine = _close_qio;
     }                   /* end if (!uO.cflag) */
-    return PK_COOL;
+    return OPENOUT_OK;
 }
 
 
@@ -1428,23 +1472,23 @@ static int replace_rms_newversion(__GPRO)
      * use in the "extracting:/inflating:/..."  message (G.filename).
      */
     nam.NAM_RSA = res_nam;
-    nam.NAM_RSS = sizeof( res_nam);
+    nam.NAM_RSS = sizeof(res_nam);
 
 #ifdef NAML$C_MAXRSS
 
     outfab->fab$l_dna = (char *) -1;    /* Using NAML for default name. */
     outfab->fab$l_fna = (char *) -1;    /* Using NAML for file name. */
 
-#endif /* def NAML$C_MAXRSS */
+#endif /* NAML$C_MAXRSS */
 
-    FAB_OR_NAML( *outfab, nam).FAB_OR_NAML_FNA = G.filename;
-    FAB_OR_NAML( *outfab, nam).FAB_OR_NAML_FNS = strlen( G.filename);
+    FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNA = G.filename;
+    FAB_OR_NAML(*outfab, nam).FAB_OR_NAML_FNS = strlen(G.filename);
 
     /* Maximize version number. */
     outfab->fab$l_fop |= FAB$M_MXV;
 
     /* Create the new-version file. */
-    ierr = sys$create( outfab);
+    ierr = sys$create(outfab);
 
     if (nam.NAM_RSL > 0)
     {
@@ -1456,16 +1500,16 @@ static int replace_rms_newversion(__GPRO)
         char *semi_col_res;
 
         /* NUL-terminate the (complete) resultant file spec. */
-        res_nam[ nam.NAM_RSL] = '\0';
+        res_nam[nam.NAM_RSL] = '\0';
 
         /* Find the versions (";") in the original and resultant file specs. */
-        semi_col_orig = strrchr( G.filename, ';');
-        semi_col_res = strrchr( res_nam, ';');
+        semi_col_orig = strrchr(G.filename, ';');
+        semi_col_res = strrchr(res_nam, ';');
 
         if ((semi_col_orig != NULL) && (semi_col_res != NULL))
         {
             /* Transfer the resultant version to the original file spec. */
-            strcpy( (semi_col_orig+ 1), (semi_col_res+ 1));
+            strcpy((semi_col_orig + 1), (semi_col_res + 1));
         }
     }
     return ierr;
@@ -1475,23 +1519,19 @@ static int replace_rms_newversion(__GPRO)
 /* RMS overwrite original version. */
 static int replace_rms_overwrite(__GPRO)
 {
-    int ierr;
-
     /* Supersede existing file. */
     outfab->fab$l_fop |= FAB$M_SUP;
     /* Create (overwrite) the original-version file. */
-    ierr = sys$create( outfab);
-
-    return ierr;
+    return sys$create(outfab);
 }
+
 
 /* Main query function to ask user how to handle an existing file
  * (unless command-line options already specify what to do).
  */
-
-static int replace( __GPRO)
+static int replace(__GPRO)
 {
-    char answ[ 10];
+    char answ[10];
     int replace_code;
 
     if (replace_code_all >= 0)
@@ -1502,60 +1542,55 @@ static int replace( __GPRO)
     else if (uO.overwrite_none)
     {
         /* "-n".  Do not extract this (or any) file. */
-        replace_code = REPL_NO_EXTRACT;
-        replace_code_all = REPL_NO_EXTRACT;
+        replace_code = replace_code_all = REPL_NO_EXTRACT;
     }
     else if (uO.overwrite_all == 1)
     {
         /* "-o".  Create a new version of this (or any) file. */
-        replace_code = REPL_NEW_VERSION;
-        replace_code_all = REPL_NEW_VERSION;
+        replace_code = replace_code_all = REPL_NEW_VERSION;
     }
     else if (uO.overwrite_all > 1)
     {
         /* "-oo".  Overwrite (supersede) this (or any) existing file. */
-        replace_code = REPL_OVERWRITE;
-        replace_code_all = REPL_OVERWRITE;
+        replace_code = replace_code_all = REPL_OVERWRITE;
     }
     else
     {
         replace_code = -1;
-        while (replace_code < 0)
+        do
         {
             /* Request, accept, and decode a response. */
             Info(slide, 0x81, ((char *)slide,
-             "%s exists:  new [v]ersion, [o]verwrite, or [n]o extract?\n\
+              "%s exists:  new [v]ersion, [o]verwrite, or [n]o extract?\n\
   (Uppercase response [V,O,N] => Do same for all files): ",
-             FnFilter1(G.filename)));
+              FnFilter1(G.filename)));
             fflush(stderr);
 
-            if (fgets( answ, sizeof( answ), stdin) == (char *)NULL)
+            if (fgets(answ, sizeof(answ), stdin) == (char *)NULL)
             {
                 Info(slide, 1, ((char *)slide, AssumeNo));
-                *answ = 'N';
-#if 0
-                /* 2008-09-12 SMS.
-                 * Would like to set the error_in_archive indicator
-                 * here, but the maintainer doesn't want it global.
-                 */
-                if (!G.error_in_archive)
-                    G.error_in_archive = 1;  /* not extracted:  warning */
-#endif /* 0 */
+                /* Handle the NULL answer as "N",
+                 * do not extract any existing files.  */
+                replace_code_all = REPL_NO_EXTRACT;
+                /* Set a warning indicator. */
+                replace_code = REPL_NO_EXTRACT | REPL_ERRLV_WARN;
+                /* We are finished, break out of the query loop. */
+                break;
             }
 
             /* Strip off a trailing newline, to avoid corrupt
              * complaints when displaying the answer.
              */
-            if (answ[ strlen( answ)- 1] == '\n')
-                answ[ strlen( answ)- 1] = '\0';
+            if (answ[strlen(answ) - 1] == '\n')
+                answ[strlen(answ) - 1] = '\0';
 
             /* Extra newline to avoid having the extracting:/inflating:/...:
              * message overwritten by the next query.
              */
-            Info( slide, 1, ((char *)slide, "\n"));
+            Info(slide, 1, ((char *)slide, "\n"));
 
             /* Interpret response.  Store upper-case answer for future use. */
-            switch (answ[ 0])
+            switch (answ[0])
             {
                 case 'N':
                     replace_code_all = REPL_NO_EXTRACT;
@@ -1577,18 +1612,19 @@ static int replace( __GPRO)
                     break;
                 default:
                     /* Invalid response.  Try again. */
-                    Info( slide, 1, ((char *)slide, InvalidResponse, answ));
+                    Info(slide, 1, ((char *)slide, InvalidResponse, answ));
             }
-        }
+        } while (replace_code < 0);
     }
     return replace_code;
 }
 
 
+
 #define W(p)    (*(unsigned short*)(p))
 #define L(p)    (*(unsigned long*)(p))
-#define EQL_L(a,b)      ( L(a) == L(b) )
-#define EQL_W(a,b)      ( W(a) == W(b) )
+#define EQL_L(a, b)     ( L(a) == L(b) )
+#define EQL_W(a, b)     ( W(a) == W(b) )
 
 /*
  * Function find_vms_attrs() scans the ZIP entry extra field, if any,
@@ -2043,7 +2079,7 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
             loccnt_even = (loccnt+1) & (~1);
             /* If there is one, clear the extra byte. */
             if (loccnt_even > loccnt)
-                locbuf[ loccnt] = '\0';
+                locbuf[loccnt] = '\0';
 
             status = sys$qiow(0, pka_devchn, IO$_WRITEVBLK,
                               &pka_io_iosb, 0, 0,
@@ -2257,17 +2293,17 @@ static int _flush_varlen(__G__ rawbuf, size, final_flag)
 
 /* Record delimiters */
 #ifdef undef
-#define RECORD_END(c,f)                                                 \
+#define RECORD_END(c, f)                                                 \
 (    ( ORG_DOS || G.pInfo->textmode ) && c==CTRLZ                       \
   || ( f == FAB$C_STMLF && c==LF )                                      \
   || ( f == FAB$C_STMCR || ORG_DOS || G.pInfo->textmode ) && c==CR      \
   || ( f == FAB$C_STM && (c==CR || c==LF || c==FF || c==VT) )           \
 )
 #else
-#   define  RECORD_END(c,f)   ((c) == LF || (c) == (CR))
+#   define  RECORD_END(c, f)   ((c) == LF || (c) == (CR))
 #endif
 
-static unsigned find_eol(p,n,l)
+static unsigned find_eol(p, n, l)
 /*
  *  Find first CR, LF, CR/LF or LF/CR in string 'p' of length 'n'.
  *  Return offset of the sequence found or 'n' if not found.
@@ -2284,8 +2320,8 @@ static unsigned find_eol(p,n,l)
 
     *l = 0;
 
-    for (q=p ; n > 0 ; --n,++q)
-        if ( RECORD_END(*q,rfm) )
+    for (q=p ; n > 0 ; --n, ++q)
+        if ( RECORD_END(*q, rfm) )
         {
             off = q-p;
             break;
@@ -2491,7 +2527,10 @@ static int WriteBuffer(__G__ buf, len)
         if (ERR(status))
         {
             vms_msg(__G__ "[ WriteBuffer: sys$wait failed ]\n", status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
+            if (outrab->rab$l_stv != 0)
+            {
+                vms_msg(__G__ "", outrab->rab$l_stv);
+            }
         }
 
         /* If odd byte count, then this must be the final record.
@@ -2506,7 +2545,10 @@ static int WriteBuffer(__G__ buf, len)
         if (ERR(status = sys$write(outrab)))
         {
             vms_msg(__G__ "[ WriteBuffer: sys$write failed ]\n", status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
+            if (outrab->rab$l_stv != 0)
+            {
+                vms_msg(__G__ "", outrab->rab$l_stv);
+            }
             return PK_DISK;
         }
     }
@@ -2532,7 +2574,10 @@ static int WriteRecord(__G__ rec, len)
         if (ERR(status = sys$wait(outrab)))
         {
             vms_msg(__G__ "[ WriteRecord: sys$wait failed ]\n", status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
+            if (outrab->rab$l_stv != 0)
+            {
+                vms_msg(__G__ "", outrab->rab$l_stv);
+            }
         }
         outrab->rab$w_rsz = len;
         outrab->rab$l_rbf = (char *) rec;
@@ -2540,7 +2585,10 @@ static int WriteRecord(__G__ rec, len)
         if (ERR(status = sys$put(outrab)))
         {
             vms_msg(__G__ "[ WriteRecord: sys$put failed ]\n", status);
-            vms_msg(__G__ "", outrab->rab$l_stv);
+            if (outrab->rab$l_stv != 0)
+            {
+                vms_msg(__G__ "", outrab->rab$l_stv);
+            }
             return PK_DISK;
         }
     }
@@ -2788,7 +2836,10 @@ static int _close_rms(__GPRO)
     if (ERR(status))
     {
         vms_msg(__G__ "[ _close_rms: sys$wait failed ]\n", status);
-        vms_msg(__G__ "", outrab->rab$l_stv);
+        if (outrab->rab$l_stv != 0)
+        {
+            vms_msg(__G__ "", outrab->rab$l_stv);
+        }
     }
 
     status = sys$close(outfab);
@@ -2798,7 +2849,10 @@ static int _close_rms(__GPRO)
         vms_msg(__G__
           "\r[ Warning: cannot set owner/protection/time attributes ]\n",
           status);
-        vms_msg(__G__ "", outfab->fab$l_stv);
+        if (outfab->fab$l_stv != 0)
+        {
+            vms_msg(__G__ "", outfab->fab$l_stv);
+        }
         retcode = PK_WARN;
     }
 #endif
@@ -2854,9 +2908,9 @@ static int _close_qio(__GPRO)
         {
             unsigned bytes_read = 0;
 
-            status = sys$qiow(0,                /* Event flag */
-                              pka_devchn,       /* Channel */
-                              IO$_READVBLK,     /* Function */
+            status = sys$qiow(0,                /* event flag */
+                              pka_devchn,       /* channel */
+                              IO$_READVBLK,     /* function */
                               &pka_io_iosb,     /* IOSB */
                               0,                /* AST address */
                               0,                /* AST parameter */
@@ -3304,9 +3358,9 @@ int set_direc_attribs(__G__ d)
              * adjustment.  Retrieve the RECATTR data for the existing
              * (newly created) directory file.
              */
-            status = sys$qiow(0,                    /* Event flag */
-                              pka_devchn,           /* Channel */
-                              IO$_ACCESS,           /* Function code */
+            status = sys$qiow(0,                    /* event flag */
+                              pka_devchn,           /* channel */
+                              IO$_ACCESS,           /* function code */
                               &pka_acp_iosb,        /* IOSB */
                               0,                    /* AST address */
                               0,                    /* AST parameter */
@@ -3353,9 +3407,9 @@ int set_direc_attribs(__G__ d)
     }
 
     /* Modify the file (directory) attributes. */
-    status = sys$qiow(0,                            /* Event flag */
-                      pka_devchn,                   /* Channel */
-                      IO$_MODIFY,                   /* Function code */
+    status = sys$qiow(0,                            /* event flag */
+                      pka_devchn,                   /* channel */
+                      IO$_MODIFY,                   /* function code */
                       &pka_acp_iosb,                /* IOSB */
                       0,                            /* AST address */
                       0,                            /* AST parameter */
@@ -3571,7 +3625,7 @@ int stamp_file(fname, modtime)
 
     /* Special ODS5-QIO-compatible name storage. */
     nam.naml$l_filesys_name = sys_nam;
-    nam.naml$l_filesys_name_alloc = sizeof( sys_nam);
+    nam.naml$l_filesys_name_alloc = sizeof(sys_nam);
 
 #endif /* NAML$C_MAXRSS */
 
@@ -3953,7 +4007,7 @@ int mapattr(__G)
     ulg tmp = G.crec.external_file_attributes;
     ulg theprot;
     static ulg  defprot = (ulg)-1L,
-                sysdef,owndef,grpdef,wlddef;  /* Default protection fields */
+                sysdef, owndef, grpdef, wlddef; /* Default protection fields */
 
     /* IM: The only field of XABPRO we need to set here is */
     /*     file protection, so we need not to change type */
@@ -4311,8 +4365,8 @@ static void adj_file_name_ods2(char *dest, char *src)
     */
     last_dot = versionp;
 
-    if ((*(versionp- 1) != '.') ||
-     ((versionp- 2 < src) || (*(versionp- 2) == '.')))
+    if ((*(versionp - 1) != '.') ||
+        (versionp - 2 < src) || (*(versionp - 2) == '.'))
     {
         /* Not an exception.  Find the real last dot. */
         while ((--last_dot >= src) && (*last_dot != '.'));
@@ -4324,7 +4378,7 @@ static void adj_file_name_ods2(char *dest, char *src)
         prop = char_prop[uchr];         /* Get source char properties. */
         if ((prop & 2) != 0)            /* Up-case lower case. */
         {
-            uchr -= ('a'- 'A');         /* (Simple-fast is adequate.) */
+            uchr -= ('a' - 'A');        /* (Simple-fast is adequate.) */
         }
         else if ((prop & 4) != 0)       /* Dot. */
         {
@@ -4354,7 +4408,7 @@ static void adj_file_name_ods5(char *dest, char *src)
     char *versionp;
     char *last_dot;
 
-    endp = src+ strlen( src);   /* Pointer to the NUL-terminator of src. */
+    endp = src + strlen(src);   /* Pointer to the NUL-terminator of src. */
     /* Starting at the end, find the last non-decimal-digit. */
     versionp = endp;
     while ((--versionp >= src) && isdigit(*versionp));
@@ -4390,8 +4444,8 @@ static void adj_file_name_ods5(char *dest, char *src)
     */
     last_dot = versionp;
 
-    if ((*(versionp- 1) != '.') ||
-     ((versionp- 2 < src) || (*(versionp- 2) == '.')))
+    if ((*(versionp - 1) != '.') ||
+        (versionp - 2 < src) || (*(versionp - 2) == '.'))
     {
         /* Not an exception.  Find the real last dot. */
         while ((--last_dot >= src) && (*last_dot != '.'));
@@ -4470,7 +4524,7 @@ int mapname(__G__ renamed)
     __GDEF
     int renamed;
 {
-    char pathcomp[ FILNAMSIZ];      /* Path-component buffer. */
+    char pathcomp[FILNAMSIZ];       /* Path-component buffer. */
     char *last_slash;               /* Last slash in path. */
     char *next_slash;               /* Next slash in path. */
     int  dir_len;                   /* Length of a directory segment. */
@@ -4543,7 +4597,7 @@ int mapname(__G__ renamed)
         dir_len = next_slash- cp;
 
         /* Filter out unacceptable directories. */
-        if ((dir_len == 2) && (strncmp( cp, "..", 2) == 0))
+        if ((dir_len == 2) && (strncmp(cp, "..", 2) == 0))
         {   /* Double dot. */
             if (!uO.ddotflag)           /* Not allowed.  Skip it. */
             {
@@ -4638,10 +4692,10 @@ int checkdir(__G__ pathcomp, fcn)
     int fcn;
 {
     int function=fcn & FN_MASK;
-    static char pathbuf[ FILNAMSIZ];
+    static char pathbuf[FILNAMSIZ];
 
     /* previously created directory (initialized to impossible dir. spec.) */
-    static char lastdir[ FILNAMSIZ] = "\t";
+    static char lastdir[FILNAMSIZ] = "\t";
 
     static char *pathptr = pathbuf;     /* For debugger */
     static char *devptr, *dirptr;
@@ -4951,7 +5005,7 @@ int checkdir(__G__ pathcomp, fcn)
                 {
                     strcpy(lastdir, PATH_DEFAULT);
                     mkdir_failed = 0;
-                    if ( mkdir(lastdir,0) && errno != EEXIST )
+                    if ( mkdir(lastdir, 0) && errno != EEXIST )
                         mkdir_failed = 1;   /* Mine for GETPATH */
                 }
             }
@@ -5014,7 +5068,7 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
      * Special case for "." as a file name, not as the current directory.
      * Substitute ".;" to keep stat() from seeing a plain ".".
     */
-    if (strcmp( filenam, ".") == 0)
+    if (strcmp(filenam, ".") == 0)
         filenam_stat = ".;";
     else
         filenam_stat = filenam;
@@ -5043,7 +5097,7 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
 
     if (ERR(sys$open(&fab)))             /* open failure:  report exists and */
         return EXISTS_AND_OLDER;         /*  older so new copy will be made  */
-    sys$numtim(&timbuf,&xdat.xab$q_cdt);
+    sys$numtim(&timbuf, &xdat.xab$q_cdt);
     fab.fab$l_xab = NULL;
 
     sys$dassgn(fab.fab$l_stv);
@@ -5421,13 +5475,13 @@ void version(__G)
     /* Truncate the version string at the first (trailing) space. */
     strncpy(vms_vers, VMS_VERSION, sizeof(vms_vers));
     vms_vers[sizeof(vms_vers)-1] = '\0';
-    chrp1 = strchr( vms_vers, ' ');
+    chrp1 = strchr(vms_vers, ' ');
     if (chrp1 != NULL)
         *chrp1 = '\0';
 
     /* Determine the major version number. */
     ver_maj = 0;
-    chrp1 = strchr(&vms_vers[ 1], '.');
+    chrp1 = strchr(&vms_vers[1], '.');
     for (chrp2 = &vms_vers[1];
          chrp2 < chrp1;
          ver_maj = ver_maj * 10 + *(chrp2++) - '0');
@@ -5659,7 +5713,7 @@ static void decc_init(void)
                     sts = decc$feature_set_value(
                               feat_index,
                               1,
-                              decc_feat_array[ i].value);
+                              decc_feat_array[i].value);
                 }
             }
             else
@@ -5686,7 +5740,7 @@ static void decc_init(void)
    attributes.
 */
 globaldef {"LIB$INITIALIZ"} readonly _align (LONGWORD)
-   int spare[ 8] = { 0 };
+   int spare[8] = { 0 };
 globaldef {"LIB$INITIALIZE"} readonly _align (LONGWORD)
    void (*x_decc_init)() = decc_init;
 
@@ -5711,7 +5765,7 @@ int dmy_lib$initialize = (int)lib$initialize;
 
 #pragma standard
 
-#endif /* !defined( __VAX) && (__CRTL_VER >= 70301000) */
+#endif /* !defined(__VAX) && (__CRTL_VER >= 70301000) */
 #endif /* __CRTL_VER */
 #endif /* __DECC */
 
