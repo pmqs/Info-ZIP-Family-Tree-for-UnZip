@@ -99,7 +99,7 @@
 
 /* VMS success or warning status */
 #define OK(s)   (((s) & STS$M_SUCCESS) != 0)
-#define STRICMP(s1, s2)  STRNICMP(s1, s2, 2147483647)
+#define STRICMP(s1,s2)  STRNICMP(s1,s2,2147483647)
 
 /* Interactive inquiry response codes for replace(). */
 
@@ -857,10 +857,7 @@ static int create_default_output(__GPRO)
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
             vms_msg(__G__ buf, ierr);
-            if (fileblk.fab$l_stv != 0)
-            {
-                vms_msg(__G__ "", fileblk.fab$l_stv);
-            }
+            vms_msg(__G__ "", fileblk.fab$l_stv);
             free_up();
             return OPENOUT_FAILED;
         }
@@ -875,10 +872,7 @@ static int create_default_output(__GPRO)
         {
 #ifdef DEBUG
             vms_msg(__G__ "create_default_output: sys$connect failed.\n", ierr);
-            if (fileblk.fab$l_stv != 0)
-            {
-                vms_msg(__G__ "", fileblk.fab$l_stv);
-            }
+            vms_msg(__G__ "", fileblk.fab$l_stv);
 #endif
             Info(slide, 1, ((char *)slide,
                  "Cannot create ($connect) output file:  %s\n",
@@ -1024,10 +1018,7 @@ static int create_rms_output(__GPRO)
             sprintf(buf, "[ Cannot create ($create) output file %s ]\n",
               G.filename);
             vms_msg(__G__ buf, ierr);
-            if (outfab->fab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outfab->fab$l_stv);
-            }
+            vms_msg(__G__ "", outfab->fab$l_stv);
             free_up();
             return OPENOUT_FAILED;
         }
@@ -1041,10 +1032,7 @@ static int create_rms_output(__GPRO)
 
                 sprintf(buf, "[ Cannot allocate space for %s ]\n", G.filename);
                 vms_msg(__G__ buf, ierr);
-                if (outfab->fab$l_stv != 0)
-                {
-                    vms_msg(__G__ "", outfab->fab$l_stv);
-                }
+                vms_msg(__G__ "", outfab->fab$l_stv);
                 free_up();
                 return OPENOUT_FAILED;
             }
@@ -1061,10 +1049,7 @@ static int create_rms_output(__GPRO)
         {
 #ifdef DEBUG
             vms_msg(__G__ "create_rms_output: sys$connect failed.\n", ierr);
-            if (outfab->fab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outfab->fab$l_stv);
-            }
+            vms_msg(__G__ "", outfab->fab$l_stv);
 #endif
             Info(slide, 1, ((char *)slide,
                  "Cannot create ($connect) output file:  %s\n",
@@ -1256,7 +1241,7 @@ static int create_qio_output(__GPRO)
 
         pka_devdsc.dsc$w_length = (unsigned short)nam.NAM_DVI[0];
 
-        if ( ERR(status = sys$assign(&pka_devdsc, &pka_devchn, 0, 0)) )
+        if ( ERR(status = sys$assign(&pka_devdsc,&pka_devchn,0,0)) )
         {
             vms_msg(__G__ "create_qio_output: sys$assign failed.\n", status);
             return OPENOUT_FAILED;
@@ -1623,8 +1608,8 @@ static int replace(__GPRO)
 
 #define W(p)    (*(unsigned short*)(p))
 #define L(p)    (*(unsigned long*)(p))
-#define EQL_L(a, b)     ( L(a) == L(b) )
-#define EQL_W(a, b)     ( W(a) == W(b) )
+#define EQL_L(a,b)      ( L(a) == L(b) )
+#define EQL_W(a,b)      ( W(a) == W(b) )
 
 /*
  * Function find_vms_attrs() scans the ZIP entry extra field, if any,
@@ -2293,17 +2278,17 @@ static int _flush_varlen(__G__ rawbuf, size, final_flag)
 
 /* Record delimiters */
 #ifdef undef
-#define RECORD_END(c, f)                                                 \
+#define RECORD_END(c,f)                                                 \
 (    ( ORG_DOS || G.pInfo->textmode ) && c==CTRLZ                       \
   || ( f == FAB$C_STMLF && c==LF )                                      \
   || ( f == FAB$C_STMCR || ORG_DOS || G.pInfo->textmode ) && c==CR      \
   || ( f == FAB$C_STM && (c==CR || c==LF || c==FF || c==VT) )           \
 )
 #else
-#   define  RECORD_END(c, f)   ((c) == LF || (c) == (CR))
+#   define  RECORD_END(c,f)   ((c) == LF || (c) == (CR))
 #endif
 
-static unsigned find_eol(p, n, l)
+static unsigned find_eol(p,n,l)
 /*
  *  Find first CR, LF, CR/LF or LF/CR in string 'p' of length 'n'.
  *  Return offset of the sequence found or 'n' if not found.
@@ -2320,7 +2305,7 @@ static unsigned find_eol(p, n, l)
 
     *l = 0;
 
-    for (q=p ; n > 0 ; --n, ++q)
+    for (q=p ; n > 0 ; --n,++q)
         if ( RECORD_END(*q, rfm) )
         {
             off = q-p;
@@ -2527,10 +2512,7 @@ static int WriteBuffer(__G__ buf, len)
         if (ERR(status))
         {
             vms_msg(__G__ "[ WriteBuffer: sys$wait failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
         }
 
         /* If odd byte count, then this must be the final record.
@@ -2545,10 +2527,7 @@ static int WriteBuffer(__G__ buf, len)
         if (ERR(status = sys$write(outrab)))
         {
             vms_msg(__G__ "[ WriteBuffer: sys$write failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
             return PK_DISK;
         }
     }
@@ -2574,10 +2553,7 @@ static int WriteRecord(__G__ rec, len)
         if (ERR(status = sys$wait(outrab)))
         {
             vms_msg(__G__ "[ WriteRecord: sys$wait failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
         }
         outrab->rab$w_rsz = len;
         outrab->rab$l_rbf = (char *) rec;
@@ -2585,10 +2561,7 @@ static int WriteRecord(__G__ rec, len)
         if (ERR(status = sys$put(outrab)))
         {
             vms_msg(__G__ "[ WriteRecord: sys$put failed ]\n", status);
-            if (outrab->rab$l_stv != 0)
-            {
-                vms_msg(__G__ "", outrab->rab$l_stv);
-            }
+            vms_msg(__G__ "", outrab->rab$l_stv);
             return PK_DISK;
         }
     }
@@ -2836,10 +2809,7 @@ static int _close_rms(__GPRO)
     if (ERR(status))
     {
         vms_msg(__G__ "[ _close_rms: sys$wait failed ]\n", status);
-        if (outrab->rab$l_stv != 0)
-        {
-            vms_msg(__G__ "", outrab->rab$l_stv);
-        }
+        vms_msg(__G__ "", outrab->rab$l_stv);
     }
 
     status = sys$close(outfab);
@@ -2849,10 +2819,7 @@ static int _close_rms(__GPRO)
         vms_msg(__G__
           "\r[ Warning: cannot set owner/protection/time attributes ]\n",
           status);
-        if (outfab->fab$l_stv != 0)
-        {
-            vms_msg(__G__ "", outfab->fab$l_stv);
-        }
+        vms_msg(__G__ "", outfab->fab$l_stv);
         retcode = PK_WARN;
     }
 #endif
@@ -4007,7 +3974,7 @@ int mapattr(__G)
     ulg tmp = G.crec.external_file_attributes;
     ulg theprot;
     static ulg  defprot = (ulg)-1L,
-                sysdef, owndef, grpdef, wlddef; /* Default protection fields */
+                sysdef,owndef,grpdef,wlddef;  /* Default protection fields */
 
     /* IM: The only field of XABPRO we need to set here is */
     /*     file protection, so we need not to change type */
@@ -4352,29 +4319,21 @@ static void adj_file_name_ods2(char *dest, char *src)
         }
     }
 
-    /* Find the last dot (except, perhaps, the version dot).
-       Special cases:
-          Last char is a dot.  Zip strips off the normal VMS null type,
-          so if a final dot appears here, it should be escaped by "^",
-          not left for VMS to ignore it.  "name." -> "name^.".
-          Exceptions:
-             Last dot is the only character.  "." -> ".".
-             Last dot is preceded by another dot.  "X.." -> "X^..".
-       Note that if no last dot is found, the non-last-dot test below
-       will always fail, but that's not a problem.
-    */
-    last_dot = versionp;
+    /* 2008-11-04 SMS.
+     * Simplified the scheme here to escape all non-last dots.  This
+     * should work when Zip works correctly (Zip 3.1).
+     * Note that if no last dot is found, the non-last-dot test below
+     * will always fail, but that's not a problem.
+     */
 
-    if ((*(versionp - 1) != '.') ||
-        (versionp - 2 < src) || (*(versionp - 2) == '.'))
-    {
-        /* Not an exception.  Find the real last dot. */
-        while ((--last_dot >= src) && (*last_dot != '.'));
-    }
+    /* Find the last dot (if any). */
+    last_dot = versionp;
+    while ((--last_dot >= src) && (*last_dot != '.'));
 
     /* Critical features having been located, transform the name. */
     while ((uchr = *src++) != '\0')     /* Get source character. */
     {
+        /* Note that "src" has been incremented, affecting "src <=". */
         prop = char_prop[uchr];         /* Get source char properties. */
         if ((prop & 2) != 0)            /* Up-case lower case. */
         {
@@ -4383,7 +4342,7 @@ static void adj_file_name_ods2(char *dest, char *src)
         else if ((prop & 4) != 0)       /* Dot. */
         {
             if (src <= last_dot)        /* Replace non-last dot */
-            {                           /* (with exceptions)    */
+            {
                 uchr = '_';             /* with "_". */
             }
         }
@@ -4431,29 +4390,21 @@ static void adj_file_name_ods5(char *dest, char *src)
         }
     }
 
-    /* Find the last dot (except, perhaps, the version dot).
-       Special cases:
-          Last char is a dot.  Zip strips off the normal VMS null type,
-          so if a final dot appears here, it should be escaped by "^",
-          not left for VMS to ignore it.  "name." -> "name^.".
-          Exceptions:
-             Last dot is the only character.  "." -> ".".
-             Last dot is preceded by another dot.  "X.." -> "X^..".
-       Note that if no last dot is found, the non-last-dot test below
-       will always fail, but that's not a problem.
-    */
-    last_dot = versionp;
+    /* 2008-11-04 SMS.
+     * Simplified the scheme here to escape all non-last dots.  This
+     * should work when Zip works correctly (Zip 3.1).
+     * Note that if no last dot is found, the non-last-dot test below
+     * will always fail, but that's not a problem.
+     */
 
-    if ((*(versionp - 1) != '.') ||
-        (versionp - 2 < src) || (*(versionp - 2) == '.'))
-    {
-        /* Not an exception.  Find the real last dot. */
-        while ((--last_dot >= src) && (*last_dot != '.'));
-    }
+    /* Find the last dot (if any). */
+    last_dot = versionp;
+    while ((--last_dot >= src) && (*last_dot != '.'));
 
     /* Critical features having been located, transform the name. */
     while ((uchr = *src++) != '\0')             /* Get source character. */
     {
+        /* Note that "src" has been incremented, affecting "src <=". */
         prop = char_prop[uchr];                 /* Get source char props. */
         if ((prop & (32+8)) != 0)               /* Escape 1-char, including */
         {                                       /* SP (but not dot). */
@@ -4473,7 +4424,7 @@ static void adj_file_name_ods5(char *dest, char *src)
         else if ((prop & 4) != 0)               /* Dot. */
         {
             if (src <= last_dot)                /* Escape non-last dot */
-            {                                   /* (with exceptions).  */
+            {
                 *dest++ = '^';                  /* Insert caret. */
             }
         }
@@ -5005,7 +4956,7 @@ int checkdir(__G__ pathcomp, fcn)
                 {
                     strcpy(lastdir, PATH_DEFAULT);
                     mkdir_failed = 0;
-                    if ( mkdir(lastdir, 0) && errno != EEXIST )
+                    if ( mkdir(lastdir,0) && errno != EEXIST )
                         mkdir_failed = 1;   /* Mine for GETPATH */
                 }
             }
@@ -5097,7 +5048,7 @@ int check_for_newer(__G__ filenam)   /* return 1 if existing file newer or */
 
     if (ERR(sys$open(&fab)))             /* open failure:  report exists and */
         return EXISTS_AND_OLDER;         /*  older so new copy will be made  */
-    sys$numtim(&timbuf, &xdat.xab$q_cdt);
+    sys$numtim(&timbuf,&xdat.xab$q_cdt);
     fab.fab$l_xab = NULL;
 
     sys$dassgn(fab.fab$l_stv);
