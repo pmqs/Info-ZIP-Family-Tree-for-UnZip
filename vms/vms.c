@@ -1363,10 +1363,10 @@ static int create_qio_output(__GPRO)
                     return ((status & REPL_ERRLV_WARN)
                             ? OPENOUT_SKIPWARN : OPENOUT_SKIPOK);
                 case REPL_NEW_VERSION:  /* Create a new version. */
-                    pka_fib.fib$v_newver = 1;
+                    pka_fib.FIB$W_NMCTL |= FIB$M_NEWVER;
                     break;
                 case REPL_OVERWRITE:    /* Overwrite the existing file. */
-                    pka_fib.fib$v_supersede = 1;
+                    pka_fib.FIB$W_NMCTL |= FIB$M_SUPERSEDE;
                     break;
             }
 
@@ -1396,8 +1396,7 @@ static int create_qio_output(__GPRO)
             /* Clear any user-specified version policy flags
              * (for the next file to be processed).
              */
-            pka_fib.fib$v_newver = 0;
-            pka_fib.fib$v_supersede = 0;
+            pka_fib.FIB$W_NMCTL &= (~(FIB$M_NEWVER| FIB$M_SUPERSEDE));
         }
 
         if ( ERR(status) )

@@ -82,11 +82,13 @@
 #  define FIB$W_FID     fib$w_fid
 #  define FIB$L_ACCTL   fib$l_acctl
 #  define FIB$W_EXCTL   fib$w_exctl
+#  define FIB$W_NMCTL   fib$w_nmctl
 #else
 #  define FIB$W_DID     fib$r_did_overlay.fib$w_did
 #  define FIB$W_FID     fib$r_fid_overlay.fib$w_fid
 #  define FIB$L_ACCTL   fib$r_acctl_overlay.fib$l_acctl
 #  define FIB$W_EXCTL   fib$r_exctl_overlay.fib$w_exctl
+#  define FIB$W_NMCTL   fib$r_nmctl_overlay.fib$w_nmctl
 #endif
 #undef variant_union
 

@@ -93,6 +93,7 @@ static int setsignalhandler OF((__GPRO__ savsigs_info **p_savedhandler_chain,
                                 int signal_type, void (*newhandler)(int)));
 #endif
 #ifndef SFX
+static void  show_license       OF((__GPRO));
 static void  help_extended      OF((__GPRO));
 static void  show_version_info  OF((__GPRO));
 #endif
@@ -256,17 +257,6 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #else /* !VMS */
 #ifdef ATH_BEO_UNX
    static ZCONST char Far local2[] = " -X  restore UID/GID info";
-#  ifdef __APPLE__
-#ifdef MORE
-   static ZCONST char Far local3[] = "\
-  -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n\
-  -J  No special AppleDouble file handling\n";
-#else
-   static ZCONST char Far local3[] = "\
-  -K  keep setuid/setgid/tacky permissions   -J  No spec'l AplDbl file handling\
-\n";
-#endif
-#  else /* def __APPLE__ */
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n";
@@ -274,7 +264,6 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
    static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions\n";
 #endif
-#  endif /* def __APPLE__ [else] */
 #else /* !ATH_BEO_UNX */
 #ifdef TANDEM
    static ZCONST char Far local2[] = "\
@@ -456,13 +445,13 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  endif
 #  ifdef SYMLINKS
      static ZCONST char Far SymLinkSupport[] =
-     "SYMLINKS (symbolic links supported, if RTL and file system permits)";
+     "SYMLINKS (symbolic links supported, if RTL and file system permit)";
 #  endif
 #  ifdef TIMESTAMP
      static ZCONST char Far TimeStamp[] = "TIMESTAMP";
 #  endif
-#  ifdef UNIXBACKUP
-     static ZCONST char Far UnixBackup[] = "UNIXBACKUP";
+#  ifdef FILEBACKUP
+     static ZCONST char Far FileBackup[] = "FILEBACKUP";
 #  endif
 #  ifdef USE_EF_UT_TIME
      static ZCONST char Far Use_EF_UT_time[] = "USE_EF_UT_TIME";
@@ -599,18 +588,21 @@ Latest sources and executables are at ftp://ftp.info-zip.org/pub/infozip/ ;\
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-d exdir]\n \
  Default action is to extract files in list, to exdir;\n\
-  file[.zip] may be a wildcard.  %s\n";
+  file[.zip] may be a wildcard.  %s\n\
+  unzip -L for license;  unzip -hh for more help.\n";
 #else /* !MACOS */
 #ifdef VM_CMS
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d fm]\n \
  Default action is to extract files in list, except those in xlist, to disk fm;\
-\n  file[.zip] may be a wildcard.  %s\n";
+\n  file[.zip] may be a wildcard.  %s\n\
+  unzip -L for license;  unzip -hh for more help.\n";
 #else /* !VM_CMS */
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
  Default action is to extract files in list, except those in xlist, to exdir;\n\
-  file[.zip] may be a wildcard.  %s\n";
+  file[.zip] may be a wildcard.  %s\n\
+  unzip -L for license;  unzip -hh for more help.\n";
 #endif /* ?VM_CMS */
 #endif /* ?MACOS */
 
@@ -663,7 +655,7 @@ static ZCONST char Far UnzipUsageLine3[] = "\n\
  * the option to list that page put here.  [E. Gordon, 2008-3-16]
  */
 #if (defined(UNICODE_SUPPORT) && !defined(WIN32))
-#  ifdef VMS
+#ifdef VMS
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite or make a new version of an existing file\n\
@@ -673,7 +665,7 @@ modifiers:\n\
   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#  else /* def VMS */
+#else /* !VMS */
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
@@ -682,9 +674,9 @@ modifiers:\n\
   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#  endif /* def VMS [else] */
+#endif /* ?VMS */
 #else /* !UNICODE_SUPPORT */
-#  ifdef VMS
+#ifdef VMS
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite or make a new version of an existing file\n\
@@ -693,7 +685,7 @@ modifiers:\n\
   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#  else /* def VMS */
+#else /* !VMS */
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
@@ -701,7 +693,7 @@ modifiers:\n\
   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#  endif /* def VMS [else] */
+#endif /* ?VMS */
 #endif /* ?UNICODE_SUPPORT */
 
 static ZCONST char Far UnzipUsageLine5[] = "\
@@ -743,6 +735,7 @@ int unzip(__G__ argc, argv)
     int argc;
     char *argv[];
 {
+    int showing_license = 0;
 #ifndef NO_ZIPINFO
     char *p;
 #endif
@@ -1033,6 +1026,12 @@ int unzip(__G__ argc, argv)
     }
     ++p;
 
+    /* License */
+    if (argc == 2 && strncmp(argv[1], "-L", 2) == 0) {
+      show_license();
+      showing_license = 1;
+    }
+
 #ifdef THEOS
     if (strncmp(p, "ZIPINFO.",8) == 0 || strstr(p, ".ZIPINFO:") != NULL ||
         strncmp(p, "II.",3) == 0 || strstr(p, ".II:") != NULL ||
@@ -1059,7 +1058,7 @@ int unzip(__G__ argc, argv)
 #endif
     }
 
-    if (!error) {
+    if (!showing_license && !error) {
         /* Check the length of all passed command line parameters.
          * Command arguments might get sent through the Info() message
          * system, which uses the sliding window area as string buffer.
@@ -1085,7 +1084,7 @@ int unzip(__G__ argc, argv)
 
 #endif /* ?SFX */
 
-    if ((argc < 0) || error) {
+    if ((argc < 0) || error || showing_license) {
         retcode = error;
         goto cleanup_and_exit;
     }
@@ -1238,10 +1237,6 @@ int unzip(__G__ argc, argv)
 # endif
 #endif
 
-#if defined( UNIX) && defined( __APPLE__)
-    /* Set flag according to the capabilities of the destination volume. */
-    G.exdir_attr_ok = vol_attr_ok( (uO.exdir == NULL) ? "." : uO.exdir);
-#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /*---------------------------------------------------------------------------
     Okey dokey, we have everything we need to get started.  Let's roll.
@@ -1385,7 +1380,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.aflag = 0;
                     }
                     break;
-#ifdef UNIXBACKUP
+#ifdef FILEBACKUP
                 case ('B'): /* -B: back up existing files */
                     if (negative)
                         uO.B_flag = FALSE, negative = 0;
@@ -1519,8 +1514,7 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.jflag = TRUE;
                     break;
-#if (defined(ATH_BEO) || defined(MACOS) || \
- (defined( UNIX) && defined( __APPLE__)))
+#if (defined(ATH_BEO) || defined(MACOS))
                 case ('J'):    /* Junk AtheOS, BeOS or MacOS file attributes */
                     if( negative ) {
                         uO.J_flag = FALSE, negative = 0;
@@ -1528,7 +1522,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.J_flag = TRUE;
                     }
                     break;
-#endif /* ATH_BEO || MACOS || defined( UNIX) && defined( __APPLE__) */
+#endif /* ATH_BEO || MACOS */
 #ifdef ATH_BEO_UNX
                 case ('K'):
                     if (negative) {
@@ -2079,6 +2073,77 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
 
 #ifndef SFX
 
+/* Print license to stdout. */
+static void show_license(__G)
+    __GDEF
+{
+    extent i;             /* counter for license array */
+
+    /* license array */
+    static ZCONST char Far *text[] = {
+"Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.",
+"",
+"For the purposes of this copyright and license, \"Info-ZIP\" is defined as",
+"the following set of individuals:",
+"",
+"   Mark Adler, John Bush, Karl Davis, Harald Denker, Jean-Michel Dubois,",
+"   Jean-loup Gailly, Hunter Goatley, Ed Gordon, Ian Gorman, Chris Herborth,",
+"   Dirk Haase, Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz,",
+"   David Kirschbaum, Johnny Lee, Onno van der Linden, Igor Mandrichenko,",
+"   Steve P. Miller, Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs,",
+"   Kai Uwe Rommel, Steve Salisbury, Dave Smith, Steven M. Schweda,",
+"   Christian Spieler, Cosmin Truta, Antoine Verheijen, Paul von Behren,",
+"   Rich Wales, Mike White",
+"",
+"This software is provided \"as is,\" without warranty of any kind, express",
+"or implied.  In no event shall Info-ZIP or its contributors be held liable",
+"for any direct, indirect, incidental, special or consequential damages",
+"arising out of the use of or inability to use this software.",
+"",
+"Permission is granted to anyone to use this software for any purpose,",
+"including commercial applications, and to alter it and redistribute it",
+"freely, subject to the above disclaimer and the following restrictions:",
+"",
+"    1. Redistributions of source code (in whole or in part) must retain",
+"       the above copyright notice, definition, disclaimer, and this list",
+"       of conditions.",
+"",
+"    2. Redistributions in binary form (compiled executables and libraries)",
+"       must reproduce the above copyright notice, definition, disclaimer,",
+"       and this list of conditions in documentation and/or other materials",
+"       provided with the distribution.  The sole exception to this condition",
+"       is redistribution of a standard UnZipSFX binary (including SFXWiz) as",
+"       part of a self-extracting archive; that is permitted without inclusion",
+"       of this license, as long as the normal SFX banner has not been removed",
+"       from the binary or disabled.",
+"",
+"    3. Altered versions--including, but not limited to, ports to new operating",
+"       systems, existing ports with new graphical interfaces, versions with",
+"       modified or added functionality, and dynamic, shared, or static library",
+"       versions not from Info-ZIP--must be plainly marked as such and must not",
+"       be misrepresented as being the original source or, if binaries,",
+"       compiled from the original source.  Such altered versions also must not",
+"       be misrepresented as being Info-ZIP releases--including, but not",
+"       limited to, labeling of the altered versions with the names \"Info-ZIP\"",
+"       (or any variation thereof, including, but not limited to, different",
+"       capitalizations), \"Pocket UnZip,\" \"WiZ\" or \"MacZip\" without the",
+"       explicit permission of Info-ZIP.  Such altered versions are further",
+"       prohibited from misrepresentative use of the Zip-Bugs or Info-ZIP",
+"       e-mail addresses or the Info-ZIP URL(s), such as to imply Info-ZIP",
+"       will provide support for the altered versions.",
+"",
+"    4. Info-ZIP retains the right to use the names \"Info-ZIP,\" \"Zip,\" \"UnZip,\"",
+"       \"UnZipSFX,\" \"WiZ,\" \"Pocket UnZip,\" \"Pocket Zip,\" and \"MacZip\" for its",
+"       own source and binary releases."
+    };
+
+    for (i = 0; i < sizeof(text)/sizeof(char *); i++)
+    {
+        Info(slide, 0, ((char *)slide, "%s\n", text[i]));
+    }
+} /* end function show_license() */
+
+
 /* Print extended help to stdout. */
 static void help_extended(__G)
     __GDEF
@@ -2086,7 +2151,7 @@ static void help_extended(__G)
     extent i;             /* counter for help array */
 
     /* help array */
-    static ZCONST char *text[] = {
+    static ZCONST char Far *text[] = {
   "",
   "Extended Help for UnZip",
   "",
@@ -2098,22 +2163,109 @@ static void help_extended(__G)
   "needed.  With appropriate options, UnZip lists the contents of archives",
   "instead.",
   "",
-  "Basic command line:",
-  "  unzip options archive_name",
+  "Basic unzip command line:",
+  "  unzip [-Z] options archive[.zip] [file ...] [-x xfile ...] [-d exdir]",
   "",
   "Some examples:",
+  "  unzip -l foo.zip        - list files in short format in archive foo.zip",
+  "",
+  "  unzip -t foo            - test the files in archive foo",
+  "",
+  "  unzip -Z foo            - list files using more detailed zipinfo format",
+  "",
+  "  unzip foo               - unzip the contents of foo in current dir",
+  "",
+  "  unzip -a foo            - unzip foo and convert text files to local OS",
+  "",
+  "If unzip is run in zipinfo mode, a more detailed list of archive contents",
+  "is provided.  The -Z option sets zipinfo mode and changes the available",
+  "options.",
+  "",
+  "Basic zipinfo command line:",
+  "  zipinfo options archive[.zip] [file ...] [-x xfile ...]",
+  "  unzip -Z options archive[.zip] [file ...] [-x xfile ...]",
+  "",
+  "Below, Mac OS refers to Mac OS before Mac OS X.  Mac OS X is a Unix based",
+  "port and is referred to as Unix Apple.",
   "",
   "",
-  "Basic options:",
+  "unzip options:",
+  "  -Z   Switch to zipinfo mode.  Must be first option.",
+  "  -A   [OS/2, Unix DLL] Print extended help for DLL.",
+  "  -c   Extract files to stdout/screen.  As -p but include names.  Also,",
+  "         -a allowed and EBCDIC conversions done if needed.",
+  "  -f   Freshen by extracting only if older file on disk.",
+  "  -l   List files using short form.",
+  "  -p   Extract files to pipe (stdout).  Only file data is output and all",
+  "         files extracted in binary mode (as stored).",
+  "  -t   Test archive files.",
+  "  -T   Set timestamp on archive(s) to that of newest file.  Similar to",
+  "       zip -o but faster.",
+  "  -u   Update existing older files on disk as -f and extract new files.",
+  "  -v   Use verbose list format.  If given alone as unzip -v show version",
+  "         information.  Also can be added to other list commands for more",
+  "         verbose output.",
+  "  -z   Display only archive comment.",
   "",
+  "unzip modifiers:",
+  "  -a   Convert text files to local OS format.  Convert line ends, EOF",
+  "         marker, and from or to EBCDIC character set as needed.",
+  "  -b   Treat all files as binary.  [Tandem] Force filecode 180 ('C').",
+  "         [VMS] Autoconvert binary files.  -bb forces convert of all files.",
+  "  -B   [Unix and Win32] Save a backup copy of each overwritten file in",
+  "         foo~ or foo~99999 format.",
+  "  -C   Use case-insensitive matching.",
+  "  -D   Skip restoration of timestamps for extracted directories.  On VMS this",
+  "         is on by default and -D essentially becames -DD.",
+  "  -DD  Skip restoration of timestamps for all entries.",
+  "  -E   [MacOS (not Unix Apple)]  Display contents of MacOS extra field during",
+  "         restore.",
+  "  -F   [Acorn] Suppress removal of NFS filetype extension.  [Non-Acorn if",
+  "         ACORN_FTYPE_NFS] Translate filetype and append to name.",
+  "  -i   [MacOS] Ignore filenames in MacOS extra field.  Instead, use name in",
+  "         standard header.",
+  "  -j   Junk paths and deposit all files in extraction directory.",
+  "  -J   [BeOS] Junk file attributes.  [MacOS] Ignore MacOS specific info.",
+  "  -K   [AtheOS, BeOS, Unix] Restore SUID/SGID/Tacky file attributes.",
+  "  -L   Convert to lowercase any names from uppercase only file system.",
+  "  -LL  Convert all files to lowercase.",
+  "  -M   Pipe all output through internal pager similar to Unix more(1).",
+  "  -n   Never overwrite existing files.  Skip extracting that file, no prompt.",
+  "  -N   [Amiga] Extract file comments as Amiga filenotes.",
+  "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
+  "         care.",
+  "  -P p Use password p to decrypt files.  THIS IS INSECURE!  Some OS show",
+  "         command line to other users.",
+  "  -q   Perform operations quietly.  The more q (as in -qq) the quieter.",
+  "  -s   [OS/2, NT, MS-DOS] Convert spaces in filenames to underscores.",
+  "  -S   [VMS] Convert text files (-a, -aa) into Stream_LF format.",
+  "  -U   [UNICODE enabled] Show non-local characters as #Uxxxx or #Lxxxxxx ASCII",
+  "         text escapes where x is hex digit.  [Old] -U used to leave names",
+  "         uppercase if created on MS-DOS, VMS, etc.  See -L.",
+  "  -UU  [UNICODE enabled] Disable use of stored UTF-8 paths.  Note that UTF-8",
+  "         paths stored as native local paths are still processed as Unicode.",
+  "  -V   Retain VMS file version numbers.",
+  "  -W   [Only if WILD_STOP_AT_DIR] Modify pattern matching so ? and * do not",
+  "         match directory separator /, but ** does.  Allows matching at specific",
+  "         directory levels.",
+  "  -X   [VMS, Unix, OS/2, NT] Restore UICs under VMS, or UIDs/GIDs under Unix,",
+  "         or ACLs under certain network-enabled versions of OS/2, or security",
+  "         ACLs under Windows NT.  Can require user privileges.",
+  "  -XX  [NT] Use privileges for extraction.",
+  "  -Y   [VMS] Treat archived name endings of .nnn as VMS version numbers.",
+  "  -$   [MS-DOS, OS/2, NT] Restore volume label if extraction medium is",
+  "         removable.  -$$ allows fixed media (hard drives) to be labeled.",
+  "  -/ e [Acorn] Use e as extension list.",
+  "  -:   [All but Acorn, VM/CMS, MVS, Tandem] Allow extract archive members into",
+  "         locations outside of current extraction root folder.  This allows",
+  "         paths such as ../foo to be extracted above the current extraction",
+  "         directory, which can be a security problem.",
+  "  -^   [Unix] Allow control characters in names of extracted entries.  Usually",
+  "         this is not a good thing and should be avoided.",
+  "  -2   [VMS] Force unconditional conversion of names to ODS-compatible names.",
+  "         Default is to exploit destination file system, preserving cases and",
+  "         extended name characters on ODS5 and applying ODS2 filtering on ODS2.",
   "",
-  "Syntax:",
-  "  The full command line syntax is:",
-  "",
-  "",
-  "",
-  "Listing files:",
-  "  -l        list the files in an archive",
   "",
   "Wildcards:",
   "  Internally unzip supports the following wildcards:",
@@ -2121,35 +2273,29 @@ static void help_extended(__G)
   "    *       matches any number of characters, including zero",
   "    [list]  matches char in list (regex), can do range [ac-f], all but [!bf]",
   "  If port supports [], must escape [ as [[]",
-  "  For shells that expand wildcards, escape (\\* or \"*\") so zip can recurse",
-  "    zip zipfile -r . -i \"*.h\"",
-  "",
+  "  For shells that expand wildcards, escape (\\* or \"*\") so unzip can recurse.",
   "",
   "Include and Exclude:",
   "  -i pattern pattern ...   include files that match a pattern",
   "  -x pattern pattern ...   exclude files that match a pattern",
   "  Patterns are paths with optional wildcards and match paths as stored in",
-  "  archive.  Exclude and include lists end at next option, @, or end of line.",
+  "  archive.  Exclude and include lists end at next option or end of line.",
   "    unzip archive -x pattern pattern ...",
   "",
-  "End Of Line Translation (text files only):",
-  "",
-  "Splits (archives created as a set of split files):",
-  "  Currently split archives are not readable by UnZip.  A workaround is",
+  "Multi-part (split) archives (archives created as a set of split files):",
+  "  Currently split archives are not readable by unzip.  A workaround is",
   "  to use zip to convert the split archive to a single-file archive and",
-  "  use unzip on that.",
-  "",
+  "  use unzip on that.  See the manual page for Zip 3.0 or later.",
   "",
   "Streaming (piping into unzip):",
   "  Currently unzip does not support streaming.  The funzip utility can be",
   "  used to process the first entry in a stream.",
   "    cat archive | funzip",
   "",
-  "",
-  "",
   "Testing archives:",
   "  -t        test contents of archive",
-  "",
+  "  This can be modified using -q for quieter operation, and -qq for even",
+  "  quieter operation.",
   "",
   "Unicode:",
   "  If compiled with Unicode support, unzip automatically handles archives",
@@ -2159,9 +2305,29 @@ static void help_extended(__G)
   "  or #Lxxxxxx where it doesn't, where x is the ASCII character for a hex",
   "  digit.",
   "",
+  "",
+  "zipinfo options (these are used in zipinfo mode (unzip -Z ...)):",
+  "  -1  List names only, one per line.  No headers/trailers.  Good for scripts.",
+  "  -2  List names only as -1, but include headers, trailers, and comments.",
+  "  -s  List archive entries in short Unix ls -l format.  Default list format.",
+  "  -m  List in long Unix ls -l format.  As -s, but includes compression %.",
+  "  -l  List in long Unix ls -l format.  As -m, but compression in bytes.",
+  "  -v  List zipfile information in verbose, multi-page format.",
+  "  -h  List header line.  Includes archive name, actual size, total files.",
+  "  -M  Pipe all output through internal pager similar to Unix more(1) command.",
+  "  -t  List totals for files listed or for all files.  Includes uncompressed",
+  "        and compressed sizes, and compression factors.",
+  "  -T  Print file dates and times in a sortable decimal format (yymmdd.hhmmss)",
+  "        Default date and time format is a more human-readable version.",
+  "  -U  [UNICODE] If entry has a UTF-8 Unicode path, display any characters",
+  "        not in current character set as text #Uxxxx and #Lxxxxxx escapes",
+  "        representing the Unicode character number of the character in hex.",
+  "  -UU [UNICODE]  Disable use of any UTF-8 path information.",
+  "  -z  Include archive comment if any in listing.",
+  "",
+  "",
   "Self extractor:",
   "",
-  "More option highlights (see manual for additional options and details):",
   ""
     };
 
@@ -2319,9 +2485,9 @@ static void show_version_info(__G)
           LoadFarStringSmall(TimeStamp)));
         ++numopts;
 #endif
-#ifdef UNIXBACKUP
+#ifdef FILEBACKUP
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
-          LoadFarStringSmall(UnixBackup)));
+          LoadFarStringSmall(FileBackup)));
         ++numopts;
 #endif
 #ifdef USE_EF_UT_TIME
