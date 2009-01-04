@@ -947,8 +947,10 @@ int checkdir(__G__ pathcomp, flag)
                  * to create more than one level, but why really necessary?) */
                 if (mkdir(tmproot, 0777) == -1) {
                     Info(slide, 1, ((char *)slide,
-                      "checkdir:  cannot create extraction directory: %s\n",
-                      FnFilter1(tmproot)));
+                      "checkdir:  cannot create extraction directory: %s\n\
+                 %s\n",
+                      FnFilter1(tmproot),
+                      strerror(errno)));
                     free(tmproot);
                     G.rootlen = 0;
                     /* path didn't exist, tried to create, and failed: */

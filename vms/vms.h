@@ -40,6 +40,7 @@
 #define sys$read SYS$READ
 #define sys$rewind SYS$REWIND
 #define sys$search SYS$SEARCH
+#define sys$setdfprot SYS$SETDFPROT
 #define sys$synch SYS$SYNCH
 #define sys$wait SYS$WAIT
 #define sys$write SYS$WRITE
