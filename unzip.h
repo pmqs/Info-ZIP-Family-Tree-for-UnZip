@@ -2,7 +2,7 @@
 
   unzip.h (new)
 
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -11,13 +11,13 @@
 
   ---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------
-This is version 2007-Mar-04 of the Info-ZIP license.
+This is version 2009-Jan-02 of the Info-ZIP license.
 The definitive version of this document should be available at
 ftp://ftp.info-zip.org/pub/infozip/license.html indefinitely and
 a copy at http://www.info-zip.org/pub/infozip/license.html.
 
 
-Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
 For the purposes of this copyright and license, "Info-ZIP" is defined as
 the following set of individuals:
@@ -47,11 +47,13 @@ freely, subject to the above disclaimer and the following restrictions:
     2. Redistributions in binary form (compiled executables and libraries)
        must reproduce the above copyright notice, definition, disclaimer,
        and this list of conditions in documentation and/or other materials
-       provided with the distribution.  The sole exception to this condition
-       is redistribution of a standard UnZipSFX binary (including SFXWiz) as
-       part of a self-extracting archive; that is permitted without inclusion
-       of this license, as long as the normal SFX banner has not been removed
-       from the binary or disabled.
+       provided with the distribution.  Additional documentation is not needed
+       for executables where a command line license option provides these and
+       a note regarding this option is in the executable's startup banner.  The
+       sole exception to this condition is redistribution of a standard
+       UnZipSFX binary (including SFXWiz) as part of a self-extracting archive;
+       that is permitted without inclusion of this license, as long as the
+       normal SFX banner has not been removed from the binary or disabled.
 
     3. Altered versions--including, but not limited to, ports to new operating
        systems, existing ports with new graphical interfaces, versions with
@@ -303,6 +305,10 @@ freely, subject to the above disclaimer and the following restrictions:
 #  endif
 #endif
 
+/* NO_UNIXBACKUP overrides UNIXBACKUP */
+#if defined(NO_UNIXBACKUP) && defined(UNIXBACKUP)
+#  undef UNIXBACKUP
+#endif
 
 /*---------------------------------------------------------------------------
     Grab system-specific public include headers.
@@ -461,14 +467,16 @@ typedef struct _UzpOpts {
 #ifdef TANDEM
     int bflag;          /* -b: create text files in 'C' format (180)*/
 #endif
+#if defined(UNIX) || defined(OS2) || defined(WIN32)
+    int B_flag;         /* -B: back up existing files by renaming to *~##### */
+#else
 #ifdef UNIXBACKUP
-    int B_flag;         /* -B: back up existing files by renaming to *~ first */
+    int B_flag;         /* -B: back up existing files by renaming to *~##### */
+#endif
 #endif
     int cflag;          /* -c: output to stdout */
     int C_flag;         /* -C: match filenames case-insensitively */
-#if (!defined(NO_TIMESTAMPS))
     int D_flag;         /* -D: don't restore directory (-DD: any) timestamps */
-#endif
 #ifdef MACOS
     int E_flag;         /* -E: [MacOS] show Mac extra field during restoring */
 #endif
@@ -484,8 +492,7 @@ typedef struct _UzpOpts {
     int scanimage;      /* -I: scan image files */
 #endif
     int jflag;          /* -j: junk pathnames (unzip) */
-#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS) || \
- (defined( UNIX) && defined( __APPLE__)))
+#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS))
     int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS e. f. info (unzip) */
 #endif
 #if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))

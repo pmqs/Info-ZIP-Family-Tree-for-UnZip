@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2005-Feb-10 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -151,10 +151,10 @@ static ZCONST char Far CannotOpenZipfile[] =
 #if (!defined(TANDEM))
 #if (defined(ATH_BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32))
    static ZCONST char Far CannotDeleteOldFile[] =
-     "error:  cannot delete old %s\n";
+     "error:  cannot delete old %s\n        %s\n";
 #ifdef UNIXBACKUP
    static ZCONST char Far CannotRenameOldFile[] =
-     "error:  cannot rename old %s\n";
+     "error:  cannot rename old %s\n        %s\n";
    static ZCONST char Far BackupSuffix[] = "~";
 #endif
 #endif /* ATH_BEO_THS_UNX || DOS_FLX_NLM_OS2_W32 */
@@ -163,7 +163,7 @@ static ZCONST char Far CannotOpenZipfile[] =
      "error:  %s: stat() says does not exist, but fopen() found anyway\n";
 #endif
    static ZCONST char Far CannotCreateFile[] =
-    "error:  cannot create %s\n        %s\n";
+     "error:  cannot create %s\n        %s\n";
 #endif /* !TANDEM */
 #endif /* !VMS && !AOS_VS && !CMS_MVS && !MACOS */
 
@@ -302,7 +302,7 @@ int open_outfile(__G)           /* return 1 if fail */
 #ifdef UNIXBACKUP
         if (uO.B_flag) {    /* do backup */
             char *tname;
-            struct stat tmpstat;
+            z_stat tmpstat;
             int blen, flen, tlen;
 
             blen = strlen(BackupSuffix);
@@ -333,13 +333,15 @@ int open_outfile(__G)           /* return 1 if fail */
                     unlink(tname);
             } else {
                 /* Check if backupname exists, and, if it's true, try
-                 * appending numbers of up to 5 digits to the BackupSuffix,
-                 * until an unused name is found.
+                 * appending numbers of up to 5 digits (or the maximum
+                 * "unsigned int" number on 16-bit systems) to the
+                 * BackupSuffix, until an unused name is found.
                  */
                 unsigned maxtail, i;
                 char *numtail = tname + flen + blen;
 
-                maxtail = 65535;
+                /* take account of the "unsigned" limit on 16-bit systems: */
+                maxtail = ( ((~0) >= 99999L) ? 99999 : (~0) );
                 switch (tlen - flen - blen - 1) {
                     case 4: maxtail = 9999; break;
                     case 3: maxtail = 999; break;
@@ -348,13 +350,14 @@ int open_outfile(__G)           /* return 1 if fail */
                     case 0: maxtail = 0; break;
                 }
                 /* while filename exists */
-                for (i = 0; (i <= maxtail) && (SSTAT(tname, &tmpstat) == 0);)
+                for (i = 0; (i < maxtail) && (SSTAT(tname, &tmpstat) == 0);)
                     sprintf(numtail,"%u", ++i);
             }
 
             if (rename(G.filename, tname) != 0) {   /* move file */
                 Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotRenameOldFile), FnFilter1(G.filename)));
+                  LoadFarString(CannotRenameOldFile),
+                  FnFilter1(G.filename), strerror(errno)));
                 free(tname);
                 return 1;
             }
@@ -380,7 +383,8 @@ int open_outfile(__G)           /* return 1 if fail */
 #endif /* NLM */
             if (unlink(G.filename) != 0) {
                 Info(slide, 0x401, ((char *)slide,
-                  LoadFarString(CannotDeleteOldFile), FnFilter1(G.filename)));
+                  LoadFarString(CannotDeleteOldFile),
+                  FnFilter1(G.filename), strerror(errno)));
                 return 1;
             }
             Trace((stderr, "open_outfile:  %s now deleted\n",
@@ -2141,7 +2145,8 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
 #ifdef WINDLL
             /* ran out of local mem -- had to cheat */
-            win_fprintf((zvoid *)&G, stdout, length, (char *)G.outbuf);
+            win_fprintf((zvoid *)&G, stdout, (extent)(q-G.outbuf),
+                        (char *)G.outbuf);
             win_fprintf((zvoid *)&G, stdout, 2, (char *)"\n\n");
 #else /* !WINDLL */
 #ifdef NOANSIFILT       /* GRR:  can ANSI be used with EBCDIC? */

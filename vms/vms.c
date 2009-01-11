@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -3991,13 +3991,9 @@ static ulg unix_to_vms[8]={ /* Map from UNIX rwx to VMS rwed */
                     /* not have that service, undef SETDFPROT.          */
                     /* IM: Maybe it's better to put this to Makefile    */
                     /* and DESCRIP.MMS */
-
 #ifdef SETDFPROT
-# ifndef sys$setdfprot
 extern int sys$setdfprot();
-# endif /* !sys$setdfprot */
-#endif /* SETDFPROT */
-
+#endif
 
 int mapattr(__G)
     __GDEF

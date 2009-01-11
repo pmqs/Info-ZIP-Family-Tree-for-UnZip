@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -93,7 +93,6 @@ static int setsignalhandler OF((__GPRO__ savsigs_info **p_savedhandler_chain,
                                 int signal_type, void (*newhandler)(int)));
 #endif
 #ifndef SFX
-static void  show_license       OF((__GPRO));
 static void  help_extended      OF((__GPRO));
 static void  show_version_info  OF((__GPRO));
 #endif
@@ -450,8 +449,8 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  ifdef TIMESTAMP
      static ZCONST char Far TimeStamp[] = "TIMESTAMP";
 #  endif
-#  ifdef FILEBACKUP
-     static ZCONST char Far FileBackup[] = "FILEBACKUP";
+#  ifdef UNIXBACKUP
+     static ZCONST char Far UnixBackup[] = "UNIXBACKUP";
 #  endif
 #  ifdef USE_EF_UT_TIME
      static ZCONST char Far Use_EF_UT_time[] = "USE_EF_UT_TIME";
@@ -588,21 +587,18 @@ Latest sources and executables are at ftp://ftp.info-zip.org/pub/infozip/ ;\
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-d exdir]\n \
  Default action is to extract files in list, to exdir;\n\
-  file[.zip] may be a wildcard.  %s\n\
-  unzip -L for license;  unzip -hh for more help.\n";
+  file[.zip] may be a wildcard.  %s\n";
 #else /* !MACOS */
 #ifdef VM_CMS
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d fm]\n \
  Default action is to extract files in list, except those in xlist, to disk fm;\
-\n  file[.zip] may be a wildcard.  %s\n\
-  unzip -L for license;  unzip -hh for more help.\n";
+\n  file[.zip] may be a wildcard.  %s\n";
 #else /* !VM_CMS */
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
  Default action is to extract files in list, except those in xlist, to exdir;\n\
-  file[.zip] may be a wildcard.  %s\n\
-  unzip -L for license;  unzip -hh for more help.\n";
+  file[.zip] may be a wildcard.  %s\n";
 #endif /* ?VM_CMS */
 #endif /* ?MACOS */
 
@@ -735,7 +731,6 @@ int unzip(__G__ argc, argv)
     int argc;
     char *argv[];
 {
-    int showing_license = 0;
 #ifndef NO_ZIPINFO
     char *p;
 #endif
@@ -762,6 +757,12 @@ int unzip(__G__ argc, argv)
     /* see if can use UTF-8 Unicode locale */
 # ifdef UTF8_MAYBE_NATIVE
     {
+#  if !(defined(NO_NL_LANGINFO) || defined(NO_LANGINFO_H))
+#     include <langinfo.h>
+      char *codeset = nl_langinfo(CODESET);
+
+      if (strcmp(codeset, "UTF-8") == 0) {
+#  else /* NO_NL_LANGINFO || NO_LANGINFO_H */
       /* Note: a "partial" locale specification (".UTF-8") is not valid. */
       char *loc = setlocale(LC_CTYPE, "en_US.UTF-8");
       char *ploc_coding;
@@ -769,6 +770,7 @@ int unzip(__G__ argc, argv)
       if ((loc != NULL) &&
           ((ploc_coding = strchr(loc, '.')) != NULL) &&
           (strcmp(ploc_coding, ".UTF-8") == 0)) {
+#  endif /* ?(NO_NL_LANGINFO || NO_LANGINFO_H) */
           /* Successfully set UTF-8 */
           G.native_is_utf8 = TRUE;
       } else {
@@ -1026,12 +1028,6 @@ int unzip(__G__ argc, argv)
     }
     ++p;
 
-    /* License */
-    if (argc == 2 && strncmp(argv[1], "-L", 2) == 0) {
-      show_license();
-      showing_license = 1;
-    }
-
 #ifdef THEOS
     if (strncmp(p, "ZIPINFO.",8) == 0 || strstr(p, ".ZIPINFO:") != NULL ||
         strncmp(p, "II.",3) == 0 || strstr(p, ".II:") != NULL ||
@@ -1058,7 +1054,7 @@ int unzip(__G__ argc, argv)
 #endif
     }
 
-    if (!showing_license && !error) {
+    if (!error) {
         /* Check the length of all passed command line parameters.
          * Command arguments might get sent through the Info() message
          * system, which uses the sliding window area as string buffer.
@@ -1084,7 +1080,7 @@ int unzip(__G__ argc, argv)
 
 #endif /* ?SFX */
 
-    if ((argc < 0) || error || showing_license) {
+    if ((argc < 0) || error) {
         retcode = error;
         goto cleanup_and_exit;
     }
@@ -1380,7 +1376,7 @@ int uz_opts(__G__ pargc, pargv)
                         uO.aflag = 0;
                     }
                     break;
-#ifdef FILEBACKUP
+#ifdef UNIXBACKUP
                 case ('B'): /* -B: back up existing files */
                     if (negative)
                         uO.B_flag = FALSE, negative = 0;
@@ -2073,77 +2069,6 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
 
 #ifndef SFX
 
-/* Print license to stdout. */
-static void show_license(__G)
-    __GDEF
-{
-    extent i;             /* counter for license array */
-
-    /* license array */
-    static ZCONST char Far *text[] = {
-"Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.",
-"",
-"For the purposes of this copyright and license, \"Info-ZIP\" is defined as",
-"the following set of individuals:",
-"",
-"   Mark Adler, John Bush, Karl Davis, Harald Denker, Jean-Michel Dubois,",
-"   Jean-loup Gailly, Hunter Goatley, Ed Gordon, Ian Gorman, Chris Herborth,",
-"   Dirk Haase, Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz,",
-"   David Kirschbaum, Johnny Lee, Onno van der Linden, Igor Mandrichenko,",
-"   Steve P. Miller, Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs,",
-"   Kai Uwe Rommel, Steve Salisbury, Dave Smith, Steven M. Schweda,",
-"   Christian Spieler, Cosmin Truta, Antoine Verheijen, Paul von Behren,",
-"   Rich Wales, Mike White",
-"",
-"This software is provided \"as is,\" without warranty of any kind, express",
-"or implied.  In no event shall Info-ZIP or its contributors be held liable",
-"for any direct, indirect, incidental, special or consequential damages",
-"arising out of the use of or inability to use this software.",
-"",
-"Permission is granted to anyone to use this software for any purpose,",
-"including commercial applications, and to alter it and redistribute it",
-"freely, subject to the above disclaimer and the following restrictions:",
-"",
-"    1. Redistributions of source code (in whole or in part) must retain",
-"       the above copyright notice, definition, disclaimer, and this list",
-"       of conditions.",
-"",
-"    2. Redistributions in binary form (compiled executables and libraries)",
-"       must reproduce the above copyright notice, definition, disclaimer,",
-"       and this list of conditions in documentation and/or other materials",
-"       provided with the distribution.  The sole exception to this condition",
-"       is redistribution of a standard UnZipSFX binary (including SFXWiz) as",
-"       part of a self-extracting archive; that is permitted without inclusion",
-"       of this license, as long as the normal SFX banner has not been removed",
-"       from the binary or disabled.",
-"",
-"    3. Altered versions--including, but not limited to, ports to new operating",
-"       systems, existing ports with new graphical interfaces, versions with",
-"       modified or added functionality, and dynamic, shared, or static library",
-"       versions not from Info-ZIP--must be plainly marked as such and must not",
-"       be misrepresented as being the original source or, if binaries,",
-"       compiled from the original source.  Such altered versions also must not",
-"       be misrepresented as being Info-ZIP releases--including, but not",
-"       limited to, labeling of the altered versions with the names \"Info-ZIP\"",
-"       (or any variation thereof, including, but not limited to, different",
-"       capitalizations), \"Pocket UnZip,\" \"WiZ\" or \"MacZip\" without the",
-"       explicit permission of Info-ZIP.  Such altered versions are further",
-"       prohibited from misrepresentative use of the Zip-Bugs or Info-ZIP",
-"       e-mail addresses or the Info-ZIP URL(s), such as to imply Info-ZIP",
-"       will provide support for the altered versions.",
-"",
-"    4. Info-ZIP retains the right to use the names \"Info-ZIP,\" \"Zip,\" \"UnZip,\"",
-"       \"UnZipSFX,\" \"WiZ,\" \"Pocket UnZip,\" \"Pocket Zip,\" and \"MacZip\" for its",
-"       own source and binary releases."
-    };
-
-    for (i = 0; i < sizeof(text)/sizeof(char *); i++)
-    {
-        Info(slide, 0, ((char *)slide, "%s\n", text[i]));
-    }
-} /* end function show_license() */
-
-
 /* Print extended help to stdout. */
 static void help_extended(__G)
     __GDEF
@@ -2151,7 +2076,7 @@ static void help_extended(__G)
     extent i;             /* counter for help array */
 
     /* help array */
-    static ZCONST char Far *text[] = {
+    static ZCONST char *text[] = {
   "",
   "Extended Help for UnZip",
   "",
@@ -2186,11 +2111,12 @@ static void help_extended(__G)
   "  unzip -Z options archive[.zip] [file ...] [-x xfile ...]",
   "",
   "Below, Mac OS refers to Mac OS before Mac OS X.  Mac OS X is a Unix based",
-  "port and is referred to as Unix Apple.",
+  "port and is referred to as Unix Apple.]",
   "",
   "",
   "unzip options:",
   "  -Z   Switch to zipinfo mode.  Must be first option.",
+  "  -hh  Display extended help.",
   "  -A   [OS/2, Unix DLL] Print extended help for DLL.",
   "  -c   Extract files to stdout/screen.  As -p but include names.  Also,",
   "         -a allowed and EBCDIC conversions done if needed.",
@@ -2326,8 +2252,49 @@ static void help_extended(__G)
   "  -z  Include archive comment if any in listing.",
   "",
   "",
-  "Self extractor:",
+  "funzip stream extractor:",
+  "  funzip extracts the first member in an archive to stdout.  Typically",
+  "  used to unzip the first member of a stream or pipe.  If a file argument",
+  "  is given, read from that file instead of stdin.",
   "",
+  "funzip command line:",
+  "  funzip [-password] [input[.zip|.gz]]",
+  "",
+  "",
+  "unzipsfx self extractor:",
+  "  Self-extracting archives made with unzipsfx are no more (or less)",
+  "  portable across different operating systems than unzip executables.",
+  "  In general, a self-extracting archive made on a particular Unix system,",
+  "  for example, will only self-extract under the same flavor of Unix.",
+  "  Regular unzip may still be used to extract embedded archive however.",
+  "",
+  "unzipsfx command line:",
+  "  <unzipsfx+archive_filename>  [-options] [file(s) ... [-x xfile(s) ...]]",
+  "",
+  "unzipsfx options:",
+  "  -c, -p - Output to pipe.  (See above for unzip.)",
+  "  -f, -u - Freshen and Update, as for unzip.",
+  "  -t     - Test embedded archive.  (Can be used to list contents.)",
+  "  -z     - Print archive comment.  (See unzip above.)",
+  "",
+  "unzipsfx modifiers:",
+  "  Most unzip modifiers are supported.  These include",
+  "  -a     - Convert text files.",
+  "  -n     - Never overwrite.",
+  "  -o     - Overwrite without prompting.",
+  "  -q     - Quiet operation.",
+  "  -C     - Match names case-insensitively.",
+  "  -j     - Junk paths.",
+  "  -V     - Keep version numbers.",
+  "  -s     - Convert spaces to underscores.",
+  "  -$     - Restore volume label.",
+  "",
+  "If unzipsfx compiled with SFX_EXDIR defined, -d option also available:",
+  "  -d exd - Extract to directory exd.",
+  "By default, all files extracted to current directory.  This option",
+  "forces extraction to specified directory.",
+  "",
+  "See unzipsfx manual page for more information.",
   ""
     };
 
@@ -2485,9 +2452,9 @@ static void show_version_info(__G)
           LoadFarStringSmall(TimeStamp)));
         ++numopts;
 #endif
-#ifdef FILEBACKUP
+#ifdef UNIXBACKUP
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
-          LoadFarStringSmall(FileBackup)));
+          LoadFarStringSmall(UnixBackup)));
         ++numopts;
 #endif
 #ifdef USE_EF_UT_TIME

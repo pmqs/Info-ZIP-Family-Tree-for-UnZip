@@ -38,14 +38,24 @@ Option Explicit
 '---------------------------------------------------------------
 '--
 '-- Modified August 17, 1998
-'-- by Christian Spieler
-'-- (implemented sort of a "real" user interface)
+'--  by Christian Spieler
+'--  (implemented sort of a "real" user interface)
 '-- Modified May 11, 2003
-'-- by Christian Spieler
-'-- (use late binding for referencing the common dialog)
-'-- Modified Feb 01, 2008
-'-- by Christian Spieler
-'-- (adapted DLL interface changes, fixed UZDLLPass callback)
+'--  by Christian Spieler
+'--  (use late binding for referencing the common dialog)
+'-- Modified February 01, 2008
+'--  by Christian Spieler
+'--  (adapted DLL interface changes, fixed UZDLLPass callback)
+'-- Modified December 08, 2008 to December 30, 2008
+'--  by Ed Gordon
+'--  Updated sample project for UnZip 6.0 unzip32.dll
+'--  (support UnZip 6.0 flags and structures)
+'-- Modified January 03, 2009
+'--  by Christian Spieler
+'--  (better solution for overwrite_all handling, use Double
+'--  instead of Currency to stay safe against number overflow,
+'--  corrected UZDLLServ_I32() calling interface,
+'--  removed code that is unsupported under VB5)
 '--
 '---------------------------------------------------------------
 
@@ -66,6 +76,7 @@ End Type
 
 '-- UNZIP32.DLL DCL Structure
 Private Type DCLIST
+  StructVersID      As Long    ' Currently version 6 of this structure
   ExtractOnlyNewer  As Long    ' 1 = Extract Only Newer/New, Else 0
   SpaceToUnderscore As Long    ' 1 = Convert Space To Underscore, Else 0
   PromptToOverwrite As Long    ' 1 = Prompt To Overwrite Required, Else 0
@@ -79,8 +90,10 @@ Private Type DCLIST
   noflag            As Long    ' 1 = Overwrite Files, Else 0
   naflag            As Long    ' 1 = Convert CR To CRLF, Else 0
   nZIflag           As Long    ' 1 = Zip Info Verbose, Else 0
+  B_flag            As Long    ' 1 = Backup existing files, Else 0
   C_flag            As Long    ' 1 = Case Insensitivity, 0 = Case Sensitivity
   D_flag            As Long    ' Timestamp restoration, 0 = All, 1 = Files, 2 = None
+  U_flag            As Long    ' 0 = Unicode enabled, 1 = Escape chars, 2 = No Unicode
   fPrivilege        As Long    ' 1 = ACL, 2 = Privileges
   Zip               As String  ' The Zip Filename To Extract Files
   ExtractDir        As String  ' The Extraction Directory, NULL If Extracting To Current Dir
@@ -88,17 +101,25 @@ End Type
 
 '-- UNZIP32.DLL Userfunctions Structure
 Private Type USERFUNCTION
-  UZDLLPrnt     As Long     ' Pointer To Apps Print Function
-  UZDLLSND      As Long     ' Pointer To Apps Sound Function
-  UZDLLREPLACE  As Long     ' Pointer To Apps Replace Function
-  UZDLLPASSWORD As Long     ' Pointer To Apps Password Function
-  UZDLLMESSAGE  As Long     ' Pointer To Apps Message Function
-  UZDLLSERVICE  As Long     ' Pointer To Apps Service Function (Not Coded!)
-  TotalSizeComp As Long     ' Total Size Of Zip Archive
-  TotalSize     As Long     ' Total Size Of All Files In Archive
-  CompFactor    As Long     ' Compression Factor
-  NumMembers    As Long     ' Total Number Of All Files In The Archive
-  cchComment    As Integer  ' Flag If Archive Has A Comment!
+  UZDLLPrnt         As Long     ' Pointer To Apps Print Function
+  UZDLLSND          As Long     ' Pointer To Apps Sound Function
+  UZDLLREPLACE      As Long     ' Pointer To Apps Replace Function
+  UZDLLPASSWORD     As Long     ' Pointer To Apps Password Function
+  ' 64-bit versions (VB6 does not support passing 64-bit values!)
+  UZDLLMESSAGE      As Long     ' Pointer To Apps Message Function (Not Used!)
+  UZDLLSERVICE      As Long     ' Pointer To Apps Service Function (Not Used!)
+  ' 32-bit versions
+  UZDLLMESSAGE_I32  As Long     ' Pointer To Apps Message Function
+  UZDLLSERVICE_I32  As Long     ' Pointer To Apps Service Function
+  ' All 64-bit values passed as low and high parts!
+  TotalSizeComp_Lo  As Long     ' Total Size Of Zip Archive (low 32 bits)
+  TotalSizeComp_Hi  As Long     ' Total Size Of Zip Archive (high 32 bits)
+  TotalSize_Lo      As Long     ' Total Size Of All Files In Archive (low 32)
+  TotalSize_Hi      As Long     ' Total Size Of All Files In Archive (high 32)
+  NumMembers_Lo     As Long     ' Total Number Of All Files In The Archive (low 32)
+  NumMembers_Hi     As Long     ' Total Number Of All Files In The Archive (high 32)
+  CompFactor        As Long     ' Compression Factor
+  cchComment        As Integer  ' Flag If Archive Has A Comment!
 End Type
 
 '-- UNZIP32.DLL Version Structure
@@ -114,7 +135,13 @@ Private Type UZPVER
   windll(1 To 4)  As Byte         ' Version Type Windows DLL
 End Type
 
-'-- This Assumes UNZIP32.DLL Is In Your \Windows\System Directory!
+'-- This assumes UNZIP32.DLL is somewhere on your execution path!
+'-- ("execution path" means: the directory where this VB6 executable
+'-- is stored, your current working directory in effect when the
+'-- VB6 program starts and the folder list of your command path.
+'-- Normally, the Windows system directory is on your command path,
+'-- so installing the UNZIP32.DLL in the Windows System Directory
+'-- should always work.
 Private Declare Function Wiz_SingleEntryUnzip Lib "unzip32.dll" _
   (ByVal ifnc As Long, ByRef ifnv As UNZIPnames, _
    ByVal xfnc As Long, ByRef xfnv As UNZIPnames, _
@@ -167,21 +194,29 @@ Public Function FnPtr(ByVal lp As Long) As Long
 End Function
 
 '-- Callback For UNZIP32.DLL - Receive Message Function
-Public Sub UZReceiveDLLMessage(ByVal ucsize As Long, _
-    ByVal csiz As Long, _
+Public Sub UZReceiveDLLMessage_I32( _
+    ByVal ucsize_lo As Long, _
+    ByVal ucsize_hi As Long, _
+    ByVal csiz_lo As Long, _
+    ByVal csiz_hi As Long, _
     ByVal cfactor As Integer, _
     ByVal mo As Integer, _
     ByVal dy As Integer, _
     ByVal yr As Integer, _
     ByVal hh As Integer, _
     ByVal mm As Integer, _
-    ByVal c As Byte, ByRef fname As UNZIPCBCh, _
-    ByRef meth As UNZIPCBCh, ByVal crc As Long, _
+    ByVal c As Byte, _
+    ByRef fname As UNZIPCBCh, _
+    ByRef meth As UNZIPCBCh, _
+    ByVal crc As Long, _
     ByVal fCrypt As Byte)
 
   Dim s0     As String
   Dim xx     As Long
+  Dim cCh    As Byte
   Dim strout As String * 80
+  Dim ucsize As Double
+  Dim csiz   As Double
 
   '-- Always Put This In Callback Routines!
   On Error Resume Next
@@ -196,10 +231,10 @@ Public Sub UZReceiveDLLMessage(ByVal ucsize As Long, _
 
   '-- For Zip Message Printing
   If uZipNumber = 0 Then
-    Mid(strout, 1, 50) = "Filename:"
-    Mid(strout, 53, 4) = "Size"
-    Mid(strout, 62, 4) = "Date"
-    Mid(strout, 71, 4) = "Time"
+    Mid$(strout, 1, 50) = "Filename:"
+    Mid$(strout, 53, 4) = "Size"
+    Mid$(strout, 62, 4) = "Date"
+    Mid$(strout, 71, 4) = "Time"
     uZipMessage = strout & vbNewLine
     strout = Space$(80)
   End If
@@ -207,22 +242,25 @@ Public Sub UZReceiveDLLMessage(ByVal ucsize As Long, _
   s0 = ""
 
   '-- Do Not Change This For Next!!!
-  For xx = 0 To 255
+  For xx = 0 To UBound(fname.ch)
     If fname.ch(xx) = 0 Then Exit For
     s0 = s0 & Chr$(fname.ch(xx))
   Next
+  
+  ucsize = CnvI64Struct2Dbl(ucsize_lo, ucsize_hi)
+  csiz = CnvI64Struct2Dbl(csiz_lo, csiz_hi)
 
   '-- Assign Zip Information For Printing
   Mid$(strout, 1, 50) = Mid$(s0, 1, 50)
-  Mid$(strout, 51, 7) = Right$("        " & CStr(ucsize), 7)
-  Mid$(strout, 60, 3) = Right$("0" & Trim$(CStr(mo)), 2) & "/"
-  Mid$(strout, 63, 3) = Right$("0" & Trim$(CStr(dy)), 2) & "/"
-  Mid$(strout, 66, 2) = Right$("0" & Trim$(CStr(yr)), 2)
-  Mid$(strout, 70, 3) = Right$(Str$(hh), 2) & ":"
-  Mid$(strout, 73, 2) = Right$("0" & Trim$(CStr(mm)), 2)
+  Mid$(strout, 51, 9) = Right$("        " & CStr(ucsize), 9)
+  Mid$(strout, 62, 3) = Right$("0" & Trim$(CStr(mo)), 2) & "/"
+  Mid$(strout, 65, 3) = Right$("0" & Trim$(CStr(dy)), 2) & "/"
+  Mid$(strout, 68, 2) = Right$("0" & Trim$(CStr(yr)), 2)
+  Mid$(strout, 72, 3) = Right$(Str$(hh), 2) & ":"
+  Mid$(strout, 75, 2) = Right$("0" & Trim$(CStr(mm)), 2)
 
-  ' Mid(strout, 75, 2) = Right$(" " & CStr(cfactor), 2)
-  ' Mid(strout, 78, 8) = Right$("        " & CStr(csiz), 8)
+  ' Mid$(strout, 77, 2) = Right$(" " & CStr(cfactor), 2)
+  ' Mid$(strout, 80, 8) = Right$("        " & CStr(csiz), 8)
   ' s0 = ""
   ' For xx = 0 To 255
   '     If meth.ch(xx) = 0 Then Exit For
@@ -240,6 +278,7 @@ Public Function UZDLLPrnt(ByRef fname As UNZIPCBChar, ByVal x As Long) As Long
 
   Dim s0 As String
   Dim xx As Long
+  Dim cCh As Byte
 
   '-- Always Put This In Callback Routines!
   On Error Resume Next
@@ -248,12 +287,20 @@ Public Function UZDLLPrnt(ByRef fname As UNZIPCBChar, ByVal x As Long) As Long
 
   '-- Gets The UNZIP32.DLL Message For Displaying.
   For xx = 0 To x - 1
-    If fname.ch(xx) = 0 Then Exit For
-    s0 = s0 & Chr$(fname.ch(xx))
+    cCh = fname.ch(xx)
+    Select Case cCh
+    Case 0
+      Exit For
+    Case 10
+      s0 = s0 & vbNewLine     ' Damn UNIX :-)
+    Case 92 ' = Asc("\")
+      s0 = s0 & "/"
+    Case Else
+      s0 = s0 & Chr$(cCh)
+    End Select
   Next
 
   '-- Assign Zip Information
-  If Mid$(s0, 1, 1) = vbLf Then s0 = vbNewLine ' Damn UNIX :-)
   uZipInfo = uZipInfo & s0
 
   UZDLLPrnt = 0
@@ -261,16 +308,20 @@ Public Function UZDLLPrnt(ByRef fname As UNZIPCBChar, ByVal x As Long) As Long
 End Function
 
 '-- Callback For UNZIP32.DLL - DLL Service Function
-Public Function UZDLLServ(ByRef mname As UNZIPCBChar, ByVal x As Long) As Long
+Public Function UZDLLServ_I32(ByRef mname As UNZIPCBChar, _
+         ByVal lUcSiz_Lo As Long, ByVal lUcSiz_Hi As Long) As Long
 
+    Dim UcSiz As Double
     Dim s0 As String
     Dim xx As Long
 
     '-- Always Put This In Callback Routines!
     On Error Resume Next
 
-    ' Parameter x contains the size of the extracted archive entry.
+    ' Parameter lUcSiz_Lo and lUcSiz_Hi contains the uncompressed size
+    ' of the extracted archive entry.
     ' This information may be used for some kind of progress display...
+    UcSiz = CnvI64Struct2Dbl(lUcSiz_Lo, lUcSiz_Hi)
 
     s0 = ""
     '-- Get Zip32.DLL Message For processing
@@ -279,9 +330,10 @@ Public Function UZDLLServ(ByRef mname As UNZIPCBChar, ByVal x As Long) As Long
         s0 = s0 & Chr$(mname.ch(xx))
     Next
     ' At this point, s0 contains the message passed from the DLL
+    ' (like the current file being extracted)
     ' It is up to the developer to code something useful here :)
 
-    UZDLLServ = 0 ' Setting this to 1 will abort the zip!
+    UZDLLServ_I32 = 0 ' Setting this to 1 will abort the zip!
 
 End Function
 
@@ -302,7 +354,7 @@ Public Function UZDLLPass(ByRef p As UNZIPCBCh, _
   If uVbSkip Then Exit Function
 
   '-- Get the Password prompt
-  For xx = 0 To 255
+  For xx = 0 To UBound(m.ch)
     If m.ch(xx) = 0 Then
       Exit For
     Else
@@ -313,7 +365,7 @@ Public Function UZDLLPass(ByRef p As UNZIPCBCh, _
     prompt = "Please Enter The Password!"
   Else
     prompt = prompt & " "
-    For xx = 0 To 255
+    For xx = 0 To UBound(Name.ch)
       If Name.ch(xx) = 0 Then
         Exit For
       Else
@@ -349,34 +401,41 @@ End Function
 '-- Callback For UNZIP32.DLL - Report Function To Overwrite Files.
 '-- This Function Will Display A MsgBox Asking The User
 '-- If They Would Like To Overwrite The Files.
-Public Function UZDLLRep(ByRef fname As UNZIPCBChar) As Long
+Public Function UZDLLReplacePrmt(ByRef fname As UNZIPCBChar) As Long
 
   Dim s0 As String
   Dim xx As Long
+  Dim cCh As Byte
 
   '-- Always Put This In Callback Routines!
   On Error Resume Next
 
-  UZDLLRep = 100 ' 100 = Do Not Overwrite - Keep Asking User
+  UZDLLReplacePrmt = 100   ' 100 = Do Not Overwrite - Keep Asking User
   s0 = ""
 
-  For xx = 0 To 255
-    If fname.ch(xx) = 0 Then Exit For
-    s0 = s0 & Chr$(fname.ch(xx))
+  For xx = 0 To UBound(fname.ch)
+    cCh = fname.ch(xx)
+    Select Case cCh
+    Case 0
+      Exit For
+    Case 92 ' = Asc("\")
+      s0 = s0 & "/"
+    Case Else
+      s0 = s0 & Chr$(cCh)
+    End Select
   Next
 
   '-- This Is The MsgBox Code
-  xx = MsgBox("Overwrite " & s0 & "?", vbExclamation & vbYesNoCancel, _
+  xx = MsgBox("Overwrite """ & s0 & """ ?", vbExclamation Or vbYesNoCancel, _
               "VBUnZip32 - File Already Exists!")
-
-  If xx = vbNo Then Exit Function
-
-  If xx = vbCancel Then
-    UZDLLRep = 104       ' 104 = Overwrite None
-    Exit Function
-  End If
-
-  UZDLLRep = 102         ' 102 = Overwrite, 103 = Overwrite All
+  Select Case xx
+  Case vbYes
+    UZDLLReplacePrmt = 102    ' 102 = Overwrite, 103 = Overwrite All
+  Case vbCancel
+    UZDLLReplacePrmt = 104    ' 104 = Overwrite None
+  Case Else
+    'keep the default as set at function entry.
+  End Select
 
 End Function
 
@@ -398,15 +457,30 @@ Public Function szTrim(szString As String) As String
 
 End Function
 
+'-- convert a 64-bit int divided in two Int32 variables into
+'-- a single 64-bit floating-point value
+Private Function CnvI64Struct2Dbl(ByVal lInt64Lo As Long, lInt64Hi As Long) As Double
+  If lInt64Lo < 0 Then
+    CnvI64Struct2Dbl = 2# ^ 32 + CDbl(lInt64Lo)
+  Else
+    CnvI64Struct2Dbl = CDbl(lInt64Lo)
+  End If
+  CnvI64Struct2Dbl = CnvI64Struct2Dbl + (2# ^ 32) * CDbl(lInt64Hi)
+End Function
+
 '-- Main UNZIP32.DLL UnZip32 Subroutine
 '-- (WARNING!) Do Not Change!
 Public Sub VBUnZip32()
 
   Dim retcode As Long
   Dim MsgStr As String
+  Dim TotalSizeComp As Double
+  Dim TotalSize As Double
+  Dim NumMembers As Double
 
   '-- Set The UNZIP32.DLL Options
   '-- (WARNING!) Do Not Change
+  UZDCL.StructVersID = 6                     ' Current version of this structure
   UZDCL.ExtractOnlyNewer = uExtractOnlyNewer ' 1 = Extract Only Newer/New
   UZDCL.SpaceToUnderscore = uSpaceUnderScore ' 1 = Convert Space To Underscore
   UZDCL.PromptToOverwrite = uPromptOverWrite ' 1 = Prompt To Overwrite Required
@@ -430,10 +504,10 @@ Public Sub VBUnZip32()
   '-- (WARNING!!!) Do Not Change
   UZUSER.UZDLLPrnt = FnPtr(AddressOf UZDLLPrnt)
   UZUSER.UZDLLSND = 0&    '-- Not Supported
-  UZUSER.UZDLLREPLACE = FnPtr(AddressOf UZDLLRep)
+  UZUSER.UZDLLREPLACE = FnPtr(AddressOf UZDLLReplacePrmt)
   UZUSER.UZDLLPASSWORD = FnPtr(AddressOf UZDLLPass)
-  UZUSER.UZDLLMESSAGE = FnPtr(AddressOf UZReceiveDLLMessage)
-  UZUSER.UZDLLSERVICE = FnPtr(AddressOf UZDLLServ)
+  UZUSER.UZDLLMESSAGE_I32 = FnPtr(AddressOf UZReceiveDLLMessage_I32)
+  UZUSER.UZDLLSERVICE_I32 = FnPtr(AddressOf UZDLLServ_I32)
 
   '-- Set UNZIP32.DLL Version Space
   '-- (WARNING!!!) Do Not Change
@@ -452,10 +526,10 @@ Public Sub VBUnZip32()
   '-- The Version Information!
   '--------------------------------------
   MsgStr$ = "DLL Date: " & szTrim(UZVER.date)
-  MsgStr$ = MsgStr$ & vbNewLine$ & "Zip Info: " & Hex$(UZVER.zipinfo(1)) & "." & _
-       Hex$(UZVER.zipinfo(2)) & Hex$(UZVER.zipinfo(3))
-  MsgStr$ = MsgStr$ & vbNewLine$ & "DLL Version: " & Hex$(UZVER.windll(1)) & "." & _
-       Hex$(UZVER.windll(2)) & Hex$(UZVER.windll(3))
+  MsgStr$ = MsgStr$ & vbNewLine$ & "Zip Info: " & Hex$(UZVER.zipinfo(1)) _
+       & "." & Hex$(UZVER.zipinfo(2)) & Hex$(UZVER.zipinfo(3))
+  MsgStr$ = MsgStr$ & vbNewLine$ & "DLL Version: " & Hex$(UZVER.windll(1)) _
+       & "." & Hex$(UZVER.windll(2)) & Hex$(UZVER.windll(3))
   MsgStr$ = MsgStr$ & vbNewLine$ & "--------------"
   '-- End Of Version Information.
 
@@ -466,17 +540,29 @@ Public Sub VBUnZip32()
   '---------------------------------------------------------------
 
   '-- If There Is An Error Display A MsgBox!
-  If retcode <> 0 Then MsgBox retcode
+  If retcode <> 0 Then _
+    MsgBox "UnZip DLL call returned error code #" & CStr(retcode), vbExclamation
 
+  '-- Add up 64-bit values
+  TotalSizeComp = CnvI64Struct2Dbl(UZUSER.TotalSizeComp_Lo, _
+                                   UZUSER.TotalSizeComp_Hi)
+  TotalSize = CnvI64Struct2Dbl(UZUSER.TotalSize_Lo, _
+                               UZUSER.TotalSize_Hi)
+  NumMembers = CnvI64Struct2Dbl(UZUSER.NumMembers_Lo, _
+                                UZUSER.NumMembers_Hi)
+  
   '-- You Can Change This As Needed!
   '-- For Compression Information
-  MsgStr$ = MsgStr$ & vbNewLine & "Only Shows If uExtractList = 1 List Contents"
+  MsgStr$ = MsgStr$ & vbNewLine & _
+       "Only Shows If uExtractList = 1 List Contents"
   MsgStr$ = MsgStr$ & vbNewLine & "--------------"
   MsgStr$ = MsgStr$ & vbNewLine & "Comment         : " & UZUSER.cchComment
-  MsgStr$ = MsgStr$ & vbNewLine & "Total Size Comp : " & UZUSER.TotalSizeComp
-  MsgStr$ = MsgStr$ & vbNewLine & "Total Size      : " & UZUSER.TotalSize
+  MsgStr$ = MsgStr$ & vbNewLine & "Total Size Comp : " _
+                    & Format$(TotalSizeComp, "#,0")
+  MsgStr$ = MsgStr$ & vbNewLine & "Total Size      : " _
+                    & Format$(TotalSize, "#,0")
   MsgStr$ = MsgStr$ & vbNewLine & "Compress Factor : %" & UZUSER.CompFactor
-  MsgStr$ = MsgStr$ & vbNewLine & "Num Of Members  : " & UZUSER.NumMembers
+  MsgStr$ = MsgStr$ & vbNewLine & "Num Of Members  : " & NumMembers
   MsgStr$ = MsgStr$ & vbNewLine & "--------------"
 
   VBUnzFrm.txtMsgOut.Text = VBUnzFrm.txtMsgOut.Text & MsgStr$ & vbNewLine

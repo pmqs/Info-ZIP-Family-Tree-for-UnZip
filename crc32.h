@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -14,7 +14,9 @@
 #ifndef __crc32_h
 #define __crc32_h       /* identifies this source module */
 
-#include "zip.h"
+/* This header should be read AFTER zip.h resp. unzip.h
+ * (the latter with UNZIP_INTERNAL defined...).
+ */
 
 #ifndef OF
 #  define OF(a) a

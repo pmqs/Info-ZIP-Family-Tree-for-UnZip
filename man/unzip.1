@@ -1,6 +1,6 @@
-.\"  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 .\"
-.\"  See the accompanying file LICENSE, version 2007-Mar-04 or later
+.\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
 .\"  If, for some reason, all these files are missing, the Info-ZIP license
 .\"  also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -20,12 +20,12 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "29 February 2008 (v6.0)" "Info-ZIP"
+.TH UNZIP 1L "20 January 2009 (v6.0)" "Info-ZIP"
 .SH NAME
 unzip \- list, test and extract compressed files in a ZIP archive
 .PD
 .SH SYNOPSIS
-\fBunzip\fP [\fB\-Z\fP] [\fB\-cflptTuvz\fP[\fBabjnoqsCDKLMVWX$/:\fP]]
+\fBunzip\fP [\fB\-Z\fP] [\fB\-cflptTuvz\fP[\fBabjnoqsCDKLMUVWX$/:\fP]]
 \fIfile\fP[\fI.zip\fP] [\fIfile(s)\fP\ .\|.\|.]
 [\fB\-x\fP\ \fIxfile(s)\fP\ .\|.\|.] [\fB\-d\fP\ \fIexdir\fP]
 .PD
@@ -235,10 +235,30 @@ record delimiters is disabled for binary (\fB\-b\fP) resp. all (\fB\-bb\fP)
 files.
 .TP
 .B \-B
-[Unix only, and only if compiled with UNIXBACKUP defined] save a backup copy
-of each overwritten file with a tilde appended (e.g., the old copy of
-``\fCfoo\fR'' is renamed to ``\fCfoo~\fR'').  This is similar to the default
-behavior of \fIemacs\fP(1) in many locations.
+[when compiled with UNIXBACKUP defined] save a backup copy of each
+overwritten file. The backup file is gets the name of the target file with
+a tilde and optionally a unique sequence number (up to 5 digits) appended.
+The sequence number is applied whenever another file with the original name
+plus tilde already exists.  When used together with the "overwrite all"
+option \fB\-o\fP, numbered backup files are never created. In this case,
+all backup files are named as the original file with an appended tilde,
+existing backup files are deleted without notice.
+This feature works similarly to the default behavior of \fIemacs\fP(1)
+in many locations.
+.IP
+Example: the old copy of ``\fCfoo\fR'' is renamed to ``\fCfoo~\fR''.
+.IP
+Warning: Users should be aware that the \fB-B\fP option does not prevent
+loss of existing data under all circumstances.  For example, when
+\fIunzip\fP is run in overwrite-all mode, an existing ``\fCfoo~\fR'' file
+is deleted before \fIunzip\fP attempts to rename ``\fCfoo\fR'' to
+``\fCfoo~\fR''.  When this rename attempt fails (because of a file locks,
+insufficient privileges, or ...), the extraction of ``\fCfoo~\fR'' gets
+cancelled, but the old backup file is already lost.  A similar scenario
+takes place when the sequence number range for numbered backup files gets
+exhausted (99999, or 65535 for 16-bit systems).  In this case, the backup
+file with the maximum sequence number is deleted and replaced by the new
+backup version without notice.
 .TP
 .B \-C
 use case-insensitive matching for the selection of archive entries
@@ -400,7 +420,18 @@ unless conversion (\fB\-a\fP, \fB\-aa\fP and/or \fB\-b\fP, \fB\-bb\fP) is
 requested or a VMS-specific entry is processed.)
 .TP
 .B \-U
-(obsolete; to be removed in a future release) leave filenames uppercase if
+[UNICODE_SUPPORT only] modify or disable UTF-8 handling.
+When UNICODE_SUPPORT is available, the option \fB\-U\fP forces \fIunzip\fP
+to escape all non-ASCII characters from UTF-8 coded filenames as ``#Uxxxx''
+(for UCS-2 characters, or ``#Lxxxxxx'' for unicode codepoints needing 3
+octets).  This option is mainly provided for debugging purpose when the
+fairly new UTF-8 support is suspected to mangle up extracted filenames.
+.IP
+The option \fB\-UU\fP allows to entirely disable the recognition of UTF-8
+encoded filenames.  The handling of filename codings within \fIunzip\fP falls
+back to the behaviour of previous versions.
+.IP
+[old, obsolete usage] leave filenames uppercase if
 created under MS-DOS, VMS, etc.  See \fB\-L\fP above.
 .TP
 .B \-V
@@ -839,8 +870,12 @@ status means.
 .SH BUGS
 Multi-part archives are not yet supported, except in conjunction with
 \fIzip\fP.  (All parts must be concatenated together in order, and then
-``\fCzip \-F\fR'' must be performed on the concatenated archive in order
-to ``fix'' it.)  This will definitely be corrected in the next major release.
+``\fCzip \-F\fR'' (for \fIzip 2.x\fP) or ``\fCzip \-FF\fR'' (for
+\fIzip 3.x\fP) must be performed on the concatenated archive in order to
+``fix'' it.  Also, \fIzip 3.0\fP and later can combine multi-part (split)
+archives into a combined single-file archive using ``\fCzip \-s\- inarchive
+-O outarchive\fR''.  See the \fIzip 3\fP manual page for more information.)
+This will definitely be corrected in the next major release.
 .PP
 Archives read from standard input are not yet supported, except with
 \fIfunzip\fP (and then only the first member of the archive can be extracted).
@@ -918,15 +953,16 @@ or
 .SH AUTHORS
 The primary Info-ZIP authors (current semi-active members of the Zip-Bugs
 workgroup) are:  Ed Gordon (Zip, general maintenance, shared code, Zip64,
-Win32, Unix); Christian Spieler (UnZip maintenance coordination, VMS, MS-DOS,
-Win32, shared code, general Zip and UnZip integration and optimization);
-Onno van der Linden (Zip); Mike White (Win32, Windows GUI, Windows DLLs);
-Kai Uwe Rommel (OS/2, Win32); Steven M. Schweda (VMS, support of new features);
-Paul Kienitz (Amiga, Win32); Chris Herborth (BeOS, QNX, Atari); Jonathan Hudson
-(SMS/QDOS); Sergio Monesi (Acorn RISC OS); Harald Denker (Atari, MVS);
-John Bush (Solaris, Amiga); Hunter Goatley (VMS, Info-ZIP Site maintenance);
-Steve Salisbury (Win32); Steve Miller (Windows CE GUI), Johnny Lee (MS-DOS,
-Win32, Zip64); and Dave Smith (Tandem NSK).
+Win32, Unix, Unicode); Christian Spieler (UnZip maintenance coordination,
+VMS, MS-DOS, Win32, shared code, general Zip and UnZip integration and
+optimization); Onno van der Linden (Zip); Mike White (Win32, Windows GUI,
+Windows DLLs); Kai Uwe Rommel (OS/2, Win32); Steven M. Schweda (VMS, Unix,
+support of new features); Paul Kienitz (Amiga, Win32, Unicode); Chris
+Herborth (BeOS, QNX, Atari); Jonathan Hudson (SMS/QDOS); Sergio Monesi
+(Acorn RISC OS); Harald Denker (Atari, MVS); John Bush (Solaris, Amiga);
+Hunter Goatley (VMS, Info-ZIP Site maintenance); Steve Salisbury (Win32);
+Steve Miller (Windows CE GUI), Johnny Lee (MS-DOS, Win32, Zip64); and Dave
+Smith (Tandem NSK).
 .PP
 The following people were former members of the Info-ZIP development group
 and provided major contributions to key parts of the current code:
@@ -991,6 +1027,6 @@ Info-ZIP (Zip-Bugs subgroup, SPC)
 Info-ZIP (Zip-Bugs subgroup, SPC)
 .IP "v5.52\t28 Feb 05"
 Info-ZIP (Zip-Bugs subgroup, SPC)
-.IP "v6.0\t29 Feb 08"
+.IP "v6.0\t20 Jan 09"
 Info-ZIP (Zip-Bugs subgroup, SPC)
 .PD

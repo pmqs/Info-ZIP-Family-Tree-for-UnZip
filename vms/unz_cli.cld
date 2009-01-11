@@ -1,5 +1,5 @@
 	Module		VMS_UNZIP_CLD
-	Ident		"03-002"
+	Ident		"03-003"
 
 Define	Verb		UNZIP
 	Parameter	P1, Label=ZIPFILE, Prompt="Zip file"

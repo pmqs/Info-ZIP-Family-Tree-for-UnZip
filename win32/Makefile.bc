@@ -4,7 +4,7 @@
 #
 # Tested with Borland C++ 5.5 (may work with older C++Builder 3.0, too)
 #
-# Last revised: 10 Nov 2007 (Christian Spieler)
+# Last revised: 07 Sep 2008 (Christian Spieler)
 #
 #
 
@@ -196,7 +196,7 @@ guisfx: SFXWiz32.exe
 lib:    $(OBDIR) $(OB)unzip32.lib
 all:    unzips dll dllsample guisfx lib
 
-unzip.exe:      $(OBJU)
+unzip.exe:      $(OBJU) winapp.res
 	$(CC) $(LDFLAGS) -e$@ @&&|
 $(OBJU)
 |
@@ -244,6 +244,7 @@ $(OB)unzip32.lib: $(OBJB)
 clean:
 	rem Ignore any errors in the following...
 	-del *.obj
+	-del winapp.res
 	-del unzip.exe
 	-del funzip.exe
 	-del unzipsfx.exe
@@ -372,6 +373,9 @@ ntx.obj:        win32/nt.c $(UNZIP_H) win32/nt.h
 
 uzexampl.obj:   windll/uzexampl.c windll/uzexampl.h
 	$(CC) -c $(UNFLAGS) -I./windll -o$@ windll/uzexampl.c
+
+winapp.res:	win32/winapp.rc unzvers.h
+	$(RC) /l 0x409 /fo$@ /i win32 /d WIN32 win32/winapp.rc
 
 # DLL compilation section
 api.obj:        api.c $(UNZIP_H) $(WINDLL_H) unzvers.h

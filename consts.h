@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -52,25 +52,3 @@ ZCONST char Far ExclFilenameNotMatched[] =
   ZCONST char Far Zipnfo[] = "zipinfo";
   ZCONST char Far CompiledWith[] = "Compiled with %s%s for %s%s%s%s.\n\n";
 #endif
-
-/* Messages used in extract.c and vms/vms.c.
- * Strictly speaking, vms/vms.c uses AssumeNo[], not AssumeNone[], but
- * they should look similar, and if they were separated, they'd likely
- * diverge, so here they are, together.  Watch for changes in wording in
- * the query messages (which might be better here, too, for the same
- * consistency reasons).
- */
-
-#ifndef WINDLL
-  ZCONST char Far AssumeNone[] =
-    "\n(EOF or read error.  Treating as \"[N]one\" ...)\n";
-
-#  ifdef VMS
-  ZCONST char Far AssumeNo[] =
-    "\n(EOF or read error.  Treating as \"[N]o extract (all)\" ...)\n";
-#  endif /* def VMS */
-
-  ZCONST char Far InvalidResponse[] =
-    "error:  invalid response [%.1s]\n";
-#endif /* ndef WINDLL */
-

@@ -48,7 +48,7 @@
      By default, Zip uses (and UnZip supports) the "deflate" compression
      method.  To add support for the optional "bzip2" compression method,
      first obtain and build the bzip2 software (http://www.bzip.org/ or,
-     for a more VMS-friendly kit, http://antinode.org/dec/sw/bzip2.html).
+     for a more VMS-friendly kit, http://antinode.info/dec/sw/bzip2.html).
      Then, define the macro IZ_BZIP2 on the BUILD_UNZIP.COM or MMS/MMK
      command line to specify the directory where the bzip2 files may be
      found.  For example:

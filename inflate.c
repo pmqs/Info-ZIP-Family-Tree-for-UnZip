@@ -351,14 +351,16 @@
 #endif
 
 /* Check for incompatible combinations of zlib and Deflate64 support. */
-#if defined(USE_DEFLATE64) && !USE_ZLIB_INFLATCB
- #error Deflate64 is incompatible with traditional (pre-1.2.x) zlib interface!
-#else
- /* The support for Deflate64 callback function in the framework of zlib 1.2.x
-    requires the inclusion of the unsupported infback9 header file:
-  */
-# include "infback9.h"
-#endif
+#if defined(USE_DEFLATE64)
+# if !USE_ZLIB_INFLATCB
+  #error Deflate64 is incompatible with traditional (pre-1.2.x) zlib interface!
+# else
+   /* The Deflate64 callback function in the framework of zlib 1.2.x requires
+      the inclusion of the unsupported infback9 header file:
+    */
+#  include "infback9.h"
+# endif
+#endif /* USE_DEFLATE64 */
 
 
 #if USE_ZLIB_INFLATCB
@@ -491,7 +493,7 @@ int UZinflate(__G__ is_defl64)
         }
     }
     else
-#endif
+#endif /* USE_DEFLATE64 */
     {
         /* For the callback interface, inflate initialization has to
            be called before each decompression call.

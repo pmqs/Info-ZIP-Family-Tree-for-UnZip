@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -91,55 +91,84 @@ typedef void (WINAPI DLLMESSAGE_I32) (unsigned long ucsiz_l,
     char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
 
 typedef struct {
-DLLPRNT *print;
-DLLSND *sound;
-DLLREPLACE *replace;
-DLLPASSWORD *password;
-DLLMESSAGE *SendApplicationMessage;
-DLLSERVICE *ServCallBk;
-DLLMESSAGE_I32 *SendApplicationMessage_i32;
-DLLSERVICE_I32 *ServCallBk_i32;
+  DLLPRNT *print;
+  DLLSND *sound;
+  DLLREPLACE *replace;
+  DLLPASSWORD *password;
+  DLLMESSAGE *SendApplicationMessage;
+  DLLSERVICE *ServCallBk;
+  DLLMESSAGE_I32 *SendApplicationMessage_i32;
+  DLLSERVICE_I32 *ServCallBk_i32;
 #ifdef Z_UINT8_DEFINED
-z_uint8 TotalSizeComp;
-z_uint8 TotalSize;
-z_uint8 NumMembers;
+  z_uint8 TotalSizeComp;
+  z_uint8 TotalSize;
+  z_uint8 NumMembers;
 #else
-struct _TotalSizeComp {
-  unsigned long u4Lo;
-  unsigned long u4Hi;
-} TotalSizeComp;
-struct _TotalSize {
-  unsigned long u4Lo;
-  unsigned long u4Hi;
-} TotalSize;
-struct _NumMembers {
-  unsigned long u4Lo;
-  unsigned long u4Hi;
-} NumMembers;
+  struct _TotalSizeComp {
+    unsigned long u4Lo;
+    unsigned long u4Hi;
+  } TotalSizeComp;
+  struct _TotalSize {
+    unsigned long u4Lo;
+    unsigned long u4Hi;
+  } TotalSize;
+  struct _NumMembers {
+    unsigned long u4Lo;
+    unsigned long u4Hi;
+  } NumMembers;
 #endif
-unsigned CompFactor;
-WORD cchComment;
+  unsigned CompFactor;
+  WORD cchComment;
 } USERFUNCTIONS, far * LPUSERFUNCTIONS;
 
+/* The following symbol UZ_DCL_STRUCTVER must be incremented whenever an
+ * incompatible change is applied to the WinDLL API structure "DCL" !
+ */
+#define UZ_DCL_STRUCTVER        6
+/* The structure "DCL" is collects most the UnZip WinDLL program options
+ * that control the operation of the main UnZip WinDLL function.
+ */
 typedef struct {
-int ExtractOnlyNewer;
-int SpaceToUnderscore;
-int PromptToOverwrite;
-int fQuiet;
-int ncflag;
-int ntflag;
-int nvflag;
-int nfflag;
-int nzflag;
-int ndflag;
-int noflag;
-int naflag;
-int nZIflag;
-int C_flag;
-int D_flag;
-int fPrivilege;
-LPSTR lpszZipFN;
-LPSTR lpszExtractDir;
+  unsigned StructVersID;  /* struct version id (= UZ_DCL_STRUCTVER) */
+  int ExtractOnlyNewer;   /* TRUE for "update" without interaction
+                             (extract only newer/new files, without queries) */
+  int SpaceToUnderscore;  /* TRUE if convert space to underscore */
+  int PromptToOverwrite;  /* TRUE if prompt to overwrite is wanted */
+  int fQuiet;             /* quiet flag:
+                             { 0 = all | 1 = few | 2 = no } messages */
+  int ncflag;             /* write to stdout if TRUE */
+  int ntflag;             /* test zip file */
+  int nvflag;             /* verbose listing */
+  int nfflag;             /* "freshen" (replace existing files by newer versions) */
+  int nzflag;             /* display zip file comment */
+  int ndflag;             /* controls (sub)dir recreation during extraction
+                             0 = junk paths from filenames
+                             1 = "safe" usage of paths in filenames (skip ../)
+                             2 = allow unsafe path components (dir traversal)
+                           */
+  int noflag;             /* always overwriting existing files if TRUE */
+  int naflag;             /* do end-of-line translation */
+  int nZIflag;            /* get ZipInfo output if TRUE */
+  int B_flag;             /* backup existing files if TRUE */
+  int C_flag;             /* be case insensitive if TRUE */
+  int D_flag;             /* controls restoration of timestamps
+                             0 = restore all timestamps (default)
+                             1 = skip restoration of timestamps for folders
+                                 created on behalf of directory entries in the
+                                 Zip archive
+                             2 = no restoration of timestamps; extracted files
+                                 and dirs get stamped with current time */
+  int U_flag;             /* controls UTF-8 filename coding support
+                             0 = automatic UTF-8 translation enabled (default)
+                             1 = recognize UTF-8 coded names, but all non-ASCII
+                                 characters are "escaped" into "#Uxxxx"
+                             2 = UTF-8 support is disabled, filename handling
+                                 works exactly as in previous UnZip versions */
+  int fPrivilege;         /* 1 => restore ACLs in user mode,
+                             2 => try to use privileges for restoring ACLs */
+  LPSTR lpszZipFN;        /* zip file name */
+  LPSTR lpszExtractDir;   /* directory to extract to. This should be NULL if
+                             you are extracting to the current directory. */
 } DCL, far * LPDCL;
 
 #ifdef __cplusplus

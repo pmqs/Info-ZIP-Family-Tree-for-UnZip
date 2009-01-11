@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -18,11 +18,11 @@
 #endif
 
 #ifdef BETA
-#  define UZ_BETALEVEL      "d BETA"
-#  define UZ_VERSION_DATE   "17 Feb 08"         /* internal beta version */
+#  define UZ_BETALEVEL      "f BETA"
+#  define UZ_VERSION_DATE   "11 Jan 09"         /* internal beta version */
 #else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "28 February 2008"  /* official release version */
+#  define UZ_VERSION_DATE   "20 January 2009"   /* official release version */
 #  define RELEASE
 #endif
 

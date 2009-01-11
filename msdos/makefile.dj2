@@ -1,5 +1,5 @@
 # Makefile for Info-ZIP's UnZip, UnZipSFX and fUnZip using DJGPP v2.01 or
-# higher, by Frank Donahoe.                      Last updated: 16 Feb 2008
+# higher, by Frank Donahoe.                      Last updated: 21 Jul 2008
 
 # This Makefile is specifically tailored for GNU make and GNU C and
 # may not work with a generic Unix-compatible make utility.  The latest
@@ -190,7 +190,7 @@ $(IZ_BZIP2)/libbz2.a:
 # explicit compilation instructions:
 
 crc_gcc$O: crc_i386.S		# 32bit, GNU AS
-	$(CC) $(ASFLAGS) -x assembler-with-cpp -c -o $@ crc_i386.S
+	$(CC) $(ASFLAGS) -x assembler-with-cpp -c -o $@ $<
 
 # BIN_PATH may be defined in djgpp.env [make] or defined below.  If the
 # installation is to the directory containing gcc.exe etc. place the

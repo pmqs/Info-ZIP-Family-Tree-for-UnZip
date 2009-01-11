@@ -4,7 +4,7 @@ NAME
        unzip - list, test and extract compressed files in a ZIP archive
 
 SYNOPSIS
-       unzip  [-Z]  [-cflptTuvz[abjnoqsCDKLMVWX$/:]]  file[.zip] [file(s) ...]
+       unzip  [-Z]  [-cflptTuvz[abjnoqsCDKLMUVWX$/:]] file[.zip] [file(s) ...]
        [-x xfile(s) ...] [-d exdir]
 
 DESCRIPTION
@@ -212,10 +212,32 @@ MODIFIERS
               of  text record delimiters is disabled for binary (-b) resp. all
               (-bb) files.
 
-       -B     [Unix only, and only if compiled with UNIXBACKUP defined] save a
-              backup  copy  of  each  overwritten  file  with a tilde appended
-              (e.g., the old copy of ``foo'' is renamed to ``foo~'').  This is
-              similar to the default behavior of emacs(1) in many locations.
+       -B     [when compiled with UNIXBACKUP defined] save a  backup  copy  of
+              each  overwritten  file. The backup file is gets the name of the
+              target file with a tilde and optionally a unique sequence number
+              (up to 5 digits) appended.  The sequence number is applied when-
+              ever another file with the  original  name  plus  tilde  already
+              exists.   When used together with the "overwrite all" option -o,
+              numbered backup files are  never  created.  In  this  case,  all
+              backup  files  are  named  as the original file with an appended
+              tilde, existing backup files are deleted without  notice.   This
+              feature  works  similarly to the default behavior of emacs(1) in
+              many locations.
+
+              Example: the old copy of ``foo'' is renamed to ``foo~''.
+
+              Warning: Users should be aware that the -B option does not  pre-
+              vent  loss  of existing data under all circumstances.  For exam-
+              ple, when unzip  is  run  in  overwrite-all  mode,  an  existing
+              ``foo~'' file is deleted before unzip attempts to rename ``foo''
+              to ``foo~''.  When this rename attempt fails (because of a  file
+              locks,  insufficient  privileges,  or  ...),  the  extraction of
+              ``foo~'' gets cancelled, but the  old  backup  file  is  already
+              lost.   A  similar scenario takes place when the sequence number
+              range for numbered backup files gets exhausted (99999, or  65535
+              for  16-bit  systems).   In  this case, the backup file with the
+              maximum sequence number is  deleted  and  replaced  by  the  new
+              backup version without notice.
 
        -C     use  case-insensitive  matching  for  the  selection  of archive
               entries from the command-line list  of  extract  selection  pat-
@@ -380,8 +402,20 @@ MODIFIERS
               applied unless conversion (-a, -aa and/or -b, -bb) is  requested
               or a VMS-specific entry is processed.)
 
-       -U     (obsolete;  to  be  removed in a future release) leave filenames
-              uppercase if created under MS-DOS, VMS, etc.  See -L above.
+       -U     [UNICODE_SUPPORT  only]  modify or disable UTF-8 handling.  When
+              UNICODE_SUPPORT is available, the  option  -U  forces  unzip  to
+              escape  all  non-ASCII  characters from UTF-8 coded filenames as
+              ``#Uxxxx'' (for UCS-2 characters, or  ``#Lxxxxxx''  for  unicode
+              codepoints  needing  3  octets).  This option is mainly provided
+              for debugging purpose when the fairly new UTF-8 support is  sus-
+              pected to mangle up extracted filenames.
+
+              The  option  -UU  allows  to entirely disable the recognition of
+              UTF-8 encoded  filenames.   The  handling  of  filename  codings
+              within unzip falls back to the behaviour of previous versions.
+
+              [old, obsolete usage] leave filenames uppercase if created under
+              MS-DOS, VMS, etc.  See -L above.
 
        -V     retain (VMS) file version numbers.  VMS files can be stored with
               a  version  number,  in  the format file.ext;##.  By default the
@@ -602,13 +636,13 @@ DECRYPTION
        2.50 uses Latin-1 (and is therefore incompatible with DOS PKZIP); Info-
        ZIP uses the OEM code page on DOS, OS/2 and Win3.x  ports  but  Latin-1
        everywhere  else;  and Nico Mak's WinZip 6.x does not allow 8-bit pass-
-       words at all.  UnZip  5.3  (or  newer)  attempts  to  use  the  default
-       character  set  first  (e.g.,  Latin-1),  followed by the alternate one
-       (e.g., OEM code page) to test passwords.  On EBCDIC systems, if both of
-       these  fail,  EBCDIC encoding will be tested as a last resort.  (EBCDIC
-       is not tested  on  non-EBCDIC  systems,  because  there  are  no  known
-       archivers that encrypt using EBCDIC encoding.)  ISO character encodings
-       other than Latin-1 are not supported.
+       words at all.  UnZip 5.3 (or newer) attempts to use the default charac-
+       ter set first (e.g., Latin-1), followed by the alternate one (e.g., OEM
+       code page) to test passwords.  On EBCDIC  systems,  if  both  of  these
+       fail,  EBCDIC encoding will be tested as a last resort.  (EBCDIC is not
+       tested on non-EBCDIC systems, because there are no known archivers that
+       encrypt  using  EBCDIC  encoding.)   ISO character encodings other than
+       Latin-1 are not supported.
 
 EXAMPLES
        To use unzip to extract all members of the archive letters.zip into the
@@ -782,8 +816,12 @@ DIAGNOSTICS
 BUGS
        Multi-part archives are not yet supported, except in  conjunction  with
        zip.  (All parts must be concatenated together in order, and then ``zip
-       -F'' must be performed on the concatenated archive in order to  ``fix''
-       it.)  This will definitely be corrected in the next major release.
+       -F'' (for zip 2.x) or ``zip -FF'' (for zip 3.x) must  be  performed  on
+       the  concatenated  archive  in  order to ``fix'' it.  Also, zip 3.0 and
+       later can combine multi-part (split) archives into a  combined  single-
+       file  archive using ``zip -s- inarchive -O outarchive''.  See the zip 3
+       manual page for more information.)  This will definitely  be  corrected
+       in the next major release.
 
        Archives  read  from  standard input are not yet supported, except with
        funzip  (and  then  only  the  first  member  of  the  archive  can  be
@@ -857,16 +895,16 @@ URL
 AUTHORS
        The  primary  Info-ZIP authors (current semi-active members of the Zip-
        Bugs workgroup) are:  Ed Gordon (Zip, general maintenance, shared code,
-       Zip64, Win32, Unix); Christian Spieler (UnZip maintenance coordination,
-       VMS, MS-DOS, Win32, shared code, general Zip and UnZip integration  and
-       optimization);  Onno  van  der Linden (Zip); Mike White (Win32, Windows
-       GUI, Windows DLLs); Kai Uwe Rommel (OS/2,  Win32);  Steven  M.  Schweda
-       (VMS, support of new features); Paul Kienitz (Amiga, Win32); Chris Her-
-       borth (BeOS, QNX, Atari); Jonathan  Hudson  (SMS/QDOS);  Sergio  Monesi
-       (Acorn  RISC  OS);  Harald  Denker  (Atari,  MVS);  John Bush (Solaris,
-       Amiga); Hunter Goatley (VMS, Info-ZIP Site maintenance);  Steve  Salis-
-       bury (Win32); Steve Miller (Windows CE GUI), Johnny Lee (MS-DOS, Win32,
-       Zip64); and Dave Smith (Tandem NSK).
+       Zip64,  Win32,  Unix,  Unicode);  Christian  Spieler (UnZip maintenance
+       coordination, VMS, MS-DOS, Win32, shared code, general  Zip  and  UnZip
+       integration  and  optimization);  Onno van der Linden (Zip); Mike White
+       (Win32, Windows GUI, Windows  DLLs);  Kai  Uwe  Rommel  (OS/2,  Win32);
+       Steven  M.  Schweda  (VMS, Unix, support of new features); Paul Kienitz
+       (Amiga, Win32, Unicode); Chris Herborth (BeOS,  QNX,  Atari);  Jonathan
+       Hudson (SMS/QDOS); Sergio Monesi (Acorn RISC OS); Harald Denker (Atari,
+       MVS); John Bush (Solaris, Amiga); Hunter Goatley  (VMS,  Info-ZIP  Site
+       maintenance);  Steve  Salisbury (Win32); Steve Miller (Windows CE GUI),
+       Johnny Lee (MS-DOS, Win32, Zip64); and Dave Smith (Tandem NSK).
 
        The following people were former members of  the  Info-ZIP  development
        group  and  provided  major  contributions  to key parts of the current
@@ -906,6 +944,6 @@ VERSIONS
        v5.5   17 Feb 02   Info-ZIP (Zip-Bugs subgroup, SPC)
        v5.51  22 May 04   Info-ZIP (Zip-Bugs subgroup, SPC)
        v5.52  28 Feb 05   Info-ZIP (Zip-Bugs subgroup, SPC)
-       v6.0   29 Feb 08   Info-ZIP (Zip-Bugs subgroup, SPC)
+       v6.0   20 Jan 09   Info-ZIP (Zip-Bugs subgroup, SPC)
 
-Info-ZIP                    29 February 2008 (v6.0)                  UNZIP(1L)
+Info-ZIP                    20 January 2009 (v6.0)                   UNZIP(1L)

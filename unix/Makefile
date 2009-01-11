@@ -1,6 +1,6 @@
 #==============================================================================
 # Makefile for UnZip, UnZipSFX and fUnZip:  Unix and MS-DOS ("real" makes only)
-# Version:  6.0                                                     16 Feb 2008
+# Version:  6.0                                                     26 Oct 2008
 #==============================================================================
 
 
@@ -48,16 +48,18 @@ AS = as
 LOC = $(D_USE_BZ2) $(LOCAL_UNZIP)
 AF = $(LOC)
 CFLAGS = -O
-CF = $(CFLAGS) -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
-LF = -o unzip
+CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
+CF = $(CFLAGS) $(CF_NOOPT)
+LFLAGS1 =
+LF = -o unzip $(LFLAGS1)
 LF2 = -s
 
 # UnZipSFX flags
-SL = -o unzipsfx
+SL = -o unzipsfx $(LFLAGS1)
 SL2 = $(LF2)
 
 # fUnZip flags
-FL = -o funzip
+FL = -o funzip $(LFLAGS1)
 FL2 = $(LF2)
 
 # general-purpose stuff
@@ -73,6 +75,7 @@ E =
 O = .o
 M = unix
 SHELL = /bin/sh
+MAKEF = -f unix/Makefile
 
 # Version info for unix/unix.c
 HOST_VERSINFO=-DIZ_CC_NAME='\"\$$(CC) \"' -DIZ_OS_NAME='\"`uname -a`\"'
@@ -82,7 +85,8 @@ CRCA_O =
 OSDEP_H =
 
 # optional inclusion of bzip2 decompression
-IZ_BZIP2 = bzip2
+IZ_OUR_BZIP2_DIR = bzip2
+IZ_BZIP2 = $(IZ_OUR_BZIP2_DIR)
 ## The following symbols definitions need to be set to activate bzip2 support:
 #D_USE_BZ2 = -DUSE_BZIP2
 #L_BZ2 = -lbz2
@@ -129,8 +133,8 @@ MANS = man/funzip.1 man/unzip.1 man/unzipsfx.1 man/zipgrep.1 man/zipinfo.1
 DOCS = funzip.txt unzip.txt unzipsfx.txt zipgrep.txt zipinfo.txt
 
 # list of supported systems/targets in this version
-SYSTEMG1 = generic generic1 generic2 generic3
-SYSTEMG2 = generic_bz2 generic_zlib generic_shlib
+SYSTEMG1 = generic generic_gcc  generic_pkg generic_gccpkg
+SYSTEMG2 = generic1 generic2 generic3 generic_bz2 generic_zlib generic_shlib
 SYSTEMS1 = 386i 3Bx 7300 7300_gcc aix aix_rt amdahl amdahl_eft apollo aviion
 SYSTEMS2 = bsd bsdi bsdi_noasm bull coherent convex cray cray_opt cyber_sgi
 SYSTEMS3 = cygwin dec dnix encore eta freebsd gcc gould hk68 hp hpux
@@ -269,7 +273,7 @@ unzipsdocs:	unzips docs
 # make utilities if default:  change "unzip$E:" to "unzip$E:&"
 
 unzip$E:	$(OBJS) $(LIBBZ2)	# add `&' for parallel makes
-	$(LD) $(LF) $(LOBJS) -L$(IZ_BZIP2) $(L_BZ2) $(LF2)
+	$(LD) $(LF) -L$(IZ_BZIP2) $(LOBJS) $(L_BZ2) $(LF2)
 
 unzipsfx$E:	$(OBJX)			# add `&' for parallel makes
 	$(LD) $(SL) $(LOBJX) $(SL2)
@@ -288,10 +292,10 @@ zipinfo$E:	unzip$E			# `&' is pointless here...
 
 # when the optional bzip2 support is provided (as recommended) by sources
 # in the 'bzip2' subdirectory, create/update the library:
-bzip2/libbz2.a:
+$(IZ_OUR_BZIP2_DIR)/libbz2.a:
 	@echo "Building/updating bzip2 object library..."
-	( cd bzip2 ; $(MAKE) -f Makebz2.iz CC="$(CC)"\
-	 CFLAGS="$(CFLAGS)" RM="rm -f" )
+	( cd $(IZ_OUR_BZIP2_DIR) ; $(MAKE) -f Makebz2.iz CC="$(CC_BZ)"\
+	 CFLAGS="$(CFLAGS_BZ)" RM="rm -f" )
 
 
 crc32$O:	crc32.c $(UNZIP_H) zip.h crc32.h
@@ -408,7 +412,7 @@ clean:
 	@echo ""
 	@echo '         This is a Unix-specific target.  (Just so you know.)'
 	@echo ""
-	-@( cd $(IZ_BZIP2); $(MAKE) -f Makebz2.iz RM="rm -f" clean )
+	-( cd $(IZ_OUR_BZIP2_DIR); $(MAKE) -f Makebz2.iz RM="rm -f" clean )
 	rm -f $(UNZIPS) $(OBJS) $(OBJF) $(OBJX) api$O apihelp$O crc_gcc$O \
 	  crc_sysv$O unzipstb$O crypt_.c extract_.c globals_.c inflate_.c \
 	  ttyio_.c crc_i386s.s msdos_.c process_.c unix_.c unzipsfx.c
@@ -456,7 +460,7 @@ uninstall:
 
 # added 10/28/04 EG
 flags:  unix/configure
-	sh unix/configure "${CC}" "${CF}" "${IZ_BZIP2}"
+	sh unix/configure "${CC}" "${CF_NOOPT}" "${IZ_BZIP2}"
 
 # the test zipfile
 TESTZIP = testmake.zip
@@ -525,21 +529,32 @@ check:
 ################################
 
 #----------------------------------------------------------------------------
-#  Generic targets (can't assume make utility groks "$(MAKE)")
+#  Generic targets using the configure script to determine configuration.
 #----------------------------------------------------------------------------
 
 # Well, try MAKE and see.  By now everyone may be happy.  10/28/04 EG
 generic:	flags	   # now try autoconfigure first
-	eval make -f unix/Makefile unzips `cat flags`
-#	make -f unix/Makefile unzips CF="${CF} `cat flags`"
+	eval $(MAKE) $(MAKEF) unzips `cat flags`
+#	make $(MAKEF) unzips CF="${CF} `cat flags`"
+
+generic_gcc:
+	$(MAKE) $(MAKEF) generic CC=gcc IZ_BZIP2="$(IZ_BZIP2)"
+
+# extensions to perform SVR4 package-creation after compilation
+generic_pkg:	generic svr4package
+generic_gccpkg:	generic_gcc svr4package
+
+#----------------------------------------------------------------------------
+#  Old static generic targets (can't assume make utility groks "$(MAKE)")
+#----------------------------------------------------------------------------
 
 generic1:	unzips	   # first try if unknown
 
 generic2:	unix_make  # second try if unknown:  hope make is called "make"
-	make -f unix/Makefile unzips CF="$(CF) -DBSD"
+	make $(MAKEF) unzips CF="$(CF) -DBSD"
 
 generic3:	unix_make  # third try if unknown:  hope make is called "make"
-	make -f unix/Makefile unzips CF="$(CF) -DSYSV"
+	make $(MAKEF) unzips CF="$(CF) -DSYSV"
 
 # Generic build including bzip2 decompression support for unzip.
 # Requires presence of the bzip2 sources in subdirectory bzip2.
@@ -547,8 +562,9 @@ generic3:	unix_make  # third try if unknown:  hope make is called "make"
 generic_bz2:	unix_make
 	@echo\
  "This target assumes bzip2 sources are available in subfolder bzip2/."
-	$(MAKE) -f unix/Makefile unzips D_USE_BZ2="-DUSE_BZIP2"\
-	 L_BZ2="-lbz2" LIBBZ2="$(IZ_BZIP2)/libbz2.a"
+	$(MAKE) $(MAKEF) unzips D_USE_BZ2="-DUSE_BZIP2"\
+	 L_BZ2="-lbz2" LIBBZ2="$(IZ_OUR_BZIP2_DIR)/libbz2.a" \
+	 CC_BZ="$(CC)" CFLAGS_BZ="$(CFLAGS)"
 
 # Generic unzip and funzip target using either shared or static zlib for
 # inflate rather than the original UnZip version.  (libz was libgz prior
@@ -578,6 +594,16 @@ generic_shlib:	unix_make
 	$(LN) -s libunzip.so.0 libunzip.so
 	gcc -c -O unzipstb.c
 	gcc -o unzip_shlib unzipstb.o -L. -lunzip
+
+#----------------------------------------------------------------------------
+#  "Autoconfig" group, aliases for the generic targets using configure:
+#----------------------------------------------------------------------------
+
+# Solaris:  generic, plus generation of installable package.
+solaris_pkg:	generic_pkg
+
+# Solaris: forcing usage of GCC, plus generation of installable package.
+solaris_gccpkg:	generic_gcc_pkg
 
 #----------------------------------------------------------------------------
 #  "Normal" group (BSD vs. SysV may be set in unzip.h via predefined macros):
@@ -627,8 +653,6 @@ _bsd:		unix_make
 aix_rt:		_sysv	# IBM RT 6150 under AIX 2.2.1
 aviion:		_sysv	# Data General AViiONs, DG/UX 4.3x
 pyr_att:	_sysv	# Pyramids running AT&T (SysV) universe by default
-solaris:	_sysv	# Sun SPARC & x86, Solaris 2.x
-solaris_pkg:	_sysvp	# Sun SPARC & x86, Solaris 2.x; make package when done
 stardent:	_sysv	# Stardent ...
 sysv:		_sysv	# generic System V Unix (Xenix handled in unzip.h)
 xos:		_sysv	# Olivetti LSX-3005..3045, X/OS 2.3 and 2.4
@@ -647,7 +671,7 @@ pixel:		_v7	# Pixel 80, 100 (68000-based, V7/mostly BSD4.1 compat.)
 v7:		_v7	# generic Unix Version 7 box (prob. only Pixel...)
 
 _v7:
-	make -f unix/Makefile unzips \
+	make $(MAKEF) unzips \
 	 CF="$(CF) -DV7 -DNO_PARAM_H -DSHORT_NAMES -DBSD -DZMEM -DNO_LCHOWN -DNO_LCHMOD"
 
 #----------------------------------------------------------------------------
@@ -893,7 +917,7 @@ nextfat:	unix_make
 # IBM OS/390 (formerly MVS) compiled under "OpenEdition" shell
 os390:		unix_make
 	set -x; \
-	$(MAKE) -f unix/Makefile unzips \
+	$(MAKE) $(MAKEF) unzips \
 	 CC=c89 LD="\$$(CC) -Wl,EDIT=NO" \
 	 CF="$(CF) -DSYSV -DUNIX -DOS390 -DEBCDIC -DNO_PARAM_H \
 	 -DNO_LCHOWN -DNO_LCHMOD \
@@ -908,7 +932,7 @@ ptx:		unix_make
 # experimental target!  If it fails, use either pyr_ucb or pyr_att instead.)
 # The make in the BSD half is too stupid to understand $(MAKE), sigh...
 pyramid:	unix_make
-	-make -f unix/Makefile pyr_`universe`
+	-make $(MAKEF) pyr_`universe`
 
 # QNX/Neutrino is "special" because you don't have any native development
 # tools yet.  Set ARCH to "x86", "ppcbe", "ppcle", "mipsbe", or "mipsle"
@@ -918,11 +942,11 @@ qnxnto:		unix_make
 	@if [ "$(ARCH)" = "" ] ; then \
 		echo "You didn't set ARCH; I'll assume you meant ARCH=x86..." ; \
 		echo "" ; \
-		$(MAKE) -f unix/Makefile CC="qcc -Vgcc_ntox86" unzips ; \
+		$(MAKE) $(MAKEF) CC="qcc -Vgcc_ntox86" unzips ; \
 	else \
 		echo "Making unzip for $(ARCH)..." ; \
 		echo "" ; \
-		$(MAKE) -f unix/Makefile CC="qcc -Vgcc_nto$(ARCH)" unzips ; \
+		$(MAKE) $(MAKEF) CC="qcc -Vgcc_nto$(ARCH)" unzips ; \
 	fi
 
 # REGULUS:  68040-based, "real-time" SysV.3 mutant; uses gcc, with "REGULUS"

@@ -1,7 +1,7 @@
 /*
   Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -557,7 +557,9 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             *ptr++ = 'n';
         }
 
-        /* Deprecated: */
+        /*
+        **  Overwrite files (deprecated) ?
+        */
         status = cli$present(&cli_overwrite);
         if (status == CLI$_NEGATED)
             *ptr++ = 'n';
@@ -1103,7 +1105,7 @@ Major options include (type unzip -h for Unix style flags):\n\
 Modifiers include:\n\
    /BRIEF, /FULL, /[NO]TEXT[=NONE|AUTO|ALL], /[NO]BINARY[=NONE|AUTO|ALL],\n\
    /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT}, /[NO]JUNK, /QUIET,\n\
-   /QUIET[=SUPER], /[NO]PAGE,/[NO]CASE_INSENSITIVE, /[NO]LOWERCASE,\n\
+   /QUIET[=SUPER], /[NO]PAGE, /[NO]CASE_INSENSITIVE, /[NO]LOWERCASE,\n\
    /[NO]VERSION, /RESTORE[=([NO]OWNER_PROT[,NODATE|DATE={ALL|FILES}])]\n\n"));
 
         Info(slide, flag, ((char *)slide, "\
@@ -1111,8 +1113,8 @@ Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
    unzip edit1 /EXCL=joe.jou /CASE_INSENSITIVE    => Extract all files except\
 \n\
       joe.jou (or JOE.JOU, or any combination of case) from zipfile edit1.zip.\
-\n\
-   unzip zip201 \"Makefile.VMS\" vms/*.[ch]       => extract VMS Makefile and\
+\n  \
+ unzip zip201 \"Makefile.VMS\" vms/*.[ch]         => extract VMS Makefile and\
 \n\
       *.c and *.h files; must quote uppercase names if /CASE_INSENS not used.\
 \n\

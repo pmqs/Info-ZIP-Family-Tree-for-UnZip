@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -197,7 +197,7 @@ char *GetLoadPath(__GPRO)
 
 #else    /* use generic API call */
 
-    GetModuleFileName(NULL, G.filename, FILNAMSIZ-1);
+    GetModuleFileName(NULL, G.filename, FILNAMSIZ);
     _ISO_INTERN(G.filename);    /* translate to codepage of C rtl's stdio */
     return G.filename;
 #endif
@@ -2171,8 +2171,11 @@ int checkdir(__G__ pathcomp, flag)
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
+                 %s\n\
                  unable to process %s.\n",
-                  FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
+                  FnFilter2(G.buildpathFAT),
+                  strerror(errno),
+                  FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
                 /* path didn't exist, tried to create, failed */
@@ -2201,8 +2204,11 @@ int checkdir(__G__ pathcomp, flag)
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
+                 %s\n\
                  unable to process %s.\n",
-                  FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
+                  FnFilter2(G.buildpathFAT),
+                  strerror(errno),
+                  FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
                 /* path didn't exist, tried to create, failed */
@@ -2211,8 +2217,8 @@ int checkdir(__G__ pathcomp, flag)
             G.created_dir = TRUE;
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  %s exists but is not directory\n   \
-              unable to process %s.\n",
+              "checkdir error:  %s exists but is not directory\n\
+                 unable to process %s.\n",
               FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
             free(G.buildpathHPFS);
             free(G.buildpathFAT);
@@ -2222,7 +2228,7 @@ int checkdir(__G__ pathcomp, flag)
         if (too_long) {
             Info(slide, 1, ((char *)slide,
               "checkdir error:  path too long: %s\n",
-               FnFilter1(G.buildpathHPFS)));
+              FnFilter1(G.buildpathHPFS)));
             free(G.buildpathHPFS);
             free(G.buildpathFAT);
             /* no room for filenames:  fatal */
@@ -2938,8 +2944,90 @@ int getch_win32(void)
 
 
 
+#if (defined(UNICODE_SUPPORT) && !defined(FUNZIP))
+/* convert wide character string to multi-byte character string */
+char *wide_to_local_string(wide_string, escape_all)
+  ZCONST zwchar *wide_string;
+  int escape_all;
+{
+  int i;
+  wchar_t wc;
+  int bytes_char;
+  int default_used;
+  int wsize = 0;
+  int max_bytes = 9;
+  char buf[9];
+  char *buffer = NULL;
+  char *local_string = NULL;
+
+  for (wsize = 0; wide_string[wsize]; wsize++) ;
+
+  if (max_bytes < MB_CUR_MAX)
+    max_bytes = MB_CUR_MAX;
+
+  if ((buffer = (char *)malloc(wsize * max_bytes + 1)) == NULL) {
+    return NULL;
+  }
+
+  /* convert it */
+  buffer[0] = '\0';
+  for (i = 0; i < wsize; i++) {
+    if (sizeof(wchar_t) < 4 && wide_string[i] > 0xFFFF) {
+      /* wchar_t probably 2 bytes */
+      /* could do surrogates if state_dependent and wctomb can do */
+      wc = zwchar_to_wchar_t_default_char;
+    } else {
+      wc = (wchar_t)wide_string[i];
+    }
+    /* Unter some vendor's C-RTL, the Wide-to-MultiByte conversion functions
+     * (like wctomb() et. al.) do not use the same codepage as the other
+     * string arguments I/O functions (fopen, mkdir, rmdir etc.).
+     * Therefore, we have to fall back to the underlying Win32-API call to
+     * achieve a consistent behaviour for all supported compiler environments.
+     * Failing RTLs are for example:
+     *   Borland (locale uses OEM-CP as default, but I/O functions expect ANSI
+     *            names)
+     *   Watcom  (only "C" locale, wctomb() always uses OEM CP)
+     * (in other words: all supported environments except the Microsoft RTLs)
+     */
+    bytes_char = WideCharToMultiByte(
+                          CP_ACP, WC_COMPOSITECHECK,
+                          &wc, 1,
+                          (LPSTR)buf, sizeof(buf),
+                          NULL, &default_used);
+    if (default_used)
+      bytes_char = -1;
+    if (escape_all) {
+      if (bytes_char == 1 && (uch)buf[0] <= 0x7f) {
+        /* ASCII */
+        strncat(buffer, buf, 1);
+      } else {
+        /* use escape for wide character */
+        char *escape_string = wide_to_escape_string(wide_string[i]);
+        strcat(buffer, escape_string);
+        free(escape_string);
+      }
+    } else if (bytes_char > 0) {
+      /* multi-byte char */
+      strncat(buffer, buf, bytes_char);
+    } else {
+      /* no MB for this wide */
+      /* use escape for wide character */
+      char *escape_string = wide_to_escape_string(wide_string[i]);
+      strcat(buffer, escape_string);
+      free(escape_string);
+    }
+  }
+  if ((local_string = (char *)realloc(buffer, strlen(buffer) + 1)) == NULL) {
+    free(buffer);
+    return NULL;
+  }
+
+  return local_string;
+}
+
+
 #if 0
-#ifdef UNICODE_SUPPORT
 wchar_t *utf8_to_wchar_string(utf8_string)
   char *utf8_string;       /* path to get utf-8 name for */
 {
@@ -3029,8 +3117,8 @@ wchar_t *local_to_wchar_string(local_string)
 
   return qw;
 }
-#endif /* UNICODE_SUPPORT */
 #endif /* 0 */
+#endif /* UNICODE_SUPPORT && !FUNZIP */
 
 
 

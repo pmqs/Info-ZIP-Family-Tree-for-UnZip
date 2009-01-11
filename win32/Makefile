@@ -4,7 +4,7 @@
 #   J. Lee 8/95 (johnnyl@microsoft.com)
 #   C. Spieler 03/99
 #
-# Last revised:  17 Feb 2008
+# Last revised:  06 Jan 2009
 #
 # Tested with VC++ 2.0 for NT for MIPS and Alpha, Visual C++ 2.2 for Intel CPUs
 # Revision tested with VC++ 5.0, 6.0, 8.0 and 9.0 for Intel CPUs
@@ -25,14 +25,17 @@
 #   DLLSTANDALONE       : unzip32.dll is linked against static MT runtime lib
 #                         (default: unzip32.dll linked against C runtime dll)
 #
-#   USE_UTF8            : =0 (default for now) no unicode names support
-#                         =1 recognize UTF8 extra fields and "UTF8 name" attrib
+#   USE_UTF8            : =0 no unicode names support
+#                         =1 force recognition of UTF8 extra fields and
+#                            "UTF8 name" attrib (default)
 #
 #   USEASM              : use assembler code for crc32 function (default)
 #   NOASM               : use C implementation for crc32 function
 #   USEMASM             : use MS macro assembler (MASM) to assemble crc32 code
 #   USEML               : use MS macro assembler (ML driver) to create crc32
 #                         (default: use C inline assembler code for crc32)
+#
+#   NOCRC_OPT=1         : disable "unfolding CRC tables" optimization
 #
 #   USEIZTIMEZONE       : =0 (default) timezone setup by built-in C RTL
 #                         =1 apply InfoZip replacement code for timezone setup
@@ -71,8 +74,9 @@ USEZLIBSTAT=1
 !endif
 !undef USEASM
 APPLY_ASMCRC=0
-ZLIBLIB=zlib
-ZLIBLIBDLL=zdll
+NOCRC_OPT=1
+ZLIBLIB=zlib.lib
+ZLIBLIBDLL=zdll.lib
 !else # !USEZLIB
 ZLIBLIB=
 ZLIBLIBDLL=
@@ -96,11 +100,16 @@ OBDLL = obdll
 INC_BZ2LIB=-I$(IZ_BZIP2)
 # Set static bzip2 linkage as default in case nothing is specified.
 !if !defined(USEBZ2STAT) && !defined(USEBZ2DLL)
-USEBZIP2STAT=1
+USEBZ2STAT=1
 !endif
 !IFNDEF debug
+!ifdef USEBZ2STAT
 BZIPLIBEXE=$(IZ_BZIP2)/$(OBEXE)/bz2.lib
 BZIPLIBDLL=$(IZ_BZIP2)/$(OBDLL)/bz2.lib
+!else
+BZIPLIBEXE=bz2.lib
+BZIPLIBDLL=bz2.lib
+!endif
 !ELSE
 BZIPLIBEXE=bz2d.lib
 BZIPLIBDLL=bz2d.lib
@@ -122,8 +131,8 @@ USE_IZTIMEZONE=0
 !endif
 
 !ifndef USE_UTF8
-#default for now: do not include support for UTF8 paths
-USE_UTF8=0
+#default for now: include support for UTF8 paths
+USE_UTF8=1
 !endif
 
 !IF "$(CPU)" == ""  &&  "$(PROCESSOR_ARCHITECTURE)" == "x86"
@@ -198,6 +207,12 @@ LOCAL_UNZIP = -DW32_USE_IZ_TIMEZONE $(LOCAL_UNZIP)
 
 !if $(USE_UTF8) != 0
 LOCAL_UNZIP = -DUNICODE_SUPPORT $(LOCAL_UNZIP)
+!else
+LOCAL_UNZIP = -DNO_UNICODE_SUPPORT $(LOCAL_UNZIP)
+!endif
+
+!ifndef NOCRC_OPT
+LOCAL_UNZIP = -DIZ_CRCOPTIM_UNFOLDTBL $(LOCAL_UNZIP)
 !endif
 
 !ifdef USEZLIB
@@ -392,6 +407,7 @@ CFLAGS_UN = $(cdebug) $(cflags) $(INC_BZ2LIB) $(cvars_iz)
 CFLAGS_SX = $(cdbgsz) $(cflags) $(INC_BZ2LIB) $(cvars_iz) -DSFX
 CFLAGS_FU = $(cdebug) $(cflags) $(cvars_iz) -DFUNZIP
 CFLAGS_DL = $(cdebug) $(cflags) $(INC_BZ2LIB) $(cvars_izdll) -DWINDLL -DDLL
+CFLAGS_DX = $(cdebug) $(cflags) $(INC_BZ2LIB) $(cvars_izdll)
 CFLAGS_SL = $(cdbgsz) $(cflags) $(INC_BZ2LIB) $(cvars_iz) -DWINDLL -DDLL -DUNZIPLIB -DSFX
 CFLAGS_GX = $(cdbgsz) $(cflags) $(cvars_iz) -DSFX
 CFLAGS_LB = $(cdebug) $(cflags) $(INC_BZ2LIB) $(cvars_iz) -DWINDLL -DDLL -DUNZIPLIB
@@ -422,7 +438,7 @@ lib: $(OBDIR) $(OB)unzip32.lib
 all: unzips guisfx dll dllsample lib
 
 
-unzip.exe:	$(OBJU) $(BZIPLIBEXE)
+unzip.exe:	$(OBJU) $(BZIPLIBEXE) winapp.res
 	$(link) $(ldebug) $(conlflags) $(conlibs_iz) $** -out:$@
 unzipsfx.exe:	$(OBJX) $(BZIPLIBEXE)
 	$(link) $(ldebug) $(conlflags) $(conlibs_iz) $** $(LINKOPT_SIZE) -out:$@
@@ -604,11 +620,14 @@ crci386l.obj:	win32/crc_i386.c
 !endif
 !endif
 
+winapp.res:	win32/winapp.rc unzvers.h
+	$(rc) /l 0x409 /fo$@ /i win32 /d WIN32 win32/winapp.rc
+
 windll.res:	windll/windll.rc unzvers.h
 	$(rc) /l 0x409 /fo$@ /i windll /d WIN32 windll/windll.rc
 
 uzexampl.obj:	windll/uzexampl.c windll/uzexampl.h
-	$(cc) $(CFLAGS_UN) -I. windll/uzexampl.c -Fo$@
+	$(cc) $(CFLAGS_DX) -I. windll/uzexampl.c -Fo$@
 
 # SFX Lib compilation section
 apig.obj:	api.c $(UNZIP_H) $(WINDLL_H) unzvers.h
@@ -729,6 +748,7 @@ $(OBDIR):
 
 clean:	clean_bz2exe_lib clean_bz2dll_lib
 	-del *.obj
+	-del winapp.res
 	-del unzip.exe
 	-del unzip.pdb
 	-del funzip.exe

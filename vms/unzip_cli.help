@@ -576,8 +576,8 @@ options and modifiers can be provided:
 |  -2   force creation of ODS2-compatible file names
 <LARETIL>
 
-Note that uppercase options such as -C, -D, -L, -M, -P, -S, -T, -V, -X, Y, and
--Z must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
+Note that uppercase options such as -C, -D, -L, -M, -P, -S, -T, -V, -X, -Y,
+and -Z must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
 For example:
 
 <LITERAL>

@@ -223,7 +223,7 @@ static nsk_file_attrs *ef_scan_for_tandem(ef_buf, ef_len)
 /* Function open_outfile() */
 /***************************/
 
-int open_outfile(__G)         /* return 1 if fail */
+int open_outfile(__G)           /* return 1 if fail */
     __GDEF
 {
     int fdesc;

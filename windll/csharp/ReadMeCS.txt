@@ -13,10 +13,15 @@ contact us at www.Info-ZIP.org or for specific questions about these
 projects contact Adrian Maull directly at adrian.maull@sprintpcs.com.
 
 See UnZip.cs for more detailed information about the project.  Currently
-the sample project has some bugs as noted in the above file and
-are only designed for Zip 2.3x and UnZip 5.5x.  We are looking to
-port the projects to Zip 3 and UnZip 6.  These projects are mostly
-untested by us at this time.
+the sample project has some bugs as noted in the above file.
+The original code has been adapted to the modified WinDLL interface of
+UnZip 6, using Visual C# 2005 (.Net Framework 2.0) and a unzip32.dll compiled
+by Visual C++ 6.0.  The provided project file is still in the format for
+Visual Studio 7.1 (VS .Net 2003, .Net 1.1).  But the code of the project
+can be used with newer Visual Studio versions (2005 = 8.0 or 2008 = 9.0);
+only the project file gets (irreveribly) converted to the newer Visual
+Studio format when first opened.
+However, this project is not tested throughoutly by us at this time.
 
 These sample projects are distributed as part of the Info-ZIP distribution
 under the Info-ZIP license.
@@ -26,4 +31,4 @@ stripped.  These may need to be restored before the project can be successfully
 used.
 
 Ed Gordon, Christian Spieler
-2005/08/14
+2009/01/11

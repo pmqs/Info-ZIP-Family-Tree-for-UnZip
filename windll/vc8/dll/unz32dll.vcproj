@@ -72,6 +72,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="advapi32.lib user32.lib"
 				OutputFile="../Debug.ASM/app/unzip32.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -168,6 +169,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="advapi32.lib user32.lib"
 				OutputFile="../Debug/app/unzip32.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -265,6 +267,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="advapi32.lib user32.lib"
 				OutputFile="../Release.ASM/app/unzip32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -361,6 +364,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="advapi32.lib user32.lib"
 				OutputFile="../Release/app/unzip32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"

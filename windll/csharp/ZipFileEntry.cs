@@ -33,14 +33,15 @@ namespace CSharpInfoZip_UnZipSample
 		private string m_FileName;
 		private string m_FilePath;
 		private bool m_IsFolder;
-		private int m_FileSize;
+		private ulong m_FileSize;
 		private int m_FileMonth;
 		private int m_FileDay;
 		private int m_FileYear;
 		private int m_FileHour;
 		private int m_FileMinute;
 		private int m_CompressionFactor;
-		private int m_CompressedSize;
+		private ulong m_CompressedSize;
+		private string m_CompressMeth;
 
 		#endregion
 
@@ -68,7 +69,7 @@ namespace CSharpInfoZip_UnZipSample
 			set {m_IsFolder = value;}
 		}
 
-		public int FileSize
+		public ulong FileSize
 		{
 			get {return m_FileSize;}
 			set {m_FileSize = value;}
@@ -110,10 +111,16 @@ namespace CSharpInfoZip_UnZipSample
 			set {m_CompressionFactor = value;}
 		}
 
-		public int CompressedSize
+		public ulong CompressedSize
 		{
 			get {return m_CompressedSize;}
 			set {m_CompressedSize = value;}
+		}
+
+		public string CompressionMethShort
+		{
+			get {return m_CompressMeth;}
+			set {m_CompressMeth = value;}
 		}
 
 		#endregion

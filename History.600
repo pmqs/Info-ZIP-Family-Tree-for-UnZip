@@ -1,4 +1,4 @@
-UnZip, version 6.00d BETA, 17 February 2008
+UnZip, version 6.00f BETA, 11 January 2009
 
 Features added (or removed):
 
@@ -14,7 +14,7 @@ Features added (or removed):
    -V and new -VV options, revised build procedures, and
    documentation updates.  [Steven Schweda (SMS)]
  - file_size added to process.c to handle files sizes larger
-   than 2 GB more cleanly when no large file support.  [SMS]
+   than 2 GiB more cleanly when no large file support.  [SMS]
  - Large file debugging on Unix and VMS.  [SMS, EG]
  - Split w32i64.h with large file includes for dll [EG]
 
@@ -154,10 +154,44 @@ Features added (or removed):
 6.00d (17 Feb 08):
  - NO feature changes.
 
+6.00e01 (21 Feb 08):
+ - NO feature changes.
+
+6.00e02 (08 Mar 08):
+ - ATheOS, BeOS, Tandem, Unix: removed experimental 32-bit extension of "Ux"
+    extra field (affected generic sources: process.c).  [Chr. Spieler]
+
+6.00e03 (29 Mar 08):
+ - general (ebcdic.h, process.c, unpriv.h): modified infrastructure to make
+    OEM<-->ISO translation configurable at runtime.  [Chr. Spieler]
+ - MSDOS (doscfg.h, msdos.c): OEM<-->ISO configured at runtime, depending on
+    system codepage (enabled for 437, 850, 858; disabled for 932, 936, 949,
+    950, 874, 1258; currently also disabled for all other OEM codepages because
+    of missing translation tables).  [Chr. Spieler]
+
+6.00e04 (27 Apr 08):
+ - NO feature changes.
+
+6.00e05 (09 Sep 08):
+ - unzip.c: added framework for verbose multi-page online help, called by
+    option "-hh".  [Ed Gordon]
+ - unzip.c - uz_opts(): do not exit immediatly after recognizing help screen
+    request; this allows to specify the pager option after the explicit help
+    request.  [Chr. Spieler]
+
+6.00e06 (13 Sep 08):
+ - NO feature changes.
+
+6.00e (04 Jan 09):
+ - unzip.h: enable -B option for Unix, OS/2, and Win32.  [EG, Chr. Spieler]
+
+6.00f (11 Jan 09):
+ - NO feature changes.
+
 Bugs fixed:
 
 6.00b (12 Nov 04):
- - Output bug fixes to account for sizes > 2 Gb and < 4 GB.  [EG]
+ - Output bug fixes to account for sizes > 2 GiB and < 4 GiB.  [EG]
  - Bug fixes in ZipInfo.  [EG]
  - Reverted unix.c to an older version to make
     calls to defer_dir_attribs compatible.  Also needed to rework
@@ -631,8 +665,292 @@ Bugs fixed:
     section for the supported build variant flags on the nmake command line.
     [Chr. Spieler]
 
+6.00e01 (17 Feb 08):
+ - unzpriv.h: re-added "fixed" allocation of space for the first of two string
+    delimiters from the definition of type slinkentry, the "buf[]" structure
+    member is not accepted by some older compilers. [Chr. Spieler]
+ - aosvs, atari, atheos, beos, unix, vms - close_outfile(): Reduced the
+    allocation size for the slnk_entry structure by 1, one of the two '\0'
+    end-of-string markers is again part of the structure.  [Chr. Spieler]
+ - unix/configure: export CC and IZ_BZIP2 symbols to flags, to feed their
+    current settings to the child make process without having to use special
+    make command qualifiers.  [Steven M. Schweda, Chr. Spieler]
+
+6.00e02 (08 Mar 08):
+ - unix/unix.c - close_outfile(): added missing semicolon in the SYMLINKS code
+    for the non-SET_SYMLINK_ATTRIBS case.  [Steven M. Schweda]
+ - unzip.c: removed extra "credit to Myles Bennet" note from startup screen
+    for space considerations; added credit note to README and referenced
+    Myles Bennet in proginfo/CONTRIBS.  [Chr. Spieler]
+ - vms/vms.c: fixed dir separator find logic in vms_path_fixdown() for cases
+    where directory name contains a '.' or '[' itself.  [Steven M. Schweda]
+ - crc32.h: replaced explicit inclusion of zip.h by a note that this header
+    should be read after zip.h resp. unzip.h.  [Steven M. Schweda, C. Spieler]
+ - unix/configure, unix/Makefile: cleaned up auto-configured build procedure.
+    * pass the "configure"-selected C optimizations to the bzip2 build process.
+    * clean only affects the unzip-specific bzip2 subdirectory.
+    * let make display the bzip2 clean subprocess call.
+    [Steven M. Schweda]
+ - unzip.c, unzip.h, zipinfo.c, fileio.c - UNICODE_SUPPORT, revised the
+    options to control UTF-8 handling:
+    * removed the -H option
+    * modified -U option syntax: -U forces to escape all non-ASCII UTF-8 chars,
+      -UU must be used now to entirely disable UTF-8 support.
+    [Chr. Spieler]
+ - windll/windll.{c|txt}: added U_flag to option stucture.  [Chr. Spieler]
+ - man/unzip.1, man/zipinfo.1: added description of the new UTF-8 related
+    syntax for the -U option.  [Chr. Spieler]
+ - win32/w32cfg.h, wince/wcecfg.h: enabled UNICODE_SUPPORT by default.
+    [Chr. Spieler]
+ - win32/Makefile: adapted to modified UNICODE_SUPPORT default.  [Chr. Spieler]
+ - wince/intrface.cpp - close_outfile(): moved local (wide string) copy of
+    filename outside of conditional "set timestamps" block.  [Chr. Spieler]
+ - unzpriv.h: do never include <wchar.h> here for the wince port (_WIN32_WCE or
+    POCKET_UNZIP), this must be handled elsewhere for C++.  [Chr. Spieler]
+ - unzip.c: removed the -U option description from the introductory screen for
+    WIN32 because of lacking space. Maybe, these "debugging" options should not
+    be shown there at all.  [Chr. Spieler]
+
+6.00e03 (29 Mar 08):
+ - unix/configure: corrected detection of ANSI C vs. bundled C compiler on
+    HP-UX.  [Steven M. Schweda]
+ - VMS, unzip.c: help screen extended to show correct "-D" semantics for the
+    special VMS defaults.  [Steven M. Schweda]
+ - unix/Makefile: added "generic_gcc" target, using auto-configuration with
+    GNU compiler.  [Steven M. Schweda]
+ - unzip.c: renamed error message constant for clarity.  [Chr. Spieler]
+ - unshrink.c: revision to fix long-standing decompression bug, added boundary
+    checks to detect invalid compressed data.  [Santiago Vila, Chr. Spieler]
+ - extract.c: added error message handling for "invalid data" errors from
+    unshrink().  [Chr. Spieler]
+ - process.c, unzpriv.h: disabled compilation of unused UNICODE_SUPPORT helper
+    function.  [Chr. Spieler]
+ - process.c, win32/win32.c: added special win32-only version of the
+    wide_to_local_string() helper function to work around "ANSI vs. OEM"
+    codepage problems with non-Microsoft C-runtime libraries.  [Chr. Spieler]
+ - zipinfo.c - zipinfo(): corrected "back at end-of-cdir" check (synchronized
+    it with the corresponding list_files() code).  [Chr. Spieler]
+ - fileio.c - do_string(): closed UNICODE_SUPPORT related memory leaks
+    (free allocated utf8 buffers when no longer used).  [Chr. Spieler]
+ - vms/vms.c - set_direc_attribs(): do not restore any size info from the
+    (PK-style) extra field record attributes settings.  The new directory
+    created during extraction may contain fewer (restored) entries than the
+    original source folder, so that the old non-matching size data would
+    result in corrupted interal directory structures.  [Steven M. Schweda]
+
+6.00e04 (27 Apr 08):
+ - vms/vms.c - set_direc_attribs(): fixed NAM[L] initialization for the
+    "normal" non-VMS-attributes case.  [Steven M. Schweda]
+ - vms/NOTES.TXT updated (version copied from zip30h05).  [Steven M. Schweda]
+ - unzip.c, vms/NOTES.TXT: added SYMLINKS to the special compilation options
+    reported by show_version_info(); updated Symbolic Links section in
+    NOTES.TXT.  [Chr. Spieler]
+ - INSTALL: added documentation for the new UNICODE_SUPPORT related options.
+    [Chr. Spieler]
+ - README: added anouncement of the new UTF-8 coded entry names support.
+    [Chr. Spieler]
+ - fileio.c, process.c, unzip.c, globals.h, unzpriv.h, win32/w32cfg.h,
+    wince/wcecfg.h : revised the UNICODE_SUPPORT code, added direct support for
+    UTF-8 being the native MBCS char enconding, allowed separate activation of
+    the "UTF-8 is native character coding" and the "translate UTF-8 <==> native
+    extended-ASCII via Unicoded wchar_t" support methods.  [Chr. Spieler]
+ - unix/configure, unix/Makefile: extended configure script to support
+    automatic selection of UNICODE_SUPPORT support on capable systems,
+    completed configuration support for the linking step.  [Chr. Spieler]
+ - unix/unxcfg.h: changed interdependancy rules of LARGE_FILE_SUPPORT and
+    ZIP64_SUPPORT to prevent unsupported symbol combinations.  [Chr. Spieler]
+ - man/unzip.1: extended description of -U option to mention the #Lxxxxxx
+    escape format for characters beyond the basic unicode page.  [Chr. Spieler]
+ - proginfo/extrafld.txt: updated wording and line wrapping of Info-ZIP
+    Unicode extra fields.  [Chr. Spieler]
+
+6.00e05 (09 Sep 08):
+ - unix/unix.c - version(): added OS info support for Mac OS X (including a
+    note for the recognized CPU architecture).  [Steven M. Schweda]
+ - unix/configure: check for Mac OS X special linker options is only executed
+    on systems that have been identified as Mac OS X.  [Steven M. Schweda]
+ - unix/Makefile: moved "solaris" targets into new "autoconfig generic" group
+    of machine target aliases.  [Steven M. Schweda, Chr. Spieler]
+ - extract.c, fileio.c: use "sizeof(G.answerbuf)" as length argument in fgets()
+    calls, for better robustness and "in-code" documentation.  [Chr. Spieler]
+ - extract.c - extract_or_test_entrylist(): fixed handling of \n in response
+    to "overwrite (y/n/r)" prompt.  [Steven M. Schweda, Chr. Spieler]
+ - extract.c, special version of "replace file" prompt for VMS to take into
+    account that VMS normally created a new version instead of overwriting
+    an existing file.  [Steven M. Schweda]
+ - unzpriv.h: for VMS, undefine the PATH_MAX definition provided by <limits.h>,
+    because it does not take into account long name support of ODS-5 volumes.
+    [Steven M. Schweda]
+ - VMS: added zlib.h and infback9.h jacket headers for support of using zlib
+    as inflate decompression code; revised build procedures for zlib support
+    (build_unzip.com, descrip.mms, descrip_src.mms).  [Steven M. Schweda]
+ - inflate.c: corrected condition when to include "infback9.h" for Deflate64
+    support with zlib 1.2.x.  [Chr. Spieler]
+ - extract.c: standardized wording of error messages in SET_DIR_ATTRIBS code.
+    [Steven M. Schweda]
+ - vms/vms.c - set_direc_attribs(): ensure that the FAB block used is properly
+    initialized.  [Steven M. Schweda]
+ - aosvs, atari, atheos, beos, unix - mapname(): for all "unix-like" ports, the
+    reserved file names "." and ".." are mapped to "_" resp. "__".
+    [Steven M. Schweda, Chr. Spieler]
+ - list.c - changed listing layout to emit four-digit years for file
+    date-time-stamps.  [Ed Gordon, Chr. Spieler]
+ - process.c - find_ecrec(): fixed zipfile comment handling within the Zip64-
+    compatible end-of-central-dir records scanning, to take into account that
+    the file pointer is no longer at the zipfile end when the eocdrec scanning
+    has finished.  [Chr. Spieler]
+ - process.c, zipinfo.c: revised and reorganized zipinfo log header output;
+    the zip archive comment has to be reported before all of the eocdir info
+    could be collected.  [Chr. Spieler]
+ - man/unzipsfx.1 - Debian patches 4461_002 and 5293_009 fixing text errors;
+    correct spelling of similarly and additional per debian patch; correct
+     wrong formatting command \P to \fP.  [sanvila]
+ - vms/build_unzip.com: fixed integrated bzlib build support.  [Chr. Spieler]
+
+6.00e06 (13 Sep 08):
+ - unix/unix.c - set_symlnk_attribs(): removed erronous surplus line with only
+    "if" on it. [Steven M. Schweda]
+ - vms/descrip_deps.mms: restored correct file which was accidentally
+    overwritten by vms/descrip_src.mms.  [Steven M. Schweda]
+ - vms/build_unzip.com: optimized the distinction between "compile destination
+    subdir" for integrated BZIP2 compilation (should distinguish between the
+    different compilers supported for VAX) and "external library dir" for
+    user-supplied BZIP2 (and ZLIB) libraries (user-supplied library is expected
+    to work with any supported compiler on VAX, so no dependancy on the
+    specific compiler used).  [Steven M. Schweda]
+ - unzip.c: replaced tab characters in output messages by appropiate number of
+    spaces (assuming standard tab spacing of 8 chars), to prevent mis-formatted
+    output on terminals with non-standard tabstop settings.  [S. M. Schweda]
+ - unix/unix.c
+    * set_symlnk_attribs(): fixed uid/gid size check before calling lchown();
+    * set_direc_attribs(): repared wrongly inserted patch and fixed uid/gid
+      size check before calling chown().  [Chr. Spieler]
+ - vms/vms.c: fixed user-query code for existing files on VMS when extracting
+    in "-V" mode (retaining version numbers); fixed some problems with exotic
+    extended ODS5 file names, and files named ".".  [Steven M. Schweda]
+ - vms/cmdline.c, vms/unz_cli.cld: extended CLI to support the new extended
+    meaning of the -o flag (-oo => "overwrite ALL existing" when retaining
+    version numbers ("-V") and extracting archive members with attached version
+    number (new /EXISTING option).  [Steven M. Schweda]
+ - extract.c - extract_or_test_entrylist(): added code to skip the generic user
+    query "overwrite (y/n/r)?" when extracting an entry with attached version
+    number in "-V" (keep version number) mode.  [Steven M. Schweda, C. Spieler]
+ - vms/unzip_cli.help, vms/unzip_hlp.rnh: updated documentation to reflect the
+    UI extension to handle VMS-specific "overwrite or new version" settings.
+    [Steven M. Schweda]
+ - unzip.c: added VMS specific -n and -o (-oo) option description sections
+    to online help screen definitions.  [Steven M. Schweda]
+ - vms/cmdline.c: corrected some small formatting issues in online help output.
+    [Chr. Spieler]
+ - vms/unzip_cli.help, vms/unzip_hlp.rnh: corrected a few typos and updated the
+    help screen for the "unix-style" commands in the CLI help.  [Chr. Spieler]
+ - vms/vms.c, extract.c, unzpriv.h: fixed the the error handling of the VMS-
+    specific "newver/overwrite/skip" query by extending the return code range
+    of open_output() for VMS, without any new global data.  [Chr. Spieler]
+
+6.00e (04 Jan 09):
+ - fileio.c: changed tmpstat from struct stat to z_stat.  [EG]
+ - unzip.c: expanded extended help to include unzip and zipinfo options.  [EG]
+ - man/unzip.1: updated multi-part archive information; minor additions
+    to authors activities list.  [EG]
+ - fileio.c: added strerror(errno) output to CannotCreateFile message.  [SMS]
+ - unix/unix.c: add more detailed error message using strerror() when a
+    file error occurs.  [SMS]
+ - unix/zipgrep - add additional information to top.  Clean up some lines and
+    add commments.  Added code to handle backslashes in archive file names,
+    and shell-special characters in the pattern. Changed to use "sed" for all
+    escaping of shell-special characters. Tried to get the exit status to
+    follow the status of egrep in the complex (default) situation, using only
+    standard Bourne shell features, and to exit early if egrep returns
+    status 2 (error).  [SMS]
+ - vms/unzip_cli.help - VMS help updates.  [SMS]
+ - vms/unzip_def.rnh - synchronized option description with unzip_cli.help.
+    [Chr. Spieler]
+ - fileio.c: extend backup number range from 65535 to 99999 on 32-bit systems;
+    fixed limit detection on 16-bit systems.  [Chr. Spieler]
+ - zipinfo.c: changed date layout of "short" (one-line) zipinfo modes to always
+    use ISO-style YMD order.  [Chr. Spieler]
+ - unix/configure: added a simple compiler test to check for a working C
+    compiler setup.  [Steven M. Schweda]
+ - cmsmvs/vmmvs.h: removed __EBCDIC preprocessor symbol definition (not used
+    anywhere in UnZip, breaks compilation on Z-OS).  ["Lutz", Chr. Spieler]
+ - unix/makefile - moved -L link option earlier in unzip$E rule.  [Lutz]
+ - unzip.c - Remove "s" from "permits" in SYMLINKS feature message.  [SMS]
+ - vms/vms.c: simplified the scheme to escape non-last dots, for compatibility
+    with modifications in Zip 3.1.  [SMS]
+ - vms/vms.c, vms/vms.h, function create_qio_output(): revised NMCTL flag
+    handling ("overwrite or create-new" code) to be VAXC compatible.  [SMS]
+ - extract.c - extract_or_test_entrylist(): removed '\n in middle of WINDLL
+    "file exists ... skipping" message to get it displayed on one line.  [EG]
+ - man/unzip.1, INSTALL: updated/corrected documentation for the UNIXBACKUP
+    feature and the description of its -B qualifier.  [Chr. Spieler]
+ - proginfo/ziplimits.txt: updated discussion of program implementation limits
+    to the state of "released" Zip 3.0 and UnZip 6.0.  [EG, Chr. Spieler]
+ - README, Bugs, ToDo: updated and syncronized documentation for release
+    candidate.  [Chr. Spieler]
+ - windll/structs.h: added structure version id field at the "top" of the
+    "DCL" options struct.  [EG]
+ - windll/structs.h: added UZ_DCL_STRUCTVER preprocessor symbol, holding the
+    currently valid version id of the DCL structure definition.  [Chr. Spieler]
+ - windll/windll.c - Wiz_SetOpts(): exit function if version id of passed in
+    "DCL" structure is not equal to the expected setting.  [EG, Chr. Spieler]
+ - windll/unexampl.c: synchronized with recent WinDLL option structure
+    addition.  [EG, Chr. Spieler]
+ - windll/vc?/exampl/c_dll_ex.[dsp|vcproj]: new Visual Studio project files
+    for building the WinDLL C usage example uzexampl.exe.  [EG, Chr. Spieler]
+ - windll/vb/vbunzip.bas: changed DLL interface to use UZxxx_I32 variants of
+    callback functions that split 64-bit values into high and low part 32-bit
+    integers that can be handled by VB(A)5/6.  Inside the VB code, low and
+    high parts are added up in Currency type variables. Converted \ to / in
+    duplicate file message.  Fixed MsgBox flags concatenation.  Added support
+    for new OverwriteAll checkbox.  [EG]
+ - windll/vb/vbunzip.frm: added OverwriteAll checkbox, added resizing to
+    txtMsgOut output box.  [EG]
+ - windll/vb/vbunzip.frm, windll/vb/vbunzip.bas: cleaned up and completed the
+    recent modifications, resynchronized with WinDLL interface with UnZip 6.0
+    master source, removed all modification incompatible with VB5, fixed the
+    UZDLLServ_I32() callback calling interface, used Double instead of
+    Currency as Int64 summation type to prevent potential numeric overflow
+    issues.  [Chr. Spieler]
+
+6.00f (11 Jan 09):
+ - INSTALL: added notes on the difference between "old" Macintosh OS and
+    current Apple Mac OS/X, which is supported as a BSD Unix port .  [EG]
+ - unzip.c - help_extended(): added some documentation about funzip and
+    unzipsfx stub.  [EG]
+ - windll/csharp/: updated C# example to match the current Zip64-compatible
+    WinDLL API, revised string parameter marshalling, initialized/resetted
+    job statistic counters, added OverwriteAll checkbox.  [Chr. Spieler]
+ - win32/Makefile: the DLL example frontend is now compiled with the same
+    runtime library settings as the DLL binary.  [Chr. Spieler]
+ - LICENSE: updated to version 2009-Jan-2, which removes the requirement to
+    provide the LICENSE in documentation with distribution of binaries when
+    the redistributed programs support display of the LICENSE by some command
+    line option.  [EG]
+ - vms/vms.h, vms/vms.c: moved "lowercase to uppercase mapping" define of
+    sys$setdfprot from vms.c into vms.h in front of the starlet.h include,
+    where all the other name case mappings are located.  [Steven M. Schweda]
+ - vms/vms.c: made the declaration of sys$setdfprot() always active when
+    the SETDFPROT symbol is defined.  [Chr. Spieler]
+ - unix/unix.c: added strerror(errno) output to various "Cannot..." I/O error
+    messages (in checkdir(), close_outfile(), set_symlnk_attribs()).
+    [Steven M. Schweda, Chr. Spieler]
+ - fileio.c - open_outfile(): added strerror(errno) output to the error
+    messages "cannot rename ..." and "cannot delete ...".  [Chr. Spieler]
+ - fileio.c - do_string(): corrected string length passed to win_fprintf()
+    (comment string may get shortened by CRLF->LF translation). [Chr. Spieler]
+ - beos/beos.c, beos/beocfg.h, aosvs/aosvs.c, win32/win32.c: extended various
+    "Cannot..." I/O error messages with strerror(errno) output, to synchronize
+    code with current state of the Unix port.  [Chr. Spieler]
+ - unzip.c, unzpriv.h, unix/configure: added better check for UTF-8 codeset
+    using nl_langinfo() function, as suggested on the sourceforge.net forum;
+    added nl_langinfo() to the "function existence" checks in the configure
+    script.  [Chr. Spieler]
+ - wince/intrface.cpp: added missing wide_to_local_string() function from
+    win32.c (is [currently] needed in process.c).  [Chr. Spieler]
+
 ==================
 
-These changes occurred in beta versions 6.00a to 6.00d.  This list may have
+These changes occurred in beta versions 6.00a to 6.00e.  This list may have
 left out some bugfixes and even some features...void where prohibited, your
 mileage may vary, etc., etc.

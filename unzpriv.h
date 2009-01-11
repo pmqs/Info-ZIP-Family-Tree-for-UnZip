@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -79,6 +79,17 @@
 #else
 #  if (!defined(VMS_TEXT_CONV) && !defined(SFX))
 #    define VMS_TEXT_CONV
+#  endif
+#endif
+
+/* Enable -B option per default on specific systems, to allow backing up
+ * files that would be overwritten.
+ * (This list of systems must be kept in sync with the list of systems
+ * that add the B_flag to the UzpOpts structure, see unzip.h.)
+ */
+#if (!defined(NO_UNIXBACKUP) && !defined(UNIXBACKUP))
+#  if defined(UNIX) || defined(OS2) || defined(WIN32)
+#    define UNIXBACKUP
 #  endif
 #endif
 
@@ -1193,6 +1204,9 @@
 # endif
 # ifndef _MBCS  /* no need to include <locale.h> twice, see below */
 #   include <locale.h>
+#   ifndef SETLOCALE
+#     define SETLOCALE(category, locale) setlocale(category, locale)
+#   endif
 # endif
 #endif /* UNICODE_SUPPORT */
 
@@ -1594,6 +1608,14 @@
 
 #define IS_OVERWRT_ALL    (G.overwrite_mode == OVERWRT_ALWAYS)
 #define IS_OVERWRT_NONE   (G.overwrite_mode == OVERWRT_NEVER)
+
+#ifdef VMS
+  /* return codes for VMS-specific open_outfile() function */
+# define OPENOUT_OK       0   /* file openend normally */
+# define OPENOUT_FAILED   1   /* file open failed */
+# define OPENOUT_SKIPOK   2   /* file not opened, skip at error level OK */
+# define OPENOUT_SKIPWARN 3   /* file not opened, skip at error level WARN */
+#endif /* VMS */
 
 #define ROOT              0    /* checkdir() extract-to path:  called once */
 #define INIT              1    /* allocate buildpath:  called once per member */
@@ -2503,14 +2525,6 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
                             const char *path, z_stat *buf));      /* win32.c */
 #endif
 #endif
-
-/*---------------------------------------------------------------------------
-    Mac-OS-X-only functions:
-  ---------------------------------------------------------------------------*/
-
-#if defined( UNIX) && defined( __APPLE__)
-    int vol_attr_ok( const char *path);
-#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /*---------------------------------------------------------------------------
     Miscellaneous/shared functions:

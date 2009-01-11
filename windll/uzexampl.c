@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -251,24 +251,32 @@ else
    Here is where the actual extraction process begins. First we set up the
    flags to be passed into the dll.
  */
-lpDCL->ncflag = 0; /* Write to stdout if true */
-lpDCL->fQuiet = 0; /* We want all messages.
-                      1 = fewer messages,
-                      2 = no messages */
-lpDCL->ntflag = 0; /* test zip file if true */
-lpDCL->nvflag = 0; /* give a verbose listing if true */
-lpDCL->nzflag = 0; /* display a zip file comment if true */
-lpDCL->ndflag = 1; /* Recreate directories != 0, skip "../" if < 2 */
-lpDCL->naflag = 0; /* Do not convert CR to CRLF */
-lpDCL->nfflag = 0; /* Do not freshen existing files only */
-lpDCL->noflag = 1; /* Over-write all files if true */
-lpDCL->ExtractOnlyNewer = 0; /* Do not extract only newer */
-lpDCL->PromptToOverwrite = 0; /* "Overwrite all" selected -> no query mode */
-lpDCL->lpszZipFN = argv[1]; /* The archive name */
-lpDCL->lpszExtractDir = NULL; /* The directory to extract to. This is set
-                                 to NULL if you are extracting to the
-                                 current directory.
-                               */
+lpDCL->StructVersID = UZ_DCL_STRUCTVER; /* version of this structure */
+lpDCL->ncflag = 0;              /* write to stdout if true */
+lpDCL->fQuiet = 0;              /* we want all messages
+                                   1 = fewer messages,
+                                   2 = no messages */
+lpDCL->ntflag = 0;              /* test zip file if true */
+lpDCL->nvflag = 0;              /* give a verbose listing if true */
+lpDCL->nzflag = 0;              /* display zip file comment if true */
+lpDCL->ndflag = 1;              /* recreate directories != 0,
+                                   skip "../" if < 2 */
+lpDCL->naflag = 0;              /* do not convert CR to CRLF */
+lpDCL->nfflag = 0;              /* do not freshen existing files only */
+lpDCL->noflag = 1;              /* over-write all files if true */
+lpDCL->nZIflag = 0;             /* no ZipInfo output mode */
+lpDCL->B_flag = 0;              /* do not backup existing files */
+lpDCL->C_flag = 0;              /* do not match case-insensitive */
+lpDCL->D_flag = 0;              /* restore all timestamps */
+lpDCL->U_flag = 0;              /* do not disable UTF-8 support */
+lpDCL->ExtractOnlyNewer = 0;    /* do not extract only newer */
+lpDCL->SpaceToUnderscore = 0;   /* do not convert space to '_' in filenames */
+lpDCL->PromptToOverwrite = 0;   /* "overwrite all" selected -> no query mode */
+lpDCL->lpszZipFN = argv[1];     /* the archive name */
+lpDCL->lpszExtractDir = NULL;   /* the directory to extract to.
+                                   This is set to NULL if you are extracting
+                                   to the current directory.
+                                 */
 /*
    As this is a quite short example, intended primarily to show how to
    load and call in to the dll, the command-line parameters are only

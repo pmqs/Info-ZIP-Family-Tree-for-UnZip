@@ -1,6 +1,6 @@
 # Makefile for UnZip, fUnZip and UnZipSFX using LCC-Win32.
 # By E-Yen Tan (3 June 1998).
-# Last updated 27 Dec 2006 (Christian Spieler).
+# Last updated 20 Jul 2008 (Christian Spieler).
 #
 # This version includes rules to build the 32-bit windll DLL.
 
@@ -112,8 +112,8 @@ dllsample: uzexampl.exe
 guisfx:	SFXWiz32.exe
 all:	unzips dll dllsample guisfx
 
-unzip.exe: $(OBJU)
-	$(LD) $(LDFLAGS)$@ $(DEF) $(OBJU) $(LDFLAGS2)
+unzip.exe: $(OBJU) winapp.res
+	$(LD) $(LDFLAGS)$@ $(DEF) $(OBJU) winapp.res $(LDFLAGS2)
 
 funzip.exe: $(OBJF)
 	$(LD) $(LDFLAGS)$@ $(DEF) $(OBJF) $(LDFLAGS2)
@@ -175,6 +175,9 @@ crc_lcc$(OBJ):	win32/crc_lcc.asm
 
 crypt$(OBJ):	crypt.c $(UNZIP_H) zip.h crypt.h ttyio.h
 	$(CC) -c $(CFLAGS_UN) $(OUT)$@ crypt.c
+
+winapp.res:	win32/winapp.rc unzvers.h
+	- lrc -v -r -I./win32 -DWIN32 -o$@ win32/winapp.rc
 
 crc32f$(OBJ):	crc32.c $(UNZIP_H) zip.h crc32.h
 	$(CC) -c $(CFLAGS_FU) $(OUT)$@ crc32.c

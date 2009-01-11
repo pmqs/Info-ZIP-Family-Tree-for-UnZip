@@ -17,6 +17,7 @@ Contents of the "win32" sub-archive for UnZip 6.0 and later:
   w32cfg.h      Win32-specific configuration, included by unzpriv.h
   win32.c       Win32-specific support routines
   win32i64.c
+  winapp.rc     resource file for regular console-mode UnZip application
   vc6/          directory containing Visual C++ 6.0 project files
     funzip.dsp    MSVC++ 6.0 project file for fUnZip command-line tool
     unzip.dsp     MSVC++ 6.0 project file for UnZip command-line main program

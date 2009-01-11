@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -237,7 +237,7 @@ char *do_wild(__G__ wildspec)
 /* Function open_outfile() */
 /***************************/
 
-int open_outfile(__G)         /* return 1 if fail */
+int open_outfile(__G)           /* return 1 if fail */
     __GDEF
 {
     int errc = 1;    /* init to show no success with AOS/VS info */
@@ -661,6 +661,15 @@ int mapname(__G__ renamed)
             *lastsemi = '\0';
     }
 
+    /* On UNIX (and compatible systems), "." and ".." are reserved for
+     * directory navigation and cannot be used as regular file names.
+     * These reserved one-dot and two-dot names are mapped to "_" and "__".
+     */
+    if (strcmp(pathcomp, ".") == 0)
+        *pathcomp = '_';
+    else if (strcmp(pathcomp, "..") == 0)
+        strcpy(pathcomp, "__");
+
 #ifdef ACORN_FTYPE_NFS
     /* translate Acorn filetype information if asked to do so */
     if (uO.acorn_nfs_ext &&
@@ -746,6 +755,7 @@ int checkdir(__G__ pathcomp, flag)
 #   define FUNCTION  (flag & FN_MASK)
 
 
+
 /*---------------------------------------------------------------------------
     APPEND_DIR:  append the path component to the path being built and check
     for its existence.  If doesn't exist and we are creating directories, do
@@ -771,10 +781,11 @@ int checkdir(__G__ pathcomp, flag)
          * within 20 of FILNAMSIZ; then if var set, do careful check when
          * appending.  Clear variable when begin new path. */
 
-        if ((end-buildpath) > FILNAMSIZ-3)  /* need '/', one-char name, '\0' */
-            too_long = TRUE;                /* check if extracting directory? */
+        /* next check: need to append '/', at least one-char name, '\0' */
+        if ((end-buildpath) > FILNAMSIZ-3)
+            too_long = TRUE;                    /* check if extracting dir? */
         /* for AOS/VS, try to create so as to not use searchlist: */
-        if ( /*stat(buildpath, &G.statbuf)*/ 1) {
+        if ( /*SSTAT(buildpath, &G.statbuf)*/ 1) {
             if (!G.create_dirs) { /* told not to create (freshening) */
                 free(buildpath);
                 return MPN_INF_SKIP;    /* path doesn't exist: nothing to do */
@@ -792,8 +803,11 @@ int checkdir(__G__ pathcomp, flag)
             {
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
+                 %s\n\
                  unable to process %s.\n",
-                  FnFilter2(buildpath), FnFilter1(G.filename)));
+                  FnFilter2(buildpath),
+                  strerror(errno),
+                  FnFilter1(G.filename)));
                 free(buildpath);
                 /* path didn't exist, tried to create, failed */
                 return MPN_ERR_SKIP;
@@ -919,7 +933,7 @@ int checkdir(__G__ pathcomp, flag)
             if (tmproot[rootlen-1] == '/') {
                 tmproot[--rootlen] = '\0';
             }
-            if (rootlen > 0 && (stat(tmproot, &G.statbuf) ||
+            if (rootlen > 0 && (SSTAT(tmproot, &G.statbuf) ||
                                 !S_ISDIR(G.statbuf.st_mode)))
             {   /* path does not exist */
                 if (!G.create_dirs /* || iswild(tmproot) */ ) {
@@ -934,8 +948,9 @@ int checkdir(__G__ pathcomp, flag)
                     == -1)
                 {
                     Info(slide, 1, ((char *)slide,
-                      "checkdir:  cannot create extraction directory: %s\n",
-                      FnFilter1(tmproot)));
+                      "checkdir:  cannot create extraction directory: %s\n\
+           %s\n",
+                      FnFilter1(tmproot), strerror(errno)));
                     free(tmproot);
                     rootlen = 0;
                     /* path didn't exist, tried to create, and failed: */
@@ -997,11 +1012,11 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     if (G.symlnk) {
         extent ucsize = (extent)G.lrec.ucsize;
         /* size of the symlink entry is the sum of
-         *  (struct size + 2 trailing '\0'),
+         *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
          *  system specific attribute data size (might be 0),
          *  and the lengths of name and link target.
          */
-        extent slnk_entrysize = (sizeof(slinkentry) + 2) +
+        extent slnk_entrysize = (sizeof(slinkentry) + 1) +
                                 ucsize + strlen(G.filename);
         slinkentry *slnk_entry;
 

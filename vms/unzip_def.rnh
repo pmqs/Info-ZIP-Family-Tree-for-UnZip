@@ -143,21 +143,21 @@ options and modifiers can be provided:
  MODIFIERS
    -a   extract text files in standard VMS text file format
    -aa  extract all files as text
-   -b   auto-extract only binary files in VMS fixed 512-byte record fmt
-   -bb  extract all files as binary in VMS fixed 512-byte record format
+   -b   auto-extract only binary files in fixed 512-byte record format
+   -bb  extract all files as binary in fixed 512-byte record format
    -j   junk paths (don't recreate archive's directory structure)
    -n   never overwrite or make a new version of an existing file
    -o   always make a new version (-oo: overwrite orig) existing file
    -q   perform operations quietly (-qq => even quieter)
    -C   match filenames case-insensitively
-   -D   do not restore any timestamps (--D restore timestamps for dirs)
+   -D   do not restore any timestamps (--D restore them even for dirs)
    -L   convert filenames to lowercase if created under DOS, VMS, etc.
    -M   feed screen output through built-in "more" pager
-   -P<password> supply decryption password on the cmnd line (insecure!)
-   -S   use Stream_LF record format to extract text files (-a[a] req'd)
+   -P<password> supply decryption password on the cmd line (insecure!)
+   -S   use Stream_LF record format to extract text files (with -a[a])
    -V   retain (VMS) file version numbers
    -X   restore owner/protection info (may require privileges)
-   -Y   treat ".nnn" suffix as version number (e.g. "a.b.3" -> "a.b;3")
+   -Y   treat ".nnn" suffix as version number ("a.b.3" -> "a.b;3")
    -:   allow "../" path components to traverse across top extract dir
    -2   force creation of ODS2-compatible file names
 .end literal;.sk
@@ -168,7 +168,7 @@ For example:
     unzip "-VX" -a zipfile
 .end literal;.sk
 When extracting to SYS$OUTPUT (-c or -p options) redirected to a file,
-you may want to override the default text file converion by specifying
+you may want to override the default text file conversion by specifying
 the -b option. A single "-b" option switches to "binary piping" mode
 for Zip entries marked as non-text, only. To force "binary piping" mode
 even for Zip file entries marked as text, the "-bb" option should be used.

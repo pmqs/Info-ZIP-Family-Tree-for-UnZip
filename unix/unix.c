@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -104,6 +104,24 @@ typedef struct {
 /* static int renamed_fullpath; */      /* ditto */
 
 static unsigned filtattr OF((__GPRO__ unsigned perms));
+
+
+/*****************************/
+/* Strings used multiple     */
+/* times in unix.c           */
+/*****************************/
+
+#ifndef MTS
+/* messages of code for setting file/directory attributes */
+static ZCONST char CannotSetItemUidGid[] =
+  "warning:  cannot set UID %lu and/or GID %lu for %s\n          %s\n";
+static ZCONST char CannotSetUidGid[] =
+  " (warning) cannot set UID %lu and/or GID %lu\n          %s";
+static ZCONST char CannotSetItemTimestamps[] =
+  "warning:  cannot set modif./access times for %s\n          %s\n";
+static ZCONST char CannotSetTimestamps[] =
+  " (warning) cannot set modif./access times\n          %s";
+#endif /* !MTS */
 
 
 #ifndef SFX
@@ -297,7 +315,7 @@ char *do_wild(__G__ wildspec)
 #ifndef S_ISGID
 # define S_ISGID        0002000 /* set group id on execution */
 #endif
-#ifndef	S_ISVTX
+#ifndef S_ISVTX
 # define S_ISVTX        0001000 /* save swapped text even after use */
 #endif
 
@@ -948,9 +966,8 @@ int checkdir(__G__ pathcomp, flag)
                 if (mkdir(tmproot, 0777) == -1) {
                     Info(slide, 1, ((char *)slide,
                       "checkdir:  cannot create extraction directory: %s\n\
-                 %s\n",
-                      FnFilter1(tmproot),
-                      strerror(errno)));
+           %s\n",
+                      FnFilter1(tmproot), strerror(errno)));
                     free(tmproot);
                     G.rootlen = 0;
                     /* path didn't exist, tried to create, and failed: */
@@ -1200,13 +1217,12 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 #endif
         {
             if (uO.qflag)
-                Info(slide, 0x201, ((char *)slide,
-                  "warning:  cannot set UID %lu and/or GID %lu for %s\n",
-                  z_uidgid[0], z_uidgid[1], FnFilter1(G.filename)));
+                Info(slide, 0x201, ((char *)slide, CannotSetItemUidGid,
+                  z_uidgid[0], z_uidgid[1], FnFilter1(G.filename),
+                  strerror(errno)));
             else
-                Info(slide, 0x201, ((char *)slide,
-                  " (warning) cannot set UID %lu and/or GID %lu",
-                  z_uidgid[0], z_uidgid[1]));
+                Info(slide, 0x201, ((char *)slide, CannotSetUidGid,
+                  z_uidgid[0], z_uidgid[1], strerror(errno)));
         }
     }
 
@@ -1221,7 +1237,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
   ---------------------------------------------------------------------------*/
 
     if (fchmod(fileno(G.outfile), filtattr(__G__ G.pInfo->file_attr)))
-        perror("chmod (file attributes) error");
+        perror("fchmod (file attributes) error");
 
     fclose(G.outfile);
 #endif /* !NO_FCHOWN && !NO_FCHMOD */
@@ -1230,23 +1246,12 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     if (uO.D_flag <= 1) {
         /* set the file's access and modification times */
         if (utime(G.filename, &(zt.t2))) {
-#ifdef AOS_VS
             if (uO.qflag)
-                Info(slide, 0x201, ((char *)slide,
-                  "... cannot set time for %s\n",
-                  FnFilter1(G.filename)));
+                Info(slide, 0x201, ((char *)slide, CannotSetItemTimestamps,
+                  FnFilter1(G.filename), strerror(errno)));
             else
-                Info(slide, 0x201, ((char *)slide,
-                  "... cannot set time"));
-#else
-            if (uO.qflag)
-                Info(slide, 0x201, ((char *)slide,
-                  "warning:  cannot set times for %s\n",
-                  FnFilter1(G.filename)));
-            else
-                Info(slide, 0x201, ((char *)slide,
-                  " (warning) cannot set times"));
-#endif /* ?AOS_VS */
+                Info(slide, 0x201, ((char *)slide, CannotSetTimestamps,
+                  strerror(errno)));
         }
     }
 
@@ -1286,9 +1291,9 @@ int set_symlnk_attribs(__G__ slnk_entry)
           if (lchown(slnk_entry->fname,
                      (uid_t)z_uidgid_p[0], (gid_t)z_uidgid_p[1]))
           {
-            Info(slide, 0x201, ((char *)slide,
-              "warning:  cannot set UID %lu and/or GID %lu for %s\n",
-              z_uidgid_p[0], z_uidgid_p[1], FnFilter1(slnk_entry->fname)));
+            Info(slide, 0x201, ((char *)slide, CannotSetItemUidGid,
+              z_uidgid_p[0], z_uidgid_p[1], FnFilter1(slnk_entry->fname),
+              strerror(errno)));
           }
         }
       }
@@ -1304,19 +1309,15 @@ int set_symlnk_attribs(__G__ slnk_entry)
     }
     /* currently, no error propagation... */
     return PK_OK;
-}
+} /* end function set_symlnk_attribs() */
 #endif /* SYMLINKS && SET_SYMLINK_ATTRIBS */
 
 
 #ifdef SET_DIR_ATTRIB
 /* messages of code for setting directory attributes */
-static ZCONST char Far DirlistUidGidFailed[] =
-  "warning:  cannot set UID %lu and/or GID %lu for %s\n";
-static ZCONST char Far DirlistUtimeFailed[] =
-  "warning:  cannot set modification, access times for %s\n";
 #  ifndef NO_CHMOD
-  static ZCONST char Far DirlistChmodFailed[] =
-    "warning:  cannot set permissions for %s\n";
+  static ZCONST char DirlistChmodFailed[] =
+    "warning:  cannot set permissions for %s\n          %s\n";
 #  endif
 
 
@@ -1355,9 +1356,9 @@ int set_direc_attribs(__G__ d)
         chown(UxAtt(d)->fn, (uid_t)UxAtt(d)->uidgid[0],
               (gid_t)UxAtt(d)->uidgid[1]))
     {
-        Info(slide, 0x201, ((char *)slide,
-          LoadFarString(DirlistUidGidFailed),
-          UxAtt(d)->uidgid[0], UxAtt(d)->uidgid[1], FnFilter1(d->fn)));
+        Info(slide, 0x201, ((char *)slide, CannotSetItemUidGid,
+          UxAtt(d)->uidgid[0], UxAtt(d)->uidgid[1], FnFilter1(d->fn),
+          strerror(errno)));
         if (!errval)
             errval = PK_WARN;
     }
@@ -1365,17 +1366,16 @@ int set_direc_attribs(__G__ d)
     if (uO.D_flag <= 0) {
         /* restore directory timestamps */
         if (utime(d->fn, &UxAtt(d)->u.t2)) {
-            Info(slide, 0x201, ((char *)slide,
-              LoadFarString(DirlistUtimeFailed), FnFilter1(d->fn)));
+            Info(slide, 0x201, ((char *)slide, CannotSetItemTimestamps,
+              FnFilter1(d->fn), strerror(errno)));
             if (!errval)
                 errval = PK_WARN;
         }
     }
 #ifndef NO_CHMOD
     if (chmod(d->fn, UxAtt(d)->perms)) {
-        Info(slide, 0x201, ((char *)slide,
-          LoadFarString(DirlistChmodFailed), FnFilter1(d->fn)));
-        /* perror("chmod (file attributes) error"); */
+        Info(slide, 0x201, ((char *)slide, DirlistChmodFailed,
+          FnFilter1(d->fn), strerror(errno)));
         if (!errval)
             errval = PK_WARN;
     }

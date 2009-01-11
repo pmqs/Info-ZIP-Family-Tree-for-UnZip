@@ -14,6 +14,7 @@ ZIP digest *should* now be listed here, but oversights are entirely possible.
   Bob Babcock            DOS volume-label code (FCBs)
   Charles Bailey         VMS_SEVERITY fix; VMSWILD () extension
   Audrey Beck            "WHERE" file info for AOL OS/2 forum
+  Myles Bennet           Initial start of Zip64 and Large-File handling
   Mike Bernardi          Unix makefile entry; CIX uploads
   James Birdsall         extract.c/makefile/NT stuff, etc.; awesome beta tester
   Allan Bjorklund        in misc.c

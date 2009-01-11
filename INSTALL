@@ -1,6 +1,6 @@
 __________________________________________________________________________
 
-  This is the Info-ZIP file INSTALL (for UnZip), last updated 02 Feb 2008.
+  This is the Info-ZIP file INSTALL (for UnZip), last updated 06 Jan 2009.
 __________________________________________________________________________
 
   Yes, this is a rather long file, but don't be intimidated:  much of its
@@ -27,7 +27,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
     docs first.
 
     Ah ha ha ha!!  Oh, that kills me.  But seriously...  For VMS, see the
-    Install section below or [.vms]readme. for details.
+    Install section below or [.vms]README. for details.
 
     For DOS and other OSes without explicit timezone support (i.e., everybody
     but Unix, Windows 95 and NT), make sure the "TZ" environment variable is
@@ -241,7 +241,8 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
 
       DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
         This option controls the order in which date components are printed
-        in listings:  day-month-year or month-day-year or year-month-day.
+        in non-ZipInfo-mode listings:  day-month-year or month-day-year or
+        year-month-day.
         For DOS, FlexOS, OS2, Theos and Win32, the format is automatically
         obtained from the operating system; most others default to DF_MDY.
 
@@ -264,11 +265,14 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         UnZip to append "datalen info" to QDOS exec type files in the same
         format as used by QDOS cross-compilers on Unix or the qltools v2.2(+).
 
-      UNIXBACKUP   (Unix only)
+      UNIXBACKUP   (default on OS/2, Unix, Win32)
         This option enables a -B option that instructs UnZip to rename files
         that would normally be overwritten.  The renamed files are given a
-        tilde suffix (`~').  Note that previously renamed files may be over-
-        written without notice, even if the -n option is given.
+        tilde suffix and a unique sequence number (`~#####').  Note that
+        previously renamed files may be overwritten without notice, even
+        if the -n option is given.
+        On target ports where UNIXBACKUP is enabled by default, the negated
+        option NO_UNIXBACKUP may be used to disable this feature.
 
       OS2_EAS
         List the sizes of OS/2 EAs and ACLs for each file as two extra columns
@@ -366,7 +370,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         used to compile a production versions of UnZip. This flag has been
         introduced to allow integration of experimental code for multi-volume
         support in the master source tree. This feature will become a default
-        option in the future 6.0 release of UnZip.
+        option in the future 6.1 release of UnZip.
 
       LZW_CLEAN
       USE_UNSHRINK (now default, as of January 2005)
@@ -409,6 +413,49 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         the program.  PASSWD_FROM_STDIN will therefore probably be phased out
         in future versions.  Note that the same security warnings given in the
         description of the -P option apply here as well.
+
+      UNICODE_SUPPORT
+        Enable restoring from UTF-8 encoded paths.  These paths are stored
+        in extra fields in a backward-compatible way so that archives with
+        UTF-8 paths still work on zips and unzips that don't support Unicode.
+        This support follows the recent additions to the PKWare AppNote for
+        Unicode support, except that Unicode comments on systems where UTF-8
+        is not the current character set is not implemented in this release.
+
+        Internally, Unicode support can be achieved by three methods:
+        a) The charset encoding used by the system is already UTF-8, so
+           the program just has to select the UTF-8 versions of the stored
+           filenames for file name handling.
+           This method is enabled by setting the symbol UTF8_MAYBE_NATIVE;
+           this activates code to check for native UTF-8 encoding in the
+           locale settings.
+        b) The operating system and the compilation environment support
+           "wide character" data in Unicode encoding (UCS-2/UTF-16 or UCS-4),
+           which are used to translate between UTF-8 and the native
+           extended-ASCII character encoding.
+           The code for this method is activated by setting the preprocessor
+           symbol UNICODE_WCHAR.
+           It may be activated together with UTF8_MAYBE_NATIVE to provide
+           more versatile Unicode support and additional "debugging" options
+           for checking the correct recognition of non-ASCII Unicode
+           characters.
+        c) The operating system and the compilation environment allow to use
+           unicode-encoded "wide character" data for native text strings
+           support.
+           Complete support for this method requires a throughout revision
+           of the UnZip code. All internal string handling and text output
+           needs to be ported to use wchar_t character storage.
+           This porting is still in an experimental stage and not ready
+           for general distribution.
+
+        On some ports UNICODE_SUPPORT is set automatically:
+        - WIN32 (and WinCE) use method b) by defining UNICODE_SUPPORT and
+          UNICODE_WCHAR.
+        - On Unix, the automatic configuration script enables UNICODE_WCHAR
+          if ISO-10646 compatible wide characters are supported and
+          UTF8_MAYBE_NATIVE if the locale detection call is available.
+        For these ports, setting NO_UNICODE_SUPPORT forces deactivation of
+        the Unicode support.
 
       DEBUG
         Used for debugging purposes; enables Trace() statements.  Generally
@@ -746,6 +793,8 @@ BeOS
   install in /boot/bin, do "make prefix=/boot/bin install".
 
 Macintosh
+  (This port is for Macintosh OS before Mac OS X.  See Unix Apple below for
+  Mac OS X and later.)
   MacZip requires at least System 7 and a Macintosh with a minimum of a
   Motorola 68020 or PowerPC 601 processor. Other configurations may work
   but it is not tested at all.
@@ -759,6 +808,12 @@ Macintosh
   WWW-Browser as a helper-app.
   Look into "macos/README.TXT" (or ":macos:README.TXT" on Mac) for further
   info.
+
+Macintosh OS X (Unix Apple)
+  Mac OS X and later are based on BSD Unix and are supported by the Unix
+  port.  See the Unix port for details.  Though support is currently
+  minimal, we plan to support additional Mac OS X features, such as resource
+  forks, in future releases.
 
 Human68K, TOPS-20, AOS/VS, MVS, VM/CMS, etc.
   Dunno, sorry...

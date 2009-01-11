@@ -12,6 +12,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unz32lib", "lib\unz32lib.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unzsfx32", "sfx\unzsfx32.vcproj", "{7545BD38-9F08-4F69-A944-E9981A5AB398}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_dll_ex", "exampl\c_dll_ex.vcproj", "{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{26E880E4-A1B1-4FB1-8833-13FC0FA48857} = {26E880E4-A1B1-4FB1-8833-13FC0FA48857}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		ASM Debug|Win32 = ASM Debug|Win32
@@ -52,6 +57,14 @@ Global
 		{7545BD38-9F08-4F69-A944-E9981A5AB398}.Debug|Win32.Build.0 = Debug|Win32
 		{7545BD38-9F08-4F69-A944-E9981A5AB398}.Release|Win32.ActiveCfg = Release|Win32
 		{7545BD38-9F08-4F69-A944-E9981A5AB398}.Release|Win32.Build.0 = Release|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.ASM Debug|Win32.ActiveCfg = ASM Debug|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.ASM Debug|Win32.Build.0 = ASM Debug|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.ASM Release|Win32.ActiveCfg = ASM Release|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.ASM Release|Win32.Build.0 = ASM Release|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.Debug|Win32.Build.0 = Debug|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.Release|Win32.ActiveCfg = Release|Win32
+		{80E5EF65-3BD4-4EFF-BA4C-CA893C95EE8B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

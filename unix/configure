@@ -4,7 +4,7 @@
 
 # configure: Guess values for system-dependent variables
 # Output the flag definitions to the file "flags".
-# Parameters: $1 = $(CC), $2 = $(CFLAGS), $3 = $(IZ_BZIP2) $4 = $(PROD)
+# Parameters: $1 = $(CC), $2 = $(CFLAGS), $3 = $(IZ_BZIP2)
 # To construct unzip automatically using this file, type
 # "make -f unix/Makefile generic".
 # If this fails, then type "make list" to get a list of special targets.
@@ -23,8 +23,6 @@ LN="ln -s"
 CFLAGS_OPT=''
 CFLAGS_BZ=''
 BZLF=''
-
-PROD=${4-.}
 
 echo "Check C compiler operation"
 cat > conftest.c << _EOF_
@@ -154,12 +152,12 @@ $CPP conftest.c >/dev/null 2>/dev/null || CPP="${CC} -E"
 
 echo Check if we can use asm code
 CRC32OA=""
-if eval "$CPP crc_i386.S > ${PROD}/_crc_i386.s 2>/dev/null"; then
-  if test ! -s ${PROD}/_crc_i386.s || grep error < ${PROD}/_crc_i386.s > /dev/null; then
+if eval "$CPP crc_i386.S > _crc_i386.s 2>/dev/null"; then
+  if test ! -s _crc_i386.s || grep error < _crc_i386.s > /dev/null; then
     :
-  elif eval "$CC -c -o ${PROD}/_crc_i386.o ${PROD}/_crc_i386.s >/dev/null 2>/dev/null" && [ -f ${PROD}/_crc_i386.o ]; then
+  elif eval "$CC -c _crc_i386.s >/dev/null 2>/dev/null" && [ -f _crc_i386.o ]; then
     CFLAGSR="${CFLAGSR} -DASM_CRC"
-    CRC32OA="${PROD}/crc_gcc.o"
+    CRC32OA="crc_gcc.o"
     echo "int foo() { return 0;}" > conftest.c
     $CC -c conftest.c >/dev/null 2>/dev/null
     echo Check if compiler generates underlines
@@ -167,7 +165,7 @@ if eval "$CPP crc_i386.S > ${PROD}/_crc_i386.s 2>/dev/null"; then
     [ $? -eq 0 ] && CPP="${CPP} -DNO_UNDERLINE"
   fi
 fi
-rm -f ${PROD}/_crc_i386.s ${PROD}/_crc_i386.o
+rm -f _crc_i386.s _crc_i386.o
 
 # ANSI options for compilers that don't have __STDC__ defined by default
 # Currently HPUX, pyramid, Dynix, AIX, OSF/1 and ultrix
@@ -380,7 +378,7 @@ $CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
 
 # Check for missing functions
 # add NO_'function_name' to flags if missing
-for func in fchmod fchown lchmod lchown
+for func in fchmod fchown lchmod lchown nl_langinfo
 do
   echo Check for $func
   echo "int main(){ $func(); return 0; }" > conftest.c
@@ -445,7 +443,7 @@ done
 CFLAGSR="${CFLAGSR} ${OPT}"
 
 echo Check for non existent include files
-for inc in stdlib.h stddef.h unistd.h fcntl.h string.h
+for inc in stdlib.h stddef.h unistd.h fcntl.h string.h langinfo.h
 do
    echo "#include <$inc>" > conftest.c
    $CPP conftest.c >/dev/null 2>/dev/null
@@ -601,4 +599,4 @@ echo CC=\"${CC}\" CF=\"${CFLAGSR} ${D_USE_BZ2}\" CRCA_O=\"${CRC32OA}\" \
        AS=\"${CC} -c\" LFLAGS1=\"${LFLAGS1}\" LF2=\"${LFLAGS2}\" \
        CC_BZ=\"${CC_BZ}\" CFLAGS_BZ=\"${CFLAGS_BZ}\" \
        IZ_BZIP2=\"${IZ_BZIP2}\" D_USE_BZ2=\"${D_USE_BZ2}\" \
-       L_BZ2=\"${L_BZ2}\" LIBBZ2=\"${LIBBZ2}\"  > "$PROD"/flags
+       L_BZ2=\"${L_BZ2}\" LIBBZ2=\"${LIBBZ2}\"  > flags

@@ -89,4 +89,4 @@ URL
 AUTHOR
        Mark Adler (Info-ZIP)
 
-Info-ZIP                   28 November 2007 (v3.94)                 FUNZIP(1L)
+Info-ZIP                    20 January 2009 (v3.95)                 FUNZIP(1L)

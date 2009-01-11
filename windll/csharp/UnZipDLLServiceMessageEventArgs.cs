@@ -27,26 +27,26 @@ namespace CSharpInfoZip_UnZipSample
 	/// </summary>
 	public class UnZipDLLServiceMessageEventArgs
 	{
-		private int m_ZipFileSize = 0;
-		private int m_SizeOfFileEntry = 0;
+		private ulong m_ZipFileSize = 0;
+		private ulong m_SizeOfFileEntry = 0;
 		private string m_FileEntryName = string.Empty;
 
 		//zipFileSize = Total size of the zip file
 		//fileEntryBytes - size of an individual file in the zip
 		//fileEntryName - name of an individual file in the zip
-		public UnZipDLLServiceMessageEventArgs(int zipFileSize, string fileEntryName, int fileEntryBytes)
+		public UnZipDLLServiceMessageEventArgs(ulong zipFileSize, string fileEntryName, ulong fileEntryBytes)
 		{
 			m_ZipFileSize = zipFileSize;
 			m_SizeOfFileEntry = fileEntryBytes;
 			m_FileEntryName = fileEntryName;
 		}
 
-		public int ZipFileSize
+		public ulong ZipFileSize
 		{
 			get {return m_ZipFileSize;}
 		}
 
-		public int SizeOfFileEntry
+		public ulong SizeOfFileEntry
 		{
 			get {return m_SizeOfFileEntry;}
 		}

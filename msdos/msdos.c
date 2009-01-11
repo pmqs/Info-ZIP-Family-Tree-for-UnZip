@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -25,6 +25,7 @@
              volumelabel()                  (non-djgpp, non-emx)
              close_outfile()
              stamp_file()                   (TIMESTAMP only)
+             prepare_ISO_OEM_translat()
              dateformat()
              version()
              zcalloc()                      (16-bit, only)
@@ -41,6 +42,7 @@
              _is_executable()               (djgpp 2.x)
              __crt0_glob_function()         (djgpp 2.x)
              __crt0_load_environment_file() (djgpp 2.x)
+             dos_getcodepage()              (all, ASM system call)
              screensize()                   (emx, Watcom 32-bit)
              int86x_realmode()              (Watcom 32-bit)
              stat_bandaid()                 (Watcom)
@@ -67,6 +69,7 @@ static int volumelabel OF((ZCONST char *newlabel));
 #if (!defined(SFX) && !defined(WINDLL))
    static int is_running_on_windows OF((void));
 #endif
+static int getdoscodepage OF((void));
 
 static int created_dir;        /* used by mapname(), checkdir() */
 static int renamed_fullpath;   /* ditto */
@@ -125,7 +128,11 @@ static ZCONST char Far AttribsMayBeWrong[] =
 #  define F_intdosx(ir,or,sr) int86x_realmode(0x21, ir, or, sr)
 #  define XXX__MK_FP_IS_BROKEN
 #else
-#  define WREGS(v,r) (v.x.r)
+#  if (defined(__DJGPP__) && (__DJGPP__ >= 2))
+#   define WREGS(v,r) (v.w.r)
+#  else
+#   define WREGS(v,r) (v.x.r)
+#  endif
 #  define F_intdosx(ir,or,sr) intdosx(ir, or, sr)
 #endif
 
@@ -1658,6 +1665,46 @@ int stamp_file(fname, modtime)
 
 
 
+void prepare_ISO_OEM_translat(__G)
+   __GDEF
+{
+    switch (getdoscodepage()) {
+    case 437:
+    case 850:
+    case 858:
+#ifdef IZ_ISO2OEM_ARRAY
+        iso2oem = iso2oem_850;
+#endif
+#ifdef IZ_OEM2ISO_ARRAY
+        oem2iso = oem2iso_850;
+#endif
+
+    case 932:   /* Japanese */
+    case 949:   /* Korean */
+    case 936:   /* Chinese, simple */
+    case 950:   /* Chinese, traditional */
+    case 874:   /* Thai */
+    case 1258:  /* Vietnamese */
+#ifdef IZ_ISO2OEM_ARRAY
+        iso2oem = NULL;
+#endif
+#ifdef IZ_OEM2ISO_ARRAY
+        oem2iso = NULL;
+#endif
+
+    default:
+#ifdef IZ_ISO2OEM_ARRAY
+       iso2oem = NULL;
+#endif
+#ifdef IZ_OEM2ISO_ARRAY
+       oem2iso = NULL;
+#endif
+    }
+} /* end function prepare_ISO_OEM_translat() */
+
+
+
+
 #ifndef SFX
 
 /*************************/
@@ -1736,7 +1783,7 @@ int dateformat()
         case 2:
             return DF_YMD;
     }
-#endif /* !WINDLL && !WATCOMC_386 */
+#endif /* !WINDLL */
 
     return DF_MDY;   /* default for systems without locale info */
 
@@ -2230,6 +2277,29 @@ void __crt0_load_environment_file(char *_app_name)
 
 #endif /* __DJGPP__ >= 2 */
 #endif /* __GO32__ || __EMX__ */
+
+
+
+static int getdoscodepage(void)
+{
+    union REGS regs;
+
+    WREGS(regs,ax) = 0x6601;
+#ifdef __EMX__
+    _int86(0x21, &regs, &regs);
+    if (WREGS(regs,flags) & 1)
+#else
+    intdos(&regs, &regs);
+    if (WREGS(regs,cflag))
+#endif
+    {
+        Trace((stderr,
+          "error in DOS function 0x66 (AX = 0x%04x): default to 850...\n",
+          (unsigned int)(WREGS(regs,ax))));
+        return 858;
+    } else
+        return WREGS(regs,bx);
+}
 
 
 

@@ -211,7 +211,7 @@ char *do_wild(__G__ wildspec)
 #ifndef S_ISGID
 # define S_ISGID        0002000 /* set group id on execution */
 #endif
-#ifndef	S_ISVTX
+#ifndef S_ISVTX
 # define S_ISVTX        0001000 /* save swapped text even after use */
 #endif
 
@@ -552,6 +552,15 @@ int mapname(__G__ renamed)
         if (*pp == '\0')          /* only digits between ';' and end:  nuke */
             *lastsemi = '\0';
     }
+
+    /* On UNIX (and compatible systems), "." and ".." are reserved for
+     * directory navigation and cannot be used as regular file names.
+     * These reserved one-dot and two-dot names are mapped to "_" and "__".
+     */
+    if (strcmp(pathcomp, ".") == 0)
+        *pathcomp = '_';
+    else if (strcmp(pathcomp, "..") == 0)
+        strcpy(pathcomp, "__");
 
 #ifdef ACORN_FTYPE_NFS
     /* translate Acorn filetype information if asked to do so */
@@ -944,11 +953,11 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         }
 
         /* size of the symlink entry is the sum of
-         *  (struct size + 2 trailing '\0'),
+         *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
          *  system specific attribute data size (might be 0),
          *  and the lengths of name and link target.
          */
-        slnk_entrysize = (sizeof(slinkentry) + 2) + AtheOSef_len +
+        slnk_entrysize = (sizeof(slinkentry) + 1) + AtheOSef_len +
                          ucsize + strlen(G.filename);
 
         if (slnk_entrysize < ucsize) {

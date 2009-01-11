@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -19,7 +19,7 @@
              rec_find()
              find_ecrec64()
              find_ecrec()
-             uz_end_central()
+             process_zip_cmmnt()
              process_cdir_file_hdr()
              get_cdir_ent()
              process_local_file_hdr()
@@ -54,7 +54,12 @@ static zoff_t file_size          OF((int fh));
 static int    rec_find           OF((__GPRO__ zoff_t, char *, int));
 static int    find_ecrec64       OF((__GPRO__ zoff_t searchlen));
 static int    find_ecrec         OF((__GPRO__ zoff_t searchlen));
+static int    process_zip_cmmnt  OF((__GPRO));
 static int    get_cdir_ent       OF((__GPRO));
+#ifdef IZ_HAVE_UXUIDGID
+static int    read_ux3_value     OF((ZCONST uch *dbuf, unsigned uidgid_sz,
+                                     ulg *p_uidgid));
+#endif /* IZ_HAVE_UXUIDGID */
 
 
 static ZCONST char Far CannotAllocateBuffers[] =
@@ -120,7 +125,7 @@ static ZCONST char Far CannotAllocateBuffers[] =
 #endif
 #ifdef DO_SAFECHECK_2GB
    static ZCONST char Far ZipfileTooBig[] =
-     "Trying to read large file (> 2 GB) without large file support\n";
+     "Trying to read large file (> 2 GiB) without large file support\n";
 #endif /* DO_SAFECHECK_2GB */
    static ZCONST char Far MaybeExe[] =
      "note:  %s may be a plain executable, not an archive\n";
@@ -155,6 +160,10 @@ static ZCONST char Far CannotAllocateBuffers[] =
      "warning [%s]:  %s extra byte%s at beginning or within zipfile\n\
   (attempting to process anyway)\n";
 #endif /* ?SFX */
+
+#if ((!defined(WINDLL) && !defined(SFX)) || !defined(NO_ZIPINFO))
+   static ZCONST char Far LogInitline[] = "Archive:  %s\n";
+#endif
 
 static ZCONST char Far MissingBytes[] =
   "error [%s]:  missing %s bytes in zipfile\n\
@@ -194,6 +203,20 @@ static ZCONST char Far Cent64EndSigSearchOff[] =
 #endif
 static ZCONST char Far ZipfileCommTrunc1[] =
   "\ncaution:  zipfile comment truncated\n";
+#ifndef NO_ZIPINFO
+   static ZCONST char Far NoZipfileComment[] =
+     "There is no zipfile comment.\n";
+   static ZCONST char Far ZipfileCommentDesc[] =
+     "The zipfile comment is %u bytes long and contains the following text:\n";
+   static ZCONST char Far ZipfileCommBegin[] =
+     "======================== zipfile comment begins\
+ ==========================\n";
+   static ZCONST char Far ZipfileCommEnd[] =
+     "========================= zipfile comment ends\
+ ===========================\n";
+   static ZCONST char Far ZipfileCommTrunc2[] =
+     "\n  The zipfile comment is truncated.\n";
+#endif /* !NO_ZIPINFO */
 #ifdef UNICODE_SUPPORT
    static ZCONST char Far UnicodeVersionError[] =
      "\nwarning:  Unicode Path version > 1\n";
@@ -254,11 +277,11 @@ int process_zipfiles(__G)    /* return PK-type error code */
       end_centloc64_sig[1] = end_central64_sig[1] = 0x4B;
 
 /*---------------------------------------------------------------------------
-    Make sure timezone info is set correctly; localtime() returns GMT on
-    some OSes (e.g., Solaris 2.x) if this isn't done first.  The ifdefs were
-    initially copied from dos_to_unix_time() in fileio.c. probably, they are
-    still too strict; any listed OS that supplies tzset(), regardless of
-    whether the function does anything, should be removed from the ifdefs.
+    Make sure timezone info is set correctly; localtime() returns GMT on some
+    OSes (e.g., Solaris 2.x) if this isn't done first.  The ifdefs around
+    tzset() were initially copied from dos_to_unix_time() in fileio.c.  They
+    may still be too strict; any listed OS that supplies tzset(), regardless
+    of whether the function does anything, should be removed from the ifdefs.
   ---------------------------------------------------------------------------*/
 
 #if (defined(WIN32) && defined(USE_EF_UT_TIME))
@@ -292,6 +315,12 @@ int process_zipfiles(__G)    /* return PK-type error code */
 #if (!defined(BSD) && !defined(MTS) && !defined(CMS_MVS) && !defined(TANDEM))
     tzset();
 #endif
+#endif
+
+/* Initialize UnZip's built-in pseudo hard-coded "ISO <--> OEM" translation,
+   depending on the detected codepage setup.  */
+#ifdef NEED_ISO_OEM_INIT
+    prepare_ISO_OEM_translat(__G);
 #endif
 
 /*---------------------------------------------------------------------------
@@ -727,28 +756,34 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
     G.cur_zipfile_bufstart = 0;
     G.inptr = G.inbuf;
 
-#if (!defined(WINDLL) && !defined(SFX))
-#ifdef TIMESTAMP
-    if (!uO.zipinfo_mode && !uO.qflag && !uO.T_flag)
-#else
-    if (!uO.zipinfo_mode && !uO.qflag)
-#endif
-#ifdef WIN32    /* Win32 console may require codepage conversion for G.zipfn */
-        Info(slide, 0, ((char *)slide, "Archive:  %s\n", FnFilter1(G.zipfn)));
-#else
-        Info(slide, 0, ((char *)slide, "Archive:  %s\n", G.zipfn));
-#endif
-#endif /* !WINDLL && !SFX */
+#if ((!defined(WINDLL) && !defined(SFX)) || !defined(NO_ZIPINFO))
+# if (!defined(WINDLL) && !defined(SFX))
+    if ( (!uO.zipinfo_mode && !uO.qflag
+#  ifdef TIMESTAMP
+          && !uO.T_flag
+#  endif
+         )
+#  ifndef NO_ZIPINFO
+         || (uO.zipinfo_mode && uO.hflag)
+#  endif
+       )
+# else /* not (!WINDLL && !SFX) ==> !NO_ZIPINFO !! */
+    if (uO.zipinfo_mode && uO.hflag)
+# endif /* if..else..: (!WINDLL && !SFX) */
+# ifdef WIN32   /* Win32 console may require codepage conversion for G.zipfn */
+        Info(slide, 0, ((char *)slide, LoadFarString(LogInitline),
+          FnFilter1(G.zipfn)));
+# else
+        Info(slide, 0, ((char *)slide, LoadFarString(LogInitline), G.zipfn));
+# endif
+#endif /* (!WINDLL && !SFX) || !NO_ZIPINFO */
 
-    if ((
+    if ( (error_in_archive = find_ecrec(__G__
 #ifndef NO_ZIPINFO
-         uO.zipinfo_mode &&
-          ((error_in_archive = find_ecrec(__G__ G.ziplen)) != 0 ||
-          (error_in_archive = zi_end_central(__G)) > PK_WARN))
-        || (!uO.zipinfo_mode &&
+                                        uO.zipinfo_mode ? G.ziplen :
 #endif
-          ((error_in_archive = find_ecrec(__G__ MIN(G.ziplen,66000L))) != 0 ||
-          (error_in_archive = uz_end_central(__G)) > PK_WARN)))
+                                        MIN(G.ziplen, 66000L)))
+         > PK_WARN )
     {
         CLOSE_INFILE();
 
@@ -1412,6 +1447,7 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
     zoff_t searchlen;
 {
     int found = FALSE;
+    int error_in_archive;
     int result;
     ec_byte_rec byterec;
 
@@ -1500,51 +1536,44 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
     G.ecrec.zipfile_comment_length =
       makeword(&byterec[ZIPFILE_COMMENT_LENGTH]);
 
+    /* Now, we have to read the archive comment, BEFORE the file pointer
+       is moved away backwards to seek for a Zip64 ECLOC64 structure.
+     */
+    if ( (error_in_archive = process_zip_cmmnt(__G)) > PK_WARN )
+        return error_in_archive;
+
     /* Next: Check for existence of Zip64 end-of-cent-dir locator
        ECLOC64. This structure must reside on the same volume as the
        classic ECREC, at exactly (ECLOC64_SIZE+4) bytes in front
        of the ECREC.
+       The ECLOC64 structure directs to the longer ECREC64 structure
+       A ECREC64 will ALWAYS exist for a proper Zip64 archive, as
+       the "Version Needed To Extract" field is required to be set
+       to 4.5 or higher whenever any Zip64 features are used anywhere
+       in the archive, so just check for that to see if this is a
+       Zip64 archive.
      */
-
-    /* This is an internal comment.  Remove before the next public beta.
-
-       Below check does not catch when an entry requires Zip64, as
-       when the uncompressed size is larger than 4 GB, but the
-       standard fields in ecrec (called EOCDR in the Zip source)
-       are sufficient, as when the file compresses under the Zip64
-       limit.  In such cases ecrec64 (called Zip64 EOCDR in Zip)
-       will exist to flag the archive as Zip64, even though none
-       of the ecrec values are set to the FFFF or FFFFFFFF flag
-       values.
-
-      if(check_ecrec_zip64(__G)){
-        need_zip64 = TRUE;
-      }
-
-       In fact, this check is not needed, as ecrec64 will ALWAYS
-       exist for a proper Zip64 archive, as the Version Needed To Extract
-       field is required to be set to 4.5 or higher.
-
-       End of internal comment.
-     */
-
-    /* The ecrec64 will ALWAYS exist for a proper Zip64 archive, as
-       the Version Needed To Extract field is required to be set to
-       4.5 or higher if any Zip64 features are used in any of the local
-       headers or anywhere else in the archive, so just check for that
-       to see if this is a Zip64 archive.
-     */
-
-    /* check for ecrec64 */
     result = find_ecrec64(__G__ searchlen+76);
         /* 76 bytes for zip64ec & zip64 locator */
-    if (result != PK_COOL){
-      return result;
+    if (result != PK_COOL) {
+        if (error_in_archive < result)
+            error_in_archive = result;
+        return error_in_archive;
     }
 
     G.expect_ecrec_offset = G.ecrec.offset_start_central_directory +
-                          G.ecrec.size_central_directory;
-    return PK_COOL;
+                            G.ecrec.size_central_directory;
+
+#ifndef NO_ZIPINFO
+    if (uO.zipinfo_mode) {
+        /* In ZipInfo mode, additional info about the data found in the
+           end-of-central-directory areas is printed out.
+         */
+        zi_end_central(__G);
+    }
+#endif
+
+    return error_in_archive;
 
 } /* end function find_ecrec() */
 
@@ -1552,11 +1581,11 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
 
 
 
-/*****************************/
-/* Function uz_end_central() */
-/*****************************/
+/********************************/
+/* Function process_zip_cmmnt() */
+/********************************/
 
-int uz_end_central(__G)    /* return PK-type error code */
+static int process_zip_cmmnt(__G)       /* return PK-type error code */
     __GDEF
 {
     int error = PK_COOL;
@@ -1564,29 +1593,74 @@ int uz_end_central(__G)    /* return PK-type error code */
 
 /*---------------------------------------------------------------------------
     Get the zipfile comment (up to 64KB long), if any, and print it out.
-    Then position the file pointer to the beginning of the central directory
-    and fill buffer.
   ---------------------------------------------------------------------------*/
 
 #ifdef WINDLL
     /* for comment button: */
     if ((!G.fValidate) && (G.lpUserFunctions != NULL))
        G.lpUserFunctions->cchComment = G.ecrec.zipfile_comment_length;
-    if (G.ecrec.zipfile_comment_length && (uO.zflag > 0))
-#else /* !WINDLL */
-    if (G.ecrec.zipfile_comment_length && (uO.zflag > 0 ||
-        (uO.zflag == 0 &&
-#ifdef TIMESTAMP
-                          !uO.T_flag &&
-#endif
-                                        !uO.qflag)))
-#endif /* ?WINDLL */
-    {
-#if (defined(SFX) && defined(CHEAP_SFX_AUTORUN))
-        if (do_string(__G__ G.ecrec.zipfile_comment_length, CHECK_AUTORUN)) {
-#else
+#endif /* WINDLL */
+
+#ifndef NO_ZIPINFO
+    /* ZipInfo, verbose format */
+    if (uO.zipinfo_mode && uO.lflag > 9) {
+        /*-------------------------------------------------------------------
+            Get the zipfile comment, if any, and print it out.
+            (Comment may be up to 64KB long.  May the fleas of a thousand
+            camels infest the arm-pits of anyone who actually takes advantage
+            of this fact.)
+          -------------------------------------------------------------------*/
+
+        if (!G.ecrec.zipfile_comment_length)
+            Info(slide, 0, ((char *)slide, LoadFarString(NoZipfileComment)));
+        else {
+            Info(slide, 0, ((char *)slide, LoadFarString(ZipfileCommentDesc),
+              G.ecrec.zipfile_comment_length));
+            Info(slide, 0, ((char *)slide, LoadFarString(ZipfileCommBegin)));
+            if (do_string(__G__ G.ecrec.zipfile_comment_length, DISPLAY))
+                error = PK_WARN;
+            Info(slide, 0, ((char *)slide, LoadFarString(ZipfileCommEnd)));
+            if (error)
+                Info(slide, 0, ((char *)slide,
+                  LoadFarString(ZipfileCommTrunc2)));
+        } /* endif (comment exists) */
+
+    /* ZipInfo, non-verbose mode:  print zipfile comment only if requested */
+    } else if (G.ecrec.zipfile_comment_length &&
+               (uO.zflag > 0) && uO.zipinfo_mode) {
         if (do_string(__G__ G.ecrec.zipfile_comment_length, DISPLAY)) {
+            Info(slide, 0x401, ((char *)slide,
+              LoadFarString(ZipfileCommTrunc1)));
+            error = PK_WARN;
+        }
+    } else
+#endif /* !NO_ZIPINFO */
+    if ( G.ecrec.zipfile_comment_length &&
+         (uO.zflag > 0
+#ifndef WINDLL
+          || (uO.zflag == 0
+# ifndef NO_ZIPINFO
+              && !uO.zipinfo_mode
+# endif
+# ifdef TIMESTAMP
+              && !uO.T_flag
+# endif
+              && !uO.qflag)
+#endif /* !WINDLL */
+         ) )
+    {
+        if (do_string(__G__ G.ecrec.zipfile_comment_length,
+#if (defined(SFX) && defined(CHEAP_SFX_AUTORUN))
+# ifndef NO_ZIPINFO
+                      (oU.zipinfo_mode ? DISPLAY : CHECK_AUTORUN)
+# else
+                      CHECK_AUTORUN
+# endif
+#else
+                      DISPLAY
 #endif
+                     ))
+        {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(ZipfileCommTrunc1)));
             error = PK_WARN;
@@ -1594,7 +1668,8 @@ int uz_end_central(__G)    /* return PK-type error code */
     }
 #if (defined(SFX) && defined(CHEAP_SFX_AUTORUN))
     else if (G.ecrec.zipfile_comment_length) {
-        if (do_string(__G__ G.ecrec.zipfile_comment_length, CHECK_AUTORUN_Q)) {
+        if (do_string(__G__ G.ecrec.zipfile_comment_length, CHECK_AUTORUN_Q))
+        {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(ZipfileCommTrunc1)));
             error = PK_WARN;
@@ -1603,7 +1678,7 @@ int uz_end_central(__G)    /* return PK-type error code */
 #endif
     return error;
 
-} /* end function uz_end_central() */
+} /* end function process_zip_cmmnt() */
 
 
 
@@ -1911,7 +1986,8 @@ int getUnicodeData(__G__ ef_buf, ef_len)
           offset += 1;
           if (G.unipath_version > 1) {
             /* can do only version 1 */
-            Info(slide, 0x401, ((char *)slide, LoadFarString(UnicodeVersionError)));
+            Info(slide, 0x401, ((char *)slide,
+              LoadFarString(UnicodeVersionError)));
             return PK_ERR;
           }
 
@@ -1926,11 +2002,12 @@ int getUnicodeData(__G__ ef_buf, ef_len)
           chksum = crc32(chksum, (uch *)(G.filename_full),
                          strlen(G.filename_full));
 
-          /* If the checksums's don't match then likely filename has been modified and
-           * the Unicode Path is no longer valid
+          /* If the checksums's don't match then likely filename has been
+           * modified and the Unicode Path is no longer valid.
            */
           if (chksum != G.unipath_checksum) {
-            Info(slide, 0x401, ((char *)slide, LoadFarString(UnicodeMismatchError)));
+            Info(slide, 0x401, ((char *)slide,
+              LoadFarString(UnicodeMismatchError)));
             if (G.unicode_mismatch == 1) {
               /* warn and continue */
             } else if (G.unicode_mismatch == 2) {
@@ -1953,9 +2030,6 @@ int getUnicodeData(__G__ ef_buf, ef_len)
                     (ZCONST char *)(offset + ef_buf), ULen);
             G.unipath_filename[ULen] = '\0';
           }
-# if 0
-          G.unipath_escapedfilename = utf8_to_escaped_string(G.unipath_filename);
-# endif
         }
 
         /* Skip this extra field block */
@@ -1969,6 +2043,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
 
 
 
+#ifdef UNICODE_WCHAR
   /*---------------------------------------------
  * Unicode conversion functions
  *
@@ -1995,6 +2070,11 @@ int getUnicodeData(__G__ ef_buf, ef_len)
    encoded as UTF-8.
 */
 
+static int utf8_char_bytes OF((ZCONST char *utf8));
+static ulg ucs4_char_from_utf8 OF((ZCONST char **utf8));
+static int utf8_to_ucs4_string OF((ZCONST char *utf8, ulg *ucs4buf,
+                                   int buflen));
+
 /* utility functions for managing UTF-8 and UCS-4 strings */
 
 
@@ -2003,7 +2083,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
  * Returns the number of bytes used by the first character in a UTF-8
  * string, or -1 if the UTF-8 is invalid or null.
  */
-int utf8_char_bytes(utf8)
+static int utf8_char_bytes(utf8)
   ZCONST char *utf8;
 {
   int      t, r;
@@ -2039,23 +2119,20 @@ int utf8_char_bytes(utf8)
  *
  * Given a reference to a pointer into a UTF-8 string, returns the next
  * UCS-4 character and advances the pointer to the next character sequence.
- * Returns ~0 and does not advance the pointer when input is ill-formed.
- *
- * Since the Unicode standard says 32-bit values won't be used (just
- * up to the current 21-bit mappings) changed this to signed to allow -1 to
- * be returned.
+ * Returns ~0 (= -1 in twos-complement notation) and does not advance the
+ * pointer when input is ill-formed.
  */
-long ucs4_char_from_utf8(utf8)
+static ulg ucs4_char_from_utf8(utf8)
   ZCONST char **utf8;
 {
   ulg  ret;
   int  t, bytes;
 
   if (!utf8)
-    return -1;                          /* no input */
+    return ~0L;                         /* no input */
   bytes = utf8_char_bytes(*utf8);
   if (bytes <= 0)
-    return -1;                          /* invalid input */
+    return ~0L;                         /* invalid input */
   if (bytes == 1)
     ret = **utf8;                       /* ascii-7 */
   else
@@ -2063,16 +2140,17 @@ long ucs4_char_from_utf8(utf8)
   (*utf8)++;
   for (t = 1; t < bytes; t++)           /* consume trailing bytes */
     ret = (ret << 6) | (*((*utf8)++) & 0x3F);
-  return (long) ret;
+  return (zwchar) ret;
 }
 
 
+#if 0 /* currently unused */
 /* utf8_from_ucs4_char - Convert UCS char to UTF-8
  *
  * Returns the number of bytes put into utf8buf to represent ch, from 1 to 6,
  * or -1 if ch is too large to represent.  utf8buf must have room for 6 bytes.
  */
-int utf8_from_ucs4_char(utf8buf, ch)
+static int utf8_from_ucs4_char(utf8buf, ch)
   char *utf8buf;
   ulg ch;
 {
@@ -2096,11 +2174,14 @@ int utf8_from_ucs4_char(utf8buf, ch)
     tch >>= 6;
   } while (tch & ~leadbits);
   ret = trailing + 1;
-  *utf8buf++ = (char) (leadmask | (ch >> (6 * trailing)));          /* produce lead byte */
+  /* produce lead byte */
+  *utf8buf++ = (char) (leadmask | (ch >> (6 * trailing)));
   while (--trailing >= 0)
-    *utf8buf++ = (char) (0x80 | ((ch >> (6 * trailing)) & 0x3F));   /* produce trailing bytes */
+    /* produce trailing bytes */
+    *utf8buf++ = (char) (0x80 | ((ch >> (6 * trailing)) & 0x3F));
   return ret;
 }
+#endif /* unused */
 
 
 /*===================================================================*/
@@ -2109,7 +2190,7 @@ int utf8_from_ucs4_char(utf8buf, ch)
  *
  * Return UCS count.  Now returns int so can return -1.
  */
-int utf8_to_ucs4_string(utf8, ucs4buf, buflen)
+static int utf8_to_ucs4_string(utf8, ucs4buf, buflen)
   ZCONST char *utf8;
   ulg *ucs4buf;
   int buflen;
@@ -2118,8 +2199,8 @@ int utf8_to_ucs4_string(utf8, ucs4buf, buflen)
 
   for (;;)
   {
-    long ch = ucs4_char_from_utf8(&utf8);
-    if (ch == -1)
+    ulg ch = ucs4_char_from_utf8(&utf8);
+    if (ch == ~0L)
       return -1;
     else
     {
@@ -2133,11 +2214,12 @@ int utf8_to_ucs4_string(utf8, ucs4buf, buflen)
 }
 
 
+#if 0 /* currently unused */
 /* ucs4_string_to_utf8
  *
  *
  */
-int ucs4_string_to_utf8(ucs4, utf8buf, buflen)
+static int ucs4_string_to_utf8(ucs4, utf8buf, buflen)
   ZCONST ulg *ucs4;
   char *utf8buf;
   int buflen;
@@ -2171,12 +2253,12 @@ int ucs4_string_to_utf8(ucs4, utf8buf, buflen)
  *
  * Wrapper: counts the actual unicode characters in a UTF-8 string.
  */
-int utf8_chars(utf8)
+static int utf8_chars(utf8)
   ZCONST char *utf8;
 {
   return utf8_to_ucs4_string(utf8, NULL, 0);
 }
-
+#endif /* unused */
 
 /* --------------------------------------------------- */
 /* Unicode Support
@@ -2193,11 +2275,12 @@ int utf8_chars(utf8)
  * different sizes of wchar_t.
  */
 
+#if 0 /* currently unused */
 /* is_ascii_string
  * Checks if a string is all ascii
  */
 int is_ascii_string(mbstring)
-  char *mbstring;
+  ZCONST char *mbstring;
 {
   char *p;
   uch c;
@@ -2212,43 +2295,58 @@ int is_ascii_string(mbstring)
 
 /* local to UTF-8 */
 char *local_to_utf8_string(local_string)
-  char *local_string;
+  ZCONST char *local_string;
 {
   return wide_to_utf8_string(local_to_wide_string(local_string));
 }
+# endif /* unused */
 
 /* wide_to_escape_string
    provides a string that represents a wide char not in local char set
 
    An initial try at an algorithm.  Suggestions welcome.
 
+   According to the standard, Unicode character points are restricted to
+   the number range from 0 to 0x10FFFF, respective 21 bits.
+   For a hexadecimal notation, 2 octets are sufficient for the mostly
+   used characters from the "Basic Multilingual Plane", all other
+   Unicode characters can be represented by 3 octets (= 6 hex digits).
+   The Unicode standard suggests to write Unicode character points
+   as 4 resp. 6 hex digits, preprended by "U+".
+   (e.g.: U+10FFFF for the highest character point, or U+0030 for the ASCII
+   digit "0")
+
+   However, for the purpose of escaping non-ASCII chars in an ASCII character
+   stream, the "U" is not a very good escape initializer. Therefore, we
+   use the following convention within our Info-ZIP code:
+
    If not an ASCII char probably need 2 bytes at least.  So if
    a 2-byte wide encode it as 4 hex digits with a leading #U.  If
-   needs 4 bytes then prefix the string with #L.  So
+   needs 3 bytes then prefix the string with #L.  So
    #U1234
    is a 2-byte wide character with bytes 0x12 and 0x34 while
-   #L12345678
-   is a 4-byte wide with bytes 0x12, 0x34, 0x56, and 0x78.
+   #L123456
+   is a 3-byte wide character with bytes 0x12, 0x34, 0x56.
    On Windows, wide that need two wide characters need to be converted
    to a single number.
   */
 
  /* set this to the max bytes an escape can be */
-#define MAX_ESCAPE_BYTES 10
+#define MAX_ESCAPE_BYTES 8
 
 char *wide_to_escape_string(wide_char)
   zwchar wide_char;
 {
   int i;
   zwchar w = wide_char;
-  uch b[5];
-  char d[5];
+  uch b[4];
+  char d[3];
   char e[11];
   int len;
   char *r;
 
   /* fill byte array with zeros */
-  for (len = 0; len < 8; len++) {
+  for (len = 0; len < 5; len++) {
     b[len] = 0;
   }
   /* get bytes in right to left order */
@@ -2257,12 +2355,11 @@ char *wide_to_escape_string(wide_char)
     w /= 0x100;
   }
   strcpy(e, "#");
-  /* either 2 bytes or 4 bytes */
-  if (len < 3) {
+  /* either 2 bytes or 3 bytes */
+  if (len <= 2) {
     len = 2;
     strcat(e, "U");
   } else {
-    len = 4;
     strcat(e, "L");
   }
   for (i = len - 1; i >= 0; i--) {
@@ -2276,15 +2373,16 @@ char *wide_to_escape_string(wide_char)
   return r;
 }
 
+#if 0 /* currently unused */
 /* returns the wide character represented by the escape string */
 zwchar escape_string_to_wide(escape_string)
-  char *escape_string;
+  ZCONST char *escape_string;
 {
   int i;
   zwchar w;
   char c;
   int len;
-  char *e = escape_string;
+  ZCONST char *e = escape_string;
 
   if (e == NULL) {
     return 0;
@@ -2294,17 +2392,17 @@ zwchar escape_string_to_wide(escape_string)
     return 0;
   }
   len = strlen(e);
-  /* either #U1234 or #L12345678 format */
-  if (len != 6 && len != 10) {
+  /* either #U1234 or #L123456 format */
+  if (len != 6 && len != 8) {
     return 0;
   }
   w = 0;
   if (e[1] == 'L') {
-    if (len != 10) {
+    if (len != 8) {
       return 0;
     }
-    /* 4 bytes */
-    for (i = 2; i < 10; i++) {
+    /* 3 bytes */
+    for (i = 2; i < 8; i++) {
       c = e[i];
       if (c < '0' || c > '9') {
         return 0;
@@ -2323,23 +2421,12 @@ zwchar escape_string_to_wide(escape_string)
   }
   return w;
 }
+#endif /* unused */
 
-char *utf8_to_escaped_string(utf8_string, escape_all)
-  char *utf8_string;
-  int escape_all;
-{
-  zwchar *wide_string;
-  char *escaped_string;
-
-  wide_string = utf8_to_wide_string(utf8_string);
-  escaped_string = wide_to_local_string(wide_string, escape_all);
-  free(wide_string);
-  return escaped_string;
-}
-
+#ifndef WIN32  /* WIN32 supplies a special variant of this function */
 /* convert wide character string to multi-byte character string */
 char *wide_to_local_string(wide_string, escape_all)
-  zwchar *wide_string;
+  ZCONST zwchar *wide_string;
   int escape_all;
 {
   int i;
@@ -2347,7 +2434,6 @@ char *wide_to_local_string(wide_string, escape_all)
   int b;
   int state_dependent;
   int wsize = 0;
-  int mbsize = 0;
   int max_bytes = MB_CUR_MAX;
   char buf[9];
   char *buffer = NULL;
@@ -2355,7 +2441,7 @@ char *wide_to_local_string(wide_string, escape_all)
 
   for (wsize = 0; wide_string[wsize]; wsize++) ;
 
-  if (MAX_ESCAPE_BYTES > max_bytes)
+  if (max_bytes < MAX_ESCAPE_BYTES)
     max_bytes = MAX_ESCAPE_BYTES;
 
   if ((buffer = (char *)malloc(wsize * max_bytes + 1)) == NULL) {
@@ -2401,19 +2487,19 @@ char *wide_to_local_string(wide_string, escape_all)
         free(escape_string);
     }
   }
-  if ((local_string = (char *)malloc(strlen(buffer) + 1)) == NULL) {
-    return NULL;
+  if ((local_string = (char *)malloc(strlen(buffer) + 1)) != NULL) {
+    strcpy(local_string, buffer);
   }
-  strcpy(local_string, buffer);
   free(buffer);
 
   return local_string;
 }
+#endif /* !WIN32 */
 
-
+#if 0 /* currently unused */
 /* convert local string to display character set string */
 char *local_to_display_string(local_string)
-  char *local_string;
+  ZCONST char *local_string;
 {
   char *display_string;
 
@@ -2442,10 +2528,11 @@ char *local_to_display_string(local_string)
 
   return display_string;
 }
+#endif /* unused */
 
 /* UTF-8 to local */
 char *utf8_to_local_string(utf8_string, escape_all)
-  char *utf8_string;
+  ZCONST char *utf8_string;
   int escape_all;
 {
   zwchar *wide = utf8_to_wide_string(utf8_string);
@@ -2454,16 +2541,17 @@ char *utf8_to_local_string(utf8_string, escape_all)
   return loc;
 }
 
+#if 0 /* currently unused */
 /* convert multi-byte character string to wide character string */
 zwchar *local_to_wide_string(local_string)
-  char *local_string;
+  ZCONST char *local_string;
 {
   int wsize;
   wchar_t *wc_string;
   zwchar *wide_string;
 
   /* for now try to convert as string - fails if a bad char in string */
-  wsize = mbstowcs(NULL, local_string, MB_CUR_MAX );
+  wsize = mbstowcs(NULL, local_string, strlen(local_string) + 1);
   if (wsize == (size_t)-1) {
     /* could not convert */
     return NULL;
@@ -2490,7 +2578,7 @@ zwchar *local_to_wide_string(local_string)
 
 /* convert wide string to UTF-8 */
 char *wide_to_utf8_string(wide_string)
-  zwchar *wide_string;
+  ZCONST zwchar *wide_string;
 {
   int mbcount;
   char *utf8_string;
@@ -2508,10 +2596,11 @@ char *wide_to_utf8_string(wide_string)
 
   return utf8_string;
 }
+#endif /* unused */
 
 /* convert UTF-8 string to wide string */
 zwchar *utf8_to_wide_string(utf8_string)
-  char *utf8_string;
+  ZCONST char *utf8_string;
 {
   int wcount;
   zwchar *wide_string;
@@ -2519,7 +2608,8 @@ zwchar *utf8_to_wide_string(utf8_string)
   wcount = utf8_to_ucs4_string(utf8_string, NULL, 0);
   if (wcount == -1)
     return NULL;
-  if ((wide_string = (zwchar *) malloc((wcount + 1) * sizeof(zwchar))) == NULL) {
+  if ((wide_string = (zwchar *) malloc((wcount + 1) * sizeof(zwchar)))
+      == NULL) {
     return NULL;
   }
   wcount = utf8_to_ucs4_string(utf8_string, wide_string, wcount + 1);
@@ -2527,6 +2617,7 @@ zwchar *utf8_to_wide_string(utf8_string)
   return wide_string;
 }
 
+#endif /* UNICODE_WCHAR */
 #endif /* UNICODE_SUPPORT */
 
 
@@ -2534,6 +2625,37 @@ zwchar *utf8_to_wide_string(utf8_string)
 
 
 #ifdef USE_EF_UT_TIME
+
+#ifdef IZ_HAVE_UXUIDGID
+static int read_ux3_value(dbuf, uidgid_sz, p_uidgid)
+    ZCONST uch *dbuf;   /* buffer a uid or gid value */
+    unsigned uidgid_sz; /* size of uid/gid value */
+    ulg *p_uidgid;      /* return storage: uid or gid value */
+{
+    zusz_t uidgid64;
+
+    switch (uidgid_sz) {
+      case 2:
+        *p_uidgid = (ulg)makeword(dbuf);
+        break;
+      case 4:
+        *p_uidgid = (ulg)makelong(dbuf);
+        break;
+      case 8:
+        uidgid64 = makeint64(dbuf);
+#ifndef LARGE_FILE_SUPPORT
+        if (uidgid64 == (zusz_t)0xffffffffL)
+            return FALSE;
+#endif
+        *p_uidgid = (ulg)uidgid64;
+        if ((zusz_t)(*p_uidgid) != uidgid64)
+            return FALSE;
+        break;
+    }
+    return TRUE;
+}
+#endif /* IZ_HAVE_UXUIDGID */
+
 
 /*******************************/
 /* Function ef_scan_for_izux() */
@@ -2551,7 +2673,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
     unsigned flags = 0;
     unsigned eb_id;
     unsigned eb_len;
-    int have_new_type_eb = FALSE;
+    int have_new_type_eb = 0;
     long i_time;        /* buffer for Unix style 32-bit integer time value */
 #ifdef TIME_T_TYPE_DOUBLE
     int ut_in_archive_sgn = 0;
@@ -2598,7 +2720,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
         switch (eb_id) {
           case EF_TIME:
             flags &= ~0x0ff;    /* ignore previous IZUNIX or EF_TIME fields */
-            have_new_type_eb = TRUE;
+            have_new_type_eb = 1;
             if ( eb_len >= EB_UT_MINLEN && z_utim != NULL) {
                 unsigned eb_idx = EB_UT_TIME1;
                 TTrace((stderr,"ef_scan_for_izux: found TIME extra field\n"));
@@ -2740,23 +2862,57 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
             break;
 
           case EF_IZUNIX2:
-            if (!have_new_type_eb) {
+            if (have_new_type_eb == 0) {
                 flags &= ~0x0ff;        /* ignore any previous IZUNIX field */
-                have_new_type_eb = TRUE;
+                have_new_type_eb = 1;
             }
-            if (eb_len >= EB_UX2_MINLEN && z_uidgid != NULL) {
+#ifdef IZ_HAVE_UXUIDGID
+            if (have_new_type_eb > 1)
+                break;          /* IZUNIX3 overrides IZUNIX2 e.f. block ! */
+            if (eb_len == EB_UX2_MINLEN && z_uidgid != NULL) {
                 z_uidgid[0] = (ulg)makeword((EB_HEADSIZE+EB_UX2_UID) + ef_buf);
                 z_uidgid[1] = (ulg)makeword((EB_HEADSIZE+EB_UX2_GID) + ef_buf);
-                if (eb_len >= EB_UX2_MINLEN + 4) {
-                    z_uidgid[0] |=
-                        (ulg)makeword((EB_HEADSIZE+EB_UX2_UID+4) + ef_buf)
-                        << 16;
-                    z_uidgid[1] |=
-                        (ulg)makeword((EB_HEADSIZE+EB_UX2_GID+4) + ef_buf)
-                        << 16;
-                }
                 flags |= EB_UX2_VALID;   /* signal success */
             }
+#endif
+            break;
+
+          case EF_IZUNIX3:
+            /* new 3rd generation Unix ef */
+            have_new_type_eb = 2;
+
+        /*
+          Version       1 byte      version of this extra field, currently 1
+          UIDSize       1 byte      Size of UID field
+          UID           Variable    UID for this entry
+          GIDSize       1 byte      Size of GID field
+          GID           Variable    GID for this entry
+        */
+
+#ifdef IZ_HAVE_UXUIDGID
+            if (eb_len >= EB_UX3_MINLEN
+                && z_uidgid != NULL
+                && (*((EB_HEADSIZE + 0) + ef_buf) == 1)
+                    /* only know about version 1 */
+            {
+                uch uid_size;
+                uch gid_size;
+
+                uid_size = *((EB_HEADSIZE + 1) + ef_buf);
+                gid_size = *((EB_HEADSIZE + uid_size + 2) + ef_buf);
+
+                flags &= ~0x0ff;      /* ignore any previous UNIX field */
+
+                if ( read_ux3_value((EB_HEADSIZE + 2) + ef_buf,
+                                    uid_size, z_uidgid[0])
+                    &&
+                     read_ux3_value((EB_HEADSIZE + uid_size + 3) + ef_buf,
+                                    gid_size, z_uidgid[1]) )
+                {
+                    flags |= EB_UX2_VALID;   /* signal success */
+                }
+            }
+#endif /* IZ_HAVE_UXUIDGID */
             break;
 
           case EF_IZUNIX:
@@ -2764,7 +2920,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
             if (eb_len >= EB_UX_MINLEN) {
                 TTrace((stderr,"ef_scan_for_izux: found %s extra field\n",
                         (eb_id == EF_IZUNIX ? "IZUNIX" : "PKUNIX")));
-                if (have_new_type_eb) {
+                if (have_new_type_eb > 0) {
                     break;      /* Ignore IZUNIX extra field block ! */
                 }
                 if (z_utim != NULL) {
@@ -2844,11 +3000,13 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                     }
 #endif /* ?TIME_T_TYPE_DOUBLE */
                 }
+#ifdef IZ_HAVE_UXUIDGID
                 if (eb_len >= EB_UX_FULLSIZE && z_uidgid != NULL) {
                     z_uidgid[0] = makeword((EB_HEADSIZE+EB_UX_UID) + ef_buf);
                     z_uidgid[1] = makeword((EB_HEADSIZE+EB_UX_GID) + ef_buf);
                     flags |= EB_UX2_VALID;
                 }
+#endif /* IZ_HAVE_UXUIDGID */
             }
             break;
 

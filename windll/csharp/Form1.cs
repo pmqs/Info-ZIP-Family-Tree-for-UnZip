@@ -41,8 +41,9 @@ namespace CSharpInfoZip_UnZipSample
 
 		//Define the Unzip object
 		Unzip m_Unzip = new Unzip();
-		private double m_CurrentSize;
+		private ulong m_CurrentSize;
 		private System.Windows.Forms.Button btnListZipFiles;
+		private CheckBox chkOverwriteAll;
 
 
 		/// <summary>
@@ -91,6 +92,7 @@ namespace CSharpInfoZip_UnZipSample
 			this.lblProgress = new System.Windows.Forms.Label();
 			this.prgBar = new System.Windows.Forms.ProgressBar();
 			this.btnListZipFiles = new System.Windows.Forms.Button();
+			this.chkOverwriteAll = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			//
 			// btnUnzipArchive
@@ -118,7 +120,6 @@ namespace CSharpInfoZip_UnZipSample
 			this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
 			this.textBox1.Size = new System.Drawing.Size(464, 120);
 			this.textBox1.TabIndex = 2;
-			this.textBox1.Text = "";
 			//
 			// lblProgress
 			//
@@ -143,10 +144,21 @@ namespace CSharpInfoZip_UnZipSample
 			this.btnListZipFiles.Text = "List zip files...";
 			this.btnListZipFiles.Click += new System.EventHandler(this.btnListZipFiles_Click);
 			//
+			// chkOverwriteAll
+			//
+			this.chkOverwriteAll.AutoSize = true;
+			this.chkOverwriteAll.Location = new System.Drawing.Point(255, 29);
+			this.chkOverwriteAll.Name = "chkOverwriteAll";
+			this.chkOverwriteAll.Size = new System.Drawing.Size(177, 17);
+			this.chkOverwriteAll.TabIndex = 6;
+			this.chkOverwriteAll.Text = "Overwrite all files without prompt";
+			this.chkOverwriteAll.UseVisualStyleBackColor = true;
+			//
 			// Form1
 			//
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
 			this.ClientSize = new System.Drawing.Size(480, 254);
+			this.Controls.Add(this.chkOverwriteAll);
 			this.Controls.Add(this.btnListZipFiles);
 			this.Controls.Add(this.prgBar);
 			this.Controls.Add(this.lblProgress);
@@ -160,6 +172,7 @@ namespace CSharpInfoZip_UnZipSample
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Form1";
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 		#endregion
@@ -182,6 +195,12 @@ namespace CSharpInfoZip_UnZipSample
 
 			if (file == null | file == string.Empty) return;
 
+			//Clear the DLL messages output area
+			m_CurrentSize = 0;
+			prgBar.Value = prgBar.Minimum;
+			lblProgress.Text = "";
+			textBox1.Text = "";
+
 			//Instantiate the Unzip object
 			m_Unzip = new Unzip();
 
@@ -192,17 +211,33 @@ namespace CSharpInfoZip_UnZipSample
 			//Set the Unzip object properties
 			m_Unzip.ZipFileName = file;
 			m_Unzip.HonorDirectories = HonorDirectoriesEnum.True;
-			m_Unzip.ExtractList = ExtractListEnum.Extract;
+			m_Unzip.ExtractOrList = ExtractOrListEnum.Extract;
 
-			//PROBLEM:
-			//I receive an error from the DLL when this flag is true.  When this is true, the DLL extracts the
-			//zip file comment, which throws an error.  Look at the KNOWN ISSUES region in the Unzip.cs for
-			//futher comments
-			//m_Unzip.Verbose = VerboseEnum.True;
+			//This option sets the DLL to display only the archive comment and
+			//then exit immediately.
+			//m_Unzip.DisplayComment = DisplayCommentEnum.True;
+
+			//This option switches the DLL into "verbose ZipInfo" mode. The
+			//DLL extracts nothing, but instead prints out a verbose technical list
+			//of the content of the Zip archive central directory.
+			//This option works now, but gets terribly slow when applied to archives
+			//with a large number of entries.
+			//m_Unzip.VerboseZI = VerboseZIEnum.True;
+
+			if (chkOverwriteAll.Checked)
+			{
+				m_Unzip.OverWriteFiles = OverWriteFilesEnum.True;
+				m_Unzip.PromptToOverWrite = PromptToOverWriteEnum.NotRequired;
+			}
+			else
+			{
+				m_Unzip.OverWriteFiles = OverWriteFilesEnum.False;
+				m_Unzip.PromptToOverWrite = PromptToOverWriteEnum.Required;
+			}
 
 			//NOTE:
 			//Directory where the unzipped files are stored.  Change this as appropriate
-			m_Unzip.ExtractDirectory = @"c:\tmp\unzip";
+			m_Unzip.ExtractDirectory = @"c:\temp\unzip";
 
 			//Wire the event handlers to receive the events from the Unzip class
 			m_Unzip.ReceivePrintMessage +=new UnZipDLLPrintMessageEventHandler(unZip_ReceivePrintMessage);
@@ -223,6 +258,11 @@ namespace CSharpInfoZip_UnZipSample
 
 			if (file == null | file == string.Empty) return;
 
+			//Clear the DLL messages output area
+			prgBar.Value = prgBar.Minimum;
+			lblProgress.Text = "";
+			textBox1.Text = "";
+
 			//Instantiate the Unzip object
 			m_Unzip = new Unzip();
 
@@ -233,15 +273,7 @@ namespace CSharpInfoZip_UnZipSample
 			//Set the Unzip object properties
 			m_Unzip.ZipFileName = file;
 			m_Unzip.HonorDirectories = HonorDirectoriesEnum.True;
-			m_Unzip.ExtractList = ExtractListEnum.ListContents;
-
-			//NOTE:
-			//Directory where the unzipped files are stored.  Change this as appropriate
-			m_Unzip.ExtractDirectory = @"c:\tmp\unzip";
-
-			//PROBLEM:
-			//Whenever I try to retrieve the comment I get an error from the DLL.  If you want to try it, just set the
-			// m_Unzip.DisplayComment = DisplayCommentEnum.True
+			m_Unzip.ExtractOrList = ExtractOrListEnum.ListContents;
 
 			//Wire the event handlers to receive the events from the Unzip class
 			m_Unzip.ReceivePrintMessage +=new UnZipDLLPrintMessageEventHandler(unZip_ReceivePrintMessage);
@@ -266,16 +298,20 @@ namespace CSharpInfoZip_UnZipSample
 
 		private void unZip_ReceivePrintMessage(object sender, UnZipDLLPrintMessageEventArgs e)
 		{
-			textBox1.Text = e.PrintMessage + "\r\n";
+			textBox1.Text += e.PrintMessage.Replace("\n", Environment.NewLine);
 			Application.DoEvents();
 		}
 
-		private void unZip_ReceiveServiceMessage(object sender, UnZipDLLServiceMessageEventArgs e)
+		private int unZip_ReceiveServiceMessage(object sender, UnZipDLLServiceMessageEventArgs e)
 		{
 			m_CurrentSize += e.SizeOfFileEntry;
-			prgBar.Value = (Convert.ToInt32(100 * (m_CurrentSize/e.ZipFileSize)));
-			lblProgress.Text = "Unzipping " + m_CurrentSize.ToString() + " of " + e.ZipFileSize + " bytes.";
+			prgBar.Value = Convert.ToInt32(100 * Convert.ToDouble(m_CurrentSize)
+                                     / Convert.ToDouble(e.ZipFileSize));
+			lblProgress.Text = "Unzipping " + m_CurrentSize.ToString("N0") + " of " +
+                         e.ZipFileSize.ToString("N0") + " bytes.";
 			Application.DoEvents();
+
+			return 0;
 		}
 
 		#endregion

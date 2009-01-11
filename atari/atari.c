@@ -462,6 +462,15 @@ int mapname(__G__ renamed)
             *lastsemi = '\0';
     }
 
+    /* On UNIX (and compatible systems), "." and ".." are reserved for
+     * directory navigation and cannot be used as regular file names.
+     * These reserved one-dot and two-dot names are mapped to "_" and "__".
+     */
+    if (strcmp(pathcomp, ".") == 0)
+        *pathcomp = '_';
+    else if (strcmp(pathcomp, "..") == 0)
+        strcpy(pathcomp, "__");
+
 #ifdef ACORN_FTYPE_NFS
     /* translate Acorn filetype information if asked to do so */
     if (uO.acorn_nfs_ext &&
@@ -812,11 +821,11 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     if (G.symlnk) {
         extent ucsize = (extent)G.lrec.ucsize;
         /* size of the symlink entry is the sum of
-         *  (struct size + 2 trailing '\0'),
+         *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
          *  system specific attribute data size (might be 0),
          *  and the lengths of name and link target.
          */
-        extent slnk_entrysize = (sizeof(slinkentry) + 2) +
+        extent slnk_entrysize = (sizeof(slinkentry) + 1) +
                                 ucsize + strlen(G.filename);
         slinkentry *slnk_entry;
 

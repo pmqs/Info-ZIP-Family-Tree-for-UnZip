@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -77,6 +77,7 @@
 //              iswild
 //              conv_to_rule
 //              GetPlatformLocalTimezone
+//              wide_to_local_string
 //
 //
 // Date      Name          History
@@ -87,6 +88,10 @@
 // 12/01/02  Chr. Spieler  Updated interface for UnZip 5.50
 // 02/23/05  Chr. Spieler  Modified and optimized utimeToFileTime() to support
 //                         the NO_W32TIMES_IZFIX compilation option
+// 11/01/09  Chr. Spieler  Added wide_to_local_string() conversion function
+//                         from win32.c, which is currently needed for the
+//                         new UTF-8 names support (until we manage to port
+//                         the complete UnZip code to native wide-char support).
 //
 //*****************************************************************************
 
@@ -1309,14 +1314,14 @@ void close_outfile(__GPRO)
 {
    HANDLE hFile;
 
+   TCHAR szFile[_MAX_PATH];
+   MBSTOTSTR(szFile, G.filename, countof(szFile));
+
    /* skip restoring time stamps on user's request */
    if (uO.D_flag <= 1) {
       // Get the 3 time stamps for the file.
       FILETIME ftCreated, ftAccessed, ftModified;
       int timeFlags = GetFileTimes(__G__ &ftCreated, &ftAccessed, &ftModified);
-
-      TCHAR szFile[_MAX_PATH];
-      MBSTOTSTR(szFile, G.filename, countof(szFile));
 
 #if (defined(_WIN32_WCE) && (_WIN32_WCE < 211))
 
@@ -1787,3 +1792,79 @@ int getch_win32(void)
 }
 #endif /* !WINDLL */
 #endif // !POCKET_UNZIP
+
+#if (defined(UNICODE_SUPPORT))
+/* convert wide character string to multi-byte character string */
+char *wide_to_local_string(ZCONST zwchar *wide_string,
+                           int escape_all)
+{
+  int i;
+  wchar_t wc;
+  int bytes_char;
+  int default_used;
+  int wsize = 0;
+  int max_bytes = 9;
+  char buf[9];
+  char *buffer = NULL;
+  char *local_string = NULL;
+
+  for (wsize = 0; wide_string[wsize]; wsize++) ;
+
+  if (max_bytes < MB_CUR_MAX)
+    max_bytes = MB_CUR_MAX;
+
+  if ((buffer = (char *)malloc(wsize * max_bytes + 1)) == NULL) {
+    return NULL;
+  }
+
+  /* convert it */
+  buffer[0] = '\0';
+  for (i = 0; i < wsize; i++) {
+    if (sizeof(wchar_t) < 4 && wide_string[i] > 0xFFFF) {
+      /* wchar_t probably 2 bytes */
+      /* could do surrogates if state_dependent and wctomb can do */
+      wc = zwchar_to_wchar_t_default_char;
+    } else {
+      wc = (wchar_t)wide_string[i];
+    }
+    /* The C-RTL under WinCE does not support the generic C-style
+     * Wide-to-MultiByte conversion functions (like wctomb() et. al.).
+     * Therefore, we have to fall back to the underlying WinCE-API call to
+     * get WCHAR-to-ANSI translation done.
+     */
+    bytes_char = WideCharToMultiByte(
+                          CP_ACP, WC_COMPOSITECHECK,
+                          &wc, 1,
+                          (LPSTR)buf, sizeof(buf),
+                          NULL, &default_used);
+    if (default_used)
+      bytes_char = -1;
+    if (escape_all) {
+      if (bytes_char == 1 && (uch)buf[0] <= 0x7f) {
+        /* ASCII */
+        strncat(buffer, buf, 1);
+      } else {
+        /* use escape for wide character */
+        char *escape_string = wide_to_escape_string(wide_string[i]);
+        strcat(buffer, escape_string);
+        free(escape_string);
+      }
+    } else if (bytes_char > 0) {
+      /* multi-byte char */
+      strncat(buffer, buf, bytes_char);
+    } else {
+      /* no MB for this wide */
+      /* use escape for wide character */
+      char *escape_string = wide_to_escape_string(wide_string[i]);
+      strcat(buffer, escape_string);
+      free(escape_string);
+    }
+  }
+  if ((local_string = (char *)realloc(buffer, strlen(buffer) + 1)) == NULL) {
+    free(buffer);
+    return NULL;
+  }
+
+  return local_string;
+}
+#endif /* UNICODE_SUPPORT */

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -96,33 +96,33 @@ int FAR PASCAL LibMain( HINSTANCE hInstance,
 #endif
 {
 #ifndef WIN32
-/* The startup code for the DLL initializes the local heap(if there is one)
- * with a call to LocalInit which locks the data segment.
- */
+   /* The startup code for the DLL initializes the local heap(if there is one)
+    * with a call to LocalInit which locks the data segment.
+    */
 
-if ( wHeapSize != 0 )
-   {
-   UnlockData( 0 );
-   }
-hInst = hInstance;
-return 1;   /* Indicate that the DLL was initialized successfully. */
+   if ( wHeapSize != 0 )
+      {
+      UnlockData( 0 );
+      }
+   hInst = hInstance;
+   return 1;   /* Indicate that the DLL was initialized successfully. */
 #else
-BOOL rc = TRUE;
-switch( dwReason )
-   {
-   case DLL_PROCESS_ATTACH:
-      // DLL is loaded. Do your initialization here.
-      // If cannot init, set rc to FALSE.
-      hInst = hInstance;
-      break;
+   BOOL rc = TRUE;
+   switch( dwReason )
+      {
+      case DLL_PROCESS_ATTACH:
+         // DLL is loaded. Do your initialization here.
+         // If cannot init, set rc to FALSE.
+         hInst = hInstance;
+         break;
 
-   case DLL_PROCESS_DETACH:
-      // DLL is unloaded. Do your cleanup here.
-      break;
-   default:
-      break;
-   }
-return rc;
+      case DLL_PROCESS_DETACH:
+         // DLL is unloaded. Do your cleanup here.
+         break;
+      default:
+         break;
+      }
+   return rc;
 #endif
 }
 
@@ -131,149 +131,153 @@ return rc;
 #endif
 int FAR PASCAL WEP ( int bSystemExit )
 {
-return 1;
+   return 1;
 }
 #endif /* !UNZIPLIB */
 
 static int UnzipAllocMemory(unsigned int i, char *cmd, char *str,
                             char ***pargVee, unsigned int *pargCee)
 {
-if (((*pargVee)[i] = (char *)malloc(sizeof(char) * strlen(cmd)+1 )) == NULL)
+    if (((*pargVee)[i] = (char *)malloc(sizeof(char) * strlen(cmd)+1 ))
+        == NULL)
     {
-    if (pargCee != NULL)
-        *pargCee++;
-    UnzipFreeArguments(*pargCee, pargVee);
-    fprintf(stdout, "Unable to allocate memory in unzip library at %s\n",
-            str);
-    return PK_MEM;
+        if (pargCee != NULL)
+            *pargCee++;
+        UnzipFreeArguments(*pargCee, pargVee);
+        fprintf(stdout, "Unable to allocate memory in unzip library at %s\n",
+                str);
+        return PK_MEM;
     }
-strcpy((*pargVee)[i], cmd);
-*pargCee++;
-return PK_OK;
+    strcpy((*pargVee)[i], cmd);
+    *pargCee++;
+    return PK_OK;
 }
 
 static void UnzipFreeArguments(unsigned int argCee, char ***pargVee)
 {
-unsigned i;
+    unsigned i;
 
-/* Free the arguments in the arrays */
-for (i = 0; i < argCee; i++)
+    /* Free the arguments in the arrays */
+    for (i = 0; i < argCee; i++)
     {
-    free ((*pargVee)[i]);
-    (*pargVee)[i] = NULL;
+        free ((*pargVee)[i]);
+        (*pargVee)[i] = NULL;
     }
 
-/* Then free the arrays themselves */
-free(*pargVee);
+    /* Then free the arrays themselves */
+    free(*pargVee);
 }
 
 
 static int UnzipParseString(LPCSTR s, unsigned int *pargCee, char ***pargVee)
 {
-unsigned int i = 0;
-char *str1, *str2, *str3;
-size_t size;
+    unsigned int i = 0;
+    char *str1, *str2, *str3;
+    size_t size;
 
-str1 = (char *) malloc(lstrlen(s)+4);
-lstrcpy(str1, s);
-lstrcat(str1, " @");
+    str1 = (char *) malloc(lstrlen(s)+4);
+    lstrcpy(str1, s);
+    lstrcat(str1, " @");
 
-str2 = strchr(str1, '\"'); // get first occurance of double quote
+    str2 = strchr(str1, '\"'); // get first occurance of double quote
 
-while ((str3 = strchr(str1, '\t')) != NULL)
+    while ((str3 = strchr(str1, '\t')) != NULL)
     {
-    str3[0] = ' '; // Change tabs into a single space
+        str3[0] = ' '; // Change tabs into a single space
     }
 
-/* Note that if a quoted string contains multiple adjacent spaces, they
-   will not be removed, because they could well point to a valid
-   folder/file name.
- */
-while ((str2 = strchr(str1, '\"')) != NULL) // Found a double quote if not NULL
+    /* Note that if a quoted string contains multiple adjacent spaces, they
+       will not be removed, because they could well point to a valid
+       folder/file name.
+     */
+    while ((str2 = strchr(str1, '\"')) != NULL)
     {
-    str3 = strchr(str2+1, '\"'); // Get the second quote
-    if (str3 == NULL)
+        // Found an opening double quote; get the corresponding closing quote
+        str3 = strchr(str2+1, '\"');
+        if (str3 == NULL)
         {
-        free(str1);
-        return PK_PARAM; /* Something is screwy with the
-                            string, bail out */
+            free(str1);
+            return PK_PARAM; /* Something is screwy with the
+                                string, bail out */
         }
-    str3[0] = '\0';  // terminate str2 with a NULL
+        str3[0] = '\0';  // terminate str2 with a NULL
 
-    size = _msize(*pargVee);
-    if ((*pargVee = (char **)realloc(*pargVee, size + sizeof(char *))) == NULL)
+        size = _msize(*pargVee);
+        if ((*pargVee = (char **)realloc(*pargVee, size + sizeof(char *)))
+            == NULL)
         {
-        fprintf(stdout, "Unable to allocate memory in unzip dll\n");
-        return PK_MEM;
+            fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+            return PK_MEM;
         }
-    // argCee is incremented in UnzipAllocMemory
-    if (UnzipAllocMemory(i, str2+1, "Creating file list from string",
-                         pargVee, pargCee) != PK_OK)
+        // argCee is incremented in UnzipAllocMemory
+        if (UnzipAllocMemory(i, str2+1, "Creating file list from string",
+                             pargVee, pargCee) != PK_OK)
         {
-        free(str1);
-        return PK_MEM;
+            free(str1);
+            return PK_MEM;
         }
-    i++;
-    str3+=2;  // Point past the whitespace character
-    str2[0] = '\0'; // Terminate str1
-    lstrcat(str1, str3);
+        i++;
+        str3+=2;  // Point past the whitespace character
+        str2[0] = '\0'; // Terminate str1
+        lstrcat(str1, str3);
     }    // end while
 
-/* points to first occurance of a space */
-str2 = strchr(str1, ' ');
+    /* points to first occurance of a space */
+    str2 = strchr(str1, ' ');
 
-/*  Go through the string character by character, looking for instances
-    of two spaces together. Terminate when you find the trailing @
-*/
-while ((str2[0] != '\0') && (str2[0] != '@'))
+    /*  Go through the string character by character, looking for instances
+        of two spaces together. Terminate when you find the trailing @
+    */
+    while ((str2[0] != '\0') && (str2[0] != '@'))
     {
-    while ((str2[0] == ' ') && (str2[1] == ' '))
+        while ((str2[0] == ' ') && (str2[1] == ' '))
         {
-        str3 = &str2[1];
-        str2[0] = '\0';
-        lstrcat(str1, str3);
+            str3 = &str2[1];
+            str2[0] = '\0';
+            lstrcat(str1, str3);
         }
-    str2++;
+        str2++;
     }
 
-/* Do we still have a leading space? */
-if (str1[0] == ' ')
+    /* Do we still have a leading space? */
+    if (str1[0] == ' ')
     {
-    str3 = &str1[1];
-    lstrcpy(str1, str3); // Dump the leading space
+        str3 = &str1[1];
+        lstrcpy(str1, str3); // Dump the leading space
     }
 
 
-/* Okay, now we have gotten rid of any tabs and replaced them with
-   spaces, and have replaced multiple spaces with a single space. We
-   couldn't do this before because the folder names could have actually
-   contained these characters.
-*/
+    /* Okay, now we have gotten rid of any tabs and replaced them with
+       spaces, and have replaced multiple spaces with a single space. We
+       couldn't do this before because the folder names could have actually
+       contained these characters.
+    */
 
-str2 = str3 = str1;
+    str2 = str3 = str1;
 
-while ((str2[0] != '\0') && (str3[0] != '@'))
+    while ((str2[0] != '\0') && (str3[0] != '@'))
     {
-    str3 = strchr(str2+1, ' ');
-    str3[0] = '\0';
-    size = _msize(pargVee);
-    if ((*pargVee = (char **)realloc(*pargVee, size + sizeof(char *))) == NULL)
+        str3 = strchr(str2+1, ' ');
+        str3[0] = '\0';
+        size = _msize(pargVee);
+        if ((*pargVee = (char **)realloc(*pargVee, size + sizeof(char *)))
+            == NULL)
         {
-        fprintf(stdout, "Unable to allocate memory in unzip dll\n");
-        return PK_MEM;
+            fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+            return PK_MEM;
         }
-    if (UnzipAllocMemory(i, str2, "Creating file list from string",
-                         pargVee, pargCee) != PK_OK)
+        if (UnzipAllocMemory(i, str2, "Creating file list from string",
+                             pargVee, pargCee) != PK_OK)
         {
-        free(str1);
-        return PK_MEM;
+            free(str1);
+            return PK_MEM;
         }
-    i++;
-    str3++;
-    str2 = str3;
+        i++;
+        str3++;
+        str2 = str3;
     }
-free(str1);
-return PK_OK;
+    free(str1);
+    return PK_OK;
 }
 
 /* DLL calls */
@@ -282,30 +286,31 @@ BOOL WINAPI Wiz_Init(pG, lpUserFunc)
 zvoid *pG;
 LPUSERFUNCTIONS lpUserFunc;
 {
-G.message = DllMessagePrint;
-G.statreportcb = Wiz_StatReportCB;
-if (lpUserFunc->sound == NULL)
-   lpUserFunc->sound = DummySound;
-G.lpUserFunctions = lpUserFunc;
+    G.message = DllMessagePrint;
+    G.statreportcb = Wiz_StatReportCB;
+    if (lpUserFunc->sound == NULL)
+       lpUserFunc->sound = DummySound;
+    G.lpUserFunctions = lpUserFunc;
 
-SETLOCALE(LC_CTYPE, "");
+    SETLOCALE(LC_CTYPE, "");
 
-if (!G.lpUserFunctions->print ||
-    !G.lpUserFunctions->sound ||
-    !G.lpUserFunctions->replace)
-    return FALSE;
+    if (!G.lpUserFunctions->print ||
+        !G.lpUserFunctions->sound ||
+        !G.lpUserFunctions->replace)
+        return FALSE;
 
-return TRUE;
+    return TRUE;
 }
 
 /*
-    ExtractOnlyNewer  = true for "update" without interaction
+    StructVersID      = version of this structure (= UZ_DCL_STRUCTVER)
+    ExtractOnlyNewer  = TRUE for "update" without interaction
                         (extract only newer/new files, without queries)
-    SpaceToUnderscore = true if convert space to underscore
-    PromptToOverwrite = true if prompt to overwrite is wanted
+    SpaceToUnderscore = TRUE if convert space to underscore
+    PromptToOverwrite = TRUE if prompt to overwrite is wanted
     fQuiet            = quiet flag:
                          0 = all messages, 1 = few messages, 2 = no messages
-    ncflag            = write to stdout if true
+    ncflag            = write to stdout if TRUE
     ntflag            = test zip file
     nvflag            = verbose listing
     nfflag            = "freshen" (replace existing files by newer versions)
@@ -314,9 +319,10 @@ return TRUE;
                         0 = junk paths from filenames
                         1 = "safe" usage of paths in filenames (skip "../")
                         2 = allow also unsafe path components (dir traversal)
-    noflag            = true if you are to always overwrite existing files
+    noflag            = always overwriting existing files if TRUE
     naflag            = do end-of-line translation
     nZIflag           = get ZipInfo if TRUE
+    B_flag            = backup existing files if TRUE
     C_flag            = be case insensitive if TRUE
     D_flag            = controls restoration of timestamps
                         0 = restore all timestamps (default)
@@ -325,6 +331,12 @@ return TRUE;
                             Zip archive
                         2 = do not restore any timestamps; extracted files
                             and directories get stamped with the current time
+    U_flag            = controls UTF-8 filename coding support
+                        0 = automatic UTF-8 translation enabled (default)
+                        1 = recognize UTF-8 coded names, but all non-ASCII
+                            characters are "escaped" into "#Uxxxx"
+                        2 = UTF-8 support is disabled, filename handling
+                            works exactly as in previous UnZip versions
     fPrivilege        = 1 => restore ACLs in user mode,
                         2 => try to use privileges for restoring ACLs
     lpszZipFN         = zip file name
@@ -336,6 +348,9 @@ BOOL WINAPI Wiz_SetOpts(pG, lpDCL)
 zvoid *pG;
 LPDCL lpDCL;
 {
+    if (lpDCL->StructVersID != UZ_DCL_STRUCTVER)
+        return FALSE;
+
     uO.qflag = lpDCL->fQuiet;  /* Quiet flag */
     G.pfnames = (char **)&fnames[0];    /* assign default file name vector */
     G.pxnames = (char **)&fnames[1];
@@ -347,8 +362,12 @@ LPDCL lpDCL;
     uO.vflag = lpDCL->nvflag;
     uO.zflag = lpDCL->nzflag;
     uO.aflag = lpDCL->naflag;
+#ifdef UNIXBACKUP
+    uO.B_flag = lpDCL->B_flag;
+#endif
     uO.C_flag = lpDCL->C_flag;
     uO.D_flag = lpDCL->D_flag;
+    uO.U_flag = lpDCL->U_flag;
     uO.overwrite_all = lpDCL->noflag;
     uO.overwrite_none = !(lpDCL->noflag || lpDCL->PromptToOverwrite);
     uO.uflag = lpDCL->ExtractOnlyNewer || lpDCL->nfflag;
@@ -391,7 +410,7 @@ LPDCL lpDCL;
            {
            /* The supplied extract root path exceed the filename size limit. */
 #ifndef CRTL_CP_IS_ISO
-	   free(pExDirRoot);
+           free(pExDirRoot);
 #endif
            return FALSE;
            }
@@ -446,132 +465,132 @@ char **ifnv;
 int xfnc;
 char **xfnv;
 {
-int retcode, f_cnt;
+    int retcode, f_cnt;
 #ifndef CRTL_CP_IS_ISO
-unsigned bufsize;
-char **intern_ifv = NULL, **intern_xfv = NULL;
+    unsigned bufsize;
+    char **intern_ifv = NULL, **intern_xfv = NULL;
 #endif
 
-if (ifnv == (char **)NULL && ifnc != 0)
-    ifnc = 0;
-else
-    for (f_cnt = 0; f_cnt < ifnc; f_cnt++)
-        if (ifnv[f_cnt] == (char *)NULL) {
-            ifnc = f_cnt;
-            break;
-        }
-if (xfnv == (char **)NULL && xfnc != 0)
-    xfnc = 0;
-else
-    for (f_cnt = 0; f_cnt < xfnc; f_cnt++)
-        if (xfnv[f_cnt] == (char *)NULL) {
-            xfnc = f_cnt;
-            break;
-        }
+    if (ifnv == (char **)NULL && ifnc != 0)
+        ifnc = 0;
+    else
+        for (f_cnt = 0; f_cnt < ifnc; f_cnt++)
+            if (ifnv[f_cnt] == (char *)NULL) {
+                ifnc = f_cnt;
+                break;
+            }
+    if (xfnv == (char **)NULL && xfnc != 0)
+        xfnc = 0;
+    else
+        for (f_cnt = 0; f_cnt < xfnc; f_cnt++)
+            if (xfnv[f_cnt] == (char *)NULL) {
+                xfnc = f_cnt;
+                break;
+            }
 
-G.process_all_files = (ifnc == 0 && xfnc == 0);         /* for speed */
-G.filespecs = ifnc;
-G.xfilespecs = xfnc;
+    G.process_all_files = (ifnc == 0 && xfnc == 0);         /* for speed */
+    G.filespecs = ifnc;
+    G.xfilespecs = xfnc;
 
-if (ifnc > 0) {
-    for (f_cnt = ifnc; --f_cnt >= 0;)
-        if (strlen(ifnv[f_cnt]) > ((WSIZE>>2) - 160)) {
-            /* include filename pattern is too long for internal buffers */
-            FreeDllMem(__G);
-            return PK_PARAM;
-        }
+    if (ifnc > 0) {
+        for (f_cnt = ifnc; --f_cnt >= 0;)
+            if (strlen(ifnv[f_cnt]) > ((WSIZE>>2) - 160)) {
+                /* include filename pattern is too long for internal buffers */
+                FreeDllMem(__G);
+                return PK_PARAM;
+            }
 
 #ifdef CRTL_CP_IS_ISO
-    G.pfnames = ifnv;
+        G.pfnames = ifnv;
 #else /* !CRTL_CP_IS_ISO */
-    intern_ifv = (char **)malloc((ifnc+1)*sizeof(char **));
-    if (intern_ifv == (char **)NULL)
+        intern_ifv = (char **)malloc((ifnc+1)*sizeof(char **));
+        if (intern_ifv == (char **)NULL)
         {
-        FreeDllMem(__G);
-        return PK_BADERR;
+            FreeDllMem(__G);
+            return PK_BADERR;
         }
 
-    bufsize = 0;
-    for (f_cnt = ifnc; --f_cnt >= 0;)
-        bufsize += strlen(ifnv[f_cnt]) + 1;
-    intern_ifv[0] = (char *)malloc(bufsize);
-    if (intern_ifv[0] == (char *)NULL)
+        bufsize = 0;
+        for (f_cnt = ifnc; --f_cnt >= 0;)
+            bufsize += strlen(ifnv[f_cnt]) + 1;
+        intern_ifv[0] = (char *)malloc(bufsize);
+        if (intern_ifv[0] == (char *)NULL)
         {
-        free(intern_ifv);
-        FreeDllMem(__G);
-        return PK_BADERR;
+            free(intern_ifv);
+            FreeDllMem(__G);
+            return PK_BADERR;
         }
 
-    for (f_cnt = 0; ; f_cnt++)
+        for (f_cnt = 0; ; f_cnt++)
         {
-        ISO_TO_INTERN(ifnv[f_cnt], intern_ifv[f_cnt]);
-        if ((f_cnt+1) >= ifnc)
-            break;
-        intern_ifv[f_cnt+1] = intern_ifv[f_cnt] +
-                              (strlen(intern_ifv[f_cnt]) + 1);
+            ISO_TO_INTERN(ifnv[f_cnt], intern_ifv[f_cnt]);
+            if ((f_cnt+1) >= ifnc)
+                break;
+            intern_ifv[f_cnt+1] = intern_ifv[f_cnt] +
+                                  (strlen(intern_ifv[f_cnt]) + 1);
         }
-    intern_ifv[ifnc] = (char *)NULL;
-    G.pfnames = intern_ifv;
+        intern_ifv[ifnc] = (char *)NULL;
+        G.pfnames = intern_ifv;
 #endif /* ?CRTL_CP_IS_ISO */
     }
 
-if (xfnc > 0) {
-    for (f_cnt = xfnc; --f_cnt >= 0;)
-        if (strlen(xfnv[f_cnt]) > ((WSIZE>>2) - 160))
+    if (xfnc > 0) {
+        for (f_cnt = xfnc; --f_cnt >= 0;)
+            if (strlen(xfnv[f_cnt]) > ((WSIZE>>2) - 160))
             {
-            /* exclude filename pattern is too long for internal buffers */
+                /* exclude filename pattern is too long for internal buffers */
 #ifndef CRTL_CP_IS_ISO
-            if (ifnc > 0)
+                if (ifnc > 0)
                 {
-                free(intern_ifv[0]);
-                free(intern_ifv);
+                    free(intern_ifv[0]);
+                    free(intern_ifv);
                 }
 #endif
-            FreeDllMem(__G);
-            return PK_PARAM;
+                FreeDllMem(__G);
+                return PK_PARAM;
             }
 
 #ifdef CRTL_CP_IS_ISO
-    G.pxnames = xfnv;
+        G.pxnames = xfnv;
 #else /* !CRTL_CP_IS_ISO */
-    intern_xfv = (char **)malloc((xfnc+1)*sizeof(char **));
-    if (intern_xfv == (char **)NULL)
+        intern_xfv = (char **)malloc((xfnc+1)*sizeof(char **));
+        if (intern_xfv == (char **)NULL)
         {
-        if (ifnc > 0)
+            if (ifnc > 0)
             {
-            free(intern_ifv[0]);
-            free(intern_ifv);
+                free(intern_ifv[0]);
+                free(intern_ifv);
             }
-        FreeDllMem(__G);
-        return PK_BADERR;
+            FreeDllMem(__G);
+            return PK_BADERR;
         }
 
-    bufsize = 0;
-    for (f_cnt = xfnc; --f_cnt >= 0;)
-        bufsize += strlen(xfnv[f_cnt]) + 1;
-    intern_xfv[0] = (char *)malloc(bufsize);
-    if (intern_xfv[0] == (char *)NULL)
+        bufsize = 0;
+        for (f_cnt = xfnc; --f_cnt >= 0;)
+            bufsize += strlen(xfnv[f_cnt]) + 1;
+        intern_xfv[0] = (char *)malloc(bufsize);
+        if (intern_xfv[0] == (char *)NULL)
         {
-        free(intern_xfv);
-        if (ifnc > 0)
+            free(intern_xfv);
+            if (ifnc > 0)
             {
-            free(intern_ifv[0]);
-            free(intern_ifv);
+                free(intern_ifv[0]);
+                free(intern_ifv);
             }
-        FreeDllMem(__G);
-        return PK_BADERR;
+            FreeDllMem(__G);
+            return PK_BADERR;
         }
 
-    for (f_cnt = 0; ; f_cnt++)
+        for (f_cnt = 0; ; f_cnt++)
         {
-        ISO_TO_INTERN(xfnv[f_cnt], intern_xfv[f_cnt]);
-        if ((f_cnt+1) >= xfnc)
-            break;
-        intern_xfv[f_cnt+1] = intern_xfv[f_cnt] +
-                              (strlen(intern_xfv[f_cnt]) + 1);
+            ISO_TO_INTERN(xfnv[f_cnt], intern_xfv[f_cnt]);
+            if ((f_cnt+1) >= xfnc)
+                break;
+            intern_xfv[f_cnt+1] = intern_xfv[f_cnt] +
+                                  (strlen(intern_xfv[f_cnt]) + 1);
         }
-    intern_xfv[xfnc] = (char *)NULL;
-    G.pxnames = intern_xfv;
+        intern_xfv[xfnc] = (char *)NULL;
+        G.pxnames = intern_xfv;
 #endif /* ?CRTL_CP_IS_ISO */
     }
 
@@ -579,40 +598,40 @@ if (xfnc > 0) {
     Okey dokey, we have everything we need to get started.  Let's roll.
   ---------------------------------------------------------------------------*/
 
-retcode = setjmp(dll_error_return);
-if (retcode)
-   {
+    retcode = setjmp(dll_error_return);
+    if (retcode)
+    {
 #ifndef CRTL_CP_IS_ISO
-   if (xfnc > 0)
-      {
-      free(intern_xfv[0]);
-      free(intern_xfv);
-      }
-   if (ifnc > 0)
-      {
-      free(intern_ifv[0]);
-      free(intern_ifv);
-      }
+        if (xfnc > 0)
+        {
+            free(intern_xfv[0]);
+            free(intern_xfv);
+        }
+        if (ifnc > 0)
+        {
+            free(intern_ifv[0]);
+            free(intern_ifv);
+        }
 #endif
-   FreeDllMem(__G);
-   return PK_BADERR;
-   }
+        FreeDllMem(__G);
+        return PK_BADERR;
+    }
 
-retcode = process_zipfiles(__G);
+    retcode = process_zipfiles(__G);
 #ifndef CRTL_CP_IS_ISO
-if (xfnc > 0)
-   {
-   free(intern_xfv[0]);
-   free(intern_xfv);
-   }
-if (ifnc > 0)
-   {
-   free(intern_ifv[0]);
-   free(intern_ifv);
-   }
+    if (xfnc > 0)
+    {
+        free(intern_xfv[0]);
+        free(intern_xfv);
+    }
+    if (ifnc > 0)
+    {
+        free(intern_ifv[0]);
+        free(intern_ifv);
+    }
 #endif
-FreeDllMem(__G);
-return retcode;
+    FreeDllMem(__G);
+    return retcode;
 }
 
 
@@ -637,40 +656,40 @@ lpUserFunc = pointer to a structure that contains pointers to functions
 int WINAPI Wiz_SingleEntryUnzip(int ifnc, char **ifnv, int xfnc, char **xfnv,
    LPDCL lpDCL, LPUSERFUNCTIONS lpUserFunc)
 {
-int retcode;
-CONSTRUCTGLOBALS();
+   int retcode;
+   CONSTRUCTGLOBALS();
 
-if (!Wiz_Init((zvoid *)&G, lpUserFunc))
+   if (!Wiz_Init((zvoid *)&G, lpUserFunc))
    {
-   DESTROYGLOBALS();
-   return PK_BADERR;
+      DESTROYGLOBALS();
+      return PK_BADERR;
    }
 
-if (lpDCL->lpszZipFN == NULL)
+   if (lpDCL->lpszZipFN == NULL)
    {
-   /* Something has screwed up, we don't have a filename */
-   DESTROYGLOBALS();
-   return PK_NOZIP;
+      /* Something has screwed up, we don't have a filename */
+      DESTROYGLOBALS();
+      return PK_NOZIP;
    }
 
-if (!Wiz_SetOpts((zvoid *)&G, lpDCL))
+   if (!Wiz_SetOpts((zvoid *)&G, lpDCL))
    {
-   DESTROYGLOBALS();
-   return PK_MEM;
+      DESTROYGLOBALS();
+      return PK_MEM;
    }
 
 #ifdef SFX
-G.zipfn = lpDCL->lpszZipFN;
-G.argv0 = lpDCL->lpszZipFN;
+   G.zipfn = lpDCL->lpszZipFN;
+   G.argv0 = lpDCL->lpszZipFN;
 #endif
 
-/* Here is the actual call to "unzip" the files (or whatever else you
- * are doing.)
- */
-retcode = Wiz_Unzip((zvoid *)&G, ifnc, ifnv, xfnc, xfnv);
+   /* Here is the actual call to "unzip" the files (or whatever else you
+    * are doing.)
+    */
+   retcode = Wiz_Unzip((zvoid *)&G, ifnc, ifnv, xfnc, xfnv);
 
-DESTROYGLOBALS();
-return retcode;
+   DESTROYGLOBALS();
+   return retcode;
 }
 
 
@@ -699,55 +718,55 @@ int WINAPI Wiz_SingleEntryUnzpList(unsigned int ifnc, LPCSTR ExtList,
    unsigned int xfnc, LPCSTR ExcList,
    LPDCL lpDCL, LPUSERFUNCTIONS lpUserFunc)
 {
-int retcode;
-char **argVExt, **argVExc;
-unsigned int argCExt, argCExc;
+    int retcode;
+    char **argVExt, **argVExc;
+    unsigned int argCExt, argCExc;
 
-argCExt = argCExc = 0;
+    argCExt = argCExc = 0;
 
-if (ExtList != NULL)
+    if (ExtList != NULL)
     {
-    if ((argVExt = (char **)malloc((ifnc)*sizeof(char *))) == NULL)
-       {
-       fprintf(stdout, "Unable to allocate memory in unzip dll\n");
-       return PK_MEM;
-       }
-    if ((retcode = UnzipParseString(ExtList, &argCExt, &argVExt)) != PK_OK)
-        return retcode;
+        if ((argVExt = (char **)malloc((ifnc)*sizeof(char *))) == NULL)
+        {
+            fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+            return PK_MEM;
+        }
+        if ((retcode = UnzipParseString(ExtList, &argCExt, &argVExt)) != PK_OK)
+            return retcode;
     }
 
-if (ExcList != NULL)
+    if (ExcList != NULL)
     {
-    if ((argVExc = (char **)malloc((ifnc)*sizeof(char *))) == NULL)
+        if ((argVExc = (char **)malloc((ifnc)*sizeof(char *))) == NULL)
         {
-        fprintf(stdout, "Unable to allocate memory in unzip dll\n");
-        UnzipFreeArguments(argCExt, &argVExt);
-        return PK_MEM;
+            fprintf(stdout, "Unable to allocate memory in unzip dll\n");
+            UnzipFreeArguments(argCExt, &argVExt);
+            return PK_MEM;
         }
-    if ((retcode = UnzipParseString(ExcList, &argCExc, &argVExc)) != PK_OK)
+        if ((retcode = UnzipParseString(ExcList, &argCExc, &argVExc)) != PK_OK)
         {
-        UnzipFreeArguments(argCExt, &argVExt);
-	return retcode;
+            UnzipFreeArguments(argCExt, &argVExt);
+            return retcode;
         }
     }
 
-retcode = Wiz_SingleEntryUnzip(argCExt, argVExt, argCExc, argVExc,
-                               lpDCL, lpUserFunc);
-UnzipFreeArguments(argCExc, &argVExc);
-UnzipFreeArguments(argCExt, &argVExt);
-return retcode;
+    retcode = Wiz_SingleEntryUnzip(argCExt, argVExt, argCExc, argVExc,
+                                   lpDCL, lpUserFunc);
+    UnzipFreeArguments(argCExc, &argVExc);
+    UnzipFreeArguments(argCExt, &argVExt);
+    return retcode;
 }
 
 
 int win_fprintf(zvoid *pG, FILE *file, unsigned int size, char far *buffer)
 {
-if ((file != stderr) && (file != stdout))
+   if ((file != stderr) && (file != stdout))
    {
-   return write(fileno(file),(char far *)(buffer),size);
+      return write(fileno(file),(char far *)(buffer),size);
    }
-if (!fNoPrinting)
-   return G.lpUserFunctions->print((LPSTR)buffer, size);
-return (int)size;
+   if (!fNoPrinting)
+      return G.lpUserFunctions->print((LPSTR)buffer, size);
+   return (int)size;
 }
 
 /**********************************
@@ -764,10 +783,10 @@ static int UZ_EXP DllMessagePrint(pG, buf, size, flag)
     ulg size;       /* length of string (may include nulls) */
     int flag;       /* flag bits */
 {
-if (!fNoPrinting)
-   return G.lpUserFunctions->print((LPSTR)buf, size);
-else
-   return (int)size;
+    if (!fNoPrinting)
+        return G.lpUserFunctions->print((LPSTR)buf, size);
+    else
+        return (int)size;
 }
 
 #if 0 /* currently unused */
@@ -785,7 +804,9 @@ int DllDisplayPrint(pG, buf, size, flag)
     ulg size;       /* length of string (may include nulls) */
     int flag;       /* flag bits */
 {
-return (!fNoPrinting ? G.lpUserFunctions->print((LPSTR)buf, size) : (int)size);
+    return (!fNoPrinting
+            ? G.lpUserFunctions->print((LPSTR)buf, size)
+            : (int)size);
 }
 #endif /* never */
 
@@ -826,7 +847,7 @@ int UZ_EXP UzpPassword(pG, rcnt, pwbuf, size, zfn, efn)
 /* Turn off all messages to the calling application */
 void WINAPI Wiz_NoPrinting(int f)
 {
-fNoPrinting = f;
+    fNoPrinting = f;
 }
 
 /* Dummy sound function for those applications that don't use sound */

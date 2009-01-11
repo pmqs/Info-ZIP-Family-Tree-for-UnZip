@@ -622,14 +622,14 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
         goto exit_retcode;
     }
 
-    if (strlen(archive) > FILNAMSIZ) {
+    if (strlen(archive) >= FILNAMSIZ) {
        /* length of supplied archive name exceed the system's filename limit */
        DESTROYGLOBALS();
        retcode = PK_PARAM;
        goto exit_retcode;
     }
 
-    G.wildzipfn = (char *)malloc(FILNAMSIZ + 1);
+    G.wildzipfn = (char *)malloc(FILNAMSIZ);
     strcpy(G.wildzipfn, archive);
 #if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
     _ISO_INTERN(G.wildzipfn);

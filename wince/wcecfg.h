@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -68,6 +68,16 @@
 
 #ifdef NTSD_EAS
 #undef NTSD_EAS
+#endif
+
+#if (!defined(NO_UNICODE_SUPPORT) && !defined(UNICODE_SUPPORT))
+#define UNICODE_SUPPORT
+#endif
+#if (defined(UNICODE_SUPPORT) && !defined(UNICODE_WCHAR))
+#define UNICODE_WCHAR           /* wchar_t is UTF-16 encoded on WinCE */
+#endif
+#ifdef UTF8_MAYBE_NATIVE
+#undef UTF8_MAYBE_NATIVE        /* UTF-8 cannot be system charset on WinCE */
 #endif
 
 #ifdef POCKET_UNZIP

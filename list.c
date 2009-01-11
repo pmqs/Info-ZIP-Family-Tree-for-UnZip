@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -41,42 +41,46 @@
 
 #ifdef OS2_EAS
    static ZCONST char Far HeadersS[]  =
-     "  Length     EAs   ACLs    Date   Time    Name";
+     "  Length     EAs   ACLs     Date    Time    Name";
    static ZCONST char Far HeadersS1[] =
-     " --------    ---   ----    ----   ----    ----";
+     "---------    ---   ----  ---------- -----   ----";
 #else
-   static ZCONST char Far HeadersS[]  = "  Length     Date   Time    Name";
-   static ZCONST char Far HeadersS1[] = " --------    ----   ----    ----";
+   static ZCONST char Far HeadersS[]  =
+     "  Length      Date    Time    Name";
+   static ZCONST char Far HeadersS1[] =
+     "---------  ---------- -----   ----";
 #endif
 
    static ZCONST char Far HeadersL[]  =
-     " Length   Method    Size  Ratio   Date   Time   CRC-32    Name";
+     " Length   Method    Size  Cmpr    Date    Time   CRC-32   Name";
    static ZCONST char Far HeadersL1[] =
-     "--------  ------  ------- -----   ----   ----   ------    ----";
+     "--------  ------  ------- ---- ---------- ----- --------  ----";
    static ZCONST char Far *Headers[][2] =
      { {HeadersS, HeadersS1}, {HeadersL, HeadersL1} };
 
    static ZCONST char Far CaseConversion[] =
      "%s (\"^\" ==> case\n%s   conversion)\n";
    static ZCONST char Far LongHdrStats[] =
-     "%s  %-7s%s %4s  %02u%c%02u%c%02u %02u:%02u  %08lx %c";
+     "%s  %-7s%s %4s %02u%c%02u%c%02u %02u:%02u %08lx %c";
    static ZCONST char Far LongFileTrailer[] =
      "--------          -------  ---                       \
      -------\n%s         %s %4s                            %lu file%s\n";
 #ifdef OS2_EAS
    static ZCONST char Far ShortHdrStats[] =
      "%s %6lu %6lu  %02u%c%02u%c%02u %02u:%02u  %c";
-   static ZCONST char Far ShortFileTrailer[] = " --------  -----  -----       \
-            -------\n%s %6lu %6lu                   %lu file%s\n";
+   static ZCONST char Far ShortFileTrailer[] =
+     "---------  -----  -----                \
+     -------\n%s %6lu %6lu                     %lu file%s\n";
    static ZCONST char Far OS2ExtAttrTrailer[] =
      "%lu file%s %lu bytes of OS/2 extended attributes attached.\n";
    static ZCONST char Far OS2ACLTrailer[] =
      "%lu file%s %lu bytes of access control lists attached.\n";
 #else
    static ZCONST char Far ShortHdrStats[] =
-    "%s  %02u%c%02u%c%02u %02u:%02u  %c";
+     "%s  %02u%c%02u%c%02u %02u:%02u  %c";
    static ZCONST char Far ShortFileTrailer[] =
-    " --------                   -------\n%s                   %lu file%s\n";
+     "---------                     -------\n%s\
+                     %lu file%s\n";
 #endif /* ?OS2_EAS */
 #endif /* !WINDLL */
 
@@ -289,14 +293,14 @@ int list_files(__G)    /* return PK-type error code */
             if (t != (struct tm *)NULL) {
                 mo = (unsigned)(t->tm_mon + 1);
                 dy = (unsigned)(t->tm_mday);
-                yr = (unsigned)(t->tm_year % 100);
+                yr = (unsigned)(t->tm_year + 1900);
                 hh = (unsigned)(t->tm_hour);
                 mm = (unsigned)(t->tm_min);
             } else
 #endif /* USE_EF_UT_TIME */
             {
                 yr = ((((unsigned)(G.crec.last_mod_dos_datetime >> 25) & 0x7f)
-                       + 80) % (unsigned)100);
+                       + 1980));
                 mo = ((unsigned)(G.crec.last_mod_dos_datetime >> 21) & 0x0f);
                 dy = ((unsigned)(G.crec.last_mod_dos_datetime >> 16) & 0x1f);
                 hh = (((unsigned)G.crec.last_mod_dos_datetime >> 11) & 0x1f);
@@ -489,22 +493,29 @@ int list_files(__G)    /* return PK-type error code */
 #endif /* ?WINDLL */
     }
 
+    /* Skip the following checks in case of a premature listing break. */
+    if (error_in_archive <= PK_WARN) {
+
 /*---------------------------------------------------------------------------
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
 
-    if ( (strncmp(G.sig,
-                  (G.ecrec.have_ecr64 ?
-                   end_central64_sig : end_central_sig),
-                  4) != 0)
-        && (!G.ecrec.is_zip64_archive)
-        && (strncmp(G.sig, end_central_sig, 4) != 0)
-       ) {              /* just to make sure again */
-        Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
-        error_in_archive = PK_WARN;     /* didn't find sig */
+        if ( (strncmp(G.sig,
+                      (G.ecrec.have_ecr64 ?
+                       end_central64_sig : end_central_sig),
+                      4) != 0)
+            && (!G.ecrec.is_zip64_archive)
+            && (strncmp(G.sig, end_central_sig, 4) != 0)
+           ) {          /* just to make sure again */
+            Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
+            error_in_archive = PK_WARN;   /* didn't find sig */
+        }
+
+        /* Set specific return code when no files have been found. */
+        if (members == 0L && error_in_archive <= PK_WARN)
+            error_in_archive = PK_FIND;
+
     }
-    if (members == 0L && error_in_archive <= PK_WARN)
-        error_in_archive = PK_FIND;
 
     return error_in_archive;
 
@@ -714,7 +725,7 @@ int ratio(uc, c)
 void fnprint(__G)    /* print filename (after filtering) and newline */
     __GDEF
 {
-    char *name = fnfilter(G.filename, slide, (WSIZE>>1));
+    char *name = fnfilter(G.filename, slide, (extent)(WSIZE>>1));
 
     (*G.message)((zvoid *)&G, (uch *)name, (ulg)strlen(name), 0);
     (*G.message)((zvoid *)&G, (uch *)"\n", 1L, 0);

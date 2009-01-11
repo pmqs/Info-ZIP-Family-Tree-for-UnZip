@@ -8,15 +8,6 @@
 # This script assumes that the desired "unzip" and "egrep" (and "sed")
 # programs are on the user's PATH.
 #
-#    History (recent):
-#
-# 2008-09-29 SMS.  Added code to handle backslashes in archive file
-# names, and shell-special characters in the pattern.
-# Changed to use "sed" for all escaping of shell-special characters.
-# Tried to get the exit status to follow the status of egrep in the
-# complex (default) situation, using only standard Bourne shell
-# features, and to exit early if egrep returns status 2 (error).
-#
 
 pat=""
 opt=""

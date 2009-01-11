@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -210,6 +210,15 @@
 #if (defined(NTSD_EAS) && !defined(RESTORE_ACL))
 #  define RESTORE_ACL   /* "restore ACLs" only needed when NTSD_EAS active */
 #endif
+#if (!defined(NO_UNICODE_SUPPORT) && !defined(UNICODE_SUPPORT))
+#  define UNICODE_SUPPORT       /* enable UTF-8 filename support by default */
+#endif
+#if (defined(UNICODE_SUPPORT) && !defined(UNICODE_WCHAR))
+#  define UNICODE_WCHAR         /* wchar_t is UTF-16 encoded on WIN32 */
+#endif
+#ifdef UTF8_MAYBE_NATIVE
+#  undef UTF8_MAYBE_NATIVE      /* UTF-8 cannot be system charset on WIN32 */
+#endif
 
 /* WIN32 runs solely on little-endian processors; enable support
  * for the 32-bit optimized CRC-32 C code by default.
@@ -365,11 +374,6 @@ int getch_win32  OF((void));
                                       modify [eax ecx edx]
 #    endif /* !USE_ZLIB */
 #  endif /* __386__ */
-
-#  ifndef EPIPE
-#    define EPIPE 29    /* Watcom 11.0c(+) errno.h contains this define */
-#  endif
-#  define PIPE_ERROR (errno == EPIPE)
 #endif /* __WATCOMC__ */
 
 #define SCREENWIDTH 80
@@ -388,7 +392,7 @@ int screensize(int *tt_rows, int *tt_cols);
  *  If this is set it is assumed that the port
  *  supports 64-bit file calls.  The types are
  *  defined here.  Any local implementations are
- *  in w32i64.c and the protypes for the calls are
+ *  in w32i64.c and the prototypes for the calls are
  *  in unzip.h.  Note that a port must support
  *  these calls fully or should not set
  *  LARGE_FILE_SUPPORT.

@@ -4,20 +4,7 @@
    This document describes some VMS-specific behavior and implementation
 details of the Info-ZIP Zip and UnZip programs.
 
-   Last modified: 2007-10-20.
-
-
-   Building with the LIST option using MMK or MMS
-   ----------------------------------------------
-
-   Currently, building with MMK or MMS using the LIST option (as in
-"/MACRO = LIST=1") may cause a failure for some old versions of the DEC
-C compiler.  The LIST option currently adds "/show = (all, nomessages)"
-to the CC command line, and some old DEC C compilers do not support the
-"nomessages" keyword.  When VAX C is used, this keyword is omitted, but
-the builder does not distinguish between the various DEC/Compaq/HP C
-versions.  The work-arounds are to use BUILD_[UN]ZIP.COM, or edit
-[.VMS]DESCRIP_SRC.MMS to remove the troublesome keyword.
+   Last modified: 2008-04-19.
 
 
    Command-line Case
@@ -36,12 +23,91 @@ logical name DECC$ARGV_PARSE_STYLE to "ENABLE" will work.   HELP CRTL
 leads to some additional information on these features.
 
 
+   File Name Case (ODS5)
+   ---------------------
+
+   In general, Zip 3.0 and UnZip 6.0 should handle file name case (and
+extended file names) in reasonable ways on ODS5 disks.
+
+   Zip offers a variety of "-C" (/PRESERVE_CASE) options to control how
+case is handled when adding files to an archive.  The default settings
+("-C2-", /PRESERVE_CASE = NOODS2, down-case ODS2 file names; "-C5",
+/PRESERVE_CASE = ODS5, preserve case of ODS5 file names) should be
+consistent with previous Zip versions for files on ODS2 disks, and
+reasonable for files on ODS5 disks.
+
+   UnZip should preserve case when it extracts to an ODS5 destination
+disk (unless "-2" (/ODS2) is specified).  (Note that previous UnZip
+versions, including version 5.52, did not properly preserve case for
+directories, which were always up-cased.)
+
+   The Zip and UnZip builders should work properly on ODS2 and ODS5
+disks, with old (pre-ODS5) and new (case-conscious) versions of MMS (or
+MMK).  All testing was done with SET PROCESS /CASE_LOOKUP = BLIND.
+Various problems may be expected with /CASE_LOOKUP = SENSITIVE.
+
+   For consistency, the builders should always create product files
+(.OBJ, .EXE, .HLB, and so on) with upper-case names, whether the build
+is done on an ODS2 or ODS5 disk.  Note, however, that in a world with
+both ODS2 and ODS5 disks, and old and new Zip and UnZip versions, it's
+possible to encounter lower-case product file names.  For example, a VMS
+binary kit could be created on an ODS2 disk, and a Zip archive created
+from that (using Zip 2.x, or Zip 3.x with default settings).  Such a Zip
+archive would contain down-cased names for those product files, and
+those lower-case names would then normally be preserved when UnZip was
+used to extract that archive onto an ODS5 destination.  Normally, things
+will work regardless of such case changes, but there may be some
+untested combinations of unexpected name cases and quirky MMS (or MMK)
+behavior, where something goes wrong.  Complaints are always welcome,
+but it may not be possible to get everything to work as expected with
+every version of VMS, MMS (or MMK), Zip, and UnZip, on every file
+system.
+
+   It might help matters if _all_ VMS binary kits were produced on ODS5
+disks, and packaged using (case-preserving) Zip version 3.x, but this
+would certainly be different from the way things have been done before,
+and maintaining control over this process is essentially impossible.
+
+
+   Symbolic Links (ODS5)
+   ---------------------
+
+   VMS V8.3 offers support for symbolic links (symlinks) on ODS5 disks.
+In previous Zip and UnZip versions, the generic code for symlinks was
+disabled, and there was no VMS-specific code for symlinks.  Now, by
+default, Zip and UnZip attempt to support symlinks wherever the C
+headers and C run-time library include the functions needed for symlink
+support.  This means non-VAX systems with __CRTL_VER >= 70301000, so
+this includes VMS V7.3-1 and up, and thus symlink-capable Zip and UnZip
+programs may be built on systems which do not themselves offer symlink
+support.  (Various run-time failures may be expected if symlinks are
+encountered on pre-V8.3 systems, either in a file system or in a Zip
+archive.)
+
+   Symlink support can be disabled at build-time, if desired, by
+defining the C macro NO_SYMLINKS.  (See comments in the builder
+regarding LOCAL_UNZIP or LOCAL_ZIP, as appropriate.)  For example, using
+MMS to build UnZip:
+
+      MMS /DESCRIP = [.VMS] /MACRO = ("LOCAL_UNZIP=NO_SYMLINKS=1")
+
+or, using the command procedure to build Zip:
+
+      LOCAL_ZIP == "NO_SYMLINKS=1"
+      @ [.VMS]BUILD_ZIP.COM
+      DELETE /SYMBOL /GLOBAL LOCAL_ZIP
+
+   The Zip or UnZip "-v" (/VERBOSE)  report should include SYMLINK_SUPPORT
+(Zip) resp. SYMLINKS (UnZip) in its list of "(Un)Zip special compilation
+options" if Zip/UnZip was built with symlink support.
+
+
    File I/O Performance
    --------------------
 
    When compiled using DEC/Compaq/HP C (not GNU C or VAX C), the Zip and
-UnZip file I/O code now includes open callback functions which are used
-to try to set some RMS parameters to non-default values, with the
+UnZip file I/O code now includes access callback functions which are
+used to try to set some RMS parameters to non-default values, with the
 intention of improving file I/O speed.  This affects reading an archive
 file in UnZip and writing one in Zip.  (Reading and writing the
 individual data files are handled in more exotic ways, making these
@@ -96,15 +162,16 @@ particular problems with this set are welcome to comment.
    In this version, as in previous versions, when UnZip expands a -V
 archive, it allocates the entire extent of a data file before writing
 any of its data.  In some previous versions, this could cause the
-destination disk to be locked for a considerable time (minutes).  Now,
-the FAB "sequential access only" flag (or equivalent) is set, which
-prevents this troublesome disk locking.
+destination disk to be locked for a considerable time (minutes), if
+highwater marking was enabled on that disk.  Now, the FAB SQO
+("sequential access only") flag (or equivalent) is set, which prevents
+this troublesome disk locking.
 
    In some previous versions, when UnZip expanded a non-V archive, it
 did no pre-allocation, and used the default extension quantity.  This
 could slow file creation significantly for large files.  Now, space for
-extracted files is pre-allocated, and the same "sequential access only"
-flag is set, as with a -V archive.
+extracted files is pre-allocated, and the same SQO ("sequential access
+only") flag is set, as with a -V archive.
 
 
    Changes to the "-V" (/VMS) Option
@@ -154,10 +221,12 @@ of 3, so all the resulting VMS message codes (bits 13:3) were even.
 programs exit with standard 32-bit VMS status values which differ from
 the old ones in several ways: The official facility code is used, and
 the facility-specific bit is set.  (For compatibility with older
-versions, the internal status codes are still left-shifted by 4 bits.)
-The builders also create non-executable message files (UNZIP_MSG.EXE and
-ZIP_MSG.EXE) so that, after a suitable SET MESSAGE command, the program
-messages will be available from DCL.  For example:
+versions, the internal status codes are still left-shifted by 4 bits.
+This also makes it easier to extract the internal status code from a
+hexadecimal representation of the VMS status code.)  The builders also
+create non-executable message files (UNZIP_MSG.EXE and ZIP_MSG.EXE) so
+that, after a suitable SET MESSAGE command, the program messages will be
+available from DCL.  For example:
 
       $ SET MESSAGE dev:[dir]ZIP_MSG.EXE
       $ ZIP FRED.ZIP no_such_file
@@ -187,48 +256,6 @@ by defining a C macro with the old facility value:
 appropriate.)  This will maintain compatibility with older program
 versions, but will make the programs incompatible with the new error
 message files.
-
-
-   Symbolic Links
-   --------------
-
-   VMS V8.3 offers support for symbolic links (symlinks) on ODS5 disks.
-In previous Zip and UnZip versions, the generic code for symlinks was
-disabled, and there was no VMS-specific code for symlinks.  Now, by
-default, Zip and UnZip attempt to support symlinks wherever the C
-headers and C run-time library include the functions needed for symlink
-support.  This means non-VAX systems with __CRTL_VER >= 70301000, so
-this includes VMS V7.3-1 and up, and thus symlink-capable Zip and UnZip
-programs may be built on systems which do not themselves offer symlink
-support.  (Various run-time failures may be expected if symlinks are
-encountered on pre-V8.3 systems, either in a file system or in a Zip
-archive.)
-
-   Symlink support can be disabled at build-time, if desired, by
-defining the C macro NO_SYMLINKS.  (See comments in the builder
-regarding LOCAL_UNZIP or LOCAL_ZIP, as appropriate.)  For example, using
-MMS to build UnZip:
-
-      MMS /DESCRIP = [.VMS] /MACRO = ("LOCAL_UNZIP=NO_SYMLINKS=1")
-
-or, using the command procedure to build Zip:
-
-      LOCAL_ZIP == "NO_SYMLINKS=1"
-      @ [.VMS]BUILD_ZIP.COM
-      DELETE /SYMBOL /GLOBAL LOCAL_ZIP
-
-   Currently, the only indication of symlink support in Zip is the
-mention of the "-y" (or /SYMLINKS) option in the "zip -h" (or "zip
-/help") report.  UnZip is even less convenient, but searching the UnZip
-executable (or EXTRACT.OBJ) for "symlink" should fail if symlink support
-is missing (or succeed if it's present):
-
-      $ SEARCH /NOOUTPUT UNZIP.EXE SYMLINK      ! No symlink support.
-      %SEARCH-I-NOMATCHES, no strings matched
-or:
-      $ SEARCH /NOOUTPUT EXTRACT.OBJ SYMLINK    ! Symlink support.
-      $ SHOW SYMBOL $STATUS
-        $STATUS == "%X00000001"
 
 
    VMS File Attribute Schemes
@@ -286,6 +313,19 @@ or, using the command procedure to build Zip:
 USE_EF_UT_TIME if the program was built with UTC support.
 
 
+   Building with the LIST option using MMK or MMS
+   ----------------------------------------------
+
+   Currently, building with MMK or MMS using the LIST option (as in
+"/MACRO = LIST=1") may cause a failure for some old versions of the DEC
+C compiler.  The LIST option currently adds "/show = (all, nomessages)"
+to the CC command line, and some old DEC C compilers do not support the
+"nomessages" keyword.  When VAX C is used, this keyword is omitted, but
+the builder does not distinguish between the various DEC/Compaq/HP C
+versions.  The work-arounds are to use BUILD_[UN]ZIP.COM, or edit
+[.VMS]DESCRIP_SRC.MMS to remove the troublesome keyword.
+
+
    GNU C
    -----
 
@@ -330,4 +370,3 @@ defects in the GNU C header files, such as:
 [...]rab.h:143: warning: unnamed struct/union that defines no instances
 
 These warnings appear to be harmless.
-

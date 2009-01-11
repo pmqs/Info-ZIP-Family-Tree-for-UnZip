@@ -1,5 +1,5 @@
 # WMAKE makefile for Windows 9x and Windows NT (Intel only)
-# using Watcom C/C++ v11.0+, by Paul Kienitz, last revised 16 Feb 2008.
+# using Watcom C/C++ v11.0+, by Paul Kienitz, last revised 07 Sep 2008.
 # Makes UnZip.exe, fUnZip.exe, and UnZipSFX.exe.
 #
 # Invoke from UnZip source dir with "WMAKE -F WIN32\MAKEFILE.WAT [targets]"
@@ -124,9 +124,11 @@ WINDLL_IMP_H = windll/decs.h windll/structs.h
 cc     = wcc386
 link   = wlink
 asm    = wasm
+rc     = wrc
 # Use Pentium Pro timings, register args, static strings in code, high strictness:
 cflags = -bt=NT -6r -zt -zq -wx
 aflags = -bt=NT -mf -3 -zq
+rflags = -bt=NT
 lflags = sys NT
 lflags_dll = sys NT_DLL
 cvars  = $+$(cvars)$- -DWIN32 $(variation)
@@ -164,7 +166,7 @@ f:   fUnZip.exe    .SYMBOLIC
 x:   UnZipSFX.exe  .SYMBOLIC
 d:   UnZip32.dll   .SYMBOLIC
 
-UnZip.exe:	$(OBDIR) $(OBJU) $(BZIPLIB)
+UnZip.exe:	$(OBDIR) $(OBJU) $(BZIPLIB) $(O)winapp.res
 	$(link) $(lflags) $(ldebug) name $@ file {$(OBJU)} $(BZ2LNKLIB)
 
 UnZipSFX.exe:	$(OBDIR) $(OBJX) $(BZIPLIB)
@@ -173,11 +175,12 @@ UnZipSFX.exe:	$(OBDIR) $(OBJX) $(BZIPLIB)
 fUnZip.exe:	$(OBDIR) $(OBJF)
 	$(link) $(lflags) $(ldebug) name $@ file {$(OBJF)}
 
-UnZip32.dll:	$(OBDIR) $(OBJD)
-	$(link) $(lflags_dll) $(ldebug) name $@ file {$(OBJD)}
+UnZip32.dll:	$(OBDIR) $(OBJD) $(BZIPLIB) $(O)windll.res
+	$(link) $(lflags_dll) $(ldebug) name $@ file {$(OBJD)} $(BZ2LNKLIB)
+	$(rc) $(rflags) $(O)windll.res $@
 
 uzexampl.exe:	$(OBDIR) $(O)uzexampl.obj
-	$(link) $(lflags) $(ldebug) name $@ file {$(O)uzexampl.obj}
+	$(link) $(lflags) $(ldebug) name $@ file {$(O)uzexampl.obj} lib version.lib
 
 # Source dependencies:
 
@@ -240,6 +243,9 @@ $(O)nt.obx:    win32\nt.c $(UNZIP_H) win32\nt.h
 
 $(O)crc_i386.obj: win32\crc_i386.asm
 	$(asm) $(aflags) $(avars) win32\crc_i386.asm -fo=$@
+
+$(O)winapp.res:	win32\winapp.rc unzvers.h
+	$(rc) $(rflags) /r /fo=$@ /dWIN32 win32\winapp.rc
 
 # Variant object files for fUnZip:
 
@@ -308,8 +314,8 @@ $(O)windll.obj:   windll\windll.c $(UNZIP_H) $(WINDLL_H)
 $(O)windll.obj:   crypt.h unzvers.h consts.h
 	$(cc) $(CFLAGS_DL) -I. windll\windll.c -fo=$@
 
-windll.res:	windll\windll.rc unzvers.h
-	$(rc) /l 0x409 /fo$@ /i windll /d WIN32 windll\windll.rc
+$(O)windll.res:	windll\windll.rc unzvers.h
+	$(rc) $(rflags) /r /fo=$@ /i=windll /dWIN32 windll\windll.rc
 
 # Windll command line example:
 $(O)uzexampl.obj: windll/uzexampl.c windll/uzexampl.h
@@ -333,9 +339,11 @@ clean_bz2_lib: .SYMBOLIC
 
 clean:     clean_bz2_lib  .SYMBOLIC
 	del $(O)*.ob?
+	del $(O)*.res
 
 cleaner:   clean  .SYMBOLIC
 	del UnZip.exe
 	del fUnZip.exe
 	del UnZipSFX.exe
-        del UnZip32.dll
+	del UnZip32.dll
+	del uzexampl.exe
