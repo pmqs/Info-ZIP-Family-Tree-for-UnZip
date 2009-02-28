@@ -57,6 +57,7 @@
 
 /* Workaround for broken header files of older DECC distributions
  * that are incompatible with the /NAMES=AS_IS qualifier. */
+#define lib$getdvi LIB$GETDVI
 #define lib$getsyi LIB$GETSYI
 #define lib$sys_getmsg LIB$SYS_GETMSG
 #include <lib$routines.h>

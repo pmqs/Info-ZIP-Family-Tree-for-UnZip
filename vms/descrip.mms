@@ -1,4 +1,4 @@
-#                                               28 July 2008.  SMS.
+#                                               1 March 2009.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Description File.
 #
@@ -121,10 +121,10 @@ INCL_DESCRIP_SRC = 1
 
 # Object library names.
 
-LIB_UNZIP = [.$(DEST)]UNZIP.OLB
-LIB_UNZIP_CLI = [.$(DEST)]UNZIPCLI.OLB
-LIB_UNZIPSFX = [.$(DEST)]UNZIPSFX.OLB
-LIB_UNZIPSFX_CLI = [.$(DEST)]UNZSFXCLI.OLB
+LIB_UNZIP = SYS$DISK:[.$(DEST)]UNZIP.OLB
+LIB_UNZIP_CLI = SYS$DISK:[.$(DEST)]UNZIPCLI.OLB
+LIB_UNZIPSFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OLB
+LIB_UNZIPSFX_CLI = SYS$DISK:[.$(DEST)]UNZSFXCLI.OLB
 
 # Help file names.
 
@@ -319,8 +319,9 @@ $(LIB_BZ2_LOCAL) :
 $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
            $(LIB_UNZIP) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
-	 $(LIB_UNZIP) /library $(INCL_BZIP2_Q), -
+	 $(LIB_UNZIP) /library, -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_UNZIP) /library, -
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
@@ -332,8 +333,9 @@ $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
                $(LIB_UNZIP_CLI) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP_CLI) /library, -
-	 $(LIB_UNZIP) /library $(INCL_BZIP2_Q), -
+	 $(LIB_UNZIP) /library, -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_UNZIP) /library, -
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
@@ -344,8 +346,9 @@ $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
 $(UNZIPSFX) : [.$(DEST)]UNZIPSFX.OBJ \
               $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
-	 $(LIB_UNZIPSFX) /library $(INCL_BZIP2_Q), -
+	 $(LIB_UNZIPSFX) /library, -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_UNZIPSFX) /library, -
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
@@ -358,8 +361,9 @@ $(UNZIPSFX_CLI) : [.$(DEST)]UNZSFXCLI.OBJ \
                   $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX_CLI) /library, -
-	 $(LIB_UNZIPSFX) /library $(INCL_BZIP2_Q), -
+	 $(LIB_UNZIPSFX) /library, -
 	 $(LIB_BZIP2_OPTS) -
+	 $(LIB_UNZIPSFX) /library, -
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -

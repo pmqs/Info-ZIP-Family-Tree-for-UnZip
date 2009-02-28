@@ -1,4 +1,4 @@
-#                                               29 July 2008.  SMS.
+#                                               1 March 2009.  SMS.
 #
 #    UnZip 6.0 for VMS - MMS (or MMK) Source Description File.
 #
@@ -220,8 +220,6 @@ BUILD_BZIP2 = 1
 .IFDEF IZ_BZIP2                 # IZ_BZIP2
 CDEFS_BZ = , USE_BZIP2
 CFLAGS_INCL = /include = ([], [.VMS])
-INCL_BZIP2_M = , UBZ2ERR
-INCL_BZIP2_Q = /include = (UBZ2ERR)
 LIB_BZIP2_OPTS = lib_bzip2:$(BZ2_OLB) /library,
 .ENDIF                          # IZ_BZIP2
 

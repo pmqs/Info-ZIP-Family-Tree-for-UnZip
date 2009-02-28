@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2008-09-12  SMS.
+$!     Last revised:  2009-03-01  SMS.
 $!
 $!     Command arguments:
 $!     - suppress help file processing: "NOHELP"
@@ -395,11 +395,9 @@ $! library.  Complain if things fail.
 $!
 $ cc_incl = "[]"
 $ lib_bzip2_opts = ""
-$ incl_bzip2_q = ""
 $ if (IZ_BZIP2 .nes. "")
 $ then
 $     bz2_olb = "LIBBZ2_NS.OLB"
-$     incl_bzip2_q = "/include = (UBZ2ERR)"
 $     if (.not. LINK_ONLY)
 $     then
 $         define incl_bzip2 'IZ_BZIP2'
@@ -601,9 +599,10 @@ $!
 $! Link the executable.
 $!
 $ link /executable = [.'dest']'unzx_unx'.EXE -
-   [.'dest']UNZIP.OBJ, -
-   [.'dest']UNZIP.OLB /library 'incl_bzip2_q', -
+   SYS$DISK:[.'dest']UNZIP.OBJ, -
+   SYS$DISK:[.'dest']UNZIP.OLB /library, -
    'lib_bzip2_opts' -
+   SYS$DISK:[.'dest']UNZIP.OLB /library, -
    'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIP.OPT /options
@@ -648,10 +647,11 @@ $!
 $! Link the CLI executable.
 $!
 $ link /executable = [.'dest']'unzx_cli'.EXE -
-   [.'dest']UNZIPCLI.OBJ, -
-   [.'dest']UNZIPCLI.OLB /library, -
-   [.'dest']UNZIP.OLB /library 'incl_bzip2_q', -
+   SYS$DISK:[.'dest']UNZIPCLI.OBJ, -
+   SYS$DISK:[.'dest']UNZIPCLI.OLB /library, -
+   SYS$DISK:[.'dest']UNZIP.OLB /library, -
    'lib_bzip2_opts' -
+   SYS$DISK:[.'dest']UNZIP.OLB /library, -
    'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIP.OPT /options
@@ -699,9 +699,10 @@ $!
 $! Link the SFX executable.
 $!
 $ link /executable = [.'dest']'unzsfx_unx'.EXE -
-   [.'dest']UNZIPSFX.OBJ, -
-   [.'dest']UNZIPSFX.OLB /library 'incl_bzip2_q', -
+   SYS$DISK:[.'dest']UNZIPSFX.OBJ, -
+   SYS$DISK:[.'dest']UNZIPSFX.OLB /library, -
    'lib_bzip2_opts' -
+   SYS$DISK:[.'dest']UNZIPSFX.OLB /library, -
    'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIPSFX.OPT /options
@@ -731,10 +732,11 @@ $!
 $! Link the SFX CLI executable.
 $!
 $ link /executable = [.'dest']'unzsfx_cli'.EXE -
-   [.'dest']UNZSXCLI.OBJ, -
-   [.'dest']UNZSXCLI.OLB /library, -
-   [.'dest']UNZIPSFX.OLB /library 'incl_bzip2_q', -
+   SYS$DISK:[.'dest']UNZSXCLI.OBJ, -
+   SYS$DISK:[.'dest']UNZSXCLI.OLB /library, -
+   SYS$DISK:[.'dest']UNZIPSFX.OLB /library, -
    'lib_bzip2_opts' -
+   SYS$DISK:[.'dest']UNZIPSFX.OLB /library, -
    'lib_zlib_opts' -
    'opts' -
    SYS$DISK:[.VMS]UNZIPSFX.OPT /options
