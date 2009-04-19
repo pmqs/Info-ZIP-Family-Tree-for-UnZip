@@ -249,8 +249,6 @@ Private Sub cmdStartUnz_Click()
     ' 1 = Prompt To Overwrite
     uPromptOverWrite = IIf(uOverWriteFiles = 0, 1, 0)
     uDisplayComment = 0   ' 1 = Display comment ONLY!!!
-    
-    '-- Change The Next Line To Do The Actual Unzip!
     uHonorDirectories = 1  ' 1 = Honour Zip Directories
     
     '-- Select Filenames If Required

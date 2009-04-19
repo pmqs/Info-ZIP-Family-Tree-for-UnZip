@@ -433,4 +433,4 @@ AUTHOR
        CONTRIBS  file  in  the  UnZip  source distribution for a more complete
        list.
 
-Info-ZIP                    20 January 2009 (v3.0)                 ZIPINFO(1L)
+Info-ZIP                     20 April 2009 (v3.0)                  ZIPINFO(1L)

@@ -4,7 +4,7 @@
    This document describes some VMS-specific behavior and implementation
 details of the Info-ZIP Zip and UnZip programs.
 
-   Last modified: 2008-04-19.
+   Last modified: 2009-03-02.
 
 
    Command-line Case
@@ -97,9 +97,9 @@ or, using the command procedure to build Zip:
       @ [.VMS]BUILD_ZIP.COM
       DELETE /SYMBOL /GLOBAL LOCAL_ZIP
 
-   The Zip or UnZip "-v" (/VERBOSE)  report should include SYMLINK_SUPPORT
-(Zip) resp. SYMLINKS (UnZip) in its list of "(Un)Zip special compilation
-options" if Zip/UnZip was built with symlink support.
+   The Zip or UnZip "-v" (/VERBOSE) report should include
+SYMLINK_SUPPORT (Zip) or SYMLINKS (UnZip) in its list of "special
+compilation options" if the program was built with symlink support.
 
 
    File I/O Performance

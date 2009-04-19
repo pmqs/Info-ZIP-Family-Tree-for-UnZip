@@ -72,4 +72,4 @@ URL
 AUTHORS
        zipgrep was written by Jean-loup Gailly.
 
-Info-ZIP                        20 January 2009                    ZIPGREP(1L)
+Info-ZIP                         20 April 2009                     ZIPGREP(1L)

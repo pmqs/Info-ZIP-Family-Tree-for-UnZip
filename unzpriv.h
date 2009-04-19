@@ -312,8 +312,13 @@
 #ifdef __human68k__
    /* DO NOT DEFINE DOS_OS2 HERE!  If Human68k is so much */
    /*  like MS-DOS and/or OS/2, create DOS_H68_OS2 macro. */
-#  ifndef _MBCS
+#  if (!defined(_MBCS) && !defined(NO_MBCS))
+     /* enable MBCS support by default for this system */
 #    define _MBCS
+#  endif
+#  if (defined(_MBCS) && defined(NO_MBCS))
+     /* disable MBCS support when explicitely requested */
+#    undef _MBCS
 #  endif
 #  include <time.h>
 #  include <fcntl.h>
@@ -594,11 +599,17 @@
 /* ----------------------------------------------------------------------------
    MUST BE AFTER LARGE FILE INCLUDES
    ---------------------------------------------------------------------------- */
-
 /* This stuff calls in types and messes up large file includes.  It needs to
    go after large file defines in local includes.
    I am guessing that moving them here probably broke some ports, but hey.
    10/31/2004 EG */
+/* ----------------------------------------------------------------------------
+   Common includes
+   ---------------------------------------------------------------------------- */
+
+/* Some ports apply specific adjustments which must be in effect before
+   reading the "standard" include headers.
+ */
 
 #ifdef EFT
 #  define Z_OFF_T off_t  /* Amdahl UTS nonsense ("extended file types") */
@@ -1321,13 +1332,13 @@
 /***********************************/
 /* This whole section lifted from Zip 3b tailor.h
 
- * Types are in OS dependant headers (eg, w32cfg.h)
+ * Types are in OS dependent headers (eg, w32cfg.h)
  *
  * LARGE_FILE_SUPPORT and ZIP64_SUPPORT are automatically
- * set in OS dependant headers (for some ports) based on the port and compiler.
+ * set in OS dependent headers (for some ports) based on the port and compiler.
  *
  * Function prototypes are below as OF is defined earlier in this file
- * but after OS dependant header is included.
+ * but after OS dependent header is included.
  *
  * E. Gordon 9/21/2003
  * Updated 1/28/2004
@@ -1343,7 +1354,6 @@
     /* 64-bit stat functions */
 #   define zstat stat
 #   define zfstat fstat
-#   define zlstat lstat
 
     /* 64-bit fseeko */
 #   define zlseek lseek
@@ -1365,22 +1375,50 @@
 #   if defined(_MSC_VER) || defined(__MINGW32__) || defined(__LCC__)
     /* MS C (VC), MinGW GCC port and LCC-32 use the MS C Runtime lib */
 
-    /* 64-bit stat functions */
+      /* 64-bit stat functions */
 #     define zstat _stati64
 #     define zfstat _fstati64
 
-    /* 64-bit lseek */
+      /* 64-bit lseek */
 #     define zlseek _lseeki64
 
-    /* The newest MinGW port contains built-in extension to the MSC rtl that
-       provide fseeko and ftello, but our implementations will do for now. */
-    /* 64-bit fseeko */
-      int zfseeko OF((FILE *, zoff_t, int));
+#     if defined(_MSC_VER) && (_MSC_VER >= 1400)
+        /* Beginning with VS 8.0 (Visual Studio 2005, MSC 14), the Microsoft
+           C rtl publishes its (previously internal) implmentations of
+           "fseeko" and "ftello" for 64-bit file offsets. */
+        /* 64-bit fseeko */
+#       define zfseeko _fseeki64
+        /* 64-bit ftello */
+#       define zftello _ftelli64
 
-    /* 64-bit ftello */
-      zoff_t zftello OF((FILE *));
+#     else /* not (defined(_MSC_VER) && (_MSC_VER >= 1400)) */
 
-    /* 64-bit fopen */
+#     if defined(__MSVCRT_VERSION__) && (__MSVCRT_VERSION__ >= 0x800)
+        /* Up-to-date versions of MinGW define the macro __MSVCRT_VERSION__
+           to denote the version of the MS C rtl dll used for linking.  When
+           configured to link against the runtime of MS Visual Studio 8 (or
+           newer), the built-in 64-bit fseek/ftell functions are available. */
+        /* 64-bit fseeko */
+#       define zfseeko _fseeki64
+        /* 64-bit ftello */
+#       define zftello _ftelli64
+
+#     else /* !(defined(__MSVCRT_VERSION__) && (__MSVCRT_VERSION__>=0x800)) */
+        /* The version of the C runtime is lower than MSC 14 or unknown. */
+
+        /* The newest MinGW port contains built-in extensions to the MSC rtl
+           that provide fseeko and ftello, but our implementations will do
+           for now. */
+       /* 64-bit fseeko */
+       int zfseeko OF((FILE *, zoff_t, int));
+
+       /* 64-bit ftello */
+       zoff_t zftello OF((FILE *));
+
+#     endif /* ? (__MSVCRT_VERSION__ >= 0x800) */
+#     endif /* ? (_MSC_VER >= 1400) */
+
+      /* 64-bit fopen */
 #     define zfopen fopen
 #     define zfdopen fdopen
 
@@ -1390,20 +1428,20 @@
     /* CYGWIN GCC Posix emulator on Windows
        (configuration not yet finished/tested)  */
 
-    /* 64-bit stat functions */
+      /* 64-bit stat functions */
 #     define zstat _stati64
 #     define zfstat _fstati64
 
-    /* 64-bit lseek */
+      /* 64-bit lseek */
 #     define zlseek _lseeki64
 
-    /* 64-bit fseeko */
+      /* 64-bit fseeko */
 #     define zfseeko fseeko
 
-    /* 64-bit ftello */
+      /* 64-bit ftello */
 #     define zftello ftello
 
-    /* 64-bit fopen */
+      /* 64-bit fopen */
 #     define zfopen fopen
 #     define zfdopen fdopen
 
@@ -1412,22 +1450,22 @@
     /* WATCOM C and Borland C provide their own C runtime libraries,
        but they are sufficiently compatible with MS CRTL. */
 
-    /* 64-bit stat functions */
+      /* 64-bit stat functions */
 #     define zstat _stati64
 #     define zfstat _fstati64
 
 #   ifdef __WATCOMC__
-    /* 64-bit lseek */
+      /* 64-bit lseek */
 #     define zlseek _lseeki64
 #   endif
 
-    /* 64-bit fseeko */
+      /* 64-bit fseeko */
       int zfseeko OF((FILE *, zoff_t, int));
 
-    /* 64-bit ftello */
+      /* 64-bit ftello */
       zoff_t zftello OF((FILE *));
 
-    /* 64-bit fopen */
+      /* 64-bit fopen */
 #     define zfopen fopen
 #     define zfdopen fdopen
 
@@ -1454,7 +1492,6 @@
 #   define zstat stat
 # endif
 # define zfstat fstat
-# define zlstat lstat
 # define zlseek lseek
 # define zfseeko fseek
 # define zftello ftell
@@ -1991,6 +2028,9 @@ typedef struct min_info {
     unsigned symlink : 1;    /* file is a symbolic link */
 #endif
     unsigned HasUxAtt : 1;   /* crec ext_file_attr has Unix style mode bits */
+#ifdef UNICODE_SUPPORT
+    unsigned GPFIsUTF8: 1;   /* crec gen_purpose_flag UTF-8 bit 11 is set */
+#endif
 #ifndef SFX
     char Far *cfilname;      /* central header version of filename */
 #endif
@@ -2308,7 +2348,7 @@ char    *fzofft               OF((__GPRO__ zoff_t val,
                      register unsigned int));
 #endif
 #ifdef NEED_UZMBCLEN
-   extent uzmbclen(ZCONST unsigned char *ptr);
+   extent uzmbclen          OF((ZCONST unsigned char *ptr));
 #endif
 #ifdef NEED_UZMBSCHR
    unsigned char *uzmbschr  OF((ZCONST unsigned char *str, unsigned int c));

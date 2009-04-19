@@ -1,5 +1,5 @@
 # WMAKE makefile for Windows 9x and Windows NT (Intel only)
-# using Watcom C/C++ v11.0+, by Paul Kienitz, last revised 07 Sep 2008.
+# using Watcom C/C++ v11.0+, by Paul Kienitz, last revised 18 Jan 2009.
 # Makes UnZip.exe, fUnZip.exe, and UnZipSFX.exe.
 #
 # Invoke from UnZip source dir with "WMAKE -F WIN32\MAKEFILE.WAT [targets]"
@@ -248,6 +248,9 @@ $(O)winapp.res:	win32\winapp.rc unzvers.h
 	$(rc) $(rflags) /r /fo=$@ /dWIN32 win32\winapp.rc
 
 # Variant object files for fUnZip:
+
+$(O)crc32f.obj:   crc32.c $(UNZIP_H) zip.h crc32.h
+	$(cc) $(CFLAGS_FU) crc32.c -fo=$@
 
 $(O)cryptf.obj:   crypt.c $(UNZIP_H) zip.h crypt.h ttyio.h
 	$(cc) $(CFLAGS_FU) crypt.c -fo=$@

@@ -75,6 +75,14 @@ If you want to build the UnZip DLL, the WinDLL usage example, or the WinGUI SFX
 stub from the command line, you may use the MSC Makefile supplied in the
 subdirectory of the Win32 command line port.
 
+In the default setup, the UnZip DLL is linked against the shared C runtime
+dll.  This configuration is most feasible for multi-module C/C++ based
+programs.  For usage with non-C projects (e.g. Visual Basic 5/6 or MS .NET
+managed code), a statically linked UnZip DLL might be more appropiate.
+Both the Visual Studio projects and the MSC Makefile in the win32/ subdir
+support statically linked builds through specific configurations (VC projects)
+or a configuration switch (for details look into ../win32/Makefile).
+
 Note that Borland C++ 5.0 is full of bugs; version 4.5 or 5.01 is recommended
 instead.  If you must use Borland C++ 5.0, using the Intel optimizing compiler
 is required to avoid crashes (possibly due to a bug in the stat() function in

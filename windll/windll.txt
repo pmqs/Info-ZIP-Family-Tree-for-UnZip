@@ -58,7 +58,7 @@ the expected structure layout. The C header file containing the reference
 definition of the DCL structure also provides a symbol denoting the currently
 valid StructVersID:
 
-#define UZ_DCL_STRUCTVER        6
+#define UZ_DCL_STRUCTVER        0x600
 
 The layout of the DCL structure is shown below:
 
@@ -158,7 +158,7 @@ typedef int (WINAPI DLLSERVICE) (LPCSTR entryname, z_uint8 uncomprsiz);
 typedef int (WINAPI DLLSERVICE_I32) (LPCSTR entryname,
     unsigned long ucsz_lo, unsigned long ucsz_hi);
 typedef void (WINAPI DLLSND) (void);
-typedef int (WINAPI DLLREPLACE) (LPSTR efnam);
+typedef int (WINAPI DLLREPLACE) (LPSTR efnam, unsigned efbufsiz);
 typedef void (WINAPI DLLMESSAGE) (z_uint8 ucsize, z_uint8 csize,
     unsigned cfactor,
     unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
@@ -179,7 +179,7 @@ typedef struct {
  DLLREPLACE *replace    = a pointer to the application's replace routine. The
                           replace routine may modify the content of the efnam
                           string buffer, but must not write beyond its fixed
-                          size of FILNAMSIZ! (This is a potential security
+                          size of efbufsiz bytes! (This is a potential security
                           leak of the windll interface.) When modifying the
                           efnam buffer, the replace routine should return
                           the status IDM_REPLACE_RENAME.
@@ -241,20 +241,21 @@ different versions of the dll loaded, with resulting unknown behavior.
 
 Additional entry points:
 
-    void WINAPI UzpVersion2(UzpVer far *);
+    const UzpVer * WINAPI UzpVersion(void);
 
 where UzpVer is defined as:
 
 typedef struct _UzpVer {
-    ulg structlen;          /* length of the struct being passed */
-    ulg flag;               /* bit 0: is_beta   bit 1: uses_zlib */
-    LPSTR betalevel;        /* e.g., "g BETA" or "" */
-    LPSTR date;             /* e.g., "4 Sep 95" (beta) or "4 September 1995" */
-    LPSTR zlib_version;     /* e.g., "1.0.5" or NULL */
-    _version_type unzip;
-    _version_type zipinfo;
-    _version_type os2dll;
-    _version_type windll;
+    ulg structlen;            /* length of the struct being passed */
+    ulg flag;                 /* bit 0: is_beta   bit 1: uses_zlib */
+    LPCSTR betalevel;         /* e.g. "g BETA" or "" */
+    LPCSTR date;              /* e.g. "9 Oct 08" (beta) or "9 October 2008" */
+    LPCSTR zlib_version;      /* e.g. "1.2.3" or NULL */
+    _version_type unzip;      /* current UnZip version */
+    _version_type zipinfo;    /* current ZipInfo version */
+    _version_type os2dll;     /* OS2DLL version (retained for compatibility) */
+    _version_type windll;     /* WinDLL version (retained for compatibility) */
+    _version_type dllapimin;  /* last incompatible change of library API */
 } UzpVer;
 
 and _version_type is defined as:
@@ -266,8 +267,33 @@ typedef struct _ver {
     uch not_used;
 } _version_type;
 
-   See api.c for exactly what UzpVersion2 does, but the short version of
-   what it does is fill in the version information in the UzpVer structure.
+    See api.c for exactly what UzpVersion does, but the short description is
+    "UzpVersion() returns a pointer to a dll-internal static structure
+    containing the unzip32.dll version information".
+
+For usage with languages that do not support function which return pointers
+to structures, the variant UzpVersion2() allows to retrieve the version info
+into a memory area supplied by the caller:
+
+    unsigned WINAPI UzpVersion2(UzpVer2 far *);
+
+where UzpVer2 is defined as:
+
+typedef struct _UzpVer2 {
+    ulg structlen;            /* length of the struct being passed */
+    ulg flag;                 /* bit 0: is_beta   bit 1: uses_zlib */
+    char betalevel[10];       /* e.g. "g BETA" or "" */
+    char date[20];            /* e.g. "9 Oct 08" (beta) or "9 October 2008" */
+    char zlib_version[10];    /* e.g. "1.2.3" or NULL */
+    _version_type unzip;      /* current UnZip version */
+    _version_type zipinfo;    /* current ZipInfo version */
+    _version_type os2dll;     /* OS2DLL version (retained for compatibility) */
+    _version_type windll;     /* WinDLL version (retained for compatibility) */
+    _version_type dllapimin;  /* last incompatible change of library API */
+} UzpVer2;
+
+   See api.c for the exact function of UzpVersion2, but the short description
+   is "fill in the version information in the UzpVer2 structure".
 
 void WINAPI Wiz_NoPrinting(int flag)
 
@@ -403,6 +429,6 @@ the "series" of calls, make sure that Wiz_SetOpts and Wiz_Unzip are always
 used together! When successfully called, Wiz_SetOpts has allocated some
 internal structures which are in turn free'd by Wiz_Unzip.
 
-Last revised January 03, 2009.
+Last revised January 18, 2009.
 
 Mike White, Christian Spieler

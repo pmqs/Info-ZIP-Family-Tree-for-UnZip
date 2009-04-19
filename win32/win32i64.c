@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2003-May-08 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in zip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -14,8 +14,6 @@
   ---------------------------------------------------------------------------*/
 
 #include "../zip.h"
-
-/* for LARGE_FILE_SUPPORT but may not be needed */
 
 /* --------------------------------------------------- */
 /* Large File Support
@@ -74,20 +72,32 @@ int zfseeko(stream, offset, origin)
   zoff_t offset;
   int origin;
 {
-  zoff_t location;
 
-  location = zftello(stream);
-  fflush(stream);
+  /* fseek() or its replacements are supposed to clear the eof status
+     of the stream. fflush() and _lseeki64() do not touch the stream's
+     eof flag, so we have to do it manually. */
+#if ((defined(_MSC_VER) && (_MSC_VER >= 1200)) || \
+     (defined(__MINGW32__) && defined(__MSVCRT_VERSION__)))
+  /* For the MSC environment (VS 6 or higher), and for recent releases of
+     the MinGW environment, we "know" the internals of the FILE structure.
+     So, we can clear just the EOF bit of the status flag. */
+  stream->_flag &= ~_IOEOF;
+#else
+  /* Unfortunately, there is no standard "cleareof()" function, so we have
+     to use clearerr().  This has the unwanted side effect of clearing the
+     ferror() state as well. */
+  clearerr(stream);
+#endif
+
   if (origin == SEEK_CUR) {
     /* instead of synching up lseek easier just to figure and
        use an absolute offset */
-    offset = location + offset;
-    location = _lseeki64(fileno(stream), offset, SEEK_SET);
-  } else {
-    location = _lseeki64(fileno(stream), offset, origin);
+    offset += zftello(stream);
+    origin = SEEK_SET;
   }
-  if (location == -1L) {
-    return -1L;
+  fflush(stream);
+  if (_lseeki64(fileno(stream), offset, origin) == (zoff_t)-1L) {
+    return -1;
   } else {
     return 0;
   }

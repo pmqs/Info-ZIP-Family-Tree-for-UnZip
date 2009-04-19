@@ -1,6 +1,6 @@
 #==============================================================================
 # Makefile for UnZip, UnZipSFX and fUnZip:  Unix and MS-DOS ("real" makes only)
-# Version:  6.0                                                     26 Oct 2008
+# Version:  6.0                                                     18 Jan 2009
 #==============================================================================
 
 
@@ -51,15 +51,15 @@ CFLAGS = -O
 CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
 CF = $(CFLAGS) $(CF_NOOPT)
 LFLAGS1 =
-LF = -o unzip $(LFLAGS1)
+LF = -o unzip$E $(LFLAGS1)
 LF2 = -s
 
 # UnZipSFX flags
-SL = -o unzipsfx $(LFLAGS1)
+SL = -o unzipsfx$E $(LFLAGS1)
 SL2 = $(LF2)
 
 # fUnZip flags
-FL = -o funzip $(LFLAGS1)
+FL = -o funzip$E $(LFLAGS1)
 FL2 = $(LF2)
 
 # general-purpose stuff
@@ -82,7 +82,10 @@ HOST_VERSINFO=-DIZ_CC_NAME='\"\$$(CC) \"' -DIZ_OS_NAME='\"`uname -a`\"'
 
 # defaults for crc32 stuff and system dependent headers
 CRCA_O =
-OSDEP_H =
+OSDEP_H = unix/unxcfg.h
+# default for dependency on auto-configure result, is an empty symbol
+# so that the static non-autoconfigure targets continue to work
+ACONF_DEP =
 
 # optional inclusion of bzip2 decompression
 IZ_OUR_BZIP2_DIR = bzip2
@@ -91,6 +94,10 @@ IZ_BZIP2 = $(IZ_OUR_BZIP2_DIR)
 #D_USE_BZ2 = -DUSE_BZIP2
 #L_BZ2 = -lbz2
 #LIBBZ2 = $(IZ_BZIP2)/libbz2.a
+
+# defaults for unzip's "built-in" bzip2 library compilation
+CC_BZ = $(CC)
+CFLAGS_BZ = $(CFLAGS)
 
 # object files
 OBJS1 = unzip$O crc32$O $(CRCA_O) crypt$O envargs$O explode$O
@@ -105,7 +112,7 @@ LOBJX = $(OBJX)
 OBJF = funzip$O crc32$O $(CRCA_O) cryptf$O globalsf$O inflatef$O ttyiof$O
 #OBJS_OS2 = $(OBJS1:.o=.obj) $(OBJS2:.o=.obj) os2.obj
 #OBJF_OS2 = $(OBJF:.o=.obj)
-UNZIP_H = unzip.h unzpriv.h globals.h $(OSDEP_H)
+UNZIP_H = unzip.h unzpriv.h globals.h $(OSDEP_H) $(ACONF_DEP)
 
 # installation
 # (probably can change next two to `install' and `install -d' if you have it)
@@ -370,13 +377,13 @@ ttyiof$O:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 crc_i86$O:	msdos/crc_i86.asm				# 16bit only
 	$(AS) $(AF) msdos/crc_i86.asm $(ASEOL)
 
-crc_gcc$O:	crc_i386.S					# 32bit, GNU AS
+crc_gcc$O:	crc_i386.S $(ACONF_DEP)				# 32bit, GNU AS
 	$(AS) $(AF) -x assembler-with-cpp -c -o $@ crc_i386.S
 
-crc_gcc.pic.o:	crc_i386.S					# 32bit, GNU AS
+crc_gcc.pic.o:	crc_i386.S $(ACONF_DEP)				# 32bit, GNU AS
 	$(AS) $(AF) -x assembler-with-cpp -c -o $@ crc_i386.S
 
-crc_sysv$O:	crc_i386.S					# 32bit, SysV AS
+crc_sysv$O:	crc_i386.S $(ACONF_DEP)				# 32bit, SysV AS
 	$(CC) -E $(AF) crc_i386.S > crc_i386s.s
 	$(AS) -o $@ crc_i386s.s
 	$(RM) crc_i386s.s
@@ -534,7 +541,7 @@ check:
 
 # Well, try MAKE and see.  By now everyone may be happy.  10/28/04 EG
 generic:	flags	   # now try autoconfigure first
-	eval $(MAKE) $(MAKEF) unzips `cat flags`
+	eval $(MAKE) $(MAKEF) unzips ACONF_DEP=flags `cat flags`
 #	make $(MAKEF) unzips CF="${CF} `cat flags`"
 
 generic_gcc:
@@ -823,7 +830,8 @@ linux_lcc:	unix_make
 
 # Linux host with go32 (djgpp) cross-compiler (go32crs.tgz) for 32-bit DOS.
 linux_dos:	unix_make
-	$(MAKE) unzips CC=go32gcc LD=go32gcc M=msdos CFLAGS="-O2 -Wall"
+	$(MAKE) unzips CC=go32gcc LD=go32gcc M=msdos OSDEP_H="msdos/doscfg.h" \
+	 CFLAGS="-O2 -Wall"
 #	go32-strip unzip
 #	Due to limitations of the cross-compiling package, this has to be
 #	done manually:
@@ -840,8 +848,8 @@ linux_shlib:	unix_make
 	$(MAKE) objsdll CC=gcc CFLAGS="-O3 -Wall -fPIC"\
 	 LOC="-DDLL -DASM_CRC $(LOC)"\
 	 AS=gcc AF="-fPIC -Di386 $(AF)" CRCA_O=crc_gcc$O
-	ln -sf crc_gcc.pic.o crc32.pic.o
-	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(OBJSDLL)
+	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(OBJSDLL)\
+	 crc_gcc.pic.o
 	ln -sf libunzip.so.0.4 libunzip.so.0
 	ln -sf libunzip.so.0 libunzip.so
 	gcc -c -O unzipstb.c
@@ -852,8 +860,8 @@ linux_shlib:	unix_make
 linux_shlibz:	unix_make
 	$(MAKE) objsdll CC=gcc AS=gcc AF="-fPIC -Di386 $(AF)" CRCA_O=crc_gcc$O\
 	 CFLAGS="-O3 -Wall -fPIC" LOC="-DDLL -DUSE_ZLIB -DASM_CRC $(LOC)"
-	ln -sf crc_gcc.pic.o crc32.pic.o
-	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(OBJSDLL)
+	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(OBJSDLL)\
+	 crc_gcc.pic.o
 	ln -sf libunzip.so.0.4 libunzip.so.0
 	gcc -c -O unzipstb.c
 	gcc -o unzip unzipstb.o -L. -lunzip -lz
@@ -964,7 +972,7 @@ rs6000:		unix_make
 # recognize the -M0 flag that forces 8086 code.)  (GRR:  may need to reduce
 # stack to 0c00h if using 286/small-model code...?)
 sco_dos:	unix_make
-	$(MAKE) unzips CFLAGS="-O -dos -M0" M=msdos \
+	$(MAKE) unzips CFLAGS="-O -dos -M0" M=msdos OSDEP_H="msdos/doscfg.h" \
 	 LF="-dos -F 2000" LF2="-o unzip.exe" \
 	 FL="-dos" FL2="-o funzip.exe" SL="-dos" SL2="-o unzipsfx.exe"
 

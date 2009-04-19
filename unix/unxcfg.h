@@ -36,8 +36,8 @@
 #ifdef LARGE_FILE_SUPPORT
   /* 64-bit Large File Support */
 
-  /* The following Large File Summit (LFS) defines turn on large file support on
-     Linux (probably 2.4 or later kernel) and many other unixen */
+  /* The following Large File Summit (LFS) defines turn on large file support
+     on Linux (probably 2.4 or later kernel) and many other unixen */
 
   /* These have to be before any include that sets types so the large file
      versions of the types are set in the includes */
@@ -149,6 +149,33 @@ typedef struct stat z_stat;
 #  define O_RDONLY 0
 #  define O_WRONLY 1
 #  define O_RDWR   2
+#endif
+
+#if defined(NO_UNICODE_SUPPORT) && defined(UNICODE_SUPPORT)
+   /* disable Unicode (UTF-8) support when requested */
+#  undef UNICODE_SUPPORT
+#endif
+
+#if (defined(_MBCS) && defined(NO_MBCS))
+   /* disable MBCS support when requested */
+#  undef _MBCS
+#endif
+
+#if (!defined(NO_SETLOCALE) && !defined(_MBCS))
+# if (!defined(UNICODE_SUPPORT) || !defined(UTF8_MAYBE_NATIVE))
+   /* enable setlocale here, unless this happens later for UTF-8 and/or
+    * MBCS support */
+#  include <locale.h>
+#  ifndef SETLOCALE
+#    define SETLOCALE(category, locale) setlocale(category, locale)
+#  endif
+# endif
+#endif
+#ifndef NO_SETLOCALE
+# if (!defined(NO_WORKING_ISPRINT) && !defined(HAVE_WORKING_ISPRINT))
+   /* enable "enhanced" unprintable chars detection in fnfilter() */
+#  define HAVE_WORKING_ISPRINT
+# endif
 #endif
 
 #ifdef MINIX

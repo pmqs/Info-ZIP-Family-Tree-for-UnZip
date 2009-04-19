@@ -292,7 +292,7 @@ int open_outfile(__G)           /* return 1 if fail */
 #endif /* BORLAND_STAT_BUG */
 #ifdef SYMLINKS
     if (SSTAT(G.filename, &G.statbuf) == 0 ||
-        zlstat(G.filename, &G.statbuf) == 0)
+        lstat(G.filename, &G.statbuf) == 0)
 #else
     if (SSTAT(G.filename, &G.statbuf) == 0)
 #endif /* ?SYMLINKS */
@@ -1917,7 +1917,7 @@ int check_for_newer(__G__ filename)  /* return 1 if existing file is newer */
         Trace((stderr, "check_for_newer:  doing lstat(%s)\n",
           FnFilter1(filename)));
         /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
-        if (zlstat(filename, &G.statbuf) == 0) {
+        if (lstat(filename, &G.statbuf) == 0) {
             Trace((stderr,
               "check_for_newer:  lstat(%s) returns 0:  symlink does exist\n",
               FnFilter1(filename)));
@@ -1934,7 +1934,7 @@ int check_for_newer(__G__ filename)  /* return 1 if existing file is newer */
 
 #ifdef SYMLINKS
     /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
-    if (zlstat(filename, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
+    if (lstat(filename, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
         Trace((stderr, "check_for_newer:  %s is a symbolic link\n",
           FnFilter1(filename)));
         if (QCOND2 && !IS_OVERWRT_ALL)
@@ -2301,7 +2301,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             if (G.UzO.U_flag < 2) {
               /* check if GPB11 (General Purpuse Bit 11) is set indicating
                  the standard path and comment are UTF-8 */
-              if (G.crec.general_purpose_bit_flag & (1 << 11)) {
+              if (G.pInfo->GPFIsUTF8) {
                 /* if GPB11 set then filename_full is untruncated UTF-8 */
                 G.unipath_filename = G.filename_full;
               } else {

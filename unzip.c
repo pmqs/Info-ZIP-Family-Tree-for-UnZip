@@ -239,7 +239,7 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #endif /* ?OS2 || ?WIN32 */
 #else /* !DOS_FLX_OS2_W32 */
 #ifdef VMS
-   static ZCONST char Far local2[] = " -X  restore owner/protection info";
+   static ZCONST char Far local2[] = " -X  restore owner/ACL protection info";
 #ifdef MORE
    static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
@@ -486,6 +486,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
        "UNICODE_SUPPORT [wide-chars] (handle UTF-8 paths)";
 #   endif /* ?UTF8_MAYBE_NATIVE */
 #  endif /* UNICODE_SUPPORT */
+#  ifdef _MBCS
+     static ZCONST char Far Have_MBCS_Support[] =
+     "MBCS-support (multibyte character support, MB_CUR_MAX = %u)";
+#  endif
 #  ifdef MULT_VOLUME
      static ZCONST char Far Use_MultiVol[] =
      "MULT_VOLUME (multi-volume archives supported)";
@@ -693,7 +697,7 @@ lowercase\n %-42s  -V  retain VMS version numbers\n%s";
 #endif /* ?UNICODE_SUPPORT */
 
 static ZCONST char Far UnzipUsageLine5[] = "\
-Examples (see unzip.txt for more info):\n\
+See \"unzip -hh\" or unzip.txt for more help.  Examples:\n\
   unzip data1 -x joe   => extract all files except joe from zipfile data1.zip\n\
 %s\
   unzip -fo foo %-6s => quietly replace existing %s if archive file newer\n";
@@ -751,32 +755,41 @@ int unzip(__G__ argc, argv)
 #endif
 #endif /* NO_EXCEPT_SIGNALS */
 
+    /* initialize international char support to the current environment */
     SETLOCALE(LC_CTYPE, "");
 
 #ifdef UNICODE_SUPPORT
     /* see if can use UTF-8 Unicode locale */
 # ifdef UTF8_MAYBE_NATIVE
     {
+        char *codeset;
 #  if !(defined(NO_NL_LANGINFO) || defined(NO_LANGINFO_H))
-#     include <langinfo.h>
-      char *codeset = nl_langinfo(CODESET);
+        /* get the codeset (character set encoding) currently used */
+#       include <langinfo.h>
 
-      if (strcmp(codeset, "UTF-8") == 0) {
+        codeset = nl_langinfo(CODESET);
 #  else /* NO_NL_LANGINFO || NO_LANGINFO_H */
-      /* Note: a "partial" locale specification (".UTF-8") is not valid. */
-      char *loc = setlocale(LC_CTYPE, "en_US.UTF-8");
-      char *ploc_coding;
-
-      if ((loc != NULL) &&
-          ((ploc_coding = strchr(loc, '.')) != NULL) &&
-          (strcmp(ploc_coding, ".UTF-8") == 0)) {
+        /* query the current locale setting for character classification */
+        codeset = setlocale(LC_CTYPE, NULL);
+        if (codeset != NULL) {
+            /* extract the codeset portion of the locale name */
+            codeset = strchr(codeset, '.');
+            if (codeset != NULL) ++codeset;
+        }
 #  endif /* ?(NO_NL_LANGINFO || NO_LANGINFO_H) */
-          /* Successfully set UTF-8 */
-          G.native_is_utf8 = TRUE;
-      } else {
-          G.native_is_utf8 = FALSE;
-      }
-
+        /* is the current codeset UTF-8 ? */
+        if ((codeset != NULL) && (strcmp(codeset, "UTF-8") == 0)) {
+            /* successfully found UTF-8 char coding */
+            G.native_is_utf8 = TRUE;
+        } else {
+            /* Current codeset is not UTF-8 or cannot be determined. */
+            G.native_is_utf8 = FALSE;
+        }
+        /* Note: At least for UnZip, trying to change the process codeset to
+         *       UTF-8 does not work.  For the example Linux setup of the
+         *       UnZip maintainer, a successful switch to "en-US.UTF-8"
+         *       resulted in garbage display of all non-basic ASCII characters.
+         */
     }
 # endif /* UTF8_MAYBE_NATIVE */
 
@@ -848,7 +861,7 @@ int unzip(__G__ argc, argv)
 
 #if (defined(WIN32) && defined(__RSXNT__))
     for (i = 0 ; i < argc; i++) {
-       _ISO_INTERN(argv[i]);
+        _ISO_INTERN(argv[i]);
     }
 #endif
 
@@ -1836,7 +1849,7 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
         *pargc = -1;
 #ifndef SFX
         if (showhelp == 2) {
-            help_extended();
+            help_extended(__G);
             return PK_OK;
         } else
 #endif /* !SFX */
@@ -2111,7 +2124,7 @@ static void help_extended(__G)
   "  unzip -Z options archive[.zip] [file ...] [-x xfile ...]",
   "",
   "Below, Mac OS refers to Mac OS before Mac OS X.  Mac OS X is a Unix based",
-  "port and is referred to as Unix Apple.]",
+  "port and is referred to as Unix Apple.",
   "",
   "",
   "unzip options:",
@@ -2138,8 +2151,8 @@ static void help_extended(__G)
   "         marker, and from or to EBCDIC character set as needed.",
   "  -b   Treat all files as binary.  [Tandem] Force filecode 180 ('C').",
   "         [VMS] Autoconvert binary files.  -bb forces convert of all files.",
-  "  -B   [Unix and Win32] Save a backup copy of each overwritten file in",
-  "         foo~ or foo~99999 format.",
+  "  -B   [UNIXBACKUP compile option enabled] Save a backup copy of each",
+  "         overwritten file in foo~ or foo~99999 format.",
   "  -C   Use case-insensitive matching.",
   "  -D   Skip restoration of timestamps for extracted directories.  On VMS this",
   "         is on by default and -D essentially becames -DD.",
@@ -2174,10 +2187,12 @@ static void help_extended(__G)
   "  -W   [Only if WILD_STOP_AT_DIR] Modify pattern matching so ? and * do not",
   "         match directory separator /, but ** does.  Allows matching at specific",
   "         directory levels.",
-  "  -X   [VMS, Unix, OS/2, NT] Restore UICs under VMS, or UIDs/GIDs under Unix,",
-  "         or ACLs under certain network-enabled versions of OS/2, or security",
-  "         ACLs under Windows NT.  Can require user privileges.",
-  "  -XX  [NT] Use privileges for extraction.",
+  "  -X   [VMS, Unix, OS/2, NT, Tandem] Restore UICs and ACL entries under VMS,",
+  "         or UIDs/GIDs under Unix, or ACLs under certain network-enabled",
+  "         versions of OS/2, or security ACLs under Windows NT.  Can require",
+  "         user privileges.",
+  "  -XX  [NT] Extract NT security ACLs after trying to enable additional",
+  "         system privileges.",
   "  -Y   [VMS] Treat archived name endings of .nnn as VMS version numbers.",
   "  -$   [MS-DOS, OS/2, NT] Restore volume label if extraction medium is",
   "         removable.  -$$ allows fixed media (hard drives) to be labeled.",
@@ -2487,6 +2502,13 @@ static void show_version_info(__G)
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(Use_Unicode)));
 # endif
+        ++numopts;
+#endif
+#ifdef _MBCS
+        sprintf((char *)(slide+256), LoadFarStringSmall(Have_MBCS_Support),
+          (unsigned int)MB_CUR_MAX);
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          (char *)(slide+256)));
         ++numopts;
 #endif
 #ifdef MULT_VOLUME

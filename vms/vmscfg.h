@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2005-Feb-10 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -90,6 +90,14 @@
 #  define DIR_BEG       '['
 #  define DIR_END       ']'
 #  define DIR_EXT       ".dir"
+#  ifndef UZ_FNFILTER_REPLACECHAR
+     /* We use '?' instead of the single char wildcard '%' as "unprintable
+      * charcode" placeholder, because '%' is valid for ODS-5 names but '?'
+      * is invalid. This choice may allow easier detection of "unprintables"
+      * when reading the fnfilter() output.
+      */
+#    define UZ_FNFILTER_REPLACECHAR  '?'
+#  endif
 #  ifndef DATE_FORMAT
 #    define DATE_FORMAT DF_MDY
 #  endif
@@ -136,6 +144,13 @@
 #  endif
 #  if !defined(IZ_CRCOPTIM_UNFOLDTBL) && !defined(NO_CRC_OPTIMIZ)
 #    define IZ_CRCOPTIM_UNFOLDTBL
+#  endif
+   /* Enable "better" unprintable charcodes filtering in fnfilter().
+    * (On VMS, the isprint() implementation seems to detect 8-bit printable
+    * characters even for the default "C" locale. A previous localization
+    * setup by calling setlocale() is not neccessary.) */
+#  if (!defined(NO_WORKING_ISPRINT) && !defined(HAVE_WORKING_ISPRINT))
+#    define HAVE_WORKING_ISPRINT
 #  endif
 
 #ifdef NO_OFF_T

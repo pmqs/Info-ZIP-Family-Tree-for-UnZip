@@ -34,6 +34,7 @@
 #  endif
 #endif
 
+#include <stddef.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -74,13 +75,16 @@ HANDLE hZCL = (HANDLE)NULL;
 #ifdef WIN32
 DWORD dwPlatformId = 0xFFFFFFFF;
 #endif
+static ZCONST UzpVer *lpUzVersInfo = NULL;
 
 
 /* Forward References */
 int WINAPI DisplayBuf(LPSTR, unsigned long);
-int WINAPI GetReplaceDlgRetVal(LPSTR);
+int WINAPI GetReplaceDlgRetVal(LPSTR, unsigned);
 int WINAPI password(LPSTR, int, LPCSTR, LPCSTR);
 
+ZCONST UzpVer * UZ_EXP UzpVersion  OF((void));
+_DLL_UZVER pUzpVersion;
 _DLL_UNZIP pWiz_SingleEntryUnzip;
 
 static void FreeUpMemory(void);
@@ -104,21 +108,30 @@ HANDLE  hMem;         /* handle to mem alloc'ed */
 
 if (argc < 2)   /* We must have an archive to unzip */
    {
+   char *progname = strrchr(argv[0], '\\');
+
+   if (progname != NULL)
+      progname++;
+   else
+      {
+      progname = argv[0];
+      if (progname == NULL || *progname == '\0') progname = "example";
+      }
    printf("usage: %s <zipfile> [entry1 [entry2 [...]]] [-x xentry1 [...]]",
-          "example");
+          progname);
    return 0;
    }
 
 hDCL = GlobalAlloc( GPTR, (DWORD)sizeof(DCL));
 if (!hDCL)
    {
-   return 0;
+   return -1;
    }
 lpDCL = (LPDCL)GlobalLock(hDCL);
 if (!lpDCL)
    {
    GlobalFree(hDCL);
-   return 0;
+   return -1;
    }
 
 hUF = GlobalAlloc( GPTR, (DWORD)sizeof(USERFUNCTIONS));
@@ -126,16 +139,16 @@ if (!hUF)
    {
    GlobalUnlock(hDCL);
    GlobalFree(hDCL);
-   return 0;
+   return -1;
    }
 lpUserFunctions = (LPUSERFUNCTIONS)GlobalLock(hUF);
 
 if (!lpUserFunctions)
    {
+   GlobalFree(hUF);
    GlobalUnlock(hDCL);
    GlobalFree(hDCL);
-   GlobalFree(hUF);
-   return 0;
+   return -1;
    }
 
 lpUserFunctions->password = password;
@@ -163,7 +176,7 @@ if (hfile == HFILE_ERROR)
    wsprintf (str, DLL_WARNING, UNZ_DLL_NAME);
    printf("%s\n", str);
    FreeUpMemory();
-   return 0;
+   return -1;
    }
 #ifndef WIN32
 else
@@ -207,10 +220,10 @@ if (dwVerInfoSize)
          {
          wsprintf (str, DLL_VERSION_WARNING, UNZ_DLL_NAME);
          printf("%s\n", str);
-         FreeUpMemory();
          GlobalUnlock(hMem);
          GlobalFree(hMem);
-         return 0;
+         FreeUpMemory();
+         return -1;
          }
       }
       /* free memory */
@@ -223,7 +236,7 @@ else
    wsprintf (str, DLL_VERSION_WARNING, UNZ_DLL_NAME);
    printf("%s\n", str);
    FreeUpMemory();
-   return 0;
+   return -1;
    }
 /* Okay, now we know that the dll exists, and has the proper version
  * information in it. We can go ahead and load it.
@@ -235,6 +248,8 @@ if (hUnzipDll > HINSTANCE_ERROR)
 if (hUnzipDll != NULL)
 #endif
    {
+   pUzpVersion =
+     (_DLL_UZVER)GetProcAddress(hUnzipDll, "UzpVersion");
    pWiz_SingleEntryUnzip =
      (_DLL_UNZIP)GetProcAddress(hUnzipDll, "Wiz_SingleEntryUnzip");
    }
@@ -244,8 +259,65 @@ else
    wsprintf (str, "Could not load %s", UNZ_DLL_NAME);
    printf("%s\n", str);
    FreeUpMemory();
-   return 0;
+   return -1;
    }
+
+/*
+   Before we actually start with the extraction process, we should first
+   check whether the API of the loaded dll is compatible with the API
+   definition used to compile this frontend program.
+ */
+lpUzVersInfo = (*pUzpVersion)();
+
+/* The UnZip WinDLL code may change quite frequently.  To be safe, we
+ * require the DLL to be at least at the release level of this example
+ * frontend code.
+ */
+#   define UZDLL_MINVERS_MAJOR          UZ_MAJORVER
+#   define UZDLL_MINVERS_MINOR          UZ_MINORVER
+#   define UZDLL_MINVERS_PATCHLEVEL     UZ_PATCHLEVEL
+/* This UnZip DLL stub requires a DLL version of at least: */
+if ( (lpUzVersInfo->unzip.major < UZDLL_MINVERS_MAJOR) ||
+     ((lpUzVersInfo->unzip.major == UZDLL_MINVERS_MAJOR) &&
+      ((lpUzVersInfo->unzip.minor < UZDLL_MINVERS_MINOR) ||
+       ((lpUzVersInfo->unzip.minor == UZDLL_MINVERS_MINOR) &&
+        (lpUzVersInfo->unzip.patchlevel < UZDLL_MINVERS_PATCHLEVEL)
+       )
+      )
+     ) )
+{
+  char str[256];
+  wsprintf(str, "The version %u.%u%u of the loaded UnZip DLL is too old!",
+           lpUzVersInfo->unzip.major, lpUzVersInfo->unzip.minor,
+           lpUzVersInfo->unzip.patchlevel);
+  printf("%s\n", str);
+  FreeLibrary(hUnzipDll);
+  FreeUpMemory();
+  return -1;
+}
+
+if (lpUzVersInfo->structlen >=
+    (offsetof(UzpVer, dllapimin) + sizeof(_version_type)))
+{
+  if ( (lpUzVersInfo->dllapimin.major > UZ_WINAPI_COMP_MAJOR) ||
+       ((lpUzVersInfo->dllapimin.major == UZ_WINAPI_COMP_MAJOR) &&
+        ((lpUzVersInfo->dllapimin.minor > UZ_WINAPI_COMP_MINOR) ||
+         ((lpUzVersInfo->dllapimin.minor == UZ_WINAPI_COMP_MINOR) &&
+          (lpUzVersInfo->dllapimin.patchlevel > UZ_WINAPI_COMP_REVIS)
+         )
+        )
+       ) )
+  {
+    char str[256];
+    wsprintf(str, "Found incompatible WinDLL API version %u.%u%u, aborting!",
+             lpUzVersInfo->dllapimin.major, lpUzVersInfo->dllapimin.minor,
+             lpUzVersInfo->dllapimin.patchlevel);
+    printf("%s\n", str);
+    FreeLibrary(hUnzipDll);
+    FreeUpMemory();
+    return -1;
+  }
+}
 
 /*
    Here is where the actual extraction process begins. First we set up the
@@ -320,14 +392,14 @@ if (x_opt) {
 }
 
 if (retcode != 0)
-   printf("Error unzipping...\n");
+   printf("Error unzipping (error/warning code %d)...\n", retcode);
 
-FreeUpMemory();
 FreeLibrary(hUnzipDll);
-return 1;
+FreeUpMemory();
+return retcode;
 }
 
-int WINAPI GetReplaceDlgRetVal(LPSTR filename)
+int WINAPI GetReplaceDlgRetVal(LPSTR filename, unsigned fnbufsiz)
 {
 /* This is where you will decide if you want to replace, rename etc existing
    files.
@@ -337,15 +409,15 @@ return 1;
 
 static void FreeUpMemory(void)
 {
-if (hDCL)
-   {
-   GlobalUnlock(hDCL);
-   GlobalFree(hDCL);
-   }
 if (hUF)
    {
    GlobalUnlock(hUF);
    GlobalFree(hUF);
+   }
+if (hDCL)
+   {
+   GlobalUnlock(hDCL);
+   GlobalFree(hDCL);
    }
 }
 

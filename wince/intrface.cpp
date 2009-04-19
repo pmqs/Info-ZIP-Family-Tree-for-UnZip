@@ -200,12 +200,12 @@ int UZ_EXP UzpMessagePrnt2(zvoid *pG, uch *buffer, ulg size, int flag);
 int UZ_EXP UzpInput2(zvoid *pG, uch *buffer, int *size, int flag);
 int UZ_EXP CheckForAbort2(zvoid *pG, int fnflag, ZCONST char *zfn,
                           ZCONST char *efn, ZCONST zvoid *details);
-int WINAPI UzpReplace(LPSTR szFile);
+int WINAPI UzpReplace(LPSTR szFile, unsigned nbufsiz);
 void WINAPI UzpSound(void);
 #ifdef Z_UINT8_DEFINED
-void WINAPI SendAppMsg(z_uint8 dwSize, z_uint8 dwCompressedSize,
+void WINAPI SendAppMsg(z_uint8 uzSize, z_uint8 uzCompressedSize,
 #else
-void WINAPI SendAppMsg(ulg dwSize, ulg dwCompressedSize,
+void WINAPI SendAppMsg(ulg uzSize, ulg uzCompressedSize,
 #endif
                        unsigned ratio,
                        unsigned month, unsigned day, unsigned year,
@@ -806,7 +806,7 @@ int UZ_EXP UzpPassword(zvoid *pG, int *pcRetry, char *szPassword, int nSize,
    return SendMessage(g_hWndMain, WM_PRIVATE, MSG_PROMPT_FOR_PASSWORD, (LPARAM)&di);
 
 #else
-   return -2;
+   return IZ_PW_CANCELALL;
 #endif
 }
 
@@ -850,8 +850,10 @@ int UZ_EXP CheckForAbort2(zvoid *pG, int fnflag, ZCONST char *zfn,
 }
 
 //******************************************************************************
-int WINAPI UzpReplace(LPSTR szFile) {
+int WINAPI UzpReplace(LPSTR szFile, unsigned nbufsiz) {
    // Pass control to our GUI thread which will prompt the user to overwrite.
+   // The nbufsiz parameter is not needed here, because this program does not
+   // (yet?) contain support for renaming the extraction target.
    return SendMessage(g_hWndMain, WM_PRIVATE, MSG_PROMPT_TO_REPLACE,
                       (LPARAM)szFile);
 }
@@ -986,12 +988,13 @@ int win_fprintf(zvoid *pG, FILE *file, unsigned int dwCount, char far *buffer)
 
    // Check to see if we are expecting a compressed file comment string.
    if (g_pFileLast) {
+      char *p1, *p2;
 
       // Calcalute the size of the buffer we will need to store this comment.
       // We are going to convert all ASC values 0 - 31 (except tab, new line,
       // and CR) to ^char.
       int size = 1;
-      for (char *p2, *p1 = buffer; *p1; INCSTR(p1)) {
+      for (p1 = buffer; *p1; INCSTR(p1)) {
          size += ((*p1 >= 32) || (*p1 == '\t') ||
                   (*p1 == '\r') || (*p1 == '\n')) ? CLEN(p1) : 2;
       }

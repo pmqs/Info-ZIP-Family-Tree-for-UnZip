@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2006 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -58,9 +58,9 @@ int WINAPI WinMain( HINSTANCE hInstance,
         }
 
         /* Check for quote enclosed strings for extended file names. */
-        if (argPtr[0] == _T('"') && 
+        if (argPtr[0] == _T('"') &&
             /* Look for closing quote */
-            (closingQuote = _tcschr(argPtr + 1, _T('"')) != NULL)
+            (closingQuote = _tcschr(argPtr + 1, _T('"'))) != NULL)
         {
             /* Clear the enclosing quotes */
             *argPtr++ = _T('\0');

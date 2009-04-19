@@ -51,6 +51,10 @@ For UnZip 6.1/who knows:
         (there is internal alpha-state code for better "wide" support on
         Windows available at the time of the 6.0 release)
 
+   o revise the "extended charcodes" handling in decryption password to
+     support UTF-8 encoding on Unicode-aware systems where the "native"
+     character coding is NOT UTF-8 (e.g. Windows).
+
    o revise the command line interface for more compatibility with Zip'
      command parser
      - implement the versatile command parser from Zip 3.0.

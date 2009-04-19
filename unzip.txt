@@ -4,7 +4,7 @@ NAME
        unzip - list, test and extract compressed files in a ZIP archive
 
 SYNOPSIS
-       unzip  [-Z]  [-cflptTuvz[abjnoqsCDKLMUVWX$/:]] file[.zip] [file(s) ...]
+       unzip  [-Z] [-cflptTuvz[abjnoqsCDKLMUVWX$/:^]] file[.zip] [file(s) ...]
        [-x xfile(s) ...] [-d exdir]
 
 DESCRIPTION
@@ -448,23 +448,23 @@ MODIFIERS
               allowing `/' as regular filename character, the -W option  would
               not work as expected on a wildcard zipfile specification.)
 
-       -X     [VMS, Unix, OS/2, NT] restore owner/protection info (UICs) under
-              VMS, or user and group info (UID/GID) under Unix, or access con-
-              trol lists (ACLs) under certain network-enabled versions of OS/2
-              (Warp Server with IBM LAN Server/Requester 3.0 to 5.0; Warp Con-
-              nect  with IBM Peer 1.0), or security ACLs under Windows NT.  In
-              most cases this will require special system privileges, and dou-
-              bling  the  option  (-XX) under NT instructs unzip to use privi-
-              leges for extraction; but under Unix, for example,  a  user  who
-              belongs  to  several  groups  can  restore files owned by any of
-              those groups, as long as the user IDs  match  his  or  her  own.
-              Note  that  ordinary  file  attributes are always restored--this
-              option applies only to optional, extra ownership info  available
-              on  some  operating  systems.  [NT's access control lists do not
-              appear to be especially compatible with OS/2's, so no attempt is
-              made  at cross-platform portability of access privileges.  It is
-              not clear under what conditions this would ever be  useful  any-
-              way.]
+       -X     [VMS,  Unix,  OS/2,  NT,  Tandem]  restore owner/protection info
+              (UICs and ACL  entries)  under  VMS,  or  user  and  group  info
+              (UID/GID)  under Unix, or access control lists (ACLs) under cer-
+              tain network-enabled versions of OS/2 (Warp Server with IBM  LAN
+              Server/Requester 3.0 to 5.0; Warp Connect with IBM Peer 1.0), or
+              security ACLs under Windows NT.  In most cases this will require
+              special  system  privileges, and doubling the option (-XX) under
+              NT instructs unzip to use privileges for extraction;  but  under
+              Unix,  for  example,  a  user  who belongs to several groups can
+              restore files owned by any of those groups, as long as the  user
+              IDs  match  his  or her own.  Note that ordinary file attributes
+              are always restored--this option applies only to optional, extra
+              ownership  info  available  on  some  operating  systems.  [NT's
+              access control lists do not appear to be  especially  compatible
+              with OS/2's, so no attempt is made at cross-platform portability
+              of access privileges.  It is not  clear  under  what  conditions
+              this would ever be useful anyway.]
 
        -Y     [VMS]  treat  archived  file  name  endings  of  ``.nnn'' (where
               ``nnn'' is a decimal  number) as if they were VMS  version  num-
@@ -634,15 +634,21 @@ DECRYPTION
        methods  for  such  characters,  including Latin-1 (ISO 8859-1) and OEM
        code page 850.  DOS PKZIP 2.04g uses the OEM code page;  Windows  PKZIP
        2.50 uses Latin-1 (and is therefore incompatible with DOS PKZIP); Info-
-       ZIP uses the OEM code page on DOS, OS/2 and Win3.x  ports  but  Latin-1
-       everywhere  else;  and Nico Mak's WinZip 6.x does not allow 8-bit pass-
-       words at all.  UnZip 5.3 (or newer) attempts to use the default charac-
-       ter set first (e.g., Latin-1), followed by the alternate one (e.g., OEM
-       code page) to test passwords.  On EBCDIC  systems,  if  both  of  these
-       fail,  EBCDIC encoding will be tested as a last resort.  (EBCDIC is not
-       tested on non-EBCDIC systems, because there are no known archivers that
-       encrypt  using  EBCDIC  encoding.)   ISO character encodings other than
-       Latin-1 are not supported.
+       ZIP uses the OEM code page on DOS, OS/2 and Win3.x ports but ISO coding
+       (Latin-1  etc.)  everywhere  else;  and  Nico Mak's WinZip 6.x does not
+       allow 8-bit passwords at all.  UnZip 5.3 (or newer) attempts to use the
+       default  character set first (e.g., Latin-1), followed by the alternate
+       one (e.g., OEM code page) to test passwords.   On  EBCDIC  systems,  if
+       both  of  these  fail, EBCDIC encoding will be tested as a last resort.
+       (EBCDIC is not tested on non-EBCDIC systems, because there are no known
+       archivers that encrypt using EBCDIC encoding.)  ISO character encodings
+       other than Latin-1 are not supported.  The new addition of  (partially)
+       Unicode (resp.  UTF-8) support in UnZip 6.0 has not yet been adapted to
+       the encryption password handling in unzip.  On systems that  use  UTF-8
+       as  native  character  encoding, unzip simply tries decryption with the
+       native UTF-8 encoded password; the built-in attempts to check the pass-
+       word in translated encoding have not yet been adapted for UTF-8 support
+       and will consequently fail.
 
 EXAMPLES
        To use unzip to extract all members of the archive letters.zip into the
@@ -869,8 +875,8 @@ BUGS
        associated with them, unzip has no way to determine whether the  stored
        attributes are newer or older than those on disk.  In practice this may
        mean a two-pass approach is required:  first unpack  the  archive  nor-
-       mally  (with or without freshening/updating existing files), then over-
-       write just the directory entries (e.g., ``unzip -o foo */'').
+       mally  (with  or  without  freshening/updating  existing  files),  then
+       overwrite just the directory entries (e.g., ``unzip -o foo */'').
 
        [VMS] When extracting to another directory, only the [.foo]  syntax  is
        accepted  for  the  -d  option;  the simple Unix foo syntax is silently
@@ -944,6 +950,6 @@ VERSIONS
        v5.5   17 Feb 02   Info-ZIP (Zip-Bugs subgroup, SPC)
        v5.51  22 May 04   Info-ZIP (Zip-Bugs subgroup, SPC)
        v5.52  28 Feb 05   Info-ZIP (Zip-Bugs subgroup, SPC)
-       v6.0   20 Jan 09   Info-ZIP (Zip-Bugs subgroup, SPC)
+       v6.0   20 Apr 09   Info-ZIP (Zip-Bugs subgroup, SPC)
 
-Info-ZIP                    20 January 2009 (v6.0)                   UNZIP(1L)
+Info-ZIP                     20 April 2009 (v6.0)                    UNZIP(1L)

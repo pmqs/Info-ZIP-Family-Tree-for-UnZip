@@ -290,8 +290,8 @@ freely, subject to the above disclaimer and the following restrictions:
 #  define ZCONST
 #endif
 
-/* Tell Microsoft Visual C++ 2005 to leave us alone and
- * let us use standard C functions the way we're supposed to.
+/* Tell Microsoft Visual C++ 2005 (and newer) to leave us alone
+ * and let us use standard C functions the way we're supposed to.
  * (These preprocessor symbols must appear before the first system
  *  header include. They are located here, because for WINDLL the
  *  first system header includes follow just below.)
@@ -302,6 +302,9 @@ freely, subject to the above disclaimer and the following restrictions:
 #  endif
 #  ifndef _CRT_NONSTDC_NO_WARNINGS
 #    define _CRT_NONSTDC_NO_WARNINGS
+#  endif
+#  if defined(POCKET_UNZIP) && !defined(_CRT_NON_CONFORMING_SWPRINTFS)
+#    define _CRT_NON_CONFORMING_SWPRINTFS
 #  endif
 #endif
 
@@ -568,28 +571,30 @@ typedef struct _ver {
 } _version_type;
 
 typedef struct _UzpVer {
-    ulg structlen;          /* length of the struct being passed */
-    ulg flag;               /* bit 0: is_beta   bit 1: uses_zlib */
-    char *betalevel;        /* e.g., "g BETA" or "" */
-    char *date;             /* e.g., "4 Sep 95" (beta) or "4 September 1995" */
-    char *zlib_version;     /* e.g., "0.95" or NULL */
-    _version_type unzip;
-    _version_type zipinfo;
-    _version_type os2dll;
-    _version_type windll;
+    ulg structlen;            /* length of the struct being passed */
+    ulg flag;                 /* bit 0: is_beta   bit 1: uses_zlib */
+    ZCONST char *betalevel;   /* e.g. "g BETA" or "" */
+    ZCONST char *date;        /* e.g. "9 Oct 08" (beta) or "9 October 2008" */
+    ZCONST char *zlib_version;/* e.g. "1.2.3" or NULL */
+    _version_type unzip;      /* current UnZip version */
+    _version_type zipinfo;    /* current ZipInfo version */
+    _version_type os2dll;     /* OS2DLL version (retained for compatibility */
+    _version_type windll;     /* WinDLL version (retained for compatibility */
+    _version_type dllapimin;  /* last incompatible change of library API */
 } UzpVer;
 
 /* for Visual BASIC access to Windows DLLs: */
 typedef struct _UzpVer2 {
-    ulg structlen;          /* length of the struct being passed */
-    ulg flag;               /* bit 0: is_beta   bit 1: uses_zlib */
-    char betalevel[10];     /* e.g., "g BETA" or "" */
-    char date[20];          /* e.g., "4 Sep 95" (beta) or "4 September 1995" */
-    char zlib_version[10];  /* e.g., "0.95" or NULL */
-    _version_type unzip;
-    _version_type zipinfo;
-    _version_type os2dll;
-    _version_type windll;
+    ulg structlen;            /* length of the struct being passed */
+    ulg flag;                 /* bit 0: is_beta   bit 1: uses_zlib */
+    char betalevel[10];       /* e.g. "g BETA" or "" */
+    char date[20];            /* e.g. "9 Oct 08" (beta) or "9 October 2008" */
+    char zlib_version[10];    /* e.g. "1.2.3" or NULL */
+    _version_type unzip;      /* current UnZip version */
+    _version_type zipinfo;    /* current ZipInfo version */
+    _version_type os2dll;     /* OS2DLL version (retained for compatibility */
+    _version_type windll;     /* WinDLL version (retained for compatibility */
+    _version_type dllapimin;  /* last incompatible change of library API */
 } UzpVer2;
 
 
@@ -672,7 +677,7 @@ typedef struct _Uzp_cdir_Rec {
 
 int      UZ_EXP UzpMain            OF((int argc, char **argv));
 int      UZ_EXP UzpAltMain         OF((int argc, char **argv, UzpInit *init));
-UzpVer * UZ_EXP UzpVersion         OF((void));
+ZCONST UzpVer * UZ_EXP UzpVersion  OF((void));
 void     UZ_EXP UzpFreeMemBuffer   OF((UzpBuffer *retstr));
 #ifndef WINDLL
 int      UZ_EXP UzpUnzipToMemory   OF((char *zip, char *file, UzpOpts *optflgs,
@@ -686,7 +691,7 @@ int      UZ_EXP UzpFileTree        OF((char *name, cbList(callBack),
                                        char *cpInclude[], char *cpExclude[]));
 #endif
 
-void     UZ_EXP UzpVersion2        OF((UzpVer2 *version));
+unsigned UZ_EXP UzpVersion2        OF((UzpVer2 *version));
 int      UZ_EXP UzpValidate        OF((char *archive, int AllCodes));
 
 

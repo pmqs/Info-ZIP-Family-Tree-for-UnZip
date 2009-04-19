@@ -1,4 +1,4 @@
-UnZip, version 6.00f BETA, 11 January 2009
+UnZip, version 6.00, 20 April 2009
 
 Features added (or removed):
 
@@ -175,7 +175,9 @@ Features added (or removed):
 6.00e05 (09 Sep 08):
  - unzip.c: added framework for verbose multi-page online help, called by
     option "-hh".  [Ed Gordon]
- - unzip.c - uz_opts(): do not exit immediatly after recognizing help screen
+ - process.c, unzpriv.h, unix/unix.c: added support for new IZUNIX3 extra field
+    providing 32-bit UID/GID data.  [Ed Gordon, Chr. Spieler]
+ - unzip.c - uz_opts(): do not exit immediately after recognizing help screen
     request; this allows to specify the pager option after the explicit help
     request.  [Chr. Spieler]
 
@@ -186,6 +188,12 @@ Features added (or removed):
  - unzip.h: enable -B option for Unix, OS/2, and Win32.  [EG, Chr. Spieler]
 
 6.00f (11 Jan 09):
+ - NO feature changes.
+
+6.00g01 (08 Jan 09), 6.00g02 (25 Jan 09), 6.00g03 (10 Feb 09),
+6.00g04 (16 Feb 09), 6.00g (28 Feb 09),
+6.00h01 (09 Mar 09), 6.00h02 (16 Apr 09), 6.00h03 (17 Apr 09),
+6.00 (20 Apr 09):
  - NO feature changes.
 
 Bugs fixed:
@@ -292,7 +300,7 @@ Bugs fixed:
     [Steven M. Schweda, Chr. Spieler]
 
 6.00c12 (15 Aug 05):
- - VMS port: updated the dependancy build routines (*.mms, *.com) and the VMS
+ - VMS port: updated the dependency build routines (*.mms, *.com) and the VMS
     install documentation (INSTALL) [Steven M. Schweda]
  - api.c - redirect_outfile(): initialize check_conversion variable in the
     non-textmode case [Chr. Spieler]
@@ -751,13 +759,13 @@ Bugs fixed:
     [Chr. Spieler]
  - fileio.c, process.c, unzip.c, globals.h, unzpriv.h, win32/w32cfg.h,
     wince/wcecfg.h : revised the UNICODE_SUPPORT code, added direct support for
-    UTF-8 being the native MBCS char enconding, allowed separate activation of
+    UTF-8 being the native MBCS char encoding, allowed separate activation of
     the "UTF-8 is native character coding" and the "translate UTF-8 <==> native
     extended-ASCII via Unicoded wchar_t" support methods.  [Chr. Spieler]
  - unix/configure, unix/Makefile: extended configure script to support
     automatic selection of UNICODE_SUPPORT support on capable systems,
     completed configuration support for the linking step.  [Chr. Spieler]
- - unix/unxcfg.h: changed interdependancy rules of LARGE_FILE_SUPPORT and
+ - unix/unxcfg.h: changed interdependency rules of LARGE_FILE_SUPPORT and
     ZIP64_SUPPORT to prevent unsupported symbol combinations.  [Chr. Spieler]
  - man/unzip.1: extended description of -U option to mention the #Lxxxxxx
     escape format for characters beyond the basic unicode page.  [Chr. Spieler]
@@ -816,7 +824,7 @@ Bugs fixed:
     subdir" for integrated BZIP2 compilation (should distinguish between the
     different compilers supported for VAX) and "external library dir" for
     user-supplied BZIP2 (and ZLIB) libraries (user-supplied library is expected
-    to work with any supported compiler on VAX, so no dependancy on the
+    to work with any supported compiler on VAX, so no dependency on the
     specific compiler used).  [Steven M. Schweda]
  - unzip.c: replaced tab characters in output messages by appropiate number of
     spaces (assuming standard tab spacing of 8 chars), to prevent mis-formatted
@@ -949,8 +957,161 @@ Bugs fixed:
  - wince/intrface.cpp: added missing wide_to_local_string() function from
     win32.c (is [currently] needed in process.c).  [Chr. Spieler]
 
+6.00g01 (18 Jan 09):
+ - extract.c, windll/structs.h, windll/windll.txt: added a bufsize parameter
+    to the "replace()" callback function, updated UZ_DCL_STRUCTVER setting to
+    0x600.  [Chr. Spieler]
+ - windll/uzexampl.c, windll/csharp/Unzip.cs, windll/vb/vbunzip.bas,
+   windll/guisfx/sfxwiz.c, wince/intrface.cpp: adapted frontend code to the
+    "replace()" callback function signature change; updated DCL.StructVersID
+    setting to reflect the change in the DLL code; added check against password
+    buffer overflow (not in uzexampl.c).  [Chr. Spieler]
+ - windll/vb/vbunzip.frm: removed obsolete comment.  [EG]
+ - windll/csharp/ReadMeCS.txt: added note on problem with Visual Studio 8.0
+    and 9.0 when used with unzip32.dll that was linked against the Visual
+    Studio version of the MS C runtime dll.  [Chr. Spieler]
+ - unix/Makefile: consistent use of "$E" for executable filename extension;
+    fixed dependency of binary builds on system specific config header; added
+    dependency of autoconfigured "generic" builds on the configure result.
+    [Chr. Spieler]
+ - unzip.c: added hint to "unzip -hh" extended help display to the short help
+    screen.  [Chr. Spieler]
+ - unzip.c - help_extended(): removed superfluous "]", corrected availability
+    info for the "-B" option.  [EG, Chr. Spieler]
+ - man/unzip.1, unzip.c, vms/unzip_def.rnh, vms/unzip_cli.help - modified
+    description of -X option for VMS to emphasize that this option controls
+    restoration of ACL protection info, whereas the standard S/O/G/W access
+    restrictions get always restored.  [SMS, H. Goatley, Chr. Spieler]
+ - unzip.h, api.c, unzipstb.c, unzvers.h, windll/windll.txt,
+   windll/vb/vbunzip.bas:
+    revised and extended the "version info retrieve" function calls, added
+    version identifier for the "last incompatible API change", fixed version
+    structure size handling, updated API documentation.  [Chr. Spieler]
+ - windll/windll.c - UnzipAllocMemory(): fixed operator precedence bug by
+    adding explicit parenteses.  [Chr. Spieler]
+ - win32/Makefile.wat: added missing rule for crc32f.obj.  [Chr. Spieler]
+ - unzip.c - uz_opts(): corrected parameter list for call of help_extended().
+    [Chr. Spieler]
+ - unix/Makefile: adapted linux_shlib and linux_shlibz targets to work with
+    the changed organisation of the assembler CRC code.  [Chr. Spieler]
+
+6.00g02 (25 Jan 09):
+ - History.600, unzpriv.h, unix/unix.c: corrected/unified spelling of
+    "dependent" and "dependence".  [Steven M. Schweda]
+ - api.c - UzpVersion2(): added forgotten setting of dllapimin version info
+    (similar to UzpVersion()).  [Chr. Spieler]
+ - unzipstb.c, windll/uzexampl.c, windll/uzexampl.h: extended DLL version
+    display to report the new "DLL API" version info; added compatibility
+    checks for version of loaded dll, using the recently added additional
+    API version info.  [Chr. Spieler]
+ - windll/uzexampl.c: changed program return values to follow common usage
+    (0 for no error, -1 for fatal abort, unzipdll return code otherwise).
+    [Chr. Spieler]
+ - windll/vb/VBReadMe.txt, windll/vb/vbunzip.bas: revised and extended
+    documentation of unzip32.dll search process flow, added warning note
+    explaining the unexpected "dll not found" errors when running the VB code
+    inside the VB IDE.  [Chr. Spieler]
+ - windll/vb/vbunzip.bas: added version/api compatibility checks for the
+    loaded unzip32.dll, aborting the program in case of any detected
+    incompatibility.  [Chr. Spieler]
+
+6.00g03 (10 Feb 09):
+ - README, History.600: documented support for new 32-bit UID/GID extra field
+    on Unix.  [Ed Gordon, Chr. Spieler]
+ - unzip.h: added "old lib swprintf" compatibility clause for Pocket-UnZip
+    (WinCE) to support current Visual Studio versions 8 and 9. [Chr. Spieler]
+ - wince/wcecfg.h: switched off UNIX_BACKUP for WinCE (rename() function not
+    available on Windows CE); moved the (none-WCE) configuration setup for
+    Zip64 support to the end (behind all header includes).  [Chr. Spieler]
+ - wince/wince.h: added guard against redefinition of isalpha() macro.
+    [Chr. Spieler]
+ - wince/intrface.cpp - win_fprintf(): reordered local loop counter variable
+    declaration to achieve compatibility with standard C++ (without breaking
+    the non-standard MS VC++ 6.0 variant).  [Chr. Spieler]
+ - extract.c, list.c, process.c, zipinfo.c: replaced strncmp() by memcmp()
+    when comparing against "binary" signatures.  [Chr. Spieler]
+ - process.c - wide_to_escape_string(): fixed a "write to unallocated memory"
+    bug.  [Chr. Spieler]
+
+6.00g04 (16 Feb 09):
+ - unzpriv.h: mapped zfseeko and zftello to C rtl supplied functions for MS
+    C runtime of VC 8.0 or newer.  [Chr. Spieler]
+ - win32/win32i64.c: revised zfseeko() code to correctly clear the eof state
+    (and for "MSVC 6.0 or newer" rtl environments: manipulate internal flag
+    to prevent clearing a ferror() state).  [Chr. Spieler]
+ - windll/vc5/, windll/vc6/, windll/vc8/: added "link against static C rtl"
+    configurations to the unzip32 dll and c_example projects.  [Chr. Spieler]
+ - win32/vc8/, windll/vc8/: removed "UpdateFromVC600" property sheet settings,
+    they are not needed.  [Chr. Spieler]
+ - windll/guisfx/sfxwiz.c: added compatiblity preprocessor switches to shut up
+    MS VC 8 (and newer) complaining about depreciated standard C functions.
+    [Chr. Spieler]
+ - INSTALL, windll/Contents: added notes about different runtime configurations
+    (linking against C rtl dll vs. static C rtl lib) when building the UnZip
+    DLL.  [Chr. Spieler]
+
+6.00g (28 Feb 09):
+ - unzip.c: cleaned up the UTF-8 check according to the code found in the
+    latest Zip 3.1 beta, removed the "switch to UTF-8 codeset" code because
+    it proved to not work as expected.  [Ed Gordon, Chr. Spieler]
+ - win32/w32cfg.h: use rtl-provided MBCS functions for MinGW32 when compiled
+    and linked against msvcrt.dll.  [Chr. Spieler]
+ - extract.c - fnfilter(): added "enhanced" non-printable charcode filtering
+    when a locale-aware isprint() implementation is available (controlled by
+    the preprocessor symbol HAVE_WORKING_ISPRINT).  [Chr. Spieler]
+ - win32: enabled "enhanced" fnfilter() filtering for compiler environments
+    using MSVC 6.0 (or newer) runtime, and for Borland C.  [Chr. Spieler]
+ - vms: enabled "enhanced" fnfilter() filtering using isprint(), may get
+   disabled by defining the NO_WORKING_ISPRINT symbol.  [Chr. Spieler]
+ - unix/unxcfg.h: enabled "enhanced" fnfilter() filtering when setlocale() is
+    available (NO_SETLOCALE is not defined).  [Chr. Spieler]
+ - unix/configure: added NO_SETLOCALE define when setlocale() check fails.
+    [Chr. Spieler]
+ - INSTALL: added documentation of NO_SETLOCALE and HAVE_WORKING_ISPRINT resp.
+    NO_WORKING_ISPRINT symbols.  [Chr. Spieler]
+ - general: unified spelling of "wildcard".  [Chr. Spieler]
+
+6.00h01 (09 Mar 09):
+ - vms/vms.c: added missing case-translation define for sys$getdvi(), for
+    support of /NAMES=AS_IS with older DECC distributions.  [Steven M. Schweda]
+ - vms/build_unzip.com, vms/descrip.mms, vms/descrip_src.mms: resolved a
+    /NAME=AS_IS case issue by changing the linking command for bzip2-enabled
+    builds to read the unzip code library twice (before and after the bzip2
+    object library) to resolve the bzip2 error callback, instead of explicitely
+    loading the callback function.  [Steven M. Schweda]
+ - vms/NOTES.TXT: cleaned up wording of the Symbolic Links section. [SMS]
+ - extract.c, fileio.c, process.c, unzpriv.h: fixed recognition of "native
+    UTF-8" general purpose flag bit 11 when processing local header, added
+    check against mismatching central vs. local GPFlag bit 11 (not for SFX)
+    with warning display (suppressible by -q command qualifier).  [C. Spieler]
+
+6.00h02 (16 Apr 09):
+ - extract.c: fixed evaluation sequence of check expression by adding correct
+    pairs of parentheses.  [EG, SMS]
+ - unix/configure: added working check for lchmod.  [SMS]
+ - unzip.c: added compile option display for MBCS support.  [Chr. Spieler]
+ - unzpriv.h, unix/unxcfg.h, win32/w32cfg.h: the new preprocessor symbol
+    NO_MBCS allows to explicitely disable MBCS support.  [Chr. Spieler]
+ - INSTALL: documented _MBCS and NO_MBCS preprocessor symbols.  [Chr. Spieler]
+ - unix/configure: added checks for MBCS support.  [Chr. Spieler]
+
+6.00h03 (17 Apr 09):
+ - unzpriv.h: added missing OF() macro to uzmbclen() prototype.  [SMS]
+ - man/*.1: changed revision info to intended release date.  [Chr. Spieler]
+
+6.00 (20 Apr 09):
+ - unzpriv.h, fileio.c: removed superfluous "define indirection" zlstat,
+    link attributes do never ever need 64-bit treatment.  [Chr. Spieler]
+ - man/unzip.1, ToDo: added remark to DECRYPTION section on still missing
+    support for UTF-8 encoded passwords on systems like Windows, that are
+    Unicode-aware without using UTF-8 as native character encoding; added
+    ToDo note about fixing UTF-8 password handling in the next release.
+    [Chr. Spieler]
+ - updated release dates (History.600, README, unzvers.h, all man pages),
+    changed all relevant files from BETA into release state.  [Chr. Spieler]
+
 ==================
 
-These changes occurred in beta versions 6.00a to 6.00e.  This list may have
+These changes occurred in beta versions 6.00a to 6.00.  This list may have
 left out some bugfixes and even some features...void where prohibited, your
 mileage may vary, etc., etc.

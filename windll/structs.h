@@ -72,7 +72,7 @@ typedef int (WINAPI DLLSERVICE_I32) (LPCSTR entryname,
 #endif /* DEFINED_ONCE */
 
 typedef void (WINAPI DLLSND) (void);
-typedef int (WINAPI DLLREPLACE) (LPSTR efnam);
+typedef int (WINAPI DLLREPLACE) (LPSTR efnam, unsigned efbufsiz);
 #ifdef Z_UINT8_DEFINED
 typedef void (WINAPI DLLMESSAGE) (z_uint8 ucsize, z_uint8 csize,
     unsigned cfactor,
@@ -124,7 +124,7 @@ typedef struct {
 /* The following symbol UZ_DCL_STRUCTVER must be incremented whenever an
  * incompatible change is applied to the WinDLL API structure "DCL" !
  */
-#define UZ_DCL_STRUCTVER        6
+#define UZ_DCL_STRUCTVER        0x600
 /* The structure "DCL" is collects most the UnZip WinDLL program options
  * that control the operation of the main UnZip WinDLL function.
  */

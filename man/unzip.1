@@ -20,12 +20,12 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "20 January 2009 (v6.0)" "Info-ZIP"
+.TH UNZIP 1L "20 April 2009 (v6.0)" "Info-ZIP"
 .SH NAME
 unzip \- list, test and extract compressed files in a ZIP archive
 .PD
 .SH SYNOPSIS
-\fBunzip\fP [\fB\-Z\fP] [\fB\-cflptTuvz\fP[\fBabjnoqsCDKLMUVWX$/:\fP]]
+\fBunzip\fP [\fB\-Z\fP] [\fB\-cflptTuvz\fP[\fBabjnoqsCDKLMUVWX$/:^\fP]]
 \fIfile\fP[\fI.zip\fP] [\fIfile(s)\fP\ .\|.\|.]
 [\fB\-x\fP\ \fIxfile(s)\fP\ .\|.\|.] [\fB\-d\fP\ \fIexdir\fP]
 .PD
@@ -467,20 +467,21 @@ For systems allowing `/' as regular filename character, the -W option
 would not work as expected on a wildcard zipfile specification.)
 .TP
 .B \-X
-[VMS, Unix, OS/2, NT] restore owner/protection info (UICs) under VMS, or user
-and group info (UID/GID) under Unix, or access control lists (ACLs) under
-certain network-enabled versions of OS/2 (Warp Server with IBM LAN
-Server/Requester 3.0 to 5.0; Warp Connect with IBM Peer 1.0), or security ACLs
-under Windows NT.  In most cases this will require special system privileges,
-and doubling the option (\fB\-XX\fP) under NT instructs \fIunzip\fP to use
-privileges for extraction; but under Unix, for example, a user who belongs to
-several groups can restore files owned by any of those groups, as long as the
-user IDs match his or her own.  Note that ordinary file attributes are always
-restored--this option applies only to optional, extra ownership info available
-on some operating systems.  [NT's access control lists do not appear to be
-especially compatible with OS/2's, so no attempt is made at cross-platform
-portability of access privileges.  It is not clear under what conditions this
-would ever be useful anyway.]
+[VMS, Unix, OS/2, NT, Tandem] restore owner/protection info (UICs and ACL
+entries) under VMS, or user and group info (UID/GID) under Unix, or access
+control lists (ACLs) under certain network-enabled versions of OS/2
+(Warp Server with IBM LAN Server/Requester 3.0 to 5.0; Warp Connect with
+IBM Peer 1.0), or security ACLs under Windows NT.  In most cases this will
+require special system privileges, and doubling the option (\fB\-XX\fP)
+under NT instructs \fIunzip\fP to use privileges for extraction; but under
+Unix, for example, a user who belongs to several groups can restore files
+owned by any of those groups, as long as the user IDs match his or her own.
+Note that ordinary file attributes are always restored--this option applies
+only to optional, extra ownership info available on some operating systems.
+[NT's access control lists do not appear to be especially compatible with
+OS/2's, so no attempt is made at cross-platform portability of access
+privileges.  It is not clear under what conditions this would ever be
+useful anyway.]
 .TP
 .B \-Y
 [VMS] treat archived file name endings of ``.nnn'' (where ``nnn'' is a
@@ -655,17 +656,24 @@ and extraction errors, as noted above.)
 Archives encrypted with 8-bit passwords (for example, passwords with accented
 European characters) may not be portable across systems and/or other
 archivers.  This problem stems from the use of multiple encoding methods for
-such characters, including Latin-1 (ISO 8859-1) and OEM code page 850.  DOS
-\fIPKZIP\fP 2.04g uses the OEM code page; Windows \fIPKZIP\fP 2.50 uses
-Latin-1 (and is therefore incompatible with DOS \fIPKZIP\fP); Info-ZIP uses
-the OEM code page on DOS, OS/2 and Win3.x ports but Latin-1 everywhere
-else; and Nico Mak's \fIWinZip\fP 6.x does not allow 8-bit passwords at all.
-\fIUnZip\fP 5.3 (or newer) attempts to use the default character set first
-(e.g., Latin-1), followed by the alternate one (e.g., OEM code page) to test
-passwords.  On EBCDIC systems, if both of these fail, EBCDIC encoding will
-be tested as a last resort.  (EBCDIC is not tested on non-EBCDIC systems,
-because there are no known archivers that encrypt using EBCDIC encoding.)
-ISO character encodings other than Latin-1 are not supported.
+such characters, including Latin-1 (ISO 8859-1) and OEM code page 850.
+DOS \fIPKZIP\fP 2.04g uses the OEM code page; Windows \fIPKZIP\fP 2.50
+uses Latin-1 (and is therefore incompatible with DOS \fIPKZIP\fP); Info-ZIP
+uses the OEM code page on DOS, OS/2 and Win3.x ports but ISO coding
+(Latin-1 etc.) everywhere else; and Nico Mak's \fIWinZip\fP 6.x does not
+allow 8-bit passwords at all.  \fIUnZip\fP 5.3 (or newer) attempts to use
+the default character set first (e.g., Latin-1), followed by the alternate
+one (e.g., OEM code page) to test passwords.  On EBCDIC systems, if both
+of these fail, EBCDIC encoding will be tested as a last resort.  (EBCDIC is
+not tested on non-EBCDIC systems, because there are no known archivers
+that encrypt using EBCDIC encoding.)  ISO character encodings other than
+Latin-1 are not supported.  The new addition of (partially) Unicode (resp.
+UTF-8) support in \fIUnZip\fP 6.0 has not yet been adapted to the encryption
+password handling in \fIunzip\fP.  On systems that use UTF-8 as native
+character encoding, \fIunzip\fP simply tries decryption with the native
+UTF-8 encoded password; the built-in attempts to check the password in
+translated encoding have not yet been adapted for UTF-8 support and
+will consequently fail.
 .PD
 .\" =========================================================================
 .SH EXAMPLES
@@ -1027,6 +1035,6 @@ Info-ZIP (Zip-Bugs subgroup, SPC)
 Info-ZIP (Zip-Bugs subgroup, SPC)
 .IP "v5.52\t28 Feb 05"
 Info-ZIP (Zip-Bugs subgroup, SPC)
-.IP "v6.0\t20 Jan 09"
+.IP "v6.0\t20 Apr 09"
 Info-ZIP (Zip-Bugs subgroup, SPC)
 .PD

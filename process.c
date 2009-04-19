@@ -913,10 +913,10 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
             CLOSE_INFILE();
             return PK_ERR;  /* file may be locked, or possibly disk error(?) */
         }
-        if (strncmp(G.sig, central_hdr_sig, 4))
+        if (memcmp(G.sig, central_hdr_sig, 4))
 #else
         if ((error != PK_OK) || (readbuf(__G__ G.sig, 4) == 0) ||
-            strncmp(G.sig, central_hdr_sig, 4))
+            memcmp(G.sig, central_hdr_sig, 4))
 #endif
         {
 #ifndef SFX
@@ -926,7 +926,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
             G.extra_bytes = 0;
             error = seek_zipf(__G__ G.ecrec.offset_start_central_directory);
             if ((error != PK_OK) || (readbuf(__G__ G.sig, 4) == 0) ||
-                strncmp(G.sig, central_hdr_sig, 4))
+                memcmp(G.sig, central_hdr_sig, 4))
             {
                 if (error != PK_BADERR)
                   Info(slide, 0x401, ((char *)slide,
@@ -1146,7 +1146,7 @@ static int rec_find(__G__ searchlen, signature, rec_size)
              G.inptr >= G.inbuf;
              --G.inptr) {
             if ( (*G.inptr == (uch)0x50) &&         /* ASCII 'P' */
-                 !strncmp((char *)G.inptr, signature, 4) ) {
+                 !memcmp((char *)G.inptr, signature, 4) ) {
                 G.incnt -= (int)(G.inptr - G.inbuf);
                 found = TRUE;
                 break;
@@ -1179,7 +1179,7 @@ static int rec_find(__G__ searchlen, signature, rec_size)
 
         for (G.inptr = G.inbuf+INBUFSIZ-1;  G.inptr >= G.inbuf; --G.inptr)
             if ( (*G.inptr == (uch)0x50) &&         /* ASCII 'P' */
-                 !strncmp((char *)G.inptr, signature, 4) ) {
+                 !memcmp((char *)G.inptr, signature, 4) ) {
                 G.incnt -= (int)(G.inptr - G.inbuf);
                 found = TRUE;
                 break;
@@ -1257,7 +1257,7 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
       return PK_ERR;
     }
 
-    if (strncmp((char *)byterecL, end_centloc64_sig, 4) ) {
+    if (memcmp((char *)byterecL, end_centloc64_sig, 4) ) {
       /* not found */
       return PK_COOL;
     }
@@ -1324,7 +1324,7 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
       return PK_ERR;
     }
 
-    if (strncmp((char *)byterec, end_central64_sig, 4) ) {
+    if (memcmp((char *)byterec, end_central64_sig, 4) ) {
       /* Zip64 EOCD Record not found */
       /* Since we already have seen the Zip64 EOCD Locator, it's
          possible we got here because there are bytes prepended
@@ -1349,7 +1349,7 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
         return PK_ERR;
       }
 
-      if (strncmp((char *)byterec, end_central64_sig, 4) ) {
+      if (memcmp((char *)byterec, end_central64_sig, 4) ) {
         /* Zip64 EOCD Record not found */
         /* Probably something not so easy to handle so exit */
         if (uO.qflag || uO.zipinfo_mode)
@@ -1469,7 +1469,7 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
                  G.inptr >= G.inbuf;
                  --G.inptr) {
                 if ( (*G.inptr == (uch)0x50) &&         /* ASCII 'P' */
-                     !strncmp((char *)G.inptr, end_central_sig, 4)) {
+                     !memcmp((char *)G.inptr, end_central_sig, 4)) {
                     G.incnt -= (int)(G.inptr - G.inbuf);
                     found = TRUE;
                     break;
@@ -1743,6 +1743,13 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
        deciding which kind of codepage conversion has to be applied to
        strings (see do_string() function in fileio.c) */
     G.pInfo->HasUxAtt = (G.crec.external_file_attributes & 0xffff0000L) != 0L;
+
+#ifdef UNICODE_SUPPORT
+    /* remember the state of GPB11 (General Purpuse Bit 11) which indicates
+       that the standard path and comment are UTF-8. */
+    G.pInfo->GPFIsUTF8
+        = (G.crec.general_purpose_bit_flag & (1 << 11)) == (1 << 11);
+#endif
 
     return PK_COOL;
 
@@ -2160,7 +2167,7 @@ static int utf8_from_ucs4_char(utf8buf, ch)
   int tch = ch;
   int ret;
 
-  if (ch > 0x7FFFFFFF)
+  if (ch > 0x7FFFFFFFL)
     return -1;                /* UTF-8 can represent 31 bits */
   if (ch < 0x7F)
   {
@@ -2339,16 +2346,14 @@ char *wide_to_escape_string(wide_char)
 {
   int i;
   zwchar w = wide_char;
-  uch b[4];
+  uch b[sizeof(zwchar)];
   char d[3];
   char e[11];
   int len;
   char *r;
 
   /* fill byte array with zeros */
-  for (len = 0; len < 5; len++) {
-    b[len] = 0;
-  }
+  memzero(b, sizeof(zwchar));
   /* get bytes in right to left order */
   for (len = 0; w; len++) {
     b[len] = (char)(w % 0x100);

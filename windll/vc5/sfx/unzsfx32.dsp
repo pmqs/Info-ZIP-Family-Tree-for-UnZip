@@ -170,11 +170,6 @@ SOURCE=..\..\..\ubz2err.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\windll\unzsfx32.def
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\win32\win32.c
 # End Source File
 # Begin Source File

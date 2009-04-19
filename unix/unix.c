@@ -1773,7 +1773,7 @@ static ush SH(ush val)
 static ulg LG(ulg val)
 {
     /*  convert the big-endian unsigned long number `val' to the machine
-     *  dependant representation
+     *  dependent representation
      */
     ush swapbuf[2];
 

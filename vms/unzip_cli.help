@@ -367,8 +367,8 @@ operations even more quiet.
 Selects restoration options for some meta-data.
 The optional keywords recognized are:
 <LITERAL>
-|  OWNER_PROT    Restore file owner and protection settings.
-|  NOOWNER_PROT  Do not restore file owner and protection settings.
+|  OWNER_PROT    Restore file owner and ACL protection settings.
+|  NOOWNER_PROT  Do not restore file owner and ACL protection settings.
 |  NODATE        Do not restore any timestamps.
 |  DATE=ALL      Restore timestamps for all extracted entries, files
 |                and directories.
@@ -570,7 +570,7 @@ options and modifiers can be provided:
 |  -P<password> supply decryption password on the cmd line (insecure!)
 |  -S   use Stream_LF record format to extract text files (with -a[a])
 |  -V   retain (VMS) file version numbers
-|  -X   restore owner/protection info (may require privileges)
+|  -X   restore owner/ACL protection info (may require privileges)
 |  -Y   treat ".nnn" suffix as version number ("a.b.3" -> "a.b;3")
 |  -:   allow "../" path components to traverse across top extract dir
 |  -2   force creation of ODS2-compatible file names

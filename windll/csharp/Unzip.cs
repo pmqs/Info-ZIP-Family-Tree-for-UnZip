@@ -94,6 +94,13 @@ namespace CSharpInfoZip_UnZipSample
     {
     }
 
+    #region Constants
+    // Current version of the DCLIST interface structure, must be matched
+    // with the UZ_DCL_STRUCTVER constant as defined in the struct.h header
+    // from the UnZip WinDLL code.
+    private const uint uz_dcl_StructVer = 0x600;
+    #endregion
+
     #region Private Vars
 
     private ulong m_ZipFileSize;
@@ -205,9 +212,6 @@ namespace CSharpInfoZip_UnZipSample
       public short cchComment;                          //Flag If Archive Has A Comment!
     }
 
-    #endregion
-
-    #region Constants
     #endregion
 
     #region DLL Function Declares
@@ -404,7 +408,7 @@ namespace CSharpInfoZip_UnZipSample
                                                  [MarshalAs(UnmanagedType.LPStr)]String entryname);
 
     //Callback For UNZIP32.DLL - Replace Function To Overwrite Files
-    protected delegate int UZDLLReplaceCallback(ref UNZIPCBCh fname);
+    protected delegate int UZDLLReplaceCallback(ref UNZIPCBCh fname, uint fnbufsiz);
 
     #endregion
 
@@ -498,7 +502,8 @@ namespace CSharpInfoZip_UnZipSample
                                ulong ucsize)
     {
       //Raise this event
-      UnZipDLLServiceMessageEventArgs e = new UnZipDLLServiceMessageEventArgs(m_ZipFileSize, fname, unchecked(ucsize));
+      UnZipDLLServiceMessageEventArgs e =
+          new UnZipDLLServiceMessageEventArgs(m_ZipFileSize, fname, unchecked(ucsize));
       OnReceiveServiceMessage (e);
 
       return m_Stop;
@@ -508,10 +513,18 @@ namespace CSharpInfoZip_UnZipSample
                         [MarshalAs(UnmanagedType.LPStr)]String msg,
                         [MarshalAs(UnmanagedType.LPStr)]String entryname)
     {
-      if (m_Password == null | m_Password == string.Empty) return 1;
+      if (m_Password == null | m_Password == string.Empty) return -1;
+
+      if (m_Password.Length >= bufsize)
+      {
+        MessageBox.Show("Length of supplied password exceeds available pw buffer size "
+                    + bufsize.ToString() + "!", "Password Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return 5;  // IZ_PW_ERROR
+      }
 
       //clear the byte array
-      for (int i = 0; i <= bufsize-1; i ++)
+      for (int i = 0; i < bufsize; i ++)
         pwd.ch[i] = 0;
 
       m_EncodingANSI.GetBytes(m_Password, 0, m_Password.Length, pwd.ch, 0);
@@ -519,13 +532,14 @@ namespace CSharpInfoZip_UnZipSample
       return 0;
     }
 
-    protected int UZDLLReplace(ref UNZIPCBCh fname)
+    protected int UZDLLReplace(ref UNZIPCBCh fname, uint fnbufsiz)
     {
       ReplaceFileOptionsEnum ReplaceFileOption = ReplaceFileOptionsEnum.ReplaceNo; //Default
       string s = string.Empty;
       int i = 0;
 
-      for (i = 0; i <= fname.ch.Length; i++)
+      if (fnbufsiz > fname.ch.Length) fnbufsiz = (uint)fname.ch.Length;
+      for (i = 0; i < fnbufsiz; i++)
         if (fname.ch[i] == 0) break;
       s = m_EncodingANSI.GetString(fname.ch, 0, i);
 
@@ -563,10 +577,10 @@ namespace CSharpInfoZip_UnZipSample
       //The zip file size, in bytes, is stored in the m_ZipFileSize variable.
       //m_ZipFileCount is the number of files in the zip.  This information
       //is useful for some sort of progress information during unzipping.
-      GetZipFileSizeAndCount();
+      if (!GetZipFileSizeAndCount()) return ret;
 
       DCLIST dclist = new DCLIST();
-      dclist.StructVersID = 6;          // Current version of this structure
+      dclist.StructVersID = uz_dcl_StructVer;   // Current version of this structure
       dclist.ExtractOnlyNewer = ConvertEnumToInt(m_ExtractOnlyNewer);
       dclist.SpaceToUnderscore = ConvertEnumToInt(m_SpaceToUnderScore);
       dclist.PromptToOverwrite = ConvertEnumToInt(m_PromptToOverWrite);
@@ -606,11 +620,12 @@ namespace CSharpInfoZip_UnZipSample
       return ret;
     }
 
-    public void GetZipFileSizeAndCount(ref ulong size, ref ulong fileCount)
+    public bool GetZipFileSizeAndCount(ref ulong size, ref ulong fileCount)
     {
-      GetZipFileSizeAndCount();
+      if (!GetZipFileSizeAndCount()) return false;
       size = m_ZipFileSize;
       fileCount = m_ZipFileCount;
+      return true;
     }
 
     public ZipFileEntries GetZipFileContents ()
@@ -618,7 +633,7 @@ namespace CSharpInfoZip_UnZipSample
       int ret = 0;
 
       DCLIST dclist = new DCLIST();
-      dclist.StructVersID = 6;
+      dclist.StructVersID = uz_dcl_StructVer;
       dclist.nvflag = ConvertEnumToInt(ExtractOrListEnum.ListContents);
       dclist.Zip = m_ZipFileName;
 
@@ -716,12 +731,12 @@ namespace CSharpInfoZip_UnZipSample
       return Convert.ToInt32(obj);
     }
 
-    private void GetZipFileSizeAndCount()
+    private bool GetZipFileSizeAndCount()
     {
       int ret = 0;
 
       DCLIST dclist = new DCLIST();
-      dclist.StructVersID = 6;          // Current version of this structure
+      dclist.StructVersID = uz_dcl_StructVer;   // Current version of this structure
       dclist.nvflag = ConvertEnumToInt(ExtractOrListEnum.ListContents);
       dclist.Zip = m_ZipFileName;
       dclist.ExtractDir = m_ExtractionDirectory;
@@ -734,6 +749,8 @@ namespace CSharpInfoZip_UnZipSample
 
       ret = Wiz_SingleEntryUnzip(m_FilesToUnzip.Length, m_FilesToUnzip, m_FilesToExclude.Length,
                                  m_FilesToExclude, ref dclist, ref uf);
+
+      return (ret == 0);
     }
 
 

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -27,8 +27,11 @@
 #endif
 
 /* enable multibyte character set support by default */
-#ifndef _MBCS
+#if (!defined(_MBCS) && !defined(NO_MBCS))
 #  define _MBCS
+#endif
+#if (defined(_MBCS) && defined(NO_MBCS))
+#  undef _MBCS
 #endif
 #if (defined(__CYGWIN__) && defined(_MBCS))
 #  undef _MBCS                  /* Cygwin RTL lacks support for __mb_cur_max */
@@ -98,8 +101,8 @@
 #define GOT_UTIMBUF
 
 #ifdef _MBCS
-#  if (!defined(__EMX__) && !defined(__MINGW32__) && !defined(__CYGWIN__))
-#  if (!defined(__DJGPP__))
+#  if (!defined(__EMX__) && !defined(__DJGPP__) && !defined(__CYGWIN__))
+#  if (!defined(__MINGW32__) || defined(__MSVCRT__))
 #    include <stdlib.h>
 #    include <mbstring.h>
      /* for MSC (and compatible compilers), use routines supplied by RTL */
@@ -218,6 +221,19 @@
 #endif
 #ifdef UTF8_MAYBE_NATIVE
 #  undef UTF8_MAYBE_NATIVE      /* UTF-8 cannot be system charset on WIN32 */
+#endif
+
+/* The following compiler systems provide or use a runtime library with a
+ * locale-aware isprint() implementation.  For these systems, the "enhanced"
+ * unprintable charcode detection in fnfilter() gets enabled.
+ */
+#if (!defined(HAVE_WORKING_ISPRINT) && !defined(NO_WORKING_ISPRINT))
+#  if defined(MSC) || defined(__BORLANDC__)
+#    define HAVE_WORKING_ISPRINT
+#  endif
+#  if defined(__MINGW32__) && defined(__MSVCRT__)
+#    define HAVE_WORKING_ISPRINT
+#  endif
 #endif
 
 /* WIN32 runs solely on little-endian processors; enable support

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -13,8 +13,8 @@
   This module supplies an UnZip engine for use directly from C/C++
   programs.  The functions are:
 
-    UzpVer *UzpVersion(void);
-    void UzpVersion2(UzpVer2 *version)
+    ZCONST UzpVer *UzpVersion(void);
+    unsigned UzpVersion2(UzpVer2 *version)
     int UzpMain(int argc, char *argv[]);
     int UzpAltMain(int argc, char *argv[], UzpInit *init);
     int UzpValidate(char *archive, int AllCodes);
@@ -63,53 +63,64 @@ jmp_buf dll_error_return;
   ---------------------------------------------------------------------------*/
 
 
-UzpVer * UZ_EXP UzpVersion()   /* should be pointer to const struct */
+ZCONST UzpVer * UZ_EXP UzpVersion()     /* returns pointer to const struct */
 {
-    static UzpVer version;     /* doesn't change between calls */
-
-
-    version.structlen = UZPVER_LEN;
-
+    static ZCONST UzpVer version = {    /* doesn't change between calls */
+        /* structure size */
+        UZPVER_LEN,
+        /* version flags */
 #ifdef BETA
-    version.flag = 1;
+# ifdef ZLIB_VERSION
+        3,
+# else
+        1,
+# endif
 #else
-    version.flag = 0;
+# ifdef ZLIB_VERSION
+        2,
+# else
+        0,
+# endif
 #endif
-    version.betalevel = UZ_BETALEVEL;
-    version.date = UZ_VERSION_DATE;
-
+        /* betalevel and date strings */
+        UZ_BETALEVEL, UZ_VERSION_DATE,
+        /* zlib_version string */
 #ifdef ZLIB_VERSION
-    version.zlib_version = ZLIB_VERSION;
-    version.flag |= 2;
+        ZLIB_VERSION,
 #else
-    version.zlib_version = NULL;
+        NULL,
 #endif
-
-    /* someday each of these may have a separate patchlevel: */
-    version.unzip.major = UZ_MAJORVER;
-    version.unzip.minor = UZ_MINORVER;
-    version.unzip.patchlevel = UZ_PATCHLEVEL;
-
-    version.zipinfo.major = ZI_MAJORVER;
-    version.zipinfo.minor = ZI_MINORVER;
-    version.zipinfo.patchlevel = UZ_PATCHLEVEL;
-
-    /* these are retained for backward compatibility only: */
-    version.os2dll.major = UZ_MAJORVER;
-    version.os2dll.minor = UZ_MINORVER;
-    version.os2dll.patchlevel = UZ_PATCHLEVEL;
-
-    version.windll.major = UZ_MAJORVER;
-    version.windll.minor = UZ_MINORVER;
-    version.windll.patchlevel = UZ_PATCHLEVEL;
+        /*== someday each of these may have a separate patchlevel: ==*/
+        /* unzip version */
+        {UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, 0},
+        /* zipinfo version */
+        {ZI_MAJORVER, ZI_MINORVER, UZ_PATCHLEVEL, 0},
+        /* os2dll version (retained for backward compatibility) */
+        {UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, 0},
+        /* windll version (retained for backward compatibility)*/
+        {UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, 0},
+#ifdef OS2DLL
+        /* os2dll API minimum compatible version*/
+        {UZ_OS2API_COMP_MAJOR, UZ_OS2API_COMP_MINOR, UZ_OS2API_COMP_REVIS, 0}
+#else /* !OS2DLL */
+#ifdef WINDLL
+        /* windll API minimum compatible version*/
+        {UZ_WINAPI_COMP_MAJOR, UZ_WINAPI_COMP_MINOR, UZ_WINAPI_COMP_REVIS, 0}
+#else /* !WINDLL */
+        /* generic DLL API minimum compatible version*/
+        {UZ_GENAPI_COMP_MAJOR, UZ_GENAPI_COMP_MINOR, UZ_GENAPI_COMP_REVIS, 0}
+#endif /* ?WINDLL */
+#endif /* ?OS2DLL */
+    };
 
     return &version;
 }
 
-void UZ_EXP UzpVersion2(UzpVer2 *version)
+unsigned UZ_EXP UzpVersion2(UzpVer2 *version)
 {
 
-    version->structlen = UZPVER_LEN;
+    if (version->structlen != sizeof(UzpVer2))
+        return sizeof(UzpVer2);
 
 #ifdef BETA
     version->flag = 1;
@@ -148,6 +159,26 @@ void UZ_EXP UzpVersion2(UzpVer2 *version)
     version->windll.major = UZ_MAJORVER;
     version->windll.minor = UZ_MINORVER;
     version->windll.patchlevel = UZ_PATCHLEVEL;
+
+#ifdef OS2DLL
+    /* os2dll API minimum compatible version*/
+    version->dllapimin.major = UZ_OS2API_COMP_MAJOR;
+    version->dllapimin.minor = UZ_OS2API_COMP_MINOR;
+    version->dllapimin.patchlevel = UZ_OS2API_COMP_REVIS;
+#else /* !OS2DLL */
+#ifdef WINDLL
+    /* windll API minimum compatible version*/
+    version->dllapimin.major = UZ_WINAPI_COMP_MAJOR;
+    version->dllapimin.minor = UZ_WINAPI_COMP_MINOR;
+    version->dllapimin.patchlevel = UZ_WINAPI_COMP_REVIS;
+#else /* !WINDLL */
+    /* generic DLL API minimum compatible version*/
+    version->dllapimin.major = UZ_GENAPI_COMP_MAJOR;
+    version->dllapimin.minor = UZ_GENAPI_COMP_MINOR;
+    version->dllapimin.patchlevel = UZ_GENAPI_COMP_REVIS;
+#endif /* ?WINDLL */
+#endif /* ?OS2DLL */
+    return 0;
 }
 
 
@@ -493,7 +524,7 @@ int close_redirect(__G)
 
    Parameters: archive  = archive name
                file     = file contained in the archive. This cannot be
-                          a wild card to be meaningful
+                          a wildcard to be meaningful
                pattern  = string to search for
                cmd      = 0 - case-insensitive search
                           1 - case-sensitve search

@@ -1,8 +1,4 @@
-This is a beta release of UnZip, version 6.00f,  2009 January 11
-
-        DO NOT DISTRIBUTE THIS ARCHIVE FOR PRODUCTION USE!!
-______________________ Cut here for public release _______________________
-This is the README file for the 20 January 2009 public release of the
+This is the README file for the 20 April 2009 public release of the
 Info-ZIP group's portable UnZip zipfile-extraction program (and related
 utilities).
 
@@ -84,6 +80,8 @@ Major changes are:
    - On Unix, allow extracted filenames to contain embedded control characters
      when explicitly requested by specifying the new command line option "-^".
    - On Unix, support restoration of symbolic link attributes.
+   - On Unix, support restoration of 32-bit UID/GID data using the new "ux"
+     IZUNIX3 extra field introduced with Zip 3.0.
    - Support for ODS5 extended filename syntax on new OpenVMS systems.
    - Support symbolic links zipped up on VMS.
    - On VMS (only 8.x or better), support symbolic link creation.

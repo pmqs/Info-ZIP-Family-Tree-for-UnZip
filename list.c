@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -163,7 +163,7 @@ int list_files(__G)    /* return PK-type error code */
 
         if (readbuf(__G__ G.sig, 4) == 0)
             return PK_EOF;
-        if (strncmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
+        if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
             /* no new central directory entry
              * -> is the number of processed entries compatible with the
              *    number of entries as stored in the end_central record?
@@ -500,12 +500,12 @@ int list_files(__G)    /* return PK-type error code */
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
 
-        if ( (strncmp(G.sig,
-                      (G.ecrec.have_ecr64 ?
-                       end_central64_sig : end_central_sig),
-                      4) != 0)
+        if ( (memcmp(G.sig,
+                     (G.ecrec.have_ecr64 ?
+                      end_central64_sig : end_central_sig),
+                     4) != 0)
             && (!G.ecrec.is_zip64_archive)
-            && (strncmp(G.sig, end_central_sig, 4) != 0)
+            && (memcmp(G.sig, end_central_sig, 4) != 0)
            ) {          /* just to make sure again */
             Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
             error_in_archive = PK_WARN;   /* didn't find sig */
@@ -579,7 +579,7 @@ int get_time_stamp(__G__ last_modtime, nmember)  /* return PK-type error code */
 
         if (readbuf(__G__ G.sig, 4) == 0)
             return PK_EOF;
-        if (strncmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
+        if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
             if (((unsigned)(j - 1) & (unsigned)0xFFFF) ==
                 (unsigned)G.ecrec.total_entries_central_dir) {
                 /* "j modulus 64k" matches the reported 16-bit-unsigned
@@ -673,7 +673,7 @@ int get_time_stamp(__G__ last_modtime, nmember)  /* return PK-type error code */
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
 
-    if (strncmp(G.sig, end_central_sig, 4)) {   /* just to make sure again */
+    if (memcmp(G.sig, end_central_sig, 4)) {    /* just to make sure again */
         Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
         error_in_archive = PK_WARN;
     }

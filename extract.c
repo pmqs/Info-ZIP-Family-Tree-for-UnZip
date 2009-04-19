@@ -161,6 +161,12 @@ static ZCONST char Far FilNamMsg[] =
      "%s:  mismatching \"local\" filename (%s),\n\
          continuing with \"central\" filename version\n";
 #endif /* !SFX */
+#if (!defined(SFX) && defined(UNICODE_SUPPORT))
+   static ZCONST char Far GP11FlagsDiffer[] =
+     "file #%lu (%s):\n\
+         mismatch between local and central GPF bit 11 (\"UTF-8\"),\n\
+         continuing with central flag (IsUTF8 = %d)\n";
+#endif /* !SFX && UNICODE_SUPPORT */
 static ZCONST char Far WrnStorUCSizCSizDiff[] =
   "%s:  ucsize %s <> csize %s for STORED entry\n\
          continuing with \"compressed\" size value\n";
@@ -440,7 +446,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
-            if (strncmp(G.sig, central_hdr_sig, 4)) {  /* is it a new entry? */
+            if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a new entry? */
                 /* no new central directory entry
                  * -> is the number of processed entries compatible with the
                  *    number of entries as stored in the end_central record?
@@ -452,12 +458,12 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     /* yes, so look if we ARE back at the end_central record
                      */
                     no_endsig_found =
-                      ( (strncmp(G.sig,
-                                 (G.ecrec.have_ecr64 ?
-                                  end_central64_sig : end_central_sig),
-                                 4) != 0)
+                      ( (memcmp(G.sig,
+                                (G.ecrec.have_ecr64 ?
+                                 end_central64_sig : end_central_sig),
+                                4) != 0)
                        && (!G.ecrec.is_zip64_archive)
-                       && (strncmp(G.sig, end_central_sig, 4) != 0)
+                       && (memcmp(G.sig, end_central_sig, 4) != 0)
                       );
 #endif /* !SFX */
                 } else {
@@ -1125,7 +1131,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
             error_in_archive = PK_BADERR;
             continue;   /* but can still try next one */
         }
-        if (strncmp(G.sig, local_hdr_sig, 4)) {
+        if (memcmp(G.sig, local_hdr_sig, 4)) {
             Info(slide, 0x401, ((char *)slide, LoadFarString(OffsetMsg),
               *pfilnum, LoadFarStringSmall(LocalHdrSig), (long)request));
             /*
@@ -1151,7 +1157,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
                     error_in_archive = PK_BADERR;
                     continue;   /* but can still try next one */
                 }
-                if (strncmp(G.sig, local_hdr_sig, 4)) {
+                if (memcmp(G.sig, local_hdr_sig, 4)) {
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OffsetMsg), *pfilnum,
                       LoadFarStringSmall(LocalHdrSig), (long)request));
@@ -1167,6 +1173,27 @@ static int extract_or_test_entrylist(__G__ numchunk,
             error_in_archive = error;   /* only PK_EOF defined */
             continue;   /* can still try next one */
         }
+#if (!defined(SFX) && defined(UNICODE_SUPPORT))
+        if (((G.lrec.general_purpose_bit_flag & (1 << 11)) == (1 << 11))
+            != (G.pInfo->GPFIsUTF8 != 0)) {
+            if (QCOND2) {
+#  ifdef SMALL_MEM
+                char *temp_cfilnam = slide + (7 * (WSIZE>>3));
+
+                zfstrcpy((char Far *)temp_cfilnam, G.pInfo->cfilname);
+#    define  cFile_PrintBuf  temp_cfilnam
+#  else
+#    define  cFile_PrintBuf  G.pInfo->cfilname
+#  endif
+                Info(slide, 0x421, ((char *)slide,
+                  LoadFarStringSmall2(GP11FlagsDiffer),
+                  *pfilnum, FnFilter1(cFile_PrintBuf), G.pInfo->GPFIsUTF8));
+#  undef    cFile_PrintBuf
+            }
+            if (error_in_archive < PK_WARN)
+                error_in_archive = PK_WARN;
+        }
+#endif /* !SFX && UNICODE_SUPPORT */
         if ((error = do_string(__G__ G.lrec.filename_length, DS_FN_L)) !=
              PK_COOL)
         {
@@ -1435,7 +1462,7 @@ startover:
             if (query) {
 #ifdef WINDLL
                 switch (G.lpUserFunctions->replace != NULL ?
-                        (*G.lpUserFunctions->replace)(G.filename) :
+                        (*G.lpUserFunctions->replace)(G.filename, FILNAMSIZ) :
                         IDM_REPLACE_NONE) {
                     case IDM_REPLACE_RENAME:
                         _ISO_INTERN(G.filename);
@@ -2558,12 +2585,44 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
             }
         } else
 #endif
+#ifdef HAVE_WORKING_ISPRINT
+# ifndef UZ_FNFILTER_REPLACECHAR
+    /* A convenient choice for the replacement of unprintable char codes is
+     * the "single char wildcard", as this character is quite unlikely to
+     * appear in filenames by itself.  The following default definition
+     * sets the replacement char to a question mark as the most common
+     * "single char wildcard"; this setting should be overridden in the
+     * appropiate system-specific configuration header when needed.
+     */
+#   define UZ_FNFILTER_REPLACECHAR      '?'
+# endif
+        if (!isprint(*r)) {
+            if (*r < 32) {
+                /* ASCII control codes are escaped as "^{letter}". */
+                if (se != NULL && (s > (space + (size-4)))) {
+                    have_overflow = TRUE;
+                    break;
+                }
+                *s++ = '^', *s++ = (uch)(64 + *r++);
+            } else {
+                /* Other unprintable codes are replaced by the
+                 * placeholder character. */
+                if (se != NULL && (s > (space + (size-3)))) {
+                    have_overflow = TRUE;
+                    break;
+                }
+                *s++ = UZ_FNFILTER_REPLACECHAR;
+                INCSTR(r);
+            }
+#else /* !HAVE_WORKING_ISPRINT */
         if (*r < 32) {
+            /* ASCII control codes are escaped as "^{letter}". */
             if (se != NULL && (s > (space + (size-4)))) {
                 have_overflow = TRUE;
                 break;
             }
             *s++ = '^', *s++ = (uch)(64 + *r++);
+#endif /* ?HAVE_WORKING_ISPRINT */
         } else {
 #ifdef _MBCS
             unsigned i = CLEN(r);

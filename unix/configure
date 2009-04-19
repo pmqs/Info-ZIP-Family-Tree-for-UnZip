@@ -324,7 +324,7 @@ _EOF_
 # compile it
 $CC -o conftest conftest.c >/dev/null 2>/dev/null
 if [ $? -ne 0 ]; then
-  echo -- no Unicode wchar_t support
+  echo "-- no Unicode (wchar_t) support"
 else
 # have wide char support
 # run it
@@ -338,7 +338,7 @@ else
     echo -- have wchar_t with known UCS encoding - enabling Unicode support!
     CFLAGSR="${CFLAGSR} -DUNICODE_SUPPORT -DUNICODE_WCHAR"
   else
-    echo -- no Unicode support - conftest returned $r
+    echo "-- no Unicode (wchar_t) support - conftest returned $r"
   fi
 fi
 
@@ -358,6 +358,7 @@ if [ $? -eq 0 ]; then
   CFLAGSR="${CFLAGSR} -DUNICODE_SUPPORT -DUTF8_MAYBE_NATIVE"
 else
   echo "-- no Unicode (UTF-8 native) support!"
+  CFLAGSR="${CFLAGSR} -DNO_SETLOCALE"
 fi
 
 # from configure 2.4i (Onno) 12/5/04
@@ -378,13 +379,26 @@ $CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
 
 # Check for missing functions
 # add NO_'function_name' to flags if missing
-for func in fchmod fchown lchmod lchown nl_langinfo
+for func in fchmod fchown lchown nl_langinfo
 do
   echo Check for $func
   echo "int main(){ $func(); return 0; }" > conftest.c
   $CC $BFLAG -o conftest conftest.c >/dev/null 2>/dev/null
   [ $? -ne 0 ] && CFLAGSR="${CFLAGSR} -DNO_`echo $func | tr '[a-z]' '[A-Z]'`"
 done
+
+# Check (seriously) for a working lchmod.
+echo 'Check for lchmod'
+temp_file="/tmp/unzip_test_$$"
+temp_link="link_$$"
+( echo '#include <unistd.h>' ; \
+  echo "int main() { lchmod(\"${temp_file}\", 0666); }" \
+) > conftest.c
+ln -s "${temp_link}" "${temp_file}" && \
+ $CC $BFLAG -o conftest conftest.c >/dev/null 2>/dev/null && \
+ ./conftest
+[ $? -ne 0 ] && CFLAGSR="${CFLAGSR} -DNO_LCHMOD"
+rm -f "${temp_file}"
 
 echo Check for memset
 echo "int main(){ char k; memset(&k,0,0); return 0; }" > conftest.c
@@ -469,6 +483,42 @@ do
    [ $? -eq 0 ] && OPT="-DHAVE_`echo $inc | tr '[a-z]./' '[A-Z]__'`" && break
 done
 CFLAGSR="${CFLAGSR} ${OPT}"
+
+# Check for MBCS support
+echo Check for MBCS support
+cat > conftest.c << _EOF_
+#include <stdlib.h>
+#include <stdio.h>
+#include <wchar.h>
+#ifdef HAVE_MBSTRING_H
+#  include <mbstring.h>
+#endif
+int main()
+{
+  char *tst;
+  tst = "Hallo";
+  return mblen(tst, MB_CUR_MAX);
+}
+_EOF_
+# compile it
+$CC ${CFLAGS} ${CFLAGSR} -o conftest conftest.c >/dev/null 2>/dev/null
+if [ $? -ne 0 ]; then
+  echo "-- no MBCS support"
+  CFLAGSR="${CFLAGSR} -DNO_MBCS"
+else
+#
+  echo "-- have MBCS support"
+  CFLAGSR="${CFLAGSR} -D_MBCS"
+# check for library-supplied functions
+# add FUNCTION_NAME='function_name' to flags if found
+  for func in mbschr mbsrchr
+  do
+    echo Check for MBCS $func
+    echo "int main() { $func(); return 0; }" > conftest.c
+    $CC $BFLAG -o conftest conftest.c >/dev/null 2>/dev/null
+    [ $? -eq 0 ] && CFLAGSR="${CFLAGSR} -D`echo $func | tr '[a-z]' '[A-Z]'`=$func"
+  done
+fi
 
 # needed for AIX (and others ?) when mmap is used
 echo Check for valloc

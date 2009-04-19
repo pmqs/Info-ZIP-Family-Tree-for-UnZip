@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -68,6 +68,16 @@
 
 #ifdef NTSD_EAS
 #undef NTSD_EAS
+#endif
+
+#ifdef _WIN32_WCE
+// Windows CE does not provide the rename() function needed for UNIXBACKUP
+# ifndef NO_UNIXBACKUP
+#  define NO_UNIXBACKUP
+# endif
+# ifdef UNIXBACKUP
+#  undef UNIXBACKUP
+# endif
 #endif
 
 #if (!defined(NO_UNICODE_SUPPORT) && !defined(UNICODE_SUPPORT))
@@ -220,6 +230,30 @@ int getch_win32  OF((void));
 #endif /* ?POCKET_UNZIP */
 
 
+//******************************************************************************
+//***** Global headers
+//******************************************************************************
+
+#include <windows.h>
+#ifndef TIME_ZONE_ID_INVALID
+#  define TIME_ZONE_ID_INVALID  (DWORD)0xFFFFFFFFL
+#endif
+#include <setjmp.h>
+#include <stdlib.h>
+#if defined(_MBCS) && !defined(_WIN32_WCE)
+#include <mbstring.h>
+#endif
+#include <excpt.h>
+#ifndef Cdecl
+#define Cdecl __cdecl
+#endif
+#include "wince/wince.h"     // Our WinCE specific code and our debug function.
+#ifdef POCKET_UNZIP
+#include "wince/resource.h"  // Our resource constants
+#include "wince/punzip.rcv"  // Our version information.
+#endif
+
+
 #ifndef _WIN32_WCE /* native Windows CE does not support 64-bit filesizes */
 
 /* 64-bit-Integers & Large File Support
@@ -285,29 +319,5 @@ int getch_win32  OF((void));
 #endif
 
 #endif /* !_WIN32_WCE */
-
-
-//******************************************************************************
-//***** Global headers
-//******************************************************************************
-
-#include <windows.h>
-#ifndef TIME_ZONE_ID_INVALID
-#  define TIME_ZONE_ID_INVALID  (DWORD)0xFFFFFFFFL
-#endif
-#include <setjmp.h>
-#include <stdlib.h>
-#if defined(_MBCS) && !defined(_WIN32_WCE)
-#include <mbstring.h>
-#endif
-#include <excpt.h>
-#ifndef Cdecl
-#define Cdecl __cdecl
-#endif
-#include "wince/wince.h"     // Our WinCE specific code and our debug function.
-#ifdef POCKET_UNZIP
-#include "wince/resource.h"  // Our resource constants
-#include "wince/punzip.rcv"  // Our version information.
-#endif
 
 #endif /* !__w32cfg_h */

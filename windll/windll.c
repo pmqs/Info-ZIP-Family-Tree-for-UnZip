@@ -142,14 +142,14 @@ static int UnzipAllocMemory(unsigned int i, char *cmd, char *str,
         == NULL)
     {
         if (pargCee != NULL)
-            *pargCee++;
+            (*pargCee)++;
         UnzipFreeArguments(*pargCee, pargVee);
         fprintf(stdout, "Unable to allocate memory in unzip library at %s\n",
                 str);
         return PK_MEM;
     }
     strcpy((*pargVee)[i], cmd);
-    *pargCee++;
+    (*pargCee)++;
     return PK_OK;
 }
 
@@ -961,7 +961,7 @@ int WINAPI Wiz_UnzipToMemory(LPSTR zip, LPSTR file,
 
    Parameters: archive  = archive name
                file     = file contained in the archive. This cannot be
-                          a wild card to be meaningful
+                          a wildcard to be meaningful
                pattern  = string to search for
                cmd      = 0 - case-insensitive search
                           1 - case-sensitve search

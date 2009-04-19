@@ -13,16 +13,16 @@
 #ifndef __unzvers_h     /* don't include more than once */
 #define __unzvers_h
 
-#ifndef BETA
-#  define BETA          /* undefine BETA for public releases */
+#ifdef BETA
+#  undef BETA           /* undefine BETA for public releases */
 #endif
 
 #ifdef BETA
-#  define UZ_BETALEVEL      "f BETA"
-#  define UZ_VERSION_DATE   "11 Jan 09"         /* internal beta version */
+#  define UZ_BETALEVEL      "h03 BETA"
+#  define UZ_VERSION_DATE   "17 Apr 09"         /* internal beta version */
 #else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "20 January 2009"   /* official release version */
+#  define UZ_VERSION_DATE   "20 April 2009"     /* official release version */
 #  define RELEASE
 #endif
 
@@ -54,5 +54,36 @@
 #define WIN_VERSION_DATE  UZ_VERSION_DATE
 
 #define UNZ_DLL_VERSION   UZ_VER_STRING
+
+/* The following version constants specify the UnZip version that introduced
+ * the most recent incompatible change (means: change that breaks backward
+ * compatibility) of a DLL/Library binary API definition.
+ *
+ * Currently, UnZip supports three distinct DLL/Library APIs, which each
+ * carry their own "compatibility level":
+ * a) The "generic" (console-mode oriented) API has been used on UNIX,
+ *    for example. This API provides a "callable" interface similar to the
+ *    interactive command line of the normal program executables.
+ * b) The OS/2-only API provides (additional) functions specially tailored
+ *    for interfacing with the REXX shell.
+ * c) The Win32 DLL API with a pure binary interface which can be used to
+ *    build GUI mode as well as Console mode applications.
+ *
+ * Whenever a change that breaks backward compatibility gets applied to
+ * any of the DLL/Library APIs, the corresponding compatibility level should
+ * be synchronized with the current UnZip version numbers.
+ */
+/* generic DLL API minimum compatible version*/
+#define UZ_GENAPI_COMP_MAJOR  6
+#define UZ_GENAPI_COMP_MINOR  0
+#define UZ_GENAPI_COMP_REVIS  0
+/* os2dll API minimum compatible version*/
+#define UZ_OS2API_COMP_MAJOR  6
+#define UZ_OS2API_COMP_MINOR  0
+#define UZ_OS2API_COMP_REVIS  0
+/* windll API minimum compatible version*/
+#define UZ_WINAPI_COMP_MAJOR  6
+#define UZ_WINAPI_COMP_MINOR  0
+#define UZ_WINAPI_COMP_REVIS  0
 
 #endif /* !__unzvers_h */

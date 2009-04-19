@@ -753,7 +753,7 @@ int zipinfo(__G)   /* return PK-type error code */
             error_in_archive = PK_EOF;
             break;
         }
-        if (strncmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
+        if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
             /* no new central directory entry
              * -> is the number of processed entries compatible with the
              *    number of entries as stored in the end_central record?
@@ -953,12 +953,12 @@ int zipinfo(__G)   /* return PK-type error code */
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
 
-        if ( (strncmp(G.sig,
-                      (G.ecrec.have_ecr64 ?
-                       end_central64_sig : end_central_sig),
-                      4) != 0)
+        if ( (memcmp(G.sig,
+                     (G.ecrec.have_ecr64 ?
+                      end_central64_sig : end_central_sig),
+                     4) != 0)
             && (!G.ecrec.is_zip64_archive)
-            && (strncmp(G.sig, end_central_sig, 4) != 0)
+            && (memcmp(G.sig, end_central_sig, 4) != 0)
            ) {          /* just to make sure again */
             Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
             error_in_archive = PK_WARN;   /* didn't find sig */

@@ -276,4 +276,4 @@ AUTHORS
        Bugs authors, or the file CONTRIBS in the UnZip source distribution for
        the full list of Info-ZIP contributors.
 
-Info-ZIP                    20 January 2009 (v6.0)                UNZIPSFX(1L)
+Info-ZIP                     20 April 2009 (v6.0)                 UNZIPSFX(1L)

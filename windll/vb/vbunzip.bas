@@ -59,6 +59,28 @@ Option Explicit
 '--
 '---------------------------------------------------------------
 
+'-- Expected Version data for the DLL compatibility check
+'
+'   For consistency of the version checking algorithm, the version number
+'   constants "UzDLL_MinVer" and "UzDLL_MaxAPI" have to fullfil the
+'   condition "UzDLL_MinVer <= "UzDLL_MaxAPI".
+'   Version data supplied by a specific UnZip DLL always obey the
+'   relation  "UzDLL Version" >= "UzDLL API".
+
+'Oldest UnZip DLL version that is supported by this program
+Private Const cUzDLL_MinVer_Major As Byte = 6
+Private Const cUzDLL_MinVer_Minor As Byte = 0
+Private Const cUzDLL_MinVer_Revis As Byte = 0
+
+'Last (newest) UnZip DLL API version that is known (and supported)
+'by this program
+Private Const cUzDLL_MaxAPI_Major As Byte = 6
+Private Const cUzDLL_MaxAPI_Minor As Byte = 0
+Private Const cUzDLL_MaxAPI_Revis As Byte = 0
+
+'Current structure version ID of the DCLIST structure layout
+Private Const cUz_DCLStructVer As Long = &H600
+
 '-- C Style argv
 Private Type UNZIPnames
   uzFiles(0 To 99) As String
@@ -76,7 +98,7 @@ End Type
 
 '-- UNZIP32.DLL DCL Structure
 Private Type DCLIST
-  StructVersID      As Long    ' Currently version 6 of this structure
+  StructVersID      As Long    ' Currently version &H600 of this structure
   ExtractOnlyNewer  As Long    ' 1 = Extract Only Newer/New, Else 0
   SpaceToUnderscore As Long    ' 1 = Convert Space To Underscore, Else 0
   PromptToOverwrite As Long    ' 1 = Prompt To Overwrite Required, Else 0
@@ -123,7 +145,7 @@ Private Type USERFUNCTION
 End Type
 
 '-- UNZIP32.DLL Version Structure
-Private Type UZPVER
+Private Type UZPVER2
   structlen       As Long         ' Length Of The Structure Being Passed
   flag            As Long         ' Bit 0: is_beta  bit 1: uses_zlib
   beta            As String * 10  ' e.g., "g BETA" or ""
@@ -133,26 +155,49 @@ Private Type UZPVER
   zipinfo(1 To 4) As Byte         ' Version Type Zip Info
   os2dll          As Long         ' Version Type OS2 DLL
   windll(1 To 4)  As Byte         ' Version Type Windows DLL
+  dllapimin(1 To 4) As Byte       ' Version Type DLL API minimum compatibility
 End Type
 
 '-- This assumes UNZIP32.DLL is somewhere on your execution path!
-'-- ("execution path" means: the directory where this VB6 executable
-'-- is stored, your current working directory in effect when the
-'-- VB6 program starts and the folder list of your command path.
+'-- The term "execution path" means a search in the following locations,
+'-- in the listed sequence (for more details look up the documentation
+'-- of the LoadLibrary() Win32 API call):
+'--  1) the directory from which the VB6 application was loaded,
+'--  2) your current working directory in effect when the VB6 program
+'--     tries to access a first API call of UNZIP32.DLL,
+'--  3) the Windows "SYSTEM32" (only NT/2K/XP...) and "SYSTEM" directories,
+'--     and the Windows directory,
+'--  4) the folder list of your command path (e.g. check the environment
+'--     variable PATH as set in a console window started from scratch).
 '-- Normally, the Windows system directory is on your command path,
 '-- so installing the UNZIP32.DLL in the Windows System Directory
 '-- should always work.
+'--
+'-- WARNING:
+'-- When a VB6 program is run in the VB6 IDE, the "directory from which the
+'-- application was loaded" is the
+'--  ===>>> directory where VB6.EXE is stored (!!!),
+'-- not the storage directory of the VB project file
+'-- (the folder returned by "App.Path").
+'-- When a compiled VB6 program is run, the "application load directory"
+'-- is identical with the folder reported by "App.Path".
+'--
 Private Declare Function Wiz_SingleEntryUnzip Lib "unzip32.dll" _
   (ByVal ifnc As Long, ByRef ifnv As UNZIPnames, _
    ByVal xfnc As Long, ByRef xfnv As UNZIPnames, _
    dcll As DCLIST, Userf As USERFUNCTION) As Long
 
-Private Declare Sub UzpVersion2 Lib "unzip32.dll" (uzpv As UZPVER)
+Private Declare Function UzpVersion2 Lib "unzip32.dll" _
+  (uzpv As UZPVER2) As Long
+
+'-- Private variable holding the API version id as reported by the
+'-- loaded UnZip DLL
+Private m_UzDllApiVers As Long
 
 '-- Private Variables For Structure Access
 Private UZDCL  As DCLIST
 Private UZUSER As USERFUNCTION
-Private UZVER  As UZPVER
+Private UZVER2 As UZPVER2
 
 '-- Public Variables For Setting The
 '-- UNZIP32.DLL DCLIST Structure
@@ -218,7 +263,7 @@ Public Sub UZReceiveDLLMessage_I32( _
   Dim ucsize As Double
   Dim csiz   As Double
 
-  '-- Always Put This In Callback Routines!
+  '-- Always implement a runtime error handler in Callback Routines!
   On Error Resume Next
 
   '------------------------------------------------
@@ -246,7 +291,7 @@ Public Sub UZReceiveDLLMessage_I32( _
     If fname.ch(xx) = 0 Then Exit For
     s0 = s0 & Chr$(fname.ch(xx))
   Next
-  
+
   ucsize = CnvI64Struct2Dbl(ucsize_lo, ucsize_hi)
   csiz = CnvI64Struct2Dbl(csiz_lo, csiz_hi)
 
@@ -280,7 +325,7 @@ Public Function UZDLLPrnt(ByRef fname As UNZIPCBChar, ByVal x As Long) As Long
   Dim xx As Long
   Dim cCh As Byte
 
-  '-- Always Put This In Callback Routines!
+  '-- Always implement a runtime error handler in Callback Routines!
   On Error Resume Next
 
   s0 = ""
@@ -311,42 +356,42 @@ End Function
 Public Function UZDLLServ_I32(ByRef mname As UNZIPCBChar, _
          ByVal lUcSiz_Lo As Long, ByVal lUcSiz_Hi As Long) As Long
 
-    Dim UcSiz As Double
-    Dim s0 As String
-    Dim xx As Long
+  Dim UcSiz As Double
+  Dim s0 As String
+  Dim xx As Long
 
-    '-- Always Put This In Callback Routines!
-    On Error Resume Next
+  '-- Always implement a runtime error handler in Callback Routines!
+  On Error Resume Next
 
-    ' Parameter lUcSiz_Lo and lUcSiz_Hi contains the uncompressed size
-    ' of the extracted archive entry.
-    ' This information may be used for some kind of progress display...
-    UcSiz = CnvI64Struct2Dbl(lUcSiz_Lo, lUcSiz_Hi)
+  ' Parameters lUcSiz_Lo and lUcSiz_Hi contain the uncompressed size
+  ' of the extracted archive entry.
+  ' This information may be used for some kind of progress display...
+  UcSiz = CnvI64Struct2Dbl(lUcSiz_Lo, lUcSiz_Hi)
 
-    s0 = ""
-    '-- Get Zip32.DLL Message For processing
-    For xx = 0 To UBound(mname.ch)
-        If mname.ch(xx) = 0 Then Exit For
-        s0 = s0 & Chr$(mname.ch(xx))
-    Next
-    ' At this point, s0 contains the message passed from the DLL
-    ' (like the current file being extracted)
-    ' It is up to the developer to code something useful here :)
+  s0 = ""
+  '-- Get Zip32.DLL Message For processing
+  For xx = 0 To UBound(mname.ch)
+    If mname.ch(xx) = 0 Then Exit For
+    s0 = s0 & Chr$(mname.ch(xx))
+  Next
+  ' At this point, s0 contains the message passed from the DLL
+  ' (like the current file being extracted)
+  ' It is up to the developer to code something useful here :)
 
-    UZDLLServ_I32 = 0 ' Setting this to 1 will abort the zip!
+  UZDLLServ_I32 = 0 ' Setting this to 1 will abort the zip!
 
 End Function
 
 '-- Callback For UNZIP32.DLL - Password Function
-Public Function UZDLLPass(ByRef p As UNZIPCBCh, _
-  ByVal n As Long, ByRef m As UNZIPCBCh, _
-  ByRef Name As UNZIPCBCh) As Long
+Public Function UZDLLPass(ByRef pwbuf As UNZIPCBCh, _
+  ByVal bufsiz As Long, ByRef promptmsg As UNZIPCBCh, _
+  ByRef entryname As UNZIPCBCh) As Long
 
   Dim prompt     As String
   Dim xx         As Long
   Dim szpassword As String
 
-  '-- Always Put This In Callback Routines!
+  '-- Always implement a runtime error handler in Callback Routines!
   On Error Resume Next
 
   UZDLLPass = -1  'IZ_PW_CANCEL
@@ -354,28 +399,33 @@ Public Function UZDLLPass(ByRef p As UNZIPCBCh, _
   If uVbSkip Then Exit Function
 
   '-- Get the Password prompt
-  For xx = 0 To UBound(m.ch)
-    If m.ch(xx) = 0 Then
-      Exit For
-    Else
-      prompt = prompt & Chr$(m.ch(xx))
-    End If
+  For xx = 0 To UBound(promptmsg.ch)
+    If promptmsg.ch(xx) = 0 Then Exit For
+    prompt = prompt & Chr$(promptmsg.ch(xx))
   Next
   If Len(prompt) = 0 Then
     prompt = "Please Enter The Password!"
   Else
     prompt = prompt & " "
-    For xx = 0 To UBound(Name.ch)
-      If Name.ch(xx) = 0 Then
-        Exit For
-      Else
-        prompt = prompt & Chr$(Name.ch(xx))
-      End If
+    For xx = 0 To UBound(entryname.ch)
+      If entryname.ch(xx) = 0 Then Exit For
+      prompt = prompt & Chr$(entryname.ch(xx))
     Next
   End If
 
   '-- Get The Zip File Password
-  szpassword = InputBox(prompt)
+  Do
+    szpassword = InputBox(prompt)
+    If Len(szpassword) < bufsiz Then Exit Do
+    ' -- Entered password exceeds UnZip's password buffer size
+    If MsgBox("The supplied password exceeds the maximum password length " _
+            & CStr(bufsiz - 1) & " supported by the UnZip DLL." _
+            , vbExclamation + vbRetryCancel, "UnZip password too long") _
+         = vbCancel Then
+      szpassword = ""
+      Exit Do
+    End If
+  Loop
 
   '-- No Password So Exit The Function
   If Len(szpassword) = 0 Then
@@ -384,15 +434,16 @@ Public Function UZDLLPass(ByRef p As UNZIPCBCh, _
   End If
 
   '-- Zip File Password So Process It
-  For xx = 0 To n - 1
-    p.ch(xx) = 0
+  For xx = 0 To bufsiz - 1
+    pwbuf.ch(xx) = 0
   Next
-
+  '-- Password length has already been checked, so
+  '-- it will fit into the communication buffer.
   For xx = 0 To Len(szpassword) - 1
-    p.ch(xx) = Asc(Mid$(szpassword, xx + 1, 1))
+    pwbuf.ch(xx) = Asc(Mid$(szpassword, xx + 1, 1))
   Next
 
-  p.ch(xx) = 0 ' Put Null Terminator For C
+  pwbuf.ch(xx) = 0 ' Put Null Terminator For C
 
   UZDLLPass = 0   ' IZ_PW_ENTERED
 
@@ -401,19 +452,23 @@ End Function
 '-- Callback For UNZIP32.DLL - Report Function To Overwrite Files.
 '-- This Function Will Display A MsgBox Asking The User
 '-- If They Would Like To Overwrite The Files.
-Public Function UZDLLReplacePrmt(ByRef fname As UNZIPCBChar) As Long
+Public Function UZDLLReplacePrmt(ByRef fname As UNZIPCBChar, _
+                                 ByVal fnbufsiz As Long) As Long
 
   Dim s0 As String
   Dim xx As Long
   Dim cCh As Byte
+  Dim bufmax As Long
 
-  '-- Always Put This In Callback Routines!
+  '-- Always implement a runtime error handler in Callback Routines!
   On Error Resume Next
 
   UZDLLReplacePrmt = 100   ' 100 = Do Not Overwrite - Keep Asking User
   s0 = ""
+  bufmax = UBound(fname.ch)
+  If bufmax >= fnbufsiz Then bufmax = fnbufsiz - 1
 
-  For xx = 0 To UBound(fname.ch)
+  For xx = 0 To bufmax
     cCh = fname.ch(xx)
     Select Case cCh
     Case 0
@@ -468,6 +523,47 @@ Private Function CnvI64Struct2Dbl(ByVal lInt64Lo As Long, lInt64Hi As Long) As D
   CnvI64Struct2Dbl = CnvI64Struct2Dbl + (2# ^ 32) * CDbl(lInt64Hi)
 End Function
 
+'-- Concatenate a "structured" version number into a single integer value,
+'-- to facilitate version number comparisons
+'-- (In case the practically used NumMajor numbers will ever exceed 128, it
+'-- should be considered to use the number type "Double" to store the
+'-- concatenated number. "Double" can store signed integer numbers up to a
+'-- width of 52 bits without loss of precision.)
+Private Function ConcatVersNums(ByVal NumMajor As Byte, ByVal NumMinor As Byte _
+                              , ByVal NumRevis As Byte, ByVal NumBuild As Byte) As Long
+  If (NumMajor And &H80) <> 0 Then
+    ConcatVersNums = (NumMajor And &H7F) * (2 ^ 24) Or &H80000000
+  Else
+    ConcatVersNums = NumMajor * (2 ^ 24)
+  End If
+  ConcatVersNums = ConcatVersNums _
+                 + NumMinor * (2 ^ 16) _
+                 + NumRevis * (2 ^ 8) _
+                 + NumBuild
+End Function
+
+'-- Helper function to provide a printable version number string, using the
+'-- current formatting rule for version number display as implemented in UnZip.
+Private Function VersNumsToTxt(ByVal NumMajor As Byte, ByVal NumMinor As Byte _
+                             , ByVal NumRevis As Byte) As String
+  VersNumsToTxt = CStr(NumMajor) & "." & Hex$(NumMinor)
+  If NumRevis <> 0 Then VersNumsToTxt = VersNumsToTxt & Hex$(NumRevis)
+End Function
+
+'-- Helper function to convert a "concatenated" version id into a printable
+'-- version number string, using the current formatting rule for version number
+'-- display as implemented in UnZip.
+Private Function VersIDToTxt(ByVal VersionID As Long) As String
+  Dim lNumTemp As Long
+
+  lNumTemp = VersionID \ (2 ^ 24)
+  If lNumTemp < 0 Then lNumTemp = 256 + lNumTemp
+  VersIDToTxt = CStr(lNumTemp) & "." _
+             & Hex$((VersionID And &HFF0000) \ &H10000)
+  lNumTemp = (VersionID And &HFF00&) \ &H100
+  If lNumTemp <> 0 Then VersIDToTxt = VersIDToTxt & Hex$(lNumTemp)
+End Function
+
 '-- Main UNZIP32.DLL UnZip32 Subroutine
 '-- (WARNING!) Do Not Change!
 Public Sub VBUnZip32()
@@ -480,7 +576,7 @@ Public Sub VBUnZip32()
 
   '-- Set The UNZIP32.DLL Options
   '-- (WARNING!) Do Not Change
-  UZDCL.StructVersID = 6                     ' Current version of this structure
+  UZDCL.StructVersID = cUz_DCLStructVer      ' Current version of this structure
   UZDCL.ExtractOnlyNewer = uExtractOnlyNewer ' 1 = Extract Only Newer/New
   UZDCL.SpaceToUnderscore = uSpaceUnderScore ' 1 = Convert Space To Underscore
   UZDCL.PromptToOverwrite = uPromptOverWrite ' 1 = Prompt To Overwrite Required
@@ -511,25 +607,73 @@ Public Sub VBUnZip32()
 
   '-- Set UNZIP32.DLL Version Space
   '-- (WARNING!!!) Do Not Change
-  With UZVER
-    .structlen = Len(UZVER)
-    .beta = Space$(9) & vbNullChar
-    .date = Space$(19) & vbNullChar
-    .zlib = Space$(9) & vbNullChar
+  With UZVER2
+    .structlen = Len(UZVER2)
+    .beta = String$(10, vbNullChar)
+    .date = String$(20, vbNullChar)
+    .zlib = String$(10, vbNullChar)
   End With
 
   '-- Get Version
-  Call UzpVersion2(UZVER)
+  retcode = UzpVersion2(UZVER2)
+  If retcode <> 0 Then
+    MsgBox "Incompatible DLL version discovered!" & vbNewLine _
+         & "The UnZip DLL requires a version structure of length " _
+         & CStr(retcode) & ", but the VB frontend expects the DLL to need " _
+         & Len(UZVER2) & "bytes." & vbNewLine _
+         & vbNewLine & "The program cannot continue." _
+         , vbCritical + vbOKOnly, App.Title
+    Exit Sub
+  End If
+
+  ' Check that the DLL version is sufficiently recent
+  If (ConcatVersNums(UZVER2.unzip(1), UZVER2.unzip(2) _
+                  , UZVER2.unzip(3), UZVER2.unzip(4)) < _
+      ConcatVersNums(cUzDLL_MinVer_Major, cUzDLL_MinVer_Minor _
+                  , cUzDLL_MinVer_Revis, 0)) Then
+    ' The found UnZip DLL is too old!
+    MsgBox "Incompatible old DLL version discovered!" & vbNewLine _
+         & "This program requires an UnZip DLL version of at least " _
+         & VersNumsToTxt(cUzDLL_MinVer_Major, cUzDLL_MinVer_Minor, cUzDLL_MinVer_Revis) _
+         & ", but the version reported by the found DLL is only " _
+         & VersNumsToTxt(UZVER2.unzip(1), UZVER2.unzip(2), UZVER2.unzip(3)) _
+         & "." & vbNewLine _
+         & vbNewLine & "The program cannot continue." _
+         , vbCritical + vbOKOnly, App.Title
+    Exit Sub
+  End If
+
+  ' Concatenate the DLL API version info into a single version id variable.
+  ' This variable may be used later on to switch between different
+  ' known variants of specific API calls or API structures.
+  m_UzDllApiVers = ConcatVersNums(UZVER2.dllapimin(1), UZVER2.dllapimin(2) _
+                                , UZVER2.dllapimin(3), UZVER2.dllapimin(4))
+  ' check that the DLL API version is not too new
+  If (m_UzDllApiVers > _
+      ConcatVersNums(cUzDLL_MaxAPI_Major, cUzDLL_MaxAPI_Minor _
+                  , cUzDLL_MaxAPI_Revis, 0)) Then
+    ' The found UnZip DLL is too new!
+    MsgBox "DLL version with incompatible API discovered!" & vbNewLine _
+         & "This program can only handle UnZip DLL API versions up to " _
+         & VersNumsToTxt(cUzDLL_MaxAPI_Major, cUzDLL_MaxAPI_Minor, cUzDLL_MaxAPI_Revis) _
+         & ", but the found DLL reports a newer API version of " _
+         & VersIDToTxt(m_UzDllApiVers) & "." & vbNewLine _
+         & vbNewLine & "The program cannot continue." _
+         , vbCritical + vbOKOnly, App.Title
+    Exit Sub
+  End If
 
   '--------------------------------------
   '-- You Can Change This For Displaying
   '-- The Version Information!
   '--------------------------------------
-  MsgStr$ = "DLL Date: " & szTrim(UZVER.date)
-  MsgStr$ = MsgStr$ & vbNewLine$ & "Zip Info: " & Hex$(UZVER.zipinfo(1)) _
-       & "." & Hex$(UZVER.zipinfo(2)) & Hex$(UZVER.zipinfo(3))
-  MsgStr$ = MsgStr$ & vbNewLine$ & "DLL Version: " & Hex$(UZVER.windll(1)) _
-       & "." & Hex$(UZVER.windll(2)) & Hex$(UZVER.windll(3))
+  MsgStr$ = "DLL Date: " & szTrim(UZVER2.date)
+  MsgStr$ = MsgStr$ & vbNewLine$ & "Zip Info: " _
+       & VersNumsToTxt(UZVER2.zipinfo(1), UZVER2.zipinfo(2), UZVER2.zipinfo(3))
+  MsgStr$ = MsgStr$ & vbNewLine$ & "DLL Version: " _
+       & VersNumsToTxt(UZVER2.windll(1), UZVER2.windll(2), UZVER2.windll(3))
+  MsgStr$ = MsgStr$ & vbNewLine$ & "DLL API Compatibility: " _
+       & VersIDToTxt(m_UzDllApiVers)
   MsgStr$ = MsgStr$ & vbNewLine$ & "--------------"
   '-- End Of Version Information.
 
@@ -541,7 +685,8 @@ Public Sub VBUnZip32()
 
   '-- If There Is An Error Display A MsgBox!
   If retcode <> 0 Then _
-    MsgBox "UnZip DLL call returned error code #" & CStr(retcode), vbExclamation
+    MsgBox "UnZip DLL call returned error code #" & CStr(retcode) _
+          , vbExclamation, App.Title
 
   '-- Add up 64-bit values
   TotalSizeComp = CnvI64Struct2Dbl(UZUSER.TotalSizeComp_Lo, _
@@ -550,7 +695,7 @@ Public Sub VBUnZip32()
                                UZUSER.TotalSize_Hi)
   NumMembers = CnvI64Struct2Dbl(UZUSER.NumMembers_Lo, _
                                 UZUSER.NumMembers_Hi)
-  
+
   '-- You Can Change This As Needed!
   '-- For Compression Information
   MsgStr$ = MsgStr$ & vbNewLine & _

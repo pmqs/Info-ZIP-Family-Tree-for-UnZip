@@ -1,6 +1,6 @@
 __________________________________________________________________________
 
-  This is the Info-ZIP file INSTALL (for UnZip), last updated 06 Jan 2009.
+  This is the Info-ZIP file INSTALL (for UnZip), last updated 16 Apr 2009.
 __________________________________________________________________________
 
   Yes, this is a rather long file, but don't be intimidated:  much of its
@@ -194,7 +194,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         If you like to get UnZip binaries that handle command line arguments
         similar to Unix tools which are run in an Unix shell, you might want
         to set this compilation option.  This option enables the support for
-        globbing command line arguments containing wild card that is built
+        globbing command line arguments containing wildcards that is built
         into the DJGPP startup code.  When using a binary compiled with this
         option, you may have to enclose wildcard arguments in double quotes
         to get them passed to the program unmodified.  Enabling this option
@@ -457,6 +457,35 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         For these ports, setting NO_UNICODE_SUPPORT forces deactivation of
         the Unicode support.
 
+      NO_SETLOCALE (for Unix)
+        On Unix, it is now assumed that <locale.h> and the setlocale function
+        are available, to setup locale-aware filtering of displayed filenames.
+        The option NO_SETLOCALE allows to disable the dependency on <locale.h>
+        and setlocale() on systems where this assumption is invalid (and the
+        auto-configuring make target "generic" cannot be used for capabilities
+        detection).
+
+      _MBCS
+      NO_MBCS
+       Enable multi-byte character set support.  This is the default for the
+       Human68k system (originated from Japan) and for Win32 (here only DBCS
+       "double-byte character set" support).  The MBCS support should also be
+       enabled on systems which are capable of using UTF-8 as native charset.
+       For MBCS support, the C runtime library must supply implementations
+       for the mblen() function and the MB_CUR_MAX runtime macro/function.
+       The NO_MBCS symbol allows to explicitely disable MBCS support for
+       testing purpose, or when MBCS support does not work as expected.
+
+      HAVE_WORKING_ISPRINT
+      NO_WORKING_ISPRINT
+        The symbol HAVE_WORKING_ISPRINT enables enhanced non-printable chars
+        filtering for filenames in the fnfilter() function.  On some systems
+        (Unix, VMS, some Win32 compilers), this setting is enabled by default.
+        In cases where isprint() flags printable extended characters as
+        unprintable, defining NO_WORKING_ISPRINT allows to disable the enhanced
+        filtering capability in fnfilter().  (The ASCII control codes 0x01 to
+        0x1f are always escaped on ASCII systems.)
+
       DEBUG
         Used for debugging purposes; enables Trace() statements.  Generally
         it's best to compile only one or two modules this way.
@@ -599,6 +628,19 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         CygWin, GNU Make and win32\Makefile.gcc should do the job.
         With emx+gcc, a good choice is GNUMake 3.75 (or higher) from the
         djgpp V2 distribution used on win32\Makefile.emx.
+
+        The unzip32.dll WinDLL executables can be built using the appropiate
+        Makefile in the win32\ subdirectory, or by using the Microsoft Visual
+        C++ project files supplied below the windll subdirectory.  Besides the
+        MSC compilers, gcc-mingw32, Watcom C and Borland C allow to build the
+        Windows UnZip DLL.  By default, the Makefiles for compilers that use
+        the Microsoft C runtime are configured to link against the shared
+        multithreading C runtime DLL.  Depending on the intended usage for
+        unzip32.dll, a statically linked dll might be more suitable.  The
+        make scripts for MSC support build variants with static linking; you
+        should look up the configuration switch DLLSTANDALONE in the MSC
+        Makefile or the "Static..." build configurations in the Visual Studio
+        project files.
 
       WinCE (WinCE or WinNT)
         Only Microsoft Visual C++ 5.0, 6.0 or Visual C++ embedded 3.0 or later
