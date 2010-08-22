@@ -3071,6 +3071,13 @@ diff -ru2 unz60e03/unzpriv.h u6e3_np/unzpriv.h
 +
  /***********************************/
  /*  LARGE_FILE_SUPPORT             */
+
+HEREHERE
+
+
+
+
+
 diff -ru2 unz60e03/vms/cmdline.c u6e3_np/vms/cmdline.c
 --- unz60e03/vms/cmdline.c	Tue Feb 12 01:37:42 2008
 +++ u6e3_np/vms/cmdline.c	Mon Mar 24 14:13:10 2008

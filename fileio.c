@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -71,6 +71,10 @@
 #include "crc32.h"
 #include "crypt.h"
 #include "ttyio.h"
+
+#if defined( UNIX) && defined( __APPLE__)
+#  include "unix/macosx.h"
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /* setup of codepage conversion for decryption passwords */
 #if CRYPT
@@ -277,6 +281,26 @@ int open_outfile(__G)           /* return 1 if fail */
 #ifdef QDOS
     QFilename(__G__ G.filename);
 #endif
+
+#if defined( UNIX) && defined( __APPLE__)
+    if (G.apple_double)
+    {
+        /* Set flags and byte counts for the AppleDouble header. */
+        G.apl_dbl_hdr_len = 0;
+        G.apl_dbl_hdr_bytes = APL_DBL_HDR_SIZE;
+        /* Append "/rsrc" suffix to the AppleDouble file name. */
+        strcat( G.ad_filename, APL_DBL_SFX);
+
+        /* Re-aim pointer instead of copying? */
+        strcpy( G.filename, G.ad_filename);
+    }
+    else
+    {
+        /* Set byte count to bypass AppleDouble processing. */
+        G.apl_dbl_hdr_bytes = 0;
+    }
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 #if (defined(DOS_FLX_NLM_OS2_W32) || defined(ATH_BEO_THS_UNX))
 #ifdef BORLAND_STAT_BUG
     /* Borland 5.0's stat() barfs if the filename has no extension and the
@@ -290,11 +314,19 @@ int open_outfile(__G)           /* return 1 if fail */
         fclose(tmp);
     }
 #endif /* BORLAND_STAT_BUG */
+
+/* AppleDouble resource fork is expected to exist, so evade the test. */
+#if defined( UNIX) && defined( __APPLE__)
+#  define TEST_EXIST (G.apple_double == 0)
+#else /* defined( UNIX) && defined( __APPLE__) */
+#  define TEST_EXIST 1
+#endif /* defined( UNIX) && defined( __APPLE__) [else] */
+
 #ifdef SYMLINKS
-    if (SSTAT(G.filename, &G.statbuf) == 0 ||
-        lstat(G.filename, &G.statbuf) == 0)
+    if (TEST_EXIST && (SSTAT(G.filename, &G.statbuf) == 0 ||
+        lstat(G.filename, &G.statbuf) == 0))
 #else
-    if (SSTAT(G.filename, &G.statbuf) == 0)
+    if (TEST_EXIST && (SSTAT(G.filename, &G.statbuf) == 0))
 #endif /* ?SYMLINKS */
     {
         Trace((stderr, "open_outfile:  stat(%s) returns 0:  file exists\n",
@@ -866,6 +898,74 @@ static int partflush(__G__ rawbuf, size, unshrink)
 #endif
         } else
 #endif
+
+#if defined( UNIX) && defined( __APPLE__)
+        /* If expecting AppleDouble header bytes, process them. */
+        if (G.apl_dbl_hdr_bytes > 0)
+        {
+            if (size < G.apl_dbl_hdr_bytes)
+            {
+                /* Fewer bytes than needed to complete the AppleDouble
+                 * header.  (Unlikely?)  Move them to the AppleDouble 
+                 * header buffer, adjust the byte counts, and resume
+                 * extraction.
+                 */
+                memcpy( &G.apl_dbl_hdr[ G.apl_dbl_hdr_len], rawbuf, size);
+                size = 0;
+                G.apl_dbl_hdr_bytes -= size;
+            }
+            else
+            {
+                /* Enough bytes to complete the AppleDouble header.  Move
+                 * them to the AppleDouble header buffer, adjust the byte
+                 * counts, and set the Finder info attributes (for the
+                 * plain-name) file.
+                 */
+                char btrbslash; /* Saved character had better be a slash. */
+                int sts;
+                struct attrlist attr_list_fndr;
+
+                memcpy( &G.apl_dbl_hdr[ G.apl_dbl_hdr_len], rawbuf,
+                 G.apl_dbl_hdr_bytes);
+                size -= G.apl_dbl_hdr_bytes;
+                G.apl_dbl_hdr_bytes = 0;
+
+                /* Truncate name at "/rsrc" for setattrlist(). */
+                btrbslash =
+                 G.filename[ strlen( G.filename)- strlen( APL_DBL_SFX)];
+                G.filename[ strlen( G.filename)- strlen( APL_DBL_SFX)] = '\0';
+
+                /* Clear attribute list structure. */
+                memset( &attr_list_fndr, 0, sizeof( attr_list_fndr));
+                /* Set attribute list bits for Finder info. */
+                attr_list_fndr.bitmapcount = ATTR_BIT_MAP_COUNT;
+                attr_list_fndr.commonattr = ATTR_CMN_FNDRINFO;
+
+                /* Set Finder info for main file. */
+                sts = setattrlist( G.filename,          /* Path. */
+                                   &attr_list_fndr,     /* Attrib list. */
+                                   &G.apl_dbl_hdr[ APL_DBL_HDR_FNDR_INFO_OFFS],
+                                                        /* Src buffer. */
+                                   APL_FNDR_INFO_SIZE,  /* Src buffer size. */
+                                   0);                  /* Options. */
+
+                if (sts != 0)
+                {
+                    Info(slide, 0x12, ((char *)slide,
+                     "\nsetattrlist(fndr) failure: %s", G.filename));
+                }
+
+                /* Restore name suffix ("/rsrc"). */
+                G.filename[ strlen( G.filename)] = btrbslash;
+             }
+
+            if (size == 0L)     /* No resource fork left to write. */
+                return PK_OK;
+
+            rawbuf += APL_DBL_HDR_SIZE;
+        }
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
         if (!uO.cflag && WriteError(rawbuf, size, G.outfile))
             return disk_error(__G);
         else if (uO.cflag && (*G.message)((zvoid *)&G, rawbuf, size, 0))
@@ -2853,3 +2953,4 @@ int Far zfstrcmp(const char Far *s1, const char Far *s2)
 #endif /* !_MSC_VER || (_MSC_VER < 600) */
 
 #endif /* SMALL_MEM */
+

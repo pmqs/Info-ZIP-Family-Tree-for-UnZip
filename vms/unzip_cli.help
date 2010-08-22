@@ -61,6 +61,10 @@
 .!              Added documentation of extended /RESTORE=(...) qualifier.
 .!      03-003          S. Schweda, C. Spieler  13-Sep-2008 20:00
 .!              Added /EXISTING qualifier.
+.!      03-004          S. Schweda              30-JUL-2010 22:00
+.!              Added /CASE_MATCH qualifier, replacing
+.!              /[NO]CASE_INSENSITIVE (with something less confusing,
+.!              and more like existing DCL).
 .!
 <INIT>
 <MAIN>
@@ -145,7 +149,7 @@ The following qualifiers may be specified with /ZIPINFO:
 |  /HEADER                Print header lines
 |  /TOTALS                Print totals for files
 |  /TIMES                 Print file times in sortable decimal format
-|  /[NO]CASE_INSENSITIVE  Match filenames case-insensitively
+|  /CASE_MATCH = [BL|SE]  Match filenames case-blind or -sensitive
 |  /[NO]PAGE              Page screen output through built-in "more"
 <LARETIL>
 <QUALIFIER>
@@ -179,13 +183,14 @@ When used with /LIST, specifies that a brief listing of the archive's
 contents is to be displayed.  A brief listing shows the length, date,
 time, and file name for the files in the archive.
 <QUALIFIER>
-/CASE_INSENSITIVE
+/CASE_MATCH
 
-/CASE_INSENSITIVE
+/CASE_MATCH = BLIND
 <NEXT>
-/NOCASE_INSENSITIVE (default)
+/CASE_MATCH = SENSITIVE (default)
 
-Match filenames case-insensitively.  (Good default option under VMS.)
+Match filenames case-blind or case-sensitive.  (Good default option on
+VMS?)
 <QUALIFIER>
 /COMMENT
 

@@ -1,26 +1,40 @@
 #==============================================================================
 # Makefile for UnZip, UnZipSFX and fUnZip:  Unix and MS-DOS ("real" makes only)
-# Version:  6.0                                                     18 Jan 2009
+# Version:  6.1                                                     25 Jul 2010
 #==============================================================================
 
 
 # INSTRUCTIONS (such as they are):
 #
-# "make sunos"	-- makes UnZip in current directory on a generic SunOS 4.x Sun
-# "make list"	-- lists all supported systems (targets)
-# "make help"	-- provides pointers on what targets to try if problems occur
-# "make wombat" -- chokes and dies if you haven't added the specifics for your
-#		    Wombat 68000 (or whatever) to the systems list
+# "make generic"      Makes UnZip on most systems using "cc".
+# "make generic_gcc"  Makes UnZip on most systems using "gcc".
+# "make list"	      Lists all supported targets.
+# "make help"	      Advice on which targets to try if problems occur.
 #
 # CF are flags for the C compiler.  LF are flags for the loader.  LF2 are more
 # flags for the loader, if they need to be at the end of the line instead of at
-# the beginning (for example, some libraries).  FL and FL2 are the corre-
-# sponding flags for fUnZip.  LOCAL_UNZIP is an environment variable that can
-# be used to add default C flags to your compile without editing the Makefile
-# (e.g., -DDEBUG_STRUC, or -FPi87 on PCs using Microsoft C).
+# the beginning (for example, some libraries).  FL and FL2 are corresponding
+# flags for fUnZip.  LOCAL_UNZIP is a "make" macro that can be used to add
+# default C flags to your compile without editing the Makefile (e.g.,
+# -DDEBUG_STRUC, or -FPi87 on PCs using Microsoft C).
 #
-# Some versions of make do not define the macro "$(MAKE)"; this is rare, but
-# if things don't work, try using "make" instead of "$(MAKE)" in your system's
+# The "generic" and "generic_gcc" targets use the "unix/configure" script to
+# probe the compiler and other parts of the environment to adjust the build
+# procedure, and to enable or disable some program features.  Other (older)
+# targets are less well tested, and may need considerable help from the user
+# to get optimal results (or any success at all).
+#
+# The "generic" and "generic_gcc" targets should find bzip2 source code in the
+# local ./bzip2 subdirectory, or the user can set the "make" macro IZ_BZIP2 to
+# a directory containing suitable bzip2 header and object/shared library files.
+# Similarly, to use zlib compress-expand code instead of UnZip's built-in code,
+# set the "make" macro IZ_ZLIB to a directory containing suitable zlib header
+# and object/shared library files.  For example:
+#     make -f unix/Makefile IZ_BZIP2=../../bzip2/bzip2-1.0.5 \
+#      IZ_ZLIB=../../zlib/zlib-1.2.5 generic
+#
+# Some versions of make do not define the macro "MAKE"; this is rare, but if
+# things don't work, try using "make" instead of "$(MAKE)" in your system's
 # makerule.  Or try adding the following line to your .login file:
 #	setenv MAKE "make"
 # (That never works--makes that are too stupid to define MAKE are also too
@@ -30,25 +44,25 @@
 # are in fileio.c and will be used if -DZMEM is included in CF.  These days
 # almost all systems have them.
 #
-# Be sure to test your new UnZip (and UnZipSFX and fUnZip); successful compila-
-# tion does not always imply a working program.
+# Be sure to test your new UnZip (and UnZipSFX and fUnZip); successful
+# compilation does not always imply a working program.
 
 
 #####################
 # MACRO DEFINITIONS #
 #####################
 
-# Defaults most systems use (use LOCAL_UNZIP in environment to add flags,
-# such as -DDOSWILD).
+# Defaults most systems use (use "make" macro LOCAL_UNZIP to add compiler
+# flags, such as -DDOSWILD).
 
 # UnZip flags
 CC = cc#	try using "gcc" target rather than changing this (CC and LD
 LD = $(CC)#	must match, else "unresolved symbol:  ___main" is possible)
 AS = as
-LOC = $(D_USE_BZ2) $(LOCAL_UNZIP)
+LOC = $(D_USE_BZ2) $(D_USE_ZLIB) $(LOCAL_UNZIP)
 AF = $(LOC)
 CFLAGS = -O
-CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
+CF_NOOPT = -I. -DUNIX $(LOC)
 CF = $(CFLAGS) $(CF_NOOPT)
 LFLAGS1 =
 LF = -o unzip$E $(LFLAGS1)
@@ -130,9 +144,9 @@ INSTALLEDMAN = $(MANDIR)/funzip.$(manext) $(MANDIR)/unzip.$(manext) \
 	$(MANDIR)/unzipsfx.$(manext) $(MANDIR)/zipgrep.$(manext) \
 	$(MANDIR)/zipinfo.$(manext)
 
-# Solaris 2.x stuff:
+# Solaris 2.x package stuff:
 PKGDIR = IZunzip
-VERSION = Version 6.0
+VERSION = Version 6.1
 
 UNZIPS = unzip$E funzip$E unzipsfx$E
 # this is a little ugly...well, OK, it's a lot ugly:
@@ -150,7 +164,7 @@ SYSTEMS5 = lynx macosx macosx_gcc minix mips mpeix next next10 next2x next3x
 SYSTEMS6 = nextfat osf1 pixel ptx pyramid qnxnto realix regulus rs6000 sco
 SYSTEMS7 = sco_dos sco_sl sco_x286 sequent sgi solaris solaris_pkg stardent
 SYSTEMS8 = stellar sunos3 sunos4 sysv sysv_gcc sysv6300 tahoe ti_sysv ultrix
-SYSTEMS9 = vax v7 wombat xenix xos
+SYSTEMS9 = vax v7 xenix xos
 
 
 ####################
@@ -162,26 +176,30 @@ SYSTEMS9 = vax v7 wombat xenix xos
 
 help:
 	@echo ""
-	@echo "  If you're not sure about the characteristics of your system, try typing"
-	@echo "  \"make generic\".  This is new and uses the configure script, though it is"
-	@echo "  still being worked on."
+	@echo "  For most users, the best build method is to use the \"make\" target \"generic\""
+	@echo "  or \"generic_gcc\".  (To use "cc", type \"make generic\" or, to use gcc,"
+	@echo "  \"make generic_gcc\".)  These use the \"unix/configure\" script to probe the"
+	@echo "  compiler and other parts of the environment to adjust the build procedure,"
+	@echo "  and to enable or disable some program features.  Problems with these targets"
+	@echo "  should be reported to the developers.  Other (older) targets are less well"
+	@echo "  tested, and may need considerable help from the user to get optimal results"
+	@echo "  (or any success at all)."
 	@echo ""
-	@echo "  If that does not do it, try the original generic which is \"make generic1\"."
+	@echo "  If \"generic[_gcc]\" fails, then you might try the original generic which is"
+	@echo "  now \"generic1\".  Always do \"make clean\" before trying a different target."
 	@echo ""
-	@echo "  If the compiler barfs and says something unpleasant about \"timezone redefined\","
-	@echo "  try typing \"make clean\" followed by \"make generic2\".  If, on the other"
-	@echo "  hand, it complains about an undefined symbol _ftime, try typing \"make clean\""
-	@echo "  followed by \"make generic3\"."
+	@echo "  If the compiler complains about \"timezone redefined\", then the \"generic2\""
+	@echo "  target may work better.  If the linker complains about an undefined symbol,"
+	@echo "  \"_ftime\", then the \"generic3\" target may work better."
 	@echo ""
-	@echo "  One of these actions should produce a working copy of unzip on most Unix"
-	@echo "  systems.  If you know a bit more about the machine on which you work, you"
-	@echo "  might try \"make list\" for a list of the specific systems supported herein."
-	@echo "  (Many of them do exactly the same thing, so don't agonize too much over"
-	@echo "  which to pick if two or more sound equally likely.)  Also check out the"
-	@echo "  INSTALL file for notes on compiling various targets.  As a last resort,"
-	@echo "  feel free to read the numerous comments within the Makefile itself."
-	@echo ""
-	@echo "  Have a mostly pretty good day."
+	@echo "  One of these actions should produce working UnZip programs on most"
+	@echo "  UNIX(-like) systems.  If you know a bit more about the system on which you"
+	@echo "  work, then you might try \"make list\" for a list of the system-specific"
+	@echo "  targets supported herein.  (Many of them do exactly the same thing, so don't"
+	@echo "  agonize too much over which to pick if two or more sound equally likely.)"
+	@echo "  Also check out the INSTALL file for notes on compiling various targets.  As"
+	@echo "  a last resort, feel free to read the numerous comments within the Makefile"
+	@echo "  itself."
 	@echo ""
 
 list:
@@ -280,7 +298,7 @@ unzipsdocs:	unzips docs
 # make utilities if default:  change "unzip$E:" to "unzip$E:&"
 
 unzip$E:	$(OBJS) $(LIBBZ2)	# add `&' for parallel makes
-	$(LD) $(LF) -L$(IZ_BZIP2) $(LOBJS) $(L_BZ2) $(LF2)
+	$(LD) $(LF) $(LOBJS) $(LF2)
 
 unzipsfx$E:	$(OBJX)			# add `&' for parallel makes
 	$(LD) $(SL) $(LOBJX) $(SL2)
@@ -467,7 +485,7 @@ uninstall:
 
 # added 10/28/04 EG
 flags:  unix/configure
-	sh unix/configure "${CC}" "${CF_NOOPT}" "${IZ_BZIP2}"
+	sh unix/configure "${CC}" "${CF_NOOPT}" "${IZ_BZIP2}" "${IZ_ZLIB}"
 
 # the test zipfile
 TESTZIP = testmake.zip
@@ -1018,9 +1036,3 @@ ti_sysv:	unix_make
 xenix:		 unix_make
 	$(MAKE) unzips LF2="$(LF2) -lx"
 
-# Wombat 68000 (or whatever).
-# I didn't do this.  I swear.  No, really.
-wombat:		unix_make
-	@echo
-	@echo  '	Ha ha!  Just kidding.'
-	@echo

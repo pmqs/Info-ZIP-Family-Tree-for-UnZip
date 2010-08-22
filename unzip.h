@@ -2,7 +2,7 @@
 
   unzip.h (new)
 
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -17,7 +17,7 @@ ftp://ftp.info-zip.org/pub/infozip/license.html indefinitely and
 a copy at http://www.info-zip.org/pub/infozip/license.html.
 
 
-Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
 For the purposes of this copyright and license, "Info-ZIP" is defined as
 the following set of individuals:
@@ -495,7 +495,19 @@ typedef struct _UzpOpts {
     int scanimage;      /* -I: scan image files */
 #endif
     int jflag;          /* -j: junk pathnames (unzip) */
-#if (defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS))
+/*
+ * VAX C V3.1-051 loves "\" in #define, but hates it in #if.
+ * HP C V7.3-009 dislikes "defined" in macro in #if (%CC-I-EXPANDEDDEFINED).
+ * It seems safest to avoid any continuation lines in either.
+ */
+#if defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS)
+# define J_FLAG 1
+#else
+# if defined( UNIX) && defined( __APPLE__)
+#  define J_FLAG 1
+# endif
+#endif
+#ifdef J_FLAG
     int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS e. f. info (unzip) */
 #endif
 #if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
@@ -694,6 +706,8 @@ int      UZ_EXP UzpFileTree        OF((char *name, cbList(callBack),
 unsigned UZ_EXP UzpVersion2        OF((UzpVer2 *version));
 int      UZ_EXP UzpValidate        OF((char *archive, int AllCodes));
 
+void     show_commandline          OF((char *args[]));
+
 
 /* default I/O functions (can be swapped out via UzpAltMain() entry point): */
 
@@ -720,3 +734,4 @@ int      UZ_EXP UzpPassword      OF((zvoid *pG, int *rcnt, char *pwbuf,
 
 
 #endif /* !__unzip_h */
+

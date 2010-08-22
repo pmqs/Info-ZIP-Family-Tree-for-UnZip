@@ -4,7 +4,7 @@
    This document describes some VMS-specific behavior and implementation
 details of the Info-ZIP Zip and UnZip programs.
 
-   Last modified: 2009-03-02.
+   Last modified: 2009-11-02.
 
 
    Command-line Case
@@ -206,15 +206,16 @@ be seen as corrupt because of the data from beyond EOF.
    Changes to Program Exit Status Values
    -------------------------------------
 
-   Zip and UnZip exit with 32-bit VMS status values which are formed
-from their internal OS-independent status values.  In previous program
-versions, this was done by converting the internal success code (0) into
-%x00000001 (SS$_NORMAL), and converting the other internal warning and
-error codes using an artificial control/facility code, 0x7FFF (which
-includes some reserved bits), and a severity value which was determined
-according to rules specified in the VMS-specific exit function.
-Curiously, the internal status codes were left-shifted by 4 bits instead
-of 3, so all the resulting VMS message codes (bits 13:3) were even.
+   In a normal DCL environment, Zip and UnZip exit with 32-bit VMS
+status values which are formed from their internal OS-independent status
+values.  In previous program versions, this was done by converting the
+internal success code (0) into %x00000001 (SS$_NORMAL), and converting
+the other internal warning and error codes using an artificial
+control/facility code, 0x7FFF (which includes some reserved bits), and a
+severity value which was determined according to rules specified in the
+VMS-specific exit function. Curiously, the internal status codes were
+left-shifted by 4 bits instead of 3, so all the resulting VMS message
+codes (bits 13:3) were even.
 
    Zip and UnZip now have facility names and codes assigned by HP
 (UnZip: IZ_UNZIP, 1954; Zip: IZ_ZIP, 1955).  Now, by default, the
@@ -256,6 +257,14 @@ by defining a C macro with the old facility value:
 appropriate.)  This will maintain compatibility with older program
 versions, but will make the programs incompatible with the new error
 message files.
+
+   Beginning with Zip version 3.1 and UnZip version 6.1, on VMS V7.0 and
+newer (__CRTL_VER >= 70000000), Zip and UnZip can also exit with simple,
+UNIX-like status codes when used in a GNV "bash" shell environment. 
+This is done if the environment variable "SHELL" is set (and its value
+is not "DCL").  This feature may be disabled at build time by defining
+the C macro "NO_POSIX_EXIT".  (See comments in the builder regarding
+LOCAL_UNZIP or LOCAL_ZIP, as appropriate.)
 
 
    VMS File Attribute Schemes

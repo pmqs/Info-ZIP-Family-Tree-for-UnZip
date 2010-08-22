@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -669,6 +669,10 @@
    typedef unsigned int extent;
 #endif /* ?MODERN */
 
+#ifdef NEED_STRERROR
+   char *strerror();
+#endif /* def NEED_STRERROR */
+
 
 
 
@@ -1226,6 +1230,9 @@
  */
 #ifdef _MBCS
 #  include <locale.h>
+#  ifdef HAVE_MBSTR_H
+#    include <mbstr.h>
+#  endif /* def HAVE_MBSTR_H */
    /* Multi Byte Character Set */
 #  define ___MBS_TMP_DEF  char *___tmp_ptr;
 #  define ___TMP_PTR      ___tmp_ptr
@@ -1326,6 +1333,92 @@
 #ifndef IS_VOLID
 #  define IS_VOLID(m)  ((m) & 0x08)
 #endif
+
+
+/*--------------------------------------------------------------------
+    Long option support
+    23 August 2003
+    Updated for UnZip 1 March 2008
+    See unzip.c
+  --------------------------------------------------------------------*/
+
+/* The below is for use in the caller-provided options table */
+
+/* option groups */
+#define UZO 1   /* UnZip option */
+#define ZIO 2   /* ZipInfo option */
+
+
+/* value_type - value is always returned as a string. */
+#define o_NO_VALUE        0   /* this option does not take a value */
+#define o_REQUIRED_VALUE  1   /* this option requires a value */
+#define o_OPTIONAL_VALUE  2   /* value is optional (see get_option() for details) */
+#define o_VALUE_LIST      3   /* this option takes a list of values */
+#define o_ONE_CHAR_VALUE  4   /* next char is value (does not end short opt string) */
+#define o_NUMBER_VALUE    5   /* value is integer (does not end short opt string) */
+
+
+/* negatable - a dash following the option (but before any value) sets negated. */
+#define o_NOT_NEGATABLE   0   /* trailing '-' to negate either starts value or generates error */
+#define o_NEGATABLE       1   /* trailing '-' sets negated to TRUE */
+
+
+/* option_num can be this when option not in options table */
+#define o_NO_OPTION_MATCH     -1
+
+/* special values returned by get_option - do not use these as option IDs */
+#define o_NON_OPTION_ARG      ((unsigned long) 0xFFFF)    /* returned for non-option
+                                                             args */
+#define o_ARG_FILE_ERR        ((unsigned long) 0xFFFE)    /* internal recursion
+                                                             return (user never sees) */
+#define o_BAD_ERR             ((unsigned long) 0xFFFD)    /* bad error */
+
+/* options array is set in unzip.c */
+struct option_struct {
+  int option_group;         /* either UZO for UnZip or ZIO for ZipInfo syntax */
+  char Far *shortopt;       /* pointer to short option string */
+  char Far *longopt;        /* pointer to long option string */
+  int  value_type;          /* from above */
+  int  negatable;           /* from above */
+  unsigned long option_ID;  /* value returned by get_option when this option
+                               is found */
+  char Far *name;           /* optional string for option returned on some
+                               errors */
+};
+
+/* structure used to create -x and include file lists */
+struct file_list {
+  char *name;
+  struct file_list *next;
+};
+
+
+/* function prototypes */
+
+/* get the next option from args */
+unsigned long get_option OF((int option_group,
+                             char ***pargs, int *argc, int *argnum,
+                             int *optchar,
+                             char **value, int *negated, int *first_nonopt_arg,
+                             int *option_num, int recursion_depth));
+
+/* copy args - copy an args array, allocating space as needed */
+char **copy_args OF((char **args, int max_args));
+
+/* arg count - count args in argv like array */
+int arg_count OF((char **args));
+
+/* free args - free args created with one of these functions */
+int free_args OF((char **args));
+
+/* insert arg - copy an arg into args */
+int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
+                   int free_args));
+
+/*--------------------------------------------------------------------
+    End of Long option support
+  --------------------------------------------------------------------*/
+
 
 /***********************************/
 /*  LARGE_FILE_SUPPORT             */
@@ -2543,7 +2636,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    void   return_VMS          OF((int zip_error));                  /* vms.c */
 #endif
 #ifdef VMSCLI
-   ulg    vms_unzip_cmdline   OF((int *, char ***));            /* cmdline.c */
+   unsigned  vms_unzip_cmdline   OF((int *, char ***));         /* cmdline.c */
    int    VMSCLI_usage        OF((__GPRO__ int error));         /* cmdline.c */
 #endif
 #endif
@@ -2565,6 +2658,14 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
                             const char *path, z_stat *buf));      /* win32.c */
 #endif
 #endif
+
+/*---------------------------------------------------------------------------
+    Mac-OS-X-only functions:
+  ---------------------------------------------------------------------------*/
+
+#if defined( UNIX) && defined( __APPLE__)
+    int vol_attr_ok( const char *path);
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 /*---------------------------------------------------------------------------
     Miscellaneous/shared functions:
@@ -3103,15 +3204,19 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 # define utf8_to_escaped_string(utf8_string) \
          utf8_to_local_string(utf8_string, TRUE)
 
+  wchar_t *wide_to_wchar_string(zwchar *wide_string);
+
+  zwchar *wchar_to_wide_string(wchar_t *wchar_string);
+
+  /* convert local to wide string */
+  zwchar *local_to_wide_string OF ((ZCONST char *local_string));
+
 # if 0 /* currently unused */
   /* convert escape string to wide character */
   unsigned long escape_string_to_wide OF((ZCONST char *escape_string));
 
   /* convert local to UTF-8 */
   char *local_to_utf8_string OF ((ZCONST char *local_string));
-
-  /* convert local to wide string */
-  zwchar *local_to_wide_string OF ((ZCONST char *local_string));
 
   /* convert wide string to UTF-8 */
   char *wide_to_utf8_string OF((ZCONST zwchar *wide_string));
@@ -3121,3 +3226,4 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 
 
 #endif /* !__unzpriv_h */
+

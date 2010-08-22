@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -685,10 +685,12 @@ int mapname(__G__ renamed)
         pp = lastsemi;            /* semi-colon was omitted:  expect all #'s */
 # endif
 #endif
-        while (isdigit((uch)(*pp)))
-            ++pp;
-        if (*pp == '\0')          /* only digits between ';' and end:  nuke */
-            *lastsemi = '\0';
+        if (*pp != '\0') {        /* At least one digit is required. */
+            while (isdigit((uch)(*pp)))
+                ++pp;
+            if (*pp == '\0')      /* only digits between ';' and end:  nuke */
+                *lastsemi = '\0';
+        }
     }
 
 #ifdef MAYBE_PLAIN_FAT

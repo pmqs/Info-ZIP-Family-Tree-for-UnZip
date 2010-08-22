@@ -2207,7 +2207,7 @@ static int utf8_to_ucs4_string(utf8, ucs4buf, buflen)
   for (;;)
   {
     ulg ch = ucs4_char_from_utf8(&utf8);
-    if (ch == ~0L)
+    if (ch == (ulg)~0L)
       return -1;
     else
     {
@@ -2546,7 +2546,49 @@ char *utf8_to_local_string(utf8_string, escape_all)
   return loc;
 }
 
-#if 0 /* currently unused */
+wchar_t *wide_to_wchar_string(wide_string)
+  zwchar *wide_string;
+{
+  wchar_t *wstring;
+  int i;
+  int zwlen;
+
+  for (zwlen = 0; wide_string[zwlen]; zwlen++) ;
+
+  if ((wstring = malloc((zwlen + 1) * sizeof(wchar_t))) == NULL) {
+    return NULL;
+  }
+
+  for (i = 0; wide_string[i]; i++) {
+    wstring[i] = (wchar_t)wide_string[i];
+  }
+  wstring[i] = (wchar_t)0;
+
+  return wstring;
+}
+
+zwchar *wchar_to_wide_string(wchar_string)
+  wchar_t *wchar_string;
+{
+  zwchar *zwstring;
+  int i;
+  int wlen;
+
+  for (wlen = 0; wchar_string[wlen]; wlen++) ;
+
+  if ((zwstring = malloc((wlen + 1) * sizeof(zwchar))) == NULL) {
+    return NULL;
+  }
+
+  for (i = 0; wchar_string[i]; i++) {
+    zwstring[i] = (zwchar)wchar_string[i];
+  }
+  zwstring[i] = (zwchar)0;
+
+  return zwstring;
+}
+
+
 /* convert multi-byte character string to wide character string */
 zwchar *local_to_wide_string(local_string)
   ZCONST char *local_string;
@@ -2580,6 +2622,7 @@ zwchar *local_to_wide_string(local_string)
   return wide_string;
 }
 
+#if 0 /* currently unused */
 
 /* convert wide string to UTF-8 */
 char *wide_to_utf8_string(wide_string)

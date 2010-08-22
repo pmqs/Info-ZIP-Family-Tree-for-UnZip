@@ -5,9 +5,27 @@
 # are specified explicitly.  The script attempts to handle egrep's "-h"
 # and "-l" options internally.
 #
-# This script assumes that the desired "unzip" and "egrep" (and "sed")
-# programs are on the user's PATH.
+# This script assumes that the desired "unzip" and "egrep" (and "grep",
+# "od", and "sed") programs are on the user's PATH.  The user may specify
+# a particular "unzip" path in the environment variable ZIPGREP_UNZIP.
 #
+
+# UnZip command.
+unzip=${ZIPGREP_UNZIP:-unzip}
+
+# UnZip command options.  (Note: Shell quoting can cause problems with
+# enbedded spaces in a single options variable.)
+unzopts1='-L-'
+unzopts2='-p'
+unzopts3=''
+
+# ASCII/EBCDIC test.  (Note: Simple-looking test, if [[ "a" < "A" ]], is
+# too modern for an old shell (like Solaris /bin/sh)).
+echo A | od -x | grep -i "C115" > /dev/null
+if test $? -eq 0; then
+  unzopts2='-cq'
+  unzopts3='-aa'
+fi
 
 pat=""
 opt=""
@@ -54,16 +72,16 @@ pat=` echo "$pat" | \
 
 # Use "unzip -Z1" to get a listing of the specified members from the
 # specified archive.  Escape any backslashes in a file name.
-for i in `unzip -Z1 "$zipfile" ${1+"$@"} | sed -e 's/\\\\/\\\\\\\\/g' `; do
+for i in `$unzip -Z1 "$zipfile" ${1+"$@"} | sed -e 's/\\\\/\\\\\\\\/g' `; do
   if test $list -eq 1; then
     # "-l": Show only the archive member name, not the matching line(s).
-    unzip -p-L "$zipfile" "$i" | \
+    $unzip $unzopts1 $unzopts2 $unzopts3 "$zipfile" "$i" | \
      egrep $opt "$pat" > /dev/null && echo "$i"
     status_grep=$?
   elif test $silent -eq 1; then
     # "-h": Show only the matching line(s), not the archive member name.
     # ("-s" in "opt" will silence "egrep", stopping all output.)
-    unzip -p-L "$zipfile" "$i" | \
+    $unzip $unzopts1 $unzopts2 $unzopts3 "$zipfile" "$i" | \
      egrep $opt "$pat"
     status_grep=$?
   else
@@ -77,7 +95,7 @@ for i in `unzip -Z1 "$zipfile" ${1+"$@"} | sed -e 's/\\\\/\\\\\\\\/g' `; do
     # with ``.
     exec 4>&1
     status_grep=` ( \
-     ( unzip -p-L "$zipfile" "$i" | \
+     ( $unzip $unzopts1 $unzopts2 $unzopts3 "$zipfile" "$i" | \
      egrep $opt "$pat" 1>&4 ; echo $? >&3 ) 4>&1 | \
      sed "s|^|${i}:|" 1>&4 \
      ) 3>&1 `

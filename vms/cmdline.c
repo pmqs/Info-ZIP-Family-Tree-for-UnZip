@@ -1,11 +1,22 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
+
+
+/*    Stand-alone test procedure:
+ *
+ * cc /define = TEST=1 /include = [] /object = [.vms] [.vms]cmdline.c
+ * set command /object = [.vms]unz_cli.obj [.vms]unz_cli.cld
+ * link /executable = [] [.vms]cmdline.obj, [.vms]unz_cli.obj
+ * EXEC*UTE == "$ SYS$DISK:[]'"
+ * exec cmdline [ /qualifiers ...] [parameters ...]
+ */
+
 
 /* 2004-12-13 SMS.
  * Disabled the module name macro to accommodate old GNU C which didn't
@@ -14,7 +25,7 @@
  */
 #if 0
 #define module_name VMS_UNZIP_CMDLINE
-#define module_ident "02-013"
+#define module_ident "02-015"
 #endif /* 0 */
 
 /*
@@ -33,6 +44,17 @@
 **
 **  Modified by:
 **
+**      02-015          S. Schweda              31-Jul-2010 22:00
+**              Rewrote option conversion code to use a separate argv[]
+**              member for each option, eliminating combined short
+**              options.  Changed /ZIPINFO /COMMENT to use "-z" instead
+**              of (incorrect) "-c".  Removed traces of /EXTRACT.  Added
+**              /VERBOSE = COMMAND.  Replaced /[NO]CASE_INSENSITIVE with
+**              /CASE_MATCH.  Added (and used) macros DESCRIPTOR_D and
+**              ADD_ARG.
+**
+**      02-014          E. Gordon               08-Jul-2010 16:41
+**              Modified to work with get_options() and new command table.
 **      02-013          S. Schweda, C. Spieler  29-Dec-2007 03:34
 **              Extended /RESTORE qualifier to support timestamp restoration
 **              options.
@@ -82,15 +104,6 @@
 **
 */
 
-/*    Stand-alone test procedure:
- *
- * cc /define = TEST=1 [.vms]cmdline.c /include = [] /object = [.vms]
- * set command /object = [.vms]unz_cli.obj [.vms]unz_cli.cld
- * link /executable = [] [.vms]cmdline.obj, [.vms]unz_cli.obj
- * EXEC*UTE == "$SYS$DISK:[]'"
- * exec cmdline [ /qualifiers ...] [parameters ...]
- */
-
 
 
 /* 2004-12-13 SMS.
@@ -135,32 +148,42 @@ globalvalue CLI$_COMMA;
 #endif
 
 /*
-**  "Macro" to initialize a dynamic string descriptor.
-*/
-#define init_dyndesc(dsc) {\
-        dsc.dsc$w_length = 0;\
-        dsc.dsc$b_dtype = DSC$K_DTYPE_T;\
-        dsc.dsc$b_class = DSC$K_CLASS_D;\
-        dsc.dsc$a_pointer = NULL;}
+ * DESCRIPTOR_D macro.  Like $DESCRIPTOR, but with:
+ *    dsc$descriptor_s  ->  dsc$descriptor_d
+ *       DSC$K_CLASS_S  ->  DSC$K_CLASS_D
+ *              string  ->  (NULL)
+ */
+#define DESCRIPTOR_D( name) struct dsc$descriptor_d name = \
+ { 0, DSC$K_DTYPE_T, DSC$K_CLASS_D, NULL }
 
 /*
-**  Memory allocation step for argv string buffer.
-*/
+ *  Memory allocation block size for argv string buffer.
+ */
 #define ARGBSIZE_UNIT 256
 
 /*
-**  Memory reallocation macro for argv string buffer.
-*/
-#define CHECK_BUFFER_ALLOCATION(buf, reserved, requested) { \
+ *  Memory reallocation macro for argv string buffer.
+ */
+#define CHECK_BUFFER_ALLOCATION( buf, reserved, requested) { \
     if ((requested) > (reserved)) { \
         char *save_buf = (buf); \
         (reserved) += ARGBSIZE_UNIT; \
-        if (((buf) = (char *) realloc((buf), (reserved))) == NULL) { \
-            if (save_buf != NULL) free(save_buf); \
-            return (SS$_INSFMEM); \
+        if (((buf) = (char *) realloc( (buf), (reserved))) == NULL) { \
+            if (save_buf != NULL) free( save_buf); \
+            return SS$_INSFMEM; \
         } \
     } \
 }
+
+/*
+ * Macro to add an argument to argv string buffer.
+ */
+#define ADD_ARG( opt) \
+    x = cmdl_len; \
+    cmdl_len += strlen( opt)+ 1; \
+    CHECK_BUFFER_ALLOCATION( the_cmd_line, cmdl_size, cmdl_len) \
+    strcpy( &the_cmd_line[ x], opt);
+
 
 /*
 **  Define descriptors for all of the CLI parameters and qualifiers.
@@ -171,17 +194,22 @@ $DESCRIPTOR(cli_extract,        "EXTRACT");             /* obsolete */
 $DESCRIPTOR(cli_text,           "TEXT");                /* -a[a] */
 $DESCRIPTOR(cli_text_auto,      "TEXT.AUTO");           /* -a */
 $DESCRIPTOR(cli_text_all,       "TEXT.ALL");            /* -aa */
-$DESCRIPTOR(cli_text_none,      "TEXT.NONE");           /* ---a */
+$DESCRIPTOR(cli_text_none,      "TEXT.NONE");           /* -a- */
 $DESCRIPTOR(cli_text_stmlf,     "TEXT.STMLF");          /* -S */
 $DESCRIPTOR(cli_binary,         "BINARY");              /* -b[b] */
 $DESCRIPTOR(cli_binary_auto,    "BINARY.AUTO");         /* -b */
 $DESCRIPTOR(cli_binary_all,     "BINARY.ALL");          /* -bb */
-$DESCRIPTOR(cli_binary_none,    "BINARY.NONE");         /* ---b */
-$DESCRIPTOR(cli_case_insensitive,"CASE_INSENSITIVE");   /* -C */
+$DESCRIPTOR(cli_binary_none,    "BINARY.NONE");         /* -b- */
+$DESCRIPTOR(cli_case_insensitive, "CASE_INSENSITIVE");  /* -C */
+$DESCRIPTOR(cli_case_match,     "CASE_MATCH");          /* -C[-] */
+$DESCRIPTOR(cli_case_match_blind, "CASE_MATCH.BLIND");  /* -C */
+$DESCRIPTOR(cli_case_match_sens, "CASE_MATCH.SENSITIVE"); /* -C- */
 $DESCRIPTOR(cli_screen,         "SCREEN");              /* -c */
 $DESCRIPTOR(cli_directory,      "DIRECTORY");           /* -d */
 $DESCRIPTOR(cli_freshen,        "FRESHEN");             /* -f */
 $DESCRIPTOR(cli_help,           "HELP");                /* -h */
+$DESCRIPTOR(cli_help_normal,    "HELP.NORMAL");         /* -h */
+$DESCRIPTOR(cli_help_extended,  "HELP.EXTENDED");       /* -hh */
 $DESCRIPTOR(cli_junk,           "JUNK");                /* -j */
 $DESCRIPTOR(cli_lowercase,      "LOWERCASE");           /* -L */
 $DESCRIPTOR(cli_list,           "LIST");                /* -l */
@@ -203,9 +231,10 @@ $DESCRIPTOR(cli_uppercase,      "UPPERCASE");           /* -U */
 $DESCRIPTOR(cli_update,         "UPDATE");              /* -u */
 $DESCRIPTOR(cli_version,        "VERSION");             /* -V */
 $DESCRIPTOR(cli_restore,        "RESTORE");             /* -X */
-$DESCRIPTOR(cli_restore_own,    "RESTORE.OWNER_PROT");  /* -X */
+$DESCRIPTOR(cli_restore_acl,    "RESTORE.ACL");         /* -X */
+$DESCRIPTOR(cli_restore_prot,   "RESTORE.PROTECTION");  /* -X- */
 $DESCRIPTOR(cli_restore_date,   "RESTORE.DATE");        /* -DD */
-$DESCRIPTOR(cli_restore_date_all, "RESTORE.DATE.ALL");  /* --D */
+$DESCRIPTOR(cli_restore_date_all, "RESTORE.DATE.ALL");  /* -D- */
 $DESCRIPTOR(cli_restore_date_files, "RESTORE.DATE.FILES"); /* -D */
 $DESCRIPTOR(cli_dot_version,    "DOT_VERSION");         /* -Y */
 $DESCRIPTOR(cli_comment,        "COMMENT");             /* -z */
@@ -214,16 +243,18 @@ $DESCRIPTOR(cli_ods2,           "ODS2");                /* -2 */
 $DESCRIPTOR(cli_traverse,       "TRAVERSE_DIRS");       /* -: */
 
 $DESCRIPTOR(cli_information,    "ZIPINFO");             /* -Z */
-$DESCRIPTOR(cli_short,          "SHORT");               /* -Zs */
-$DESCRIPTOR(cli_medium,         "MEDIUM");              /* -Zm */
-$DESCRIPTOR(cli_long,           "LONG");                /* -Zl */
-$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -Zv */
 $DESCRIPTOR(cli_header,         "HEADER");              /* -Zh */
-$DESCRIPTOR(cli_totals,         "TOTALS");              /* -Zt */
-$DESCRIPTOR(cli_times,          "TIMES");               /* -ZT */
+$DESCRIPTOR(cli_long,           "LONG");                /* -Zl */
+$DESCRIPTOR(cli_medium,         "MEDIUM");              /* -Zm */
 $DESCRIPTOR(cli_one_line,       "ONE_LINE");            /* -Z2 */
-
 $DESCRIPTOR(cli_page,           "PAGE");                /* -M , -ZM */
+$DESCRIPTOR(cli_short,          "SHORT");               /* -Zs */
+$DESCRIPTOR(cli_times,          "TIMES");               /* -ZT */
+$DESCRIPTOR(cli_totals,         "TOTALS");              /* -Zt */
+$DESCRIPTOR(cli_noverbose,      "NOVERBOSE");           /* -v-, -Zv- */
+$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v, -Zv */
+$DESCRIPTOR(cli_verbose_normal, "VERBOSE.NORMAL");      /* -v, -Zv */
+$DESCRIPTOR(cli_verbose_command, "VERBOSE");            /* (none) */
 
 $DESCRIPTOR(cli_yyz,            "YYZ_UNZIP");
 
@@ -232,6 +263,7 @@ $DESCRIPTOR(cli_infile,         "INFILE");
 $DESCRIPTOR(unzip_command,      "unzip ");
 
 static int show_VMSCLI_usage;
+static int verbose_command = 0;
 
 #ifndef vms_unzip_cld
 #  define vms_unzip_cld VMS_UNZIP_CLD
@@ -242,8 +274,12 @@ extern void *vms_unzip_cld;
 globalref void *vms_unzip_cld;
 #endif
 
-/* extern unsigned long LIB$GET_INPUT(void), LIB$SIG_TO_RET(void); */
+/* extern unsigned int LIB$GET_INPUT(void), LIB$SIG_TO_RET(void); */
 
+/*
+ * Old systems may lack <cli$routines.h>, so we provide the important
+ * stuff.
+ */
 #ifndef cli$dcl_parse
 #  define cli$dcl_parse CLI$DCL_PARSE
 #endif
@@ -253,27 +289,20 @@ globalref void *vms_unzip_cld;
 #ifndef cli$get_value
 #  define cli$get_value CLI$GET_VALUE
 #endif
-extern unsigned long cli$dcl_parse ();
-extern unsigned long cli$present ();
-extern unsigned long cli$get_value ();
+extern unsigned int cli$dcl_parse();
+extern unsigned int cli$present();
+extern unsigned int cli$get_value();
 
-unsigned long vms_unzip_cmdline (int *, char ***);
-static unsigned long get_list (struct dsc$descriptor_s *,
-                               struct dsc$descriptor_d *, int,
-                               char **, unsigned long *, unsigned long *);
-static unsigned long check_cli (struct dsc$descriptor_s *);
-
-
-#ifdef TEST
-int
-main(int argc, char **argv)
-{
-    return (vms_unzip_cmdline(&argc, &argv));
-}
-#endif /* TEST */
+static unsigned int get_list( struct dsc$descriptor_s *,
+                              struct dsc$descriptor_d *,
+                              int,
+                              char **,
+                              unsigned int *,
+                              unsigned int *);
+static unsigned int check_cli( struct dsc$descriptor_s *);
 
 
-unsigned long
+unsigned int
 vms_unzip_cmdline (int *argc_p, char ***argv_p)
 {
 /*
@@ -281,8 +310,8 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 **
 **  Function:
 **
-**      Parse the DCL command line and create a fake argv array to be
-**      handed off to Zip.
+**      Parse the DCL command line and create a replacement argv array
+**      to be passed to UnZip.
 **
 **      NOTE: the argv[] is built as we go, so all the parameters are
 **      checked in the appropriate order!!
@@ -302,28 +331,28 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 **      SS$_INSFMEM     - A malloc() or realloc() failed
 **      SS$_ABORT       - Bad time value
 **
+**  Modified to work with the get_option() command line parser.  08 July 2010
+**
 */
-    register unsigned long status;
-    char options[256];
-    char *the_cmd_line;                 /* buffer for argv strings */
-    unsigned long cmdl_size;            /* allocated size of buffer */
-    unsigned long cmdl_len;             /* used size of buffer */
+    char *opt;
     char *ptr;
-    int  x, len, zipinfo, exclude_list;
-    int restore_date;
+    char *the_cmd_line;                 /* buffer for argv strings */
+    unsigned int cmdl_size;             /* allocated size of buffer */
+    unsigned int cmdl_len;              /* used size of buffer */
+    unsigned int status;
+    int exclude_list;
+    int len;
+    int x;
+    int zipinfo;
 
-    int new_argc;
-    char **new_argv;
+    int new_argc;                       /* Arg count for new arg vector. */
+    char **new_argv;                    /* New arg vector. */
 
-    struct dsc$descriptor_d work_str;
-    struct dsc$descriptor_d foreign_cmdline;
-    struct dsc$descriptor_d output_directory;
-    struct dsc$descriptor_d password_arg;
+    DESCRIPTOR_D( work_str);
+    DESCRIPTOR_D( foreign_cmdline);
+    DESCRIPTOR_D( output_directory);    /* Arg for /DIRECTORY = dir_name. */
+    DESCRIPTOR_D( password_arg);        /* Arg for /PASSWORD = passwd. */
 
-    init_dyndesc(work_str);
-    init_dyndesc(foreign_cmdline);
-    init_dyndesc(output_directory);
-    init_dyndesc(password_arg);
 
     /*
     **  See if the program was invoked by the CLI (SET COMMAND) or by
@@ -345,375 +374,74 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
              (*(foreign_cmdline.dsc$a_pointer) == '"') &&
              (*(foreign_cmdline.dsc$a_pointer + 1) == '-'))) {
             show_VMSCLI_usage = FALSE;
-            return (SS$_NORMAL);
+            return SS$_NORMAL;
         }
 
         str$concat(&work_str, &unzip_command, &foreign_cmdline);
         status = cli$dcl_parse(&work_str, &vms_unzip_cld, lib$get_input,
                         lib$get_input, 0);
-        if (!(status & 1)) return (status);
+        if (!(status & 1)) return status;
     }
 
     /*
-    **  There's always going to be a new_argv[] because of the image name.
-    */
+     *  There will always be a new_argv[] because of the image name.
+     */
     if ((the_cmd_line = (char *) malloc(cmdl_size = ARGBSIZE_UNIT)) == NULL)
-        return (SS$_INSFMEM);
+        return SS$_INSFMEM;
 
-    strcpy(the_cmd_line, "unzip");
-    cmdl_len = sizeof("unzip");
+#define UNZIP_COMMAND_NAME "unzip"
 
-    /*
-    **  First, check to see if any of the regular options were specified.
-    */
-
-    options[0] = '-';
-    ptr = &options[1];          /* Point to temporary buffer */
+    strcpy( the_cmd_line, UNZIP_COMMAND_NAME);
+    cmdl_len = sizeof( UNZIP_COMMAND_NAME);
 
     /*
-    **  Is it ZipInfo??
-    */
+     * UnZip or ZipInfo?
+     */
     zipinfo = 0;
-    status = cli$present(&cli_information);
-    if (status & 1) {
-
+    status = cli$present( &cli_information);
+    if (status & 1)
+    {
+        /* ZipInfo ("unzip -Z"). */
         zipinfo = 1;
 
-        *ptr++ = 'Z';
-
-        if (cli$present(&cli_one_line) & 1)
-            *ptr++ = '2';
-        if (cli$present(&cli_short) & 1)
-            *ptr++ = 's';
-        if (cli$present(&cli_medium) & 1)
-            *ptr++ = 'm';
-        if (cli$present(&cli_long) & 1)
-            *ptr++ = 'l';
-        if (cli$present(&cli_verbose) & 1)
-            *ptr++ = 'v';
-        if (cli$present(&cli_header) & 1)
-            *ptr++ = 'h';
-        if (cli$present(&cli_comment) & 1)
-            *ptr++ = 'c';
-        if (cli$present(&cli_totals) & 1)
-            *ptr++ = 't';
-        if (cli$present(&cli_times) & 1)
-            *ptr++ = 'T';
-
+        /* Put out "-Z" option first. */
+#define IPT__Z   "-Z"           /* "-Z"  ZipInfo. */
+        ADD_ARG( IPT__Z);
     }
-    else {
+    else
+    {
+        /* UnZip (normal). */
 
-#if 0
-        /*
-        **  Extract files?
-        */
-        status = cli$present(&cli_extract);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'x';
-#endif
+        /* Process special qualifiers (those with deferred or no
+         * new-command-line activity).
+         */
 
         /*
-        **  Write binary files in VMS binary (fixed-length, 512-byte records,
-        **  record attributes: none) format
-        **  (auto-convert, or force to convert all files)
-        */
-        status = cli$present(&cli_binary);
-        if (status != CLI$_ABSENT) {
-            *ptr++ = '-';
-            *ptr++ = '-';
-            *ptr++ = 'b';
-            if ((status & 1) &&
-                !((status = cli$present(&cli_binary_none)) & 1)) {
-                *ptr++ = 'b';
-                if ((status = cli$present(&cli_binary_all)) & 1)
-                    *ptr++ = 'b';
-            }
+         * Extract destination directory.
+         */
+        status = cli$present( &cli_directory);
+        if (status == CLI$_PRESENT)
+        {
+            /* /DIRECTORY = destination_dir */
+            status = cli$get_value( &cli_directory, &output_directory);
         }
 
         /*
-        **  Convert files as text (CR LF -> LF, etc.)
-        **  (auto-convert, or force to convert all files)
-        */
-        status = cli$present(&cli_text);
-        if (status != CLI$_ABSENT) {
-            *ptr++ = '-';
-            *ptr++ = '-';
-            *ptr++ = 'a';
-            if ((status & 1) &&
-                !((status = cli$present(&cli_text_none)) & 1)) {
-                *ptr++ = 'a';
-                if ((status = cli$present(&cli_text_all)) & 1)
-                    *ptr++ = 'a';
-                if ((status = cli$present(&cli_text_stmlf)) & 1)
-                    *ptr++ = 'S';
-            }
+         * Decryption password from command line.
+         */
+        status = cli$present( &cli_password);
+        if (status == CLI$_PRESENT)
+        {
+            /* /PASSWORD = passwd */
+            status = cli$get_value( &cli_password, &password_arg);
         }
+    } /* ZipInfo [else] */
 
-        /*
-        **  Extract files to screen?
-        */
-        status = cli$present(&cli_screen);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'c';
+    /* Process options common to UnZip and ZipInfo. */
 
-        /*
-        **  Re-create directory structure?  (default)
-        */
-        status = cli$present(&cli_directory);
-        if (status == CLI$_PRESENT) {
-            status = cli$get_value(&cli_directory, &output_directory);
-        }
-
-        /*
-        **  Restore directory date-times.
-        */
-        restore_date = 0;
-        status = cli$present(&cli_restore_date);
-        if (status != CLI$_ABSENT) {
-            /* Emit "----D" to reset the timestamp restore state "D_flag"
-            ** consistently to 0 (independent of optional environment
-            ** option settings).
-            */
-            *ptr++ = '-';
-            *ptr++ = '-';
-            *ptr++ = '-';
-            *ptr++ = 'D';
-            if (status == CLI$_NEGATED) {
-                /* /RESTORE=NODATE */
-                restore_date = 2;
-            } else {
-                status = cli$present(&cli_restore_date_all);
-                if (status == CLI$_PRESENT) {
-                    /* /RESTORE=(DATE=ALL) */
-                    restore_date = 0;
-                } else {
-                    /* /RESTORE=(DATE=FILES) (default) */
-                    restore_date = 1;
-                }
-            }
-            /* Emit the required number of (positive) "D" characters. */
-            while (restore_date > 0) {
-                *ptr++ = 'D';
-                restore_date--;
-            }
-        }
-
-        /*
-        **  Freshen existing files, create none
-        */
-        status = cli$present(&cli_freshen);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'f';
-
-        /*
-        **  Show the help.
-        */
-        status = cli$present(&cli_help);
-        if (status & 1)
-            *ptr++ = 'h';
-
-        /*
-        **  Junk stored directory names on unzip
-        */
-        status = cli$present(&cli_junk);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'j';
-
-        /*
-        **  List contents (/BRIEF (default) or /FULL)
-        */
-        status = cli$present(&cli_list);
-        if (status & 1) {
-            if (cli$present(&cli_full) & 1) {
-               *ptr++ = 'v';
-               if (cli$present(&cli_full_diags) & 1)
-                   *ptr++ = 'v';
-            } else
-               *ptr++ = 'l';
-        }
-
-        /*
-        **  Existing files: new version, overwrite, no extract?
-        */
-        status = cli$present(&cli_exist_newver);
-        if (status == CLI$_PRESENT) {
-            *ptr++ = 'o';
-        }
-        status = cli$present(&cli_exist_over);
-        if (status == CLI$_PRESENT) {
-            *ptr++ = 'o';
-            *ptr++ = 'o';
-        }
-        status = cli$present(&cli_exist_noext);
-        if (status == CLI$_PRESENT) {
-            *ptr++ = 'n';
-        }
-
-        /*
-        **  Overwrite files (deprecated) ?
-        */
-        status = cli$present(&cli_overwrite);
-        if (status == CLI$_NEGATED)
-            *ptr++ = 'n';
-        else if (status != CLI$_ABSENT)
-            *ptr++ = 'o';
-
-        /*
-        **  Decryption password from command line?
-        */
-        status = cli$present(&cli_password);
-        if (status == CLI$_PRESENT) {
-            status = cli$get_value(&cli_password, &password_arg);
-        }
-
-        /*
-        **  Pipe files to SYS$OUTPUT with no informationals?
-        */
-        status = cli$present(&cli_pipe);
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'p';
-
-        /*
-        **  Quiet
-        */
-        status = cli$present(&cli_quiet);
-        if (status & 1) {
-            *ptr++ = 'q';
-            if ((status = cli$present(&cli_super_quiet)) & 1)
-                *ptr++ = 'q';
-        }
-
-        /*
-        **  Test archive integrity
-        */
-        status = cli$present(&cli_test);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 't';
-
-        /*
-        **  Set archive timestamp according to its newest file.
-        */
-        status = cli$present(&cli_timestamp);
-        if (status & 1)
-            *ptr++ = 'T';
-
-        /*
-        **  Extract "foo.ext.###" as "foo.ext;###" (treat .### as version number)
-        */
-        status = cli$present(&cli_dot_version);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'Y';
-
-        /*
-        **  Force conversion of extracted file names to old ODS2 conventions
-        */
-        status = cli$present(&cli_ods2);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = '2';
-
-        /*
-        **  Traverse directories (don't skip "../" path components)
-        */
-        status = cli$present(&cli_traverse);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = ':';
-
-        /*
-        **  Make (some) names lowercase
-        */
-        status = cli$present(&cli_lowercase);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'L';
-
-        /*
-        **  Uppercase (don't convert to lower)
-        */
-        status = cli$present(&cli_uppercase);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'U';
-
-        /*
-        **  Update (extract only new and newer files)
-        */
-        status = cli$present(&cli_update);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'u';
-
-        /*
-        **  Version (retain VMS/DEC-20 file versions)
-        */
-        status = cli$present(&cli_version);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'V';
-
-        /*
-        **  Restore owner/protection info
-        */
-        status = cli$present(&cli_restore_own);
-        if (status != CLI$_ABSENT) {
-            if (status == CLI$_NEGATED) {
-                *ptr++ = '-';
-            } else if ((status = cli$present(&cli_restore))
-                       == CLI$_NEGATED) {
-                *ptr++ = '-';
-            }
-            *ptr++ = 'X';
-        }
-
-        /*
-        **  Display only the archive comment
-        */
-        status = cli$present(&cli_comment);
-        if (status == CLI$_NEGATED)
-            *ptr++ = '-';
-        if (status != CLI$_ABSENT)
-            *ptr++ = 'z';
-
-    }   /* ZipInfo check way up there.... */
-
-    /* The following options are common to both UnZip and ZipInfo mode. */
-
-    /*
-    **  Match filenames case-insensitively (-C)
-    */
-    status = cli$present(&cli_case_insensitive);
-    if (status == CLI$_NEGATED)
-        *ptr++ = '-';
-    if (status != CLI$_ABSENT)
-        *ptr++ = 'C';
-
-    /*
-    **  Use builtin pager for all screen output
-    */
-    status = cli$present(&cli_page);
-    if (status == CLI$_NEGATED)
-        *ptr++ = '-';
-    if (status != CLI$_ABSENT)
-        *ptr++ = 'M';
+    /* Process special qualifiers (those with deferred or no
+     * new-command-line activity).
+     */
 
     /*
     **  Check existence of a list of files to exclude, fetch is done later.
@@ -722,28 +450,1001 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     exclude_list = ((status & 1) != 0);
 
     /*
-    **  If the user didn't give any DCL qualifier, assume he wants the
-    **  Un*x interface.
-    if ( (ptr == &options[1]) &&
-         (output_directory.dsc$w_length == 0) &&
-         (password_arg.dsc$w_length == 0) &&
-         (!exclude_list)  ) {
-        free(the_cmd_line);
-        return (SS$_NORMAL);
+     * Verbose command-line translation.
+     */
+    status = cli$present( &cli_verbose_command);
+    if (status & 1)
+    {
+        /* /VERBOSE = COMMAND */
+        verbose_command = 1;
     }
-    */
 
     /*
-    **  Now copy the final options string to the_cmd_line.
-    */
-    len = ptr - &options[0];
-    if (len > 1) {
-        options[len] = '\0';
-        x = cmdl_len;
-        cmdl_len += len + 1;
-        CHECK_BUFFER_ALLOCATION(the_cmd_line, cmdl_size, cmdl_len)
-        strcpy(&the_cmd_line[x], options);
+     * Filename matching case-sensitivity (-C).
+     * Clear any existing "-C" option with "-C-", then add
+     * the desired "C" value.
+     */
+#define OPT__C   "-C-C"         /* "-C"  Case-blind matching. */
+#define OPT__CN  "-C-"          /* ""    Case-sensitive matching (default). */
+
+    status = cli$present( &cli_case_match);
+    if (status & 1)
+    {
+        status = cli$present( &cli_case_match_blind);
+        if (status & 1)
+        {
+            /* /CASE_MATCH = BLIND */
+            opt = OPT__C;
+        }
+        else
+        {
+            /* /CASE_MATCH = SENSITIVE */
+            opt = OPT__CN;
+        }
+        ADD_ARG( opt);
     }
+
+#if 0
+    /*
+     * Filename matching case-sensitivity (-C)
+     * /[NO]CASE_INSENSITIVE dropped for conflict with /CASE_MATCH.
+     * Clear any existing "-C" option with "-C-", then add
+     * the desired "C" value.
+     */
+
+    status = cli$present( &cli_case_insensitive);
+    if ((status & 1) || (status == CLI$_NEGATED))
+    {
+        if (status == CLI$_NEGATED)
+        {
+            /* /NOCASE_INSENSITIVE */
+            opt = OPT__CN;
+        }
+        else
+        {
+            /* /CASE_INSENSITIVE */
+            opt = OPT__C;
+        }
+        ADD_ARG( opt);
+    }
+#endif /* 0 */
+
+    /*
+     * Use built-in ("more") pager for all screen output.
+     * Clear any existing "-M" option with "-M-", then add
+     * the desired "M" value.
+     */
+#define OPT__M   "-M-M"         /* "-M"  Use built-in "more" pager. */
+#define OPT__MN  "-M-"          /* ""    Use no built-in pager (default). */
+
+    status = cli$present( &cli_page);
+    if ((status & 1) || (status == CLI$_NEGATED))
+    {
+        if (status == CLI$_NEGATED)
+        {
+            /* /NOPAGE */
+            opt = OPT__MN;
+        }
+        else
+        {
+            /* /PAGE */
+            opt = OPT__M;
+        }
+        ADD_ARG( opt);
+    }
+
+
+    if (zipinfo == 0)
+    {
+        /* UnZip (normal) options. */
+
+        /*
+         * Convert files as text (CR LF -> LF, etc.)
+         * Clear any existing "-a[a]" options with "-a-a-", then add
+         * the desired "a" and/or "S" value(s).
+         */
+#define OPT_A   "-a-a-a"        /* "-a"  auto-convert text files. */
+#define OPT_AA  "-a-a-aa"       /* "-aa" convert all files as text. */
+#define OPT_AN  "-a-a-"         /* ""    convert no files as text. */
+
+#define OPT__S  "-S"            /* "-S"  Use Stream_LF for text files. */
+
+        status = cli$present( &cli_text);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOTEXT */
+                opt = OPT_AN;
+            }
+            else
+            {
+                /* /TEXT */
+                status = cli$present( &cli_text_none);
+                if (status & 1)
+                {
+                    /* /TEXT = NONE */
+                    opt = OPT_AN;
+                }
+                else
+                {
+                    status = cli$present( &cli_text_all);
+                    if (status & 1)
+                    {
+                         /* /TEXT = ALL */
+                         opt = OPT_AA;
+                    }
+                    else
+                    {
+                         /* /TEXT or /TEXT = AUTO */
+                         opt = OPT_A;
+                    }
+                }
+            }
+            ADD_ARG( opt);
+
+            status = cli$present( &cli_text_stmlf);
+            if (status & 1)
+            {
+                /* /TEXT = STMLF */
+                ADD_ARG( OPT__S);
+            }
+        }
+
+        /*
+         * Write binary files in VMS binary (fixed-length, 512-byte
+         * records, record attributes: none) format.
+         * Clear any existing "-b[b]" options with "-b-b-", then add
+         * the desired "b" value.
+         */
+#define OPT_B   "-b-b-b"        /* "-b"  Fixed-512 for binary files. */
+#define OPT_BB  "-b-b-bb"       /* "-bb" Fixed-512 for all files. */
+#define OPT_BN  "-b-b-"         /* ""    Fixed-512 for no files. */
+
+        status = cli$present( &cli_binary);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOBINARY */
+                opt = OPT_BN;
+            }
+            else
+            {
+                /* /BINARY */
+                status = cli$present( &cli_binary_none);
+                if (status & 1)
+                {
+                    /* /BINARY = NONE */
+                    opt = OPT_BN;
+                }
+                else
+                {
+                    status = cli$present( &cli_binary_all);
+                    if (status & 1)
+                    {
+                         /* /BINARY = ALL */
+                         opt = OPT_BB;
+                    }
+                    else
+                    {
+                         /* /BINARY or /BINARY = AUTO */
+                         opt = OPT_B;
+                    }
+                }
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Extract files to screen/stdout.
+         * Clear any existing "-c" option with "-c-", then add
+         * the desired "c" value.
+         */
+#define OPT_C   "-c-c"          /* "-c"  Extract to screen/stdout. */
+#define OPT_CN  "-c-"           /* ""    Extract to files (default). */
+
+        status = cli$present( &cli_screen);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOSCREEN */
+                opt = OPT_CN;
+            }
+            else
+            {
+                /* /SCREEN */
+                opt = OPT_C;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Restore file/directory date-times.
+         * Clear any existing "-D[D]" options with "-D-D-", then add
+         * the desired "D" value.  Note that on VMS, D_flag=1 ("-D") is
+         * the default.
+         */
+#define OPT__D   "-D-D-DD"      /* "-D"  Restore no date-times. */
+#define OPT__DD  "-D-D-D"       /* ""    Restore only file date-times. */
+#define OPT__DN  "-D-D-"        /* "-D-" Restore file and dir date-times. */
+
+        status = cli$present( &cli_restore_date);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /RESTORE = NODATE */
+                opt = OPT__D;
+            }
+            else
+            {
+                /* /RESTORE = DATE */
+                status = cli$present(&cli_restore_date_all);
+                if (status & 1)
+                {
+                    /* /RESTORE = (DATE = ALL) */
+                    opt = OPT__DN;
+                }
+                else
+                {
+                    /* /RESTORE = (DATE = FILES) */
+                    opt = OPT__DD;
+                }
+            }
+            ADD_ARG( opt);
+        }
+
+        /* Freshen existing files, create none.
+         * Clear any existing "-f" option with "-f-", then add
+         * the desired "f" value.
+         */
+#define OPT_F   "-f-f"          /* "-f"  Freshen existing files, create none. */
+#define OPT_FN  "-f-"           /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_freshen);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOFRESHEN */
+                opt = OPT_FN;
+            }
+            else
+            {
+                /* /FRESHEN */
+                opt = OPT_F;
+            }
+            ADD_ARG( opt);
+        }
+
+
+        /*
+         * Help.
+         * Clear any existing "-h" option with "-h-h-", then add
+         * the desired "h" value.
+         */
+#define OPT_H   "-h-h-h"        /* "-h"  Normal help. */
+#define OPT_HH  "-h-h-hh"       /* "-hh" Extended help. */
+#define OPT_HN  "-h-h-"         /* ""    Normal extract.  (default). */
+
+        status = cli$present( &cli_help);
+        if (status & 1)
+        {
+            status = cli$present( &cli_help_extended);
+            if (status & 1)
+            {
+                /* /HELP = EXTENDED */
+                opt = OPT_HH;
+            }
+            else
+            {
+                /* /HELP = NORMAL */
+                opt = OPT_H;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Junk stored directory names when extracting.
+         * Clear any existing "-j" option with "-j-", then add
+         * the desired "j" value.
+         */
+#define OPT_J   "-j-j"          /* "-j"  Junk directory names. */
+#define OPT_JN  "-j-"           /* ""    Use directory names. (default). */
+
+        status = cli$present( &cli_junk);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOJUNK */
+                opt = OPT_JN;
+            }
+            else
+            {
+                /* /JUNK */
+                opt = OPT_J;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * List archive contents (/BRIEF (default) or /FULL).
+         * Clear any existing "-l" option with "-l-", then add
+         * the desired "l" value.
+         */
+#define OPT_L    "-l-l"         /* "-l"    List archive contents. */
+#define OPT_LV   "-l-lv"        /* "-lv"   List archive contents /FULL. */
+#define OPT_LVV  "-l-lvv"       /* "-lvv"  List archive contents /FULL=DIAG. */
+#define OPT_LN   "-l-"          /* ""      Normal extract (default). */
+
+        status = cli$present( &cli_list);
+        if (status & 1)
+        {
+            opt = OPT_L;
+            if (cli$present( &cli_full) & 1)
+            {
+                opt = OPT_LV;
+                if (cli$present( &cli_full_diags) & 1)
+                {
+                    opt = OPT_LVV;
+                }
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Make (some) names lowercase.
+         * Clear any existing "-L" option with "-L-", then add
+         * the desired "L" value.
+         */
+#define OPT__L   "-L-L"         /* "-L"    Downcase (some) names. */
+#define OPT__LN  "-L-"          /* ""      Normal extract (default). */
+
+        status = cli$present( &cli_lowercase);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOLOWERCASE */
+                opt = OPT__LN;
+            }
+            else
+            {
+                /* /LOWERCASE */
+                opt = OPT__L;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Uppercase (don't convert to lower case).
+         * Clear any existing "-L" option with "-L-", then add
+         * the desired "L" value.
+         */
+        status = cli$present( &cli_uppercase);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOUPPERCASE */
+                opt = OPT__L;
+            }
+            else
+            {
+                /* /UPPERCASE */
+                opt = OPT__LN;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Existing files: new version, overwrite, no extract?
+         * Clear any existing "-n" or "-o" option with "-n-o-o-", then
+         * add the desired "-n"/"-o[o]" value.
+         */
+#define OPT_N   "-n-o-o-n"      /* "-n"    Never overwrite (NOEXTRACT). */
+#define OPT_O   "-n-o-o-o"      /* "-o"    Create new version (NEW_VERSION). */
+#define OPT_OO  "-n-o-o-oo"     /* "-oo"   Overwrite (OVERWRITE). */
+#define OPT_ON  "-n-o-o-"       /* ""      Normal inquiry (default). */
+
+        status = cli$present( &cli_existing);
+        if (status & 1)
+        {
+            status = cli$present( &cli_exist_newver);
+            if (status == CLI$_PRESENT)
+            {
+                opt = OPT_O;
+            }
+            else
+            {
+                status = cli$present( &cli_exist_over);
+                if (status == CLI$_PRESENT)
+                {
+                    opt = OPT_OO;
+                }
+                else
+                {
+                    status = cli$present( &cli_exist_noext);
+                    if (status == CLI$_PRESENT)
+                    {
+                        opt = OPT_N;
+                    }
+                }
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Overwrite files (deprecated).
+         * Clear any existing "-n" or "-o" option with "-n-o-o-", then
+         * add the desired "-n"/"-o[o]" value.
+         */
+        status = cli$present( &cli_overwrite);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOOVERWRITE */
+                opt = OPT_N;
+            }
+            else
+            {
+                /* /OVERWRITE */
+                opt = OPT_O;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Pipe files to SYS$OUTPUT (stdout) with no informationals.
+         * Clear any existing "-p" option with "-p-", then add
+         * the desired "p" value.
+         */
+#define OPT_P   "-p-p"          /* "-p"    Pipe files to stdout. */
+#define OPT_PN  "-p-"           /* ""      Normal extract (default). */
+
+        status = cli$present( &cli_pipe);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /PIPE */
+                opt = OPT_P;
+            }
+            else
+            {
+                /* /NOPIPE */
+                opt = OPT_P;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Quiet.
+         * Clear any existing "-q" option with "-q-q-", then add
+         * the desired "q" value.
+         */
+#define OPT_Q   "-q-q-q-q-q"    /* "-q"  Quiet (NORMAL). */
+#define OPT_QQ  "-q-q-q-q-qq"   /* "-qq" Quiet (SUPER). */
+#define OPT_QN  "-q-q-q-q-"     /* ""    Normal noisiness (default). */
+
+        status = cli$present( &cli_quiet);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOQUIET */
+                opt = OPT_QN;
+            }
+            else
+            {
+                status = cli$present( &cli_super_quiet);
+                if (status & 1)
+                {
+                    /* /QUIET = SUPER */
+                    opt = OPT_QQ;
+                }
+                else
+                {
+                    /* /QUIET = NORMAL */
+                    opt = OPT_Q;
+                }
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Test archive integrity.
+         * Clear any existing "-t" option with "-t-", then add
+         * the desired "t" value.
+         */
+#define OPT_T   "-t-t"          /* "-t"  Test archive integrity. */
+#define OPT_TN  "-t-"           /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_test);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOTEST */
+                opt = OPT_TN;
+            }
+            else
+            {
+                /* /TEST */
+                opt = OPT_T;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Set archive timestamp according to its newest file.
+         * Clear any existing "-T" option with "-T-", then add
+         * the desired "T" value.
+         */
+#define OPT__T   "-T-T"         /* "-T"  Set archive timestamp. */
+#define OPT__TN  "-T-"          /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_timestamp);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOTIMESTAMP */
+                opt = OPT__TN;
+            }
+            else
+            {
+                /* /TIMESTAMP */
+                opt = OPT__T;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Update (extract only new and newer files).
+         * Clear any existing "-u" option with "-u-", then add
+         * the desired "u" value.
+         */
+#define OPT_U   "-u-u"          /* "-u"  Update (extract new and newer). */
+#define OPT_UN  "-u-"           /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_update);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOUPDATE */
+                opt = OPT_UN;
+            }
+            else
+            {
+                /* /UPDATE */
+                opt = OPT_U;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Verbose/version ("-v" report).
+         * Clear any existing "-v" option with "-v-", then add
+         * the desired "v" value.
+         */
+#define OPT_V   "-v-v"          /* "-v"  Verbose/version report. */
+#define OPT_VN  "-v-"           /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_noverbose);
+        if (status & 1)
+        {
+            /* /NOVERBOSE */
+            ADD_ARG( OPT_VN);
+        }
+
+        status = cli$present( &cli_verbose_normal);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOVERBOSE (?) */
+                opt = OPT_VN;
+            }
+            else
+            {
+                /* /VERBOSE */
+                opt = OPT_V;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Version (retain VMS/DEC-20 file versions).
+         * Clear any existing "-V" option with "-V-", then add
+         * the desired "V" value.
+         */
+#define OPT__V   "-V-V"         /* "-V"  Extract files with versions. */
+#define OPT__VN  "-V-"          /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_version);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOVERSION */
+                opt = OPT__VN;
+            }
+            else
+            {
+                /* /VERSION */
+                opt = OPT__V;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Restore protection/owner+ACL info.
+         * Clear any existing "-X" option with "-X-X-X", then add
+         * the desired "X" value.
+         */
+#define OPT__X   "-X-X-X"       /* ""    Restore prot (not own+ACL). (dflt). */
+#define OPT__XX  "-X-X-XX"      /* "-X"  Restore prot, own+ACL. */
+#define OPT__XN  "-X-X-X-"      /* "-X-" Restore no prot, no own+ACL. */
+
+        opt = NULL;
+        status = cli$present( &cli_restore_acl);
+        if (status & 1)
+        {
+            /* /RESTORE = ACL */
+            opt = OPT__XX;
+        }
+        else
+        {
+            status = cli$present( &cli_restore_prot);
+            if (status == CLI$_NEGATED)
+            {
+                /* /RESTORE = NOPROTECTION */
+                opt = OPT__XN;
+            }
+            else if (status & 1)
+            {
+                /* /RESTORE = PROTECTION */
+                opt = OPT__X;
+            }
+        }
+        if (opt != NULL)
+        {
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Treat trailing ".###" as version number.
+         * (Extract "name.type.###" as "nane.type;###".)
+         * Clear any existing "-Y" option with "-Y-", then add
+         * the desired "Y" value.
+         */
+#define OPT__Y   "-Y-Y"         /* "-Y"  Treat ".###" as version number. */
+#define OPT__YN  "-Y-"          /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_dot_version);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NODOT_VERSION */
+                opt = OPT__YN;
+            }
+            else
+            {
+                /* /DOT_VERSION */
+                opt = OPT__Y;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Display (only) the archive comment.
+         * Clear any existing "-z" option with "-z-", then add
+         * the desired "z" value.
+         */
+#define OPT_Z   "-z-z"          /* "-z"  Extract files with versions. */
+#define OPT_ZN  "-z-"           /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_comment);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOCOMMENT */
+                opt = OPT_ZN;
+            }
+            else
+            {
+                /* /COMMENT */
+                opt = OPT_Z;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Force conversion of extracted file names to ODS2 conventions.
+         * Clear any existing "-2" option with "-2-", then add
+         * the desired "2" value.
+         */
+#define OPT_2   "-2-2"          /* "-2"  Convert names to ODS2. */
+#define OPT_2N  "-2-"           /* ""    Normal extract (default). */
+
+        status = cli$present( &cli_ods2);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOODS2 */
+                opt = OPT_2N;
+            }
+            else
+            {
+                /* /ODS2 */
+                opt = OPT_2;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Traverse directories (don't skip "../" path components).
+         * Clear any existing "-:" option with "-:-", then add
+         * the desired ":" value.
+         */
+#define OPT_COL   "-:-:"        /* "-:"  Follow "../" path components. */
+#define OPT_COLN  "-:-"         /* ""    Ignore "../" components. (default). */
+
+        status = cli$present( &cli_traverse);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOTRAVERSE_DIRS */
+                opt = OPT_COLN;
+            }
+            else
+            {
+                /* /TRAVERSE_DIRS */
+                opt = OPT_COL;
+            }
+            ADD_ARG( opt);
+        }
+									
+    }
+    else /* if (zipinfo == 0) */
+    {
+        /* ZipInfo options. */
+
+        /*
+         * Show only file names, one per line (but allow /HEADER (-h),
+         * /TOTALS (-t), or /COMMENT (-z)).
+         * Clear any existing "-2" option with "-2-", then add
+         * the desired "2" value.
+         */
+#define IPT_2   "-2-2"          /* "-2"  Named-only format. */
+#define IPT_2N  "-2-"           /* ""    Normal format (default). */
+
+        status = cli$present( &cli_one_line);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOONE_LINE */
+                opt = IPT_2N;
+            }
+            else
+            {
+                /* /ONE_LINE */
+                opt = IPT_2;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Put out header line.
+         * Clear any existing "-h" option with "-h-", then add
+         * the desired "h" value.
+         */
+#define IPT_H   "-h-h"          /* "-h"  Put out header line. */
+#define IPT_HN  "-h-"           /* ""    Omit header line (default). */
+
+        status = cli$present( &cli_header);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOHEADER */
+                opt = IPT_HN;
+            }
+            else
+            {
+                /* /HEADER */
+                opt = IPT_H;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Long UNIX "ls -l" format.
+         * Clear any existing "-l" option with "-l-", then add
+         * the desired "l" value.
+         */
+#define IPT_L   "-l-l"          /* "-l"  Long UNIX "ls -l" format. */
+#define IPT_LN  "-l-"           /* ""    Normal format (default). */
+
+        status = cli$present( &cli_long);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOLONG */
+                opt = IPT_LN;
+            }
+            else
+            {
+                /* /LONG */
+                opt = IPT_L;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Medium UNIX "ls -l" format.
+         * Clear any existing "-m" option with "-m-", then add
+         * the desired "m" value.
+         */
+#define IPT_M   "-m-m"          /* "-m"  Medium UNIX "ls -l" format. */
+#define IPT_MN  "-m-"           /* ""    Normal format (default). */
+
+        status = cli$present( &cli_medium);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOMEDIUM */
+                opt = IPT_MN;
+            }
+            else
+            {
+                /* /MEDIUM */
+                opt = IPT_M;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Short UNIX "ls -l" format (default).
+         * Clear any existing "-s" option with "-s-", then add
+         * the desired "s" value.
+         */
+#define IPT_S   "-s-s"          /* "-s"  Short UNIX "ls -l" format (deflt). */
+#define IPT_SN  "-s-"           /* ""    Normal format (default). */
+
+        status = cli$present( &cli_short);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOSHORT */
+                opt = IPT_SN;
+            }
+            else
+            {
+                /* /SHORT */
+                opt = IPT_S;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Put out totals summary.
+         * Clear any existing "-t" option with "-t-", then add
+         * the desired "t" value.
+         */
+#define IPT_T   "-t-t"          /* "-t"  Put out totals summary. */
+#define IPT_TN  "-t-"           /* ""    Omit totals summary (default). */
+
+        status = cli$present( &cli_totals);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOCOMMENT */
+                opt = IPT_TN;
+            }
+            else
+            {
+                /* /COMMENT */
+                opt = IPT_T;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Put out date-times as sortable decimal values.
+         * Clear any existing "-T" option with "-T-", then add
+         * the desired "T" value.
+         */
+#define IPT__T   "-T-T"         /* "-T"  Put out sortable date-times. */
+#define IPT__TN  "-T-"          /* ""    Put out normal date-times (deflt). */
+
+        status = cli$present( &cli_times);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOTIMES */
+                opt = IPT__TN;
+            }
+            else
+            {
+                /* /TIMES */
+                opt = IPT__T;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Verbose, multi-page format.
+         * Clear any existing "-v" option with "-v-", then add
+         * the desired "v" value.
+         */
+#define IPT_V   "-v-v"          /* "-v"  Verbose, multi-page format. */
+#define IPT_VN  "-v-"           /* ""    Normal format (default). */
+
+        status = cli$present( &cli_noverbose);
+        if (status & 1)
+        {
+            /* /NOVERBOSE */
+            ADD_ARG( IPT_VN);
+        }
+
+        status = cli$present( &cli_verbose_normal);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOVERBOSE (?) */
+                opt = IPT_VN;
+            }
+            else
+            {
+                /* /VERBOSE */
+                opt = IPT_V;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Put out archive comment.
+         * Clear any existing "-z" option with "-z-", then add
+         * the desired "z" value.
+         */
+#define IPT_Z   "-z-z"          /* "-z"  Put out archive comment. */
+#define IPT_ZN  "-z-"           /* ""    Omit header line (default). */
+
+        status = cli$present( &cli_comment);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOCOMMENT */
+                opt = IPT_ZN;
+            }
+            else
+            {
+                /* /COMMENT */
+                opt = IPT_Z;
+            }
+            ADD_ARG( opt);
+        }
+
+    } /* if (zipinfo == 0) [else] */
 
     /*
     **  If specified, add the decryption password argument.
@@ -771,7 +1472,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         strncpy(&the_cmd_line[x], work_str.dsc$a_pointer,
                 work_str.dsc$w_length);
         the_cmd_line[cmdl_len-1] = '\0';
-
     }
 
     /*
@@ -794,7 +1494,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     if (status & 1) {
         status = get_list(&cli_infile, &foreign_cmdline, '\0',
                           &the_cmd_line, &cmdl_size, &cmdl_len);
-        if (!(status & 1)) return (status);
+        if (!(status & 1)) return status;
     }
 
     /*
@@ -808,7 +1508,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 
         status = get_list(&cli_exclude, &foreign_cmdline, '\0',
                           &the_cmd_line, &cmdl_size, &cmdl_len);
-        if (!(status & 1)) return (status);
+        if (!(status & 1)) return status;
     }
 
     /*
@@ -816,7 +1516,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     **  release unused space.
     */
     if ((the_cmd_line = (char *) realloc(the_cmd_line, cmdl_len)) == NULL)
-        return (SS$_INSFMEM);
+        return SS$_INSFMEM;
 
     /*
     **  Now that we've built our new UNIX-like command line, count the
@@ -831,7 +1531,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     **  is supposed to be NULL, so allocate enough for new_argc+1.
     */
     if ((new_argv = (char **) calloc(new_argc+1, sizeof(char *))) == NULL)
-        return (SS$_INSFMEM);
+        return SS$_INSFMEM;
 
     /*
     **  For each option, store the address in new_argv[] and convert the
@@ -843,11 +1543,14 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     }
     new_argv[new_argc] = NULL;
 
-#if defined(TEST) || defined(DEBUG)
-    printf("new_argc    = %d\n", new_argc);
-    for (x = 0; x < new_argc; x++)
-        printf("new_argv[%d] = %s\n", x, new_argv[x]);
-#endif /* TEST || DEBUG */
+    /* Show the complete UNIX command line, if requested. */
+    if (verbose_command != 0)
+    {
+        printf( "   UNIX command line args (argc = %d):\n", new_argc);
+        for (x = 0; x < new_argc; x++)
+            printf( "%s\n", new_argv[ x]);
+        printf( "\n");
+    }
 
     /*
     **  All finished.  Return the new argc and argv[] addresses to Zip.
@@ -855,14 +1558,14 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     *argc_p = new_argc;
     *argv_p = new_argv;
 
-    return (SS$_NORMAL);
+    return SS$_NORMAL;
 }
 
 
 
-static unsigned long
+static unsigned int
 get_list (struct dsc$descriptor_s *qual, struct dsc$descriptor_d *rawtail,
-          int delim, char **p_str, unsigned long *p_size, unsigned long *p_end)
+          int delim, char **p_str, unsigned int *p_size, unsigned int *p_end)
 {
 /*
 **  Routine:    get_list
@@ -885,16 +1588,16 @@ get_list (struct dsc$descriptor_s *qual, struct dsc$descriptor_d *rawtail,
 **
 */
 
-    register unsigned long status;
-    struct dsc$descriptor_d work_str;
-
-    init_dyndesc(work_str);
+    unsigned int status;
+    DESCRIPTOR_D( work_str);
 
     status = cli$present(qual);
     if (status & 1) {
 
-        unsigned long len, old_len;
-        long ind, sind;
+        unsigned int len;
+        unsigned int old_len;
+        int ind;
+        int sind;
         int keep_case;
         char *src, *dst; int x;
 
@@ -904,7 +1607,7 @@ get_list (struct dsc$descriptor_s *qual, struct dsc$descriptor_d *rawtail,
         if (*p_str == NULL) {
             *p_size = ARGBSIZE_UNIT;
             if ((*p_str = (char *) malloc(*p_size)) == NULL)
-                return (SS$_INSFMEM);
+                return SS$_INSFMEM;
             len = 0;
         } else {
             len = *p_end;
@@ -944,13 +1647,11 @@ get_list (struct dsc$descriptor_s *qual, struct dsc$descriptor_d *rawtail,
         }
         *p_end = len;
     }
-
-    return (SS$_NORMAL);
-
+    return SS$_NORMAL;
 }
 
 
-static unsigned long
+static unsigned int
 check_cli (struct dsc$descriptor_s *qual)
 {
 /*
@@ -964,7 +1665,7 @@ check_cli (struct dsc$descriptor_s *qual)
 **
 */
     lib$establish(lib$sig_to_ret);      /* Establish condition handler */
-    return (cli$present(qual));         /* Just see if something was given */
+    return cli$present(qual);           /* Just see if something was given */
 }
 
 
@@ -1003,7 +1704,7 @@ Valid main options are /TEST, /FRESHEN, /UPDATE, /PIPE, /SCREEN, /COMMENT%s.\n",
       SFXOPT_EXDIR));
     Info(slide, flag, ((char *)slide, "\
 Modifying options are /TEXT, /BINARY, /JUNK, /EXISTING, /QUIET,\n\
-                      /CASE_INSENSITIVE, /LOWERCASE, %s/VERSION, /RESTORE.\n",
+                      /CASE_MATCH, /LOWERCASE, %s/VERSION, /RESTORE.\n",
       SFXOPT1));
 #ifdef BETA
     Info(slide, flag, ((char *)slide, BetaVersion, "\n", "SFX"));
@@ -1066,7 +1767,7 @@ in list (excluding those in xlist) contained in the specified .zip archive(s).\
 miscellaneous options:\n  \
 /HEADER   print header line       /TOTALS  totals for listed files or for all\n\
   /COMMENT  print zipfile comment   /TIMES   times in sortable decimal format\n\
-  /[NO]CASE_INSENSITIVE  match filenames case-insensitively\n\
+  /CASE_MATCH = [ BLIND | SENSITIVE ]  match filenames case-[in]sensitively\n\
   /[NO]PAGE page output through built-in \"more\"\n\
   /EXCLUDE=(file-spec1,etc.)  exclude file-specs from listing\n"));
 
@@ -1110,13 +1811,13 @@ Modifiers include:\n\
 
         Info(slide, flag, ((char *)slide, "\
 Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
-   unzip edit1 /EXCL=joe.jou /CASE_INSENSITIVE    => Extract all files except\
+   unzip edit1 /EXCL=joe.jou /CASE_MATCH = BLIND  => Extract all files except\
 \n\
       joe.jou (or JOE.JOU, or any combination of case) from zipfile edit1.zip.\
 \n  \
  unzip zip201 \"Makefile.VMS\" vms/*.[ch]         => extract VMS Makefile and\
 \n\
-      *.c and *.h files; must quote uppercase names if /CASE_INSENS not used.\
+      *.c and *.h files; must quote uppercase names if /CASE = SENS.\
 \n\
    unzip foo /DIR=tmp:[.test] /JUNK /TEXT /EXIS=NEW  => extract all files to\
 \n\
@@ -1134,3 +1835,13 @@ Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
 
 #endif /* ?SFX */
 #endif /* !TEST */
+
+
+#ifdef TEST
+int
+main( int argc, char **argv)
+{
+    return vms_unzip_cmdline( &argc, &argv);
+}
+#endif /* def TEST */
+

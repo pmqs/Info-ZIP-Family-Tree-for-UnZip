@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -127,6 +127,8 @@
                                     when processing invalid compressed data and
                                     hitting premature EOF, do not reuse td as
                                     temp work ptr during tables decoding
+   c17f  13 Jul 10  S. Schweda      Added FUNZIP conditionality to uses of
+                                    G.disk_full.
  */
 
 
@@ -473,7 +475,11 @@ int UZinflate(__G__ is_defl64)
                     retval = 2;
                 } else {
                     /* output write failure */
+#ifdef FUNZIP
+                    retval = PK_DISK;
+#else /* def FUNZIP */
                     retval = (G.disk_full != 0 ? PK_DISK : IZ_CTRLC);
+#endif /* def FUNZIP [else] */
                 }
             } else {
                 Trace((stderr, "oops!  (inflateBack9() err = %d)\n", err));
@@ -538,7 +544,11 @@ int UZinflate(__G__ is_defl64)
                     retval = 2;
                 } else {
                     /* output write failure */
+#ifdef FUNZIP
+                    retval = PK_DISK;
+#else /* def FUNZIP */
                     retval = (G.disk_full != 0 ? PK_DISK : IZ_CTRLC);
+#endif /* def FUNZIP [else] */
                 }
             } else {
                 Trace((stderr, "oops!  (inflateBack() err = %d)\n", err));

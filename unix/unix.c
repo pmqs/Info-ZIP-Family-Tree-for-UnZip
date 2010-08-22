@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -70,6 +70,12 @@
 #    define dirent direct
 #  endif
 #endif /* ?DIRENT */
+
+#if defined( UNIX) && defined( __APPLE__)
+#  include <sys/attr.h>
+#  include <sys/mount.h>
+#  include <sys/vnode.h>
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef SET_DIR_ATTRIB
 typedef struct uxdirattr {      /* struct for holding unix style directory */
@@ -639,26 +645,30 @@ int mapname(__G__ renamed)
                   FnFilter1(G.filename)));
             }
 #ifndef NO_CHMOD
-            /* Filter out security-relevant attributes bits. */
-            G.pInfo->file_attr = filtattr(__G__ G.pInfo->file_attr);
-            /* When extracting non-UNIX directories or when extracting
-             * without UID/GID restoration or SGID preservation, any
-             * SGID flag inherited from the parent directory should be
-             * maintained to allow files extracted into this new folder
-             * to inherit the GID setting from the parent directory.
-             */
-            if (G.pInfo->hostnum != UNIX_ || !(uO.X_flag || uO.K_flag)) {
-                /* preserve SGID bit when inherited from parent dir */
-                if (!SSTAT(G.filename, &G.statbuf)) {
-                    G.pInfo->file_attr |= G.statbuf.st_mode & S_ISGID;
-                } else {
-                    perror("Could not read directory attributes");
+            if (uO.X_flag >= 0)
+            {
+                /* Filter out security-relevant attributes bits. */
+                G.pInfo->file_attr = filtattr(__G__ G.pInfo->file_attr);
+                /* When extracting non-UNIX directories or when extracting
+                 * without UID/GID restoration or SGID preservation, any
+                 * SGID flag inherited from the parent directory should be
+                 * maintained to allow files extracted into this new folder
+                 * to inherit the GID setting from the parent directory.
+                 */
+                if (G.pInfo->hostnum != UNIX_ ||
+                 !((uO.X_flag > 0) || uO.K_flag)) {
+                    /* preserve SGID bit when inherited from parent dir */
+                    if (!SSTAT(G.filename, &G.statbuf)) {
+                        G.pInfo->file_attr |= G.statbuf.st_mode & S_ISGID;
+                    } else {
+                        perror("Could not read directory attributes");
+                    }
                 }
-            }
 
-            /* set approx. dir perms (make sure can still read/write in dir) */
-            if (chmod(G.filename, G.pInfo->file_attr | 0700))
-                perror("chmod (directory attributes) error");
+                /* set approx. dir perms (make sure can still read/write in dir) */
+                if (chmod(G.filename, G.pInfo->file_attr | 0700))
+                    perror("chmod (directory attributes) error");
+            }
 #endif
             /* set dir time (note trailing '/') */
             return (error & ~MPN_MASK) | MPN_CREATED_DIR;
@@ -672,10 +682,12 @@ int mapname(__G__ renamed)
     /* if not saving them, remove VMS version numbers (appended ";###") */
     if (!uO.V_flag && lastsemi) {
         pp = lastsemi + 1;
-        while (isdigit((uch)(*pp)))
-            ++pp;
-        if (*pp == '\0')          /* only digits between ';' and end:  nuke */
-            *lastsemi = '\0';
+        if (*pp != '\0') {        /* At least one digit is required. */
+            while (isdigit((uch)(*pp)))
+                ++pp;
+            if (*pp == '\0')      /* only digits between ';' and end:  nuke */
+                *lastsemi = '\0';
+        }
     }
 
     /* On UNIX (and compatible systems), "." and ".." are reserved for
@@ -1083,7 +1095,7 @@ static int get_extattribs(__G__ pzt, z_uidgid)
     /* if -X option was specified and we have UID/GID info, restore it */
     have_uidgid_flg =
 #ifdef RESTORE_UIDGID
-            (uO.X_flag && (eb_izux_flg & EB_UX2_VALID));
+            ((uO.X_flag > 0) && (eb_izux_flg & EB_UX2_VALID));
 #else
             0;
 #endif
@@ -1236,11 +1248,36 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     zipfile.
   ---------------------------------------------------------------------------*/
 
-    if (fchmod(fileno(G.outfile), filtattr(__G__ G.pInfo->file_attr)))
-        perror("fchmod (file attributes) error");
+# if defined( UNIX) && defined( __APPLE__)
+    /* 2009-04-19 SMS.
+     * Skip fchmod() for an AppleDouble file.  (Doing the normal file
+     * is enough, and fchmod() will fail on a "/rsrc" pseudo-file.)
+     */
+    if (!G.apple_double)
+    {
+# endif /* defined( UNIX) && defined( __APPLE__) */
+
+    if (uO.X_flag >= 0)
+    {
+        if (fchmod(fileno(G.outfile), filtattr(__G__ G.pInfo->file_attr)))
+            perror("fchmod (file attributes) error");
+    }
+
+# if defined( UNIX) && defined( __APPLE__)
+    }
+# endif /* defined( UNIX) && defined( __APPLE__) */
 
     fclose(G.outfile);
 #endif /* !NO_FCHOWN && !NO_FCHMOD */
+
+# if defined( UNIX) && defined( __APPLE__)
+    /* 2009-04-19 SMS.
+     * Skip utime() for an AppleDouble file.  (Doing the normal file
+     * is enough, and utime() will fail on a "/rsrc" pseudo-file.)
+     */
+    if (!G.apple_double)
+    {
+# endif /* defined( UNIX) && defined( __APPLE__) */
 
     /* skip restoring time stamps on user's request */
     if (uO.D_flag <= 1) {
@@ -1255,6 +1292,10 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         }
     }
 
+# if defined( UNIX) && defined( __APPLE__)
+    }
+# endif /* defined( UNIX) && defined( __APPLE__) */
+
 #if (defined(NO_FCHOWN) || defined(NO_FCHMOD))
 /*---------------------------------------------------------------------------
     Change the file permissions from default ones to those stored in the
@@ -1262,9 +1303,12 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
   ---------------------------------------------------------------------------*/
 
 #ifndef NO_CHMOD
-    if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
-        perror("chmod (file attributes) error");
-#endif
+    if (uO.X_flag >= 0)
+    {
+        if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
+            perror("chmod (file attributes) error");
+    }
+#endif /* ndef NO_CHMOD */
 #endif /* NO_FCHOWN || NO_FCHMOD */
 
 } /* end function close_outfile() */
@@ -1277,6 +1321,8 @@ int set_symlnk_attribs(__G__ slnk_entry)
     __GDEF
     slinkentry *slnk_entry;
 {
+    ulg z_uidgid[2];
+
     if (slnk_entry->attriblen > 0) {
 # if (!defined(NO_LCHOWN))
       if (slnk_entry->attriblen > sizeof(unsigned)) {
@@ -1299,12 +1345,15 @@ int set_symlnk_attribs(__G__ slnk_entry)
       }
 # endif /* !NO_LCHOWN */
 # if (!defined(NO_LCHMOD))
-      TTrace((stderr,
-        "set_symlnk_attribs:  restoring Unix attributes for\n        %s\n",
-        FnFilter1(slnk_entry->fname)));
-      if (lchmod(slnk_entry->fname,
-                 filtattr(__G__ *(unsigned *)(zvoid *)slnk_entry->buf)))
-          perror("lchmod (file attributes) error");
+      if (uO.X_flag >= 0)
+      {
+          TTrace((stderr,
+            "set_symlnk_attribs:  restoring Unix attributes for\n        %s\n",
+            FnFilter1(slnk_entry->fname)));
+          if (lchmod(slnk_entry->fname,
+           filtattr(__G__ *(unsigned *)(zvoid *)slnk_entry->buf)))
+              perror("lchmod (file attributes) error");
+        }
 # endif /* !NO_LCHMOD */
     }
     /* currently, no error propagation... */
@@ -1373,11 +1422,14 @@ int set_direc_attribs(__G__ d)
         }
     }
 #ifndef NO_CHMOD
-    if (chmod(d->fn, UxAtt(d)->perms)) {
-        Info(slide, 0x201, ((char *)slide, DirlistChmodFailed,
-          FnFilter1(d->fn), strerror(errno)));
-        if (!errval)
-            errval = PK_WARN;
+    if (uO.X_flag >= 0)
+    {
+        if (chmod(d->fn, UxAtt(d)->perms)) {
+            Info(slide, 0x201, ((char *)slide, DirlistChmodFailed,
+              FnFilter1(d->fn), strerror(errno)));
+            if (!errval)
+                errval = PK_WARN;
+        }
     }
 #endif /* !NO_CHMOD */
     return errval;
@@ -1520,6 +1572,9 @@ void version(__G)
       " (Silicon Graphics IRIX)",
 #else
 #ifdef sun
+#  if defined(UNAME_P) && defined(UNAME_R) && defined(UNAME_S) 
+      " ("UNAME_S" "UNAME_R" "UNAME_P")",
+#  else
 #  ifdef sparc
 #    ifdef __SVR4
       " (Sun SPARC/Solaris)",
@@ -1537,15 +1592,28 @@ void version(__G)
 #  endif
 #  endif
 #  endif
-#else
+#  endif
+#else /* def sun */
 #ifdef __hpux
+#  if defined(UNAME_M) && defined(UNAME_R) && defined(UNAME_S) 
+      " ("UNAME_S" "UNAME_R" "UNAME_M")",
+#  else
       " (HP-UX)",
+#  endif
 #else
 #ifdef __osf__
-      " (DEC OSF/1)",
+#  if defined( SIZER_V)
+      " (Tru64 "SIZER_V")"
+#  else /* defined( SIZER_V) */
+      " (Tru64)",
+#  endif /* defined( SIZER_V) [else] */
 #else
 #ifdef _AIX
+#  if defined( UNAME_R) && defined( UNAME_S) && defined( UNAME_V)
+      " ("UNAME_S" "UNAME_V"."UNAME_R")",
+#  else /*  */
       " (IBM AIX)",
+#  endif /* [else] */
 #else
 #ifdef aiws
       " (IBM RT/AIX)",
@@ -1568,10 +1636,14 @@ void version(__G)
 #  endif
 #else              /* the next dozen or so are somewhat order-dependent */
 #ifdef LINUX
-#  ifdef __ELF__
-      " (Linux ELF)",
+#  if defined( UNAME_M) && defined( UNAME_O)
+      " ("UNAME_O" "UNAME_M")",
 #  else
+#    ifdef __ELF__
+      " (Linux ELF)",
+#    else
       " (Linux a.out)",
+#    endif
 #  endif
 #else
 #ifdef MINIX
@@ -1658,19 +1730,23 @@ void version(__G)
       " (LynxOS)",
 #else
 #ifdef __APPLE__
+#  if defined(UNAME_P) && defined(UNAME_R) && defined(UNAME_S) 
+      " ("UNAME_S" "UNAME_R" "UNAME_P")",
+#  else
 #  ifdef __i386__
-      " Mac OS X Intel i32",
+      " (Mac OS X Intel i32)",
 #  else
 #  ifdef __ppc__
-      " Mac OS X PowerPC",
+      " (Mac OS X PowerPC)",
 #  else
 #  ifdef __ppc64__
-      " Mac OS X PowerPC64",
+      " (Mac OS X PowerPC64)",
 #  else
-      " Mac OS X",
+      " (Mac OS X"),
 #  endif /* __ppc64__ */
 #  endif /* __ppc__ */
 #  endif /* __i386__ */
+#  endif
 #else
       "",
 #endif /* Apple */
@@ -1874,3 +1950,89 @@ static void qlfix(__G__ ef_ptr, ef_len)
     }
 }
 #endif /* QLZIP */
+
+#if defined( UNIX) && defined( __APPLE__)
+
+/* Determine if the volume where "path" resides supports getattrlist()
+ * and setattrlist(), that is, if we can do the special AppleDouble
+ * file processing using setattrlist().  Otherwise, we should pretend
+ * that "-J" is in effect, to bypass the special AppleDouble processing,
+ * and leave the separate file elements separate.
+ *
+ * Return value   Meaning
+ *           -1   Error.  See errno.
+ *            0   Volume does not support getattrlist() and setattrlist().
+ *            1   Volume does support getattrlist() and setattrlist().
+ */
+int vol_attr_ok( const char *path)
+{
+
+    int sts;
+    struct statfs statfs_buf;
+    struct attrlist attr_list_volattr;
+    struct attr_bufr_volattr {
+        unsigned int  ret_length;
+        vol_capabilities_attr_t  vol_caps;
+    } attr_bufr_volattr;
+
+    /* Get file system info (in particular, the mounted volume name) for
+     * the specified path.
+     */
+    sts = statfs( path, &statfs_buf);
+
+    /* If that worked, get the interesting volume capability attributes. */
+    if (sts == 0)
+    {
+        /* Clear attribute list structure. */
+        memset( &attr_list_volattr, 0, sizeof( attr_list_volattr));
+        /* Set attribute list bits for volume capabilities. */
+        attr_list_volattr.bitmapcount = ATTR_BIT_MAP_COUNT;
+        attr_list_volattr.volattr = ATTR_VOL_INFO| ATTR_VOL_CAPABILITIES;
+
+        sts = getattrlist( statfs_buf.f_mntonname,  /* Path. */
+                           &attr_list_volattr,      /* Attrib list. */
+                           &attr_bufr_volattr,      /* Dest buffer. */
+                           sizeof( attr_bufr_volattr),  /* Dest buffer size. */
+                           0);
+
+        if (sts == 0)
+        {
+            /* Set a valid return value. */
+            sts = ((attr_bufr_volattr.vol_caps.capabilities[
+             VOL_CAPABILITIES_INTERFACES]&
+             VOL_CAP_INT_ATTRLIST) != 0);
+        }
+    }
+    return sts;
+}
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
+
+/* 2006-03-23 SMS.
+ * Emergency replacement for strerror().  (Useful on SunOS 4.*.)
+ * Enable by specifying "LOCAL_UNZIP=-DNEED_STRERROR=1" on the "make"
+ * command line.
+ */
+
+#ifdef NEED_STRERROR
+
+char *strerror( err)
+  int err;
+{
+    extern char *sys_errlist[];
+    extern int sys_nerr;
+
+    static char no_msg[ 64];
+
+    if ((err >= 0) && (err < sys_nerr))
+    {
+        return sys_errlist[ err];
+    }
+    else
+    {
+        sprintf( no_msg, "(no message, code = %d.)", err);
+        return no_msg;
+    }
+}
+
+#endif /* def NEED_STRERROR */

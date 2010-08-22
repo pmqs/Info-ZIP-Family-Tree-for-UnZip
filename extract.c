@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -195,6 +195,11 @@ static ZCONST char Far AbsolutePathWarning[] =
   "warning:  stripped absolute path spec from %s\n";
 static ZCONST char Far SkipVolumeLabel[] =
   "   skipping: %-22s  %svolume label\n";
+
+#if defined( UNIX) && defined( __APPLE__)
+static ZCONST char Far AplDblNameTooLong[] =
+  "error:  file name too long with AppleDouble suffix: %s\n";
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef SET_DIR_ATTRIB   /* messages of code for setting directory attributes */
    static ZCONST char Far DirlistEntryNoMem[] =
@@ -1031,6 +1036,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
 #endif
     int error_in_archive;
 {
+    int cfn;
     unsigned i;
     int renamed, query;
     int skip_entry;
@@ -1289,6 +1295,130 @@ static int extract_or_test_entrylist(__G__ numchunk,
         }
 #endif /* CRYPT */
 
+#if defined( UNIX) && defined( __APPLE__)
+        /* Unless the user objects, or the destination volume does not
+         * support setattrlist(), detect an AppleDouble file (by name),
+         * and set flags and adjusted file name accordingly.
+         */
+        G.apple_double = 0;
+        if ((!uO.J_flag) && G.exdir_attr_ok)
+        {
+            char *post_sgr_pfx;
+            char *rslash;
+
+            *G.ad_filename = '\0';
+
+            /* Detect, and prepare to ignore, an "__MACOSX/" prefix,
+             * used in a "sequestered" AppleDouble archive.
+             * We could add a warning if we see "__MACOSX/" here,
+             * but not "._" below.  (Does anyone _not_ use the "._"
+             * prefix in a sequestered AppleDouble archive?)
+             */
+            if (strncmp( G.filename,
+             APL_DBL_PFX_SQR, strlen( APL_DBL_PFX_SQR)) == 0)
+            {
+                post_sgr_pfx = G.filename+ strlen( APL_DBL_PFX_SQR);
+
+                /* Skip any sequestration directory, including "__MACOSX/",
+                 * itself.  The files will all be placed into the real
+                 * directories, not the sequestration directories.
+                 */
+                if (post_sgr_pfx[ strlen( post_sgr_pfx)- 1] == '/')
+                {
+                    /* Skip this sequestration directory. */
+                    continue;
+                }
+                else
+                {
+                    /* Replace the sequestered file name with the
+                     * unsequestered file name.
+                     */
+                    memmove( G.filename,
+                     post_sgr_pfx, (strlen( post_sgr_pfx)+ 1));
+                }
+            }
+
+            /* Excise "._" prefix (and set flag), if present. */
+            rslash = strrchr( G.filename, '/');
+            if (rslash == NULL)
+            {
+                /* "._name"? */
+                if (strncmp( G.filename, APL_DBL_PFX,
+                 strlen( APL_DBL_PFX)) == 0)
+                {
+                    G.apple_double = 1;
+                    strcpy( G.ad_filename, (G.filename+ strlen( APL_DBL_PFX)));
+                }
+            }
+            else
+            {
+                /*     v--- rslash (before).
+                 * "dir/._name"?
+                 *      ^--- rslash (after).
+                 */
+                if (strncmp( (++rslash), APL_DBL_PFX,
+                 strlen( APL_DBL_PFX)) == 0)
+                {
+                    G.apple_double = 1;
+                    strncpy( G.ad_filename, G.filename, (rslash- G.filename));
+                    strcpy( (G.ad_filename+ (rslash- G.filename)),
+                     (rslash+ strlen( APL_DBL_PFX)));
+                }
+            }
+
+            if (G.apple_double)
+            {
+                /* Check that the file name will not be too long when the
+                 * "/rsrc" (APL_DBL_SFX) string is appended (fileio.c:
+                 * open_outfile()).  (strlen() ignores its NUL, sizeof() 
+                 * includes its NUL.  FILNAMSIZ includes a NUL.)
+                 */
+                if (strlen( G.ad_filename)+ sizeof( APL_DBL_SFX) > FILNAMSIZ)
+                {
+                    Info(slide, 0x401, ((char *)slide, AplDblNameTooLong,
+                     G.ad_filename));
+                    error_in_archive = PK_ERR;
+                    /* Skip this (doomed) AppleDouble file. */
+                    continue;
+                }
+                /* If current file is the AppleDouble file for the previous
+                 * file (their names match), then arrange to handle this
+                 * AppleDouble file the way the previous file was handled.
+                 */ 
+                else if (strcmp( G.ad_filename, G.pq_filename) == 0)
+                {
+                    if (renamed)
+                    {
+                        /* Replace this AppleDouble file name, too.
+                         * Without extra effort, the "renamed" flag will
+                         * be misleadingly FALSE for mapname() below, but 
+                         * the preceding normal file should have paved
+                         * the way by getting all the directories created
+                         * as needed.
+                         */
+                        strcpy( G.ad_filename, G.pr_filename);
+                    }
+                    else if (skip_entry != SKIP_NO)
+                    {
+                        /* Skip this AppleDouble file, too. */
+                        continue;
+                    }
+                    *G.pq_filename = '\0';  /* Pointless? */
+                    *G.pr_filename = '\0';  /* Pointless? */
+                }
+            }
+            else
+            {
+                /* Save a normal file name for comparison with the next
+                 * AppleDouble file name.
+                 */
+                if (!G.apple_double)
+                    strcpy( G.pq_filename, G.filename);
+            }
+        }
+
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
         /*
          * just about to extract file:  if extracting to disk, check if
          * already exists, and if so, take appropriate action according to
@@ -1349,6 +1479,24 @@ startover:
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapname(__G__ renamed);
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* If the destination volume attributes are still a mystery,
+             * and mapname() admits that it made any destination directories,
+             * then try again to determine the volume attributes.
+             * We're hoping that a normal file precedes any AppleDouble
+             * files, so that the flag gets set before it's too late.
+             * We're also ignoring the possibility that a user rename
+             * has sent us onto a volume with different attributes.
+             * Otherwise, we'd need to do more complex, rename-aware
+             * volume attribute determination.
+             */ 
+            if ((G.exdir_attr_ok < 0) && (error& MPN_CREATED_DIR))
+            {
+                G.exdir_attr_ok = vol_attr_ok( uO.exdir);
+            }
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
             if ((errcode = error & ~MPN_MASK) != PK_OK &&
                 error_in_archive < errcode)
                 error_in_archive = errcode;
@@ -1398,7 +1546,28 @@ startover:
 #ifdef QDOS
             QFilename(__G__ G.filename);
 #endif
-            switch (check_for_newer(__G__ G.filename)) {
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* If we are doing special AppleDouble file processing,
+             * and this is an AppleDouble file,
+             * then we should ignore a file-exists test, which may be
+             * expected to succeed.
+             */
+            if (G.apple_double && (!uO.J_flag))
+            {
+                /* Fake a does-not-exist value for this AppleDouble file. */
+                cfn = DOES_NOT_EXIST;
+            }
+            else
+            {
+                /* Do the real test. */
+                cfn = check_for_newer(__G__ G.filename);
+            }
+#else /* defined( UNIX) && defined( __APPLE__) */
+            cfn = check_for_newer(__G__ G.filename);
+#endif /* defined( UNIX) && defined( __APPLE__) [else] */
+
+            switch (cfn) {
                 case DOES_NOT_EXIST:
 #ifdef NOVELL_BUG_FAILSAFE
                     G.dne = TRUE;   /* stat() says file DOES NOT EXIST */
@@ -1558,6 +1727,18 @@ reprompt:
                 continue;
             }
         } /* end if (extracting to disk) */
+
+#if defined( UNIX) && defined( __APPLE__)
+        /* If we are doing special AppleDouble file processing,
+         * and this was a normal file, and the user renamed it,
+         * then save the new name for use on its AppleDouble file
+         * (which should be coming along next).
+         */
+        if (renamed && (!G.apple_double) && (!uO.J_flag))
+        {
+            strcpy( G.pr_filename, G.filename);
+        }
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef DLL
         if ((G.statreportcb != NULL) &&
@@ -2496,9 +2677,27 @@ static void set_deferred_symlink(__G__ slnk_entry)
     __GDEF
     slinkentry *slnk_entry;
 {
+    int sts;
     extent ucsize = slnk_entry->targetlen;
     char *linkfname = slnk_entry->fname;
     char *linktarget = (char *)malloc(ucsize+1);
+
+#ifdef VMS
+    static int vms_symlink_works = -1;
+
+    if (vms_symlink_works < 0)
+    {
+        /* Test symlink() with an invalid file name.  If errno comes
+         * back ENOSYS ("Function not implemented"), then don't try to
+         * use it below on the symlink placeholder text files.
+         */
+        vms_symlink_works = symlink( "", "?");
+        if (errno == ENOSYS)
+            vms_symlink_works = 0;
+        else
+            vms_symlink_works = 1;
+    }
+#endif /* def VMS */
 
     if (!linktarget) {
         Info(slide, 0x201, ((char *)slide,
@@ -2527,11 +2726,29 @@ static void set_deferred_symlink(__G__ slnk_entry)
         return;
     }
     fclose(G.outfile);                  /* close "data" file for good... */
-    unlink(linkfname);                  /* ...and delete it */
-    if (QCOND2)
+
+#ifdef VMS
+    if (vms_symlink_works == 0)
+    {
+        /* Should we be using some UnZip error message function instead
+         * of perror() (or equivalent) for these "symlink error"
+         * messages?
+         */
         Info(slide, 0, ((char *)slide, LoadFarString(SymLnkFinish),
           FnFilter1(linkfname), FnFilter2(linktarget)));
-    if (symlink(linktarget, linkfname))  /* create the real link */
+
+        fprintf( stderr, "Symlink error: %s\n", strerror( ENOSYS));
+        free(linktarget);
+        return;
+    }
+#endif /* def VMS */
+
+    unlink(linkfname);                  /* ...and delete it */
+    sts = symlink(linktarget, linkfname);       /* create the real link */
+    if (QCOND2 || (sts != 0))
+        Info(slide, 0, ((char *)slide, LoadFarString(SymLnkFinish),
+          FnFilter1(linkfname), FnFilter2(linktarget)));
+    if (sts != 0)
         perror("symlink error");
     free(linktarget);
 #ifdef SET_SYMLINK_ATTRIBS
@@ -2549,30 +2766,100 @@ static void set_deferred_symlink(__G__ slnk_entry)
 /*  Function fnfilter()  */        /* here instead of in list.c for SFX */
 /*************************/
 
+/*
+  If Unicode is supported, assume we have what we need to do this
+  check using wide characters, avoiding MBCS issues.
+ */
+
 char *fnfilter(raw, space, size)   /* convert name to safely printable form */
     ZCONST char *raw;
     uch *space;
     extent size;
 {
+#ifndef UZ_FNFILTER_REPLACECHAR
+    /* A convenient choice for the replacement of unprintable char codes is
+     * the "single char wildcard", as this character is quite unlikely to
+     * appear in filenames by itself.  The following default definition
+     * sets the replacement char to a question mark as the most common
+     * "single char wildcard"; this setting should be overridden in the
+     * appropiate system-specific configuration header when needed.
+     */
+# define UZ_FNFILTER_REPLACECHAR      '?'
+#endif
+
 #ifndef NATIVE   /* ASCII:  filter ANSI escape codes, etc. */
-    ZCONST uch *r=(ZCONST uch *)raw;
+
+# ifdef UNICODE_SUPPORT
+/* If Unicode support is enabled, do the isprint() checks by first
+   converting to wide characters and checking those.  That avoids
+   issues doing checks on multi-byte characters.  After the replacements
+   the wide string is converted back to the local character set. */
+
+    wchar_t *wstring;    /* wchar_t version of raw */
+    size_t wslen;        /* length of wstring */
+    wchar_t *wc;         /* pointer to char in wstring */
+    wchar_t *wostring;   /* wchar_t version of output string */
+    size_t woslen;       /* length of wostring */
+    wchar_t *woc;        /* pointer to char in wostring */
+	char *newraw;        /* new raw */
+	ZCONST uch *r;
     uch *s=space;
     uch *slim=NULL;
     uch *se=NULL;
     int have_overflow = FALSE;
 
-    if (size > 0) {
-        slim = space + size
-#ifdef _MBCS
-                     - (MB_CUR_MAX - 1)
-#endif
-                     - 4;
+    wslen = mbstowcs(NULL, raw, 0 );
+	if ((wstring = malloc((wslen + 1) * sizeof(wchar_t))) == NULL) {
+        strcpy( (char *)space, raw);
+        return (char *)space;
     }
+	if ((wostring = malloc(2 * (wslen + 1) * sizeof(wchar_t))) == NULL) {
+		free(wstring);
+        strcpy( (char *)space, raw);
+        return (char *)space;
+    }
+    wslen = mbstowcs(wstring, raw, wslen + 1);
+	wc = wstring;
+	woc = wostring;
+
+    while (*wc) {
+        if (!iswprint(*wc)) {
+            if (*wc < 32) {
+                /* ASCII control codes are escaped as "^{letter}". */
+                *woc++ = (wchar_t)'^';
+                *woc++ = (wchar_t)(64 + *wc);
+            } else {
+                /* Other unprintable codes are replaced by the
+                 * placeholder character. */
+                *woc++ = (wchar_t)UZ_FNFILTER_REPLACECHAR;
+            }
+        } else {
+            *woc++ = *wc;
+        }
+        *wc++;
+    }
+    *woc = (wchar_t)0;
+
+    /* convert back to local string to work with output buffer */
+    woslen = wcstombs(NULL, wostring, 0 );
+	if ((newraw = malloc(woslen + 1)) == NULL) {
+		free(wstring);
+		free(wostring);
+        strcpy( (char *)space, raw);
+        return (char *)space;
+    }
+    woslen = wcstombs(newraw, wostring, (woslen * MB_CUR_MAX) + 1 );
+
+
+    if (size > 0) {
+        slim = space + size - 4;
+    }
+    r = (ZCONST uch *)newraw;
     while (*r) {
         if (size > 0 && s >= slim && se == NULL) {
             se = s;
         }
-#ifdef QDOS
+#  ifdef QDOS
         if (qlflag & 2) {
             if (*r == '/' || *r == '.') {
                 if (se != NULL && (s > (space + (size-3)))) {
@@ -2584,18 +2871,58 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                 continue;
             }
         } else
-#endif
-#ifdef HAVE_WORKING_ISPRINT
-# ifndef UZ_FNFILTER_REPLACECHAR
-    /* A convenient choice for the replacement of unprintable char codes is
-     * the "single char wildcard", as this character is quite unlikely to
-     * appear in filenames by itself.  The following default definition
-     * sets the replacement char to a question mark as the most common
-     * "single char wildcard"; this setting should be overridden in the
-     * appropiate system-specific configuration header when needed.
-     */
-#   define UZ_FNFILTER_REPLACECHAR      '?'
-# endif
+#  endif
+        {
+            if (se != NULL && (s > (space + (size-3)))) {
+                have_overflow = TRUE;
+                break;
+            }
+            *s++ = *r++;
+        }
+    }
+    if (have_overflow) {
+        strcpy((char *)se, "...");
+    } else {
+        *s = '\0';
+    }
+
+    free(wstring);
+    free(wostring);
+    free(newraw);
+
+# else /* !UNICODE_SUPPORT */
+
+    ZCONST uch *r=(ZCONST uch *)raw;
+    uch *s=space;
+    uch *slim=NULL;
+    uch *se=NULL;
+    int have_overflow = FALSE;
+
+    if (size > 0) {
+        slim = space + size
+#  ifdef _MBCS
+                     - (MB_CUR_MAX - 1)
+#  endif
+                     - 4;
+    }
+    while (*r) {
+        if (size > 0 && s >= slim && se == NULL) {
+            se = s;
+        }
+#  ifdef QDOS
+        if (qlflag & 2) {
+            if (*r == '/' || *r == '.') {
+                if (se != NULL && (s > (space + (size-3)))) {
+                    have_overflow = TRUE;
+                    break;
+                }
+                ++r;
+                *s++ = '_';
+                continue;
+            }
+        } else
+#  endif
+#  ifdef HAVE_WORKING_ISPRINT
         if (!isprint(*r)) {
             if (*r < 32) {
                 /* ASCII control codes are escaped as "^{letter}". */
@@ -2614,7 +2941,7 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                 *s++ = UZ_FNFILTER_REPLACECHAR;
                 INCSTR(r);
             }
-#else /* !HAVE_WORKING_ISPRINT */
+#  else /* !HAVE_WORKING_ISPRINT */
         if (*r < 32) {
             /* ASCII control codes are escaped as "^{letter}". */
             if (se != NULL && (s > (space + (size-4)))) {
@@ -2622,9 +2949,9 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                 break;
             }
             *s++ = '^', *s++ = (uch)(64 + *r++);
-#endif /* ?HAVE_WORKING_ISPRINT */
+#  endif /* ?HAVE_WORKING_ISPRINT */
         } else {
-#ifdef _MBCS
+#  ifdef _MBCS
             unsigned i = CLEN(r);
             if (se != NULL && (s > (space + (size-i-2)))) {
                 have_overflow = TRUE;
@@ -2632,13 +2959,13 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
             }
             for (; i > 0; i--)
                 *s++ = *r++;
-#else
+#  else
             if (se != NULL && (s > (space + (size-3)))) {
                 have_overflow = TRUE;
                 break;
             }
             *s++ = *r++;
-#endif
+#  endif
          }
     }
     if (have_overflow) {
@@ -2646,16 +2973,17 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
     } else {
         *s = '\0';
     }
+# endif /* !UNICODE_SUPPORT */
 
-#ifdef WINDLL
+# ifdef WINDLL
     INTERN_TO_ISO((char *)space, (char *)space);  /* translate to ANSI */
-#else
-#if (defined(WIN32) && !defined(_WIN32_WCE))
+# else
+#  if (defined(WIN32) && !defined(_WIN32_WCE))
     /* Win9x console always uses OEM character coding, and
        WinNT console is set to OEM charset by default, too */
     INTERN_TO_OEM((char *)space, (char *)space);
-#endif /* (WIN32 && !_WIN32_WCE) */
-#endif /* ?WINDLL */
+#  endif /* (WIN32 && !_WIN32_WCE) */
+# endif /* ?WINDLL */
 
     return (char *)space;
 

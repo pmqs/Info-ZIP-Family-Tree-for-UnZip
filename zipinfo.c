@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -161,6 +161,8 @@ static ZCONST char Far MultiPartArchive2[] = "\
 static ZCONST char Far MultiPartArchive3[] = "\
   %s of the archive entries %s contained within this zipfile volume,\n\
   out of a total of %s %s.\n\n";
+static ZCONST char Far NoMemArguments[] =
+  "envargs:  cannot get memory for arguments";
 
 static ZCONST char Far CentralDirEntry[] =
   "\nCentral directory entry #%lu:\n---------------------------\n\n";
@@ -451,50 +453,118 @@ int zi_opts(__G__ pargc, pargv)
     char ***pargv;
     __GDEF
 {
-    char   **argv, *s;
-    int    argc, c, error=FALSE, negative=0;
+    int    argc, error=FALSE;
     int    hflag_slmv=TRUE, hflag_2=FALSE;  /* diff options => diff defaults */
     int    tflag_slm=TRUE, tflag_2v=FALSE;
     int    explicit_h=FALSE, explicit_t=FALSE;
 
+    char **args;
+
+
+    /* used by get_option */
+    unsigned long option; /* option ID returned by get_option */
+    int argcnt = 0;       /* current argcnt in args */
+    int argnum = 0;       /* arg number */
+    int optchar = 0;      /* option state */
+    char *value = NULL;   /* non-option arg, option value or NULL */
+    int negative = 0;     /* 1 = option negated */
+    int fna = 0;          /* current first non-opt arg */
+    int optnum = 0;       /* index in table */
+    int showhelp = 0;     /* for --commandline */
+
+
+    /* since get_option() returns xfiles and files one at a time, store them in
+       linked lists until have them all */
+
+    int file_count;
+    struct file_list *next_file;
+
+    /* files to extract */
+    int in_files_count = 0;
+    struct file_list *in_files = NULL;
+    struct file_list *next_in_files = NULL;
+
+    /* files to exclude in -x list */
+    int in_xfiles_count = 0;
+    struct file_list *in_xfiles = NULL;
+    struct file_list *next_in_xfiles = NULL;
+
+    G.wildzipfn = NULL;
+
+    /* make copy of args that can use with insert_arg() used by get_option() */
+    args = copy_args(*pargv, 0);
+
+
+    /* Initialize lists */
+    G.filespecs = 0;
+    G.xfilespecs = 0;
 
 #ifdef MACOS
     uO.lflag = LFLAG;         /* reset default on each call */
 #endif
     G.extract_flag = FALSE;   /* zipinfo does not extract to disk */
-    argc = *pargc;
-    argv = *pargv;
 
-    while (--argc > 0 && (*++argv)[0] == '-') {
-        s = argv[0] + 1;
-        while ((c = *s++) != 0) {    /* "!= 0":  prevent Turbo C warning */
-            switch (c) {
-                case '-':
-                    ++negative;
-                    break;
+    /*
+    -------------------------------------------
+    Process command line using get_option
+    -------------------------------------------
+
+    Each call to get_option() returns either a command
+    line option and possible value or a non-option argument.
+    Arguments are permuted so that all options (-r, -b temp)
+    are returned before non-option arguments (zipfile).
+    Returns 0 when nothing left to read.
+    */
+
+    /* set argnum = 0 on first call to init get_option */
+    argnum = 0;
+
+    /* get_option returns the option ID and updates parameters:
+           args    - usually same as argv if no argument file support
+           argcnt  - current argc for args
+           value   - char* to value (free() when done with it) or NULL if no value
+           negated - option was negated with trailing -
+    */
+
+
+/* Copied from unzip.c */
+#define o_sc            0x103
+#define o_so            0x104
+
+
+    while ((option = get_option(ZIO, &args, &argcnt, &argnum,
+                                &optchar, &value, &negative,
+                                &fna, &optnum, 0)))
+    {
+        if(option == o_BAD_ERR) {
+          return(PK_PARAM);
+        }
+
+        switch (option)
+        {
                 case '1':      /* shortest listing:  JUST filenames */
                     if (negative)
-                        uO.lflag = -2, negative = 0;
+                        uO.lflag = -2;
                     else
                         uO.lflag = 1;
                     break;
                 case '2':      /* just filenames, plus headers if specified */
                     if (negative)
-                        uO.lflag = -2, negative = 0;
+                        uO.lflag = -2;
                     else
                         uO.lflag = 2;
                     break;
 #ifndef CMS_MVS
                 case ('C'):    /* -C:  match filenames case-insensitively */
                     if (negative)
-                        uO.C_flag = FALSE, negative = 0;
+                        uO.C_flag = FALSE;
                     else
                         uO.C_flag = TRUE;
                     break;
 #endif /* !CMS_MVS */
                 case 'h':      /* header line */
                     if (negative)
-                        hflag_2 = hflag_slmv = FALSE, negative = 0;
+                        hflag_2 = hflag_slmv = FALSE;
                     else {
                         hflag_2 = hflag_slmv = explicit_h = TRUE;
                         if (uO.lflag == -1)
@@ -503,33 +573,39 @@ int zi_opts(__G__ pargc, pargv)
                     break;
                 case 'l':      /* longer form of "ls -l" type listing */
                     if (negative)
-                        uO.lflag = -2, negative = 0;
+                        uO.lflag = -2;
                     else
                         uO.lflag = 5;
                     break;
                 case 'm':      /* medium form of "ls -l" type listing */
                     if (negative)
-                        uO.lflag = -2, negative = 0;
+                        uO.lflag = -2;
                     else
                         uO.lflag = 4;
                     break;
 #ifdef MORE
                 case 'M':      /* send output through built-in "more" */
                     if (negative)
-                        G.M_flag = FALSE, negative = 0;
+                        G.M_flag = FALSE;
                     else
                         G.M_flag = TRUE;
                     break;
 #endif
                 case 's':      /* default:  shorter "ls -l" type listing */
                     if (negative)
-                        uO.lflag = -2, negative = 0;
+                        uO.lflag = -2;
                     else
                         uO.lflag = 3;
                     break;
+#ifndef SFX
+                case (o_sc):   /* show processed command line and exit */
+                    *pargc = -1;
+                    showhelp = -3;
+                    break;
+#endif
                 case 't':      /* totals line */
                     if (negative)
-                        tflag_2v = tflag_slm = FALSE, negative = 0;
+                        tflag_2v = tflag_slm = FALSE;
                     else {
                         tflag_2v = tflag_slm = explicit_t = TRUE;
                         if (uO.lflag == -1)
@@ -538,50 +614,161 @@ int zi_opts(__G__ pargc, pargv)
                     break;
                 case ('T'):    /* use (sortable) decimal time format */
                     if (negative)
-                        uO.T_flag = FALSE, negative = 0;
+                        uO.T_flag = FALSE;
                     else
                         uO.T_flag = TRUE;
                     break;
 #ifdef UNICODE_SUPPORT
                 case ('U'):    /* escape UTF-8, or disable UTF-8 support */
-                    if (negative) {
-                        uO.U_flag = MAX(uO.U_flag-negative,0);
-                        negative = 0;
-                    } else
+                    if (negative)
+                        uO.U_flag = MAX(uO.U_flag - 1, 0);
+                    else
                         uO.U_flag++;
                     break;
 #endif /* UNICODE_SUPPORT */
                 case 'v':      /* turbo-verbose listing */
                     if (negative)
-                        uO.lflag = -2, negative = 0;
+                        uO.lflag = -2;
                     else
                         uO.lflag = 10;
                     break;
 #ifdef WILD_STOP_AT_DIR
                 case ('W'):    /* Wildcard interpretation (stop at '/'?) */
                     if (negative)
-                        uO.W_flag = FALSE, negative = 0;
+                        uO.W_flag = FALSE;
                     else
                         uO.W_flag = TRUE;
                     break;
 #endif /* WILD_STOP_AT_DIR */
+                case ('x'):    /* extract:  default */
+                    /* add -x file to linked list */
+
+                    if (in_xfiles_count == 0) {
+                        /* first entry */
+                        if ((in_xfiles = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
+                            Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                            return PK_MEM;
+                        }
+                        in_xfiles->name = value;
+                        in_xfiles->next = NULL;
+                        next_in_xfiles = in_xfiles;
+                    } else {
+                        /* add next entry */
+                        if ((next_file = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
+                            Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                            return PK_MEM;
+                        }
+                        next_in_xfiles->next = next_file;
+                        next_file->name = value;
+                        next_file->next = NULL;
+                        next_in_xfiles = next_file;
+                    }
+                    in_xfiles_count++;
                 case 'z':      /* print zipfile comment */
                     if (negative)
-                        uO.zflag = negative = 0;
+                        uO.zflag = 0;
                     else
                         uO.zflag = 1;
                     break;
                 case 'Z':      /* ZipInfo mode:  ignore */
                     break;
+                case o_NON_OPTION_ARG:
+                    /* not an option */
+                    /* no more options as permuting */
+
+
+                    if (G.wildzipfn == NULL) {
+                        /* first non-option argument is zip file */
+                        G.wildzipfn = value;
+
+                    } else {
+                        /* add include file to list */
+                        if (in_files_count == 0) {
+                            /* first entry */
+                            if ((next_file = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
+                                Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                                return PK_MEM;
+                            }
+                            next_file->name = value;
+                            next_file->next = NULL;
+                            in_files = next_file;
+                            next_in_files = next_file;
+                        } else {
+                            /* add next entry */
+                            if ((next_file = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
+                                Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                                return PK_MEM;
+                            }
+                            next_in_files->next = next_file;
+                            next_file->name = value;
+                            next_file->next = NULL;
+                            next_in_files = next_file;
+                        }
+                        in_files_count++;
+                    }
+                    break;
                 default:
                     error = TRUE;
                     break;
-            }
-        }
+        } /* switch */
+    } /* get_option() */
+
+    if (showhelp == -3) {
+      show_commandline(args);
+      return PK_OK;
     }
-    if ((argc-- == 0) || error) {
+
+    /* convert files and xfiles lists to arrays */
+
+    /* convert files list to array */
+    if (in_files_count) {
+      if ((G.pfnames = (char **) malloc((in_files_count + 1) * sizeof(char *))) == NULL) {
+          Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+          return PK_MEM;
+      }
+      file_count = 0;
+      for (next_file = in_files; next_file;) {
+          G.pfnames[file_count] = next_file->name;
+          in_files = next_file;
+          next_file = next_file->next;
+          free(in_files);
+          file_count++;
+      }
+      G.pfnames[file_count] = NULL;
+      G.filespecs = in_files_count;
+    }
+
+    /* convert xfiles list to array */
+    if (in_xfiles_count) {
+      if ((G.pxnames = (char **) malloc((in_xfiles_count + 1) * sizeof(char *))) == NULL) {
+          Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+          return PK_MEM;
+      }
+      file_count = 0;
+      for (next_file = in_xfiles; next_file;) {
+          G.pxnames[file_count] = next_file->name;
+          in_xfiles = next_file;
+          next_file = next_file->next;
+          free(in_xfiles);
+          file_count++;
+      }
+      G.pxnames[file_count] = NULL;
+      G.xfilespecs = in_xfiles_count;
+    }
+
+    if (in_files_count || in_xfiles_count) {
+        G.process_all_files = FALSE;
+    } else {
+        G.process_all_files = TRUE;      /* for speed */
+    }
+
+    /* it's possible the arg count could have been changed by get_option() */
+    argc = arg_count(args);
+
+    if ((G.wildzipfn == NULL) || error) {
+        argc = -1;      /* tell the caller to stop processing */
         *pargc = argc;
-        *pargv = argv;
+        *pargv = args;
         return USAGE(error);
     }
 
@@ -620,7 +807,7 @@ int zi_opts(__G__ pargc, pargv)
     }
 
     *pargc = argc;
-    *pargv = argv;
+    *pargv = args;
     return 0;
 
 } /* end function zi_opts() */
@@ -2313,3 +2500,4 @@ static char *zi_time(__G__ datetimez, modtimez, d_t_str)
 } /* end function zi_time() */
 
 #endif /* !NO_ZIPINFO */
+

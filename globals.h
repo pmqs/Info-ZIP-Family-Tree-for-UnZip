@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -146,6 +146,10 @@
 #  include "bzlib.h"
 #endif
 
+#if defined( UNIX) && defined( __APPLE__)
+#  include "unix/macosx.h"
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 
 /*************/
 /*  Globals  */
@@ -189,6 +193,17 @@ typedef struct Globals {
     zoff_t   expect_ecrec_offset;
     zoff_t   csize;       /* used by decompr. (NEXTBYTE): must be signed */
     zoff_t   used_csize;  /* used by extract_or_test_member(), explode() */
+
+#if defined( UNIX) && defined( __APPLE__)
+    int apple_double;     /* True for an AppleDouble file ("._name"). */
+    int apl_dbl_hdr_bytes;/* Non-zero for AplDbl until Finder info is set. */
+    int apl_dbl_hdr_len;  /* Bytes in apl_dbl_hdr. */
+    int exdir_attr_ok;    /* True if destination supports setattrlist(). */
+    char apl_dbl_hdr[ APL_DBL_HDR_SIZE];        /* AppleDouble header buffer. */
+    char ad_filename[ FILNAMSIZ];   /* AppleDouble "/rsrc" file name. */
+    char pq_filename[ FILNAMSIZ];   /* Previous query file name. */
+    char pr_filename[ FILNAMSIZ];   /* Previous rename file name. */
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef DLL
      int fValidate;       /* true if only validating an archive */

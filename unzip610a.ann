@@ -1,0 +1,42 @@
+UnZip 6.10a
+
+We have posted UnZip Beta 6.10a, August 23rd 2010.  This is a beta release and
+considerable additional work is planned before UnZip 6.10 is released.  See the
+file History.610 for development details of what's in this beta.
+
+As always, send in your feature suggestions and bug reports as they may influence
+development of UnZip 6.10.
+
+Quick list of major changes in UnZip 6.10a:
+
+- Ported new Zip command parser that supports long options, such as --license.
+- As result of new parser, option negation now uses trailing "-" instead
+   of leading "-".  So -B turns on the new UNIX backup option and -B- turns it
+   off.  Negation also works on long options, such as --backup- to turn the
+   backup option off.  Also, multiple levels of negation (such as ----q in UnZip
+   6.00) are currently no longer supported.
+- New option --options lists all available options.
+- New option --commandline shows the input command line as processed and exits.
+- New --license option lists the license.  This allows distribution of UnZip 6.10
+   without additional documentation.
+- Minor updates to zipgrep.
+- Preliminary support for AppleDouble storage of resource information on Mac
+   platforms.
+- Added new "VMS symlinks are working" check.
+- Additional system information reported using -v option.
+- Additional control of UID/GID and SGID restore.
+- VMS verbose report and update of VMS notes.
+- VMS return code updates.
+- File name checks now use wide character checks to find non-printing characters
+   to display as '?'.  This should fix a bug where '?' was being displayed for
+   parts of multi-byte characters.
+- File INSTALL with installation procedures updated.
+- Add ZipInfo 'C' option.
+- Replace VMS /[NO]CASE_INSENSITIVE with /CASE_MATCH.
+- Fix compile problems when using ZLIB with funzip.
+- Fix problems using SFX and ZLIB or BZIP2.
+
+As always, see the UnZip manual page and the extended help in UnZip for details
+on what UnZip has and how to use all features.
+
+Enjoy!

@@ -1,11 +1,12 @@
 __________________________________________________________________________
 
-  This is the Info-ZIP file INSTALL (for UnZip), last updated 16 Apr 2009.
+  This is the Info-ZIP file INSTALL (for UnZip), last updated 01 Aug 2010.
 __________________________________________________________________________
 
   Yes, this is a rather long file, but don't be intimidated:  much of its
   length is due to coverage of multiple operating systems and of optional
   customization features, large portions of which may be skipped.
+
 __________________________________________________________________________
 
 
@@ -15,8 +16,8 @@ To compile UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
 
 (1) Unpack everything into a work directory somewhere, and make sure you're
     in the main UnZip directory (the one with this file in it).
-    * (See note below concerning line termination format used in the source
-       distribution)
+    (See note below (*) concerning line termination format used in the source
+    distribution.)
 
 (2) Copy the appropriate makefile into the current directory, except under
     OS/2.
@@ -26,20 +27,19 @@ To compile UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
 (4) Try out your new UnZip the way you would any new utility:  read the
     docs first.
 
-    Ah ha ha ha!!  Oh, that kills me.  But seriously...  For VMS, see the
-    Install section below or [.vms]README. for details.
+    For VMS, see the Install section below or [.vms]INSTALL.VMS for details.
 
     For DOS and other OSes without explicit timezone support (i.e., everybody
-    but Unix, Windows 95 and NT), make sure the "TZ" environment variable is
-    set to a valid and reasonable value; see your compiler docs for details.
+    but Unix, VMS, Windows 95 and later), make sure the "TZ" environment variable
+    is set to a valid and reasonable value; see your compiler docs for details.
 
-(*) The unzip sources as well as other Info-ZIP source archives are packaged
+(*) The UnZip sources as well as other Info-ZIP source archives are packaged
     in Unix format. All text files use single LF (Ascii 0x0a) characters as
     line terminators.  On systems that use different conventions for plain text
     files (e.g.:DOS,Win9x,WinNT,OS/2 -> combined CR+LF; MacOS -> single CR),
     some utilities (editors, compilers, etc.) may not accept source files
     with LF line terminators.
-    For these systems, we recommend to use Info-ZIP's UnZip utility for
+    For these systems, we recommend using Info-ZIP's UnZip utility for
     extraction of our distribution archives, applying the command option
     "-a" (= translate text files to native format) in the extraction command.
     In case this procedure is not applicable, an appropiate third-party
@@ -59,52 +59,55 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
     UnZip source distribution.  If you wish to compile binaries without
     decryption support, you must define the preprocessor flag NO_CRYPT.
     For many environments, you may add this flag to the custom compilation
-    flags supplied by the environment variable LOCAL_UNZIP.  For more
-    details, see the make procedures and accompanied documentation for your
-    particular target OS.
+    flags supplied by the "make" macro (or environment variable) LOCAL_UNZIP.
+    For more details, see the "make" procedures and accompanied documentation
+    for your particular target OS.
 
     As of UnZip 5.53, support for the bzip2 compression algorithm has been
     added to UnZip. However, this support requires the original sources of
-    the bzip2 compression library which have to be aquired separately;
+    the bzip2 compression library which have to be acquired separately;
     see "http://www.bzip.org/" for further reference.
 
 
-(2) Choose the appropriate makefile based on the description in the Con-
-    tents file for your OS (that is, there's only one for Unix or OS/2, but
-    MS-DOS and several other OSes have several, depending on the compiler).
-    Copy it into the current directory and rename if necessary or desired.
-    (Some makefiles can be invoked in place; see (5) below.)
+(2) Choose the appropriate makefile based on the description in the Contents
+    file for your OS.  (There's only one for Unix or OS/2, but MS-DOS and
+    several other OSes have several, depending on the compiler).  On many
+    systems, the makefile can be used where it resides, using make's "-f"
+    option.  For example, "make -f unix/Makefile".  On other systems, you may
+    need to copy it into the current directory (and rename it, if necessary
+    or desired).  On OS/2, os2\makefile.os2 expects to remain in the os2
+    subdirectory, so invoke it using a command like, for example:
+        nmake -f os2\makefile.os2 gcc
 
     Don't be afraid to read the makefile!  Many options will be explained only
-    in the comments contained therein.  The defaults may not quite suit your
-    system.  When making changes, remember that some "make" utilities expect
-    tabs as part of the makefile syntax.  Failure with cryptic error messages
-    will result if your editor quietly replaces those tabs with spaces.
+    in the comments therein.  The defaults may not quite suit your situation.
+    When making changes, remember that some "make" utilities expect tab
+    characters as part of the makefile syntax.  Failure with cryptic error
+    messages may result if your editor (quietly) replaces those tabs with
+    spaces.
 
     Special point of confusion:  some non-MSDOS makefiles contain MS-DOS
-    targets (useful for cross-compilations). An example is the OS/2 makefile
-    os2/makefile.os2 that contains the gccdos target for DOS emx+gcc and
-    some more DOS related targets for Watcom C and MSC. But since version 5.3,
-    the msdos subdirectory contains makefiles for all supported DOS compilers.
-    [The old djgpp, djgpp1 and gcc_dos targets in unix/Makefile have been
-    removed in 5.3; use msdos/makefile.dj* instead.]
-
-    Extra-special point of confusion:  makefile.os2 expects to remain in
-    the os2 subdirectory.  Invoke it via "nmake -f os2/makefile.os2 gcc",
-    for example.
+    targets (useful for cross-compilations). An example is the OS/2 makefile,
+    os2\makefile.os2, that contains the gccdos target for DOS emx+gcc and
+    some more DOS related targets for Watcom C and MSC. But since UnZip
+    version 5.3, the msdos subdirectory contains makefiles for all supported
+    DOS compilers.  (The old djgpp, djgpp1 and gcc_dos targets in
+    unix/Makefile have been removed in UnZip 5.3; use msdos/makefile.dj*
+    instead.)
 
 
-(3) If you want a non-standard version of UnZip, define one or more of the
-    following optional macros, either by adding them to the LOCAL_UNZIP
-    environment variable or by editing your makefile as appropriate.  The
-    syntax differs from compiler to compiler, but macros are often defined
-    via "-DMACRO_NAME" or similar (for one called MACRO_NAME).  Note that
-    some of these may not be fully supported in future releases (or even
-    in the current release).  Note also that very short command lines in
-    MS-DOS (128 characters) may place severe limits on how many of these
-    can be used; if need be, the definitions can be placed at the top of
-    unzip.h instead (it is included in all source files)--for example,
-    "#define MACRO_NAME", one macro per line.
+(3) If you want a non-standard edition of UnZip, define one or more of the
+    optional C macros listed below, either by adding them to the LOCAL_UNZIP
+    "make" macro (or environment variable), or by editing your makefile as
+    appropriate.  The syntax differs from compiler to compiler, but a C
+    macro named MACRO_NAME is commonly defined using syntax like
+    "-DMACRO_NAME" (or "-DMACRO_NAME=value").  Note that, like all the UnZip
+    source code, the C macros used and/or supported may change from one UnZip
+    release to another.  Note also that very short command lines in MS-DOS
+    (128 characters) may place severe limits on how many of these can be
+    used; if need be, the definitions can be placed at the top of unzip.h
+    instead (it is included in all source files).  For example,
+    "#define MACRO_NAME" (or "#define MACRO_NAME value"), one macro per line.
 
       DOSWILD   (MS-DOS only)
         Treat trailing "*.*" like Unix "*" (i.e., matches anything); treat
@@ -175,7 +178,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         extracted on other systems.  Defining this option enables UnZip's
         -aa option to detect and convert VMS VFC-record text files into
         native text format.  Non-VMS UnZips now use a rudimentary VMS extra
-        field analyser to relyably determine such text files. (Earlier
+        field analyser to reliably determine such text files. (Earlier
         versions of UnZip applied some heuristics instead.)
         Therefore this option is now enabled by default for the main program
         (but not the SFX stub), because it can be extremely useful on those
@@ -339,29 +342,41 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         exclusion of the deflate64 support.
 
       USE_BZIP2 (requires additional external code distribution)
-       UnZip can optionally support the "bzip2" compression algorithm for
-       most ports on 32-bit (or higher) platforms. Currently, this support
-       is integrated in the Make procedures of MSDOS 32-bit (DJGPP), VMS,
-       Win32, and many Unix systems.
-       Prerequisites:
-       You have to obtain the bzip2 source distribution (version 1.03 or
-       higher) and extract it into the "bzip2" subdirectory.
-       Compilation:
-       - MSDOS, Win32: You have to supply the symbol definition
-         "USEBZ2=1" on the command line when you invoke the make program.
-       - Unix: The target "generic" automatically activates bzip2 support
-         when its configure script detects the presence of the bzip2 sources.
-         For other targets, there are two options:
-         a) Use the command
-            "make -f unix/Makefile D_USE_BZ2=-DUSE_BZIP2 L_BZ2=-lbz2 \
-                   LIBBZ2=bzip2/libbz2.a YourTarget"
-           (Do not use the continuation line and replace YourTarget with
-           the appropiate target name.)
-         b) Edit the Makefile and remove the comment signs from the lines
-            that define the macros D_USE_BZ2, L_BZ2, and LIBBZ2 (at about
-            line 84 ff.).
-       - VMS: The MMS/MMK build program should automatically activate the
-         bzip2 support when it detects the presence of the bzip2 sources.
+        UnZip can optionally support the "bzip2" compression algorithm for
+        most ports on 32-bit (or higher) platforms. Currently, this support
+        is integrated in the Make procedures of MSDOS 32-bit (DJGPP), VMS,
+        Win32, and many Unix systems.
+        Prerequisites:
+        You have to obtain the bzip2 source distribution (version 1.03 or
+        higher) and extract it into the "bzip2" subdirectory.
+        Compilation:
+        - MSDOS, Win32: You have to supply the symbol definition
+          "USEBZ2=1" on the command line when you invoke the "make" program.
+        - Unix: The target "generic" (or "generic_gcc") automatically
+          activates bzip2 support when its unix/configure script detects
+          bzip2 sources in the ./bzip2 subdirectory.  See the Unix section
+          below for details on how to specify the use of an existing bzip2
+          kit somewhere other than in the local UnZip ./bzip2 subdirectory.
+          For other targets, there are two options:
+          a) Use a command like:
+              make -f unix/Makefile D_USE_BZ2=-DUSE_BZIP2 L_BZ2=-lbz2 \
+               LIBBZ2=bzip2/libbz2.a YourTarget
+             (Do not use the continuation line and replace YourTarget with
+             the appropiate target name.)
+          b) Edit the Makefile and remove the comment signs from the lines
+             that define the macros D_USE_BZ2, L_BZ2, and LIBBZ2 (at about
+             line 84 ff.).
+        - VMS: The builders should automatically activate bzip2 support when
+          they detect the bzip2 files in the [.bzip2] subdirectory.  The user
+          can also specify a different directory where the bzip2 source and
+          object library can be found using the IZ_BZIP2 parameter/macro.
+          See [.vms]INSTALL.VMS for details.
+
+      BZIP2_SFX
+        Enable bzip2 compression support in UnZipSFX (if it's enabled in
+        UnZip).  By default, to reduce the size of the UnZipSFX executable,
+        bzip2 compression support is disabled in UnZipSFX even when it's
+        enabled in UnZip itself.
 
       MULT_VOLUME (experimental for 5.5x, do NOT use in production versions!)
       NO_MULT_VOLUME (default)
@@ -439,14 +454,16 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
            more versatile Unicode support and additional "debugging" options
            for checking the correct recognition of non-ASCII Unicode
            characters.
-        c) The operating system and the compilation environment allow to use
+        c) The operating system and the compilation environment allow use of
            unicode-encoded "wide character" data for native text strings
-           support.
+           support.  (This is mainly Windows NT and later.)
            Complete support for this method requires a throughout revision
-           of the UnZip code. All internal string handling and text output
-           needs to be ported to use wchar_t character storage.
-           This porting is still in an experimental stage and not ready
-           for general distribution.
+           of the UnZip code to convert the MBCS 8-bit string calls used now
+           to the equivalent wide character calls.  All internal string
+           handling and text output needs to be ported to use wchar_t
+           character storage, which for the most part requires just proper
+           type updating.  This capability is planned for inclusion in
+           UnZip 6.10.
 
         On some ports UNICODE_SUPPORT is set automatically:
         - WIN32 (and WinCE) use method b) by defining UNICODE_SUPPORT and
@@ -460,21 +477,21 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
       NO_SETLOCALE (for Unix)
         On Unix, it is now assumed that <locale.h> and the setlocale function
         are available, to setup locale-aware filtering of displayed filenames.
-        The option NO_SETLOCALE allows to disable the dependency on <locale.h>
-        and setlocale() on systems where this assumption is invalid (and the
-        auto-configuring make target "generic" cannot be used for capabilities
-        detection).
+        The option NO_SETLOCALE disables the dependency on <locale.h> and
+        setlocale() on systems where this assumption is invalid (and the
+        auto-configuring "make" target "generic" cannot be used for
+        capabilities detection).
 
       _MBCS
       NO_MBCS
        Enable multi-byte character set support.  This is the default for the
        Human68k system (originated from Japan) and for Win32 (here only DBCS
-       "double-byte character set" support).  The MBCS support should also be
-       enabled on systems which are capable of using UTF-8 as native charset.
-       For MBCS support, the C runtime library must supply implementations
-       for the mblen() function and the MB_CUR_MAX runtime macro/function.
-       The NO_MBCS symbol allows to explicitely disable MBCS support for
-       testing purpose, or when MBCS support does not work as expected.
+       "double-byte character set" support).  MBCS support should also be
+       enabled on systems which are capable of using UTF-8 as the native
+       charset.  For MBCS support, the C runtime library must supply
+       implementations for the mblen() function and the MB_CUR_MAX runtime
+       macro/function.  The NO_MBCS symbol explicitely disables MBCS support
+       for testing purpose, or when MBCS support does not work as expected.
 
       HAVE_WORKING_ISPRINT
       NO_WORKING_ISPRINT
@@ -484,7 +501,9 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         In cases where isprint() flags printable extended characters as
         unprintable, defining NO_WORKING_ISPRINT allows to disable the enhanced
         filtering capability in fnfilter().  (The ASCII control codes 0x01 to
-        0x1f are always escaped on ASCII systems.)
+        0x1f are always escaped on ASCII systems.)  If UNICODE_SUPPORT is
+        enabled, the isprint() check is now done using wide characters to
+        avoid MBCS issues.
 
       DEBUG
         Used for debugging purposes; enables Trace() statements.  Generally
@@ -497,11 +516,16 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
 
 
 (4) If you regularly compile new versions of UnZip and always want the same
-    non-standard option(s), you may wish to add it (them) to the LOCAL_UNZIP
+    non-standard options, you may wish to specify them in a LOCAL_UNZIP
     environment variable (assuming it's supported in your makefile).  Under
-    MS-DOS, for example, add this to AUTOEXEC.BAT:
+    MS-DOS, for example, you could add something like this to AUTOEXEC.BAT:
 
         set LOCAL_UNZIP=-DDOSWILD -DDATE_FORMAT=DF_DMY
+
+    For a Bourne-like shell on a UNIX(-like) system, you could add
+    something like this to "~/.profile":
+
+        LOCAL_UNZIP='-DBZIP2_SFX' ; export LOCAL_UNZIP
 
     You can also use the variable to hold special compiler options (e.g.,
     -FPi87 for Microsoft C, if the x87 libraries are the only ones on your
@@ -509,24 +533,61 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
     supports the CL environment variable, however).
 
 
-(5) Run the make utility on your chosen makefile:
+(5) Run the "make" utility on your chosen makefile:
 
       Unix
-        For most systems it's possible to invoke the makefile in place, at
-        the possible cost of an ignorable warning; do "make -f unix/Makefile
-        list" to get a list of possible system targets, and then "make -f
-        unix/Makefile target" for your chosen target.  The "generic" target
-        works for most systems, but if it fails with a message about ftime()
-        unresolved or timezone redefined, do "make clean", "make help", and
-        then either "make generic2" or "make generic3" as instructed.  If all
-        else fails, read the makefile itself; it contains numerous comments.
-        (One of these days we'll make a configure script that automates this
-        procedure better.)
+        For most systems it's possible to use unix/Makefile in place, at the
+        possible cost of an ignorable warning; use a command like:
+            make -f unix/Makefile <target>
+        where "<target>" is the desired "make" target.  On most systems, the
+        best target to use is "generic" or, to force the use of the GCC C
+        compiler, "generic_gcc".  These targets use the unix/configure script
+        to probe the compiler and other parts of the environment to adjust
+        the build procedure, and to enable or disable some program features.
+        Other (older) targets are less well tested, and may need considerable
+        help from the user to get optimal results (or any success at all).
+        To get a list of all possible system targets, use a command like:
+            make -f unix/Makefile list
+        Then "make -f unix/Makefile <target>" for your chosen "<target>".
+        The "generic" (or "generic_gcc") target works for most systems, but
+        if it fails with a message about "_ftime unresolved" or "timezone
+        redefined", do "make clean", "make help", and then try either
+        "make generic2" or "make generic3" as instructed.  If all else fails,
+        read the makefile itself, which contains some useful comments.
+
+        When requesting bzip2 compression support, an existing bzip2 kit can
+        be used instead of dropping a bzip2 source kit into the UnZip "bzip2"
+        subdirectory.  Use the "make" macro IZ_BZIP2 with the "generic" target
+        to specify a directory where an existing bzip2 header file and
+        suitable object/shared library may be found.  For example:
+            make -f unix/Makefile IZ_BZIP2=../../bzip2/bzip-1.0.5 generic
+        Frequent builders may find it convenient to create a nearby bzip2
+        directory, or a nearby link to some particular bzip2 kit directory.
+        For example:
+            make -f unix/Makefile IZ_BZIP2=../iz_bzip2 generic
+        where "../iz_bzip2" is a real bzip2 directory or a link to one.
+
+        Similarly, use of zlib can be requested by specifying an appropriate
+        zlib header+library directory using the "make" macro IZ_ZLIB.  For
+        example:
+             make -f unix/Makefile IZ_ZLIB=../../zlib/zlib-1.2.5 generic
+
+        IZ_BZIP2 and IZ_ZLIB may both be specified, if desired.  Similarly,
+        a value for the LOCAL_UNZIP macro can also be specified in the "make"
+        command.  For example:
+            make -f unix/Makefile IZ_BZIP2=../iz_bzip2 \
+             LOCAL_UNZIP=-DBZIP2_SFX generic_gcc
+
+        Use of "make" targets other than "generic" (or "generic_gcc") requires
+        some care, because many other targets will not use the unix/configure
+        script (or its intermediate "flags" file), and this may cause programs
+        to be built without some expected features enabled.
+
 
       VMS (OpenVMS):
-        On VMS, two build methods are provided: a command procedure, and
-        description files for MMS or MMK.  Both methods must be run from
-        the main directory, not the [.VMS] subdirectory.
+        On VMS, two build methods are provided: a DCL command procedure,
+        and description files for MMS or MMK.  Both methods must be run
+        from the main directory, not the [.VMS] subdirectory.
 
         A simple build using the command procedure looks like this:
              @ [.VMS]BUILD_UNZIP.COM
@@ -603,8 +664,9 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         place ("nmake -f msdos\makefile.msc", for example).
 
       OS/2
-        Either GNU make, nmake or dmake may be used with the OS/2 makefile;
-        all are freely available on the net.  Do "nmake -f os2\makefile.os2",
+        Either GNU "make", "nmake" or "dmake" may be used with the OS/2
+        makefile; all are freely available on the net.  Use a command like:
+            nmake -f os2\makefile.os2
         for example, to get a list of supported targets.  More generally,
         read the comments at the top of the makefile for an explanation of
         the differences between some of the same-compiler targets.
@@ -625,7 +687,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         DEC C/C++ for NT/Alpha may or may not still work.
         For the Watcom compiler, use WMAKE and win32\makefile.wat; for the
         Microsoft compilers, use NMAKE and win32\Makefile; for mingw32 and
-        CygWin, GNU Make and win32\Makefile.gcc should do the job.
+        CygWin, GNU "make" and win32\Makefile.gcc should do the job.
         With emx+gcc, a good choice is GNUMake 3.75 (or higher) from the
         djgpp V2 distribution used on win32\Makefile.emx.
 
@@ -637,7 +699,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         the Microsoft C runtime are configured to link against the shared
         multithreading C runtime DLL.  Depending on the intended usage for
         unzip32.dll, a statically linked dll might be more suitable.  The
-        make scripts for MSC support build variants with static linking; you
+        "make" scripts for MSC support build variants with static linking; you
         should look up the configuration switch DLLSTANDALONE in the MSC
         Makefile or the "Static..." build configurations in the Visual Studio
         project files.
@@ -678,7 +740,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         either using the UNZIP$EXTS environment variable and a pre-built UnZip
         binary, or using Spark[FS] and doing it manually.  Then copy the
         Acorn.Makefile to the main UnZip directory and either type 'amu' or
-        use the desktop make utility.
+        use the desktop "make" utility.
 
       VM/CMS
         Unpack all the files and transfer them with ASCII -> EBCDIC conver-
@@ -697,7 +759,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         new port and may need a little more work even to compile.]
 
       Human68K
-        [This is a Japanese machine and OS.]  It appears that GNU make and
+        [This is a Japanese machine and OS.]  It appears that GNU "make" and
         gcc are required; presumably just do "gmake -f human68k/Makefile.gcc"
         to build everything.  This port has not been tested since the 5.12
         release.
@@ -712,7 +774,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         You can run the BeOS makefile in place by typing "make -f
         beos/Makefile".  In fact, this is how the author tests it.
 
-    Running the appropriate make utility should produce three executables on
+    Running the appropriate "make" utility should produce three executables on
     most systems, one for UnZip/ZipInfo, one for UnZipSFX, and one for fUnZip.
     (VMS is one prominent exception:  fUnZip makes no sense on it.  The Amiga
     produces a fourth executable called MakeSFX, which is necessary because
@@ -857,5 +919,9 @@ Macintosh OS X (Unix Apple)
   minimal, we plan to support additional Mac OS X features, such as resource
   forks, in future releases.
 
-Human68K, TOPS-20, AOS/VS, MVS, VM/CMS, etc.
+MVS, VM/CMS, z/OS
+  More information may be coming soon.
+
+Human68K, TOPS-20, AOS/VS, etc.
   Dunno, sorry...
+
