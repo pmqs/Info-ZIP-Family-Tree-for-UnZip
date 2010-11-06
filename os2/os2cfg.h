@@ -30,6 +30,13 @@
 #  define PIPE_ERROR (errno == EERRSET || errno == EOS2ERR)
 #endif /* __IBMC__ */
 
+#ifdef __KLIBC__
+# define LARGE_FILE_SUPPORT
+# define ZIP64_SUPPORT
+#define ZOFF_T_DEFINED
+typedef long long    zoff_t;
+#endif
+
 #ifdef __WATCOMC__
 #  ifdef __386__
 #    ifndef WATCOMC_386
@@ -130,7 +137,7 @@
 #  define OS2_EAS    /* for -l and -v listings (list.c) */
 #endif
 
-#if 0
+#ifndef __KLIBC__
 #ifdef isupper
 #  undef isupper
 #endif
@@ -139,7 +146,7 @@
 #endif
 #define isupper(x)   IsUpperNLS((unsigned char)(x))
 #define tolower(x)   ToLowerNLS((unsigned char)(x))
-#endif // 0
+#endif // __KLIBC__
 
 #ifndef NO_STRNICMP     /* use UnZip's zstrnicmp(), because some compilers  */
 #  define NO_STRNICMP   /*  don't provide a NLS-aware strnicmp() function  */

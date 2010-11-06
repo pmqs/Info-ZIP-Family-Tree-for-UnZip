@@ -4,6 +4,7 @@
 #  - Microsoft C, version 6.00 or higher, for use under OS/2 1.x (16-bit)
 #  - Watcom C/C++, version 9.0+, for use under OS/2 1.x or 2.x+ (16/32-bit)
 #  - emx+gcc, version 0.9c or higher, for use under OS/2 2.x+ (32-bit)
+#  - GNU gcc (klibc 0.6.3 or higher ) (32-bit)
 #  - IBM C Set++, for use under OS/2 2.x+ (32-bit)
 #  - Borland C++, for use under OS/2 2.x+ (32-bit)
 #  - Metaware High C/C++, for use under OS/2 2.x+ (32-bit)
@@ -68,7 +69,7 @@ default:
 	@echo "   msc mscdebug mscdos ibm ibmdyn ibmdebug ibmprof"
 	@echo "   ibmdll ibmdyndll ibmdebugdll ibmprofdll"
 	@echo "   metaware borland gcc gccdyn gccdebug gccdos gccwin32"
-	@echo "   watcom watcom16 watcomdos watcom16dos pmodew watcomwin32"
+	@echo "   klibc watcom watcom16 watcomdos watcom16dos pmodew watcomwin32"
 
 # MS C 6.00 for OS/2, 16-bit (should figure out way to split unzip/funzip
 # compiles so former is always large model and latter always small model...)
@@ -472,11 +473,11 @@ gccwin32:
 klibc:
 	$(MAKE) -f os2/makefile.os2 all \
 	CC="gcc" \
-	CFLAGS="-Wall -DOS2 -DASM_CRC -I. $(CFLAGS) $(LOCAL_UNZIP)" \
+	CFLAGS="-Wall -DOS2 -DASM_CRC -DUSE_BZIP2 -I. $(CFLAGS) $(LOCAL_UNZIP)" \
 	AS="gcc -Zomf" \
 	ASFLAGS="-Di386" \
 	LDFLAGS="-o ./" \
-	LDFLAGS2="-s -Zomf -Zargs-wild -Zargs-resp $(LDFLAGS)" \
+	LDFLAGS2="-g -Zomf -Zargs-wild -Zargs-resp $(LDFLAGS) -lbz2" \
 	OUT="-o" \
 	OBJ=".o" \
 	CRCA_O="crc_gcc.o" \
@@ -704,7 +705,7 @@ install:	$(MANS)
 	$(INSTALL_PROGRAM) $(UNZIPS) $(BINDIR)
 	$(INSTALL) os2/zipgrep.cmd $(BINDIR)
 	$(RM) $(BINDIR)/zipinfo$E
-	$(LN) -s $(BINDIR)/unzip$E $(BINDIR)/zipinfo$E
+	$(LN) -s unzip$E $(BINDIR)/zipinfo$E
 	-$(INSTALL_D) $(MANDIR)
 	$(INSTALL) man/funzip.1 $(MANDIR)/funzip.$(MANEXT)
 	$(INSTALL) man/unzip.1 $(MANDIR)/unzip.$(MANEXT)
