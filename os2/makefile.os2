@@ -468,6 +468,20 @@ gccwin32:
 	OBJF2="win32f.o" \
 	OSDEP_H="win32/w32cfg.h"
 
+# klibc 0.6.3, gcc, OMF format, dynamically linked C runtime 
+klibc:
+	$(MAKE) -f os2/makefile.os2 all \
+	CC="gcc" \
+	CFLAGS="-Wall -DOS2 -DASM_CRC -I. $(CFLAGS) $(LOCAL_UNZIP)" \
+	AS="gcc -Zomf" \
+	ASFLAGS="-Di386" \
+	LDFLAGS="-o ./" \
+	LDFLAGS2="-s -Zomf -Zargs-wild -Zargs-resp $(LDFLAGS)" \
+	OUT="-o" \
+	OBJ=".o" \
+	CRCA_O="crc_gcc.o" \
+	DEF="os2/unzip.def"
+
 # variables
 
 # LOCAL_UNZIP = -DREENTRANT
@@ -506,8 +520,9 @@ UNZIP_H = unzip.h unzpriv.h globals.h $(OSDEP_H)
 	$(AS) $(ASFLAGS) $< $(ASEOL)
 
 # targets
+UNZIPS = unzip.exe funzip.exe unzipsfx.exe
 
-all:	unzip.exe funzip.exe unzipsfx.exe
+all:	$(UNZIPS)
 dll:	unzip32.dll unzip.stb funzip.exe unzipsfx.exe
 
 unzip.exe: $(OBJU) $(OBJU2)
@@ -660,3 +675,41 @@ ubz2err_$(OBJ):	ubz2err.c $(UNZIP_H)
 
 unzipsf_$(OBJ):	unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
 	$(CC) -c $(CFLAGS) -DSFX $(OUT)$@ unzip.c
+
+# install
+.PHONY: install
+
+INSTALL = cp
+INSTALL_PROGRAM = $(INSTALL)
+INSTALL_D = mkdir.exe -p
+LN = ln
+CHMOD = chmod
+BINPERMS = 755
+MANPERMS = 644
+INSTALLEDBIN = $(BINDIR)/funzip$E $(BINDIR)/unzip$E $(BINDIR)/unzipsfx$E \
+	$(BINDIR)/zipgrep.cmd $(BINDIR)/zipinfo$E
+INSTALLEDMAN = $(MANDIR)/funzip.$(MANEXT) $(MANDIR)/unzip.$(MANEXT) \
+	$(MANDIR)/unzipsfx.$(MANEXT) $(MANDIR)/zipgrep.$(MANEXT) \
+	$(MANDIR)/zipinfo.$(MANEXT)
+
+# target directories - where to install executables and man pages to
+prefix = /usr/local
+BINDIR = $(prefix)/bin
+E=.exe
+MANEXT=1
+MANDIR = $(prefix)/man/man$(MANEXT)
+
+install:	$(MANS)
+	-$(INSTALL_D) $(BINDIR)
+	$(INSTALL_PROGRAM) $(UNZIPS) $(BINDIR)
+	$(INSTALL) os2/zipgrep.cmd $(BINDIR)
+	$(RM) $(BINDIR)/zipinfo$E
+	$(LN) -s $(BINDIR)/unzip$E $(BINDIR)/zipinfo$E
+	-$(INSTALL_D) $(MANDIR)
+	$(INSTALL) man/funzip.1 $(MANDIR)/funzip.$(MANEXT)
+	$(INSTALL) man/unzip.1 $(MANDIR)/unzip.$(MANEXT)
+	$(INSTALL) man/unzipsfx.1 $(MANDIR)/unzipsfx.$(MANEXT)
+	$(INSTALL) man/zipgrep.1 $(MANDIR)/zipgrep.$(MANEXT)
+	$(INSTALL) man/zipinfo.1 $(MANDIR)/zipinfo.$(MANEXT)
+	$(CHMOD) $(BINPERMS) $(INSTALLEDBIN)
+	$(CHMOD) $(MANPERMS) $(INSTALLEDMAN)

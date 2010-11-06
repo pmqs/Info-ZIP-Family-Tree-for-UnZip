@@ -67,6 +67,11 @@
 #define __32BIT__
 #endif
 
+#ifdef __KLIBC__
+#define _emx_32to16(x) _libc_32to16(x)
+#define _emx_16to32(x) _libc_16to32(x)
+#endif
+
 #ifdef __32BIT__
 typedef ULONG U_INT;
 #ifdef __EMX__

@@ -130,6 +130,7 @@
 #  define OS2_EAS    /* for -l and -v listings (list.c) */
 #endif
 
+#if 0
 #ifdef isupper
 #  undef isupper
 #endif
@@ -138,6 +139,8 @@
 #endif
 #define isupper(x)   IsUpperNLS((unsigned char)(x))
 #define tolower(x)   ToLowerNLS((unsigned char)(x))
+#endif // 0
+
 #ifndef NO_STRNICMP     /* use UnZip's zstrnicmp(), because some compilers  */
 #  define NO_STRNICMP   /*  don't provide a NLS-aware strnicmp() function  */
 #endif
