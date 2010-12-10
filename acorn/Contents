@@ -1,26 +1,52 @@
-Contents of the "acorn" subdirectory for UnZip 5.4 and later:
+Contents of the "acorn" subdirectory for UnZip 6.0 and later:
 
   acorn.c.acorn     Acorn-specific resources
-  acorn.c.riscos    mainly file-handling routines for FileCore-based filesystems
-  acorn.Contents    this file
-  acorn.GMakeFile   Makefile for gcc
+  acorn.c.riscos    Mainly file-handling routines for FileCore-based filesystems
+  acorn.c.swiven    SWI veneers
+  acorn.Contents    This file
+  acorn.GMakeFile   Makefile for GCC
   acorn.h.riscos
   acorn.h.swiven
   acorn.makefile    Makefile script for default Acorn C compiler
-  acorn.README      notes about Acorn-specific features
+  acorn.README      Notes about Acorn-specific features
   acorn.RunMe1st    Obey file to move files into suitable place for compilation
                     on RISC OS machines
-  acorn.s.swiven    SWI veneers
-  acorn.srcrename   small executable that converts files from Unix style to
+  acorn.srcrename   Small BASIC program that converts files from Unix style to
                     RISC OS style, used by RunMe1st
 
 Notes:
 
-  Use the "RunMe1st" file (it is an Obey file) to convert all the files from
-  "filename/[chs]" to "[chs].filename" (so that UnZip could be easily compiled
-  under RISC OS). It will also set the correct makefile.
+Compilation under GCC
+---------------------
 
-  To compile just set the CSD to the main UnZip directory and run 'amu'.
+It is recommended that you use GCC 4 or higher and the corresponding 'make'
+utility.  Both are available from <URL:http://www.riscos.info/index.php/GCCSDK>.
 
-  Currently only the Acorn C V5 compiler has been tested but probably also
-  Acorn C V4 and the Acorn Assembler V2 will be able to compile UnZip.
+Use the "RunMe1st" file (it is an Obey file) to convert all the files from
+"filename/[chs]" to "[chs].filename" (so that unzip could be easily compiled
+under RISC OS).  It will also set the correct makefile.
+
+To compile just set the CSD to the main unzip directory and run 'make'.
+
+Compilation under Acorn C/C++
+-----------------------------
+
+Currently only the Acorn C V5 compiler has been tested but probably also
+Acorn C V4 and the Acorn Assembler V2 will be able to compile unzip.
+
+First check RunMe1st for a few lines that need uncommenting, in order to install
+the Acorn C/C++ makefile as opposed to the GCC one.  Then run RunMe1st as normal
+(i.e. set type to 'Obey' and then double-click).  The source tree should then be
+renamed and the makefile installed in the right place.
+
+To compile just set the CSD to the main unzip directory and run 'amu'.
+
+Cross-compilation under GCCSDK
+------------------------------
+
+Use of RunMe1st is not required when using GCCSDK 4
+(<URL:http://www.riscos.info/index.php/GCCSDK>).  Instead copy the GCC makefile
+to the right place (e.g. 'cp acorn/GMakefile makefile') and then start the cross
+compiler:
+
+  $ /home/riscos/env/ro-make E=,ff8 CC=arm-unknown-riscos-gcc

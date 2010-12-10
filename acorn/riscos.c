@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -93,7 +93,6 @@ DIR *opendir(char *dirname)
  DIR *thisdir;
  int type;
  int attr;
- os_error *er;
 
  thisdir=(DIR *)malloc(sizeof(DIR));
  if (thisdir==NULL)
@@ -109,7 +108,7 @@ DIR *opendir(char *dirname)
  if (thisdir->dirname[strlen(thisdir->dirname)-1]=='.')
    thisdir->dirname[strlen(thisdir->dirname)-1]=0;
 
- if (er=SWI_OS_File_5(thisdir->dirname,&type,NULL,NULL,NULL,&attr),er!=NULL ||
+ if (SWI_OS_File_5(thisdir->dirname,&type,NULL,NULL,NULL,&attr)!=NULL ||
      type<=1 || (type==3 && !uO.scanimage))
  {
    free(thisdir->dirname);
@@ -176,11 +175,10 @@ void closedir(DIR *d)
  free(d);
 }
 
-int unlink(f)
-char *f;                /* file to delete */
+int unlink(char *f)
 /* Delete the file *f, returning non-zero on failure. */
 {
- os_error *er;
+ _kernel_oserror *er;
  char canon[256];
  int size=255;
 
@@ -310,25 +308,14 @@ void remove_prefix(void)
 
 void set_prefix(void)
 {
- char *pref;
- int size=0;
+ char pref[MAXFILENAMELEN];
+ int size=MAXFILENAMELEN-1;
 
  if (SWI_OS_FSControl_37("@",pref,&size)!=NULL)
    return;
 
- size=1-size;
-
- if (pref=malloc(size),pref!=NULL) {
- if (SWI_OS_FSControl_37("@",pref,&size)!=NULL) {
-   free(pref);
-   return;
- }
-
  if (SWI_DDEUtils_Prefix(pref)==NULL) {
    atexit(remove_prefix);
- }
-
- free(pref);
  }
 }
 

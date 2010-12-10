@@ -213,11 +213,21 @@
 #if (defined(NTSD_EAS) && !defined(RESTORE_ACL))
 #  define RESTORE_ACL   /* "restore ACLs" only needed when NTSD_EAS active */
 #endif
+#ifdef NO_UNICODE_SUPPORT
+# ifdef UNICODE_SUPPORT
+#  undef UNICODE_SUPPORT
+# endif
+#endif
 #if (!defined(NO_UNICODE_SUPPORT) && !defined(UNICODE_SUPPORT))
-#  define UNICODE_SUPPORT       /* enable UTF-8 filename support by default */
+#  define UNICODE_SUPPORT      /* enable UTF-8 filename support by default */
+#endif
+#ifdef UNICODE_SUPPORT
+# ifndef WIN32_WIDE
+#  define WIN32_WIDE
+# endif
 #endif
 #if (defined(UNICODE_SUPPORT) && !defined(UNICODE_WCHAR))
-#  define UNICODE_WCHAR         /* wchar_t is UTF-16 encoded on WIN32 */
+#  define UNICODE_WCHAR        /* wchar_t is UTF-16 encoded on WIN32 */
 #endif
 #ifdef UTF8_MAYBE_NATIVE
 #  undef UTF8_MAYBE_NATIVE      /* UTF-8 cannot be system charset on WIN32 */
@@ -295,7 +305,29 @@
 #define STR_TO_OEM
 #define STR_TO_ISO
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+   wchar_t *utf8_to_wchar_string OF((char *));
+   wchar_t *local_to_wchar_string OF((char *));
+   int has_win32_wide();
+#endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+
 /* Static variables that we have to add to Uz_Globs: */
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+#define SYSTEM_SPECIFIC_GLOBALS \
+    int created_dir, renamed_fullpath, fnlen;\
+    unsigned nLabelDrive;\
+    char lastRootPath[4];\
+    wchar_t lastRootPathw[4];\
+    int lastVolOldFAT, lastVolLocTim;\
+    char *rootpath, *buildpathHPFS, *buildpathFAT, *endHPFS, *endFAT;\
+    wchar_t *rootpathw, *buildpathHPFSw, *buildpathFATw, *endHPFSw, *endFATw;\
+    ZCONST char *wildname;\
+    ZCONST wchar_t *wildnamew;\
+    char *dirname, matchname[FILNAMSIZ];\
+    wchar_t *dirnamew, matchnamew[FILNAMSIZ];\
+    int rootlen, have_dirname, dirnamelen, notfirstcall;\
+    zvoid *wild_dir;
+#else /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 #define SYSTEM_SPECIFIC_GLOBALS \
     int created_dir, renamed_fullpath, fnlen;\
     unsigned nLabelDrive;\
@@ -306,6 +338,7 @@
     char *dirname, matchname[FILNAMSIZ];\
     int rootlen, have_dirname, dirnamelen, notfirstcall;\
     zvoid *wild_dir;
+#endif /* ?(defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 
 /* created_dir, renamed_fullpath, fnlen, and nLabelDrive are used by   */
 /*    both mapname() and checkdir().                                   */
@@ -366,6 +399,15 @@ int getch_win32  OF((void));
 #else
 #  define SSTAT(path, pbuf) zstat_win32(__W32STAT_G__ path, pbuf)
 #endif
+
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+# ifdef WILD_STAT_BUG
+#  define SSTATW(pathw, pbuf) (iswildw(pathw) || zstat_win32w(__W32STAT_G__ pathw, pbuf))
+# else
+#  define SSTATW(pathw, pbuf) zstat_win32w(__W32STAT_G__ pathw, pbuf)
+# endif
+#endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+
 
 #ifdef __WATCOMC__
 #  ifdef __386__

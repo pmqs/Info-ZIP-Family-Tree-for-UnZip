@@ -405,7 +405,7 @@ struct
        0
      };
 
-static int get_rms_defaults()
+static int get_rms_defaults(__GPRO)
 {
     int sts;
 
@@ -566,7 +566,7 @@ int open_outfile(__G)
     /* Get process RMS_DEFAULT values, if not already done. */
     if (rms_defaults_known == 0)
     {
-        get_rms_defaults();
+        get_rms_defaults(__G);
     }
 
     switch (find_vms_attrs(__G__ (uO.D_flag <= 1)))
@@ -2050,7 +2050,7 @@ static int _flush_qio(__G__ rawbuf, size, final_flag)
         if (bufcnt_even > curbuf->bufcnt)
             curbuf->buf[curbuf->bufcnt] = '\0';
 
-        return WriteQIO(curbuf->buf, bufcnt_even);
+        return WriteQIO(__G__ curbuf->buf, bufcnt_even);
     }
     else
     {
@@ -2600,7 +2600,7 @@ static int WriteRecord(__G__ rec, len)
 #ifdef SYMLINKS
 /* Read symlink text from a still-open rms file. */
 
-static int _read_link_rms(int byte_count, char *link_text_buf)
+static int _read_link_rms(__GPRO__ int byte_count, char *link_text_buf)
 {
     /* Use RMS to read the link text into the user's buffer.
      * Rewind, then read byte count = byte_count.
@@ -2711,7 +2711,7 @@ static int _close_rms(__GPRO)
                 else
                 {
                     /* Read the link text. */
-                    status = _read_link_rms(ucsize, link_target);
+                    status = _read_link_rms(__G__ ucsize, link_target);
 
                     if (ERR(status))
                     {
@@ -2770,7 +2770,7 @@ static int _close_rms(__GPRO)
                     strcpy(slnk_entry->fname, G.filename);
 
                     /* Read the link text using the appropriate method. */
-                    status = _read_link_rms(ucsize, slnk_entry->target);
+                    status = _read_link_rms(__G__ ucsize, slnk_entry->target);
 
                     if (ERR(status))
                     {
@@ -3583,7 +3583,8 @@ static void uxtime2vmstime(  /* convert time_t value into 64 bit VMS bintime */
 /*  Function stamp_file()  */  /* adapted from VMSmunch...it just won't die! */
 /***************************/
 
-int stamp_file(fname, modtime)
+int stamp_file(__G__ fname, modtime)
+    __GDEF
     ZCONST char *fname;
     time_t modtime;
 {
@@ -4011,6 +4012,7 @@ int mapattr(__G)
 {
     ulg tmp = G.crec.external_file_attributes;
     ulg theprot;
+    unsigned uxattr;
     static ulg  defprot = (ulg)-1L,
                 sysdef, owndef, grpdef, wlddef; /* Default protection fields */
 
@@ -4072,7 +4074,7 @@ int mapattr(__G)
         case TANDEM_:
             {
               int r = FALSE;
-              unsigned uxattr = (unsigned)(tmp >> 16);  /* drwxrwxrwx */
+              uxattr = (unsigned)(tmp >> 16);  /* drwxrwxrwx */
 
               if (uxattr == 0 && G.extra_field) {
                 /* Some (non-Info-ZIP) implementations of Zip for Unix and
@@ -4146,11 +4148,66 @@ int mapattr(__G)
 
         /* all remaining cases:  expand MSDOS read-only bit into write perms */
         case FS_FAT_:
+#if 0
+            /* this is handled generically now */
+            /* 2010-11-27 SMS.
+             * But uxattr needs to be set for these cases.  The
+             * 2010-09-22 code set it only conditionally, which was
+             * wrong, but disabling the whole thing leaves uxattr always
+             * unset, causing bad G.pInfo->symlink values (and who knows
+             * what else?).  So, that "uxattr =" assignment below must
+             * still exist.  It's just unconditional here, now.  Code in
+             * process.c:process_cdir_file_hdr() clears any undesirable
+             * bits in G.crec.external_file_attributes ("tmp") before we
+             * see them ("handled generically now").
+             */
+
+            /* PKWARE's PKZip for Unix marks entries as FS_FAT_, but stores the
+             * Unix attributes in the upper 16 bits of the external attributes
+             * field, just like Info-ZIP's Zip for Unix.  We try to use that
+             * value, after a check for consistency with the MSDOS attribute
+             * bits (see below).
+             */
+            /* 2010-09-22 SMS.  User complaints suggest that we can't
+             * trust these external attribute bits to be UNIX-like
+             * attribute bits if bit 2 of the _internal_ attributes is
+             * set.  For safety, trust nothing with any bits other than
+             * 0 or 1 set in the internal attributes.
+             */
+            if ((G.crec.internal_file_attributes & 0xfc) == 0) {
+                uxattr = (unsigned)(tmp >> 16);
+            }
+#endif
+            /* fall through! */
         case FS_HPFS_:
         case FS_NTFS_:
         case MAC_:
         case TOPS20_:
         default:
+            uxattr = (unsigned)(tmp >> 16);     /* drwxrwxrwx (?) */
+
+            /* Ensure that DOS subdir bit is set when the entry's name ends
+             * in a '/'.  Some third-party Zip programs fail to set the subdir
+             * bit for directory entries.
+             */
+            if ((tmp & 0x10) == 0) {
+                extent fnlen = strlen(G.filename);
+                if (fnlen > 0 && G.filename[fnlen-1] == '/')
+                    tmp |= 0x10;
+            }
+            tmp = !(tmp & 1) << 1  |  (tmp & 0x10) >> 4;
+            if ((uxattr & 0700) == (unsigned)(0400 | tmp<<6)) {
+                /* keep previous G.pInfo->file_attr setting, when its "owner"
+                 * part appears to be consistent with DOS attribute flags!
+                 */
+#ifdef SYMLINKS
+                /* Entries "made by FS_FAT_" could have been zipped on a
+                 * system that supports POSIX-style symbolic links.
+                 */
+                G.pInfo->symlink = S_ISLNK(uxattr) &&
+                                   (G.pInfo->hostnum == FS_FAT_);
+#endif
+            }
             theprot = defprot;
             if ( tmp & 1 )   /* Test read-only bit */
             {   /* Bit is set -- set bits in all fields */
@@ -4326,7 +4383,7 @@ static void adj_dir_name_ods5(char *dest, char *src, int src_len)
 }
 
 
-static void adj_file_name_ods2(char *dest, char *src)
+static void adj_file_name_ods2(__GPRO__ char *dest, char *src)
 {
     unsigned char uchr;
     unsigned char prop;
@@ -4402,7 +4459,7 @@ static void adj_file_name_ods2(char *dest, char *src)
 }
 
 
-static void adj_file_name_ods5(char *dest, char *src)
+static void adj_file_name_ods5(__GPRO__ char *dest, char *src)
 {
     unsigned char uchr;
     unsigned char prop;
@@ -4659,11 +4716,11 @@ int mapname(__G__ renamed)
     /* Process the file name. */
     if (ods2_names)     /* Make file name ODS2-compliant. */
     {
-        adj_file_name_ods2(pathcomp, cp);
+        adj_file_name_ods2(__G__ pathcomp, cp);
     }
     else                /* Make file name ODS5-compliant. */
     {
-        adj_file_name_ods5(pathcomp, cp);
+        adj_file_name_ods5(__G__ pathcomp, cp);
     }
 
     checkdir(__G__ pathcomp, APPEND_NAME);  /* returns 1 if truncated: care? */
@@ -5622,6 +5679,10 @@ void version(__G)
  * taken of the caller-ID value, but options could be set differently
  * for read versus write access.  (I assume that specifying fab$w_deq,
  * for example, for a read-only file has no ill effects.)
+ *
+ * 2010-10-07 SMS.
+ * Note that "#ifndef REENTRANT" conditionality here allows compilation
+ * with REENTRANT defined, but does not ensure proper functionality.
  */
 
 /* Global storage. */
@@ -5634,11 +5695,13 @@ int acc_cb(int *id_arg, struct FAB *fab, struct RAB *rab)
 {
     int sts;
 
+#ifndef REENTRANT
     /* Get process RMS_DEFAULT values, if not already done. */
     if (rms_defaults_known == 0)
     {
         get_rms_defaults();
     }
+#endif /* ndef REENTRANT */
 
     /* If RMS_DEFAULT (and adjusted active) values are available, then set
      * the FAB/RAB parameters.  If RMS_DEFAULT values are not available,
@@ -5661,12 +5724,14 @@ int acc_cb(int *id_arg, struct FAB *fab, struct RAB *rab)
             rab-> rab$v_wbh = 1;
         }
 
+#ifndef REENTRANT
         if (DIAG_FLAG)
         {
             fprintf(stderr,
               "Open callback.  ID = %d, deq = %6d, mbc = %3d, mbf = %3d.\n",
               *id_arg, fab-> fab$w_deq, rab-> rab$b_mbc, rab-> rab$b_mbf);
         }
+#endif /* ndef REENTRANT */
     }
 
     /* Declare success. */

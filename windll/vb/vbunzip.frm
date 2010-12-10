@@ -1,9 +1,9 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.1#0"; "COMDLG32.OCX"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "COMDLG32.OCX"
 Begin VB.Form VBUnzFrm 
    AutoRedraw      =   -1  'True
    Caption         =   "VBUnzFrm"
-   ClientHeight    =   4785
+   ClientHeight    =   7275
    ClientLeft      =   780
    ClientTop       =   525
    ClientWidth     =   9375
@@ -17,11 +17,11 @@ Begin VB.Form VBUnzFrm
       Strikethrough   =   0   'False
    EndProperty
    LinkTopic       =   "VBUnzFrm"
-   ScaleHeight     =   4785
+   ScaleHeight     =   7275
    ScaleWidth      =   9375
-   StartUpPosition =   1  'Fenstermitte
+   StartUpPosition =   1  'CenterOwner
    Begin VB.CheckBox checkOverwriteAll 
-      Alignment       =   1  'Rechts ausgerichtet
+      Alignment       =   1  'Right Justify
       Caption         =   "Overwrite all?"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -32,11 +32,11 @@ Begin VB.Form VBUnzFrm
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   255
+      Height          =   375
       Left            =   240
       TabIndex        =   5
-      Top             =   1320
-      Width           =   4425
+      Top             =   1800
+      Width           =   3585
    End
    Begin VB.TextBox txtZipFName 
       BeginProperty Font 
@@ -49,10 +49,10 @@ Begin VB.Form VBUnzFrm
          Strikethrough   =   0   'False
       EndProperty
       Height          =   375
-      Left            =   4440
+      Left            =   3600
       TabIndex        =   1
       Top             =   120
-      Width           =   4335
+      Width           =   5175
    End
    Begin VB.TextBox txtExtractRoot 
       BeginProperty Font 
@@ -65,17 +65,17 @@ Begin VB.Form VBUnzFrm
          Strikethrough   =   0   'False
       EndProperty
       Height          =   375
-      Left            =   4440
+      Left            =   3600
       TabIndex        =   4
       Top             =   720
-      Width           =   4335
+      Width           =   5175
    End
    Begin VB.CommandButton cmdStartUnz 
       Caption         =   "Start"
       Height          =   495
       Left            =   240
       TabIndex        =   6
-      Top             =   1800
+      Top             =   2520
       Width           =   3255
    End
    Begin VB.TextBox txtMsgOut 
@@ -88,14 +88,14 @@ Begin VB.Form VBUnzFrm
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   2175
+      Height          =   2535
       Left            =   240
       Locked          =   -1  'True
       MultiLine       =   -1  'True
-      ScrollBars      =   3  'Beides
+      ScrollBars      =   3  'Both
       TabIndex        =   8
       TabStop         =   0   'False
-      Top             =   2520
+      Top             =   3360
       Width           =   8895
    End
    Begin VB.CommandButton cmdQuitVBUnz 
@@ -104,7 +104,7 @@ Begin VB.Form VBUnzFrm
       Height          =   495
       Left            =   6240
       TabIndex        =   7
-      Top             =   1800
+      Top             =   2520
       Width           =   2895
    End
    Begin VB.CommandButton cmdSearchZfile 
@@ -131,6 +131,23 @@ Begin VB.Form VBUnzFrm
       _ExtentY        =   847
       _Version        =   393216
    End
+   Begin VB.Label Label3 
+      Caption         =   "Leave ""Extract into directory"" empty to list files, provide a directory (such as ""."") to extract."
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   255
+      Left            =   240
+      TabIndex        =   9
+      Top             =   1320
+      Width           =   8175
+   End
    Begin VB.Label Label1 
       Caption         =   "Complete path-name of Zip-archive:"
       BeginProperty Font 
@@ -146,10 +163,10 @@ Begin VB.Form VBUnzFrm
       Left            =   240
       TabIndex        =   0
       Top             =   120
-      Width           =   3855
+      Width           =   3255
    End
    Begin VB.Label Label2 
-      Caption         =   "Extract archive into directory:"
+      Caption         =   "Extract into directory:"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
          Size            =   9.75
@@ -163,7 +180,7 @@ Begin VB.Form VBUnzFrm
       Left            =   240
       TabIndex        =   3
       Top             =   720
-      Width           =   3855
+      Width           =   2175
    End
 End
 Attribute VB_Name = "VBUnzFrm"
@@ -328,10 +345,9 @@ Private Sub Form_Resize()
     If Wid < 2000 Then Wid = 2000
     txtMsgOut.Width = Wid
     
-    Hei = Me.Height - 3120 ' 5295 - 2175
+    Hei = Me.Height - 3985 ' 3120 ' 5295 - 2175
     If Hei < 1000 Then Hei = 1000
     txtMsgOut.Height = Hei
-
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -381,4 +397,3 @@ err_deactivateControl:
     Set mCommDlgCtrl = Nothing
     cmdSearchZfile.Enabled = False
 End Sub
-

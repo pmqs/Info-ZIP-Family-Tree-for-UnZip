@@ -472,6 +472,12 @@ int zi_opts(__G__ pargc, pargv)
     int optnum = 0;       /* index in table */
     int showhelp = 0;     /* for --commandline */
 
+#ifdef USE_ICONV_MAPPING
+# ifdef UNIX
+    extern char OEM_CP[MAX_CP_NAME];
+    extern char ISO_CP[MAX_CP_NAME];
+# endif
+#endif
 
     /* since get_option() returns xfiles and files one at a time, store them in
        linked lists until have them all */
@@ -571,6 +577,14 @@ int zi_opts(__G__ pargc, pargv)
                             uO.lflag = 0;
                     }
                     break;
+#ifdef USE_ICONV_MAPPING
+# ifdef UNIX
+                case ('I'):    /* -I:  map ISO name to internal */
+                    strncpy(ISO_CP, value, sizeof(ISO_CP));
+                    free(value);
+                    break;
+# endif
+#endif
                 case 'l':      /* longer form of "ls -l" type listing */
                     if (negative)
                         uO.lflag = -2;
@@ -590,6 +604,14 @@ int zi_opts(__G__ pargc, pargv)
                     else
                         G.M_flag = TRUE;
                     break;
+#endif
+#ifdef USE_ICONV_MAPPING
+# ifdef UNIX
+                case ('O'):    /* -O:  map OEM name to internal */
+                    strncpy(OEM_CP, value, sizeof(OEM_CP));
+                    free(value);
+                    break;
+# endif
 #endif
                 case 's':      /* default:  shorter "ls -l" type listing */
                     if (negative)

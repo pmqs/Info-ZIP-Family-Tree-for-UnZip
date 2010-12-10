@@ -5,7 +5,8 @@ $!
 $!    Find the next available HLP$LIBRARY[_*] logical name.
 $!
 $ base = "HLP$LIBRARY"
-$ candidate = base$ i = 0
+$ candidate = base
+$ i = 0
 $!
 $ loop_top:
 $    if (i .gt. 0) then candidate = base+ "_"+ f$string( i)

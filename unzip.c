@@ -21,7 +21,8 @@
   which in turn was almost a complete rewrite of version 3.x.  For a detailed
   revision history, see UnzpHist.zip at quest.jpl.nasa.gov.  For a list of
   the many (near infinite) contributors, see "CONTRIBS" in the UnZip source
-  distribution.
+  distribution.  (Some of this information is outdated and needs to be
+  updated.)
 
   UnZip 6.0 adds support for archives larger than 4 GiB using the Zip64
   extensions as well as support for Unicode information embedded per the
@@ -118,10 +119,10 @@ static void  show_license       OF((__GPRO));
 #   ifdef RISCOS
    static ZCONST char Far EnvUnZipExts[] = ENV_UNZIPEXTS;
 #   endif /* RISCOS */
-  static ZCONST char Far NoMemEnvArguments[] =
+   static ZCONST char Far NoMemEnvArguments[] =
     "envargs:  cannot get memory for arguments";
 #  endif /* !_WIN32_WCE */
-  static ZCONST char Far CmdLineParamTooLong[] =
+   static ZCONST char Far CmdLineParamTooLong[] =
     "error:  command line parameter #%d exceeds internal size limit\n";
 # endif /* !SFX */
 static ZCONST char Far NoMemArgsList[] =
@@ -468,7 +469,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
      static ZCONST char Far TimeStamp[] = "TIMESTAMP";
 #  endif
 #  ifdef UNIXBACKUP
-     static ZCONST char Far UnixBackup[] = "UNIXBACKUP";
+     static ZCONST char Far UnixBackup[] = "UNIXBACKUP (-B creates backup files)";
 #  endif
 #  ifdef USE_EF_UT_TIME
      static ZCONST char Far Use_EF_UT_time[] = "USE_EF_UT_TIME";
@@ -504,6 +505,9 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
        "UNICODE_SUPPORT [wide-chars] (handle UTF-8 paths)";
 #   endif /* ?UTF8_MAYBE_NATIVE */
 #  endif /* UNICODE_SUPPORT */
+#  ifdef WIN32_WIDE
+     static ZCONST char Far Use_Win32_Wide[] = "WIN32_WIDE (wide characters supported)";
+#  endif
 #  ifdef _MBCS
      static ZCONST char Far Have_MBCS_Support[] =
      "MBCS-support (multibyte character support, MB_CUR_MAX = %u)";
@@ -808,6 +812,11 @@ int unzip(__G__ argc, argv)
          *       UnZip maintainer, a successful switch to "en-US.UTF-8"
          *       resulted in garbage display of all non-basic ASCII characters.
          */
+        /* On openSUSE 11.3 it appears that the console is UTF-8 aware by
+         * default.  Makes using UTF-8 aware console applications, like
+         * UnZip, easy.  Supplying UTF-8 arguments seems to work correctly,
+         * allowing input patterns to include Japanese directly, for instance.
+         */
     }
 #  endif /* UTF8_MAYBE_NATIVE */
 
@@ -818,8 +827,19 @@ int unzip(__G__ argc, argv)
     G.unipath_version = 0;
     G.unipath_checksum = 0;
     G.unipath_filename = NULL;
+
+#  ifdef WIN32_WIDE
+    G.has_win32_wide = has_win32_wide();
+#  endif
+
 # endif /* UNICODE_SUPPORT */
 
+
+#ifdef USE_ICONV_MAPPING
+# ifdef UNIX
+    init_conversion_charsets();
+# endif
+#endif /* USE_ICONV_MAPPING */
 
 # if (defined(__IBMC__) && defined(__DEBUG_ALLOC__))
     extern void DebugMalloc(void);
@@ -1460,6 +1480,12 @@ static struct option_struct far options[] = {
     {UZO, "i",  "no-Mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
        'i',  "ignore filenames stored in Mac ef"},
 # endif
+#ifdef USE_ICONV_MAPPING
+# ifdef UNIX
+    {UZO, "I",  "ISO-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'I',  "ISO char set to use"},
+# endif
+#endif
     {UZO, "j",  "junk-dirs",       o_NO_VALUE,       o_NEGATABLE,
        'j',  "junk directories, extract names only"},
 # ifdef J_FLAG
@@ -1494,6 +1520,12 @@ static struct option_struct far options[] = {
     {UZO, "N",  "comment-to-note", o_NO_VALUE,       o_NEGATABLE,
        'N',  "restore comments as filenotes"},
 # endif
+#ifdef USE_ICONV_MAPPING
+# ifdef UNIX
+    {UZO, "O",  "OEM-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'O',  "OEM char set to use"},
+# endif
+#endif
     {UZO, "o",  "overwrite",       o_NO_VALUE,       o_NEGATABLE,
        'o',  "overwrite files without prompting"},
     {UZO, "p",  "pipe-to-stdout",  o_NO_VALUE,       o_NEGATABLE,
@@ -1598,6 +1630,12 @@ static struct option_struct far options[] = {
 #  endif
     {ZIO, "h",  "headers",         o_NO_VALUE,       o_NEGATABLE,
        'h',  "header line"},
+#  ifdef USE_ICONV_MAPPING
+#   ifdef UNIX
+    {ZIO, "I",  "ISO-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'I',  "ISO charset to use"},
+#   endif
+#  endif
     {ZIO, "l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
        'l',  "longer listing"},
     {ZIO, "m",  "medium-list",     o_NO_VALUE,       o_NEGATABLE,
@@ -1605,15 +1643,21 @@ static struct option_struct far options[] = {
 #  ifdef MORE
     {ZIO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
        'M',  "output like more"},
+# endif
+# ifdef USE_ICONV_MAPPING
+#  ifdef UNIX
+    {ZIO, "O",  "OEM-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'O',  "OEM charset to use"},
 #  endif
+# endif
     {ZIO, "s",  "shorter-list",    o_NO_VALUE,       o_NEGATABLE,
        's',  "shorter list"},
-#ifndef SFX
+# ifndef SFX
     {ZIO, "",  "commandline",      o_NO_VALUE,       o_NEGATABLE,
        o_sc, "show processed command line and exit"},
     {ZIO, "",  "options",          o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
-#endif /* ndef SFX */
+# endif /* ndef SFX */
     {ZIO, "t",  "totals-line",     o_NO_VALUE,       o_NEGATABLE,
        't',  "totals line"},
     {ZIO, "T",  "decimal-time",    o_NO_VALUE,       o_NEGATABLE,
@@ -1666,6 +1710,12 @@ int uz_opts(__G__ pargc, pargv)
     int fna = 0;          /* current first non-opt arg */
     int optnum = 0;       /* index in table */
 
+# ifdef USE_ICONV_MAPPING
+#  ifdef UNIX
+    extern char OEM_CP[MAX_CP_NAME];
+    extern char ISO_CP[MAX_CP_NAME];
+#  endif
+# endif
 
 
     /* since get_option() returns xfiles and files one at a time, store them
@@ -1687,7 +1737,7 @@ int uz_opts(__G__ pargc, pargv)
     G.wildzipfn = NULL;
 
     /* make copy of args that can use with insert_arg() used by get_option() */
-    args = copy_args(*pargv, 0);
+    args = copy_args(__G__ *pargv, 0);
 
 
     /* Initialize lists */
@@ -1717,7 +1767,7 @@ int uz_opts(__G__ pargc, pargv)
            negated - option was negated with trailing -
     */
 
-    while ((option = get_option(UZO, &args, &argcnt, &argnum,
+    while ((option = get_option(__G__ UZO, &args, &argcnt, &argnum,
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
@@ -1878,6 +1928,14 @@ int uz_opts(__G__ pargc, pargv)
                 }
                 break;
 # endif  /* MACOS */
+# ifdef USE_ICONV_MAPPING
+#  ifdef UNIX
+            case ('I'): /* -I [UNIX] ISO char set of input entries */
+                strncpy(ISO_CP, value, sizeof(ISO_CP));
+                free(value);
+                break;
+#  endif
+# endif
             case ('j'):    /* junk pathnames/directory structure */
                 if (negative)
                     uO.jflag = FALSE;
@@ -1955,6 +2013,14 @@ int uz_opts(__G__ pargc, pargv)
                 } else
                     ++uO.overwrite_all;
                 break;
+# ifdef USE_ICONV_MAPPING
+#  ifdef UNIX
+            case ('O'): /* -O [UNIX] OEM char set of input entries */
+                strncpy(OEM_CP, value, sizeof(OEM_CP));
+                free(value);
+                break;
+#  endif
+# endif
             case ('p'):    /* pipes:  extract to stdout, no messages */
                 if (negative) {
                     uO.cflag = FALSE;
@@ -2415,7 +2481,7 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
     } else if (showhelp == -3) {
       /* show command line args */
       *pargc = -1;
-      show_commandline(args);
+      show_commandline(__G__ args);
       return PK_OK;
 # endif /* ndef SFX */
     }
@@ -2740,6 +2806,9 @@ static void help_extended(__G)
   "         ACORN_FTYPE_NFS] Translate filetype and append to name.",
   "  -i   [MacOS] Ignore filenames in MacOS extra field.  Instead, use name in",
   "         standard header.",
+#ifdef USE_ICONV_MAPPING
+  "  -I   [UNIX] ISO code page to use.",
+#endif
   "  -j   Junk paths and deposit all files in extraction directory.",
   "  -J   [BeOS] Junk file attributes.  [MacOS] Ignore MacOS specific info.",
   "  -K   [AtheOS, BeOS, Unix] Restore SUID/SGID/Tacky file attributes.",
@@ -2750,6 +2819,9 @@ static void help_extended(__G)
   "  -N   [Amiga] Extract file comments as Amiga filenotes.",
   "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
   "         care.",
+#ifdef USE_ICONV_MAPPING
+  "  -O   [UNIX] OEM code page to use.",
+#endif
   "  -P p Use password p to decrypt files.  THIS IS INSECURE!  Some OS show",
   "         command line to other users.",
   "  -q   Perform operations quietly.  The more q (as in -qq) the quieter.",
@@ -2816,13 +2888,19 @@ static void help_extended(__G)
   "  This can be modified using -q for quieter operation, and -qq for even",
   "  quieter operation.",
   "",
-  "Unicode:",
+  "Unicode and character set conversions:",
   "  If compiled with Unicode support, unzip automatically handles archives",
-  "  with Unicode entries.  Currently Unicode on Win32 systems is limited.",
-  "  Characters not in the current character set are shown as ASCII escapes",
-  "  in the form #Uxxxx where the Unicode character number fits in 16 bits,",
-  "  or #Lxxxxxx where it doesn't, where x is the ASCII character for a hex",
-  "  digit.",
+  "  with Unicode entries.  On ports where UTF-8 is not the native character",
+  "  set, characters not in current encoding are shown as ASCII escapes in",
+  "  form #Uxxxx or #Lxxxxxx where x is ASCII character for hex digit.",
+  "  Though modern UNIX consoles support full UTF-8, some older console",
+  "  displays may be limited to a specific code page.  Either way full UTF-8",
+  "  paths are generally restored on extraction where OS supports.  Use -U",
+  "  to force use of escapes in extracted names.  Use -UU to totally ignore",
+  "  Unicode.  Unicode comments not yet fully supported.", 
+  "",
+  "  \"New\" options -I and -O (from a patch that has been out there awhile)",
+  "  are used on UNIX to set the ISO and OEM code pages used for conversions.",
   "",
   "",
   "zipinfo options (these are used in zipinfo mode (unzip -Z ...)):",
@@ -2843,6 +2921,10 @@ static void help_extended(__G)
   "        representing the Unicode character number of the character in hex.",
   "  -UU [UNICODE]  Disable use of any UTF-8 path information.",
   "  -z  Include archive comment if any in listing.",
+#ifdef USE_ICONV_MAPPING
+  "  -I   [UNIX] ISO code page to use.",
+  "  -O   [UNIX] OEM code page to use.",
+#endif
   "",
   "",
   "funzip stream extractor:",
@@ -3059,7 +3141,7 @@ static void show_options(__G)
 } /* end function show_options() */
 
 /* Print processed command line. */
-void show_commandline(args)
+void show_commandline(__G__ args)
     char *args[];
 {
 #define MAX_CARG_LEN (WSIZE>>2)
@@ -3263,6 +3345,11 @@ static void show_version_info(__G)
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(Use_Unicode)));
 #   endif
+        ++numopts;
+#  endif
+#  ifdef WIN32_WIDE
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(Use_Win32_Wide)));
         ++numopts;
 #  endif
 #  ifdef _MBCS
@@ -3578,7 +3665,7 @@ static int optionerr(options, buf, err, optind, islong)
  * allocated with malloc or by NULL if last argument so that free_args
  * will properly work.
  */
-char **copy_args(args, max_args)
+char **copy_args(__G__ args, max_args)
   char **args;
   int max_args;
 {
@@ -3661,7 +3748,7 @@ int free_args(args)
  * argv but only on args allocated with malloc.
  */
 
-int insert_arg(pargs, arg, at_arg, free_args)
+int insert_arg(__G__ pargs, arg, at_arg, free_args)
    char ***pargs;
    ZCONST char *arg;
    int at_arg;
@@ -3761,7 +3848,7 @@ int insert_arg(pargs, arg, at_arg, free_args)
  *                   value lists.
  *    depth        - recursion depth (0 at top level, 1 or more in arg files)
  */
-static unsigned long get_shortopt(option_group, args, argnum, optchar, negated,
+static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar, negated,
                                   value, option_num, depth)
   int option_group;
   ZCONST char **args;
@@ -4014,8 +4101,8 @@ static unsigned long get_shortopt(option_group, args, argnum, optchar, negated,
  * Parameters same as for get_shortopt.
  */
 
-static unsigned long get_longopt(option_group, args, argnum, optchar, negated,
-                                 value, option_num, depth)
+static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
+                                 negated, value, option_num, depth)
   int option_group;
   ZCONST char **args;
   int argnum;
@@ -4402,7 +4489,7 @@ static unsigned long get_longopt(option_group, args, argnum, optchar, negated,
  *
  */
 
-unsigned long get_option(option_group, pargs, argc, argnum, optchar, value,
+unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value,
                          negated, first_nonopt_arg, option_num, recursion_depth)
   int option_group;
   char ***pargs;
@@ -4549,7 +4636,7 @@ unsigned long get_option(option_group, pargs, argc, argnum, optchar, value,
         /* this is only needed for argument files */
         /* but is also good for show command line so command lines with lists
            can always be read back in */
-        argcnt = insert_arg(&args, "@", first_nonoption_arg, 1);
+        argcnt = insert_arg(__G__ &args, "@", first_nonoption_arg, 1);
         argn++;
         if (first_nonoption_arg > -1) {
           first_nonoption_arg++;
@@ -4702,7 +4789,7 @@ unsigned long get_option(option_group, pargs, argc, argnum, optchar, value,
           }
 
         } else {
-          option_ID = get_longopt(option_group, (ZCONST char **)args, argn,
+          option_ID = get_longopt(__G__ option_group, (ZCONST char **)args, argn,
                                   &optc, negated,
                                   value, option_num, recursion_depth);
           if (option_ID == o_BAD_ERR) {
@@ -4716,7 +4803,7 @@ unsigned long get_option(option_group, pargs, argc, argnum, optchar, value,
 
       } else {
         /* short option */
-        option_ID = get_shortopt(option_group, (ZCONST char **)args, argn,
+        option_ID = get_shortopt(__G__ option_group, (ZCONST char **)args, argn,
                                  &optc, negated,
                                  value, option_num, recursion_depth);
 

@@ -1,7 +1,7 @@
 Type=Exe
 Form=vbunzip.frm
 Module=VBUnzBas; vbunzip.bas
-Object={F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.1#0; COMDLG32.OCX
+Object={F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0; COMDLG32.OCX
 IconForm="VBUnzFrm"
 Startup="VBUnzFrm"
 HelpFile=""
@@ -30,5 +30,9 @@ FDIVCheck=0
 UnroundedFP=0
 StartMode=0
 Unattended=0
+Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
+
+[MS Transaction Server]
+AutoRefresh=1

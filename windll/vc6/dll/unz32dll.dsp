@@ -49,7 +49,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../.." /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../.." /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "UNICODE_SUPPORT" /D "WIN32_WIDE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -75,7 +75,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../.." /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /FR /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../.." /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "UNICODE_SUPPORT" /D "WIN32_WIDE" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -101,7 +101,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../.." /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "ASM_CRC" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../.." /D "NDEBUG" /D "ASM_CRC" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "UNICODE_SUPPORT" /D "WIN32_WIDE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../.." /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "ASM_CRC" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../.." /D "_DEBUG" /D "ASM_CRC" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "UNICODE_SUPPORT" /D "WIN32_WIDE" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -231,7 +231,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "../../.." /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "ASM_CRC" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "../../.." /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "WIN32" /D "WINDLL" /D "DLL" /D "USE_EF_UT_TIME" /D "ASM_CRC" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"

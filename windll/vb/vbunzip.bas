@@ -668,11 +668,11 @@ Public Sub VBUnZip32()
   '-- The Version Information!
   '--------------------------------------
   MsgStr$ = "DLL Date: " & szTrim(UZVER2.date)
-  MsgStr$ = MsgStr$ & vbNewLine$ & "Zip Info: " _
+  MsgStr$ = MsgStr$ & vbTab$ & vbTab$ & "Zip Info: " _
        & VersNumsToTxt(UZVER2.zipinfo(1), UZVER2.zipinfo(2), UZVER2.zipinfo(3))
   MsgStr$ = MsgStr$ & vbNewLine$ & "DLL Version: " _
        & VersNumsToTxt(UZVER2.windll(1), UZVER2.windll(2), UZVER2.windll(3))
-  MsgStr$ = MsgStr$ & vbNewLine$ & "DLL API Compatibility: " _
+  MsgStr$ = MsgStr$ & vbTab$ & vbTab$ & "DLL API Compatibility: " _
        & VersIDToTxt(m_UzDllApiVers)
   MsgStr$ = MsgStr$ & vbNewLine$ & "--------------"
   '-- End Of Version Information.
@@ -698,8 +698,13 @@ Public Sub VBUnZip32()
 
   '-- You Can Change This As Needed!
   '-- For Compression Information
-  MsgStr$ = MsgStr$ & vbNewLine & _
-       "Only Shows If uExtractList = 1 List Contents"
+  If uExtractList = 1 Then
+    MsgStr$ = MsgStr$ & vbNewLine & _
+         "Listing files"  'Only Shows If uExtractList = 1 List Contents
+  Else
+    MsgStr$ = MsgStr$ & vbNewLine & _
+         "Extracting files"
+  End If
   MsgStr$ = MsgStr$ & vbNewLine & "--------------"
   MsgStr$ = MsgStr$ & vbNewLine & "Comment         : " & UZUSER.cchComment
   MsgStr$ = MsgStr$ & vbNewLine & "Total Size Comp : " _

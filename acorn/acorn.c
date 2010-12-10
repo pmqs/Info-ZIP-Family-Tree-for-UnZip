@@ -10,7 +10,7 @@
 
   acorn.c
 
-  RISCOS-specific routines for use with Info-ZIP's UnZip 5.2 and later.
+  RISCOS-specific routines for use with Info-ZIP's UnZip 6.0 and later.
 
   Contains:  do_wild()           <-- generic enough to put in fileio.c?
              mapattr()
@@ -20,6 +20,8 @@
              setRISCOSexfield()
              printRISCOSexfield()
              close_outfile()
+             defer_dir_attribs()
+             set_direc_attribs()
              stamp_file()
              version()
 
@@ -27,7 +29,7 @@
 
 
 #define UNZIP_INTERNAL
-#include "^.unzip.h"
+#include "../unzip.h"
 #include "riscos.h"
 
 #define FTYPE_FFF (1<<17)      /* set filetype to &FFF when extracting */
@@ -50,6 +52,17 @@ static void printRISCOSexfield(int isdir, ZCONST void *extra_field);
 #endif
 static int uxtime2acornftime(unsigned *pexadr, unsigned *pldadr, time_t ut);
 static int mimemap(const char *name);
+
+#ifdef SET_DIR_ATTRIB
+typedef struct uxdirattr {      /* struct for holding unix style directory */
+    struct uxdirattr *next;     /*  info until can be sorted and set at end */
+    char *fn;                   /* filename of directory */
+    unsigned int loadaddr,execaddr; /* RISC OS encoded timestamp */ 
+    unsigned attr;              /* RISC OS file attribs */
+    char fnbuf[1];              /* buffer stub for directory name */
+} uxdirattr;
+#define UxAtt(d)  ((uxdirattr *)d)    /* typecast shortcut */
+#endif /* SET_DIR_ATTRIB */
 
 
 #ifndef SFX
@@ -882,13 +895,16 @@ void close_outfile(__G)
     int attr;
     int mode=G.pInfo->file_attr&0xffff;   /* chmod equivalent mode */
 
-    time_t m_time;
-#ifdef USE_EF_UT_TIME
-    iztimes z_utime;
-#endif
+    /* get current time-stamp and attributes */
+    SWI_OS_File_5(G.filename, NULL, &loadaddr, &execaddr, NULL, &attr);
 
     /* skip restoring time stamps on user's request */
     if (uO.D_flag <= 1) {
+        time_t m_time;
+#ifdef USE_EF_UT_TIME
+        iztimes z_utime;
+#endif
+
 #ifdef USE_EF_UT_TIME
         if (G.extra_field &&
 #ifdef IZ_CHECK_TZ
@@ -904,15 +920,11 @@ void close_outfile(__G)
         } else
 #endif /* USE_EF_UT_TIME */
             m_time = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+            
+        uxtime2acornftime(&execaddr, &loadaddr, m_time);
     }
 
-    /* set the file's time-stamp and attributes */
-    SWI_OS_File_5(G.filename, NULL, &loadaddr, NULL, NULL, &attr);
-
-    if (uO.D_flag <= 1)
-        /* set the file's modification time */
-        uxtime2acornftime(&execaddr, &loadaddr, m_time);
-
+    /* Write out new attributes */
     loadaddr = (loadaddr & 0xfff000ffU) |
                ((G.pInfo->file_attr&0xfff00000) >> 12);
 
@@ -923,6 +935,95 @@ void close_outfile(__G)
   }
 
 } /* end function close_outfile() */
+
+
+#ifdef SET_DIR_ATTRIB
+int defer_dir_attribs(__G__ pd)
+    __GDEF
+    direntry **pd;
+{
+  uxdirattr *d_entry;
+  extra_block *spark_ef;
+
+  d_entry = (uxdirattr *)malloc(sizeof(uxdirattr) + strlen(G.filename));
+  *pd = (direntry *)d_entry;
+  if (d_entry == (uxdirattr *)NULL) {
+      return PK_MEM;
+  }
+  d_entry->fn = d_entry->fnbuf;
+  strcpy(d_entry->fn, G.filename);
+  /* Directory name typically contains a trailing dot; get rid of it */
+  char *c = &d_entry->fn[strlen(d_entry->fn)-1];
+  if(*c == '.')
+    *c = 0;
+
+  if ((spark_ef = (extra_block *) getRISCOSexfield(G.extra_field, G.lrec.extra_field_length))
+      != NULL) {
+    d_entry->loadaddr = spark_ef->loadaddr;
+    d_entry->execaddr = spark_ef->execaddr;
+    d_entry->attr = spark_ef->attr;
+  } else {
+    unsigned int loadaddr, execaddr;
+    int attr;
+    int mode=G.pInfo->file_attr&0xffff;   /* chmod equivalent mode */
+
+    /* get current time-stamp and attributes */
+    SWI_OS_File_5(G.filename, NULL, &loadaddr, &execaddr, NULL, &attr);
+
+    /* skip restoring directory time stamps on user's request */
+    if (uO.D_flag <= 0) {
+        time_t m_time;
+#ifdef USE_EF_UT_TIME
+        iztimes z_utime;
+#endif
+
+#ifdef USE_EF_UT_TIME
+        if (G.extra_field &&
+#ifdef IZ_CHECK_TZ
+            G.tz_is_valid &&
+#endif
+            (ef_scan_for_izux(G.extra_field, G.lrec.extra_field_length, 0,
+                              G.lrec.last_mod_dos_datetime, &z_utime, NULL)
+             & EB_UT_FL_MTIME))
+        {
+            TTrace((stderr, "defer_dir_attribs:  Unix e.f. modif. time = %ld\n",
+              z_utime.mtime));
+            m_time = z_utime.mtime;
+        } else
+#endif /* USE_EF_UT_TIME */
+            m_time = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+            
+        uxtime2acornftime(&execaddr, &loadaddr, m_time);
+    }
+
+    /* Write out new attributes */
+    loadaddr = (loadaddr & 0xfff000ffU) |
+               ((G.pInfo->file_attr&0xfff00000) >> 12);
+
+    attr=(attr&0xffffff00) | ((mode&0400) >> 8) | ((mode&0200) >> 6) |
+                             ((mode&0004) << 2) | ((mode&0002) << 4);
+
+    d_entry->loadaddr = loadaddr;
+    d_entry->execaddr = execaddr;
+    d_entry->attr = attr;
+  }
+
+  return PK_OK;
+} /* end function defer_dir_attribs() */
+
+
+int set_direc_attribs(__G__ d)
+    __GDEF
+    direntry *d;
+{
+    int errval = PK_OK;
+
+    SWI_OS_File_1(UxAtt(d)->fn,UxAtt(d)->loadaddr,UxAtt(d)->execaddr,UxAtt(d)->attr);
+    
+    return errval;
+} /* end function set_direc_attribs() */
+
+#endif /* SET_DIR_ATTRIB */
 
 
 

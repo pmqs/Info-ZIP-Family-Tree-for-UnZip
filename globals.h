@@ -319,6 +319,10 @@ typedef struct Globals {
     int      unipath_version;      /* version of Unicode field */
     ulg      unipath_checksum;     /* Unicode field checksum */
     char     *unipath_filename;    /* UTF-8 path */
+# ifdef WIN32_WIDE
+    wchar_t  *unipath_widefilename;     /* wide character filename */
+    int      has_win32_wide;       /* true if Win32 W calls work */
+# endif
 #endif /* UNICODE_SUPPORT */
 
 #ifdef CMS_MVS

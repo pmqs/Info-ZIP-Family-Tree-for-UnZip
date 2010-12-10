@@ -23,6 +23,8 @@ To compile UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
     OS/2.
 
 (3) Run your "make" utility on the makefile (e.g., "nmake -f makefile.msc").
+    (Alternately, you may be able to directly reference the makefile:
+    make -f unix/Makefile.)
 
 (4) Try out your new UnZip the way you would any new utility:  read the
     docs first.
@@ -33,18 +35,22 @@ To compile UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
     but Unix, VMS, Windows 95 and later), make sure the "TZ" environment variable
     is set to a valid and reasonable value; see your compiler docs for details.
 
-(*) The UnZip sources as well as other Info-ZIP source archives are packaged
-    in Unix format. All text files use single LF (Ascii 0x0a) characters as
-    line terminators.  On systems that use different conventions for plain text
-    files (e.g.:DOS,Win9x,WinNT,OS/2 -> combined CR+LF; MacOS -> single CR),
-    some utilities (editors, compilers, etc.) may not accept source files
-    with LF line terminators.
-    For these systems, we recommend using Info-ZIP's UnZip utility for
-    extraction of our distribution archives, applying the command option
-    "-a" (= translate text files to native format) in the extraction command.
-    In case this procedure is not applicable, an appropiate third-party
-    conversion utility may be used to achieve the desired line termination
-    style (examples: "flip", available for Unix, DOS, OS/2; or "tr" on Unix).
+(*) The UnZip sources as well as other Info-ZIP source archives are generally
+    packaged in Unix format.  All text files use single LF (Ascii 0x0a)
+    characters as line terminators.  On systems that use different conventions
+    for plain text files (e.g.:DOS,Win9x,WinNT,OS/2 -> combined CR+LF; MacOS ->
+    single CR), some utilities (editors, compilers, etc.) may not accept source
+    files with LF line terminators.  For these systems, we recommend using
+    Info-ZIP's UnZip utility for extraction of our distribution archives,
+    applying the command option "-a" (= translate text files to native format)
+    in the extraction command.  In case this procedure is not applicable, an
+    appropiate third-party conversion utility may be used to achieve the
+    desired line termination style (examples: "flip", available for Unix, DOS,
+    OS/2; or "tr" on Unix).  However, as of UnZip 6.10 some text files
+    normally read directly by utilities (such as Visual Studio files) are
+    included in the source archives in native format to allow use without
+    conversion.  Extracting using unzip -a can still be used and these
+    utilities should still be able to use these files.
 
 
 To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
@@ -89,7 +95,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
     Special point of confusion:  some non-MSDOS makefiles contain MS-DOS
     targets (useful for cross-compilations). An example is the OS/2 makefile,
     os2\makefile.os2, that contains the gccdos target for DOS emx+gcc and
-    some more DOS related targets for Watcom C and MSC. But since UnZip
+    some more DOS related targets for Watcom C and MSC.  But since UnZip
     version 5.3, the msdos subdirectory contains makefiles for all supported
     DOS compilers.  (The old djgpp, djgpp1 and gcc_dos targets in
     unix/Makefile have been removed in UnZip 5.3; use msdos/makefile.dj*
@@ -382,10 +388,10 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
       NO_MULT_VOLUME (default)
         The symbol MULT_VOLUME is used to flag code portions needed for
         support of multi-volume archives. For now, this flag MUST NOT be
-        used to compile a production versions of UnZip. This flag has been
+        used to compile a production version of UnZip. This flag has been
         introduced to allow integration of experimental code for multi-volume
-        support in the master source tree. This feature will become a default
-        option in the future 6.1 release of UnZip.
+        support in the master source tree.  This feature will become a default
+        option in the future 6.1 release of UnZip (with any luck).
 
       LZW_CLEAN
       USE_UNSHRINK (now default, as of January 2005)
@@ -431,16 +437,22 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
 
       UNICODE_SUPPORT
         Enable restoring from UTF-8 encoded paths.  These paths are stored
-        in extra fields in a backward-compatible way so that archives with
+        either in extra fields or directly in the path fields if a new
+        UTF-8 bit is set in the flag word.  If the extra field is used, the
+        UTF-8 is stored in a backward-compatible way so that archives with
         UTF-8 paths still work on zips and unzips that don't support Unicode.
-        This support follows the recent additions to the PKWare AppNote for
-        Unicode support, except that Unicode comments on systems where UTF-8
-        is not the current character set is not implemented in this release.
+        If the UTF-8 bit is used the UTF-8 is directly stored in the main
+        path field, so an unzip with Unicode support (such as UnZip 6.0 or
+        later) is needed to correctly interpret the UTF-8.  This support
+        follows the recent additions to the PKWare AppNote for Unicode support,
+        except that Unicode comments on systems where UTF-8 is not the current
+        character set is not implemented in this release.
+        
 
         Internally, Unicode support can be achieved by three methods:
         a) The charset encoding used by the system is already UTF-8, so
            the program just has to select the UTF-8 versions of the stored
-           filenames for file name handling.
+           filenames for file name handling.  (Such as most current Unix.)
            This method is enabled by setting the symbol UTF8_MAYBE_NATIVE;
            this activates code to check for native UTF-8 encoding in the
            locale settings.
@@ -456,18 +468,32 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
            characters.
         c) The operating system and the compilation environment allow use of
            unicode-encoded "wide character" data for native text strings
-           support.  (This is mainly Windows NT and later.)
+           support.
            Complete support for this method requires a throughout revision
            of the UnZip code to convert the MBCS 8-bit string calls used now
            to the equivalent wide character calls.  All internal string
            handling and text output needs to be ported to use wchar_t
            character storage, which for the most part requires just proper
-           type updating.  This capability is planned for inclusion in
+           type updating.  This capability could be included in
            UnZip 6.10.
+
+        The latest UnZip 6.10 beta now includes full wide character support
+        of UTF-8 paths on Windows NT and later.  On these OS the UTF-8 is
+        converted to wide character paths and those paths used to recreate
+        the Unicode paths on the file system.  What's not implemented on
+        Windows is language-dependent messages, wide character console
+        input and output, and wide character list support.  This may be
+        implemented in UnZip 6.10 before release.
+
+        On current Linux and similar systems, UnZip now supports UTF-8
+        names and patterns on the command line as well as display of
+        UTF-8 listings on the console.
 
         On some ports UNICODE_SUPPORT is set automatically:
         - WIN32 (and WinCE) use method b) by defining UNICODE_SUPPORT and
-          UNICODE_WCHAR.
+          UNICODE_WCHAR.  On Windows NT and later paths are now created
+          using wide character strings as in method c), but console input
+          and output still use method b).  These are now the defaults.
         - On Unix, the automatic configuration script enables UNICODE_WCHAR
           if ISO-10646 compatible wide characters are supported and
           UTF8_MAYBE_NATIVE if the locale detection call is available.
@@ -733,6 +759,7 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         See ":macos:Contents" for the possible project targets.
         Link order of the standard libraries is very important: Link all
         sources first and all standard libraries last.
+        Mac OS X is considered a Unix port and those procedures should be used.
 
       Acorn (RISC OS)
         Extract the files from the archive and place in standard 'Acorn' C
@@ -751,12 +778,15 @@ To compile UnZip, UnZipSFX and/or fUnZip (detailed instructions):
         v1.2 compiler.'  Note that it will abend without access to the C/370
         runtime library.  See the README.CMS file for more details.
 
-      MVS
+      MVS, z/OS
         Unpack all the files and transfer them to an appropriate PDS with
         ASCII -> EBCDIC conversion enabled, then edit UNZMVSC.JOB as required,
         and execute it to compile and link all the sources.  C/370 2.1 or
         later is required.  See README.MVS for further details.  [This is a
         new port and may need a little more work even to compile.]
+        There has been considerable work on the MVS and z/OS ports lately
+        (indeed, z/OS may be split off as its own port soon), so there
+        should be updates to these procedures shortly.
 
       Human68K
         [This is a Japanese machine and OS.]  It appears that GNU "make" and

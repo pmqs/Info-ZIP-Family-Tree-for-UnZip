@@ -719,6 +719,8 @@ int      UZ_EXP UzpPassword      OF((zvoid *pG, int *rcnt, char *pwbuf,
                                      int size, ZCONST char *zfn,
                                      ZCONST char *efn));
 
+#define UTF8_BIT (1<<11)
+
 #ifdef __cplusplus
 }
 #endif

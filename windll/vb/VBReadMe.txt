@@ -11,6 +11,8 @@ NOTE: Whenever a VB program is run from the VB6 IDE, the "path of the VB
 executable" is the path where the IDE program file "VB6.EXE" is stored,
 NOT the storage directory of the VB project file (= result of the App.Path
 property accessed from within the VB program).
+[Dropping unzip32.dll into the VB project directory (where this file is)
+also works when running from within the VB developent environment.]
 
 The example code has been edited last with Visual Basic 6, but should be
 compatible with VB 5. To maintain compatibility with VB5 after having modified
@@ -38,6 +40,9 @@ automatically. This number has to be changed back to "1.1" manually,
 otherwise the example code can no longer be used on systems with old versions
 of comdlg32.ocx.
 
+A small testfiles.zip archive is now included to allow immediate testing of
+the VB project.
+
 When fetching the VB example code from the UnZip source distribution, one
 has to make sure that the files are stored in the correct "DOS/Windows-native"
 text format with "CR-LF" line endings. Visual Basic does not accept Unix style
@@ -45,6 +50,8 @@ text format (LF line terminators) for Form class modules (*.frm) and the
 project file (*.vbp).  You may use unzip's -a option to convert the project
 on extraction. If this is a full source distribution, see the Where file for
 where to download the compiled unzip DLL for a specific platform which includes
-this example project in native format for that platform.
+this example project in native format for that platform.  [This may not be
+needed with the latest distributions, which now use Windows line ends for
+the project files.]
 
 For more information, see the comments within the VB source.

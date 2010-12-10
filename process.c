@@ -42,6 +42,9 @@
 #if defined(DYNALLOC_CRCTAB) || defined(UNICODE_SUPPORT)
 #  include "crc32.h"
 #endif
+#ifdef UNICODE_SUPPORT
+#  include <wchar.h>
+#endif /* def UNICODE_SUPPORT */
 
 static int    do_seekable        OF((__GPRO__ int lastchance));
 #ifdef DO_SAFECHECK_2GB
@@ -580,7 +583,14 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
 #endif
 
     inflate_free(__G);
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    if (G.has_win32_wide)
+      checkdirw(__G__ (wchar_t *)NULL, END);
+    else
+      checkdir(__G__ (char *)NULL, END);
+#else
     checkdir(__G__ (char *)NULL, END);
+#endif
 
 #ifdef DYNALLOC_CRCTAB
     if (CRC_32_TAB) {
@@ -1000,7 +1010,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
 
 #ifdef TIMESTAMP
     if (uO.T_flag && !uO.zipinfo_mode && (nmember > 0L)) {
-# ifdef WIN32
+# if defined(VMS) || defined(WIN32)
         if (stamp_file(__G__ G.zipfn, uxstamp)) {       /* TIME-STAMP 'EM */
 # else
         if (stamp_file(G.zipfn, uxstamp)) {             /* TIME-STAMP 'EM */
@@ -1729,6 +1739,13 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
     else if (uO.L_flag > 1)   /* let -LL force lower case for all names */
         G.pInfo->lcflag = 1;
 
+    /* Handle the PKWare verification bit, bit 2 (0x0004) of internal
+       attributes.  If this is set, then a verification checksum is in the
+       first 3 bytes of the external attributes.  In this case all we can use
+       for setting file attributes is the last external attributes byte. */
+    if (G.crec.internal_file_attributes & 0x0004)
+      G.crec.external_file_attributes &= (ulg)0xff;
+
     /* do Amigas (AMIGA_) also have volume labels? */
     if (IS_VOLID(G.crec.external_file_attributes) &&
         (G.pInfo->hostnum == FS_FAT_ || G.pInfo->hostnum == FS_HPFS_ ||
@@ -1745,10 +1762,10 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
     G.pInfo->HasUxAtt = (G.crec.external_file_attributes & 0xffff0000L) != 0L;
 
 #ifdef UNICODE_SUPPORT
-    /* remember the state of GPB11 (General Purpuse Bit 11) which indicates
+    /* remember the state of GPB11 (General Purpose Bit 11) which indicates
        that the standard path and comment are UTF-8. */
     G.pInfo->GPFIsUTF8
-        = (G.crec.general_purpose_bit_flag & (1 << 11)) == (1 << 11);
+        = (G.crec.general_purpose_bit_flag & UTF8_BIT) == UTF8_BIT;
 #endif
 
     return PK_COOL;
@@ -2644,7 +2661,45 @@ char *wide_to_utf8_string(wide_string)
 
   return utf8_string;
 }
+
+zwchar *wchar_to_wide_string(wchar_string)
+  wchar_t *wchar_string;
+{
+  int i;
+  int wchar_len;
+  zwchar *wide_string;
+
+  wchar_len = wcslen(wchar_string);
+
+  if ((wide_string = malloc((wchar_len + 1) * sizeof(zwchar))) == NULL) {
+    return NULL;
+  }
+  for (i = 0; i <= wchar_len; i++) {
+    wide_string[i] = wchar_string[i];
+  }
+
+  return wide_string;
+}
+
 #endif /* unused */
+
+
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+char *wchar_to_local_string(wchar_string, escape_all)
+  wchar_t *wchar_string;
+  int escape_all;
+{
+  zwchar *wide_string = wchar_to_wide_string(wchar_string);
+  char *local_string = wide_to_local_string(wide_string, escape_all);
+
+  free(wide_string);
+
+  return local_string;
+}
+
+#endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 
 /* convert UTF-8 string to wide string */
 zwchar *utf8_to_wide_string(utf8_string)

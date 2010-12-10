@@ -274,6 +274,8 @@ int open_input_file(__G)    /* return 1 if open failed */
 int open_outfile(__G)           /* return 1 if fail */
     __GDEF
 {
+  int r;
+
 #ifdef DLL
     if (G.redirect_data)
         return (redirect_outfile(__G) == FALSE);
@@ -322,11 +324,19 @@ int open_outfile(__G)           /* return 1 if fail */
 #  define TEST_EXIST 1
 #endif /* defined( UNIX) && defined( __APPLE__) [else] */
 
-#ifdef SYMLINKS
-    if (TEST_EXIST && (SSTAT(G.filename, &G.statbuf) == 0 ||
-        lstat(G.filename, &G.statbuf) == 0))
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    r = ((G.has_win32_wide
+          ? SSTATW(G.unipath_widefilename, &G.statbuf)
+          : SSTAT(G.filename, &G.statbuf)
+         ) == 0);
 #else
-    if (TEST_EXIST && (SSTAT(G.filename, &G.statbuf) == 0))
+    r = (SSTAT(G.filename, &G.statbuf) == 0);
+#endif
+
+#ifdef SYMLINKS
+    if (TEST_EXIST && (r || lstat(G.filename, &G.statbuf) == 0))
+#else
+    if (TEST_EXIST && r)
 #endif /* ?SYMLINKS */
     {
         Trace((stderr, "open_outfile:  stat(%s) returns 0:  file exists\n",
@@ -413,7 +423,15 @@ int open_outfile(__G)           /* return 1 if fail */
             /* Give the file read/write permission (non-POSIX shortcut) */
             chmod(G.filename, 0);
 #endif /* NLM */
-            if (unlink(G.filename) != 0) {
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+            if ((G.has_win32_wide
+                 ? _wunlink(G.unipath_widefilename)
+                 : unlink(G.filename)
+                ) != 0)
+#else
+            if (unlink(G.filename) != 0)
+#endif
+            {
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotDeleteOldFile),
                   FnFilter1(G.filename), strerror(errno)));
@@ -486,14 +504,30 @@ int open_outfile(__G)           /* return 1 if fail */
 #if defined(ATH_BE_UNX) || defined(AOS_VS) || defined(QDOS) || defined(TANDEM)
         mode_t umask_sav = umask(0077);
 #endif
-#if defined(SYMLINKS) || defined(QLZIP)
+
+#if defined(SYMLINKS) && defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        G.outfile = (G.has_win32_wide
+                    ? zfopenw(G.unipath_widefilename, L"wbr")
+                    : zfopen(G.filename, FOPWR)
+                    );
+#else
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        G.outfile = (G.has_win32_wide
+                    ? zfopenw(G.unipath_widefilename, L"wb")
+                    : zfopen(G.filename, FOPW)
+                    );
+# else /* (UNICODE_SUPPORT && WIN32_WIDE) */
+#  if defined(SYMLINKS) || defined(QLZIP)
         /* These features require the ability to re-read extracted data from
            the output files. Output files are created with Read&Write access.
          */
         G.outfile = zfopen(G.filename, FOPWR);
-#else
+#  else
         G.outfile = zfopen(G.filename, FOPW);
+#  endif
+# endif
 #endif
+
 #if defined(ATH_BE_UNX) || defined(AOS_VS) || defined(QDOS) || defined(TANDEM)
         umask(umask_sav);
 #endif
@@ -2090,6 +2124,116 @@ int check_for_newer(__G__ filename)  /* return 1 if existing file is newer */
 
 #endif /* !VMS && !OS2 && !CMS_MVS */
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+int check_for_newerw(__G__ filenamew)  /* return 1 if existing file is newer */
+    __GDEF                           /*  or equal; 0 if older; -1 if doesn't */
+    wchar_t *filenamew;                  /*  exist yet */
+{
+    time_t existing, archive;
+#ifdef USE_EF_UT_TIME
+    iztimes z_utime;
+#endif
+#ifdef AOS_VS
+    long    dyy, dmm, ddd, dhh, dmin, dss;
+
+
+    dyy = (lrec.last_mod_dos_datetime >> 25) + 1980;
+    dmm = (lrec.last_mod_dos_datetime >> 21) & 0x0f;
+    ddd = (lrec.last_mod_dos_datetime >> 16) & 0x1f;
+    dhh = (lrec.last_mod_dos_datetime >> 11) & 0x1f;
+    dmin = (lrec.last_mod_dos_datetime >> 5) & 0x3f;
+    dss = (lrec.last_mod_dos_datetime & 0x1f) * 2;
+
+    /* under AOS/VS, file times can only be set at creation time,
+     * with the info in a special DG format.  Make sure we can create
+     * it here - we delete it later & re-create it, whether or not
+     * it exists now.
+     */
+    if (!zvs_create(filenamew, (((ulg)dgdate(dmm, ddd, dyy)) << 16) |
+        (dhh*1800L + dmin*30L + dss/2L), -1L, -1L, (char *) -1, -1, -1, -1))
+        return DOES_NOT_EXIST;
+#endif /* AOS_VS */
+
+    Trace((stderr, "check_for_newer:  doing stat(%s)\n", FnFilter1(filename)));
+    if (SSTATW(filenamew, &G.statbuf)) {
+        Trace((stderr,
+          "check_for_newer:  stat(%s) returns %d:  file does not exist\n",
+          FnFilter1(filename), SSTAT(filename, &G.statbuf)));
+#ifdef SYMLINKS
+        Trace((stderr, "check_for_newer:  doing lstat(%s)\n",
+          FnFilter1(filename)));
+        /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
+        if (zlstat(filename, &G.statbuf) == 0) {
+            Trace((stderr,
+              "check_for_newer:  lstat(%s) returns 0:  symlink does exist\n",
+              FnFilter1(filename)));
+            if (QCOND2 && !IS_OVERWRT_ALL)
+                Info(slide, 0, ((char *)slide, LoadFarString(FileIsSymLink),
+                  FnFilter1(filename), " with no real file"));
+            return EXISTS_AND_OLDER;   /* symlink dates are meaningless */
+        }
+#endif /* SYMLINKS */
+        return DOES_NOT_EXIST;
+    }
+    Trace((stderr, "check_for_newer:  stat(%s) returns 0:  file exists\n",
+      FnFilter1(filename)));
+
+#ifdef SYMLINKS
+    /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
+    if (zlstat(filename, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
+        Trace((stderr, "check_for_newer:  %s is a symbolic link\n",
+          FnFilter1(filename)));
+        if (QCOND2 && !IS_OVERWRT_ALL)
+            Info(slide, 0, ((char *)slide, LoadFarString(FileIsSymLink),
+              FnFilter1(filename), ""));
+        return EXISTS_AND_OLDER;   /* symlink dates are meaningless */
+    }
+#endif /* SYMLINKS */
+
+    NATIVE_TO_TIMET(G.statbuf.st_mtime)   /* NOP unless MSC 7.0 or Macintosh */
+
+#ifdef USE_EF_UT_TIME
+    /* The `Unix extra field mtime' should be used for comparison with the
+     * time stamp of the existing file >>>ONLY<<< when the EF info is also
+     * used to set the modification time of the extracted file.
+     */
+    if (G.extra_field &&
+#ifdef IZ_CHECK_TZ
+        G.tz_is_valid &&
+#endif
+        (ef_scan_for_izux(G.extra_field, G.lrec.extra_field_length, 0,
+                          G.lrec.last_mod_dos_datetime, &z_utime, NULL)
+         & EB_UT_FL_MTIME))
+    {
+        TTrace((stderr, "check_for_newer:  using Unix extra field mtime\n"));
+        existing = G.statbuf.st_mtime;
+        archive  = z_utime.mtime;
+    } else {
+        /* round up existing filetime to nearest 2 seconds for comparison,
+         * but saturate in case of arithmetic overflow
+         */
+        existing = ((G.statbuf.st_mtime & 1) &&
+                    (G.statbuf.st_mtime + 1 > G.statbuf.st_mtime)) ?
+                   G.statbuf.st_mtime + 1 : G.statbuf.st_mtime;
+        archive  = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+    }
+#else /* !USE_EF_UT_TIME */
+    /* round up existing filetime to nearest 2 seconds for comparison,
+     * but saturate in case of arithmetic overflow
+     */
+    existing = ((G.statbuf.st_mtime & 1) &&
+                (G.statbuf.st_mtime + 1 > G.statbuf.st_mtime)) ?
+               G.statbuf.st_mtime + 1 : G.statbuf.st_mtime;
+    archive  = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+#endif /* ?USE_EF_UT_TIME */
+
+    TTrace((stderr, "check_for_newer:  existing %lu, archive %lu, e-a %ld\n",
+      (ulg)existing, (ulg)archive, (long)(existing-archive)));
+
+    return (existing >= archive);
+
+} /* end function check_for_newerw() */
+#endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 
 
 
@@ -2109,6 +2253,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 #ifdef AMIGA
     char tmp_fnote[2 * AMIGA_FILENOTELEN];   /* extra room for squozen chars */
 #endif
+    ush flag;
 
 
 /*---------------------------------------------------------------------------
@@ -2338,10 +2483,14 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
 #endif /* ?UNICODE_SUPPORT */
 
-        /* translate the Zip entry filename coded in host-dependent "extended
-           ASCII" into the compiler's (system's) internal text code page */
-        Ext_ASCII_TO_Native(G.filename, G.pInfo->hostnum, G.pInfo->hostver,
-                            G.pInfo->HasUxAtt, (option == DS_FN_L));
+        flag = (option==DS_FN_L)?G.lrec.general_purpose_bit_flag:G.crec.general_purpose_bit_flag;
+        /* skip ISO/OEM translation if stored name is UTF-8 */
+        if ((flag & UTF8_BIT) == 0) {
+          /* translate the Zip entry filename coded in host-dependent "extended
+             ASCII" into the compiler's (system's) internal text code page */
+          Ext_ASCII_TO_Native(G.filename, G.pInfo->hostnum, G.pInfo->hostver,
+                              G.pInfo->HasUxAtt, (option == DS_FN_L));
+        }
 
         if (G.pInfo->lcflag)      /* replace with lowercase filename */
             STRLOWER(G.filename, G.filename);
@@ -2403,7 +2552,9 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                  the standard path and comment are UTF-8 */
               if (G.pInfo->GPFIsUTF8) {
                 /* if GPB11 set then filename_full is untruncated UTF-8 */
-                G.unipath_filename = G.filename_full;
+                if (!(G.unipath_filename = malloc(strlen(G.filename_full)+1)))
+                  return PK_MEM;
+                strcpy(G.unipath_filename, G.filename_full);
               } else {
                 /* Get the Unicode fields if exist */
                 getUnicodeData(__G__ G.extra_field, length);
@@ -2452,10 +2603,31 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                   free(fn);
                 }
 # endif /* UNICODE_WCHAR */
+                /*
                 if (G.unipath_filename != G.filename_full)
-                  free(G.unipath_filename);
-                G.unipath_filename = NULL;
+                  free(G.unipath_full);
+                G.unipath_full = NULL;
+                */
               }
+# ifdef WIN32_WIDE
+              G.unipath_widefilename = NULL;
+              if (G.has_win32_wide) {
+                if (G.unipath_filename)
+                  /* Get wide path from UTF-8 */
+                  G.unipath_widefilename = utf8_to_wchar_string(G.unipath_filename);
+                else
+                  G.unipath_widefilename = utf8_to_wchar_string(G.filename);
+
+                if (G.pInfo->lcflag)      /* replace with lowercase filename */
+                    wcslwr(G.unipath_widefilename);
+
+                if (G.pInfo->vollabel && length > 8 && G.unipath_widefilename[8] == '.') {
+                    wchar_t *p = G.unipath_widefilename+8;
+                    while (*p++)
+                        p[-1] = *p;  /* disk label, and 8th char is dot:  remove dot */
+                }
+              }
+# endif /* WIN32_WIDE */
             }
 #endif /* UNICODE_SUPPORT */
         }

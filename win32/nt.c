@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -62,7 +62,12 @@
 /* private prototypes */
 
 static BOOL Initialize(VOID);
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static VOID GetRemotePrivilegesSet(wchar_t *FileName,
+                                   PDWORD dwRemotePrivileges);
+#else
 static VOID GetRemotePrivilegesSet(CHAR *FileName, PDWORD dwRemotePrivileges);
+#endif
 static VOID InitLocalPrivileges(VOID);
 
 
@@ -190,7 +195,12 @@ BOOL ValidateSecurity(uch *securitydata)
     return TRUE;
 }
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static VOID GetRemotePrivilegesSet(wchar_t *FileName,
+                                   PDWORD dwRemotePrivileges)
+#else
 static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
+#endif
 {
     HANDLE hFile;
 
@@ -198,7 +208,11 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
 
     /* see if we have the SeRestorePrivilege */
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    hFile = CreateFileW(
+#else
     hFile = CreateFileA(
+#endif
         FileName,
         ACCESS_SYSTEM_SECURITY | WRITE_DAC | WRITE_OWNER | READ_CONTROL,
         FILE_SHARE_READ | FILE_SHARE_DELETE, /* no sd updating allowed here */
@@ -235,7 +249,11 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
         /* see if we have the SeSecurityPrivilege */
         /* note we don't need this if we have SeRestorePrivilege */
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        hFile = CreateFileW(
+#else
         hFile = CreateFileA(
+#endif
             FileName,
             ACCESS_SYSTEM_SECURITY,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, /* max */
@@ -254,12 +272,21 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
 
 
 BOOL GetVolumeCaps(
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    wchar_t *rootpath,      /* filepath, or NULL */
+    wchar_t *name,          /* filename associated with rootpath */
+#else
     char *rootpath,         /* filepath, or NULL */
     char *name,             /* filename associated with rootpath */
+#endif
     PVOLUMECAPS VolumeCaps  /* result structure describing capabilities */
     )
 {
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    wchar_t TempRootPath[MAX_PATH + 1];
+#else
     char TempRootPath[MAX_PATH + 1];
+#endif
     DWORD cchTempRootPath = 0;
     BOOL bSuccess = TRUE;   /* assume success until told otherwise */
 
@@ -272,7 +299,11 @@ BOOL GetVolumeCaps(
     if(rootpath != NULL && rootpath[0] != '\0') {
         DWORD i;
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        cchTempRootPath = lstrlenW(rootpath);
+#else
         cchTempRootPath = lstrlenA(rootpath);
+#endif
         if(cchTempRootPath > MAX_PATH) return FALSE;
 
         /* copy input, converting forward slashes to back slashes as we go */
@@ -344,7 +375,11 @@ BOOL GetVolumeCaps(
     EnterCriticalSection( &VolumeCapsLock );
 
     if(!g_VolumeCaps.bValid ||
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+       lstrcmpiW(g_VolumeCaps.RootPath, TempRootPath) != 0)
+#else
        lstrcmpiA(g_VolumeCaps.RootPath, TempRootPath) != 0)
+#endif
     {
 
         /* no match found, build up new entry */
@@ -356,7 +391,11 @@ BOOL GetVolumeCaps(
         /* release lock during expensive operations */
         LeaveCriticalSection( &VolumeCapsLock );
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        bSuccess = GetVolumeInformationW(
+#else
         bSuccess = GetVolumeInformationA(
+#endif
             (TempRootPath[0] == '\0') ? NULL : TempRootPath,
             NULL, 0,
             NULL, NULL,
@@ -370,7 +409,11 @@ BOOL GetVolumeCaps(
         if(bSuccess && (dwFileSystemFlags & FS_PERSISTENT_ACLS) &&
            VolumeCaps->bUsePrivileges)
         {
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+            if(GetDriveTypeW( (TempRootPath[0] == '\0') ? NULL : TempRootPath )
+#else
             if(GetDriveTypeA( (TempRootPath[0] == '\0') ? NULL : TempRootPath )
+#endif
                == DRIVE_REMOTE)
             {
                 bRemote = TRUE;
@@ -387,7 +430,11 @@ BOOL GetVolumeCaps(
         /* replace the existing data if successful */
         if(bSuccess) {
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+            lstrcpynW(g_VolumeCaps.RootPath, TempRootPath, cchTempRootPath+1);
+#else
             lstrcpynA(g_VolumeCaps.RootPath, TempRootPath, cchTempRootPath+1);
+#endif
             g_VolumeCaps.dwFileSystemFlags = dwFileSystemFlags;
             g_VolumeCaps.bRemote = bRemote;
             g_VolumeCaps.dwRemotePrivileges = dwRemotePrivileges;
@@ -412,7 +459,11 @@ BOOL GetVolumeCaps(
 }
 
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+BOOL SecuritySet(wchar_t *resource, PVOLUMECAPS VolumeCaps, uch *securitydata)
+#else
 BOOL SecuritySet(char *resource, PVOLUMECAPS VolumeCaps, uch *securitydata)
+#endif
 {
     HANDLE hFile;
     DWORD dwDesiredAccess = 0;
@@ -490,7 +541,11 @@ BOOL SecuritySet(char *resource, PVOLUMECAPS VolumeCaps, uch *securitydata)
     if(bRestorePrivilege)
         dwFlags |= FILE_FLAG_BACKUP_SEMANTICS;
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    hFile = CreateFileW(
+#else
     hFile = CreateFileA(
+#endif
         resource,
         dwDesiredAccess,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,/* max sharing */

@@ -64,25 +64,33 @@
 #ifndef FUNZIP          /* most of this file is not used with fUnZip */
 
 /* some non-MS runtime headers (e.g. lcc) may miss this definition */
-#ifndef FILE_WRITE_ATTRIBUTES
+# ifndef FILE_WRITE_ATTRIBUTES
 #  define FILE_WRITE_ATTRIBUTES 0x0100
-#endif
+# endif
 
-#if (defined(__EMX__) || defined(__CYGWIN__))
+# if (defined(__EMX__) || defined(__CYGWIN__))
 #  define MKDIR(path,mode)   mkdir(path,mode)
-#else
+# else
 #  define MKDIR(path,mode)   mkdir(path)
-#endif
+# endif
 
-#ifdef HAVE_WORKING_DIRENT_H
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+#  if (defined(__EMX__) || defined(__CYGWIN__))
+#  define MKDIRW(pathw,mode)   _wmkdir(pathw,mode)
+#  else
+#  define MKDIRW(pathw,mode)   _wmkdir(pathw)
+#  endif
+# endif
+
+# ifdef HAVE_WORKING_DIRENT_H
 #  undef HAVE_WORKING_DIRENT_H
-#endif
+# endif
 /* The emxrtl dirent support of (__GO32__ || __EMX__) converts to lowercase! */
-#if defined(__CYGWIN__)
+# if defined(__CYGWIN__)
 #  define HAVE_WORKING_DIRENT_H
-#endif
+# endif
 
-#ifndef SFX
+# ifndef SFX
 #  ifdef HAVE_WORKING_DIRENT_H
 #    include <dirent.h>         /* use readdir() */
 #    define zdirent  dirent
@@ -106,9 +114,9 @@
      static struct zdirent *Readdir  (zDIR *d);
      static void            Closedir (zDIR *d);
 #  endif /* ?HAVE_WORKING_DIRENT_H */
-#endif /* !SFX */
+# endif /* !SFX */
 
-#ifdef SET_DIR_ATTRIB
+# ifdef SET_DIR_ATTRIB
 typedef struct NTdirattr {      /* struct for holding unix style directory */
     struct NTdirattr *next;     /*  info until can be sorted and set at end */
     char *fn;                   /* filename of directory */
@@ -117,51 +125,88 @@ typedef struct NTdirattr {      /* struct for holding unix style directory */
     FILETIME Creft;    /* NT file time type, `file creation' time */
     int gotTime;
     unsigned perms;             /* same as min_info.file_attr */
-#ifdef NTSD_EAS
+#  ifdef NTSD_EAS
     unsigned SDlen;             /* length of SD data in buf */
-#endif
+#  endif
     char buf[1];                /* buffer stub for directory SD and name */
 } NTdirattr;
 #define NtAtt(d)  ((NTdirattr *)d)    /* typecast shortcut */
-#endif /* SET_DIR_ATTRIB */
+
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+ typedef struct NTdirattrw {     /* struct for holding unix style directory */
+    struct NTdirattrw *next;     /*  info until can be sorted and set at end */
+    wchar_t *fnw;                /* filename of directory */
+    FILETIME Modft;    /* File time type defined in NT, `last modified' time */
+    FILETIME Accft;    /* NT file time type, `last access' time */
+    FILETIME Creft;    /* NT file time type, `file creation' time */
+    int gotTime;
+    unsigned perms;             /* same as min_info.file_attr */
+#   ifdef NTSD_EAS
+    unsigned SDlen;             /* length of SD data in buf */
+#   endif
+    wchar_t buf[1];                /* buffer stub for directory SD and name */
+ } NTdirattrw;
+#  define NtAttw(dw)  ((NTdirattrw *)dw)    /* typecast shortcut */
+#  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+# endif /* SET_DIR_ATTRIB */
 
 
 /* Function prototypes */
-#ifdef NTSD_EAS
+# ifdef NTSD_EAS
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+   static int  SetSD(__GPRO__ wchar_t *path, unsigned fperms,
+                     uch *eb_ptr, unsigned eb_len);
+#  else
    static int  SetSD(__GPRO__ char *path, unsigned fperms,
                      uch *eb_ptr, unsigned eb_len);
+#  endif
    static int  FindSDExtraField(__GPRO__
                                 uch *ef_ptr, unsigned ef_len,
                                 uch **p_ebSD_ptr, unsigned *p_ebSD_len);
-#endif
+# endif /* NTSD_EAS */
 
-#ifndef NO_W32TIMES_IZFIX
+# ifndef NO_W32TIMES_IZFIX
    static void utime2NtfsFileTime(time_t ut, FILETIME *pft);
-#endif
+# endif
 static void utime2VFatFileTime(time_t ut, FILETIME *pft, int clipDosMin);
-#if (defined(W32_STAT_BANDAID) && !defined(NO_W32TIMES_IZFIX))
+# if (defined(W32_STAT_BANDAID) && !defined(NO_W32TIMES_IZFIX))
    static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut);
-#endif
-#ifdef W32_STAT_BANDAID
+# endif
+# ifdef W32_STAT_BANDAID
    static int VFatFileTime2utime(const FILETIME *pft, time_t *ut);
-#endif
+# endif
 static int FStampIsLocTime(__GPRO__ const char *path);
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+   static int FStampIsLocTimeW(__GPRO__ const wchar_t *pathw);
+# endif
 
 
 static int  getNTfiletime   (__GPRO__ FILETIME *pModFT, FILETIME *pAccFT,
                              FILETIME *pCreFT);
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static int  getNTfiletimeW  (__GPRO__ FILETIME *pModFT, FILETIME *pAccFT,
+                             FILETIME *pCreFT);
+# endif
 static int  isfloppy        (int nDrive);
 static int  NTQueryVolInfo  (__GPRO__ const char *name);
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+   static int  NTQueryVolInfoW  (__GPRO__ const wchar_t *namew);
+# endif
 static int  IsVolumeOldFAT  (__GPRO__ const char *name);
 static void maskDOSdevice   (__GPRO__ char *pathcomp);
 static void map2fat         (char *pathcomp, char **pEndFAT);
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+  static void maskDOSdevicew (__GPRO__ wchar_t *pathcompw);
+  static void map2fatw      (wchar_t *pathcompw, wchar_t **pEndFATw);
+# endif
 
 
-#if (defined(__MINGW32__) && !defined(USE_MINGW_GLOBBING))
+# if (defined(__MINGW32__) && !defined(USE_MINGW_GLOBBING))
    int _CRT_glob = 0;   /* suppress command line globbing by C RTL */
-#endif
+# endif
 
-#ifdef ACORN_FTYPE_NFS
+# ifdef ACORN_FTYPE_NFS
 /* Acorn bits for NFS filetyping */
 typedef struct {
   uch ID[2];
@@ -172,7 +217,7 @@ typedef struct {
   uch attr[4];
 } RO_extra_block;
 
-#endif /* ACORN_FTYPE_NFS */
+# endif /* ACORN_FTYPE_NFS */
 
 /* static int created_dir;      */     /* used by mapname(), checkdir() */
 /* static int renamed_fullpath; */     /* ditto */
@@ -183,7 +228,7 @@ extern char Far TruncNTSD[];    /* in extract.c */
 
 
 
-#ifdef SFX
+# ifdef SFX
 
 /**************************/
 /* Function GetLoadPath() */
@@ -191,16 +236,16 @@ extern char Far TruncNTSD[];    /* in extract.c */
 
 char *GetLoadPath(__GPRO)
 {
-#ifdef MSC
+#  ifdef MSC
     extern char *_pgmptr;
     return _pgmptr;
 
-#else    /* use generic API call */
+#  else    /* use generic API call */
 
     GetModuleFileName(NULL, G.filename, FILNAMSIZ);
     _ISO_INTERN(G.filename);    /* translate to codepage of C rtl's stdio */
     return G.filename;
-#endif
+#  endif
 
 } /* end function GetLoadPath() */
 
@@ -208,9 +253,9 @@ char *GetLoadPath(__GPRO)
 
 
 
-#else /* !SFX */
+# else /* !SFX */
 
-#ifndef HAVE_WORKING_DIRENT_H
+#  ifndef HAVE_WORKING_DIRENT_H
 
 /**********************/        /* Borrowed from ZIP 2.0 sources            */
 /* Function Opendir() */        /* Difference: no special handling for      */
@@ -296,21 +341,27 @@ static void Closedir(d)
     free(d);
 }
 
-#endif /* !HAVE_WORKING_DIRENT_H */
-#endif /* ?SFX */
+#  endif /* !HAVE_WORKING_DIRENT_H */
+# endif /* ?SFX */
 
 
 
 
-#ifdef NTSD_EAS
+# ifdef NTSD_EAS
 
 /**********************/
 /*  Function SetSD()  */   /* return almost-PK errors */
 /**********************/
 
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static int SetSD(__G__ path, fperms, eb_ptr, eb_len)
+    __GDEF
+    wchar_t *path;
+#  else
 static int SetSD(__G__ path, fperms, eb_ptr, eb_len)
     __GDEF
     char *path;
+#  endif
     unsigned fperms;
     uch *eb_ptr;
     unsigned eb_len;
@@ -330,9 +381,15 @@ static int SetSD(__G__ path, fperms, eb_ptr, eb_len)
 
     /* check target volume capabilities - just fall through
      * and try if fail */
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    if (GetVolumeCaps(G.rootpathw, path, &VolumeCaps) &&
+        !(VolumeCaps.dwFileSystemFlags & FS_PERSISTENT_ACLS))
+        return PK_OK;
+#  else
     if (GetVolumeCaps(G.rootpath, path, &VolumeCaps) &&
         !(VolumeCaps.dwFileSystemFlags & FS_PERSISTENT_ACLS))
         return PK_OK;
+#  endif
 
     /* allocate storage for uncompressed data */
     security_data = (uch *)malloc((extent)ntsd_ucSize);
@@ -415,7 +472,7 @@ static int FindSDExtraField(__GPRO__
                 rc = TRUE;
                 break;
 
-#ifdef DEBUG
+#  ifdef DEBUG
             case EF_OS2:
             case EF_AV:
             case EF_PKVMS:
@@ -439,7 +496,7 @@ static int FindSDExtraField(__GPRO__
             case EF_MD5:
             case EF_ASIUNIX:
                 break;          /* shut up for other known e.f. blocks  */
-#endif /* DEBUG */
+#  endif /* DEBUG */
 
             default:
                 Trace((stderr,
@@ -458,16 +515,16 @@ static int FindSDExtraField(__GPRO__
 
 
 
-#ifndef SFX
+#  ifndef SFX
 
 /**************************/
 /*  Function test_NTSD()  */   /*  returns PK_WARN when NTSD data is invalid */
 /**************************/
 
-#ifdef __BORLANDC__
+#   ifdef __BORLANDC__
 /* Turn off warning about not using all parameters for this function only */
-#pragma argsused
-#endif
+#  pragma argsused
+#   endif
 int test_NTSD(__G__ eb, eb_size, eb_ucptr, eb_ucsize)
     __GDEF
     uch *eb;
@@ -478,8 +535,8 @@ int test_NTSD(__G__ eb, eb_size, eb_ucptr, eb_ucsize)
     return (ValidateSecurity(eb_ucptr) ? PK_OK : PK_WARN);
 } /* end function test_NTSD() */
 
-#endif /* !SFX */
-#endif /* NTSD_EAS */
+#  endif /* !SFX */
+# endif /* NTSD_EAS */
 
 
 
@@ -504,7 +561,7 @@ int IsWinNT(void)       /* returns TRUE if real NT, FALSE if Win9x or Win32s */
 
 
 /* DEBUG_TIME insertion: */
-#ifdef DEBUG_TIME
+# ifdef DEBUG_TIME
 static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft);
 
 static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft)
@@ -526,12 +583,12 @@ static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft)
     return rval;
 }
 #define FTTrace(x)   show_NTFileTime x
-#else
+# else
 #define FTTrace(x)
-#endif /* DEBUG_TIME */
+# endif /* DEBUG_TIME */
 /* end of DEBUG_TIME insertion */
 
-#ifndef IZ_USE_INT64
+# ifndef IZ_USE_INT64
 #  if (defined(__GNUC__) || defined(ULONG_LONG_MAX))
      typedef long long            LLONG64;
      typedef unsigned long long   ULLNG64;
@@ -553,7 +610,7 @@ static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft)
      typedef unsigned __int64     ULLNG64;
 #    define IZ_USE_INT64
 #  endif
-#endif
+# endif
 
 /* scale factor and offset for conversion time_t -> FILETIME */
 #define NT_QUANTA_PER_UNIX 10000000L
@@ -572,14 +629,14 @@ static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft)
 #define UTIME_1980_JAN_01_00_00   315532800L
 
 
-#ifndef NO_W32TIMES_IZFIX
+# ifndef NO_W32TIMES_IZFIX
 /*********************************/
 /* Function utime2NtfsFileTime() */ /* convert Unix time_t format into the */
 /*********************************/ /* form used by SetFileTime() in NT/9x */
 
 static void utime2NtfsFileTime(time_t ut, FILETIME *pft)
 {
-#ifdef IZ_USE_INT64
+#  ifdef IZ_USE_INT64
     ULLNG64 NTtime;
 
     /* NT_QUANTA_PER_UNIX is small enough so that "ut * NT_QUANTA_PER_UNIX"
@@ -590,7 +647,7 @@ static void utime2NtfsFileTime(time_t ut, FILETIME *pft)
     pft->dwLowDateTime = (DWORD)NTtime;
     pft->dwHighDateTime = (DWORD)(NTtime >> 32);
 
-#else /* !IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
+#  else /* !IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
     unsigned int b1, b2, carry = 0;
     unsigned long r0, r1, r2, r3;
     long r4;            /* signed, to catch environments with signed time_t */
@@ -613,10 +670,10 @@ static void utime2NtfsFileTime(time_t ut, FILETIME *pft)
         carry++;
     pft->dwHighDateTime = r4 + (r2 >> 16) + (r3 >> 16)
                             + UNIX_TIME_ZERO_HI + carry;
-#endif /* ?IZ_USE_INT64 */
+#  endif /* ?IZ_USE_INT64 */
 
 } /* end function utime2NtfsFileTime() */
-#endif /* !NO_W32TIMES_IZFIX */
+# endif /* !NO_W32TIMES_IZFIX */
 
 
 
@@ -634,10 +691,10 @@ static void utime2VFatFileTime(time_t ut, FILETIME *pft, int clipDosMin)
     /* The milliseconds field gets always initialized to 0. */
     w32tm.wMilliseconds = 0;
 
-#ifdef __BORLANDC__   /* Borland C++ 5.x crashes when trying to reference tm */
+# ifdef __BORLANDC__   /* Borland C++ 5.x crashes when trying to reference tm */
     if (utc < UTIME_1980_JAN_01_00_00)
         utc = UTIME_1980_JAN_01_00_00;
-#endif
+# endif
     ltm = localtime(&utc);
     if (ltm == (struct tm *)NULL)
         /* localtime() did not accept given utc time value; try to use
@@ -686,22 +743,22 @@ static void utime2VFatFileTime(time_t ut, FILETIME *pft, int clipDosMin)
 
 extern ZCONST ush ydays[];              /* defined in fileio.c */
 
-#if (defined(W32_STAT_BANDAID) && !defined(NO_W32TIMES_IZFIX))
+# if (defined(W32_STAT_BANDAID) && !defined(NO_W32TIMES_IZFIX))
 /*********************************/
 /* Function NtfsFileTime2utime() */
 /*********************************/
 
 static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
 {
-#ifdef IZ_USE_INT64
+#  ifdef IZ_USE_INT64
     ULLNG64 NTtime;
 
     NTtime = ((ULLNG64)pft->dwLowDateTime +
               ((ULLNG64)pft->dwHighDateTime << 32));
 
-#ifndef TIME_T_TYPE_DOUBLE
+#   ifndef TIME_T_TYPE_DOUBLE
     /* underflow and overflow handling */
-#ifdef CHECK_UTIME_SIGNED_UNSIGNED
+#    ifdef CHECK_UTIME_SIGNED_UNSIGNED
     if ((time_t)0x80000000L < (time_t)0L)
     {
         if (NTtime < ((ULLNG64)UNIX_TIME_SMIN_LO +
@@ -716,7 +773,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
         }
     }
     else
-#endif /* CHECK_UTIME_SIGNED_UNSIGNED */
+#    endif /* CHECK_UTIME_SIGNED_UNSIGNED */
     {
         if (NTtime < ((ULLNG64)UNIX_TIME_ZERO_LO +
                       ((ULLNG64)UNIX_TIME_ZERO_HI << 32))) {
@@ -729,19 +786,19 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
             return FALSE;
         }
     }
-#endif /* !TIME_T_TYPE_DOUBLE */
+#   endif /* !TIME_T_TYPE_DOUBLE */
 
     NTtime -= ((ULLNG64)UNIX_TIME_ZERO_LO +
                ((ULLNG64)UNIX_TIME_ZERO_HI << 32));
     *ut = (time_t)(NTtime / (unsigned long)NT_QUANTA_PER_UNIX);
     return TRUE;
-#else /* !IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
+#  else /* !IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
     time_t days;
     SYSTEMTIME w32tm;
 
-#ifndef TIME_T_TYPE_DOUBLE
+#   ifndef TIME_T_TYPE_DOUBLE
     /* underflow and overflow handling */
-#ifdef CHECK_UTIME_SIGNED_UNSIGNED
+#    ifdef CHECK_UTIME_SIGNED_UNSIGNED
     if ((time_t)0x80000000L < (time_t)0L)
     {
         if ((pft->dwHighDateTime < UNIX_TIME_SMIN_HI) ||
@@ -757,7 +814,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
         }
     }
     else
-#endif /* CHECK_UTIME_SIGNED_UNSIGNED */
+#    endif /* CHECK_UTIME_SIGNED_UNSIGNED */
     {
         if ((pft->dwHighDateTime < UNIX_TIME_ZERO_HI) ||
             ((pft->dwHighDateTime == UNIX_TIME_ZERO_HI) &&
@@ -772,7 +829,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
             return FALSE;
         }
     }
-#endif /* !TIME_T_TYPE_DOUBLE */
+#   endif /* !TIME_T_TYPE_DOUBLE */
 
     FileTimeToSystemTime(pft, &w32tm);
 
@@ -787,13 +844,13 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
     *ut = (time_t)(86400L * days + 3600L * (time_t)w32tm.wHour +
                    (time_t)(60 * w32tm.wMinute + w32tm.wSecond));
     return TRUE;
-#endif /* ?IZ_USE_INT64 */
+#  endif /* ?IZ_USE_INT64 */
 } /* end function NtfsFileTime2utime() */
-#endif /* W32_STAT_BANDAID && !NO_W32TIMES_IZFIX */
+# endif /* W32_STAT_BANDAID && !NO_W32TIMES_IZFIX */
 
 
 
-#ifdef W32_STAT_BANDAID
+# ifdef W32_STAT_BANDAID
 /*********************************/
 /* Function VFatFileTime2utime() */
 /*********************************/
@@ -801,12 +858,12 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
 static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
 {
     FILETIME lft;
-#ifndef HAVE_MKTIME
+#  ifndef HAVE_MKTIME
     WORD wDOSDate, wDOSTime;
-#else
+#  else
     SYSTEMTIME w32tm;
     struct tm ltm;
-#endif
+#  endif
 
     if (!FileTimeToLocalFileTime(pft, &lft)) {
         /* if pft cannot be converted to local time, set ut to current time */
@@ -814,7 +871,7 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
         return FALSE;
     }
     FTTrace((stdout, "VFatFT2utime, feed for mktime()", 1, &lft));
-#ifndef HAVE_MKTIME
+#  ifndef HAVE_MKTIME
     /* This version of the FILETIME-to-UNIXTIME conversion function
      * uses DOS-DATE-TIME format as intermediate stage. For modification
      * and access times, this is no problem. But, the extra fine resolution
@@ -844,15 +901,15 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
      * a resolution of 2 seconds and are therefore even numbers.
      */
     return (((*ut)&1) == (time_t)0);
-#else /* HAVE_MKTIME */
+#  else /* HAVE_MKTIME */
     FileTimeToSystemTime(&lft, &w32tm);
-#ifndef TIME_T_TYPE_DOUBLE
+#   ifndef TIME_T_TYPE_DOUBLE
     /* underflow and overflow handling */
     /* TODO: The range checks are not accurate, the actual limits may
      *       be off by one daylight-saving-time shift (typically 1 hour),
      *       depending on the current state of "is_dst".
      */
-#ifdef CHECK_UTIME_SIGNED_UNSIGNED
+#    ifdef CHECK_UTIME_SIGNED_UNSIGNED
     if ((time_t)0x80000000L < (time_t)0L)
     {
         if ((pft->dwHighDateTime < UNIX_TIME_SMIN_HI) ||
@@ -868,7 +925,7 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
         }
     }
     else
-#endif /* CHECK_UTIME_SIGNED_UNSIGNED */
+#    endif /* CHECK_UTIME_SIGNED_UNSIGNED */
     {
         if ((pft->dwHighDateTime < UNIX_TIME_ZERO_HI) ||
             ((pft->dwHighDateTime == UNIX_TIME_ZERO_HI) &&
@@ -883,7 +940,7 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
             return FALSE;
         }
     }
-#endif /* !TIME_T_TYPE_DOUBLE */
+#   endif /* !TIME_T_TYPE_DOUBLE */
     ltm.tm_year = w32tm.wYear - 1900;
     ltm.tm_mon = w32tm.wMonth - 1;
     ltm.tm_mday = w32tm.wDay;
@@ -900,10 +957,10 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
      * (The only known exception is creation time on VFAT partitions.)
      */
     return (*ut != (time_t)-1L);
-#endif /* ?HAVE_MKTIME */
+#  endif /* ?HAVE_MKTIME */
 
 } /* end function VFatFileTime2utime() */
-#endif /* W32_STAT_BANDAID */
+# endif /* W32_STAT_BANDAID */
 
 
 
@@ -916,16 +973,28 @@ static int FStampIsLocTime(__GPRO__ const char *path)
     return (NTQueryVolInfo(__G__ path) ? G.lastVolLocTim : FALSE);
 }
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static int FStampIsLocTimeW(__GPRO__ const wchar_t *pathw)
+{
+    return (NTQueryVolInfoW(__G__ pathw) ? G.lastVolLocTim : FALSE);
+}
+# endif
 
 
-#ifndef NO_W32TIMES_IZFIX
+
+
+# ifndef NO_W32TIMES_IZFIX
 # define UTIME_2_IZFILETIME(ut, pft) \
    if (fs_uses_loctime) {utime2VFatFileTime(ut, pft, TRUE);} \
    else {utime2NtfsFileTime(ut, pft);}
-#else
+# else
 # define UTIME_2_IZFILETIME(ut, pft) \
    utime2VFatFileTime(ut, pft, fs_uses_loctime);
-#endif
+# endif
+
+
+
+
 
 
 
@@ -939,19 +1008,19 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
     FILETIME *pAccFT;
     FILETIME *pCreFT;
 {
-#ifdef USE_EF_UT_TIME
+# ifdef USE_EF_UT_TIME
     unsigned eb_izux_flg;
     iztimes z_utime;   /* struct for Unix-style actime & modtime, + creatime */
-#endif
+# endif
     int fs_uses_loctime = FStampIsLocTime(__G__ G.filename);
 
     /* Copy and/or convert time and date variables, if necessary;
      * return a flag indicating which time stamps are available. */
-#ifdef USE_EF_UT_TIME
+# ifdef USE_EF_UT_TIME
     if (G.extra_field &&
-#ifdef IZ_CHECK_TZ
+#  ifdef IZ_CHECK_TZ
         G.tz_is_valid &&
-#endif
+#  endif
         ((eb_izux_flg = ef_scan_for_izux(G.extra_field,
           G.lrec.extra_field_length, 0, G.lrec.last_mod_dos_datetime,
           &z_utime, NULL)) & EB_UT_FL_MTIME))
@@ -967,15 +1036,15 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
         }
         return (int)eb_izux_flg;
     }
-#endif /* USE_EF_UT_TIME */
-#ifndef NO_W32TIMES_IZFIX
+# endif /* USE_EF_UT_TIME */
+# ifndef NO_W32TIMES_IZFIX
     if (!fs_uses_loctime) {
         time_t ux_modtime;
 
         ux_modtime = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
         utime2NtfsFileTime(ux_modtime, pModFT);
     } else
-#endif /* NO_W32TIMES_IZFIX */
+# endif /* NO_W32TIMES_IZFIX */
     {
         FILETIME lft;
 
@@ -990,6 +1059,65 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
 } /* end function getNTfiletime() */
 
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+  static int getNTfiletimeW(__G__ pModFT, pAccFT, pCreFT)
+      __GDEF
+      FILETIME *pModFT;
+      FILETIME *pAccFT;
+      FILETIME *pCreFT;
+  {
+#  ifdef USE_EF_UT_TIME
+      unsigned eb_izux_flg;
+      iztimes z_utime;   /* struct for Unix-style actime & modtime, + creatime */
+#  endif
+      int fs_uses_loctime = FStampIsLocTimeW(__G__ G.unipath_widefilename);
+
+      /* Copy and/or convert time and date variables, if necessary;
+       * return a flag indicating which time stamps are available. */
+#  ifdef USE_EF_UT_TIME
+      if (G.extra_field &&
+#   ifdef IZ_CHECK_TZ
+          G.tz_is_valid &&
+#   endif
+          ((eb_izux_flg = ef_scan_for_izux(G.extra_field,
+            G.lrec.extra_field_length, 0, G.lrec.last_mod_dos_datetime,
+            &z_utime, NULL)) & EB_UT_FL_MTIME))
+      {
+          TTrace((stderr, "getNTfiletime:  Unix e.f. modif. time = %lu\n",
+            z_utime.mtime));
+          UTIME_2_IZFILETIME(z_utime.mtime, pModFT)
+          if (eb_izux_flg & EB_UT_FL_ATIME) {
+              UTIME_2_IZFILETIME(z_utime.atime, pAccFT)
+          }
+          if (eb_izux_flg & EB_UT_FL_CTIME) {
+              UTIME_2_IZFILETIME(z_utime.ctime, pCreFT)
+          }
+          return (int)eb_izux_flg;
+      }
+#  endif /* USE_EF_UT_TIME */
+#  ifndef NO_W32TIMES_IZFIX
+      if (!fs_uses_loctime) {
+          time_t ux_modtime;
+
+          ux_modtime = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+          utime2NtfsFileTime(ux_modtime, pModFT);
+      } else
+#  endif /* NO_W32TIMES_IZFIX */
+      {
+          FILETIME lft;
+
+          DosDateTimeToFileTime((WORD)(G.lrec.last_mod_dos_datetime >> 16),
+                                (WORD)(G.lrec.last_mod_dos_datetime & 0xFFFFL),
+                                &lft);
+          LocalFileTimeToFileTime(&lft, pModFT);
+      }
+      *pAccFT = *pModFT;
+      return (EB_UT_FL_MTIME | EB_UT_FL_ATIME);
+
+  } /* end function getNTfiletime() */
+# endif /* (UNICODE_SUPPORT && WIN32_WIDE) */
+
+
 
 
 /**************************/
@@ -998,18 +1126,18 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
 
 int SetFileSize(FILE *file, zusz_t filesize)
 {
-#ifdef __RSXNT__
+# ifdef __RSXNT__
     /* RSXNT environment lacks a translation function from C file pointer
        to Win32-API file handle. So, simply do nothing. */
     return 0;
-#else /* !__RSXNT__ */
+# else /* !__RSXNT__ */
     /* not yet verified, if that really creates an unfragmented file
       rommel@ars.de
      */
     HANDLE os_fh;
-#ifdef Z_UINT8_DEFINED
+#  ifdef Z_UINT8_DEFINED
     LARGE_INTEGER fsbuf;
-#endif
+#  endif
 
     /* Win9x supports FAT file system, only; presetting file size does
        not help to prevent fragmentation. */
@@ -1023,20 +1151,20 @@ int SetFileSize(FILE *file, zusz_t filesize)
      */
     os_fh = (HANDLE)_get_osfhandle(fileno(file));
     /* move file pointer behind the last byte of the expected file size */
-#ifdef Z_UINT8_DEFINED
+#  ifdef Z_UINT8_DEFINED
     fsbuf.QuadPart = filesize;
     if ((SetFilePointer(os_fh, fsbuf.LowPart, &fsbuf.HighPart, FILE_BEGIN)
          == 0xFFFFFFFF) && GetLastError() != NO_ERROR)
-#else
+#  else
     if (SetFilePointer(os_fh, (ulg)filesize, 0, FILE_BEGIN) == 0xFFFFFFFF)
-#endif
+#  endif
         return -1;
     /* extend/truncate file to the current position */
     if (SetEndOfFile(os_fh) == 0)
         return -1;
     /* move file position pointer back to the start of the file! */
     return (SetFilePointer(os_fh, 0, 0, FILE_BEGIN) == 0xFFFFFFFF) ? -1 : 0;
-#endif /* ?__RSXNT__ */
+# endif /* ?__RSXNT__ */
 } /* end function SetFileSize() */
 
 
@@ -1054,72 +1182,79 @@ void close_outfile(__G)
     FILETIME Creft;    /* NT file time type, `file creation' time */
     HANDLE hFile = INVALID_HANDLE_VALUE;        /* File handle defined in NT */
     int gotTime;
-#ifdef NTSD_EAS
+# ifdef NTSD_EAS
     uch *ebSDptr;
     unsigned ebSDlen;
-#endif
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
-    char *ansi_name = (char *)alloca(strlen(G.filename) + 1);
+# endif
 
-    INTERN_TO_ISO(G.filename, ansi_name);
-#   define Ansi_Fname  ansi_name
-#else
-#   define Ansi_Fname  G.filename
-#endif
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    if (!G.has_win32_wide) {
+# endif
+# ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+      char *ansi_name = (char *)alloca(strlen(G.filename) + 1);
 
-#ifndef __RSXNT__
-    if (IsWinNT()) {
+      INTERN_TO_ISO(G.filename, ansi_name);
+#     define Ansi_Fname  ansi_name
+# else
+#     define Ansi_Fname  G.filename
+# endif
+
+# ifndef __RSXNT__
+#  if !(defined(UNICODE_SUPPORT) && defined(WIN32_WIDE))
+      if (IsWinNT()) {
         /* Truncate the file to the current position.
          * This is needed to remove excess allocation in case the
          * extraction has failed or stopped prematurely. */
         SetEndOfFile((HANDLE)_get_osfhandle(fileno(G.outfile)));
-    }
-#endif
+      }
+#  endif /* !(defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+# endif
 
-    /* Close the file and then re-open it using the Win32
-     * CreateFile call, so that the file can be created
-     * with GENERIC_WRITE access, otherwise the SetFileTime
-     * call will fail. */
-    fclose(G.outfile);
+      /* Close the file and then re-open it using the Win32
+       * CreateFile call, so that the file can be created
+       * with GENERIC_WRITE access, otherwise the SetFileTime
+       * call will fail. */
+      fclose(G.outfile);
 
-    /* don't set the time stamp and attributes on standard output */
-    if (uO.cflag)
-        return;
+      /* don't set the time stamp and attributes on standard output */
+      if (uO.cflag)
+          return;
 
-    /* skip restoring time stamps on user's request */
-    if (uO.D_flag <= 1) {
-        gotTime = getNTfiletime(__G__ &Modft, &Accft, &Creft);
+      gotTime = getNTfiletime(__G__ &Modft, &Accft, &Creft);
 
-        /* open a handle to the file before processing extra fields;
-           we do this in case new security on file prevents us from updating
-           time stamps */
-        hFile = CreateFileA(Ansi_Fname, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
-             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    } else {
-        gotTime = 0;
-    }
+      /* open a handle to the file before processing extra fields;
+         we do this in case new security on file prevents us from updating
+         time stamps */
+      hFile = CreateFileA(Ansi_Fname, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    /* sfield@microsoft.com: set attributes before time in case we decide to
-       support other filetime members later.  This also allows us to apply
-       attributes before the security is changed, which may prevent this
-       from succeeding otherwise.  Also, since most files don't have
-       any interesting attributes, only change them if something other than
-       FILE_ATTRIBUTE_ARCHIVE appears in the attributes.  This works well
-       as an optimization because FILE_ATTRIBUTE_ARCHIVE gets applied to the
-       file anyway, when it's created new. */
-    if ((G.pInfo->file_attr & 0x7F) & ~FILE_ATTRIBUTE_ARCHIVE) {
-        if (!SetFileAttributesA(Ansi_Fname, G.pInfo->file_attr & 0x7F))
-            Info(slide, 1, ((char *)slide,
-              "\nwarning (%d): could not set file attributes\n",
-              (int)GetLastError()));
-    }
+      /* sfield@microsoft.com: set attributes before time in case we decide to
+         support other filetime members later.  This also allows us to apply
+         attributes before the security is changed, which may prevent this
+         from succeeding otherwise.  Also, since most files don't have
+         any interesting attributes, only change them if something other than
+         FILE_ATTRIBUTE_ARCHIVE appears in the attributes.  This works well
+         as an optimization because FILE_ATTRIBUTE_ARCHIVE gets applied to the
+         file anyway, when it's created new. */
+      if((G.pInfo->file_attr & 0x7F) & ~FILE_ATTRIBUTE_ARCHIVE) {
+          if (!SetFileAttributesA(Ansi_Fname, G.pInfo->file_attr & 0x7F))
+              Info(slide, 1, ((char *)slide,
+                "\nwarning (%d): could not set file attributes\n",
+                (int)GetLastError()));
+      }
 
-#ifdef NTSD_EAS
-    /* set NTFS SD extra fields */
-    if (G.extra_field &&    /* zipfile extra field may have extended attribs */
-        FindSDExtraField(__G__ G.extra_field, G.lrec.extra_field_length,
-                         &ebSDptr, &ebSDlen))
-    {
+
+# ifdef NTSD_EAS
+      /* set NTFS SD extra fields */
+      if (G.extra_field &&    /* zipfile extra field may have extended attribs */
+          FindSDExtraField(__G__ G.extra_field, G.lrec.extra_field_length,
+                           &ebSDptr, &ebSDlen))
+      {
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        /* no win32_wide implies "no NT SD support", so FindSDExtraField
+         * will never return "success".
+         */
+#  else /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
         int err = SetSD(__G__ Ansi_Fname, G.pInfo->file_attr,
                         ebSDptr, ebSDlen);
 
@@ -1130,11 +1265,12 @@ void close_outfile(__G)
             Info(slide, 1, ((char *)slide, LoadFarString(TruncNTSD),
               ebSDlen-(EB_NTSD_L_LEN+EB_CMPRHEADLEN), uO.qflag? "\n":""));
         }
-    }
-#endif /* NTSD_EAS */
+#  endif /* ? (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+      }
+# endif /* NTSD_EAS */
 
-    /* skip restoring time stamps on user's request */
-    if (uO.D_flag <= 1) {
+      /* skip restoring time stamps on user's request */
+      if (uO.D_flag <= 1) {
         if ( hFile == INVALID_HANDLE_VALUE )
             Info(slide, 1, ((char *)slide,
               "\nCreateFile() error %d when trying set file time\n",
@@ -1157,22 +1293,113 @@ void close_outfile(__G)
 
 #undef Ansi_Fname
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    } else {
+      /* wide version */
+
+#  ifndef __RSXNT__
+      if (IsWinNT()) {
+          /* Truncate the file to the current position.
+           * This is needed to remove excess allocation in case the
+           * extraction has failed or stopped prematurely. */
+          SetEndOfFile((HANDLE)_get_osfhandle(fileno(G.outfile)));
+      }
+#  endif
+
+      /* Close the file and then re-open it using the Win32
+       * CreateFile call, so that the file can be created
+       * with GENERIC_WRITE access, otherwise the SetFileTime
+       * call will fail. */
+      fclose(G.outfile);
+
+      /* don't set the time stamp and attributes on standard output */
+      if (uO.cflag)
+          return;
+
+      gotTime = getNTfiletimeW(__G__ &Modft, &Accft, &Creft);
+
+      /* open a handle to the file before processing extra fields;
+         we do this in case new security on file prevents us from updating
+         time stamps */
+      hFile = CreateFileW(G.unipath_widefilename,
+           GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+      /* sfield@microsoft.com: set attributes before time in case we decide to
+         support other filetime members later.  This also allows us to apply
+         attributes before the security is changed, which may prevent this
+         from succeeding otherwise.  Also, since most files don't have
+         any interesting attributes, only change them if something other than
+         FILE_ATTRIBUTE_ARCHIVE appears in the attributes.  This works well
+         as an optimization because FILE_ATTRIBUTE_ARCHIVE gets applied to the
+         file anyway, when it's created new. */
+      if((G.pInfo->file_attr & 0x7F) & ~FILE_ATTRIBUTE_ARCHIVE) {
+          if (!SetFileAttributesW(G.unipath_widefilename, G.pInfo->file_attr & 0x7F))
+              Info(slide, 1, ((char *)slide,
+                "\nwarning (%d): could not set file attributes\n",
+                (int)GetLastError()));
+      }
+
+#  ifdef NTSD_EAS
+      /* set NTFS SD extra fields */
+      if (G.extra_field &&    /* zipfile extra field may have extended attribs */
+          FindSDExtraField(__G__ G.extra_field, G.lrec.extra_field_length,
+                           &ebSDptr, &ebSDlen))
+      {
+          int err = SetSD(__G__ G.unipath_widefilename, G.pInfo->file_attr,
+                          ebSDptr, ebSDlen);
+
+          if (err == IZ_EF_TRUNC) {
+              if (uO.qflag)
+                  Info(slide, 1, ((char *)slide, "%-22s ",
+                    FnFilter1(G.filename)));
+              Info(slide, 1, ((char *)slide, LoadFarString(TruncNTSD),
+                ebSDlen-(EB_NTSD_L_LEN+EB_CMPRHEADLEN), uO.qflag? "\n":""));
+          }
+      }
+#  endif /* NTSD_EAS */
+
+      /* skip restoring time stamps on user's request */
+      if (uO.D_flag <= 1) {
+        if ( hFile == INVALID_HANDLE_VALUE )
+            Info(slide, 1, ((char *)slide,
+              "\nCreateFile() error %d when trying set file time\n",
+              (int)GetLastError()));
+        else {
+            if (gotTime) {
+                FILETIME *pModft = (gotTime & EB_UT_FL_MTIME) ? &Modft : NULL;
+                FILETIME *pAccft = (gotTime & EB_UT_FL_ATIME) ? &Accft : NULL;
+                FILETIME *pCreft = (gotTime & EB_UT_FL_CTIME) ? &Creft : NULL;
+
+                if (!SetFileTime(hFile, pCreft, pAccft, pModft))
+                    Info(slide, 0, ((char *)slide,
+                      "\nSetFileTime failed: %d\n", (int)GetLastError()));
+            }
+            CloseHandle(hFile);
+        }
+      }
+
+      return;
+
+    }
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 } /* end function close_outfile() */
 
 
 
 
-#ifdef SET_DIR_ATTRIB
+# ifdef SET_DIR_ATTRIB
 
 int defer_dir_attribs(__G__ pd)
     __GDEF
     direntry **pd;
 {
     NTdirattr *d_entry;
-#ifdef NTSD_EAS
+#  ifdef NTSD_EAS
     uch *ebSDptr;
     unsigned ebSDlen;
-#endif
+#  endif
 
     /* Win9x does not support setting directory time stamps. */
     if (!IsWinNT()) {
@@ -1180,7 +1407,7 @@ int defer_dir_attribs(__G__ pd)
         return PK_OK;
     }
 
-#ifdef NTSD_EAS
+#  ifdef NTSD_EAS
     /* set extended attributes from extra fields */
     if (G.extra_field &&  /* zipfile e.f. may have extended attribs */
         FindSDExtraField(__G__ G.extra_field, G.lrec.extra_field_length,
@@ -1192,25 +1419,25 @@ int defer_dir_attribs(__G__ pd)
         /* no NTSD e.f. block -> no space needed to allocate */
         ebSDlen = 0;
     }
-#endif /* NTSD_EAS */
+#  endif /* NTSD_EAS */
 
     d_entry = (NTdirattr *)malloc(sizeof(NTdirattr)
-#ifdef NTSD_EAS
+#  ifdef NTSD_EAS
                                   + ebSDlen
-#endif
+#  endif
                                   + strlen(G.filename));
     *pd = (direntry *)d_entry;
     if (d_entry == (NTdirattr *)NULL) {
         return PK_MEM;
     }
-#ifdef NTSD_EAS
+#  ifdef NTSD_EAS
     if (ebSDlen > 0)
         memcpy(d_entry->buf, ebSDptr, ebSDlen);
     d_entry->SDlen = ebSDlen;
     d_entry->fn = d_entry->buf + ebSDlen;
-#else
+#  else
     d_entry->fn = d_entry->buf;
-#endif
+#  endif
 
     strcpy(d_entry->fn, G.filename);
 
@@ -1224,28 +1451,99 @@ int defer_dir_attribs(__G__ pd)
 } /* end function defer_dir_attribs() */
 
 
+
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+int defer_dir_attribsw(__G__ pdw)
+    __GDEF
+    direntryw **pdw;
+{
+    NTdirattrw *d_entryw;
+#   ifdef NTSD_EAS
+    uch *ebSDptr;
+    unsigned ebSDlen;
+#   endif
+
+    /* Win9x does not support setting directory time stamps. */
+    if (!IsWinNT()) {
+        *pdw = (direntryw *)NULL;
+        return PK_OK;
+    }
+
+#   ifdef NTSD_EAS
+    /* set extended attributes from extra fields */
+    if (G.extra_field &&  /* zipfile e.f. may have extended attribs */
+        FindSDExtraField(__G__ G.extra_field, G.lrec.extra_field_length,
+                         &ebSDptr, &ebSDlen)) {
+        /* ebSDlen contains the payload size of the e.f. block, but
+           we store it including the e.b. header. */
+        ebSDlen += EB_HEADSIZE;
+    } else {
+        /* no NTSD e.f. block -> no space needed to allocate */
+        ebSDlen = 0;
+    }
+#   endif /* NTSD_EAS */
+
+    d_entryw = (NTdirattrw *)malloc(sizeof(NTdirattrw)
+#   ifdef NTSD_EAS
+                                  + ebSDlen
+#   endif
+                                  + (wcslen(G.unipath_widefilename)
+                                     * sizeof(wchar_t)));
+    *pdw = (direntryw *)d_entryw;
+    if (d_entryw == (NTdirattrw *)NULL) {
+        return PK_MEM;
+    }
+#   ifdef NTSD_EAS
+    if (ebSDlen > 0)
+        memcpy(d_entryw->buf, ebSDptr, ebSDlen);
+    d_entryw->SDlen = ebSDlen;
+    d_entryw->fnw = d_entryw->buf + ebSDlen;
+#   else
+    d_entryw->fnw = d_entryw->buf;
+#   endif
+
+    wcscpy(d_entryw->fnw, G.unipath_widefilename);
+
+    d_entryw->perms = G.pInfo->file_attr;
+
+    d_entryw->gotTime = (uO.D_flag <= 0
+                         ? getNTfiletimeW(__G__ &(d_entryw->Modft),
+                                          &(d_entryw->Accft),
+                                          &(d_entryw->Creft))
+                         : 0);
+    return PK_OK;
+} /* end function defer_dir_attribsw() */
+#  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+
+
+
 int set_direc_attribs(__G__ d)
     __GDEF
     direntry *d;
 {
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    /* Win9x does not support setting directory time stamps. */
+    return PK_OK;
+#  else /* ! (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
     int errval;
     HANDLE hFile = INVALID_HANDLE_VALUE;        /* File handle defined in NT */
-#ifdef __RSXNT__
+#   ifdef __RSXNT__
     char *ansi_name;
-#endif
+#   endif
 
     /* Win9x does not support setting directory time stamps. */
     if (!IsWinNT())
         return PK_OK;
 
     errval = PK_OK;
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+#   ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
     ansi_name = (char *)alloca(strlen(d->fn) + 1);
     INTERN_TO_ISO(d->fn, ansi_name);
 #   define Ansi_Dirname  ansi_name
-#else
+#   else
 #   define Ansi_Dirname  d->fn
-#endif
+#   endif
 
     /* Skip restoring directory time stamps on user' request. */
     if (uO.D_flag <= 0) {
@@ -1263,7 +1561,7 @@ int set_direc_attribs(__G__ d)
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
 
-#ifdef NTSD_EAS
+#   ifdef NTSD_EAS
     if (NtAtt(d)->SDlen > 0) {
         int err;
 
@@ -1287,7 +1585,7 @@ int set_direc_attribs(__G__ d)
         if (errval < err)
             errval = err;
     }
-#endif /* NTSD_EAS */
+#   endif /* NTSD_EAS */
 
     /* Skip restoring directory time stamps on user' request. */
     if (uO.D_flag <= 0) {
@@ -1319,14 +1617,119 @@ int set_direc_attribs(__G__ d)
     }
 
     return errval;
+
+#  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 } /* end function set_direc_attribs() */
 
-#endif /* SET_DIR_ATTRIB */
 
 
 
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+int set_direc_attribsw(__G__ dw)
+    __GDEF
+    direntryw *dw;
+{
+    int errval;
+    HANDLE hFile = INVALID_HANDLE_VALUE;        /* File handle defined in NT */
 
-#ifdef TIMESTAMP
+    /* Win9x does not support setting directory time stamps. */
+    if (!IsWinNT())
+        return PK_OK;
+
+    errval = PK_OK;
+
+    /* Skip restoring directory time stamps on user' request. */
+    if (uO.D_flag <= 0) {
+        /* Open a handle to the directory before processing extra fields;
+           we do this in case new security on file prevents us from updating
+           time stamps.
+           Although the WIN32 documentation recommends to use GENERIC_WRITE
+           access flag to create the handle for SetFileTime(), this is too
+           demanding for directories with the "read-only" attribute bit set.
+           So we use the more specific flag FILE_WRITE_ATTRIBUTES here to
+           request the minimum required access rights. (This problem is a
+           Windows bug that has been silently fixed in Windows XP SP2.) */
+        hFile = CreateFileW(dw->fnw, FILE_WRITE_ATTRIBUTES,
+                            FILE_SHARE_READ|FILE_SHARE_WRITE, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    }
+
+#   ifdef NTSD_EAS
+    if (NtAtt(dw)->SDlen > 0) {
+        int err;
+
+        if (QCOND2) {
+            char *fn = wchar_to_local_string(dw->fnw, G.unicode_escape_all);
+            Info(slide, 1, ((char *)slide, " set attrib: %-22s  ",
+              FnFilter1(fn)));
+            free(fn);
+        }
+
+        /* set NTFS SD extra fields */
+        err = SetSD(__G__ dw->fnw, NtAtt(dw)->perms,
+                        NtAtt(dw)->buf, NtAtt(dw)->SDlen - EB_HEADSIZE);
+        if (err == IZ_EF_TRUNC) {
+            if (!QCOND2) {
+                char *fn = wchar_to_local_string(dw->fnw, G.unicode_escape_all);
+                Info(slide, 1, ((char *)slide, "%-22s  ",
+                  FnFilter1(fn)));
+                free(fn);
+            }
+            Info(slide, 1, ((char *)slide, LoadFarString(TruncNTSD),
+              NtAtt(dw)->SDlen-(EB_NTSD_L_LEN+EB_CMPRHEADLEN), "\n"));
+        } else if (QCOND2) {
+            Info(slide, 0, ((char *)slide, "\n"));
+        }
+        if (errval < err)
+            errval = err;
+    }
+#   endif /* NTSD_EAS */
+
+    /* Skip restoring directory time stamps on user' request. */
+    if (uO.D_flag <= 0) {
+        if (hFile == INVALID_HANDLE_VALUE) {
+            char *fn = wchar_to_local_string(dw->fnw, G.unicode_escape_all);
+            Info(slide, 1, ((char *)slide,
+              "warning: CreateFile() error %d (set file times for %s)\n",
+              (int)GetLastError(), FnFilter1(fn)));
+            free(fn);
+            if (!errval)
+                errval = PK_WARN;
+        } else {
+            if (NtAtt(dw)->gotTime) {
+                FILETIME *pModft = (NtAtt(dw)->gotTime & EB_UT_FL_MTIME)
+                                  ? &(NtAtt(dw)->Modft) : NULL;
+                FILETIME *pAccft = (NtAtt(dw)->gotTime & EB_UT_FL_ATIME)
+                                  ? &(NtAtt(dw)->Accft) : NULL;
+                FILETIME *pCreft = (NtAtt(dw)->gotTime & EB_UT_FL_CTIME)
+                                  ? &(NtAtt(dw)->Creft) : NULL;
+
+                if (!SetFileTime(hFile, pCreft, pAccft, pModft)) {
+                    char *fn = wchar_to_local_string(dw->fnw,
+                                                     G.unicode_escape_all);
+                    Info(slide, 0, ((char *)slide,
+                      "warning:  SetFileTime() for %s error %d\n",
+                      FnFilter1(fn), (int)GetLastError()));
+                    free(fn);
+                    if (!errval)
+                        errval = PK_WARN;
+                }
+            }
+            CloseHandle(hFile);
+        }
+    }
+
+    return errval;
+} /* end function set_direc_attribsw() */
+
+#  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+# endif /* SET_DIR_ATTRIB */
+
+
+
+# ifdef TIMESTAMP
 
 /*************************/
 /* Function stamp_file() */
@@ -1338,14 +1741,14 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
     HANDLE hFile;      /* File handle defined in NT    */
     int errstat = 0;   /* return status: 0 == "OK", -1 == "Failure" */
     int fs_uses_loctime = FStampIsLocTime(__G__ fname);
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+# ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
     char *ansi_name = (char *)alloca(strlen(fname) + 1);
 
     INTERN_TO_ISO(fname, ansi_name);
 #   define Ansi_Fname  ansi_name
-#else
+#  else
 #   define Ansi_Fname  fname
-#endif
+#  endif
 
     /* open a handle to the file to prepare setting the mod-time stamp */
     hFile = CreateFileA(Ansi_Fname, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
@@ -1367,7 +1770,7 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
 #undef Ansi_Fname
 } /* end function stamp_file() */
 
-#endif /* TIMESTAMP */
+# endif /* TIMESTAMP */
 
 
 
@@ -1411,12 +1814,12 @@ static int NTQueryVolInfo(__GPRO__ const char *name)
     char *tmp0;
     char tmp1[MAX_PATH], tmp2[MAX_PATH];
     DWORD volSerNo, maxCompLen, fileSysFlags;
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+# ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
     char *ansi_name = (char *)alloca(strlen(name) + 1);
 
     INTERN_TO_ISO(name, ansi_name);
     name = ansi_name;
-#endif
+# endif
 
     if ((!strncmp(name, "//", 2) || !strncmp(name, "\\\\", 2)) &&
         (name[2] != '\0' && name[2] != '/' && name[2] != '\\')) {
@@ -1466,6 +1869,65 @@ static int NTQueryVolInfo(__GPRO__ const char *name)
 } /* end function NTQueryVolInfo() */
 
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static int NTQueryVolInfoW(__GPRO__ const wchar_t *namew)
+{
+ /* static char lastRootPath[4] = ""; */
+ /* static int lastVolOldFAT; */
+ /* static int lastVolLocTim; */
+    wchar_t *tmp0w;
+    wchar_t tmp1w[MAX_PATH], tmp2w[MAX_PATH];
+    DWORD volSerNo, maxCompLen, fileSysFlags;
+
+    if ((!wcsncmp(namew, L"//", 2) || !wcsncmp(namew, L"\\\\", 2)) &&
+        (namew[2] != '\0' && namew[2] != '/' && namew[2] != '\\')) {
+        /* GetFullPathname() and GetVolumeInformation() do not work
+         * on UNC names. For now, we return "error".
+         * **FIXME**: check if UNC name is mapped to a drive letter
+         *            and use mapped drive for volume info query.
+         */
+        return FALSE;
+    }
+    if (iswalpha(namew[0]) && (namew[1] == ':'))
+        tmp0w = (wchar_t *)namew;
+    else
+    {
+        if (!GetFullPathNameW(namew, MAX_PATH, tmp1w, &tmp0w))
+            return FALSE;
+        tmp0w = &tmp1w[0];
+    }
+    if (wcsncmp(G.lastRootPathw, tmp0w, 2) != 0) {
+        /* For speed, we skip repeated queries for the same device */
+        wcsncpy(G.lastRootPathw, tmp0w, 2); /* Build the root path name, */
+        G.lastRootPathw[2] = '/';           /* e.g. "A:/"                */
+        G.lastRootPathw[3] = '\0';
+
+        if (!GetVolumeInformationW(G.lastRootPathw,
+              tmp1w, (DWORD)MAX_PATH,
+              &volSerNo, &maxCompLen, &fileSysFlags,
+              tmp2w, (DWORD)MAX_PATH)) {
+            G.lastRootPathw[0] = '\0';
+            return FALSE;
+        }
+
+        /*  LFNs are available if the component length is > 12 */
+        G.lastVolOldFAT = (maxCompLen <= 12);
+/*      G.lastVolOldFAT = !strncmp(strupr(tmp2), "FAT", 3);   old version */
+
+        /* Volumes in (V)FAT and (OS/2) HPFS format store file timestamps in
+         * local time!
+         */
+        G.lastVolLocTim = !wcsncmp(_wcsupr(tmp2w), L"VFAT", 4) ||
+                          !wcsncmp(tmp2w, L"HPFS", 4) ||
+                          !wcsncmp(tmp2w, L"FAT", 3);
+    }
+
+    return TRUE;
+
+} /* end function NTQueryVolInfoW() */
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+
 
 
 /*****************************/
@@ -1477,10 +1939,17 @@ static int IsVolumeOldFAT(__GPRO__ const char *name)
     return (NTQueryVolInfo(__G__ name) ? G.lastVolOldFAT : FALSE);
 }
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+static int IsVolumeOldFATw(__GPRO__ const wchar_t *namew)
+{
+    return (NTQueryVolInfoW(__G__ namew) ? G.lastVolOldFAT : FALSE);
+}
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
 
 
 
-#ifndef SFX
+
+# ifndef SFX
 
 /************************/
 /*  Function do_wild()  */   /* identical to OS/2 version */
@@ -1616,7 +2085,7 @@ char *do_wild(__G__ wildspec)
 
 } /* end function do_wild() */
 
-#endif /* !SFX */
+# endif /* !SFX */
 
 
 
@@ -1663,10 +2132,10 @@ int mapname(__G__ renamed)
     char pathcomp[FILNAMSIZ];   /* path-component buffer */
     char *pp, *cp=NULL;         /* character pointers */
     char *lastsemi = NULL;      /* pointer to last semi-colon in pathcomp */
-#ifdef ACORN_FTYPE_NFS
+# ifdef ACORN_FTYPE_NFS
     char *lastcomma=(char *)NULL;  /* pointer to last comma in pathcomp */
     RO_extra_block *ef_spark;      /* pointer Acorn FTYPE ef block */
-#endif
+# endif
     int killed_ddot = FALSE;    /* is set when skipping "../" pathcomp */
     int error;
     register unsigned workch;   /* hold the character being tested */
@@ -1764,12 +2233,12 @@ int mapname(__G__ renamed)
                 *pp++ = ';';      /*  but keep semicolon for now */
                 break;
 
-#ifdef ACORN_FTYPE_NFS
+# ifdef ACORN_FTYPE_NFS
             case ',':             /* NFS filetype extension */
                 lastcomma = pp;
                 *pp++ = ',';      /* keep for now; may need to remove */
                 break;            /*  later, if requested */
-#endif
+# endif
 
             case ' ':             /* keep spaces unless specifically */
                 /* NT cannot create filenames with spaces on FAT volumes */
@@ -1782,14 +2251,14 @@ int mapname(__G__ renamed)
             default:
                 /* allow European characters in filenames: */
                 if (isprint(workch) || workch >= 127)
-#ifdef _MBCS
+# ifdef _MBCS
                 {
                     memcpy(pp, cp, CLEN(cp));
                     INCSTR(pp);
                 }
-#else
+# else
                     *pp++ = (char)workch;
-#endif
+# endif
         } /* end switch */
 
     } /* end while loop */
@@ -1810,14 +2279,14 @@ int mapname(__G__ renamed)
   ---------------------------------------------------------------------------*/
 
     if (lastchar(G.filename, G.fnlen) == '/') {
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+# ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
         char *ansi_name = (char *)alloca(strlen(G.filename) + 1);
 
         INTERN_TO_ISO(G.filename, ansi_name);
 #       define Ansi_Fname  ansi_name
-#else
+# else
 #       define Ansi_Fname  G.filename
-#endif
+# endif
         checkdir(__G__ G.filename, GETPATH);
         if (G.created_dir) {
             if (QCOND2) {
@@ -1868,7 +2337,7 @@ int mapname(__G__ renamed)
         }
     }
 
-#ifdef ACORN_FTYPE_NFS
+# ifdef ACORN_FTYPE_NFS
     /* translate Acorn filetype information if asked to do so */
     if (uO.acorn_nfs_ext &&
         (ef_spark = (RO_extra_block *)
@@ -1886,7 +2355,7 @@ int mapname(__G__ renamed)
         if ((ft & 1<<31)==0) ft=0x000FFD00;
         sprintf(pathcomp+strlen(pathcomp), ",%03x", (int)(ft>>8) & 0xFFF);
     }
-#endif /* ACORN_FTYPE_NFS */
+# endif /* ACORN_FTYPE_NFS */
 
     maskDOSdevice(__G__ pathcomp);
 
@@ -1901,13 +2370,13 @@ int mapname(__G__ renamed)
 
     if (G.pInfo->vollabel) {    /* set the volume label now */
         char drive[4];
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+# ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
         char *ansi_name = (char *)alloca(strlen(G.filename) + 1);
         INTERN_TO_ISO(G.filename, ansi_name);
 #       define Ansi_Fname  ansi_name
-#else
+# else
 #       define Ansi_Fname  G.filename
-#endif
+# endif
 
         /* Build a drive string, e.g. "b:" */
         drive[0] = (char)('a' + G.nLabelDrive - 1);
@@ -1932,6 +2401,246 @@ int mapname(__G__ renamed)
 } /* end function mapname() */
 
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+
+int mapnamew(__G__ renamed)
+    __GDEF
+    int renamed;
+/*
+ * returns:
+ *  MPN_OK          - no problem detected
+ *  MPN_INF_TRUNC   - caution (truncated filename)
+ *  MPN_INF_SKIP    - info "skip entry" (dir doesn't exist)
+ *  MPN_ERR_SKIP    - error -> skip entry
+ *  MPN_ERR_TOOLONG - error -> path is too long
+ *  MPN_NOMEM       - error (memory allocation failed) -> skip entry
+ *  [also MPN_VOL_LABEL, MPN_CREATED_DIR]
+ */
+{
+    wchar_t pathcompw[FILNAMSIZ];   /* path-component buffer */
+    wchar_t *ppw, *cpw=NULL;         /* character pointers */
+    wchar_t *lastsemiw = NULL;      /* pointer to last semi-colon in pathcomp */
+    int killed_ddot = FALSE;    /* is set when skipping "../" pathcomp */
+    int error;
+    register wchar_t workchw;   /* hold the character being tested */
+
+
+/*---------------------------------------------------------------------------
+    Initialize various pointers and counters and stuff.
+  ---------------------------------------------------------------------------*/
+
+    /* can create path as long as not just freshening, or if user told us */
+    G.create_dirs = (!uO.fflag || renamed);
+
+    G.created_dir = FALSE;      /* not yet */
+    G.renamed_fullpath = FALSE;
+    G.fnlen = wcslen(G.unipath_widefilename);
+
+    if (renamed) {
+        cpw = G.unipath_widefilename;    /* point to beginning of renamed name... */
+        if (*cpw) do {
+            if (*cpw == '\\')    /* convert backslashes to forward */
+                *cpw = '/';
+        } while (*(++cpw));
+        cpw = G.unipath_widefilename;
+        /* use temporary rootpath if user gave full pathname */
+        if (G.unipath_widefilename[0] == '/') {
+            G.renamed_fullpath = TRUE;
+            pathcompw[0] = '/';  /* copy the '/' and terminate */
+            pathcompw[1] = '\0';
+            ++cpw;
+        } else if (iswalpha(G.unipath_widefilename[0]) && G.unipath_widefilename[1] == ':') {
+            G.renamed_fullpath = TRUE;
+            ppw = pathcompw;
+            *ppw++ = *cpw++;      /* copy the "d:" (+ '/', possibly) */
+            *ppw++ = *cpw++;
+            if (*cpw == '/')
+                *ppw++ = *cpw++;  /* otherwise add "./"? */
+            *ppw = '\0';
+        }
+    }
+    
+    /* pathcomp is ignored unless renamed_fullpath is TRUE: */
+    if ((error = checkdirw(__G__ pathcompw, INIT)) != 0)    /* init path buffer */
+        return error;           /* ...unless no mem or vol label on hard disk */
+
+    *pathcompw = '\0';           /* initialize translation buffer */
+    ppw = pathcompw;              /* point to translation buffer */
+    if (!renamed) {             /* cp already set if renamed */
+        if (uO.jflag)           /* junking directories */
+            cpw = wcschr(G.unipath_widefilename, '/');
+        if (cpw == NULL)         /* no '/' or not junking dirs */
+            cpw = G.unipath_widefilename;    /* point to internal zipfile-member pathname */
+        else
+            ++cpw;               /* point to start of last component of path */
+    }
+
+/*---------------------------------------------------------------------------
+    Begin main loop through characters in filename.
+  ---------------------------------------------------------------------------*/
+
+    for (; (workchw = *cpw) != 0; cpw++) {
+
+        switch (workchw) {
+            case '/':             /* can assume -j flag not given */
+                *ppw = '\0';
+                maskDOSdevicew(__G__ pathcompw);
+                if (wcscmp(pathcompw, L".") == 0) {
+                    /* don't botherw appending "./" to the path */
+                    *pathcompw = '\0';
+                } else if (!uO.ddotflag && wcscmp(pathcompw, L"..") == 0) {
+                    /* "../" dir traversal detected, skip over it */
+                    *pathcompw = '\0';
+                    killed_ddot = TRUE;     /* set "show message" flag */
+                }
+                /* when path component is not empty, append it now */
+                if (*pathcompw != '\0' &&
+                    ((error = checkdirw(__G__ pathcompw, APPEND_DIR))
+                     & MPN_MASK) > MPN_INF_TRUNC)
+                    return error;
+                ppw = pathcompw;    /* reset conversion buffer for next piece */
+                lastsemiw = (wchar_t *)NULL; /* leave direct. semi-colons alone */
+                break;
+
+            case ':':             /* drive spec not stored, so no colon allowed */
+            case '\\':            /* '\\' may come as normal filename char (not */
+            case '<':             /*  dir sep char!) from unix-like file system */
+            case '>':             /* no redirection symbols allowed either */
+            case '|':             /* no pipe signs allowed */
+            case '"':             /* no double quotes allowed */
+            case '?':             /* no wildcards allowed */
+            case '*':
+                *ppw++ = '_';      /* these rules apply equally to FAT and NTFS */
+                break;
+            case ';':             /* start of VMS version? */
+                lastsemiw = ppw;    /* remove VMS version later... */
+                *ppw++ = ';';      /*  but keep semicolon for now */
+                break;
+
+
+            case ' ':             /* keep spaces unless specifically */
+                /* NT cannot create filenames with spaces on FAT volumes */
+                if (uO.sflag || IsVolumeOldFATw(__G__ G.unipath_widefilename))
+                    *ppw++ = '_';
+                else
+                    *ppw++ = ' ';
+                break;
+
+            default:
+                /* allow European characters in filenames: */
+                if (iswprint(workchw) || workchw >= 127)
+                    *ppw++ = workchw;
+        } /* end switch */
+
+    } /* end while loop */
+
+    /* Show warning when stripping insecure "parent dir" path components */
+    /* For now use standard path for output messages */
+    if (killed_ddot && QCOND2) {
+        Info(slide, 0, ((char *)slide,
+          "warning:  skipped \"../\" path component(s) in %s\n",
+          FnFilter1(G.filename)));
+        if (!(error & ~MPN_MASK))
+            error = (error & MPN_MASK) | PK_WARN;
+    }
+
+/*---------------------------------------------------------------------------
+    Report if directory was created (and no file to create:  filename ended
+    in '/'), check name to be sure it exists, and combine path and name be-
+    fore exiting.
+  ---------------------------------------------------------------------------*/
+
+    if (G.unipath_widefilename[wcslen(G.unipath_widefilename) - 1] == '/') {
+        checkdirw(__G__ G.unipath_widefilename, GETPATH);
+        if (G.created_dir) {
+            if (QCOND2) {
+                Info(slide, 0, ((char *)slide, "   creating: %-22s\n",
+                  FnFilter1(G.filename)));
+            }
+
+            /* set file attributes:
+               The default for newly created directories is "DIR attribute
+               flags set", so there is no need to change attributes unless
+               one of the DOS style attribute flags is set. The readonly
+               attribute need not be masked, since it does not prevent
+               modifications in the new directory. */
+            if(G.pInfo->file_attr & (0x7F & ~FILE_ATTRIBUTE_DIRECTORY)) {
+                if (!SetFileAttributesW(G.unipath_widefilename, G.pInfo->file_attr & 0x7F))
+                    Info(slide, 1, ((char *)slide,
+                      "\nwarning (%d): could not set file attributes for %s\n",
+                      (int)GetLastError(), FnFilter1(G.filename)));
+            }
+
+            /* set dir time (note trailing '/') */
+            return (error & ~MPN_MASK) | MPN_CREATED_DIR;
+        } else if (IS_OVERWRT_ALL) {
+            /* overwrite attributes of existing directory on user's request */
+
+            /* set file attributes: */
+            if(G.pInfo->file_attr & (0x7F & ~FILE_ATTRIBUTE_DIRECTORY)) {
+                if (!SetFileAttributesW(G.unipath_widefilename, G.pInfo->file_attr & 0x7F))
+                    Info(slide, 1, ((char *)slide,
+                      "\nwarning (%d): could not set file attributes for %s\n",
+                      (int)GetLastError(), FnFilter1(G.filename)));
+            }
+        }
+        /* dir existed already; don't look for data to extract */
+        return (error & ~MPN_MASK) | MPN_INF_SKIP;
+    }
+
+    *ppw = '\0';                   /* done with pathcomp:  terminate it */
+
+    /* if not saving them, remove VMS version numbers (appended "###") */
+    if (!uO.V_flag && lastsemiw) {
+        ppw = lastsemiw + 1;        /* semi-colon was kept:  expect #'s after */
+        while (iswdigit(*ppw))
+            ++ppw;
+        if (*ppw == '\0')          /* only digits between ';' and end:  nuke */
+            *lastsemiw = '\0';
+    }
+
+    maskDOSdevicew(__G__ pathcompw);
+
+    if (*pathcompw == '\0') {
+        Info(slide, 1, ((char *)slide, "mapname:  conversion of %s failed\n",
+          FnFilter1(G.filename)));
+        return (error & ~MPN_MASK) | MPN_ERR_SKIP;
+    }
+
+    checkdirw(__G__ pathcompw, APPEND_NAME);  /* returns 1 if truncated: care? */
+    checkdirw(__G__ G.unipath_widefilename, GETPATH);
+
+    if (G.pInfo->vollabel) {    /* set the volume label now */
+        char drive[4];
+        wchar_t drivew[4];
+
+        /* Build a drive string, e.g. "b:" */
+        drive[0] = (char)('a' + G.nLabelDrive - 1);
+        drivew[0] = (wchar_t)('a' + G.nLabelDrive - 1);
+        wcscpy(drivew + 1, L":\\");
+        if (QCOND2)
+            Info(slide, 0, ((char *)slide, "labelling %s %-22s\n", drive,
+              FnFilter1(G.filename)));
+        if (!SetVolumeLabelW(drivew, G.unipath_widefilename)) {
+            Info(slide, 1, ((char *)slide,
+              "mapname:  error setting volume label\n"));
+            return (error & ~MPN_MASK) | MPN_ERR_SKIP;
+        }
+        /* success:  skip the "extraction" quietly */
+        return (error & ~MPN_MASK) | MPN_INF_SKIP;
+    }
+
+    Trace((stderr, "mapname returns with filename = [%s] (error = %d)\n\n",
+      FnFilter1(G.filename), error));
+    return error;
+
+} /* end function mapnamew() */
+
+
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+
 
 
 /****************************/
@@ -1947,18 +2656,18 @@ static void maskDOSdevice(__G__ pathcomp)
     DOS/WINDOWS device name like CON.*, AUX.*, PRN.*, etc. Trying to
     extract such a file would fail at best and wedge us at worst.
   ---------------------------------------------------------------------------*/
-#if !defined(S_IFCHR) && defined(_S_IFCHR)
+# if !defined(S_IFCHR) && defined(_S_IFCHR)
 #  define S_IFCHR _S_IFCHR
-#endif
-#if !defined(S_ISCHR)
-# if defined(_S_ISCHR)
-#  define S_ISCHR(m) _S_ISCHR(m)
-# elif defined(S_IFCHR)
-#  define S_ISCHR(m) ((m) & S_IFCHR)
 # endif
-#endif
+# if !defined(S_ISCHR)
+#  if defined(_S_ISCHR)
+#   define S_ISCHR(m) _S_ISCHR(m)
+#  elif defined(S_IFCHR)
+#   define S_ISCHR(m) ((m) & S_IFCHR)
+#  endif
+# endif
 
-#ifdef DEBUG
+# ifdef DEBUG
     if (zstat(pathcomp, &G.statbuf) == 0) {
         Trace((stderr,
                "maskDOSdevice() stat(\"%s\", buf) st_mode result: %X, %o\n",
@@ -1967,7 +2676,7 @@ static void maskDOSdevice(__G__ pathcomp)
         Trace((stderr, "maskDOSdevice() stat(\"%s\", buf) failed\n",
                FnFilter1(pathcomp)));
     }
-#endif
+# endif
     if (zstat(pathcomp, &G.statbuf) == 0 && S_ISCHR(G.statbuf.st_mode)) {
         extent i;
 
@@ -1982,6 +2691,42 @@ static void maskDOSdevice(__G__ pathcomp)
 } /* end function maskDOSdevice() */
 
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+static void maskDOSdevicew(__G__ pathcompw)
+    __GDEF
+    wchar_t *pathcompw;
+{
+/*---------------------------------------------------------------------------
+    Put an underscore in front of the file name if the file name is a
+    DOS/WINDOWS device name like CON.*, AUX.*, PRN.*, etc. Trying to
+    extract such a file would fail at best and wedge us at worst.
+  ---------------------------------------------------------------------------*/
+#  if !defined(S_IFCHR) && defined(_S_IFCHR)
+#   define S_IFCHR _S_IFCHR
+#  endif
+#  if !defined(S_ISCHR)
+#   if defined(_S_ISCHR)
+#    define S_ISCHR(m) _S_ISCHR(m)
+#   elif defined(S_IFCHR)
+#    define S_ISCHR(m) ((m) & S_IFCHR)
+#   endif
+#  endif
+
+    if (zstatw(pathcompw, &G.statbuf) == 0 && S_ISCHR(G.statbuf.st_mode)) {
+        extent i;
+
+        /* pathcomp contains a name of a DOS character device (builtin or
+         * installed device driver).
+         * Prepend a '_' to allow creation of the item in the file system.
+         */
+        for (i = wcslen(pathcompw) + 1; i > 0; --i)
+            pathcompw[i] = pathcompw[i - 1];
+        pathcompw[0] = '_';
+    }
+} /* end function maskDOSdevicew() */
+
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
 
 
 
@@ -2087,6 +2832,107 @@ static void map2fat(pathcomp, pEndFAT)
 } /* end function map2fat() */
 
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+static void map2fatw(pathcompw, pEndFATw)
+    wchar_t *pathcompw, **pEndFATw;
+{
+    wchar_t *ppcw = pathcompw;       /* variable pointer to pathcomp */
+    wchar_t *pEndw = *pEndFATw;      /* variable pointer to buildpathFAT */
+    wchar_t *pBeginw = *pEndFATw;    /* constant pointer to start of this comp. */
+    wchar_t *last_dotw = NULL;      /* last dot not converted to underscore */
+    register wchar_t workchw;   /* hold the character being tested */
+
+
+    /* Only need check those characters which are legal in NTFS but not
+     * in FAT:  to get here, must already have passed through mapname.
+     * Also must truncate path component to ensure 8.3 compliance.
+     */
+    while ((workchw = *ppcw++) != 0) {
+        switch (workchw) {
+            case '[':
+            case ']':
+            case '+':
+            case ',':
+            case ';':
+            case '=':
+                *pEndw++ = '_';      /* convert brackets to underscores */
+                break;
+
+            case '.':
+                if (pEndw == *pEndFATw) {   /* nothing appended yet... */
+                    if (*ppcw == '\0')     /* don't bother appending a */
+                        break;            /*  "./" component to the path */
+                    else if (*ppcw == '.' && ppcw[1] == '\0') {   /* "../" */
+                        *pEndw++ = '.';    /*  add first dot, */
+                        *pEndw++ = '.';    /*  add second dot, and */
+                        ++ppcw;            /*  skip over to pathcomp's end */
+                    } else {              /* FAT doesn't allow null filename */
+                        *pEndw++ = '_';    /*  bodies, so map .exrc -> _exrc */
+                    }                     /*  (_.exr would keep max 3 chars) */
+                } else {                  /* found dot within path component */
+                    last_dotw = pEndw;      /*  point at last dot so far... */
+                    *pEndw++ = '_';        /*  convert to underscore for now */
+                }
+                break;
+
+            default:
+                *pEndw++ = workchw;
+
+        } /* end switch */
+    } /* end while loop */
+
+    *pEndw = '\0';                 /* terminate buildpathFAT */
+
+    /* NOTE:  keep in mind that pEnd points to the end of the path
+     * component, and *pEndFAT still points to the *beginning* of it...
+     * Also note that the algorithm does not try to get too fancy:
+     * if there are no dots already, the name either gets truncated
+     * at 8 characters or the last underscore is converted to a dot
+     * (only if more characters are saved that way).  In no case is
+     * a dot inserted between existing characters.
+     */
+    if (last_dotw == NULL) {       /* no dots:  check for underscores... */
+        wchar_t *pluw = wcschr(pBeginw, '_');   /* pointer to last underscore */
+
+        if ((pluw != NULL) &&      /* found underscore: convert to dot? */
+            (MIN(pluw - pBeginw, 8) + MIN(pEndw - pluw - 1, 3) > 8)) {
+            last_dotw = pluw;       /* be lazy:  drop through to next if-blk */
+        } else if ((pEndw - *pEndFATw) > 8) {
+            /* no underscore; or converting underscore to dot would save less
+               chars than leaving everything in the basename */
+            *pEndFATw += 8;        /* truncate at 8 chars */
+            **pEndFATw = '\0';
+        } else
+            *pEndFATw = pEndw;      /* whole thing fits into 8 chars or less */
+    }
+
+    if (last_dotw != NULL) {       /* one dot is OK: */
+        *last_dotw = '.';          /* put it back in */
+
+        if ((last_dotw - pBeginw) > 8) {
+            wchar_t *pw, *qw;
+           int i;
+
+            pw = last_dotw;
+            qw = last_dotw = pBeginw + 8;
+            for (i = 0;  (i < 4) && *pw;  ++i)  /* too many chars in basename: */
+                *qw++ = *pw++;                   /*  shift .ext left and trun- */
+            *qw = '\0';                         /*  cate/terminate it */
+            *pEndFATw = qw;
+        } else if ((pEndw - last_dotw) > 4) {    /* too many chars in extension */
+            *pEndFATw = last_dotw + 4;
+            **pEndFATw = '\0';
+        } else
+            *pEndFATw = pEndw;   /* filename is fine; point at terminating zero */
+
+        if ((last_dotw - pBeginw) > 0 && last_dotw[-1] == ' ')
+            last_dotw[-1] = '_';                /* NO blank in front of '.'! */
+    }
+} /* end function map2fatw() */
+
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 
 
 /***********************/       /* Borrowed from os2.c for UnZip 5.1.        */
@@ -2148,7 +2994,7 @@ int checkdir(__G__ pathcomp, flag)
         /* next check:  need to append '/', at least one-char name, '\0' */
         if ((G.endHPFS-G.buildpathHPFS) > FILNAMSIZ-3)
             too_long = TRUE;                    /* check if extracting dir? */
-#ifdef FIX_STAT_BUG
+# ifdef FIX_STAT_BUG
         /* Borland C++ 5.0 does not handle a call to stat() well if the
          * directory does not exist (it tends to crash in strange places.)
          * This is apparently a problem only when compiling for GUI rather
@@ -2173,11 +3019,8 @@ int checkdir(__G__ pathcomp, flag)
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
-                 %s\n\
                  unable to process %s.\n",
-                  FnFilter2(G.buildpathFAT),
-                  strerror(errno),
-                  FnFilter1(G.filename)));
+                  FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
                 /* path didn't exist, tried to create, failed */
@@ -2185,7 +3028,7 @@ int checkdir(__G__ pathcomp, flag)
             }
             G.created_dir = TRUE;
         }
-#endif /* FIX_STAT_BUG */
+# endif /* FIX_STAT_BUG */
         if (SSTAT(G.buildpathFAT, &G.statbuf))   /* path doesn't exist */
         {
             if (!G.create_dirs) { /* told not to create (freshening) */
@@ -2206,11 +3049,8 @@ int checkdir(__G__ pathcomp, flag)
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
-                 %s\n\
                  unable to process %s.\n",
-                  FnFilter2(G.buildpathFAT),
-                  strerror(errno),
-                  FnFilter1(G.filename)));
+                  FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
                 /* path didn't exist, tried to create, failed */
@@ -2219,8 +3059,8 @@ int checkdir(__G__ pathcomp, flag)
             G.created_dir = TRUE;
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  %s exists but is not directory\n\
-                 unable to process %s.\n",
+              "checkdir error:  %s exists but is not directory\n   \
+              unable to process %s.\n",
               FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
             free(G.buildpathHPFS);
             free(G.buildpathFAT);
@@ -2230,7 +3070,7 @@ int checkdir(__G__ pathcomp, flag)
         if (too_long) {
             Info(slide, 1, ((char *)slide,
               "checkdir error:  path too long: %s\n",
-              FnFilter1(G.buildpathHPFS)));
+               FnFilter1(G.buildpathHPFS)));
             free(G.buildpathHPFS);
             free(G.buildpathFAT);
             /* no room for filenames:  fatal */
@@ -2329,20 +3169,20 @@ int checkdir(__G__ pathcomp, flag)
 
     if (FUNCTION == INIT) {
         Trace((stderr, "initializing buildpathHPFS and buildpathFAT to "));
-#ifdef ACORN_FTYPE_NFS
+# ifdef ACORN_FTYPE_NFS
         if ((G.buildpathHPFS = (char *)malloc(G.fnlen+G.rootlen+
                                               (uO.acorn_nfs_ext ? 5 : 1)))
-#else
+# else
         if ((G.buildpathHPFS = (char *)malloc(G.fnlen+G.rootlen+1))
-#endif
+# endif
             == NULL)
             return MPN_NOMEM;
-#ifdef ACORN_FTYPE_NFS
+# ifdef ACORN_FTYPE_NFS
         if ((G.buildpathFAT = (char *)malloc(G.fnlen+G.rootlen+
                                              (uO.acorn_nfs_ext ? 5 : 1)))
-#else
+# else
         if ((G.buildpathFAT = (char *)malloc(G.fnlen+G.rootlen+1))
-#endif
+# endif
             == NULL) {
             free(G.buildpathHPFS);
             return MPN_NOMEM;
@@ -2400,7 +3240,7 @@ int checkdir(__G__ pathcomp, flag)
     hibited (e.g., freshening).
   ---------------------------------------------------------------------------*/
 
-#if (!defined(SFX) || defined(SFX_EXDIR))
+# if (!defined(SFX) || defined(SFX_EXDIR))
     if (FUNCTION == ROOT) {
         Trace((stderr, "initializing root path to [%s]\n",
           FnFilter1(pathcomp)));
@@ -2465,7 +3305,7 @@ int checkdir(__G__ pathcomp, flag)
         }
         return MPN_OK;
     }
-#endif /* !SFX || SFX_EXDIR */
+# endif /* !SFX || SFX_EXDIR */
 
 /*---------------------------------------------------------------------------
     END:  free rootpath, immediately prior to program exit.
@@ -2486,9 +3326,461 @@ int checkdir(__G__ pathcomp, flag)
 
 
 
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+/* WIN32 wide version */
+
+int checkdirw(__G__ pathcompw, flag)
+    __GDEF
+    wchar_t *pathcompw;
+    int flag;
+/*
+ * returns:
+ *  MPN_OK          - no problem detected
+ *  MPN_INF_TRUNC   - (on APPEND_NAME) truncated filename
+ *  MPN_INF_SKIP    - path doesn't exist, not allowed to create
+ *  MPN_ERR_SKIP    - path doesn't exist, tried to create and failed; or path
+ *                    exists and is not a directory, but is supposed to be
+ *  MPN_ERR_TOOLONG - path is too long
+ *  MPN_NOMEM       - can't allocate memory for filename buffers
+ */
+{
+ /* static int rootlen = 0;     */   /* length of rootpath */
+ /* static char *rootpath;      */   /* user's "extract-to" directory */
+ /* static char *buildpathHPFS; */   /* full path (so far) to extracted file, */
+ /* static char *buildpathFAT;  */   /*  both HPFS/EA (main) and FAT versions */
+ /* static char *endHPFS;       */   /* corresponding pointers to end of */
+ /* static char *endFAT;        */   /*  buildpath ('\0') */
+
+#   define FN_MASK   7
+#   define FUNCTION  (flag & FN_MASK)
 
 
-#ifndef SFX
+
+/*---------------------------------------------------------------------------
+    APPEND_DIR:  append the path component to the path being built and check
+    for its existence.  If doesn't exist and we are creating directories, do
+    so for this one; else signal success or error as appropriate.
+  ---------------------------------------------------------------------------*/
+
+    if (FUNCTION == APPEND_DIR) {
+        wchar_t *pw = pathcompw;
+        int too_long = FALSE;
+        char *buildpathFAT = wchar_to_local_string(G.buildpathFATw, G.unicode_escape_all);
+        char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
+        /* Could use G.filename from the standard path, but may
+           not work well on this port */
+        char *fn = wchar_to_local_string(G.unipath_widefilename, G.unicode_escape_all);
+
+        while ((*G.endHPFSw = *pw++) != '\0')     /* copy to HPFS filename */
+            ++G.endHPFSw;
+        if (!IsVolumeOldFATw(__G__ G.buildpathHPFSw)) {
+            pw = pathcompw;
+            while ((*G.endFATw = *pw++) != '\0')  /* copy to FAT filename, too */
+                ++G.endFATw;
+        } else
+            map2fatw(pathcompw, &G.endFATw);   /* map into FAT fn, update endFAT */
+
+        /* GRR:  could do better check, see if overrunning buffer as we go:
+         * check endHPFS-buildpathHPFS after each append, set warning variable
+         * if within 20 of FILNAMSIZ; then if var set, do careful check when
+         * appending.  Clear variable when begin new path. */
+
+        /* next check:  need to append '/', at least one-char name, '\0' */
+        if ((G.endHPFSw-G.buildpathHPFSw) > FILNAMSIZ-3)
+            too_long = TRUE;                    /* check if extracting dir? */
+#  ifdef FIX_STAT_BUG
+        /* Borland C++ 5.0 does not handle a call to stat() well if the
+         * directory does not exist (it tends to crash in strange places.)
+         * This is apparently a problem only when compiling for GUI rather
+         * than console. The code below attempts to work around this problem.
+         */
+        if (_waccess(G.buildpathFATw, 0) != 0) {
+            if (!G.create_dirs) { /* told not to create (freshening) */
+                free(buildpathHPFS);
+                free(buildpathFAT);
+                free(fn);
+                free(G.buildpathHPFSw);
+                free(G.buildpathFATw);
+                /* path doesn't exist:  nothing to do */
+                return MPN_INF_SKIP;
+            }
+            if (too_long) {   /* GRR:  should allow FAT extraction w/o EAs */
+                Info(slide, 1, ((char *)slide,
+                  "checkdir error:  path too long: %s\n",
+                  FnFilter1(fn)));
+                free(buildpathHPFS);
+                free(buildpathFAT);
+                free(fn);
+                free(G.buildpathHPFSw);
+                free(G.buildpathFATw);
+                /* no room for filenames:  fatal */
+                return MPN_ERR_TOOLONG;
+            }
+            {
+                int i = MKDIRW(G.buildpathFATw, 0777);
+                if (i == -1) { /* create the directory */
+                    Info(slide, 1, ((char *)slide,
+                        "checkdir error:  cannot create %s\n\
+                	       unable to process %s.\n",
+                    FnFilter2(buildpathFAT), FnFilter1(fn)));
+                    free(buildpathHPFS);
+                    free(buildpathFAT);
+                    free(fn);
+                    free(G.buildpathHPFSw);
+                    free(G.buildpathFATw);
+                    /* path didn't exist, tried to create, failed */
+                    return MPN_ERR_SKIP;
+                }
+              G.created_dir = TRUE;
+              }
+        }
+#  endif /* FIX_STAT_BUG */
+        if (SSTATW(G.buildpathFATw, &G.statbuf))   /* path doesn't exist */
+        {
+            if (!G.create_dirs) { /* told not to create (freshening) */
+                free(buildpathHPFS);
+                free(buildpathFAT);
+                free(fn);
+                free(G.buildpathHPFSw);
+                free(G.buildpathFATw);
+                /* path doesn't exist:  nothing to do */
+                return MPN_INF_SKIP;
+            }
+            if (too_long) {   /* GRR:  should allow FAT extraction w/o EAs */
+                Info(slide, 1, ((char *)slide,
+                  "checkdir error:  path too long: %s\n",
+                  FnFilter1(buildpathHPFS)));
+                free(buildpathHPFS);
+                free(buildpathFAT);
+                free(fn);
+                free(G.buildpathHPFSw);
+                free(G.buildpathFATw);
+                /* no room for filenames:  fatal */
+                return MPN_ERR_TOOLONG;
+            }
+            {
+                char *buildpathFAT = wchar_to_local_string(G.buildpathFATw, G.unicode_escape_all);
+                int i = MKDIRW(G.buildpathFATw, 0777);
+                if (i == -1) { /* create the directory */
+                    Info(slide, 1, ((char *)slide,
+                        "checkdir error:  cannot create %s\n\
+                        unable to process %s.\n",
+                    FnFilter2(buildpathFAT), FnFilter1(fn)));
+                    free(buildpathHPFS);
+                    free(buildpathFAT);
+                    free(fn);
+                    free(G.buildpathHPFSw);
+                    free(G.buildpathFATw);
+                    /* path didn't exist, tried to create, failed */
+                    return MPN_ERR_SKIP;
+                }
+                G.created_dir = TRUE;
+                }
+        } else if (!S_ISDIR(G.statbuf.st_mode)) {
+            Info(slide, 1, ((char *)slide,
+              "checkdir error:  %s exists but is not directory\n\
+                 unable to process %s.\n",
+            FnFilter2(buildpathFAT), FnFilter1(fn)));
+            free(buildpathHPFS);
+            free(buildpathFAT);
+            free(fn);
+            free(G.buildpathHPFSw);
+            free(G.buildpathFATw);
+            /* path existed but wasn't dir */
+            return MPN_ERR_SKIP;
+        }
+        if (too_long) {
+            Info(slide, 1, ((char *)slide,
+              "checkdir error:  path too long: %s\n",
+            FnFilter1(buildpathHPFS)));
+            free(buildpathHPFS);
+            free(buildpathFAT);
+            free(fn);
+            free(G.buildpathHPFSw);
+            free(G.buildpathFATw);
+            /* no room for filenames:  fatal */
+            return MPN_ERR_TOOLONG;
+        }
+        *G.endHPFSw++ = '/';
+        *G.endFATw++ = '/';
+        *G.endHPFSw = *G.endFATw = '\0';
+        Trace((stderr, "buildpathHPFS now = [%s]\nbuildpathFAT now =  [%s]\n",
+          FnFilter1(buildpathHPFS), FnFilter2(buildpathFAT)));
+        free(buildpathHPFS);
+        free(buildpathFAT);
+        free(fn);
+        //free(G.buildpathHPFSw);
+        //free(G.buildpathFATw);
+        return MPN_OK;
+
+    } /* end if (FUNCTION == APPEND_DIR) */
+
+/*---------------------------------------------------------------------------
+    GETPATH:  copy full FAT path to the string pointed at by pathcomp (want
+    filename to reflect name used on disk, not EAs; if full path is HPFS,
+    buildpathFAT and buildpathHPFS will be identical).  Also free both paths.
+  ---------------------------------------------------------------------------*/
+
+    if (FUNCTION == GETPATH) {
+        char *buildpathFAT = wchar_to_local_string(G.buildpathFATw, G.unicode_escape_all);
+        char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
+        Trace((stderr, "getting and freeing FAT path [%s]\n",
+          FnFilter1(buildpathFAT)));
+        Trace((stderr, "freeing HPFS path [%s]\n",
+          FnFilter1(buildpathHPFS)));
+        wcscpy(pathcompw, G.buildpathFATw);
+        free(buildpathFAT);
+        free(buildpathHPFS);
+        free(G.buildpathFATw);
+        free(G.buildpathHPFSw);
+        G.buildpathHPFSw = G.buildpathFATw = G.endHPFSw = G.endFATw = NULL;
+        return MPN_OK;
+    }
+
+/*---------------------------------------------------------------------------
+    APPEND_NAME:  assume the path component is the filename; append it and
+    return without checking for existence.
+  ---------------------------------------------------------------------------*/
+
+    if (FUNCTION == APPEND_NAME) {
+        wchar_t *pw = pathcompw;
+        int error = MPN_OK;
+        char *pathcomp = wchar_to_local_string(pathcompw, G.unicode_escape_all);
+        char *fn = wchar_to_local_string(G.unipath_widefilename, G.unicode_escape_all);
+
+        Trace((stderr, "appending filename [%s]\n", FnFilter1(pathcomp)));
+        /* The buildpathHPFS buffer has been allocated large enough to
+         * hold the complete combined name, so there is no need to check
+         * for OS filename size limit overflow within the copy loop.
+         */
+        while ((*G.endHPFSw = *pw++) != '\0') {   /* copy to HPFS filename */
+            ++G.endHPFSw;
+        }
+        /* Now, check for OS filename size overflow.  When detected, the
+         * mapped HPFS name is truncated and a warning message is shown.
+         */
+        if ((G.endHPFSw-G.buildpathHPFSw) >= FILNAMSIZ) {
+            char *buildpathHPFS;
+            G.buildpathHPFSw[FILNAMSIZ-1] = '\0';
+            buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
+            Info(slide, 1, ((char *)slide,
+              "checkdir warning:  path too long; truncating\n \
+              %s\n                -> %s\n",
+              FnFilter1(fn), FnFilter2(buildpathHPFS)));
+            free(buildpathHPFS);
+            error = MPN_INF_TRUNC;  /* filename truncated */
+        }
+
+        /* The buildpathFAT buffer has the same allocated size as the
+         * buildpathHPFS buffer, so there is no need for an overflow check
+         * within the following copy loop, either.
+         */
+        if (G.pInfo->vollabel || !IsVolumeOldFATw(__G__ G.buildpathHPFSw)) {
+            /* copy to FAT filename, too */
+            pw = pathcompw;
+            while ((*G.endFATw = *pw++) != '\0')
+                ++G.endFATw;
+        } else
+            /* map into FAT fn, update endFAT */
+            map2fatw(pathcompw, &G.endFATw);
+
+        /* Check that the FAT path does not exceed the FILNAMSIZ limit, and
+         * truncate when neccessary.
+         * Note that truncation can only happen when the HPFS path (which is
+         * never shorter than the FAT path) has been already truncated.
+         * So, emission of the warning message and setting the error code
+         * has already happened.
+         */
+        if ((G.endFATw-G.buildpathFATw) >= FILNAMSIZ)
+            G.buildpathFATw[FILNAMSIZ-1] = '\0';
+        {
+          char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
+          char *buildpathFAT = wchar_to_local_string(G.buildpathFATw,G.unicode_escape_all);
+          Trace((stderr, "buildpathHPFS: %s\nbuildpathFAT:  %s\n",
+            FnFilter1(buildpathHPFS), FnFilter2(buildpathFAT)));
+          free(buildpathHPFS);
+          free(buildpathFAT);
+        }
+        free(fn);
+        free(pathcomp);
+
+        return error;  /* could check for existence, prompt for new name... */
+
+    } /* end if (FUNCTION == APPEND_NAME) */
+
+/*---------------------------------------------------------------------------
+    INIT:  allocate and initialize buffer space for the file currently being
+    extracted.  If file was renamed with an absolute path, don't prepend the
+    extract-to path.
+  ---------------------------------------------------------------------------*/
+
+    if (FUNCTION == INIT) {
+        Trace((stderr, "initializing buildpathHPFSw and buildpathFATw to "));
+        if ((G.buildpathHPFSw = (wchar_t *)malloc((G.fnlen+G.rootlen+1) * sizeof(wchar_t)))
+            == NULL)
+            return MPN_NOMEM;
+        if ((G.buildpathFATw = (wchar_t *)malloc((G.fnlen+G.rootlen+1) * sizeof(wchar_t)))
+            == NULL) {
+            free(G.buildpathHPFSw);
+            return MPN_NOMEM;
+        }
+        if (G.pInfo->vollabel) { /* use root or renamed path, but don't store */
+/* GRR:  for network drives, do strchr() and return IZ_VOL_LABEL if not [1] */
+            if (G.renamed_fullpath && pathcompw[1] == ':')
+                *G.buildpathHPFSw = (wchar_t)towlower(*pathcompw);
+            else if (!G.renamed_fullpath && G.rootlen > 1 &&
+                     G.rootpathw[1] == ':')
+                *G.buildpathHPFSw = (wchar_t)towlower(*G.rootpathw);
+            else {
+                wchar_t tmpNw[MAX_PATH], *tmpPw;
+                if (GetFullPathNameW(L".", MAX_PATH, tmpNw, &tmpPw) > MAX_PATH)
+                { /* by definition of MAX_PATH we should never get here */
+                    Info(slide, 1, ((char *)slide,
+                      "checkdir warning: current dir path too long\n"));
+                    return MPN_INF_TRUNC;   /* can't get drive letter */
+                }
+                G.nLabelDrive = (char)(*G.buildpathHPFSw - 'a' + 1); /* save for mapname() */
+                *G.buildpathHPFSw = (wchar_t)(G.nLabelDrive - 1 + 'a');
+			}
+            if (uO.volflag == 0 || *G.buildpathHPFSw < 'a' /* no labels/bogus? */
+                || (uO.volflag == 1 && !isfloppy(G.nLabelDrive))) { /* !fixed */
+                free(G.buildpathHPFSw);
+                free(G.buildpathFATw);
+                return MPN_VOL_LABEL;  /* skipping with message */
+			}
+            *G.buildpathHPFSw = '\0';
+        } else if (G.renamed_fullpath) /* pathcomp = valid data */
+            wcscpy(G.buildpathHPFSw, pathcompw);
+        else if (G.rootlen > 0)
+            wcscpy(G.buildpathHPFSw, G.rootpathw);
+        else
+            *G.buildpathHPFSw = '\0';
+        G.endHPFSw = G.buildpathHPFSw;
+        G.endFATw = G.buildpathFATw;
+        while ((*G.endFATw = *G.endHPFSw) != '\0') {
+            ++G.endFATw;
+            ++G.endHPFSw;
+        }
+        {
+          char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
+          Trace((stderr, "[%s]\n", FnFilter1(buildpathHPFS)));
+          free(buildpathHPFS);
+        }
+
+        return MPN_OK;
+    }
+
+/*---------------------------------------------------------------------------
+    ROOT:  if appropriate, store the path in rootpath and create it if neces-
+    sary; else assume it's a zipfile member and return.  This path segment
+    gets used in extracting all members from every zipfile specified on the
+    command line.  Note that under OS/2 and MS-DOS, if a candidate extract-to
+    directory specification includes a drive letter (leading "x:"), it is
+    treated just as if it had a trailing '/'--that is, one directory level
+    will be created if the path doesn't exist, unless this is otherwise pro-
+    hibited (e.g., freshening).
+  ---------------------------------------------------------------------------*/
+
+#  if (!defined(SFX) || defined(SFX_EXDIR))
+    if (FUNCTION == ROOT) {
+        char *pathcomp = wchar_to_local_string(pathcompw, G.unicode_escape_all);
+        Trace((stderr, "initializing root path to [%s]\n",
+          FnFilter1(pathcomp)));
+        free(pathcomp);
+        if (pathcompw == NULL) {
+            G.rootlen = 0;
+            return MPN_OK;
+        }
+        if (G.rootlen > 0)      /* rootpath was already set, nothing to do */
+            return MPN_OK;
+        if ((G.rootlen = wcslen(pathcompw)) > 0) {
+            int had_trailing_pathsep=FALSE, has_drive=FALSE, add_dot=FALSE;
+            wchar_t *tmprootw;
+
+            if ((tmprootw = (wchar_t *)malloc((G.rootlen+3) * sizeof(wchar_t))) == (wchar_t *)NULL) {
+                G.rootlen = 0;
+                return MPN_NOMEM;
+            }
+            wcscpy(tmprootw, pathcompw);
+            if (iswalpha(tmprootw[0]) && tmprootw[1] == ':')
+                has_drive = TRUE;   /* drive designator */
+            if (tmprootw[G.rootlen-1] == '/' || tmprootw[G.rootlen-1] == '\\') {
+                tmprootw[--G.rootlen] = '\0';
+                had_trailing_pathsep = TRUE;
+            }
+            if (has_drive && (G.rootlen == 2)) {
+                if (!had_trailing_pathsep)   /* i.e., original wasn't "x:/" */
+                    add_dot = TRUE;    /* relative path: add '.' before '/' */
+            } else if (G.rootlen > 0) {   /* need not check "x:." and "x:/" */
+                if (SSTATW(tmprootw, &G.statbuf) || !S_ISDIR(G.statbuf.st_mode))
+                {
+                    /* path does not exist */
+                    if (!G.create_dirs /* || iswild(tmproot) */ ) {
+                        free(tmprootw);
+                        G.rootlen = 0;
+                        /* treat as stored file */
+                        return MPN_INF_SKIP;
+                    }
+                    /* create directory (could add loop here scanning tmproot
+                     * to create more than one level, but really necessary?) */
+                    if (MKDIRW(tmprootw, 0777) == -1) {
+                        char *tmproot = wchar_to_local_string(tmprootw, G.unicode_escape_all);
+                        Info(slide, 1, ((char *)slide,
+                          "checkdir:  cannot create extraction directory: %s\n",
+                          FnFilter1(tmproot)));
+                        free(tmproot);
+                        free(tmprootw);
+                        G.rootlen = 0;
+                        /* path didn't exist, tried to create, failed: */
+                        /* file exists, or need 2+ subdir levels */
+                        free(pathcomp);
+                        return MPN_ERR_SKIP;
+                    }
+                }
+            }
+            if (add_dot)                    /* had just "x:", make "x:." */
+                tmprootw[G.rootlen++] = '.';
+            tmprootw[G.rootlen++] = '/';
+            tmprootw[G.rootlen] = '\0';
+            if ((G.rootpathw = (wchar_t *)realloc(tmprootw, (G.rootlen+1) * sizeof(wchar_t))) == NULL) {
+                free(tmprootw);
+                G.rootlen = 0;
+                return MPN_NOMEM;
+            }
+            {
+              char *rootpath = wchar_to_local_string(G.rootpathw, G.unicode_escape_all);
+              Trace((stderr, "rootpath now = [%s]\n", FnFilter1(rootpath)));
+              free(rootpath);
+            }
+        }
+        return MPN_OK;
+    }
+#  endif /* !SFX || SFX_EXDIR */
+
+/*---------------------------------------------------------------------------
+    END:  free rootpath, immediately prior to program exit.
+  ---------------------------------------------------------------------------*/
+
+    if (FUNCTION == END) {
+        Trace((stderr, "freeing rootpath\n"));
+        if (G.rootlen > 0) {
+            free(G.rootpathw);
+            G.rootlen = 0;
+        }
+        return MPN_OK;
+    }
+
+    return MPN_INVALID; /* should never reach */
+
+} /* end function checkdirw() */
+
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+
+
+
+# ifndef SFX
 
 /*************************/
 /* Function dateformat() */
@@ -2529,7 +3821,7 @@ char dateseparator()
 }
 
 
-#ifndef WINDLL
+#  ifndef WINDLL
 
 /************************/
 /*  Function version()  */
@@ -2539,106 +3831,106 @@ void version(__G)
     __GDEF
 {
     int len;
-#if (defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DJGPP__))
+#   if (defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DJGPP__))
     char buf[80];
-#if (defined(_MSC_VER) && (_MSC_VER > 900))
+#    if (defined(_MSC_VER) && (_MSC_VER > 900))
     char buf2[80];
-#endif
-#endif
+#    endif
+#   endif
 
     len = sprintf((char *)slide, CompiledWith,
 
-#if defined(_MSC_VER)  /* MSC == VC++, but what about SDK compiler? */
+#   if defined(_MSC_VER)  /* MSC == VC++, but what about SDK compiler? */
       (sprintf(buf, "Microsoft C %d.%02d ", _MSC_VER/100, _MSC_VER%100), buf),
-#  if (_MSC_VER == 800)
+#    if (_MSC_VER == 800)
       "(Visual C++ v1.1)",
-#  elif (_MSC_VER == 850)
+#    elif (_MSC_VER == 850)
       "(Windows NT v3.5 SDK)",
-#  elif (_MSC_VER == 900)
+#    elif (_MSC_VER == 900)
       "(Visual C++ v2.x)",
-#  elif (_MSC_VER > 900)
+#    elif (_MSC_VER > 900)
       (sprintf(buf2, "(Visual C++ %d.%d)", _MSC_VER/100 - 6, _MSC_VER%100/10),
         buf2),
-#  else
+#    else
       "(bad version)",
-#  endif
-#elif defined(__WATCOMC__)
-#  if (__WATCOMC__ % 10 > 0)
+#    endif
+#   elif defined(__WATCOMC__)
+#    if (__WATCOMC__ % 10 > 0)
       (sprintf(buf, "Watcom C/C++ %d.%02d", __WATCOMC__ / 100,
        __WATCOMC__ % 100), buf), "",
-#  else
+#    else
       (sprintf(buf, "Watcom C/C++ %d.%d", __WATCOMC__ / 100,
        (__WATCOMC__ % 100) / 10), buf), "",
-#  endif
-#elif defined(__BORLANDC__)
+#    endif
+#   elif defined(__BORLANDC__)
       "Borland C++",
-#  if (__BORLANDC__ < 0x0200)
+#    if (__BORLANDC__ < 0x0200)
       " 1.0",
-#  elif (__BORLANDC__ == 0x0200)
+#    elif (__BORLANDC__ == 0x0200)
       " 2.0",
-#  elif (__BORLANDC__ == 0x0400)
+#    elif (__BORLANDC__ == 0x0400)
       " 3.0",
-#  elif (__BORLANDC__ == 0x0410)   /* __TURBOC__ = 0x0310 */
+#    elif (__BORLANDC__ == 0x0410)   /* __TURBOC__ = 0x0310 */
       " 3.1",
-#  elif (__BORLANDC__ == 0x0452)   /* __TURBOC__ = 0x0320 */
+#    elif (__BORLANDC__ == 0x0452)   /* __TURBOC__ = 0x0320 */
       " 4.0 or 4.02",
-#  elif (__BORLANDC__ == 0x0460)   /* __TURBOC__ = 0x0340 */
+#    elif (__BORLANDC__ == 0x0460)   /* __TURBOC__ = 0x0340 */
       " 4.5",
-#  elif (__BORLANDC__ == 0x0500)   /* __TURBOC__ = 0x0340 */
+#    elif (__BORLANDC__ == 0x0500)   /* __TURBOC__ = 0x0340 */
       " 5.0",
-#  elif (__BORLANDC__ == 0x0520)   /* __TURBOC__ = 0x0520 */
+#    elif (__BORLANDC__ == 0x0520)   /* __TURBOC__ = 0x0520 */
       " 5.2 (C++ Builder 1.0)",
-#  elif (__BORLANDC__ == 0x0530)   /* __TURBOC__ = 0x0530 */
+#    elif (__BORLANDC__ == 0x0530)   /* __TURBOC__ = 0x0530 */
       " 5.3 (C++ Builder 3.0)",
-#  elif (__BORLANDC__ == 0x0540)   /* __TURBOC__ = 0x0540 */
+#    elif (__BORLANDC__ == 0x0540)   /* __TURBOC__ = 0x0540 */
       " 5.4 (C++ Builder 4.0)",
-#  elif (__BORLANDC__ == 0x0550)   /* __TURBOC__ = 0x0550 */
+#    elif (__BORLANDC__ == 0x0550)   /* __TURBOC__ = 0x0550 */
       " 5.5 (C++ Builder 5.0)",
-#  elif (__BORLANDC__ == 0x0551)   /* __TURBOC__ = 0x0551 */
+#    elif (__BORLANDC__ == 0x0551)   /* __TURBOC__ = 0x0551 */
       " 5.5.1 (C++ Builder 5.0.1)",
-#  elif (__BORLANDC__ == 0x0560)   /* __TURBOC__ = 0x0560 */
+#    elif (__BORLANDC__ == 0x0560)   /* __TURBOC__ = 0x0560 */
       " 6.0 (C++ Builder 6.0)",
-#  else
+#    else
       " later than 6.0",
-#  endif
-#elif defined(__LCC__)
+#    endif
+#   elif defined(__LCC__)
       "LCC-Win32", "",
-#elif defined(__GNUC__)
-#  if defined(__RSXNT__)
-#    if (defined(__DJGPP__) && !defined(__EMX__))
+#   elif defined(__GNUC__)
+#    if defined(__RSXNT__)
+#     if (defined(__DJGPP__) && !defined(__EMX__))
       (sprintf(buf, "rsxnt(djgpp v%d.%02d) / gcc ",
         __DJGPP__, __DJGPP_MINOR__), buf),
-#    elif defined(__DJGPP__)
+#     elif defined(__DJGPP__)
       (sprintf(buf, "rsxnt(emx+djgpp v%d.%02d) / gcc ",
         __DJGPP__, __DJGPP_MINOR__), buf),
-#    elif (defined(__GO32__) && !defined(__EMX__))
+#     elif (defined(__GO32__) && !defined(__EMX__))
       "rsxnt(djgpp v1.x) / gcc ",
-#    elif defined(__GO32__)
+#     elif defined(__GO32__)
       "rsxnt(emx + djgpp v1.x) / gcc ",
-#    elif defined(__EMX__)
+#     elif defined(__EMX__)
       "rsxnt(emx)+gcc ",
-#    else
+#     else
       "rsxnt(unknown) / gcc ",
-#    endif
-#  elif defined(__CYGWIN__)
+#     endif
+#    elif defined(__CYGWIN__)
       "cygnus win32 / gcc ",
-#  elif defined(__MINGW32__)
+#    elif defined(__MINGW32__)
       "mingw32 / gcc ",
-#  else
+#    else
       "gcc ",
-#  endif
+#    endif
       __VERSION__,
-#else /* !_MSC_VER, !__WATCOMC__, !__BORLANDC__, !__LCC__, !__GNUC__ */
+#   else /* !_MSC_VER, !__WATCOMC__, !__BORLANDC__, !__LCC__, !__GNUC__ */
       "unknown compiler (SDK?)", "",
-#endif /* ?compilers */
+#   endif /* ?compilers */
 
       "\nWindows 9x / Windows NT/2K/XP/2K3", " (32-bit)",
 
-#ifdef __DATE__
+#   ifdef __DATE__
       " on ", __DATE__
-#else
+#   else
       "", ""
-#endif
+#   endif
     );
 
     (*G.message)((zvoid *)&G, slide, (ulg)len, 0);
@@ -2647,12 +3939,12 @@ void version(__G)
 
 } /* end function version() */
 
-#endif /* !WINDLL */
-#endif /* !SFX */
+#  endif /* !WINDLL */
+# endif /* !SFX */
 
 
 
-#ifdef MORE
+# ifdef MORE
 
 int screensize(int *tt_rows, int *tt_cols)
 {
@@ -2666,11 +3958,11 @@ int screensize(int *tt_rows, int *tt_cols)
     return 0;           /* signal success */
 }
 
-#endif /* MORE */
+# endif /* MORE */
 
 
 
-#ifdef W32_STAT_BANDAID
+# ifdef W32_STAT_BANDAID
 
 /* All currently known variants of WIN32 operating systems (Windows 95/98,
  * WinNT 3.x, 4.0, 5.x) have a nasty bug in the OS kernel concerning
@@ -2719,19 +4011,19 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
     if (!zstat(path, buf))
     {
         /* stat was successful, now redo the time-stamp fetches */
-#ifndef NO_W32TIMES_IZFIX
+#  ifndef NO_W32TIMES_IZFIX
         int fs_uses_loctime = FStampIsLocTime(__G__ path);
-#endif
+#  endif
         HANDLE h;
         FILETIME Modft, Accft, Creft;
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+#  ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
         char *ansi_path = (char *)alloca(strlen(path) + 1);
 
         INTERN_TO_ISO(path, ansi_path);
 #       define Ansi_Path  ansi_path
-#else
+#  else
 #       define Ansi_Path  path
-#endif
+#  endif
 
         TTrace((stdout, "stat(%s) finds modtime %08lx\n", path, buf->st_mtime));
         h = CreateFileA(Ansi_Path, GENERIC_READ,
@@ -2744,7 +4036,7 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
             if (ftOK) {
                 FTTrace((stdout, "GetFileTime returned Modft", 0, &Modft));
                 FTTrace((stdout, "GetFileTime returned Creft", 0, &Creft));
-#ifndef NO_W32TIMES_IZFIX
+#  ifndef NO_W32TIMES_IZFIX
                 if (!fs_uses_loctime) {
                     /*  On a filesystem that stores UTC timestamps, we refill
                      *  the time fields of the struct stat buffer by directly
@@ -2763,7 +4055,7 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
                     TTrace((stdout,"NTFS, recalculated modtime %08lx\n",
                             buf->st_mtime));
                 } else
-#endif /* NO_W32TIMES_IZFIX */
+#  endif /* NO_W32TIMES_IZFIX */
                 {
                     /*  On VFAT and FAT-like filesystems, the FILETIME values
                      *  are converted back to the stable local time before
@@ -2786,18 +4078,18 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
 #       undef Ansi_Path
         return 0;
     }
-#ifdef W32_STATROOT_FIX
+#  ifdef W32_STATROOT_FIX
     else
     {
         DWORD flags;
-#ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+#   ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
         char *ansi_path = (char *)alloca(strlen(path) + 1);
 
         INTERN_TO_ISO(path, ansi_path);
 #       define Ansi_Path  ansi_path
-#else
+#   else
 #       define Ansi_Path  path
-#endif
+#   endif
 
         flags = GetFileAttributesA(Ansi_Path);
         if (flags != 0xFFFFFFFF && flags & FILE_ATTRIBUTE_DIRECTORY) {
@@ -2812,15 +4104,110 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
         } /* assumes: stat() won't fail on non-dirs without good reason */
 #       undef Ansi_Path
     }
-#endif /* W32_STATROOT_FIX */
+#  endif /* W32_STATROOT_FIX */
     return -1;
 }
 
-#endif /* W32_STAT_BANDAID */
+
+
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
+{
+    if (!zstatw(pathw, buf))
+    {
+        char *path = wchar_to_local_string((wchar_t *)pathw, G.unicode_escape_all);
+        /* stat was successful, now redo the time-stamp fetches */
+#   ifndef NO_W32TIMES_IZFIX
+        int fs_uses_loctime = FStampIsLocTimeW(__G__ pathw);
+#   endif
+        HANDLE h;
+        FILETIME Modft, Accft, Creft;
+
+        TTrace((stdout, "stat(%s) finds modtime %08lx\n", path, buf->st_mtime));
+        h = CreateFileW(pathw, GENERIC_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (h != INVALID_HANDLE_VALUE) {
+            BOOL ftOK = GetFileTime(h, &Creft, &Accft, &Modft);
+            CloseHandle(h);
+
+            if (ftOK) {
+                FTTrace((stdout, "GetFileTime returned Modft", 0, &Modft));
+                FTTrace((stdout, "GetFileTime returned Creft", 0, &Creft));
+#   ifndef NO_W32TIMES_IZFIX
+                if (!fs_uses_loctime) {
+                    /*  On a filesystem that stores UTC timestamps, we refill
+                     *  the time fields of the struct stat buffer by directly
+                     *  using the UTC values as returned by the Win32
+                     *  GetFileTime() API call.
+                     */
+                    NtfsFileTime2utime(&Modft, &(buf->st_mtime));
+                    if (Accft.dwLowDateTime != 0 || Accft.dwHighDateTime != 0)
+                        NtfsFileTime2utime(&Accft, &(buf->st_atime));
+                    else
+                        buf->st_atime = buf->st_mtime;
+                    if (Creft.dwLowDateTime != 0 || Creft.dwHighDateTime != 0)
+                        NtfsFileTime2utime(&Creft, &(buf->st_ctime));
+                    else
+                        buf->st_ctime = buf->st_mtime;
+                    TTrace((stdout,"NTFS, recalculated modtime %08lx\n",
+                            buf->st_mtime));
+                } else
+#   endif /* NO_W32TIMES_IZFIX */
+                {
+                    /*  On VFAT and FAT-like filesystems, the FILETIME values
+                     *  are converted back to the stable local time before
+                     *  converting them to UTC unix time-stamps.
+                     */
+                    VFatFileTime2utime(&Modft, &(buf->st_mtime));
+                    if (Accft.dwLowDateTime != 0 || Accft.dwHighDateTime != 0)
+                        VFatFileTime2utime(&Accft, &(buf->st_atime));
+                    else
+                        buf->st_atime = buf->st_mtime;
+                    if (Creft.dwLowDateTime != 0 || Creft.dwHighDateTime != 0)
+                        VFatFileTime2utime(&Creft, &(buf->st_ctime));
+                    else
+                        buf->st_ctime = buf->st_mtime;
+                    TTrace((stdout, "VFAT, recalculated modtime %08lx\n",
+                            buf->st_mtime));
+                }
+            }
+        }
+        free(path);
+
+        return 0;
+    }
+#   ifdef W32_STATROOT_FIX
+    else
+    {
+        DWORD flags;
+
+        flags = GetFileAttributesW(pathw);
+        if (flags != 0xFFFFFFFF && flags & FILE_ATTRIBUTE_DIRECTORY) {
+            char *path = wchar_to_local_string((wchar_t *)pathw, G.unicode_escape_all);
+            Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
+                   FnFilter1(path)));
+            free(path);
+            memset(buf, 0, sizeof(z_stat));
+            buf->st_atime = buf->st_ctime = buf->st_mtime =
+              dos_to_unix_time(DOSTIME_MINIMUM);        /* 1-1-80 */
+            buf->st_mode = S_IFDIR | S_IREAD |
+                           ((flags & FILE_ATTRIBUTE_READONLY) ? 0 : S_IWRITE);
+            return 0;
+        } /* assumes: stat() won't fail on non-dirs without good reason */
+    }
+#   endif /* W32_STATROOT_FIX */
+    return -1;
+}
+
+#  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+# endif /* W32_STAT_BANDAID */
 
 
 
-#ifdef W32_USE_IZ_TIMEZONE
+# ifdef W32_USE_IZ_TIMEZONE
 #include "timezone.h"
 #define SECSPERMIN      60
 #define MINSPERHOUR     60
@@ -2887,7 +4274,7 @@ int GetPlatformLocalTimezone(register struct state * ZCONST sp,
     }
     return FALSE;
 }
-#endif /* W32_USE_IZ_TIMEZONE */
+# endif /* W32_USE_IZ_TIMEZONE */
 
 #endif /* !FUNZIP */
 
@@ -2916,14 +4303,14 @@ int getch_win32(void)
   int ret = -1;
   DWORD odemode = ~(DWORD)0;
 
-#  ifdef PASSWD_FROM_STDIN
+# ifdef PASSWD_FROM_STDIN
   stin = GetStdHandle(STD_INPUT_HANDLE);
-#  else
+# else
   stin = CreateFileA("CONIN$", GENERIC_READ | GENERIC_WRITE,
                      FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
   if (stin == INVALID_HANDLE_VALUE)
     return -1;
-#  endif
+# endif
   if (GetConsoleMode(stin, &odemode))
     SetConsoleMode(stin, ENABLE_PROCESSED_INPUT);  /* raw except ^C noticed */
   if (ReadFile(stin, &buf, 1, &rc, NULL) && rc == 1)
@@ -2937,9 +4324,9 @@ int getch_win32(void)
       ret = buf[0];
   if (odemode != ~(DWORD)0)
     SetConsoleMode(stin, odemode);
-#  ifndef PASSWD_FROM_STDIN
+# ifndef PASSWD_FROM_STDIN
   CloseHandle(stin);
-#  endif
+# endif
   return ret;
 }
 #endif /* !WINDLL */
@@ -3074,7 +4461,7 @@ wchar_t *local_to_wchar_string(local_string)
   return qw;
 }
 
-#if 0
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
 wchar_t *utf8_to_wchar_string(utf8_string)
   char *utf8_string;       /* path to get utf-8 name for */
 {
@@ -3120,8 +4507,44 @@ wchar_t *utf8_to_wchar_string(utf8_string)
   return qw;
 }
 
-#endif /* 0 */
-#endif /* UNICODE_SUPPORT && !FUNZIP */
+int has_win32_wide()
+{
+  int is_win32_wide;
+
+  /* test if we have wide function support */
+  /* first guess: On "real" WinNT, the WIN32 wide API >>is<< supported. */
+  is_win32_wide = IsWinNT();
+
+  if (!is_win32_wide)
+  {
+    /* On a non-WinNT environment (Win9x or Win32s), wide functions
+     * might be supported when program is linked against the
+     * Win9x Unicode support library.
+     * => run a check whether a needed API function is supported.
+     */
+    DWORD r;
+    /* get attributes for this directory */
+    r = GetFileAttributesA(".");
+
+    /* r should be 16 = FILE_ATTRIBUTE_DIRECTORY */
+    if (r == FILE_ATTRIBUTE_DIRECTORY) {
+      /* now see if it works for the wide version */
+      r = GetFileAttributesW(L".");
+      /* if this fails then we probably don't have wide functions */
+      if (r == 0xFFFFFFFF) {
+        /* error is probably "This function is only valid in Win32 mode." */
+      } else if (r == FILE_ATTRIBUTE_DIRECTORY) {
+        /* worked, so assume we have wide support */
+        is_win32_wide = TRUE;
+      }
+    }
+  }
+  return is_win32_wide;
+}
+
+# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+#endif /* (defined(UNICODE_SUPPORT) && !defined(FUNZIP)) */
 
 
 

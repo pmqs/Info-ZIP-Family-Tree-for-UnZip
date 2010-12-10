@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -13,18 +13,13 @@
 
 #include <time.h>
 
-typedef struct {
-  int errnum;
-  char errmess[252];
-} os_error;
-
 #ifndef __swiven_h
 #  include "swiven.h"
 #endif
 
-#define MAXPATHLEN 256
-#define MAXFILENAMELEN 64  /* should be 11 for ADFS, 13 for DOS, 64 seems a sensible value... */
-#define DIR_BUFSIZE 1024   /* this should be enough to read a whole E-Format directory */
+#define MAXPATHLEN 1024
+#define MAXFILENAMELEN MAXPATHLEN  /* RISC OS 4 has 1024 limit. 1024 is also the same as FNMAX in zip.h */
+#define DIR_BUFSIZE MAXPATHLEN   /* Ensure we can read at least one full-length RISC OS 4 filename */
 
 struct stat {
   unsigned int st_dev;
@@ -58,15 +53,6 @@ struct dirent {
   size_t d_namlen;             /* length of d_name */
   char d_name[MAXFILENAMELEN]; /* name */
 };
-
-typedef struct {
-  unsigned int load_addr;
-  unsigned int exec_addr;
-  int lenght;
-  int attrib;
-  int objtype;
-  char name[13];
-} riscos_direntry;
 
 typedef struct {
   short         ID;
@@ -112,6 +98,9 @@ typedef struct {
 #  define localtime riscos_localtime
 #  define gmtime riscos_gmtime
 #endif /* !NO_UNZIPH_STUFF */
+#define SET_DIR_ATTRIB
+
+#define NO_EXCEPT_SIGNALS
 
 #define _raw_getc() SWI_OS_ReadC()
 
