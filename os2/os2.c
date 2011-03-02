@@ -323,7 +323,7 @@ long GetFileTime(ZCONST char *name)
 
 static int SetFileTime(ZCONST char *name, ulg stamp)   /* swiped from Zip */
 {
-  FILESTATUS fs;
+  FILESTATUS3 fs;
   USHORT fd, ft;
 
   if (DosQueryPathInfo((PSZ) name, FIL_STANDARD, (PBYTE) &fs, sizeof(fs)))
@@ -464,11 +464,12 @@ static void SetPathAttrTimes(__GPRO__ int flags, int dir)
 #else
   USHORT nAction;
 #endif
-  FILESTATUS fs;
+  FILESTATUS3 fs;
   USHORT nLength;
   char szName[CCHMAXPATH];
   ulg Mod_dt, Acc_dt, Cre_dt;
   int gotTimes;
+  APIRET rc;
 
   strcpy(szName, G.filename);
   nLength = strlen(szName);
@@ -520,7 +521,7 @@ static void SetPathAttrTimes(__GPRO__ int flags, int dir)
   }
   else
   {
-    DosSetFileInfo(hFile, FIL_STANDARD, (PBYTE) &fs, sizeof(fs));
+    rc = DosSetFileInfo(hFile, FIL_STANDARD, (PBYTE) &fs, sizeof(fs));
     DosClose(hFile);
   }
 }
