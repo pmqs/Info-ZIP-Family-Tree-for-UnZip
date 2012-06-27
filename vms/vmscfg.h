@@ -13,9 +13,22 @@
 #ifndef __vmscfg_h   /* Prevent (unlikely) multiple inclusions. */
 #define __vmscfg_h
 
-/* Workaround for broken header files of older DECC distributions
- * that are incompatible with the /NAMES=AS_IS qualifier. */
-#define cma$tis_errno_get_addr CMA$TIS_ERRNO_GET_ADDR
+/* 2011-12-26 SMS.
+ * Added the whole cma$tis_* set instead of only cma$tis_errno_get_addr.
+ * (Needed cma$tis_vmserrno_get_addr for the user-triggered progress
+ * messages.)
+ *
+ * Workaround for broken header files of older DECC distributions
+ * that are incompatible with the /NAMES=AS_IS qualifier.
+ */
+#define cma$tis_errno_get_addr     CMA$TIS_ERRNO_GET_ADDR
+#define cma$tis_vmserrno_get_addr  CMA$TIS_VMSERRNO_GET_ADDR
+#define cma$tis_errno_set_value    CMA$TIS_ERRNO_SET_VALUE
+#define cma$tis_vmserrno_set_value CMA$TIS_VMSERRNO_SET_VALUE
+
+#define sys$assign SYS$ASSIGN
+#define sys$dassgn SYS$DASSGN
+#define sys$qiow SYS$QIOW
 
 /* LARGE FILE SUPPORT - 10/6/04 EG */
 /* This needs to be set before the includes so they set the right sizes */
@@ -67,23 +80,32 @@
 #  include <rms.h>
 
 /* Define maximum path length according to NAM[L] member size. */
-#  ifndef NAM_MAXRSS
+#  ifndef NAMX_MAXRSS
 #    ifdef NAML$C_MAXRSS
-#      define NAM_MAXRSS NAML$C_MAXRSS
+#      define NAMX_MAXRSS NAML$C_MAXRSS
 #    else
-#      define NAM_MAXRSS NAM$C_MAXRSS
+#      define NAMX_MAXRSS NAM$C_MAXRSS
 #    endif
 #  endif
 
-#  define _MAX_PATH (NAM_MAXRSS+1)      /* to define FILNAMSIZ below */
+#  define _MAX_PATH (NAMX_MAXRSS+1)     /* to define FILNAMSIZ below */
 
-#  ifdef RETURN_CODES  /* VMS interprets standard PK return codes incorrectly */
-#    define RETURN(ret) return_VMS(__G__ (ret))   /* verbose version */
-#    define EXIT(ret)   return_VMS(__G__ (ret))
-#  else
-#    define RETURN      return_VMS                /* quiet version */
-#    define EXIT        return_VMS
-#  endif
+#  ifdef DLL
+     /* Return the normal (raw) PK status code. */
+#    define RETURN      return
+#    define EXIT        return
+#  else /* def DLL */
+     /* Do the desired VMS-specific status code and exit processing. */
+#    ifdef RETURN_CODES
+       /* Display error message before exiting. */
+#      define RETURN(ret) return_VMS(__G__ (ret))
+#      define EXIT(ret)   return_VMS(__G__ (ret))
+#    else
+       /* Exit without extra error message. */
+#      define RETURN      return_VMS
+#      define EXIT        return_VMS
+#    endif
+#  endif /* def DLL [else] */
 #  ifdef VMSCLI
 #    define USAGE(ret)  VMSCLI_usage(__G__ (ret))
 #  endif

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -31,55 +31,55 @@
 #include "unzip.h"
 
 #ifdef USE_ICONV_MAPPING
-#include <iconv.h>
-#include <langinfo.h>
+# include <iconv.h>
+# include <langinfo.h>
 #endif /* USE_ICONV_MAPPING */
 
 #ifdef SCO_XENIX
-#  define SYSNDIR
+# define SYSNDIR
 #else  /* SCO Unix, AIX, DNIX, TI SysV, Coherent 4.x, ... */
-#  if defined(__convexc__) || defined(SYSV) || defined(CRAY) || defined(BSD4_4)
-#    define DIRENT
-#  endif
+# if defined(__convexc__) || defined(SYSV) || defined(CRAY) || defined(BSD4_4)
+#  define DIRENT
+# endif
 #endif
 #if defined(_AIX) || defined(__mpexl)
-#  define DIRENT
+# define DIRENT
 #endif
 #ifdef COHERENT
-#  if defined(_I386) || (defined(__COHERENT__) && (__COHERENT__ >= 0x420))
-#    define DIRENT
-#  endif
+# if defined(_I386) || (defined(__COHERENT__) && (__COHERENT__ >= 0x420))
+#  define DIRENT
+# endif
 #endif
 
 #ifdef _POSIX_VERSION
-#  ifndef DIRENT
-#    define DIRENT
-#  endif
+# ifndef DIRENT
+#  define DIRENT
+# endif
 #endif
 
 #ifdef DIRENT
-#  include <dirent.h>
+# include <dirent.h>
 #else
-#  ifdef SYSV
-#    ifdef SYSNDIR
-#      include <sys/ndir.h>
-#    else
-#      include <ndir.h>
-#    endif
-#  else /* !SYSV */
-#    ifndef NO_SYSDIR
-#      include <sys/dir.h>
-#    endif
-#  endif /* ?SYSV */
-#  ifndef dirent
-#    define dirent direct
+# ifdef SYSV
+#  ifdef SYSNDIR
+#   include <sys/ndir.h>
+#  else
+#   include <ndir.h>
 #  endif
+# else /* !SYSV */
+#  ifndef NO_SYSDIR
+#   include <sys/dir.h>
+#  endif
+# endif /* ?SYSV */
+# ifndef dirent
+#  define dirent direct
+# endif
 #endif /* ?DIRENT */
 
 #if defined( UNIX) && defined( __APPLE__)
-#  include <sys/attr.h>
-#  include <sys/mount.h>
-#  include <sys/vnode.h>
+# include <sys/attr.h>
+# include <sys/mount.h>
+# include <sys/vnode.h>
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef SET_DIR_ATTRIB
@@ -95,7 +95,7 @@ typedef struct uxdirattr {      /* struct for holding unix style directory */
     ulg uidgid[2];
     char fnbuf[1];              /* buffer stub for directory name */
 } uxdirattr;
-#define UxAtt(d)  ((uxdirattr *)d)    /* typecast shortcut */
+# define UxAtt(d)  ((uxdirattr *)d)     /* typecast shortcut */
 #endif /* SET_DIR_ATTRIB */
 
 #ifdef ACORN_FTYPE_NFS
@@ -136,7 +136,7 @@ static ZCONST char CannotSetTimestamps[] =
 
 
 #ifndef SFX
-#ifdef NO_DIR                  /* for AT&T 3B1 */
+# ifdef NO_DIR                  /* for AT&T 3B1 */
 
 #define opendir(path) fopen(path,"r")
 #define closedir(dir) fclose(dir)
@@ -190,7 +190,8 @@ struct dirent *readdir(dirp)
 
 } /* end function readdir() */
 
-#endif /* NO_DIR */
+# endif /* NO_DIR */
+
 
 
 /**********************/
@@ -315,19 +316,18 @@ char *do_wild(__G__ wildspec)
 
 } /* end function do_wild() */
 
-#endif /* !SFX */
-
+#endif /* ndef SFX */
 
 
 
 #ifndef S_ISUID
-# define S_ISUID        0004000 /* set user id on execution */
+# define S_ISUID       0004000 /* set user id on execution */
 #endif
 #ifndef S_ISGID
-# define S_ISGID        0002000 /* set group id on execution */
+# define S_ISGID       0002000 /* set group id on execution */
 #endif
 #ifndef S_ISVTX
-# define S_ISVTX        0001000 /* save swapped text even after use */
+# define S_ISVTX       0001000 /* save swapped text even after use */
 #endif
 
 /************************/
@@ -349,8 +349,6 @@ static unsigned filtattr(__G__ perms)
 
     return (0xffff & perms);
 } /* end function filtattr() */
-
-
 
 
 
@@ -500,8 +498,6 @@ int mapattr(__G)
 
 
 
-
-
 /************************/
 /*  Function mapname()  */
 /************************/
@@ -585,14 +581,14 @@ int mapname(__G__ renamed)
                 lastsemi = (char *)NULL; /* leave direct. semi-colons alone */
                 break;
 
-#ifdef __CYGWIN__   /* Cygwin runs on Win32, apply FAT/NTFS filename rules */
-            case ':':         /* drive spec not stored, so no colon allowed */
-            case '\\':        /* '\\' may come as normal filename char (not */
-            case '<':         /*  dir sep char!) from unix-like file system */
-            case '>':         /* no redirection symbols allowed either */
-            case '|':         /* no pipe signs allowed */
-            case '"':         /* no double quotes allowed */
-            case '?':         /* no wildcards allowed */
+#ifdef __CYGWIN__  /* Cygwin runs on Win32, apply FAT/NTFS filename rules */
+            case ':':   /* drive spec not stored, so no colon allowed */
+            case '\\':  /* '\\' may come as normal filename char (not */
+            case '<':   /*  dir sep char!) from unix-like file system */
+            case '>':   /* no redirection symbols allowed either */
+            case '|':   /* no pipe signs allowed */
+            case '"':   /* no double quotes allowed */
+            case '?':   /* no wildcards allowed */
             case '*':
                 *pp++ = '_';  /* these rules apply equally to FAT and NTFS */
                 break;
@@ -674,7 +670,7 @@ int mapname(__G__ renamed)
                 if (chmod(G.filename, G.pInfo->file_attr | 0700))
                     perror("chmod (directory attributes) error");
             }
-#endif
+#endif /* ndef NO_CHMOD */
             /* set dir time (note trailing '/') */
             return (error & ~MPN_MASK) | MPN_CREATED_DIR;
         }
@@ -722,10 +718,11 @@ int mapname(__G__ renamed)
         if ((ft & 1<<31)==0) ft=0x000FFD00;
         sprintf(pathcomp+strlen(pathcomp), ",%03x", (int)(ft>>8) & 0xFFF);
     }
-#endif /* ACORN_FTYPE_NFS */
+#endif /* def ACORN_FTYPE_NFS */
 
     if (*pathcomp == '\0') {
-        Info(slide, 1, ((char *)slide, "mapname:  conversion of %s failed\n",
+        Info(slide, 1, ((char *)slide,
+         "mapname:  conversion of \"%s\" failed\n",
           FnFilter1(G.filename)));
         return (error & ~MPN_MASK) | MPN_ERR_SKIP;
     }
@@ -736,7 +733,6 @@ int mapname(__G__ renamed)
     return error;
 
 } /* end function mapname() */
-
 
 
 
@@ -757,7 +753,6 @@ int mapname(__G__ renamed)
     checkdir(name, GETPATH)     -->  copy path to name and free space
 
 #endif /* 0 */
-
 
 
 
@@ -785,8 +780,8 @@ int checkdir(__G__ pathcomp, flag)
  /* static char *buildpath; */  /* full path (so far) to extracted file */
  /* static char *end;       */  /* pointer to end of buildpath ('\0') */
 
-#   define FN_MASK   7
-#   define FUNCTION  (flag & FN_MASK)
+#define FN_MASK   7
+#define FUNCTION  (flag & FN_MASK)
 
 
 
@@ -1024,8 +1019,6 @@ int checkdir(__G__ pathcomp, flag)
 
 
 
-
-
 #ifdef NO_MKDIR
 
 /********************/
@@ -1054,7 +1047,6 @@ int mkdir(path, mode)
 
 
 
-
 #if (!defined(MTS) || defined(SET_DIR_ATTRIB))
 static int get_extattribs OF((__GPRO__ iztimes *pzt, ulg z_uidgid[2]));
 
@@ -1076,11 +1068,11 @@ static int get_extattribs(__G__ pzt, z_uidgid)
 
     eb_izux_flg = (G.extra_field ? ef_scan_for_izux(G.extra_field,
                    G.lrec.extra_field_length, 0, G.lrec.last_mod_dos_datetime,
-#ifdef IZ_CHECK_TZ
+# ifdef IZ_CHECK_TZ
                    (G.tz_is_valid ? pzt : NULL),
-#else
+# else
                    pzt,
-#endif
+# endif
                    z_uidgid) : 0);
     if (eb_izux_flg & EB_UT_FL_MTIME) {
         TTrace((stderr, "\nget_extattribs:  Unix e.f. modif. time = %ld\n",
@@ -1099,11 +1091,11 @@ static int get_extattribs(__G__ pzt, z_uidgid)
 
     /* if -X option was specified and we have UID/GID info, restore it */
     have_uidgid_flg =
-#ifdef RESTORE_UIDGID
+# ifdef RESTORE_UIDGID
             ((uO.X_flag > 0) && (eb_izux_flg & EB_UX2_VALID));
-#else
+# else
             0;
-#endif
+# endif
     return have_uidgid_flg;
 }
 #endif /* !MTS || SET_DIR_ATTRIB */
@@ -1136,15 +1128,15 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     unsigned ints with unsigned longs.
   ---------------------------------------------------------------------------*/
 
-#ifdef SYMLINKS
+# ifdef SYMLINKS
     if (G.symlnk) {
         extent ucsize = (extent)G.lrec.ucsize;
-# ifdef SET_SYMLINK_ATTRIBS
+#  ifdef SET_SYMLINK_ATTRIBS
         extent attribsize = sizeof(unsigned) +
                             (have_uidgid_flg ? sizeof(z_uidgid) : 0);
-# else
+#  else
         extent attribsize = 0;
-# endif
+#  endif
         /* size of the symlink entry is the sum of
          *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
          *  system specific attribute data size (might be 0),
@@ -1172,12 +1164,12 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         slnk_entry->next = NULL;
         slnk_entry->targetlen = ucsize;
         slnk_entry->attriblen = attribsize;
-# ifdef SET_SYMLINK_ATTRIBS
+#  ifdef SET_SYMLINK_ATTRIBS
         memcpy(slnk_entry->buf, &(G.pInfo->file_attr),
                sizeof(unsigned));
         if (have_uidgid_flg)
             memcpy(slnk_entry->buf + 4, z_uidgid, sizeof(z_uidgid));
-# endif
+#  endif
         slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
         slnk_entry->fname = slnk_entry->target + ucsize + 1;
         strcpy(slnk_entry->fname, G.filename);
@@ -1207,31 +1199,35 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         G.slink_last = slnk_entry;
         return;
     }
-#endif /* SYMLINKS */
+# endif /* def SYMLINKS */
 
-#ifdef QLZIP
+# ifdef QLZIP
     if (G.extra_field) {
         static void qlfix OF((__GPRO__ uch *ef_ptr, unsigned ef_len));
 
         qlfix(__G__ G.extra_field, G.lrec.extra_field_length);
     }
-#endif
+# endif
 
-#if (defined(NO_FCHOWN))
-    fclose(G.outfile);
-#endif
-
+    /* Change file ownership, if possible and desired. */
+# if !defined( NO_CHOWN) || !defined( NO_FCHOWN)
+    /* We have some kind of [f]chown(), so keep working. */
     /* if -X option was specified and we have UID/GID info, restore it */
     if (have_uidgid_flg
         /* check that both uid and gid values fit into their data sizes */
         && ((ulg)(uid_t)(z_uidgid[0]) == z_uidgid[0])
-        && ((ulg)(gid_t)(z_uidgid[1]) == z_uidgid[1])) {
+        && ((ulg)(gid_t)(z_uidgid[1]) == z_uidgid[1]))
+    {
         TTrace((stderr, "close_outfile:  restoring Unix UID/GID info\n"));
-#if (defined(NO_FCHOWN))
+#  ifdef NO_FCHOWN
+        /* If we lack fchown(), then close the file (precluding use of
+         * fchmod(), below), and use chown() (and, below, chmod()).
+         */
+        fclose(G.outfile);  /* Nothing else to do while the file is open. */
         if (chown(G.filename, (uid_t)z_uidgid[0], (gid_t)z_uidgid[1]))
-#else
+#  else /* def NO_FCHOWN */
         if (fchown(fileno(G.outfile), (uid_t)z_uidgid[0], (gid_t)z_uidgid[1]))
-#endif
+#  endif /* def NO_FCHOWN [else] */
         {
             if (uO.qflag)
                 Info(slide, 0x201, ((char *)slide, CannotSetItemUidGid,
@@ -1242,25 +1238,30 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
                   z_uidgid[0], z_uidgid[1], strerror(errno)));
         }
     }
+# endif /* !defined( NO_CHOWN) || !defined( NO_FCHOWN) */
 
-#if (!defined(NO_FCHOWN) && defined(NO_FCHMOD))
-    fclose(G.outfile);
-#endif
+# if !defined( NO_FCHOWN) && defined(NO_FCHMOD)
+    /* File is still open (because we have fchown()), but we lack
+     * fchmod(), so we close the file now.
+     */
+    fclose(G.outfile);  /* Nothing else to do while the file is open. */
+# endif /* !defined( NO_FCHOWN) && defined(NO_FCHMOD) */
 
-#if (!defined(NO_FCHOWN) && !defined(NO_FCHMOD))
+# if !defined( NO_FCHOWN) && !defined( NO_FCHMOD)
+  /* File is still open (because we have fchown()), and we have fchmod(). */
 /*---------------------------------------------------------------------------
     Change the file permissions from default ones to those stored in the
     zipfile.
   ---------------------------------------------------------------------------*/
 
-# if defined( UNIX) && defined( __APPLE__)
+#  if defined( UNIX) && defined( __APPLE__)
     /* 2009-04-19 SMS.
      * Skip fchmod() for an AppleDouble file.  (Doing the normal file
      * is enough, and fchmod() will fail on a "/rsrc" pseudo-file.)
      */
     if (!G.apple_double)
     {
-# endif /* defined( UNIX) && defined( __APPLE__) */
+#  endif /* defined( UNIX) && defined( __APPLE__) */
 
     if (uO.X_flag >= 0)
     {
@@ -1268,12 +1269,13 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             perror("fchmod (file attributes) error");
     }
 
-# if defined( UNIX) && defined( __APPLE__)
+#  if defined( UNIX) && defined( __APPLE__)
     }
-# endif /* defined( UNIX) && defined( __APPLE__) */
+#  endif /* defined( UNIX) && defined( __APPLE__) */
 
+    /* We're done with fchown() and fchmod(), so we can close the file. */
     fclose(G.outfile);
-#endif /* !NO_FCHOWN && !NO_FCHMOD */
+# endif /* !defined( NO_FCHOWN) && !defined( NO_FCHMOD) */
 
 # if defined( UNIX) && defined( __APPLE__)
     /* 2009-04-19 SMS.
@@ -1301,20 +1303,23 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     }
 # endif /* defined( UNIX) && defined( __APPLE__) */
 
-#if (defined(NO_FCHOWN) || defined(NO_FCHMOD))
+# if defined( NO_FCHOWN) || defined( NO_FCHMOD)
+  /* We lack fchown() or fchmod(), so the file has been closed.  We may
+   * have done chown() above, but not chmod().
+   */
 /*---------------------------------------------------------------------------
     Change the file permissions from default ones to those stored in the
     zipfile.
   ---------------------------------------------------------------------------*/
 
-#ifndef NO_CHMOD
+#  ifndef NO_CHMOD
     if (uO.X_flag >= 0)
     {
         if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
             perror("chmod (file attributes) error");
     }
-#endif /* ndef NO_CHMOD */
-#endif /* NO_FCHOWN || NO_FCHMOD */
+#  endif /* ndef NO_CHMOD */
+# endif /* defined( NO_FCHOWN) || defined( NO_FCHMOD) */
 
 } /* end function close_outfile() */
 
@@ -1326,10 +1331,8 @@ int set_symlnk_attribs(__G__ slnk_entry)
     __GDEF
     slinkentry *slnk_entry;
 {
-    ulg z_uidgid[2];
-
     if (slnk_entry->attriblen > 0) {
-# if (!defined(NO_LCHOWN))
+# ifndef NO_LCHOWN
       if (slnk_entry->attriblen > sizeof(unsigned)) {
         ulg *z_uidgid_p = (zvoid *)(slnk_entry->buf + sizeof(unsigned));
         /* check that both uid and gid values fit into their data sizes */
@@ -1348,8 +1351,8 @@ int set_symlnk_attribs(__G__ slnk_entry)
           }
         }
       }
-# endif /* !NO_LCHOWN */
-# if (!defined(NO_LCHMOD))
+# endif /* ndef NO_LCHOWN */
+# ifndef NO_LCHMOD
       if (uO.X_flag >= 0)
       {
           TTrace((stderr,
@@ -1359,7 +1362,7 @@ int set_symlnk_attribs(__G__ slnk_entry)
            filtattr(__G__ *(unsigned *)(zvoid *)slnk_entry->buf)))
               perror("lchmod (file attributes) error");
         }
-# endif /* !NO_LCHMOD */
+# endif /* ndef NO_LCHMOD */
     }
     /* currently, no error propagation... */
     return PK_OK;
@@ -1369,10 +1372,10 @@ int set_symlnk_attribs(__G__ slnk_entry)
 
 #ifdef SET_DIR_ATTRIB
 /* messages of code for setting directory attributes */
-#  ifndef NO_CHMOD
+# ifndef NO_CHMOD
   static ZCONST char DirlistChmodFailed[] =
     "warning:  cannot set permissions for %s\n          %s\n";
-#  endif
+# endif
 
 
 int defer_dir_attribs(__G__ pd)
@@ -1397,12 +1400,15 @@ int defer_dir_attribs(__G__ pd)
 } /* end function defer_dir_attribs() */
 
 
+
 int set_direc_attribs(__G__ d)
     __GDEF
     direntry *d;
 {
     int errval = PK_OK;
 
+# ifndef NO_CHOWN
+    /* Set directory owner (if possible). */
     if (UxAtt(d)->have_uidgid &&
         /* check that both uid and gid values fit into their data sizes */
         ((ulg)(uid_t)(UxAtt(d)->uidgid[0]) == UxAtt(d)->uidgid[0]) &&
@@ -1416,7 +1422,9 @@ int set_direc_attribs(__G__ d)
         if (!errval)
             errval = PK_WARN;
     }
-    /* Skip restoring directory time stamps on user' request. */
+# endif /* ndef NO_CHOWN */
+
+    /* Skip restoring directory time stamps on user request. */
     if (uO.D_flag <= 0) {
         /* restore directory timestamps */
         if (utime(d->fn, &UxAtt(d)->u.t2)) {
@@ -1426,7 +1434,11 @@ int set_direc_attribs(__G__ d)
                 errval = PK_WARN;
         }
     }
-#ifndef NO_CHMOD
+
+# ifndef NO_CHMOD
+    /* Do chmod() last, to avoid trying to change some attribute on a
+     * read-only file.
+     */
     if (uO.X_flag >= 0)
     {
         if (chmod(d->fn, UxAtt(d)->perms)) {
@@ -1436,12 +1448,12 @@ int set_direc_attribs(__G__ d)
                 errval = PK_WARN;
         }
     }
-#endif /* !NO_CHMOD */
+# endif /* ndef NO_CHMOD */
+
     return errval;
 } /* end function set_direc_attribs() */
 
 #endif /* SET_DIR_ATTRIB */
-
 
 
 
@@ -1466,7 +1478,6 @@ int stamp_file(fname, modtime)
 
 
 
-
 #ifndef SFX
 
 /************************/
@@ -1476,331 +1487,519 @@ int stamp_file(fname, modtime)
 void version(__G)
     __GDEF
 {
-#if (defined(__GNUC__) && defined(NX_CURRENT_COMPILER_RELEASE))
-    char cc_namebuf[40];
+# if defined(__GNUC__)
+   /* __GNUC__ is generated by gcc and gcc-based compilers */
+   /* - Other compilers define __GNUC__ for compatibility  */
+#  if (defined(NX_CURRENT_COMPILER_RELEASE) || \
+        defined(__MINGW64__) || \
+        defined(__MINGW32__) || \
+        defined(__llvm__) || \
+        defined(__PCC__) || \
+        defined(__PATHCC__) || \
+        defined(__INTEL_COMPILER) || \
+        defined(__GNUC_PATCHLEVEL__) )
+    char cc_namebuf[80];
+#  endif /* __GNUC__ with computed name */
+#  if (defined(NX_CURRENT_COMPILER_RELEASE) || \
+        defined(__MINGW64__) || \
+        defined(__MINGW32__) || \
+        defined(__llvm__) || \
+        defined(__PCC__) || \
+        defined(__PATHCC__) || \
+        defined(__INTEL_COMPILER) || \
+        defined(__GNUC_PATCHLEVEL__) )
     char cc_versbuf[40];
-#else
-#if (defined(__SUNPRO_C))
+#  endif /* __GNUC__ with computed version */
+# else /* !__GNUC__ */
+#  if (defined(__SUNPRO_C))
     char cc_versbuf[17];
-#else
-#if (defined(__HP_cc) || defined(__IBMC__))
+#  else
+#   if (defined(__HP_cc))
     char cc_versbuf[25];
-#else
-#if (defined(__DECC_VER))
+#   else
+#    if (defined(__IBMC__))
+    char cc_versbuf[40];
+#    else
+#     if (defined(__DECC_VER))
     char cc_versbuf[17];
     int cc_verstyp;
-#else
-#if (defined(CRAY) && defined(_RELEASE))
+#     else
+#      if (defined(CRAY) && defined(_RELEASE))
     char cc_versbuf[40];
-#endif /* (CRAY && _RELEASE) */
-#endif /* __DECC_VER */
-#endif /* __HP_cc || __IBMC__ */
-#endif /* __SUNPRO_C */
-#endif /* (__GNUC__ && NX_CURRENT_COMPILER_RELEASE) */
+#      endif /* (CRAY && _RELEASE) */
+#     endif /* (__DECC_VER) */
+#    endif /* (__IBMC__) */
+#   endif /* (__HP_cc) */
+#  endif /* (__SUNPRO_C) */
+# endif /* (__GNUC__) */
 
-#if ((defined(CRAY) || defined(cray)) && defined(_UNICOS))
+# if ((defined(CRAY) || defined(cray)) && defined(_UNICOS))
     char os_namebuf[40];
-#else
-#if defined(__NetBSD__)
+# else
+#  if defined(__NetBSD__)
     char os_namebuf[40];
-#endif
-#endif
+#  endif
+# endif
 
     /* Pyramid, NeXT have problems with huge macro expansion, too:  no Info() */
     sprintf((char *)slide, LoadFarString(CompiledWith),
 
-#ifdef __GNUC__
-#  ifdef NX_CURRENT_COMPILER_RELEASE
-      (sprintf(cc_namebuf, "NeXT DevKit %d.%02d ",
-        NX_CURRENT_COMPILER_RELEASE/100, NX_CURRENT_COMPILER_RELEASE%100),
+# if defined(__GNUC__)
+   /* __GNUC__ is generated by gcc and gcc-based compilers */
+   /* - Other compilers define __GNUC__ for compatibility  */
+#  if defined(NX_CURRENT_COMPILER_RELEASE)
+      (sprintf( cc_namebuf, "NeXT DevKit %d.%02d ",
+                (NX_CURRENT_COMPILER_RELEASE / 100),
+                (NX_CURRENT_COMPILER_RELEASE % 100) ),
        cc_namebuf),
-      (strlen(__VERSION__) > 8)? "(gcc)" :
-        (sprintf(cc_versbuf, "(gcc %s)", __VERSION__), cc_versbuf),
+      (strlen(__VERSION__) > 8)?
+       "(GCC)" :
+       (sprintf(cc_versbuf, "(GCC %s)",
+                __VERSION__),
+        cc_versbuf),
 #  else
-      "gcc ", __VERSION__,
-#  endif
-#else
-#if defined(__SUNPRO_C)
-      "Sun C ", (sprintf(cc_versbuf, "version %x", __SUNPRO_C), cc_versbuf),
-#else
-#if (defined(__HP_cc))
+#   if defined(__MINGW64__)
+      (sprintf( cc_namebuf, "MinGW 64 GCC "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __GNUC__,
+                __GNUC_MINOR__,
+                __GNUC_PATCHLEVEL__ ),
+       cc_versbuf),
+#   else
+#    if defined(__MINGW32__)
+      (sprintf( cc_namebuf, "MinGW 32 GCC "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __GNUC__,
+                __GNUC_MINOR__,
+                __GNUC_PATCHLEVEL__ ),
+       cc_versbuf),
+#    else
+#     if defined(__llvm__)
+#      if defined(__clang__)
+      (sprintf( cc_namebuf, "LLVM Clang %d.%d.%d ",
+                __clang_major__,
+                __clang_minor__,
+                __clang_patchlevel__),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "(GCC %d.%d.%d)",
+                __GNUC__,
+                __GNUC_MINOR__,
+                __GNUC_PATCHLEVEL__ ),
+       cc_versbuf),
+#      else
+#       if defined(__APPLE_CC__)
+      (sprintf( cc_namebuf, "LLVM Apple GCC "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __GNUC__,
+                __GNUC_MINOR__,
+                __GNUC_PATCHLEVEL__ ),
+       cc_versbuf),
+#       else
+      (sprintf( cc_namebuf, "LLVM GCC "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __GNUC__,
+                __GNUC_MINOR__,
+                __GNUC_PATCHLEVEL__ ),
+       cc_versbuf),
+#       endif /* (__APPLE_CC__) */
+#      endif /* (__clang__) */
+#     else
+#      if defined(__PCC__)
+      (sprintf( cc_namebuf, "Portable C compiler "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __PCC__,
+                __PCC_MINOR__,
+                __PCC_MINORMINOR__ ),
+       cc_versbuf),
+#      else
+#       if defined(__PATHCC__)
+      (sprintf( cc_namebuf, "EKOPath C compiler "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __PATHCC__,
+                __PATHCC_MINOR__,
+                __PATHCC_PATCHLEVEL__ ),
+       cc_versbuf),
+#       else
+#        if defined(__INTEL_COMPILER)
+      (sprintf( cc_namebuf, "Intel C compiler "),
+       cc_namebuf),
+#         if defined(__INTEL_COMPILER_BUILD_DATE)
+      (sprintf( cc_versbuf, "%d.%d (%s)",
+                (__INTEL_COMPILER / 100),
+                (__INTEL_COMPILER % 100),
+                __INTEL_COMPILER_BUILD_DATE ),
+       cc_versbuf),
+#         else
+      (sprintf( cc_versbuf, "%d.%d",
+                (__INTEL_COMPILER / 100),
+                (__INTEL_COMPILER % 100) ),
+       cc_versbuf),
+#         endif /* (__INTEL_COMPILER_BUILD_DATE) */
+#        else
+#         if defined(__GNUC_PATCHLEVEL__)
+      (sprintf( cc_namebuf, "GCC "),
+       cc_namebuf),
+      (sprintf( cc_versbuf, "%d.%d.%d",
+                __GNUC__,
+                __GNUC_MINOR__,
+                __GNUC_PATCHLEVEL__ ),
+       cc_versbuf),
+#         else
+      "GCC ", __VERSION__,
+#         endif /* (__GNUC_PATCHLEVEL__) */
+#        endif /* (__INTEL_COMPILER) */
+#       endif /* (__PATHCC__) */
+#      endif /* (__PCC__) */
+#     endif /* (__llvm__) */
+#    endif /* (__MINGW32__) */
+#   endif /* (__MINGW64__) */
+#  endif /* (NX_CURRENT_COMPILER_RELEASE) */
+# else /* !__GNUC__ */
+#  if defined(__SUNPRO_C)
+      "Sun C ",
+      (sprintf( cc_versbuf, "version %x",
+                __SUNPRO_C ),
+       cc_versbuf),
+#  else
+#   if (defined(__HP_cc))
       "HP C ",
       (((__HP_cc% 100) == 0) ?
-      (sprintf(cc_versbuf, "version A.%02d.%02d",
-      (__HP_cc/ 10000), ((__HP_cc% 10000)/ 100))) :
-      (sprintf(cc_versbuf, "version A.%02d.%02d.%02d",
-      (__HP_cc/ 10000), ((__HP_cc% 10000)/ 100), (__HP_cc% 100))),
-      cc_versbuf),
-#else
-#if (defined(__DECC_VER))
+      (sprintf( cc_versbuf, "version A.%02d.%02d",
+                (__HP_cc/ 10000),
+                ((__HP_cc% 10000)/ 100)) ) :
+      (sprintf( cc_versbuf, "version A.%02d.%02d.%02d",
+                (__HP_cc/ 10000),
+                ((__HP_cc% 10000)/ 100),
+                (__HP_cc% 100)) ),
+       cc_versbuf),
+#   else
+#    if (defined(__DECC_VER))
       "DEC C ",
-      (sprintf(cc_versbuf, "%c%d.%d-%03d",
-               ((cc_verstyp = (__DECC_VER / 10000) % 10) == 6 ? 'T' :
-                (cc_verstyp == 8 ? 'S' : 'V')),
-               __DECC_VER / 10000000,
-               (__DECC_VER % 10000000) / 100000, __DECC_VER % 1000),
+      (sprintf( cc_versbuf, "%c%d.%d-%03d",
+                ((cc_verstyp = (__DECC_VER / 10000) % 10) == 6 ? 'T' :
+                 (cc_verstyp == 8 ? 'S' : 'V')),
+                __DECC_VER / 10000000,
+                (__DECC_VER % 10000000) / 100000,
+                __DECC_VER % 1000 ),
                cc_versbuf),
-#else
-#if defined(CRAY) && defined(_RELEASE)
-      "cc ", (sprintf(cc_versbuf, "version %d", _RELEASE), cc_versbuf),
-#else
-#ifdef __IBMC__
+#    else
+#     if ((defined(CRAY) || defined(cray)) && defined(_RELEASE))
+      "Cray cc ",
+      (sprintf( cc_versbuf, "version %d",
+                _RELEASE ),
+       cc_versbuf),
+#     else
+#      ifdef __IBMC__
+#       if (defined(__TOS_LINUX__))
+      "IBM XL C for Linux ",
+#       else
+#        if (defined(__PPC__))
+      "IBM XL C for AIX ",
+#        else
+#         if (defined(__MVS__))
+      "IBM z/OS XL C ",
+#         else
+#          if (defined(__VM__))
+      "IBM XL C for z/VM ",
+#          else
+#           if (defined(__OS400__))
+      "IBM ILC C for iSeries ",
+#           else
       "IBM C ",
-      (sprintf(cc_versbuf, "version %d.%d.%d",
-               (__IBMC__ / 100), ((__IBMC__ / 10) % 10), (__IBMC__ % 10)),
-               cc_versbuf),
-#else
-#ifdef __VERSION__
-#   ifndef IZ_CC_NAME
-#    define IZ_CC_NAME "cc "
-#   endif
+#           endif /* (__OS400__) */
+#          endif /* (__VM__) */
+#         endif /* (__MVS__) */
+#        endif /* (__PPC__) */
+#       endif /* (__TOS_LINUX__) */
+      (sprintf( cc_versbuf, "version %d.%d.%d",
+#       if (defined(__MVS__) || defined(__VM__))
+                (((__IBMC__/ 1000)& 3)% 1000),
+                ((__IBMC__/ 10)% 100),
+                (__IBMC__% 10) ),
+#       else /* !(__MVS__ || __VM__) */
+                (__IBMC__/ 100),
+                ((__IBMC__/ 10)% 10),
+                (__IBMC__% 10) ),
+#       endif /* ?(__MVS__ || __VM__) */
+       cc_versbuf),
+#      else
+#       ifdef __VERSION__
+#        ifndef IZ_CC_NAME
+#         define IZ_CC_NAME "cc "
+#        endif
       IZ_CC_NAME, __VERSION__
-#else
-#   ifndef IZ_CC_NAME
-#    define IZ_CC_NAME "cc"
-#   endif
+#       else
+#        ifndef IZ_CC_NAME
+#         define IZ_CC_NAME "cc"
+#        endif
       IZ_CC_NAME, "",
-#endif /* ?__VERSION__ */
-#endif /* ?__IBMC__ */
-#endif /* ?(CRAY && _RELEASE) */
-#endif /* ?__DECC_VER */
-#endif /* ?__HP_cc */
-#endif /* ?__SUNPRO_C */
-#endif /* ?__GNUC__ */
+#       endif /* ?__VERSION__ */
+#      endif /* ?__IBMC__ */
+#     endif /* ?(CRAY && _RELEASE) */
+#    endif /* ?__DECC_VER */
+#   endif /* ?__HP_cc */
+#  endif /* ?__SUNPRO_C */
+# endif /* ?__GNUC__ */
 
-#ifndef IZ_OS_NAME
+# ifndef IZ_OS_NAME
 #  define IZ_OS_NAME "Unix"
-#endif
+# endif
       IZ_OS_NAME,
 
-#if defined(sgi) || defined(__sgi)
+# if defined(sgi) || defined(__sgi)
       " (Silicon Graphics IRIX)",
-#else
-#ifdef sun
-#  if defined(UNAME_P) && defined(UNAME_R) && defined(UNAME_S) 
+# else
+#  ifdef sun
+#    if defined(UNAME_P) && defined(UNAME_R) && defined(UNAME_S)
       " ("UNAME_S" "UNAME_R" "UNAME_P")",
-#  else
-#  ifdef sparc
-#    ifdef __SVR4
+#   else
+#    ifdef sparc
+#     ifdef __SVR4
       " (Sun SPARC/Solaris)",
-#    else /* may or may not be SunOS */
+#     else /* may or may not be SunOS */
       " (Sun SPARC)",
-#    endif
-#  else
-#  if defined(sun386) || defined(i386)
-      " (Sun 386i)",
-#  else
-#  if defined(mc68020) || defined(__mc68020__)
-      " (Sun 3)",
-#  else /* mc68010 or mc68000:  Sun 2 or earlier */
-      " (Sun 2)",
-#  endif
-#  endif
-#  endif
-#  endif
-#else /* def sun */
-#ifdef __hpux
-#  if defined(UNAME_M) && defined(UNAME_R) && defined(UNAME_S) 
-      " ("UNAME_S" "UNAME_R" "UNAME_M")",
-#  else
-      " (HP-UX)",
-#  endif
-#else
-#ifdef __osf__
-#  if defined( SIZER_V)
-      " (Tru64 "SIZER_V")"
-#  else /* defined( SIZER_V) */
-      " (Tru64)",
-#  endif /* defined( SIZER_V) [else] */
-#else
-#ifdef _AIX
-#  if defined( UNAME_R) && defined( UNAME_S) && defined( UNAME_V)
-      " ("UNAME_S" "UNAME_V"."UNAME_R")",
-#  else /*  */
-      " (IBM AIX)",
-#  endif /* [else] */
-#else
-#ifdef aiws
-      " (IBM RT/AIX)",
-#else
-#if defined(CRAY) || defined(cray)
-#  ifdef _UNICOS
-      (sprintf(os_namebuf, " (Cray UNICOS release %d)", _UNICOS), os_namebuf),
-#  else
-      " (Cray UNICOS)",
-#  endif
-#else
-#if defined(uts) || defined(UTS)
-      " (Amdahl UTS)",
-#else
-#ifdef NeXT
-#  ifdef mc68000
-      " (NeXTStep/black)",
-#  else
-      " (NeXTStep for Intel)",
-#  endif
-#else              /* the next dozen or so are somewhat order-dependent */
-#ifdef LINUX
-#  if defined( UNAME_M) && defined( UNAME_O)
-      " ("UNAME_O" "UNAME_M")",
-#  else
-#    ifdef __ELF__
-      " (Linux ELF)",
+#     endif
 #    else
-      " (Linux a.out)",
+#     if defined(sun386) || defined(i386)
+      " (Sun 386i)",
+#     else
+#      if defined(mc68020) || defined(__mc68020__)
+      " (Sun 3)",
+#      else /* mc68010 or mc68000:  Sun 2 or earlier */
+      " (Sun 2)",
+#      endif
+#     endif
 #    endif
-#  endif
-#else
-#ifdef MINIX
+#   endif
+#  else /* def sun */
+#   ifdef __hpux
+#    if defined(UNAME_M) && defined(UNAME_R) && defined(UNAME_S)
+      " ("UNAME_S" "UNAME_R" "UNAME_M")",
+#    else
+      " (HP-UX)",
+#    endif
+#   else
+#    ifdef __osf__
+#     if defined( SIZER_V)
+      " (Tru64 "SIZER_V")"
+#     else /* defined( SIZER_V) */
+      " (Tru64)",
+#     endif /* defined( SIZER_V) [else] */
+#    else
+#     ifdef _AIX
+#      if defined( UNAME_R) && defined( UNAME_S) && defined( UNAME_V)
+      " ("UNAME_S" "UNAME_V"."UNAME_R")",
+#      else /*  */
+      " (IBM AIX)",
+#      endif /* [else] */
+#     else
+#      ifdef aiws
+      " (IBM RT/AIX)",
+#      else
+#       ifdef __MVS__
+#        if defined( UNAME_R) && defined( UNAME_S) && defined( UNAME_V)
+      " ("UNAME_S" "UNAME_V"."UNAME_R")",
+#        else
+      " (IBM z/OS)",
+#        endif
+#       else
+#        ifdef __VM__
+#         if defined( UNAME_R) && defined( UNAME_S) && defined( UNAME_V)
+      " ("UNAME_S" "UNAME_V"."UNAME_R")",
+#         else
+      " (IBM z/VM)",
+#         endif
+#        else
+#         if defined(CRAY) || defined(cray)
+#          ifdef _UNICOS
+      (sprintf(os_namebuf, " (Cray UNICOS release %d)", _UNICOS), os_namebuf),
+#          else
+      " (Cray UNICOS)",
+#          endif
+#         else
+#          if defined(uts) || defined(UTS)
+      " (Amdahl UTS)",
+#          else
+#           ifdef NeXT
+#            ifdef mc68000
+      " (NeXTStep/black)",
+#            else
+      " (NeXTStep for Intel)",
+#            endif
+#           else   /* the next dozen or so are somewhat order-dependent */
+#            ifdef LINUX
+#             if defined( UNAME_M) && defined( UNAME_O)
+      " ("UNAME_O" "UNAME_M")",
+#             else
+#              ifdef __ELF__
+      " (Linux ELF)",
+#              else
+      " (Linux a.out)",
+#              endif
+#             endif
+#            else
+#             ifdef MINIX
       " (Minix)",
-#else
-#ifdef M_UNIX
+#             else
+#              ifdef M_UNIX
       " (SCO Unix)",
-#else
-#ifdef M_XENIX
+#              else
+#               ifdef M_XENIX
       " (SCO Xenix)",
-#else
-#ifdef __NetBSD__
-#  ifdef NetBSD0_8
-      (sprintf(os_namebuf, " (NetBSD 0.8%c)", (char)(NetBSD0_8 - 1 + 'A')),
+#               else
+#                ifdef __NetBSD__
+#                 ifdef NetBSD0_8
+      (sprintf( os_namebuf, " (NetBSD 0.8%c)",
+                (char)(NetBSD0_8 - 1 + 'A')),
        os_namebuf),
-#  else
-#  ifdef NetBSD0_9
-      (sprintf(os_namebuf, " (NetBSD 0.9%c)", (char)(NetBSD0_9 - 1 + 'A')),
+#                 else
+#                  ifdef NetBSD0_9
+      (sprintf( os_namebuf, " (NetBSD 0.9%c)",
+                (char)(NetBSD0_9 - 1 + 'A')),
        os_namebuf),
-#  else
-#  ifdef NetBSD1_0
-      (sprintf(os_namebuf, " (NetBSD 1.0%c)", (char)(NetBSD1_0 - 1 + 'A')),
+#                  else
+#                   ifdef NetBSD1_0
+      (sprintf(os_namebuf, " (NetBSD 1.0%c)",
+               (char)(NetBSD1_0 - 1 + 'A')),
        os_namebuf),
-#  else
-      (BSD4_4 == 0.5)? " (NetBSD before 0.9)" : " (NetBSD 1.1 or later)",
-#  endif
-#  endif
-#  endif
-#else
-#ifdef __FreeBSD__
-      (BSD4_4 == 0.5)? " (FreeBSD 1.x)" : " (FreeBSD 2.0 or later)",
-#else
-#ifdef __bsdi__
-      (BSD4_4 == 0.5)? " (BSD/386 1.0)" : " (BSD/386 1.1 or later)",
-#else
-#ifdef __386BSD__
-      (BSD4_4 == 1)? " (386BSD, post-4.4 release)" : " (386BSD)",
-#else
-#ifdef __CYGWIN__
+#                   else
+      (BSD4_4 == 0.5)? " (NetBSD before 0.9)" :
+                       " (NetBSD 1.1 or later)",
+#                   endif
+#                  endif
+#                 endif
+#                else
+#                 ifdef __FreeBSD__
+      (BSD4_4 == 0.5)? " (FreeBSD 1.x)" :
+                       " (FreeBSD 2.0 or later)",
+#                 else
+#                  ifdef __bsdi__
+      (BSD4_4 == 0.5)? " (BSD/386 1.0)" :
+                       " (BSD/386 1.1 or later)",
+#                  else
+#                   ifdef __386BSD__
+      (BSD4_4 == 1)? " (386BSD, post-4.4 release)" :
+                     " (386BSD)",
+#                   else
+#                    ifdef __CYGWIN__
       " (Cygwin)",
-#else
-#if defined(i686) || defined(__i686) || defined(__i686__)
+#                    else
+#                     if defined(i686) || defined(__i686) || defined(__i686__)
       " (Intel 686)",
-#else
-#if defined(i586) || defined(__i586) || defined(__i586__)
+#                     else
+#                      if defined(i586) || defined(__i586) || defined(__i586__)
       " (Intel 586)",
-#else
-#if defined(i486) || defined(__i486) || defined(__i486__)
+#                      else
+#                       if defined(i486) || defined(__i486) || defined(__i486__)
       " (Intel 486)",
-#else
-#if defined(i386) || defined(__i386) || defined(__i386__)
+#                       else
+#                        if defined(i386) || defined(__i386) || defined(__i386__)
       " (Intel 386)",
-#else
-#ifdef pyr
+#                        else
+#                         ifdef pyr
       " (Pyramid)",
-#else
-#ifdef ultrix
-#  ifdef mips
+#                         else
+#                          ifdef ultrix
+#                           ifdef mips
       " (DEC/MIPS)",
-#  else
-#  ifdef vax
+#                           else
+#                            ifdef vax
       " (DEC/VAX)",
-#  else /* __alpha? */
+#                            else /* __alpha? */
       " (DEC/Alpha)",
-#  endif
-#  endif
-#else
-#ifdef gould
+#                            endif
+#                           endif
+#                          else
+#                           ifdef gould
       " (Gould)",
-#else
-#ifdef MTS
+#                           else
+#                            ifdef MTS
       " (MTS)",
-#else
-#ifdef __convexc__
+#                            else
+#                             ifdef __convexc__
       " (Convex)",
-#else
-#ifdef __QNX__
+#                             else
+#                              ifdef __QNX__
       " (QNX 4)",
-#else
-#ifdef __QNXNTO__
+#                              else
+#                               ifdef __QNXNTO__
       " (QNX Neutrino)",
-#else
-#ifdef Lynx
+#                               else
+#                                ifdef Lynx
       " (LynxOS)",
-#else
-#ifdef __APPLE__
-#  if defined(UNAME_P) && defined(UNAME_R) && defined(UNAME_S) 
+#                                else
+#                                 ifdef __APPLE__
+#                                  if defined(UNAME_P) && defined(UNAME_R) && defined(UNAME_S)
       " ("UNAME_S" "UNAME_R" "UNAME_P")",
-#  else
-#  ifdef __i386__
+#                                  else
+#                                   ifdef __i386__
       " (Mac OS X Intel i32)",
-#  else
-#  ifdef __ppc__
+#                                   else
+#                                    ifdef __ppc__
       " (Mac OS X PowerPC)",
-#  else
-#  ifdef __ppc64__
+#                                    else
+#                                     ifdef __ppc64__
       " (Mac OS X PowerPC64)",
-#  else
-      " (Mac OS X"),
-#  endif /* __ppc64__ */
-#  endif /* __ppc__ */
-#  endif /* __i386__ */
-#  endif
-#else
+#                                     else
+      " (Mac OS X)",
+#                                     endif /* __ppc64__ */
+#                                    endif /* __ppc__ */
+#                                   endif /* __i386__ */
+#                                  endif
+#                                 else
       "",
-#endif /* Apple */
-#endif /* Lynx */
-#endif /* QNX Neutrino */
-#endif /* QNX 4 */
-#endif /* Convex */
-#endif /* MTS */
-#endif /* Gould */
-#endif /* DEC */
-#endif /* Pyramid */
-#endif /* 386 */
-#endif /* 486 */
-#endif /* 586 */
-#endif /* 686 */
-#endif /* Cygwin */
-#endif /* 386BSD */
-#endif /* BSDI BSD/386 */
-#endif /* NetBSD */
-#endif /* FreeBSD */
-#endif /* SCO Xenix */
-#endif /* SCO Unix */
-#endif /* Minix */
-#endif /* Linux */
-#endif /* NeXT */
-#endif /* Amdahl */
-#endif /* Cray */
-#endif /* RT/AIX */
-#endif /* AIX */
-#endif /* OSF/1 */
-#endif /* HP-UX */
-#endif /* Sun */
-#endif /* SGI */
+#                                 endif /* Apple */
+#                                endif /* Lynx */
+#                               endif /* QNX Neutrino */
+#                              endif /* QNX 4 */
+#                             endif /* Convex */
+#                            endif /* MTS */
+#                           endif /* Gould */
+#                          endif /* DEC */
+#                         endif /* Pyramid */
+#                        endif /* 386 */
+#                       endif /* 486 */
+#                      endif /* 586 */
+#                     endif /* 686 */
+#                    endif /* Cygwin */
+#                   endif /* 386BSD */
+#                  endif /* BSDI BSD/386 */
+#                 endif /* NetBSD */
+#                endif /* FreeBSD */
+#               endif /* SCO Xenix */
+#              endif /* SCO Unix */
+#             endif /* Minix */
+#            endif /* Linux */
+#           endif /* NeXT */
+#          endif /* Amdahl */
+#         endif /* Cray */
+#        endif /* z/VM */
+#       endif /* z/OS */
+#      endif /* RT/AIX */
+#     endif /* AIX */
+#    endif /* OSF/1 */
+#   endif /* HP-UX */
+#  endif /* Sun */
+# endif /* SGI */
 
-#ifdef __DATE__
+# ifdef __DATE__
       " on ", __DATE__
-#else
+# else
       "", ""
-#endif
+# endif
     );
 
     (*G.message)((zvoid *)&G, slide, (ulg)strlen((char *)slide), 0);
 
 } /* end function version() */
 
-#endif /* !SFX */
-
-
-
+#endif /* ndef SFX */
 
 #ifdef QLZIP
 
@@ -1817,10 +2016,10 @@ struct qdirect  {
     long            d_backup __attribute__ ((packed));   /* EOD */
 };
 
-#define LONGID  "QDOS02"
-#define EXTRALEN (sizeof(struct qdirect) + 8)
-#define JBLONGID    "QZHD"
-#define JBEXTRALEN  (sizeof(jbextra)  - 4 * sizeof(char))
+# define LONGID  "QDOS02"
+# define EXTRALEN (sizeof(struct qdirect) + 8)
+# define JBLONGID    "QZHD"
+# define JBEXTRALEN  (sizeof(jbextra)  - 4 * sizeof(char))
 
 typedef struct {
     char        eb_header[4] __attribute__ ((packed));  /* place_holder */
@@ -1954,17 +2153,24 @@ static void qlfix(__G__ ef_ptr, ef_len)
         ef_len -= (eb_len + EB_HEADSIZE);
     }
 }
-#endif /* QLZIP */
+#endif /* def QLZIP */
 
 
 #ifdef USE_ICONV_MAPPING
 typedef struct {
-    char *local_charset;
+/*  char *local_charset; */
+    char *local_lang;
     char *archive_charset;
 } CHARSET_MAP;
 
-/* A mapping of local <-> archive charsets used by default to convert filenames
- * of DOS/Windows Zip archives. Currently very basic. */
+/* Was:  A mapping of local <-> archive charsets used by default to convert filenames
+ * of DOS/Windows Zip archives. Currently very basic.
+ */
+/* Now:  A mapping of environment language <-> archive charsets used by default
+ * to convert filenames of DOS/Windows Zip archives. Currently incomplete.
+ */
+
+/*
 static CHARSET_MAP dos_charset_map[] = {
     { "ANSI_X3.4-1968", "CP850" },
     { "ISO-8859-1", "CP850" },
@@ -1974,6 +2180,45 @@ static CHARSET_MAP dos_charset_map[] = {
     { "KOI8-U", "CP866" },
     { "ISO-8859-5", "CP866" }
 };
+*/
+
+ static CHARSET_MAP dos_charset_map[] = {
+	{ "C", "CP850" },
+	{ "en", "CP850" },
+	/*  a lot of latin1 not included, by default it will be "CP850"  */
+	{ "bs", "CP852" },
+	{ "cs", "CP852" },
+	{ "hr", "CP852" },
+	{ "hsb", "CP852" },
+	{ "hu", "CP852" },
+	{ "pl", "CP852" },
+	{ "ro", "CP852" },
+	{ "sk", "CP852" },
+	{ "sl", "CP852" },
+	{ "ru", "CP866" },
+	{ "be", "CP866" },
+	{ "bg", "CP866" },
+	{ "mk", "CP866" },
+	{ "uk", "CP866" },
+	{ "ar", "CP864" },
+	{ "el", "CP869" },
+	{ "he", "CP862" },
+	{ "iw", "CP862" },
+	{ "ku", "CP857" },
+	{ "tr", "CP857" },
+	{ "zh", "CP950" },	/*  CP936   */
+	{ "ja", "CP932" },
+	{ "ko", "CP949" },
+	{ "th", "CP874" },
+	{ "da", "CP865" },
+	{ "nb", "CP865" },
+	{ "nn", "CP865" },
+	{ "no", "CP865" },
+	{ "is", "CP861" },
+	{ "lt", "CP775" },
+	{ "lv", "CP775" },
+ };
+
 
 char OEM_CP[MAX_CP_NAME] = "";
 char ISO_CP[MAX_CP_NAME] = "";
@@ -1982,19 +2227,59 @@ char ISO_CP[MAX_CP_NAME] = "";
  * ISO_CP is left alone for now. */
 void init_conversion_charsets()
 {
+/*
     const char *local_charset;
     int i;
+ */
+    char *locale;
+    char *loc = NULL;
 
-    /* Make a guess only if OEM_CP not already set. */ 
+
+    /* Make a guess only if OEM_CP not already set. */
+/*
     if(*OEM_CP == '\0') {
-    	local_charset = nl_langinfo(CODESET);
-    	for(i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
-    		if(!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
-    			strncpy(OEM_CP, dos_charset_map[i].archive_charset,
-    					sizeof(OEM_CP));
-    			break;
-    		}
+        local_charset = nl_langinfo(CODESET);
+        for (i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
+            if (!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
+                strncpy(OEM_CP, dos_charset_map[i].archive_charset,
+                 sizeof(OEM_CP));
+                break;
+        }
     }
+ */
+
+    if(*OEM_CP != '\0')
+      return;
+
+    locale = getenv("LC_ALL");
+    if (!locale)
+      locale = getenv("LANG");
+
+    if(locale && (loc = malloc(strlen(locale) + 1)) != NULL) {
+	char *p;
+	int i;
+
+      strcpy(loc, locale);
+
+	/*  Extract language part   */
+	p = strchr(loc, '.');
+	if(p) *p = '\0';
+
+	/*  Extract main language part   */
+	p = strchr(loc, '_');
+	if(p)
+        *p = '\0';
+
+     	for(i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
+		if(!strcmp(loc, dos_charset_map[i].local_lang)) {
+     			strncpy(OEM_CP, dos_charset_map[i].archive_charset,
+     					sizeof(OEM_CP));
+     			break;
+     		}
+     }
+
+    if (*OEM_CP == '\0')	/*  set default one   */
+	strncpy(OEM_CP, "CP850", sizeof(OEM_CP));
 }
 
 /* Convert a string from one encoding to the current locale using iconv().
@@ -2040,7 +2325,7 @@ inline void iso_intern(char *string)
 {
     charset_to_intern(string, ISO_CP);
 }
-#endif /* USE_ICONV_MAPPING */
+#endif /* def USE_ICONV_MAPPING */
 
 
 #if defined( UNIX) && defined( __APPLE__)

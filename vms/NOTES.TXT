@@ -260,7 +260,7 @@ message files.
 
    Beginning with Zip version 3.1 and UnZip version 6.1, on VMS V7.0 and
 newer (__CRTL_VER >= 70000000), Zip and UnZip can also exit with simple,
-UNIX-like status codes when used in a GNV "bash" shell environment. 
+UNIX-like status codes when used in a GNV "bash" shell environment.
 This is done if the environment variable "SHELL" is set (and its value
 is not "DCL").  This feature may be disabled at build time by defining
 the C macro "NO_POSIX_EXIT".  (See comments in the builder regarding

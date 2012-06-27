@@ -1,40 +1,45 @@
 1 UNZIPSFX
 
-     unzipsfx  -  self-extracting  stub  for  prepending  to  ZIP
+     UnZipSFX  -  self-extracting  stub  for  prepending  to  ZIP
      archives
 
-     <name  of  unzipsfx+archive   combo>   [-cfptuz[ajnoqsCLV$]]
+     <combined_UnZipSFX+Zip_archive_name>   [-cfptuz[ajnoqsCLV$]]
      [file(s) ...] [-x xfile(s) ...]
 
-     unzipsfx is a modified version of unzip designed  to  be
-     prepended  to  existing  ZIP archives in order to form self-
-     extracting archives.  Instead of taking its  first  non-flag
-     argument  to  be  the  zipfile(s)  to be extracted, unzipsfx
-     seeks itself under the name by  which  it  was  invoked  and
+     UnZipSFX  is  a  modified  version of UnZip,  designed to be
+     prepended to existing  ZIP archives,  in order to form self-
+     extracting archives.  Instead of taking its first non-option
+     argument  to  be  the  zipfile(s)  to be extracted, UnZipSFX
+     seeks itself under the name by  which  it  was  invoked, and
      tests  or  extracts  the  contents  of the appended archive.
      Because the executable stub adds bulk to  the  archive  (the
      whole  purpose  of  which  is to be as small as possible), a
      number of the regular version's less-vital capabilities have
      been  removed.   Among these are the usage (or help) screen,
-     the listing and diagnostic functions (-l and -v), the  abil-
-     ity to decompress older compression formats (the ``reduce,''
-     ``shrink'' and ``implode''  methods),  and  the  ability  to
-     extract  to a directory other than the current one.  Decryp-
-     tion is supported as a compile-time  option  but  should  be
-     avoided  unless  the  attached  archive  contains  encrypted
-     files.
+     the listing and diagnostic functions  (-l and -v),  and  the
+     ability  to  decompress  older   compression  formats   (the
+     "reduce", "shrink", and "implode" methods).   The ability to
+     extract to a directory  other  than  the  current one can be
+     selected as a compile-time option,  which is now enabled  by
+     default since UnZipSFX version 5.5.   Similarly,  decryption
+     is supported as a compile-time option. but should be avoided
+     unless the attached archive contains encrypted files.
 
-     Note that self-extracting archives made with unzipsfx are no
+     On VMS, there are two forms of UnZipSFX.   UNZIPSFX.EXE uses
+     a UNIX-style command-line interface.   UNZIPSFX_CLI.EXE uses
+     a DCL-style command-line interface.  Most of the description
+     here refers to the UNIX-style interface.   See  the subtopic
+     VMS-Style_Options for details on the DCL-style interface.
+
+     Note that self-extracting archives made with UnZipSFX are no
      more  (or  less) portable across different operating systems
-     than is the unzip executable itself.   In  general  a  self-
+     than is the UnZip executable itself.   In  general  a  self-
      extracting  archive  made  on  a particular Unix system, for
      example, will only self-extract under  the  same  flavor  of
-     Unix.  Regular unzip may still be used to extract the embed-
-     ded archive as with any normal  zipfile,  although  it  will
+     Unix.  Regular UnZip may still be used to extract the embed-
+     ded archive as with any  normal  zipfile,  although  it  may
      generate  a harmless warning about extra bytes at the begin-
      ning of the zipfile.
-
-
 
 [file(s)]
 
@@ -65,38 +70,55 @@
 
           An optional list of archive members to be excluded from
           processing.   Since wildcard characters match directory
-          separators (`/'), this option may be  used  to  exclude
+          separators ("/"), this option may be  used  to  exclude
           any  files  which  are in subdirectories.  For example,
-          ``unzip foo *.[ch] -x */*'' would extract all C  source
-          files  in the main directory, but none in any subdirec-
-          tories.  Without the -x option, all C source  files  in
-          all directories within the zipfile would be extracted.
+          "mcr sys$disk:[]foosfx *.[ch] -x */*" would extract all
+          C source files  in the main directory,  but none in any
+          subdirectories.   Without the -x option,  all  C source
+          files in all directories within  the  zipfile  would be
+          extracted.
 
-2 Options
+     If  UnZipSFX  is  compiled with SFX_EXDIR defined,  then the
+     following option is also enabled:
 
-     unzipsfx supports the following unzip options:   -c  and
-     -p  (extract  to standard output/screen), -f and -u (freshen
-     and  update  existing  files  upon  extraction),  -t   (test
-     archive) and -z (print archive comment).  All normal listing
-     options (-l, -v and -Z) have been removed, but  the  testing
-     option (-t) may be used as a ``poor man's'' listing.  Alter-
-     natively, those creating self-extracting archives  may  wish
-     to include a short listing in the zipfile comment.
+[-d exdir]
+          An optional directory to which to  extract  files.   By
+          default,  all files and subdirectories are recreated in
+          the current directory;  the -d option allows extraction
+          into an arbitrary directory  (always  assuming  one has
+          permission to write to the directory).   The option and
+          directory may be  concatenated  without any white space
+          between them.
 
-     See unzip for  a  more  complete  description  of  these
-     options.
+2 VMS-Style_Options
+
+     UnZipSFX_CLI supports the following UnZip  options:  /SCREEN
+     (-c or -p, extract  to standard output/terminal),   /FRESHEN
+     (-f) or /UPDATE (-u) (existing files upon extraction), /TEST
+     (-t, test archive), and /COMMENT (-z, show archive comment).
+     All normal listing options, /LIST (-l, -v) and /ZIPINFO (-Z)
+     have been removed,  but /TEST  (-t)  may be used  as a "poor
+     man's" listing.   Alternatively,  the  creator  of the self-
+     extracting archives  may  wish to include a short listing in
+     the zipfile comment.
+
+     See the normal UnZip_CLI help  for  a more complete descrip-
+     tion of these options.
 
      MODIFIERS
 
-     unzipsfx currently supports  all  unzip  modifiers:   -a
-     (convert  text  files),  -n (never overwrite), -o (overwrite
-     without prompting), -q (operate quietly),  -C  (match  names
-     case-insenstively), -L (convert uppercase-OS names to lower-
-     case), -j (junk paths) and -V (retain version numbers); plus
-     the   following   operating-system   specific  options:   -X
-     (restore VMS owner/protection info), -s (convert  spaces  in
-     filenames  to  underscores  [DOS, OS/2, NT]) and -$ (restore
-     volume label [DOS, OS/2, NT, Amiga]).
+     UnZipSFX_CLI currently supports all UnZip_CLI modifiers:
+     /CASE_MATCH    -C     match names case-[in]senstively
+     /JUNK          -j     junk paths
+     /NAMES =
+      [NO]LOWERCASE -L     downcase names from all-uppercase OS
+      [NO]ODS2      -2     ODS2 restrictions (invalid -> "_")
+      [NO]SPACES    -s     convert spaces in names to underscores
+     /OVERWRITE     -n|-o  control overwriting of existing files
+     /QUIET         -q     operate  quietly
+     /RESTORE       -X     control restoration of owner/ACL protection
+     /TEXT          -a     convert text files
+     /VERSION       -V     retain version numbers
 
      (Support for regular ASCII text-conversion may be removed in
      future versions, since it is simple enough for the archive's
@@ -105,129 +127,206 @@
      tinue to be supported since the zipfile format implies ASCII
      storage of text files.)
 
-     See unzip for  a  more  complete  description  of  these
-     modifiers.
+     See  the  normal UnZip_CLI help for a more complete descrip-
+     tion of these modifiers.
+
+2 UNIX-Style_Options
+
+     UnZipSFX supports the following UnZip  options:  -c  and  -p
+     (extract  to standard output/terminal),  -f  and -u (freshen
+     and  update  existing  files  upon  extraction),  -t   (test
+     archive) and -z (print archive comment).  All normal listing
+     options (-l, -v and -Z) have been removed, but  the  testing
+     option (-t) may be used as a  "poor man's"  listing.  Alter-
+     natively, those creating self-extracting archives  may  wish
+     to include a short listing in the zipfile comment.
+
+     See the normal UnZip help for a more complete description of
+     these options.
+
+     MODIFIERS
+
+     UnZipSFX currently supports all UnZip modifiers: -a (convert
+     text files),  -n (never  overwrite),  -o (overwrite  without
+     prompting),  -q  (operate  quietly),  -C (match  names case-
+     insenstively), -L (convert uppercase-OS names to lowercase),
+     -j (junk paths),  -s (convert  spaces in filenames to under-
+     scores), and -V (retain version numbers); plus the following
+     operating-system-specific options: -X (restore VMS owner/ACL
+     protection info),  and  -$ (restore volume label [DOS, OS/2,
+     NT, Amiga]).
+
+     (Support for regular ASCII text-conversion may be removed in
+     future versions, since it is simple enough for the archive's
+     creator to ensure that text files have the appropriate  for-
+     mat for the local OS.  EBCDIC conversion will of course con-
+     tinue to be supported since the zipfile format implies ASCII
+     storage of text files.)
+
+     See the normal UnZip help for a more complete description of
+     these modifiers.
 
 2 Environment_options
 
-     unzipsfx uses the same environment  variables  as  unzip
-     does,  although  this  is likely to be an issue only for the
-     person creating and  testing  the  self-extracting  archive.
-     See unzip for details.
+     UnZipSFX  uses  the  same  environment  variables  as normal
+     UnZip does,  although this is likely to be  of interest only
+     for  the  person  creating  and  testing the self-extracting
+     archive.  See the normal UnZip help for details.
 
 2 Decryption
 
-     Decryption is supported exactly as in  unzip;  that  is,
+     Decryption is supported exactly as in normal UnZip; that is,
      interactively with a non-echoing prompt for the password(s).
-     See unzip for details.  Once again,  note  that  if  the
-     archive  has  no encrypted files there is no reason to use a
-     version of unzipsfx with decryption support; that only  adds
-     to the size of the archive.
+     See the normal UnZip help  for details.   Once  again,  note
+     that  if  the  archive  has  no encrypted files, there is no
+     reason to use a version of UnZipSFX with encryption support;
+     that only adds to the size of the archive.
+
+2 AUTORUN COMMAND
+
+     If UnZipSFX was compiled with  CHEAP_SFX_AUTORUN  defined, a
+     simple  "command autorun"  feature  is  supported.   You may
+     include  a  command  in  the  Zip archive comment, using the
+     following format:
+
+           $AUTORUN$>[command line string]
+
+     When  UnZipSFX  recognizes  the  "$AUTORUN$>"  token  at the
+     beginning of the  Zip archive comment,  the remainder of the
+     first  line  of  the comment  (until the first newline char-
+     acter) is passed as a shell command  to the operating system
+     using  the  C RTL system() function.   Before  executing the
+     command,   UnZipSFX  displays  the  command  at  the  user's
+     terminal,  and prompts for confirmation.   When the user has
+     switched off prompting by specifying the -q option,  autorun
+     commands are not executed.
+
+     If the archive comment contains  additional  lines  of text,
+     the remainder of the  archive comment  following  the  first
+     line  is  displayed  normally,  unless  quiet  operation was
+     requested by a -q option.
 
 2 Examples
 
-     To create a self-extracting archive letters from  a  regular
-     zipfile letters.zip and change the new archive's permissions
-     to be world-executable under Unix:
+     To  create  a  self-extracting  archive "letters.exe" from a
+     regular zipfile "letters.zip":
 
-         cat unzipsfx letters.zip > letters
-         chmod 755 letters
+         copy unzipsfx.exe, letters.zip letters.exe
+         zip "-A" letters.exe
 
-     To create the same archive under MS-DOS, OS/2  or  NT  (note
-     the use of the /b [binary] option to the copy command):
+     The  "zip -A"  step is  required  to adjust the data  in the
+     self-extracting archive  to compensate for the  extra  space
+     occupied by the  UnZipSFX executable.   Without this adjust-
+     ment,  UnZipSFX may emit a  warning  message when it is run,
+     and some other file extraction programs may reject the self-
+     extracting archive.
 
-         copy /b unzipsfx.exe+letters.zip letters.exe
+     The UnZip  source  kit  also  includes a DCL procedure to do
+     this,  [.vms]makesfx.com.   Comments in the file explain how
+     to use it.  For this example:
 
-     Under VMS:
-
-         copy unzipsfx.exe,letters.zip letters.exe
-         letters == "$currentdisk:[currentdir]letters.exe"
-
-     (The VMS append command may also be used.  The  second  com-
-     mand installs the new program as a ``foreign command'' capa-
-     ble of taking  arguments.)  To  test  (or  list)  the  newly
-     created self-extracting archive:
-
-         letters -t
-
-     To test letters quietly, printing  only  a  summary  message
-     indicating whether the archive is OK or not:
-
-         letters -tq
+         @ makesfx.com letters
 
      To extract the complete contents into the current directory,
-     recreating all files and subdirectories as necessary:
+     recreating all  files  and subdirectories as necessary,  one
+     could run the self-extracting archive with no options.  On a
+     VMS  system,  one  can  simply  use  the  RUN  command.  For
+     example:
 
-         letters
+         run letters
+
+     To  run  a  self-extracting  archive with options, one could
+     define a DCL foreign-command symbol, and then use that.  For
+     example, To test (or list) the newly created self-extracting
+     archive:
+
+         letters = "$ sys$disk:[]letters"
+         letters -t
+
+     or one could use the MCR command in one step:
+
+         mcr sys$disk:[]letters -t
+
+     By default,  MCR looks in  SYS$SYSTEM,  so a full device and
+     directory specification  is  normally  required  to override
+     that default.   "sys$disk:[]"  specifies the current default
+     device and directory,  but  any  other  complete spec may be
+     used, as appropriate.
+
+     In the examples below, the MCR method is shown.   UNIX-style
+     and  VMS-style  options  are  shown.   (UNZIPSFX_CLI.EXE can
+     handle either style.   UNZIPSFX.EXE can handle only the UNIX
+     style.)
+
+     To  test "letters.exe"  quietly,  printing  only  a  summary
+     message indicating whether the archive is OK or not:
+
+         mcr sys$disk:[]letters -tqq
+
+         mcr sys$disk:[]letters /test /quiet = super
+
+     To extract all *.txt files:
+
+         mcr sys$disk:[]letters *.txt
+
+     To extract everything except the *.txt files:
+
+         mcr sys$disk:[]letters -x *.txt
+
+         mcr sys$disk:[]letters /exclude = "*.txt"
 
      To extract only the README  file  to  standard  output  (the
-     screen):
+     user's terminal):
 
-         letters -c README
+         mcr sys$disk:[]letters -c README
+
+         mcr sys$disk:[]letters /screen README
 
      To print only the zipfile comment:
 
-         letters -z
+         mcr sys$disk:[]letters -z
+ 
+         mcr sys$disk:[]letters /comment
 
 2 Limitations
 
-     The principle and fundamental limitation of unzipsfx is that
+     The principle and fundamental limitation of UnZipSFX is that
      it  is  not  portable across architectures or operating sys-
      tems, and therefore neither are the resulting archives.  For
      some  architectures  there  is  limited portability, however
      (e.g., between some flavors of Intel-based Unix).
 
-     unzipsfx has no knowledge of the user's PATH, so in  general
-     an  archive  must either be in the current directory when it
-     is invoked, or else a full or relative path must  be  given.
-     If  a  user attempts to extract the archive from a directory
-     in the PATH other than the current one, unzipsfx will  print
-     a  warning  to  the  effect, ``can't find myself.''  This is
-     always true under Unix and may be true in some  cases  under
-     MS-DOS,  depending  on  the compiler used (Microsoft C fully
-     qualifies the program name, but other  compilers  may  not).
-     Under OS/2 and NT there are operating-system calls available
-     which provide the full path name,  so  the  archive  may  be
-     invoked  from anywhere in the user's path.  The situation is
-     not known for Atari TOS, MacOS, etc.
+     As noted above,  a number of the normal UnZip functions have
+     been removed  in order to make UnZipSFX smaller:  usage  and
+     diagnostic  info,  and  listing functions,  and possibly ex-
+     traction  to  other  directories.   Also,  only  stored  and
+     deflated  files are supported by default.   This last limit-
+     ation  is  mainly relevant to those who create SFX archives,
+     however.
 
-     As noted above, a number of the normal  unzip  functions
-     have  been removed in order to make unzipsfx smaller:  usage
-     and diagnostic info, listing  functions  and  extraction  to
-     other directories.  Also, only stored and deflated files are
-     supported.  The latter  limitation  is  mainly  relevant  to
-     those who create SFX archives, however.
-
-     VMS users must know how to set up  self-extracting  archives
-     as  foreign  commands  in  order  to  use  any of unzipsfx's
-     options.  This is not necessary for simple  extraction,  but
-     the command to do so then becomes, e.g., ``run letters'' (to
-     continue the examples given above).
-
-     unzipsfx is not supported on the Amiga because  of  the  way
-     the  loader  works;  the  entire  archive  contents would be
-     loaded into memory by default.  It may be possible  to  work
-     around this by defining the attached archive to be a ``debug
-     hunk,'' but compatibility problems between the ROM levels of
-     older  Amigas  and  newer  ones are likely to cause problems
-     regardless.
-
-     All current bugs in unzip exist in unzipsfx as well.
+     All current bugs in UnZip are probably in UnZipSFX as well.
 
 2 Diagnostics
 
-     unzipsfx's exit status (error level) is identical to that of
-     unzip; see the corresponding help entry.
+     UnZipSFX's exit status (error level) is identical to that of
+     UnZip; see the corresponding help entry.
 
 2 See_also
 
-     funzip, unzip, zip,  zipcloak,  zipgrep,
-     zipinfo, zipnote, zipsplit
+     Formatted UnZip "man" pages in the source kit:
+         unzip.txt, zipinfo.txt
+
+     Related Zip programs:
+         zip, zip_cli, zipcloak, zipnote, zipsplit
+
+     The main Info-ZIP Web page is currently at:
+         http://www.info-zip.org/
+     or
+         ftp://ftp.info-zip.org/pub/infozip/
 
 2 Authors
 
      Greg Roelofs was responsible for the basic modifications  to
-     UnZip  necessary  to create UnZipSFX.  See unzip for the
-     current list of zip-bugs authors, or the  file  CONTRIBS  in
-     the  UnZip source distribution for the full list of Info-ZIP
-     contributors.
+     UnZip  necessary  to create UnZipSFX.   See the normal unzip
+     help for the current list of Info-ZIP team members.
+

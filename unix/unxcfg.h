@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -88,7 +88,7 @@ typedef struct stat z_stat;
 #  ifdef TEMP_BSD
 #    undef TEMP_BSD
 #    ifndef BSD
-#      define BSD
+#      define BSD 1
 #    endif
 #  endif
 #endif /* !NO_PARAM_H */
@@ -109,6 +109,7 @@ typedef struct stat z_stat;
 #  endif
 #endif
 
+
 #ifdef BSD
 #  include <sys/time.h>
 #  include <sys/timeb.h>
@@ -116,8 +117,16 @@ typedef struct stat z_stat;
 #    include <time.h>
 #  endif
 #else
+#  if (defined(HAVE_SYS_TIME_H))
+#  include <sys/time.h>
+#  endif
+#  if (defined(HAVE_SYS_TIMEB_H))
+#  include <sys/timeb.h>
+#  endif
 #  include <time.h>
+#  if (!defined(__IBMC__))
    struct tm *gmtime(), *localtime();
+#  endif
 #endif
 
 #if (defined(BSD4_4) || (defined(SYSV) && defined(MODERN)))
@@ -134,8 +143,13 @@ typedef struct stat z_stat;
 #    include <utime.h>
 #    define GOT_UTIMBUF
 #  endif
+#else
+#  if (defined(HAVE_UTIME_H))
+#    include <utime.h>
+#    define GOT_UTIMBUF
+#  endif
 #endif
-#if (defined(__DGUX__) && !defined(GOT_UTIMBUF))
+#if (!defined(GOT_UTIMBUF) && (defined(__DGUX__)))
    /* DG/UX requires this because of a non-standard struct utimebuf */
 #  include <utime.h>
 #  define GOT_UTIMBUF
@@ -229,14 +243,14 @@ typedef struct stat z_stat;
 
 
 #ifdef USE_ICONV_MAPPING
-# define MAX_CP_NAME 25 
-   
+# define MAX_CP_NAME 25
+
 # ifdef SETLOCALE
 #  undef SETLOCALE
 # endif
 # define SETLOCALE(category, locale) setlocale(category, locale)
 # include <locale.h>
-   
+
 # ifdef _ISO_INTERN
 #  undef _ISO_INTERN
 # endif

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -142,9 +142,36 @@
 #  endif
 #endif
 
-#ifdef USE_BZIP2
-#  include "bzlib.h"
+#ifdef CRYPT_AES_WG
+#  include "aes_wg/fileenc.h"
 #endif
+
+#ifdef BZIP2_SUPPORT
+#  include "bzlib.h"
+#endif /* def BZIP2_SUPPORT */
+
+#if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
+#  include "szip/Types.h"
+#endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
+
+#ifdef LZMA_SUPPORT
+#  include "szip/LzmaDec.h"
+#endif /* def LZMA_SUPPORT */
+
+#ifdef PPMD_SUPPORT
+#  include "szip/Ppmd8.h"
+
+struct Globals;         /* Early (vacant) declaration. */
+
+/* 7-Zip I/O structure (reduced). */
+typedef struct
+{
+  IByteIn p;
+  Bool extra;
+  SRes res;
+  struct Globals *pG;
+} CByteInToLook;
+#endif /* def PPMD_SUPPORT */
 
 #if defined( UNIX) && defined( __APPLE__)
 #  include "unix/macosx.h"
@@ -178,6 +205,7 @@ typedef struct Globals {
     int chars;            /* count of screen characters in current line */
 # endif
 #endif /* MORE */
+    FILE *outfp_prev;     /* Previous outfp for fileio.c:UzpMessagePrnt(). */
 #if (defined(IZ_CHECK_TZ) && defined(USE_EF_UT_TIME))
     int tz_is_valid;      /* indicates that timezone info can be used */
 #endif
@@ -212,7 +240,7 @@ typedef struct Globals {
      int redirect_text;   /* redirect text output to buffer */
 # ifndef NO_SLIDE_REDIR
      int redirect_slide;  /* redirect decompression area to mem buffer */
-#  if (defined(USE_DEFLATE64) && defined(INT_16BIT))
+#  if (defined(DEFLATE64_SUPPORT) && defined(INT_16BIT))
      ulg _wsize;          /* size of sliding window exceeds "unsigned" range */
 #  else
      unsigned _wsize;     /* sliding window size can be hold in unsigned */
@@ -241,7 +269,19 @@ typedef struct Globals {
 #if (!defined(USE_ZLIB) || defined(USE_OWN_CRCTAB))
     ZCONST ulg near *crc_32_tab;
 #else
-    ZCONST ulg Far *crc_32_tab;
+/* 2012-05-31 SMS.
+ * Zlib 1.2.7 changed the type of *get_crc_table() from uLongf to
+ * z_crc_t (to get a 32-bit type on systems with a 64-bit long).  To
+ * avoid complaints about mismatched (int-long) pointers (such as
+ * %CC-W-PTRMISMATCH on VMS, for example), we need to match the type
+ * zlib uses.  At zlib version 1.2.7, the only indicator available to
+ * CPP seems to be the Z_U4 macro.
+ */
+# ifdef Z_U4
+    ZCONST z_crc_t Far *crc_32_tab;
+# else /* def Z_U4 */
+    ZCONST uLongf Far *crc_32_tab;
+# endif /* def Z_U4 [else] */
 #endif
     ulg       crc32val;             /* CRC shift reg. (was static in funzip) */
 
@@ -349,7 +389,7 @@ typedef struct Globals {
     struct huft *fixed_tl;              /* inflate static */
     struct huft *fixed_td;              /* inflate static */
     unsigned fixed_bl, fixed_bd;        /* inflate static */
-#ifdef USE_DEFLATE64
+# ifdef DEFLATE64_SUPPORT
     struct huft *fixed_tl64;            /* inflate static */
     struct huft *fixed_td64;            /* inflate static */
     unsigned fixed_bl64, fixed_bd64;    /* inflate static */
@@ -359,7 +399,7 @@ typedef struct Globals {
     ZCONST ush *cplens;                 /* inflate static */
     ZCONST uch *cplext;                 /* inflate static */
     ZCONST uch *cpdext;                 /* inflate static */
-#endif
+# endif /* def DEFLATE64_SUPPORT */
     unsigned wp;              /* inflate static: current position in slide */
     ulg bb;                   /* inflate static: bit buffer */
     unsigned bk;              /* inflate static: bits count in bit buffer */
@@ -381,7 +421,7 @@ typedef struct Globals {
     PauseFn *mpause;
     PasswdFn *decr_passwd;
     StatCBFn *statreportcb;
-#ifdef WINDLL
+#if defined( WINDLL)
     LPUSERFUNCTIONS lpUserFunctions;
 #endif
 
@@ -398,6 +438,32 @@ typedef struct Globals {
     char autorun_command[FILNAMSIZ];
 #endif
 #endif /* !FUNZIP */
+
+#ifdef CRYPT_AES_WG
+    /* 2011-05-24 SMS.
+     * AES_WG encryption parameters.
+     */
+    zoff_t ucsize_aes;          /* AES uncompressed bytes left to decrypt. */
+    fcrypt_ctx zcx[ 1];         /* AES context. */
+#endif /* def CRYPT_AES_WG */
+
+/* 7-Zip (LZMA, PPMd) memory allocation function structure. */
+#if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
+    ISzAlloc g_Alloc;
+#endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
+
+/* 7-Zip LZMA compression parameters. */
+#ifdef LZMA_SUPPORT
+    CLzmaProps clzma_props;     /* LZMA properties. */
+    CLzmaDec state_lzma;        /* LZMA context. */
+#endif /* def LZMA_SUPPORT */
+
+/* 7-Zip PPMd compression parameters. */
+#ifdef PPMD_SUPPORT
+    CPpmd8 ppmd8;               /* PPMd structure. */
+    int ppmd_constructed;       /* PPMd initialization flag. */
+    CByteInToLook szios;        /* 7-Zip-like I/O structure. */
+#endif /* def PPMD_SUPPORT */
 
 #ifdef SYSTEM_SPECIFIC_GLOBALS
     SYSTEM_SPECIFIC_GLOBALS

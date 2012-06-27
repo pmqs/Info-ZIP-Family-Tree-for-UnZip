@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -19,7 +19,7 @@
   usage for building a monolythic binary of the Windows application "WiZ"
   that supports bzip2 both in compression and decompression operations.
 
-  Contains:  bz_internal_error()      (USE_BZIP2 only)
+  Contains:  bz_internal_error()      (BZIP2_SUPPORT only)
 
   ---------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@
 #  endif
 #endif
 
-#ifdef USE_BZIP2
+#ifdef BZIP2_SUPPORT
 
 /**********************************/
 /*  Function bz_internal_error()  */
@@ -52,7 +52,7 @@ void bz_internal_error(bzerrcode)
 
     Info(slide, 0x421, ((char *)slide,
       "error: internal fatal libbzip2 error number %d\n", bzerrcode));
-#ifdef WINDLL
+#if defined( WINDLL) || defined( DLL)
     longjmp(dll_error_return, 1);
 #else
     DESTROYGLOBALS();
@@ -60,4 +60,4 @@ void bz_internal_error(bzerrcode)
 #endif
 } /* end function bz_internal_error() */
 
-#endif /* USE_BZIP2 */
+#endif /* BZIP2_SUPPORT */

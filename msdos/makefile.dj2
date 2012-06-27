@@ -1,5 +1,5 @@
 # Makefile for Info-ZIP's UnZip, UnZipSFX and fUnZip using DJGPP v2.01 or
-# higher, by Frank Donahoe.                      Last updated: 21 Jul 2008
+# higher, by Frank Donahoe.                      Last updated: 16 Jan 2012
 
 # This Makefile is specifically tailored for GNU make and GNU C and
 # may not work with a generic Unix-compatible make utility.  The latest
@@ -122,7 +122,7 @@ endif
 IZ_BZIP2 = bzip2
 ifdef USEBZ2
 INC_BZ2LIB = -I$(IZ_BZIP2)
-LOCAL_UNZIP:=-DUSE_BZIP2 $(LOCAL_UNZIP)
+LOCAL_UNZIP:=-DBZIP2_SUPPORT $(LOCAL_UNZIP)
 LD_BZ2LIB = -L$(IZ_BZIP2) -lbz2
 LIBBZIP2 = $(IZ_BZIP2)/libbz2.a
 else

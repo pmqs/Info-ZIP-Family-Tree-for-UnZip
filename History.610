@@ -145,6 +145,203 @@ Features added (or removed):
 6.10b (10 Dec 2010):
  - No feature changes.
 
+6.10c01 (15 May 2011):
+ - Clarify VMS usage line.  (unzip.c) [SMS]
+ - Add compiler test.  (unix/configure) [SMS]
+ - Make -s spaces to underscores option generic (unzip.c) [Stan Sieler]
+ - Add optional AES encryption compatible with WinZip version (compression
+   method 99).  Use Gladman AES implementation.  Note that when the optional
+   AES_WG support is not enabled, this still changes the old message:
+    skipping: <name>  unsupported compression method 99
+   to:
+    skipping: <name>  AES_WG encr method not supported
+   when trying to extract an AES_WG-encrypted file.
+   (crypt.c, crypt.h, extract.c, fileio.c, globals.h, list.c, process.c,
+   unzip.c, unzpriv.h, zipinfo.c) [SMS]
+
+6.10c02 (28 May 2011):
+ - Add ef_scan_for_aes() and ef_strip_aes() for processing AES extra fields.
+   (crypt.c) [SMS]
+ - Update zipcloak() and zipbare() to support AES encryption and decryption
+   (though technically a Zip update).  (crypt.c) [SMS]
+ - Add WIN32 entropy_fun().  Add VCC 6 project for compiling in AES
+   encryption.  (crypt.c) [EG]
+ - Add AES support to ZipInfo.  Add recognition of flag bit 0x0040.  (Not
+   sure if this is correct.)  (zipinfo.c) [SMS]
+ - Add support for named parameters to configure.  Add support for AES
+   encryption.  (unix/configure, unix/makefile) [SMS]
+ - Add AES encryption.  (vms/build_unzip.com, vms/descrip.mms,
+   vms/descrip_deps.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
+ - Add initial VCC6 project for compiling AES on Win32.
+   (win32/vc6/unzip.dsp) [EG]
+ - Update UnZip to more current Zip version of crypt.c, making modifications
+   as needed.  (crypt.c) [SMS]
+ - Update testp() and testkey() to support AES.  (crypt.c) [SMS]
+
+6.10c03 (24 Jul 2011):
+ - Add AES_WG version to CRYPT_AES_WG line in -v.  (unzip.c, unzpriv.h) [SMS]
+ - Add P6 (search vector) and P7 (macro vector) parameters.
+   (vms/collect_deps.com) [SMS]
+
+6.10c04 (5 Aug 2011):
+ - First attempt at support for LZMA compression (method 14).  (extract.c,
+   fileio.c, unzip.c, unzpriv.h, lzma/* (from LZMA SDK), unix/configure,
+   unix/Makefile, vms/descrip.mms, vms/descrip_deps.mms, vms/descrip_src.mms)
+   [SMS]
+ - Create start of zos port.  (zos/zcc, zos/zld) [AD]
+ - Modify handling of non-ASCI file names (-I/-O options) to automatically
+   guess OEM code page when not already set.  Only some common mappings have
+   been added currently.  Only used if USE_ICONV_MAPPING is defined.
+   (unix/unix.c) [EG, based on patch by Dmitry Butskoy on Red Hat Bugzilla -
+   Bug 225576]
+
+6.10c05 (13 Aug 2011):
+ - Add LZMA files needed by UnZip from LZMA SDK version 9.20.  (lzma/7zfile.c,
+   lzma/7zfile.h, lzma/7zversion.h, lzma/alloc.c, lzma/alloc.h, lzma/lzfind.c,
+   lzma/lzhash.h, lzma/lzmadec.c, lzma/lzmadec.h, lzma/README_LZMA.txt,
+   lzma/types.h, lzma/orig/lzfind.h) [SMS]
+ - Split cmsmvs port into two ports zos and zvm.  (cmsmvs/* (removed),
+   zos/ccunzip.exec, zos/mvs.mki, zos/readme.mvs, zos/unzmvsc.job, zos/vmmvs.c,
+   zos/vmmvs.h, zvm/install.cms, zvm/mc.exec, zvm/readme.cms, zvm/unzip.exec,
+   zvm/unzip.makefile, zvm/unzvmc.exec, zvm/vmstat.h, zvm/whatsnew.cms,
+   zvm/zipinfo.exec) [AD]
+ - Drop VMS CASE_INSENSITIVE option as conflicts with CASE_MATCH.  Add NAMES
+   option that includes NAMES.LOWERCASE, NAMES.ODS2 (convert names to ODS2),
+   and NAMES.SPACES (convert spaces to underscores).  Add CASE_MATCH = BLIND
+   (ignore case) or SENSITIVE (don't ignore differences in case).
+   (vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help) [SMS]
+ - Add note about self-extracting archives.  (vms/install.vms) [SMS]
+ - Update VMS help for self-extracting archives.  (vms/unzipsfx.hlp) [SMS]
+
+6.10c06 (24 Aug 2011):
+ - Create new Win32 projects for AES_WG and LZMA.  Additional cleanup of
+   the Win32 projects is expected before release.  (win32/vc6/unzip.dsp,
+   win32/vc6/unzip.dsw, win32/vc6/unzipaes.dsp) [EG]
+
+6.10c07 (12 Sep 2011):
+ - Rename vms/INSTALL.VMS to vms/INSTALL_VMS.txt.  Remove much of the
+   VMS material already in INSTALL_VMS.txt.  Minor update to Mac OS X
+   to note adding of AppleDouble Finder info and resource fork storage.
+   (vms/INSTALL_VMS.txt, INSTALL) [SMS]
+ - Change default to -D everywhere, not only on VMS.  Update extended
+   help.  Update man page.  (globals.c, unzip.c, man/unzip.1) [SMS]
+
+ - Restructure unix build:  Restructure, document, reorganize; recognize IBM
+   compilers (z/OS, z/VM, AIX, Linux. iSeries); recognize z/OS system (uname
+   -I variant); add $PROD/flags_bz; support build with system zlib, zlib in
+   tree; support man and doc generation.  (unix/configure, unix/Makefile) [AD]
+ - Correct z/OS build script options parsing.  (zos/zcc, zos/zld) [AD]
+ - Add z/OS wrapper script for C preprocessor tests.  (zos/zccp) [AD]
+ - For unzip -v, emit IBM compiler OS-specific version.  (unix/unix.c) [AD]
+ - Customize unix build for z/OS UNIX (HAVE_SYS_TIME_H, sys/time.h,
+   sys/timeb.h, utime.h, et al).  (unix/unxcfg.h) [AD]
+ - Add PORT unix/configure macro, allows reuse by z/OS MVS build (under
+   z/OS UNIX) (unix/configure) [AD]
+
+ - Following changes made to unix/configure, mainly to support z/OS port.
+   (unix/configure) [AD]
+   1.  A new file $PROD/flags_bz is generated containing just the bzip2
+       compilation-related flags.
+   2.  UNAME-related flags now in more legible order.
+   3.  For z/OS, use "uname -I" to generate current z/OS information.
+   4.  Now generates installation flags (BINDIR, BINPERMS).
+   5.  Now generates man page flags (MANEXT, MANDIR, MANPERMS);
+       unix/Makefile supports generic_man and generic_doc.
+   6.  Now generates man page nroff option, currently "-Tascii" or "".
+   7.  Flags renamed for consistency between zip and unzip:
+       - CFLAGS    -> CF
+       - CFLAGS_BZ -> CF_BZ
+       - LFLAGS1   -> LF1
+       - LFLAGS2   -> LF2
+   8.  Flags generated are a superset of zip and unzip and include
+       additional header checks.
+   9.  OSDEP_xxxx flags contain OS-dependent values:
+       - OSDEP_C   C source files
+       - OSDEP_H   C header files
+       - OSDEP_S   Assembler source files
+       - OSDEP_OC  Object files (C)
+       - OSDEP_OS  Object files (assembler)
+       These allows multiple OS-dependent C or assembler source files.
+   10. Use consistent configuration, naming and recipes for assembler
+       files.
+   11. Add $PROD/flags values for program extensions:
+       - PMGEXT    Executables
+       - DLLEXT    DLLs (Shared objects)
+   12. Add $PROD/flags values for RANLIB, RM and LN.
+   13. Add $PROD/flags values for AR, required by IBM XLC for AIX 64-bit
+       compiles.
+   14. Object archive dependencies.  Non-blank if library is required:
+       LIB_AES_WG, LIB_LZMA, LIB_BZ, LIB_Z.
+   15. ZLIB and BZIP2 support now consistent:
+       - Supports build within tree via bzip2/Makefile or zlib/Makefile
+         (if present)
+       - Supports build with OS-owned libbz2.a (IZ_BZIP2=bzip2, ./bzip2 is
+         empty)
+       - Supports build with OS-owned libz.a (IZ_ZLIB=zlib, ./zlib is empty)
+       - Returns MK_BZ to allow configure to return system-specific BZIP2
+         makefile name
+   16. Now supports AF for assembler flags.
+   17. Support compiler listing options (+ CC on z/OS) for LIST=1.
+   18. Cleanup targets now same on zip and unzip (clean, clean_bzip2,
+       clean_exe)
+   19. All make targets are now explicit for portability; SysV make pattern
+       matching is not as powerful as gmane or z/OS make (MKS).
+   20. .SUFFIX reset to prevent builds from using default .c -> .o rules.
+   21. On z/OS, use CC=c89 (xlc ends with sigkill for failing compiles).
+   22. On AIX (with IBM XL C) use CC=c89.
+   23. Use unzip nl_langinfo() test instead of following zip test (which
+       fails because codeset is not an int).
+   24. Add test for sys/param.h (for -DNO_PARAM_H).
+   25. Add test for sys/time.h (separate from entry timing).
+   26. Add tests for sys/timeb.h and utime.h.
+   27. Set z/OS linker flag.s
+   28. Add PORT unix/configure parm, allows reuse by z/OS MVS build (under
+       z/OS UNIX) [AD]
+
+ - Minor updates to -D option help and option descriptions.  Add warning
+   regarding change in option negation (trailing "-" instead of leading).
+   Add note that split support should be coming by release of UnZip 6.10.
+   Add mention of automatic code page selection in some cases, but can be
+   overridden by use of -I and -O.  (unzip.c) [EG]
+ - Additional updates to UnZip man page.  (man/unzip.1) [EG]
+
+6.10c08 (22 Nov 2011):
+ - Add initial implementation of a user-triggered progress message.
+   Enabled by default, disabled by defining the C macro NO_USER_PROGRESS.
+   Adds a SIGUSR1 signal handler (non-VMS) or a control-T AST (VMS),
+   user_progress().  On non-VMS systems, add option -si to display the
+   UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
+   command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
+
+6.10c09 (15 Jun 2012):
+ - Add optional support for PPMd compression (method 98).  (extract.c,
+   lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
+   lzma/README_LZMA.txt, unix/configure, unix/Makefile,
+   vms/build_unzip.com, vms/descrip.mms, vms/descrip_deps.mms,
+   vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
+ - Add a PPMd test archive to the kit, "testmake_ppmd.zip", and a new
+   "make" target, "test_ppmd" to use it.  (testmake_ppmd.zip,
+   unix/Makefile, unix/test_unzip.sh, vms/descrip.mms,
+   vms/test_unzip.com) [SMS]
+ - Add recognition (only) of JPEG compression (method 96).  (list.c,
+   unzpriv.h, zipinfo.c) [SMS]
+ - Add archive name to user-triggered progress message.  (unzip.c) [SMS]
+ - Add data-dependent supplementary info to verbose test (-tv) report
+   for LZMA- and PPMd-compressed data.  (extract.c, man/unzip.1) [SMS]
+ - Initial attempt to provide a callable-UnZip interface on UNIX and VMS
+   systems.  Specifying LIBUNZIP at build time creates libizunzip.a or
+   LIBIZUNZIP.OLB and LIBIZUNZIP.OPT, which may be linked with a
+   user-supplied program.
+ - Initial attempt to support Windows MinGW environment with UNIX
+   builders ("generic" target).  No DLL.  (unix/configure, unix/Makefile)
+   [SMS]
+ - Added support for BAE Systems STOP OS, which lacks chown().  The
+   "configure" script now checks for chmod() and chown(), and unix.c now
+   honors the resulting NO_CHMOD and NO_CHOWN macros.  (unix/configure,
+   unix/unix.c) [SMS]
+
+
+
 
 Bugs fixed:
 
@@ -252,6 +449,405 @@ Bugs fixed:
 6.10b (10 Dec 2010):
  - No bug fixes.
 
+6.10c01 (15 May 2011):
+ - VMS-specific problem could cause "unzip -a" to truncate the last line
+   in a text file which had a one-character line ending (like LF) which
+   fell at the end of an internal buffer.  (vms/vms.c) [SMS]
+
+6.10c02 (28 May 2011):
+ - Changed the exit handler to use echorig() to restore the original
+   terminal echo setting, instead of echon() to enable echo
+   unconditionally.  (Actually implemented only on VMS.)   (fileio.c,
+   ttyio.c, ttyio.h) [SMS]
+ - Changed the carriage-control scheme used when an unfinished output line
+   to stdout is interrupted by an error message to stderr.  On VMS, the old
+   method produced spurious blank lines, and error messages could be
+   overwritten by succeeding output lines.  Please report any new problems
+   with error message format/placement.  (extract.c, fileio.c, globals.h,
+   process.c) [SMS]
+ - Updates to decrypt() to fix some minor AES header length issues.
+   (crypt.c) [SMS]
+ - Update testkey() for AES.  (crypt.c) [SMS]
+ - Minor bug fixes for AES and for making crypt similar in Zip and UnZip.
+   (crypt.h) [SMS]
+ - Add extra field processing for AES.  Account for extra AES data in file
+   data.  Replace fprintf() use with Info().  (extract.c, unzpriv.h) [SMS]
+ - Additional AES fixes.  (fileio.c, globals.h) [SMS]
+ - Spelling fixes.  (history.600, readme, unzip.h, unzpriv.h,
+   cmsmvs/vmmvs.h, macos/history.txt, windll/contents) [SMS]
+ - Minor wording updates.  Add descriptions for CRYPT_AES_WG and
+   AES_WG_SFX.  Describe support for new CC=gcc format for parameters.
+   (INSTALL) [SMS]
+ - Update method list to include AESencr.  (list.c) [SMS]
+ - Update VMS example in help message.  Add -v line for CRYPT_AES_WG.
+   Change compiler option error from PK_BADERR to PK_COMPERR.  Add
+   byte endian runtime check.  Remove CryptDate from Crypt -v line.
+   (unzip.c, unzip.h) [SMS]
+ - Add AES support to SFX.  Define AESENCRED as 99.  Define EF_AES_WG
+   as 0x9901.  (unzpriv.h) [SMS]
+ - Update comments to match latest makefile changes.  Remove support for
+   gcc target as the CC=gcc parameter covers that now.  (unix/configure)
+   [SMS]
+ - Message wording changes.  (vms/collect_deps.com) [SMS]
+ - Add new COMPERR error.  (vms/unzip_msg.msg) [SMS]
+ - VMS-specific problem could cause "unzip -a" to truncate the last line
+   in a text file which had a one-character line ending (like LF) which
+   fell at the end of an internal buffer.  (vms/vms.c) [SMS]
+ - Change NAM to NAMX.  Add some SYS defines.  (vms/vms.c, vms/vms.h,
+   vms/vmscfg.h) [SMS]
+ - Reset file pointer even on failure to fix problem.  (win32/win32.c) [????]
+ - Add (int) cast to n assignment in testkey() for type mismatch.  (May
+   limit the range of test cases.)  (crypt.c) [EG]
+ - Miscellaneous code tidying (white space, mostly).  (crypt.c, extract.c,
+   fileio.c, match.c, unzip.c, acorn/acorn.c, unix/unix.c, unix/unxcfg.h,
+   vms/cmdline.c, win32/win32.c) [SMS]
+
+6.10c03 (02 Aug 2011):
+ - Replace crypt.c with version from Zip 3.1d14.  In brief, changes for
+   AES_WG, updates in AES_WG and ZCRYPT documentation, fix eb_eas == NULL
+   issue, zipcloak() updates, change STANDARD_ENCRYPTION to
+   TRADITIONAL_ENCRYPTION, fix AES_WG password and MAC issue, remove
+   Win32 entropy_fun(), and add some type casts.  (crypt.c) [SMS]
+ - Change AES to AES_WG.  (crypt.h, extract.c, globals.h, unzip.c,
+   zipinfo.c) [SMS]
+ - Add BadEasMacMsg message.  Change #if defined(CRYPT) to #if CRYPT.
+   Pass in cmpr_vers_aes to ef_scan_for_aes().  Change bytes_put_out from
+   zoff_t to zusz_t.  Add aes_wg_mac storage.  Clear aes_mac_mismatch
+   if entry not AES encrypted.  Update bytes_put_out loop.  Add
+   aes_mac_mismatch error message.  Fix MAC issue.  (extract.c) [SMS]
+ - Add size check before calling fcrypt_decrypt().  (fileio.c) [SMS]
+ - Add ucsize_aes global for AES uncompressed bytes left do decrypt.
+   (globals.h) [SMS]
+ - Change AESencr to AES_WG as compression method name. (list.c) [SMS]
+ - Formatting updates.  Remove tabs.  (match.c, acorn/acorn.c,
+   unix/unix.c, unix/unxcfg.h, vms/cmdline.c) [SMS]
+ - Include aes_wg/iz_aes_wg.h.  Change elif to else if.  (unzip.c) [SMS]
+ - Remove unused constant UNZIP_AESVERS as there is no specific PKZIP
+   version associated with WinZip AES encryption.  (unzpriv.h) [SMS]
+ - Add IZ_MIN() for doing min of two values.  (unzpriv.h) [SMS]
+ - Change AES-ed to AES_WG-ed.  Update AES extra field output.
+   Interpret AES extra field.  (zipinfo.c) [SMS]
+ - Update aes_wg directory to use latest IZ_AES_WG files.  Remove
+   original files, just keep current files.  (aes_wg/aes.h,
+   aes_wg/aescrypt.c, aes_wg/aeskey.c, aes_wg/aesopt.h, aes_wg/aestab.c,
+   aes_wg/brg_endian.h, aes_wg/fileenc.c, aes_wg/fileenc.h,
+   aes_wg/hmac.c, aes_wg/hmac.h, aes_wg/iz_aes_wg.h, aes_wg/license.txt,
+   aes_wg/main.c, aes_wg/prng.c, aes_wg/prng.h, aes_wg/pwd2key.c,
+   aes_wg/pwd2key.h, aes_wg/sha1.c, aes_wg/sha1.h) [EG]
+ - Change AES to AES_WG.  Other minor updates for AES_WG encryption.
+   (unix/configure) [SMS]
+ - Change aes to aes_wg.  Update command line help.  Move instructions
+   for manuals to end of help.  Change LIB_AES to LIB_AES_WG.  Change
+   some single quotes to double quotes.  Add -DNO_LCHMOD to unzips
+   rule for rs6000 (IBM RS/6000 under AIX 3.2).  (unix/makefile) [SMS]
+ - Change AES to AES_WG.  Change ZIP.OLB to UNZIP.OLB.  Add UNZIPSFX
+   library replace.  (vms/build_unzip.com) [SMS]
+ - Documentation updates.  (vms/descrip.mms) [SMS]
+ - Changes to convert from AES to AES_WG.  (vms/descrip_deps.mms,
+   vms/descrip_mkdeps.mms) [SMS]
+ - Remove VAXC, GNUC dependencies.  Change AES to AES_WG.  Add SFX
+   object library.  (vms/descrip_src.mms) [SMS]
+ - Update multi-line string formatting.  (win32/win32.c) [SMS]
+ - Update options list for UnZip for -C, changing ZIO to UZO in
+   UZO (UnZip) list so option is available to UnZip.  Option had
+   been put twice in ZipInfo (ZIO) list.  (unzip.c) [EG]
+ - Add comment about disk number == 1.  (process.c) [EG]
+
+6.10c04 (05 Aug 2011):
+ - Replace some Mac-specific AppleDouble-related code which got omitted
+   between 6.10a and 6.10b(?)  (extract.c) [SMS]
+ - Replace lost code for enhanced "apparent file type" message in
+   ZipInfo.  A hex value is now included, to show useful info for
+   unexpected values (not "binary", "ebcdic", or "text").  zipinfo.c [SMS]
+ - Replace lost change enabling "-s" everywhere.  Replace lost change to
+   VMS usage text.  (unzip.c, unzip.h) [SMS]
+ - Remove an unused variable (aes_strngth).  (zipinfo.c) [EG, SMS]
+ - Reform a defective ZCRYPT version test, now handling version 3.0 case.
+   (ttyio.c) [SMS]
+ - Replace obsolete test Zip archive, to give "make test" a chance to
+   succeed.  (testmake.zip) [SMS]
+ - Add "testmake_zip" target to UNIX "make" file, to help in creating
+   testmake.zip.  (Formerly not done on UNIX.)  (unix/Makefile) [SMS]
+ - New command-line processing in ZipInfo miscounted non-option
+   arguments, causing loss of the heading and total sections in default
+   reports.  (zipinfo.c) [SMS]
+ - New command-line processing in UnZipSFX lost the first non-option
+   argument (member to extract, not archive name).  (unzip.c) [SMS]
+ - Various VMS CLI bad behavior involving /HELP and /VERBOSE.
+   (vms/cmdline.c) [SMS]
+ - Remove _orig files.  (crypt.c_orig, crypt.h_orig, extract.c_orig,
+   fileio.c_orig, globals.h_orig, INSTALL._orig, list.c_orig,
+   process.c_orig, README._orig, ttyio.c_orig, ttyio.h_orig,
+   unshrink.c_orig, unzip.c_orig, unzip.h_orig, unzpriv.h_orig,
+   zipinfo.c_orig, unix/configure._orig, unix/Makefile._orig,
+   unix/unix.c_orig, vms/build_unzip.com_orig, vms/collect_deps.com_orig,
+   vms/descrip.mms_orig, vms/descrip_deps.mms_orig,
+   vms/descrip_mkdeps.mms_orig, vms/descrip_src.mms_orig, vms/vms.c_orig,
+   vms/vms.h_orig, vmscfg.h_orig) [EG]
+ - Rename bzip2 readme from 00README.IZ to README_bz2.txt.
+   (README_bz2.txt) [EG]
+ - Update Contents.  Add lzma.  (Contents) [SMS]
+ - Minor changes to Contents.  (Contents) [EG]
+ - Update crypt to version 3.0.  (crypt.h) [SMS]
+ - Update VCC6 project to look for AES WG files in aes_wg.
+   (win32/vc6/unzip.dsp) [EG]
+ - Allow Total Disks (ecloc64_total_disks) to be 0, as some archive creator
+   out there sets this to 0 incorrectly instead of 1.  However, probably
+   no reason we can't just go with it.  This only is relevant for Zip64
+   archives.  (process.c) [EG]
+ - Change i and b to unsigned in AES_WG endian test.  (unzip.c) [SMS]
+ - Add possible fix for MINIX needing <unistd.h>.  (unzpriv.h) [SMS, adapted
+   from user suggestion]
+ - New UNIX(-like) shell script for basic UnZip testing.  Builder
+   changed to use it, instead of in-line actions.  (unix/Makefile,
+   unix/test_unzip.sh) [SMS]
+ - VMS builders now generate module-ID options files.  vms/unzip.opt and
+   vms/unzipsfx.opt have been removed from the kit.  Add new NOCOMPILE, NOEXE,
+   LZMA, and TEST commands.  Command-line options for the VMS DCL builder
+   should now agree better with those for Zip.  (vms/build_unzip.com,
+   vms/descrip.mms, vms/unzip.opt (removed), vms/unzipsfx.opt (removed),
+   vms/optgen.com (new)) [SMS]
+ - Added VMS CLI option, /LICENSE, equivalent to --license.  Change
+   VERBOSE to VERBOSE.COMMAND for verbose_command.  Update to use -h and
+   -hh help options supported by new command line parser.  (vms/cmdline.c,
+   vms/unz_cli.cld, vms/unzip_cli.help) [SMS]
+ - Significant updates to VMS Contents.  (vms/contents) [SMS]
+ - New VMS DCL procedure for basic UnZip testing.  New MMS/MMK builder
+   target, TEST, to run it, and CLEAN_TEST to clean up after it.
+   (vms/descrip.mms, vms/test_unzip.com (new), vms/install.vms) [SMS]
+ - Add definition of C macro _SZ_NO_INT_64 for LZMA on VAX.
+   (vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
+ - Initial update to README.  (README) [SMS]
+
+6.10c05 (13 Aug 2011):
+ - Bug fix for array overflow and slight enhancement of "Available
+   options" listing.  (unzip.c) [EG]
+ - Fix for improper argument count for -Z bug.  (zipinfo.c) [EG, SMS]
+
+6.10c06 (24 Aug 2011):
+ - Change UNZIP_BZ2VERS to UNZIP_BZIP2_VERS to be consistent with other
+   version defines.  Set UnZip (compatible with) version based on inclusion
+   of BZIP2 or LZMA support.  (extract.c, unzpriv.h) [SMS]
+ - Change %ld in a Trace() to %lld.  (This would be incompatible with
+   Win32, which uses %I64d, but not an issue unless Trace() is used.)
+   Remove G.incnt < LZMA_PROPS_SIZE + 4 check from LZMA properties
+   length check.  (extract.c) [SMS]
+ - Add (unsigned int) cast to ucsize assignment to fix 64-bit to 32-bit
+   assignment.  (extract.c) [EG]
+ - Add (long) cast to G.ucsize_aes in IZ_MIN() to fix 64-bit to 32-bit
+   assignment.  (fileio.c) [EG]
+ - Rename 7z* files to Sz*.  (unzip.c, SzVersion.h, lzma/7zFile.c (remove),
+   lzma/7zFile.h (remove), lzma/7zVersion.h (remove), lzma/SzFile.c,
+   lzma/SzFile.h, lzma/SzVersion.h) [SMS, EG]
+ - Add encryption notices.  (unzip.c) [SMS]
+ - Update LZMA Readme.  (README_LZMA.txt) [SMS]
+ - Change 7z* to Sz*.  Explicitly use sh to run test_unzip.sh.
+   (unix/makefile) [SMS]
+ - For VMS, update comments for SFX regarding AES_WG and LZMA.  Note that
+   SFX does not include AES_WG by default.  Change 7z* to Sz*.
+   (vms/build_unzip.mms, vms/descrip.mms, vms/descrip_deps.mms,
+   vms/descrip_src.mms) [SMS]
+ - Update VMS Install documentation.  (vms/install.vms) [SMS]
+ - Minor updates to VMS test script.  (vms/test_unzip.com) [SMS]
+ - Repackage Win32 VC 6 projects, creating new project unzipaes for AES_WG
+   and moving configurations dependent on AES files in the aes_wg
+   directory to that project.  Remove AES_WG dependencies from unzip
+   project.  Add LZMA configurations to the unzip and unzipaes projects.
+   Currently the VC 6 configurations depend on the LZMA files being present
+   (they are part of the source distribution so they should be).  The user
+   ignores those files when they select a configuration that does not use
+   them.  Added missing Release configurations.  The ASM (assembly)
+   configurations are not updated yet to support AES_WG or LZMA.
+   (win32/vc6/unzip.dsp, win32/vc6/unzip.dsw, win32/vc6/unzipaes.dsp) [EG]
+
+6.10c07 (12 Sep 2011):
+ - Change type of ucsize_lzma to SizeT.  (extract.c) [SMS]
+ - Change default to -D everywhere, not only on VMS.
+ - CF_BZ now has "-DBZ_NO_STDIO" to build correct bzip2 variation.
+   (unix/configure, unix/Makefile) [AD]
+ - CF_BZ now contains "-D_FILE_OFFSET_BITS=64 -D_LARGE_FILES" if large files
+   supported.  (unix/configure) [AD]
+ - Customize unzip unix/unxcfg.h for time.h et al.  (unix/configure) [AD]
+ - Add fix for symlink bug (see
+   http://comments.gmane.org/gmane.comp.version-control.git/181165).  From
+   Andreas Schwab:  "This only happens if you have more then 16k entries
+   and when one of the 16k entry infos is reused it happend to be previously
+   used for a symlink entry."  Patch provided.  (process.c) [AS]
+
+6.10c08 (22 Nov 2011):
+ - Add (wchar_t *) casts to wstring malloc().  (extract.c) [SMS]
+ - Remove wchar.h include.  Add parentheses around wide_string[] assignment
+   in for loop to quiet complaint by a particular compiler.  [SMS, AD]
+ - Add note regarding possible morphing of unzpriv.h to something more like
+   tailor.h.  (Could happen.)  Copy over UNICODE_SUPPORT comment from Zip
+   detailing the current plan for unifying Unicode code to just three
+   possibiities:  UNICODE_WIDE, UNICODE_ICONV, and UNICODE_NATIVE.  Change
+   "#define BSD" to "#define BSD 1".  Copy over DBCS Japanese support comment.
+   Always include stdlib.h if UNICODE_SUPPORT defined.  Copy over wchar and
+   langinfo support headers from Zip.  Add MBCS comment noting possible use of
+   replacement functions when available.  Copy over in comments some Zip MBCS
+   code.  (unzpriv.h, unix/unxcfg.h) [AD]
+ - Include unistd.h where available, mainly for SunOS.  (lzma/szfile.h) [SMS]
+ - Comment updates in top section.  Attempts at making the Zip and UnZip
+   configure scripts similar.  Formatting updates.  Add "Generating system-
+   dependent flags..." message.  Split up parameter list in valid_vars.  Remove
+   -DUNIX from CFLAGS.  Define AR_BZ for BZip2.  Change manuals output dir to
+   manout.  Default PORT to empty instead of unix.  Default AES_WG, LZMA,
+   IZ_BZIP2, and IZ_ZLIB to empty if not already defined.  Define PORT_SPEC
+   for port specification method.  Remove OSDEP_C and OSDEP_S.  Remove MANTAB.
+   Minor changes to output build messages.  Assign default PORT setting.  Set
+   PORT_SPEC to I (implicit) if PORT is unix, else E (explicit).  Output
+   UNAME_S as OS name.  Add quotes around some variables.  Add tests for MinGW
+   64, MinGW 32, LLVM, LLVM Clang, LLVM GCC.  Add Darwin check for obsolate -s
+   option.  Add tests for Portable C (PCC), EKOPath, Intel, GNU C, CNU C for
+   MAC OS X, AIX.  Update defines for CC_TST, CFLAGS_OPT, CFLAGS_TST, and AR_BZ
+   for each port.  Add test for DJGPP, CYGWIN.  Set build configuration for
+   various targets:  msdos, os2, qdos, zos,  zvm.  Add "fix me" note for
+   assembler CRC code.  Change some output error messages to use ^^ prefix as
+   in Zip.  Add "No AES WG encryption", "No LZMA compression", "No BZIP2
+   compression", and "ZLIB not used" messages as in Zip.  Error message updates
+   similar to Zip.  Add comment describing HAVE_HEADER_H, HAVE_DIR_HEADER_H,
+   NO_HEADER_H, NO_DIR_HEADER_H, FUNCTION=function, and NO_FUNCTION.  Remove
+   HPUX ANSI test.  Add off_t and UID/GID messages from Zip.  (The UID/GID
+   code, in particular, may not be appropriate for UnZip, but this should be
+   corrected in a later beta.)  Update sys/time.h messages.  (Not sure if
+   these are appropriate to UnZip.  It's possible that UnZip would work, but
+   that checking for unneeded features could prevent it from building.)  Add
+   wchar.h checks.  Update wide character support checks to match those in Zip.
+   Update check for missing functions.  Add "FIX ME" note for langinfo.h.
+   Change ${CFLAGS} to ${CFLAGS_TST} in assignment.  Update MBCS functions
+   check.  Output end blank line.  (unix/configure) [SMS, AD]
+ - Update Makefile instructions at top to be similar to Zip.  Update list of
+   targets.  Add additional instructions and guidance from Zip.  Update AR to
+   change -cq to cq.  Add note about OSDEP_H, OS_DEPOC, and OSDEP_OS.  Update
+   note on Assembler to mention msdos/crc_i86.S.  Remove PGM_ZINFO from
+   UNZIP_PGMS.  User manout for output directory of manuals.  Put plain text
+   versions of manuals in root directory as have traditionally done.  Use
+   PGM_* variables to set BIN_* variables.  Add note about C files when cross
+   compiling and PORT parm.  Change note on api.o rule from "object files" to
+   "C Compile rule" for unzip DLL.  Add comment separator lines around AES
+   code and LZMA code.  Update BZIP2 test to use "@if [ flags_bz ];" instead
+   of "@if test -f flags_bz;".  Change "-> zips' to "-> unzips".  Change manl
+   rule to manout.  Update text output rules for manuals based on Zip updates
+   including using man instead of nroff.  Add "Running:  unix/configure"
+   message.  Add PROD parameter to unix/configure.  Add note on BZIP2 flags.
+   Add PGM_ZINFO to clean rule.  Add clean_docs rule for cleaning the plain
+   text docs as was done in Zip.  Update install rule.  Remove duplicate
+   "Originally tested under Sun" comment.  Add generic build warning message.
+   Rephrase some comments for generic rules.  Update rules list for specific
+   ports.  Remove OSDEP_C and OSDEP_S from linux_dos rule.  Remove some space
+   from comments and messages.  (unix/Makefile) [SMS, AD]
+ - Add compiler identification for NeXT DevKit, MinGW 64, MinGW 32, LLVM
+   Clang, LLVM Apple GCC, LLVM GCC, Portable C, EKOPath C, Intel C, GCC, and
+   SunPro C.  Ignore case of "CRAY" define.  Reformat IBM version.  Reformat
+   sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
+   message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
+
+6.10c09 (21 Jun 2012):
+ - Minor code tidying: UZbunzip2() and UZlzma() are now static.  (extract.c,
+   unzpriv.h) [SMS]
+ - A bare "#if" directive embedded in a multi-line comment block confused
+   old C preprocessors (SunOS 4.1.4 bundled C, VAX C V3.1-051).  (unzpriv.h)
+   [SMS]
+ - Less lame handling of LZMA and PPMd data structures.  More things are
+   allocated and/or initialized once per job, rather than once per
+   archive member.  (extract.c, globals.h, process.c) [SMS]
+ - Remove definition of unused LZMA- and PPMd-related C macro _7ZIP_ST
+   from builders.  (unix/configure, vms/build_unzip.com,
+   vms/descrip_src.mms) [SMS]
+ - Miscellaneous code tidying for user-triggered progress message on VMS:
+   Portability to old VAX versions, coping with batch mode, better comments
+   and messages.  (vms/vms.c, vms/vmscfg.h) [SMS]
+ - Remove lzma/Alloc.c and lzma/Alloc.h (MyAlloc() and MyFree()
+   functions).  (extract.c, unix/Makefile, vms/descrip_src.mms) [SMS]
+ - Remove (unused) lzma/SzFile.c and lzma/SzFile.h.  (unix/Makefile,
+   vms/descrip_src.mms) [SMS]
+ - Bad hard-coded string length in message function could put a spurious
+   NUL character into messages.  (Typically invisible on screen, but
+   ugly in redirected output.)  (fileio.c) [SMS]
+ - "make clean" missed some spots.  (unix/Makefile) [SMS]
+ - A user-specified CFLAGS value for UNIX(-like) builds no longer needs
+   to include "-I.".  (unix/configure) [SMS]
+ - Some GCC versions would emit many "warning: format string is not a
+   string literal" diagnostics.  The Unix builders now add a compiler
+   option, "-Wno-format-security", to suppress these, where appropriate.
+   (unix/configure) [SMS]
+ _ Changed C macros USE_BZIP2, USE_DEFLATE64, USE_LZMA, USE_PPMD, and
+   USE_UNSHRINK to BZIP2_SUPPORT, DEFLATE64_SUPPORT, LZMA_SUPPORT,
+   PPMD_SUPPORT, and UNSHRINK_SUPPORT, respectively, for clarity and
+   consistency with Zip.  (INSTALL, explode.c, extract.c. fileio.c.
+   funzip.c. gbloffs.c. globals.h. inflate.c, process.c, ubz2err.c,
+   unzip.c, unzpriv.h, amiga/flate.a, human68k/flate.s, msdos/doscfg.h,
+   msdos/makefile.dj2, msdos/makefile.wat, os2/os2cfg.h, unix/configure,
+   vms/build_unzip.com, vms/descrip_src.mms, win32/Makefile,
+   win32/Makefile.gcc, win32/Makefile.wat, wince/punzip.h) [SMS]
+ - Changed the "special compilation options" section of the "-v" report
+   to agree better with that of Zip.  Added explanations for some more
+   options.  (unzip.c) [SMS]
+ - Changed to use the new C macro, NO_TRADITIONAL_CRYPT, as in Zip, to
+   control (disable) compilation of code specific to traditional
+   encryption, allowing AES_WG encryption without traditional
+   encryption.  (crypt.c, crypt.h, fileio.c, unzip.c, unzpriv.h) [SMS]
+ - Adopted a suggestion from Ireneusz Hallmann to use an alternate
+   buffer in more situations in the DLL, to solve a problem with data
+   corruption when inflating to memory.  Adapted another suggestion for
+   a better window size calculation.  The old method gave poor results
+   for buffer sizes which were not powers of two.  (inflate,c)  [IH, SMS]
+ - Fixed numerous problems when building with REENTRANT defined, mostly
+   in the new command-line option code, but also in ppmd_read_byte() and
+   the user-triggered progress message.  Reformed globals access in
+   VMS-specific stamp_file().  (extract.c, unzip.c, unzpriv.h,
+   zipinfo.c, vms/vms.c) [SMS]
+ - Added "aesw" to the table of compression method names used in a
+   ZipInfo report.  ("u###" was appearing for method 99 in reports.)
+   (zipinfo.c) [SMS]
+ - Repaired lame punctuation in SFX "Must quote upper-case options"
+   message on VMS.  (unzip.c) [SMS]
+ - Renamed C macro APL_DBL_SFX to APL_DBL_SUFX to reduce confusion with
+   self-extracting "SFX".  (extract.c, fileio.c, unix/macosx.h) [SMS]
+ - Added some minimal/lame support in the unix/zipgrep script for (up to
+   four) GNU long-form options for egrep, and fixed some lame error
+   handling (when the "unzip -Z1" command failed, for example).  Many
+   limitations and problems remain.
+ - Renamed "lzma" directory to "szip".  (Contents, INSTALL, extract.c,
+   globals.h, unzip.c, unix/configure, unix/Makefile, vms/build_unzip.com,
+   vms/descrip_deps.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
+ - Changed Mac OS X system-specific code to use "/..namedfork/rsrc" as
+   the suffix for resource fork access on Intel, staying with "/rsrc" on
+   PowerPC.  Define the C Macro APPLE_NFRSRC as 0 (on Intel) or 1 (on
+   PowerPC) at build time to override the automatic decision.  (We believe
+   that all PowerPC-compatible OS versions accept "/rsrc", and all
+   Intel-compatible OS versions accept "/..namedfork/rsrc".)  Using "/rsrc"
+   on Mac OS X 10.7 (Lion, Intel-only) caused spurious "Not a directory"
+   messages, and resource forks were not properly restored.   (unzip.c,
+   unix/macosx.h) [SMS]
+ - UnZip failed to extract an archive member with a null name (silently
+   on VMS, with a "mapname:  conversion of  failed" message on UNIX).
+   Spurious error messages like ":  mismatching "local" filename (fred)"
+   (where "fred" was some previously processed member name) were also
+   possible.  (Info-ZIP Zip uses "-" as the name for an archive member
+   created from standard input, but the .ZIP standard allows a null name
+   for this case.)  Now, UnZip extracts a null-name archive member as
+   "-" (C macro NULL_NAME_REPL).  On VMS, an error message was added,
+   similar to the one on UNIX, and on UNIX, the message was clarified.
+   (fileio.c, unzpriv.h, unix/unix.c, vms/vms.c) [SMS]
+ - "unzip -t" silently detected an unexpected end-of-file condition when
+   reading an archive, leading to an unexplained "At least one error was
+   detected" message.  An "Unexpected end-of-file" message has been
+   added to reduce the mystery in this case.  (extract.c) [SMS]
+ - Java "jar" archives with over-simplified header info were interpreted
+   as coming from MS-DOS, causing UTF-8-encoded file names to be damaged.
+   A Java "CAFE" extra block is now detected, and inhibits this
+   inappropriate name conversion.  A new "--jar" option lets the user
+   force this behavior when an archive lacks a "CAFE" extra block.
+   https://sourceforge.net/tracker/index.php?func=detail&aid=3526936\
+   &group_id=118012&atid=679787  (extract.c, fileio.c, unzip.c, unzip.h) [SMS]
+ - Added Java "CAFE" extra field type to ZipInfo reports.  (zipinfo.c) [SMS]
+ - Changed some declarations to accommodate a type change in zlib
+   version 1.2.7.  (globals.h) [SMS]
+ - UnZipSFX could fail (SEGV) on systems with backslash ("\") file path
+   separators (DOS, Windows, ...), if a list of member names to be
+   extracted was specified on the command line.  (unzip.c) [SMS]
 
 ==================
 

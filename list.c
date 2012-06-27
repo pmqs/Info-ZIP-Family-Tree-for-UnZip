@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -121,7 +121,8 @@ int list_files(__G)    /* return PK-type error code */
     static ZCONST char Far method[NUM_METHODS+1][8] =
         {"Stored", "Shrunk", "Reduce1", "Reduce2", "Reduce3", "Reduce4",
          "Implode", "Token", "Defl:#", "Def64#", "ImplDCL", "BZip2",
-         "LZMA", "Terse", "IBMLZ77", "WavPack", "PPMd", "Unk:###"};
+         "LZMA", "Terse", "IBMLZ77", "JPEG", "WavPack", "PPMd",
+         "AES_WG", "Unk:###"};
 
 
 

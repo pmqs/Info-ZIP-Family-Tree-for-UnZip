@@ -22,6 +22,25 @@ Bogus bugs (not our fault!):
  tion, "which -a unzip" will show *all* copies of "unzip" in your path.)
 
 
+Modern Bugs (UnZip 6.10):
+------------------------
+
+ - unix/zipgrep shell script has only limited support for long options
+   for egrep ("--color", for example, for GNU egrep), and none for short
+   options which have values (and especially multiples of those).  Up to
+   four long options are currently handled by the script, with no good
+   error handling if more are specified.  The argument quoting method
+   used by the shell seems to defeat attempts to pass multiple
+   options/arguments in one space-separated string.  (Multiple short
+   options are combined into one, but that can't be done for long
+   options, and probably shouldn't be done for short options, either.)
+   A more clever scripting technique (or a re-write as a real program)
+   seems to be needed.
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=384
+   Debian Bug#652838: unzip: zipgrep parses long egrep options as short
+   options
+
+
 Bugs (real and/or imagined):
 ---------------------------
 

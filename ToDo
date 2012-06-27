@@ -18,8 +18,10 @@ New stuff to be added to the main list (if not already there):
 - Add compression method 98 (PPMd).  See the thread for references.  (12 Jul
     2010 EG, from forum thread "Info-ZIP Bugs > UnZip Bugs > unsupported
     compression method 98")
+        Done in 6.10c09.
 - Fix for funzip.  (12 Jul 2010 EG, from forum thread "Info-ZIP Bugs > UnZip
     Bugs > compilation error: Uz_Globs has no  disk_full")
+        Improved a little in 6.10c09.
 - Add more specifics about editing flags.  Is check needed that all data
     from extra field was read?  (12 Jul 2010 EG, from forum thread "Info-ZIP
     Bugs > UnZip Bugs > Valgrind reports uninitialized reads in unzip")
@@ -54,6 +56,8 @@ For UnZip 6.1/who knows:
 
        LZMA is first-level priority for 6.1, other formats may be taken
        into consideration
+
+        LZMA and PPMd done in 6.10c09.
 
    o add support for reading AES encrypted archives
      - WinZIP format (priority 1)
@@ -233,7 +237,7 @@ Some maintenance or OS specific topics for 6.x release:
 
    * should we add support for (null) entry names (empty entry name field), to
      conform to the PKWARE specification?
-
+        Done in 6.10c09.
 
 =======================================
 

@@ -13,7 +13,7 @@
 
 .TITLE  Info-ZIP UnZip Error Messages
 .FACILITY IZ_UNZIP, 1954 /SYSTEM
-.IDENT 'V6.0-000'
+.IDENT 'V6.1-000'
 
 ! PK_
 .BASE 0
@@ -25,21 +25,24 @@ ERR     /ERROR        <Error in zipfile>
 .BASE 6
 BADERR  /SEVERE       <Error in zipfile>
 .BASE 8
-MEM     /SEVERE       <insufficient memory (init)>
+MEM     /SEVERE       <Insufficient memory (init)>
 .BASE 10
-MEM2    /SEVERE       <insufficient memory (password)>
+MEM2    /SEVERE       <Insufficient memory (password)>
 .BASE 12
-MEM3    /SEVERE       <insufficient memory (file expand)>
+MEM3    /SEVERE       <Insufficient memory (file expand)>
 .BASE 14
-MEM4    /SEVERE       <insufficient memory (memory expand)>
+MEM4    /SEVERE       <Insufficient memory (memory expand)>
 .BASE 16
-MEM5    /SEVERE       <insufficient memory (???)>
+MEM5    /SEVERE       <Insufficient memory (???)>
 .BASE 18
-NOZIP   /ERROR        <zipfile not found>
+NOZIP   /ERROR        <Zipfile not found>
 .BASE 20
 PARAM   /ERROR        <Invalid parameters specified on command line>
 .BASE 22
 FIND    /ERROR        <No files found to extract or view>
+
+.BASE 38
+COMPERR /SEVERE       <Error in compilation options>
 
 .BASE 100
 DISK    /SEVERE       <I/O error - disk full, ...>

@@ -1,42 +1,35 @@
-Contents of the "vms" sub-archive for UnZip 6.00 and later:
+Contents of the "vms" sub-directory for UnZip 6.10
 
-  Contents            this file
-  INSTALL.VMS         VMS-specific build and install instructions
-  NOTES.TXT           description of new features in VMS Zip 3.0 and UnZip 6.0
-  README              general VMS info about using UnZip and zipfiles
-  UNZIP_MSG.MSG       messages source for VMS built-in error message facility
-  unzip_def.rnh       UnZip default help page, RUNOFF format
-  unzip_cli.help      UnZip VMSCLI help page, TPU format
-  unzipsfx.hlp        UnZipSFX pre-formatted help page
-  cvthelp.tpu         TPU macro file to convert .help file to RUNOFF format
+  build_unzip.com     DCL procedure to build UnZip (and friends)
+  bzlib.h             VMS wrapper header file for the bzip2 library definitions
   cmdline.c           VMS-style command-line-interface code (if VMSCLI defined)
-  unz_cli.cld         more VMS-command-line stuff (if VMSCLI defined)
-  vms.c               VMS file manipulation code
-  vms.h               VMS header file for UnZip
-  vmscfg.h            VMS-specific configuration settings
-  vmsdefs.h           VMS system declarations (missing C compiler support)
-  build_unzip.com     command file to build or (re-)link UnZip
-  descrip.mms         MMK/MMS makefile for UnZip/ZipInfo and UnZipSFX
-  descrip_deps.mms    MMK/MMS include file providing source dependencies
-  descrip_mkdeps.mms  MMK/MMS makefile for regenerating descrip_deps.mms
-  descrip_src.mms     MMK/MMS include file, provides environment setup
-  collect_deps.com    command file used in source dependencies creation
-  mod_deps.com        command file used in source dependencies creation
-  unzip.opt           options file used for linking unzip
-  unzipsfx.opt        options file used for linking unzipsfx
-  makesfx.com         command file to create self-extracting archives
+  collect_deps.com    DCL procedure used in source dependencies creation
+  Contents            This file
+  cvthelp.tpu         TPU macro file to convert .help file to RUNOFF format
+  descrip.mms         MMK/MMS description for UnZip/ZipInfo and UnZipSFX
+  descrip_deps.mms    MMK/MMS include file for source dependencies
+  descrip_mkdeps.mms  MMK/MMS description for generating descrip_deps.mms
+  descrip_src.mms     MMK/MMS include file for common matter
+  find_bzip2_lib.com  DCL procedure to locate bzip2 and zlib libraries
+  hlp_lib_next.com    DCL procedure to find next HLP$LIBRARY[_*] logical
+  infback9.h          VMS wrapper header file for zlib inflate64 definitions
+  INSTALL_VMS.txt     VMS-specific build and install instructions
+  makesfx.com         DCL procedure to create a self-extracting archive
+  memory.h            Replacement for <memory.h>, where missing.
+  mod_dep.com         DCL procedure used in source dependencies creation
+  NOTES.TXT           VMS-specific usage notes
+  optgen.com          DCL procedure used to create module-ID link option files
+  test_unzip.com      DCL procedure to run basic UnZip tests
   unixio_gcc.h        unixio.h system header replacement for gcc
   unixlib_gcc.h       unixlib.h system header replacement for gcc
-  bzlib.h             VMS wrapper header file for the bzip2 library definitions
-  find_bzip2_lib.com  command procedure to set up environment for bzip2 support
-  infback9.h          VMS wrapper header file for zlib inflate64 definitions
+  unzipsfx.hlp        UnZipSFX pre-formatted help page
+  unzip_cli.help      UnZip VMSCLI help page (TPU source)
+  unzip_def.rnh       UnZip default help page (RUNOFF source)
+  UNZIP_MSG.MSG       Message utility source file
+  unz_cli.cld         Command definition file for UnZip and ZipInfo
+  vms.c               VMS-specific C source
+  vms.h               VMS-specific C header file
+  vmscfg.h            VMS-specific C header file for inclusion in unzpriv.h
+  vmsdefs.h           VMS system declarations (missing C compiler support)
   zlib.h              VMS wrapper header file for zlib library definitions
 
-MAKE/VMS is no longer supported since MMK (MMS clone by Matt Madison/MadGoat
-Enterprises, compatible with descrip.mms) is both free and becoming quite
-popular.  MMK is available by anonymous ftp from ftp.spc.edu/ftp.wku.edu and
-by mailserver at lists.wku.edu.  Check VMS newsgroups for announcements and
-exact location.
-
-Detailed compilation and installation instructions can be found in the
-INSTALL.VMS file in this directory.

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -17,7 +17,16 @@
 
   ---------------------------------------------------------------------------*/
 
+/* It has been proposed to replace unzpriv.h by zip-like tailor.h and tree of
+   PORT/osdep.h headers.
+   - This is a result of the effort to synchronize/rationalize the build
+     systems (such as unix/Makefile and unix/configure).
+   - This will ensure that customization is as close as possible between Zip
+     and UnZip.
+   - This in turn will make it much easier to safely share code between the
+     Zip and UnZip source trees.
 
+   This might get done in the next beta. */
 
 #ifndef __unzpriv_h   /* prevent multiple inclusions */
 #define __unzpriv_h
@@ -45,9 +54,9 @@
 #  ifdef SFX            /* fUnZip is NOT the sfx stub! */
 #    undef SFX
 #  endif
-#  ifdef USE_BZIP2      /* fUnZip does not support bzip2 decompression */
-#    undef USE_BZIP2
-#  endif
+#  ifdef BZIP2_SUPPORT  /* fUnZip does not support bzip2 decompression */
+#    undef BZIP2_SUPPORT
+#  endif /* def BZIP2_SUPPORT */
 #endif
 
 #if (defined(USE_ZLIB) && !defined(HAVE_ZL_INFLAT64) && !defined(NO_DEFLATE64))
@@ -57,19 +66,48 @@
 
 #ifdef NO_DEFLATE64
    /* disable support for Deflate64(tm) */
-#  ifdef USE_DEFLATE64
-#    undef USE_DEFLATE64
+#  ifdef DEFLATE64_SUPPORT
+#    undef DEFLATE64_SUPPORT
 #  endif
 #else
    /* enable Deflate64(tm) support unless compiling for SFX stub */
-#  if (!defined(USE_DEFLATE64) && !defined(SFX))
-#    define USE_DEFLATE64
+#  if (!defined(DEFLATE64_SUPPORT) && !defined(SFX))
+#    define DEFLATE64_SUPPORT
 #  endif
 #endif
 
-/* disable bzip2 support for SFX stub, unless explicitly requested */
-#if (defined(SFX) && !defined(BZIP2_SFX) && defined(USE_BZIP2))
-#  undef USE_BZIP2
+/* Enable Deflate support, unless SFX and explicitly disabled. */
+#if !(defined( SFX) && defined( NO_DEFLATE_SFX))
+#  define DEFLATE_SUPPORT
+#endif
+
+/* Disable AES_WG support for SFX stub, unless explicitly requested. */
+#if (defined(SFX) && !defined(AES_WG_SFX) && defined(CRYPT_AES_WG))
+#  undef CRYPT_AES_WG
+#endif
+
+/* If traditional CRYPT is disabled, and no other encryption method is
+ * enabled, then ensure that all encryption is disabled.
+ */
+#ifdef NO_TRADITIONAL_CRYPT
+# ifndef CRYPT_AES_WG
+#  define NO_CRYPT
+# endif
+#endif
+
+/* Disable bzip2 support for SFX stub, unless explicitly requested. */
+#if (defined(SFX) && !defined(BZIP2_SFX) && defined(BZIP2_SUPPORT))
+#  undef BZIP2_SUPPORT
+#endif
+
+/* Disable LZMA support for SFX stub, unless explicitly requested. */
+#if (defined(SFX) && !defined(LZMA_SFX) && defined(LZMA_SUPPORT))
+#  undef LZMA_SUPPORT
+#endif
+
+/* Disable PPMd support for SFX stub, unless explicitly requested. */
+#if (defined(SFX) && !defined(PPMD_SFX) && defined(PPMD_SUPPORT))
+#  undef PPMD_SUPPORT
 #endif
 
 #if (defined(NO_VMS_TEXT_CONV) || defined(VMS))
@@ -129,6 +167,51 @@
 #  endif
 #endif
 
+/* UNICODE */
+#ifdef NO_UNICODE_SUPPORT
+/* NO_UNICODE_SUPPORT override disables Unicode support
+ * (Useful for environments like MS Visual Studio.)
+ */
+# ifdef UNICODE_SUPPORT
+#   undef UNICODE_SUPPORT
+# endif
+#endif
+
+/* This needs fixing, but currently assume that we don't have full
+   Unicode support unless UNICODE_WCHAR is set.
+
+   What we should do is define three possibilities:
+   UNICODE_WIDE   = we have the wide character support we need for Unicode.
+                    If unix/configure found the port is missing something,
+                    the port needs to provide it and turn Unicode back on.
+                    Check for HAVE_TOWUPPER and so on.
+   UNICODE_ICONV  = we can use iconv for Unicode conversions.  All processing
+                    will be done using 8-bit characters.
+   UNICODE_NATIVE = we don't need to do any conversions.  This flag is needed,
+                    though, so we know to set the UTF-8 bit.  It also means
+                    we somehow have verified the character set as UTF-8.
+                    However, note that if the port has no way to convert
+                    from UTF-8, the code page must be UTF-8 to see paths in
+                    an existing archive.
+
+   I can't see any reason more than one of these should be set in any
+   particular build, so there probably should be some priority order for these
+   set up.  For instance, if UTF-8 is native, then paths coming in are already
+   UTF-8 and the UTF-8 paths in existing archives should be readable, so no
+   conversion code may be needed, just the code to detect if UNICODE_NATIVE
+   really applies.
+
+   This might get done in the next beta. */
+
+#ifdef UNICODE_SUPPORT
+# if !(defined(UNICODE_WCHAR))
+/* UNZIP had the following test (now synced to ZIP):
+ * # if !(defined(UTF8_MAYBE_NATIVE) || defined(UNICODE_WCHAR))
+ */
+#  undef UNICODE_SUPPORT
+# endif
+#endif
+
 /* bad or (occasionally?) missing stddef.h: */
 #if (defined(M_XENIX) || defined(DNIX))
 #  define NO_STDDEF_H
@@ -185,12 +268,12 @@
 
 #if (defined(ultrix) || defined(__ultrix) || defined(bsd4_2))
 #  if (!defined(BSD) && !defined(SYSV))
-#    define BSD
+#    define BSD 1
 #  endif
 #endif /* ultrix || __ultrix || bsd4_2 */
 #if (defined(sun) || defined(pyr) || defined(CONVEX))
 #  if (!defined(BSD) && !defined(SYSV))
-#    define BSD
+#    define BSD 1
 #  endif
 #endif /* sun || pyr || CONVEX */
 
@@ -317,7 +400,7 @@
 #    define _MBCS
 #  endif
 #  if (defined(_MBCS) && defined(NO_MBCS))
-     /* disable MBCS support when explicitely requested */
+     /* disable MBCS support when explicitly requested */
 #    undef _MBCS
 #  endif
 #  include <time.h>
@@ -495,7 +578,7 @@
 #    ifndef INT_16BIT
 #      define INT_16BIT   /* report "int" size is 16-bit to inflate setup */
 #    endif
-#    ifdef USE_DEFLATE64
+#    ifdef DEFLATE64_SUPPORT
        /* Following required for 64k WSIZE of Deflate64 support */
 #      define MED_MEM     /* else OUTBUFSIZ is 64K and fails in do_string */
 #      define INBUFSIZ  8192  /* but larger buffer for real OSes */
@@ -630,8 +713,10 @@
 #  define Z_STAT_DEFINED
 #endif
 
-#ifndef MINIX            /* Minix needs it after all the other includes (?) */
-#  include <stdio.h>
+#ifdef MINIX
+#  include <unistd.h>   /* For _POSIX_VERSION. */
+#else
+#  include <stdio.h>    /* Minix needs it after all the other includes (?) */
 #endif
 
 #include <ctype.h>       /* skip for VMS, to use tolower() function? */
@@ -680,20 +765,35 @@
 /*  Defines  */
 /*************/
 
-#define UNZIP_BZ2VERS   46
-#ifdef ZIP64_SUPPORT
-# ifdef USE_BZIP2
-#  define UNZIP_VERSION   UNZIP_BZ2VERS
-# else
-#  define UNZIP_VERSION   45
+/* Version-Needed-to-Extract values by feature. */
+#define UNZIP_LZMA_VERS     63  /* 6.3 for LZMA, PPMd, ... */
+#define UNZIP_BZIP2_VERS    46  /* 4.6 for bzip2. */
+#define UNZIP_ZIP64_VERS    45  /* 4.5 for ZIP64. */
+
+#ifdef LZMA_SUPPORT
+# ifndef UNZIP_VERSION
+#  define UNZIP_VERSION UNZIP_LZMA_VERS
 # endif
-#else
-#ifdef USE_DEFLATE64
-#  define UNZIP_VERSION   21   /* compatible with PKUNZIP 4.0 */
-#else
-#  define UNZIP_VERSION   20   /* compatible with PKUNZIP 2.0 */
+#endif /* def LZMA_SUPPORT */
+#ifdef BZIP2_SUPPORT
+# ifndef UNZIP_VERSION
+#  define UNZIP_VERSION UNZIP_BZIP2_VERS
+# endif /* def BZIP2_SUPPORT */
 #endif
+#ifdef ZIP64_SUPPORT
+# ifndef UNZIP_VERSION
+#  define UNZIP_VERSION UNZIP_ZIP64_VERS
+# endif
 #endif
+#ifdef DEFLATE64_SUPPORT
+# ifndef UNZIP_VERSION
+#  define UNZIP_VERSION 21      /* compatible with PKUNZIP 4.0 */
+# endif
+#endif
+#ifndef UNZIP_VERSION
+# define UNZIP_VERSION 20       /* compatible with PKUNZIP 2.0 */
+#endif
+
 #define VMS_UNZIP_VERSION 42   /* if OS-needed-to-extract is VMS:  can do */
 
 #if (defined(MSDOS) || defined(OS2))
@@ -886,7 +986,7 @@
 #endif
 
 #ifndef WSIZE
-#  ifdef USE_DEFLATE64
+#  ifdef DEFLATE64_SUPPORT
 #    define WSIZE   65536L  /* window size--must be a power of two, and */
 #  else                     /*  at least 64K for PKZip's deflate64 method */
 #    define WSIZE   0x8000  /* window size--must be a power of two, and */
@@ -950,7 +1050,7 @@
 #  endif
 #endif
 
-#if (defined(INT_16BIT) && (defined(USE_DEFLATE64) || lenEOL > 1))
+#if (defined(INT_16BIT) && (defined(DEFLATE64_SUPPORT) || lenEOL > 1))
    /* For environments using 16-bit integers OUTBUFSIZ must be limited to
     * less than 64k (do_string() uses "unsigned" in calculations involving
     * OUTBUFSIZ).  This is achieved by defining MED_MEM when WSIZE = 64k (aka
@@ -1077,11 +1177,11 @@
 #  define COPYRIGHT_CLEAN
 #endif
 
-/* The LZW patent is expired worldwide since 2004-Jul-07, so USE_UNSHRINK
- * is now enabled by default.  See unshrink.c.
+/* The LZW patent is expired worldwide since 2004-Jul-07, so
+ * UNSHRINK_SUPPORT is now enabled by default.  See unshrink.c.
  */
-#if (!defined(LZW_CLEAN) && !defined(USE_UNSHRINK))
-#  define USE_UNSHRINK
+#if (!defined(LZW_CLEAN) && !defined(UNSHRINK_SUPPORT))
+#  define UNSHRINK_SUPPORT
 #endif
 
 #ifndef O_BINARY
@@ -1201,63 +1301,110 @@
  */
 #define FILNAMSIZ  PATH_MAX
 
-#ifdef UNICODE_SUPPORT
-# if !(defined(UTF8_MAYBE_NATIVE) || defined(UNICODE_WCHAR))
-#  undef UNICODE_SUPPORT
-# endif
-#endif
+
+/* DBCS support for Info-ZIP's zip  (mainly for japanese (-: )
+ * by Yoshioka Tsuneo (QWF00133@nifty.ne.jp,tsuneo-y@is.aist-nara.ac.jp)
+ * This code is public domain!   Date: 1998/12/20
+ */
+
 /* 2007-09-18 SMS.
  * Include <locale.h> here if it will be needed later for Unicode.
  * Otherwise, SETLOCALE may be defined here, and then defined again
  * (differently) when <locale.h> is read later.
  */
 #ifdef UNICODE_SUPPORT
+# include <stdlib.h>
 # ifdef UNICODE_WCHAR
-#  if !(defined(_WIN32_WCE) || defined(POCKET_UNZIP))
+/* wchar support may be in any of these three headers */
+#  ifdef HAVE_CTYPE_H
+#   include <ctype.h>
+#  endif
+#  ifdef HAVE_WCHAR_H
 #   include <wchar.h>
 #  endif
+#  ifdef HAVE_WCTYPE_H
+#   include <wctype.h>
+#  endif
+# endif /* def UNICODE_WCHAR */
+
+# ifdef HAVE_LANGINFO_H
+#  include <langinfo.h>
 # endif
+
 # ifndef _MBCS  /* no need to include <locale.h> twice, see below */
+#  ifdef HAVE_LOCALE_H
 #   include <locale.h>
+#  endif
 #   ifndef SETLOCALE
 #     define SETLOCALE(category, locale) setlocale(category, locale)
 #   endif
 # endif
 #endif /* UNICODE_SUPPORT */
 
-/* DBCS support for Info-ZIP  (mainly for japanese (-: )
- * by Yoshioka Tsuneo (QWF00133@nifty.ne.jp,tsuneo-y@is.aist-nara.ac.jp)
- */
 #ifdef _MBCS
-#  include <locale.h>
+   /* Multi Byte Character Set support
+      - This section supports a number of mbcs-related functions which
+        will use the OS-provided version (if found by a unix/configure
+        test, or equivalent) or will use a generic minimally-functional
+        version provided as a fileio.c function.
+      - All references to this function UnZip code are via the FUNCTION
+        name.
+      - If unix/configure finds the OS-provided function, it will define
+        a macro in the form FUNCTION=function.
+      - If not defined:
+        - A replacement is defined below pointing to the generic version.
+        - The prototype for the generic function will be defined (below).
+        - A NEED_FUNCTION macro will also be defined, to enable compile
+          of the fileio.c code to implement the generic function.
+    */
+
+#  include <stdlib.h>
+#  ifdef HAVE_LOCALE_H
+#   include <locale.h>
+#  endif
 #  ifdef HAVE_MBSTR_H
-#    include <mbstr.h>
-#  endif /* def HAVE_MBSTR_H */
-   /* Multi Byte Character Set */
+#   include <mbstr.h>
+#  endif
+
 #  define ___MBS_TMP_DEF  char *___tmp_ptr;
 #  define ___TMP_PTR      ___tmp_ptr
+
 #  ifndef CLEN
 #    define NEED_UZMBCLEN
 #    define CLEN(ptr) (int)uzmbclen((ZCONST unsigned char *)(ptr))
+     /* Zip defines as
+#    define CLEN(ptr) mblen((ZCONST char *)ptr, MB_CUR_MAX)
+      */
 #  endif
+
 #  ifndef PREINCSTR
 #    define PREINCSTR(ptr) (ptr += CLEN(ptr))
 #  endif
+
 #  define POSTINCSTR(ptr) (___TMP_PTR=(char *)(ptr), PREINCSTR(ptr),___TMP_PTR)
    char *plastchar OF((ZCONST char *ptr, extent len));
 #  define lastchar(ptr, len) ((int)(unsigned)*plastchar(ptr, len))
+     /* Zip defines as
+#   define POSTINCSTR(ptr) (___tmp_ptr=(char *)ptr,ptr += CLEN(ptr),___tmp_ptr)
+    int lastchar OF((ZCONST char *ptr));
+      */
+
 #  ifndef MBSCHR
 #    define NEED_UZMBSCHR
 #    define MBSCHR(str,c) (char *)uzmbschr((ZCONST unsigned char *)(str), c)
 #  endif
+
 #  ifndef MBSRCHR
 #    define NEED_UZMBSRCHR
 #    define MBSRCHR(str,c) (char *)uzmbsrchr((ZCONST unsigned char *)(str), c)
 #  endif
+
 #  ifndef SETLOCALE
 #    define SETLOCALE(category, locale) setlocale(category, locale)
 #  endif
+
 #else /* !_MBCS */
+   /* Multi Byte Character Set support is not available */
 #  define ___MBS_TMP_DEF
 #  define ___TMP_PTR
 #  define CLEN(ptr) 1
@@ -1271,6 +1418,7 @@
 #    define SETLOCALE(category, locale)
 #  endif
 #endif /* ?_MBCS */
+
 #define INCSTR(ptr) PREINCSTR(ptr)
 
 
@@ -1392,28 +1540,6 @@ struct file_list {
   struct file_list *next;
 };
 
-
-/* function prototypes */
-
-/* get the next option from args */
-unsigned long get_option OF((int option_group,
-                             char ***pargs, int *argc, int *argnum,
-                             int *optchar,
-                             char **value, int *negated, int *first_nonopt_arg,
-                             int *option_num, int recursion_depth));
-
-/* copy args - copy an args array, allocating space as needed */
-char **copy_args OF((char **args, int max_args));
-
-/* arg count - count args in argv like array */
-int arg_count OF((char **args));
-
-/* free args - free args created with one of these functions */
-int free_args OF((char **args));
-
-/* insert arg - copy an arg into args */
-int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
-                   int free_args));
 
 /*--------------------------------------------------------------------
     End of Long option support
@@ -1641,6 +1767,27 @@ int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
 #define FZOFFT_LEN 24           /* Number of characters/chamber. */
 
 
+/* User-triggered (Ctrl/T, SIGUSR1) progress.
+ * ("include <signal.h>" must follow large-file decision.)
+ */
+#ifndef NO_USER_PROGRESS
+# ifndef VMS
+#  include <signal.h>
+# endif /* ndef VMS */
+# if defined(VMS) || defined(SIGUSR1)
+#  if !defined(MACOS) && !defined(WINDLL)
+#   define ENABLE_USER_PROGRESS
+#  endif /* !defined(MACOS) && !defined(WINDLL) */
+# endif /* defined(VMS) || defined(SIGUSR1) */
+#endif /* ndef NO_USER_PROGRESS */
+
+/* "api.h" wants <setjmp.h>, which must follow large-file determination,
+ * which is done above.
+ */
+#if defined( DLL) && !defined( WINDLL)
+#  include "api.h"
+#endif /* ndef WINDLL */
+
 #ifdef SHORT_SYMS                   /* Mark Williams C, ...? */
 #  define extract_or_test_files     xtr_or_tst_files
 #  define extract_or_test_member    xtr_or_tst_member
@@ -1734,6 +1881,11 @@ int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
 #  define CHECK_AUTORUN_Q 8             /* copy command, skip remainder */
 #endif
 
+/* Replacement name (default) for null/empty archive member name. */
+#ifndef NULL_NAME_REPL
+#  define NULL_NAME_REPL "-"
+#endif
+
 #define DOES_NOT_EXIST    -1   /* return values for check_for_newer() */
 #define EXISTS_AND_OLDER  0
 #define EXISTS_AND_NEWER  1
@@ -1784,7 +1936,7 @@ int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
 #define MAC_OSX_          19   /* Mac OS/X (Darwin) */
 #define ATHEOS_           30   /* AtheOS */
 #define NUM_HOSTS         31   /* index of last system + 1 */
-/* don't forget to update zipinfo.c appropiately if NUM_HOSTS changes! */
+/* Be sure to update zipinfo.c appropriately if NUM_HOSTS changes! */
 
 #define STORED            0    /* compression methods */
 #define SHRUNK            1
@@ -1801,11 +1953,13 @@ int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
 #define LZMAED           14
 #define IBMTERSED        18
 #define IBMLZ77ED        19
+#define JPEGED           96
 #define WAVPACKED        97
 #define PPMDED           98
-#define NUM_METHODS      17     /* number of known method IDs */
-/* don't forget to update list.c (list_files()), extract.c and zipinfo.c
- * appropriately if NUM_METHODS changes */
+#define AESENCRED        99
+#define NUM_METHODS      19     /* Number of known method IDs. */
+/* Be sure to update list.c (list_files()), extract.c, and zipinfo.c
+ * appropriately if NUM_METHODS changes. */
 
 /* (the PK-class error codes are public and have been moved into unzip.h) */
 
@@ -1860,6 +2014,14 @@ int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
 #define EF_THEOSO    0x4854    /* old Theos port */
 #define EF_MD5       0x4b46    /* Fred Kantor's MD5 ("FK") */
 #define EF_ASIUNIX   0x756e    /* ASi's Unix ("nu") */
+#define EF_AES_WG    0x9901    /* AES (WinZip/Gladman) encryption ("c^!") */
+#define EF_JAVA      0xcafe    /* Java ("CAFE") */
+
+#define EB_AES_VERS       0    /* AES encryption version. */
+#define EB_AES_VEND       2    /* AES encryption vendor. */
+#define EB_AES_MODE       4    /* AES encryption mode. */
+#define EB_AES_MTHD       5    /* AES encryption real compression method. */
+#define EB_AES_HLEN       7    /* AES encryption extra block size. */
 
 #define EB_HEADSIZE       4    /* length of extra field block header */
 #define EB_ID             0    /* offset of block ID in header */
@@ -2052,9 +2214,9 @@ int insert_arg OF((char ***args, ZCONST char *arg, int insert_at,
   typedef  z_uint4              zuvl_t;     /* multivolume numbers */
 # define MASK_ZUCN64            (~(zucn_t)0)
 /* In case we ever get to support an environment where z_uint8 may be WIDER
-   than 64 bit wide, we will have to apply a construct similar to
-     #define MASK_ZUCN64        (~(zucn_t)0 & (zucn_t)0xffffffffffffffffULL)
-   for the 64-bit mask.
+ * than 64 bit wide, we will have to apply a construct similar to
+ *   #define MASK_ZUCN64        (~(zucn_t)0 & (zucn_t)0xffffffffffffffffULL)
+ * for the 64-bit mask.
  */
 #else
   typedef  ulg                  zusz_t;     /* zipentry sizes & offsets */
@@ -2140,6 +2302,11 @@ typedef struct min_info {
 #ifndef SFX
     char Far *cfilname;      /* central header version of filename */
 #endif
+#ifdef CRYPT_AES_WG
+       ush cmpr_mthd_aes;
+       ush cmpr_vers_aes;
+       char cmpr_mode_aes;
+#endif /* def CRYPT_AES_WG */
 } min_info;
 
 typedef struct VMStimbuf {
@@ -2349,6 +2516,28 @@ typedef struct _APIDocStruct {
    int    usage                  OF((__GPRO__ int error));
 #endif /* !WINDLL */
 
+/* Command-line option function prototypes. */
+
+/* get_option() - Get the next option from args. */
+unsigned long get_option OF((__GPRO__ int option_group,
+                             char ***pargs, int *argc, int *argnum,
+                             int *optchar,
+                             char **value, int *negated, int *first_nonopt_arg,
+                             int *option_num, int recursion_depth));
+
+/* copy_args() - Copy an args array, allocating space as needed. */
+char **copy_args OF((__GPRO__ char **args, int max_args));
+
+/* arg_count() - Count args in argv like array. */
+int arg_count OF((__GPRO__ char **args));
+
+/* free_args - Free args created with one of these functions. */
+int free_args OF((__GPRO__ char **args));
+
+/* insert_arg() - Copy an arg into args. */
+int insert_arg OF((__GPRO__ char ***args, ZCONST char *arg, int insert_at,
+                   int free_args));
+
 /*---------------------------------------------------------------------------
     Functions in process.c (main driver routines):
   ---------------------------------------------------------------------------*/
@@ -2369,6 +2558,12 @@ int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
                                      iztimes *z_utim, ulg *z_uidgid));
+#ifdef CRYPT_AES_WG
+int ef_scan_for_aes              OF((ZCONST uch *ef_buf, unsigned ef_len,
+                                     ush *vers, ush *vend,
+                                     char *mode, ush *mthd));
+#endif /* def CRYPT_AES_WG */
+
 #if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
    zvoid *getRISCOSexfield       OF((ZCONST uch *ef_buf, unsigned ef_len));
 #endif
@@ -2469,12 +2664,12 @@ char    *fzofft               OF((__GPRO__ zoff_t val,
    char *fLoadFarString       OF((__GPRO__ const char Far *sz));
    char *fLoadFarStringSmall  OF((__GPRO__ const char Far *sz));
    char *fLoadFarStringSmall2 OF((__GPRO__ const char Far *sz));
-   #ifndef zfstrcpy
+#  ifndef zfstrcpy
      char Far * Far zfstrcpy  OF((char Far *s1, const char Far *s2));
-   #endif
-   #if (!defined(SFX) && !defined(zfstrcmp))
+#  endif
+#  if (!defined(SFX) && !defined(zfstrcmp))
      int Far zfstrcmp         OF((const char Far *s1, const char Far *s2));
-   #endif
+#  endif
 #endif
 
 
@@ -2531,10 +2726,9 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* static void  partial_clear    OF((__GPRO));                  * unshrink.c */
 #endif /* !LZW_CLEAN */
 #endif /* !SFX && !FUNZIP */
-#ifdef USE_BZIP2
-   int    UZbunzip2              OF((__GPRO));                  /* extract.c */
+#ifdef BZIP2_SUPPORT
    void   bz_internal_error      OF((int bzerrcode));           /* ubz2err.c */
-#endif
+#endif /* def BZIP2_SUPPORT */
 
 /*---------------------------------------------------------------------------
     Internal API functions (only included in DLL versions):
@@ -2646,16 +2840,19 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* int    flush               OF((__GPRO__ uch *rawbuf, unsigned size,
                                   int final_flag));   * (see fileio.c) vms.c */
    char  *vms_msg_text        OF((void));                           /* vms.c */
-#ifdef RETURN_CODES
+# ifdef RETURN_CODES
    void   return_VMS          OF((__GPRO__ int zip_error));         /* vms.c */
-#else
+# else /* def RETURN_CODES */
    void   return_VMS          OF((int zip_error));                  /* vms.c */
-#endif
-#ifdef VMSCLI
+# endif /* def RETURN_CODES [else] */
+# ifdef VMSCLI
    unsigned  vms_unzip_cmdline   OF((int *, char ***));         /* cmdline.c */
    int    VMSCLI_usage        OF((__GPRO__ int error));         /* cmdline.c */
-#endif
-#endif
+# endif /* def VMSCLI */
+# ifdef ENABLE_USER_PROGRESS
+   int establish_ctrl_t       OF((void ctrl_t_ast()));              /* vms.c */
+# endif /* def ENABLE_USER_PROGRESS */
+#endif /* def VMS */
 
 /*---------------------------------------------------------------------------
     WIN32-only functions:
@@ -2781,6 +2978,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #ifndef MIN
 #  define MIN(a,b)   ((a) < (b) ? (a) : (b))
 #endif
+#define IZ_MIN( a, b) ((a) < (b) ? (a) : (b))
 
 #ifdef DEBUG
 #  if (defined(THEOS) && defined(NO_BOGUS_SPC))

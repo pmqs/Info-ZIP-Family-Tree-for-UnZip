@@ -48,7 +48,7 @@ avars = $+$(avars)$- -DUSE_SMITH_CODE
 
 IZ_BZIP2 = bzip2
 !ifdef USEBZ2
-cvars = $+$(cvars)$- -DUSE_BZIP2 -I$(IZ_BZIP2)
+cvars = $+$(cvars)$- -DBZIP2_SUPPORT -I$(IZ_BZIP2)
 BZIPLIB = $(IZ_BZIP2)/$(OBDIR)/bz2.lib
 BZ2LNKLIB = lib {$(BZIPLIB)}
 !else

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -122,7 +122,7 @@ static ZCONST char Far WarnDirTraversSkip[] =
 static ZCONST char Far Creating[] = "   creating: %-22s ";
 static ZCONST char Far ConversionFailed[] =
   "mapname:  conversion of %s failed\n";
-static ZCONST char Far Labelling[] = "labelling %c: %-22s\n";
+static ZCONST char Far Labeling[] = "labeling %c: %-22s\n";
 static ZCONST char Far ErrSetVolLabel[] =
   "mapname:  error setting volume label\n";
 static ZCONST char Far PathTooLong[] = "checkdir error:  path too long: %s\n";
@@ -1416,7 +1416,7 @@ int mapname(__G__ renamed)
         FSInfoBuf.cch = (BYTE)strlen(FSInfoBuf.szVolLabel);
 
         if (!uO.qflag)
-            Info(slide, 0, ((char *)slide, LoadFarString(Labelling),
+            Info(slide, 0, ((char *)slide, LoadFarString(Labeling),
               (char)(G.os2.nLabelDrive + 'a' - 1), FnFilter1(G.filename)));
         if (DosSetFSInfo(G.os2.nLabelDrive, FSIL_VOLSER, (PBYTE)&FSInfoBuf,
                          sizeof(VOLUMELABEL)))

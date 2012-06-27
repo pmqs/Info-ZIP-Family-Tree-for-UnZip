@@ -1,8 +1,8 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
-  (the contents of which are also included in zip.h) for terms of use.
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
+  (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
@@ -117,13 +117,9 @@
 #    include <descrip.h>
 #    include <iodef.h>
 #    include <ttdef.h>
-     /* Workaround for broken header files of older DECC distributions
-      * that are incompatible with the /NAMES=AS_IS qualifier. */
-#    define sys$assign SYS$ASSIGN
-#    define sys$dassgn SYS$DASSGN
-#    define sys$qiow SYS$QIOW
 #    include <starlet.h>
 #    include <ssdef.h>
+#    include <stsdef.h>
 #  else /* !VMS */
 #    ifdef HAVE_TERMIOS_H
 #      include <termios.h>
@@ -203,16 +199,35 @@ int echo(opt)
      *   fixed-length descriptor info:  Programming, Vol. 3, System Services,
      *     Intro to System Routines, sec. 2.9.2
      * Greg Roelofs, 15 Aug 91
+     *
+     * 2011-05-05 SMS.
+     * Added code to save the echo state on the first normal call, and
+     * to restore the original state when called with opt < 0 (as by,
+     * say, an exit handler, to avoid leaving the terminal in a noecho
+     * state if the user aborts (Ctrl/C) at a password prompt).
      */
 
-    short           DevChan, iosb[4];
-    long            status;
-    unsigned long   ttmode[2];  /* space for 8 bytes */
+    short           DevChan;
+    short           iosb[4];
+    int             status;
+    unsigned int    ttmode[2];          /* space for 8 bytes */
+    static int      echo_orig = -1;     /* Original echo state. */
+    int             ret_status = 0;     /* Status value to return. */
 
+    if ((opt < 0) && (echo_orig < 0))
+    {
+        /* Final call, but no original echo state to restore.
+         * Return immediately with success status.
+         */
+        return SS$_NORMAL;
+    }
 
-    /* assign a channel to standard input */
+    /* Assign a channel to SYS$COMMAND (the user's terminal, _not_
+     * standard input, SYS$INPUT).
+     */
     status = sys$assign(&DevDesc, &DevChan, 0, 0);
-    if (!(status & 1))
+    /* If we can't talk to the terminal, then fail now.  No clean up needed. */
+    if ((status& STS$M_SEVERITY) != STS$K_SUCCESS)
         return status;
 
     /* use sys$qio and the IO$_SENSEMODE function to determine the current
@@ -221,35 +236,72 @@ int echo(opt)
      */
     status = sys$qiow(0, DevChan, IO$_SENSEMODE, &iosb, 0, 0,
                      ttmode, 8, 0, 0, 0, 0);
-    if (!(status & 1))
-        return status;
-    status = iosb[0];
-    if (!(status & 1))
-        return status;
+
+    if ((status& STS$M_SEVERITY) == STS$K_SUCCESS)
+    {
+        /* Initial success.  Use IOSB status. */
+        status = iosb[0];
+    }
+    if ((status& STS$M_SEVERITY) != STS$K_SUCCESS)
+    {
+        /* I/O error.  Return error status. */
+        ret_status = status;
+        goto clean_up_and_return;
+    }
+
+    if (opt < 0)
+    {
+        /* Final (restore) call.  Replace (negative) opt value with the
+         * (known) orginal echo stste.
+         */
+        opt = echo_orig;
+    }
+    else if (echo_orig < 0)
+    {
+        /* On the first (non-restore) call, save the original echo state. */
+        echo_orig = ((ttmode[ 1]& TT$M_NOECHO) ? 0 : 1);
+    }
 
     /* modify mode buffer to be either NOECHO or ECHO
      * (depending on function argument opt)
      */
-    if (opt == 0)   /* off */
-        ttmode[1] |= TT$M_NOECHO;                       /* set NOECHO bit */
-    else
-        ttmode[1] &= ~((unsigned long) TT$M_NOECHO);    /* clear NOECHO bit */
+    if (opt == 0)       /* Echo off. */
+        ttmode[1] |= TT$M_NOECHO;       /* Set NOECHO bit. */
+    else                /* Echo on. */
+        ttmode[1] &= (~TT$M_NOECHO);    /* Clear NOECHO bit. */
 
-    /* use the IO$_SETMODE function to change the tty status */
+    /* Use the IO$_SETMODE function to change the terminal echo mode. */
     status = sys$qiow(0, DevChan, IO$_SETMODE, &iosb, 0, 0,
                      ttmode, 8, 0, 0, 0, 0);
-    if (!(status & 1))
-        return status;
-    status = iosb[0];
-    if (!(status & 1))
-        return status;
 
-    /* deassign the sys$input channel by way of clean-up */
+    if ((status& STS$M_SEVERITY) == STS$K_SUCCESS)
+    {
+        /* Initial success.  Use IOSB status. */
+        status = iosb[0];
+    }
+    if ((status& STS$M_SEVERITY) != STS$K_SUCCESS)
+    {
+        /* I/O error.  Return error status. */
+        ret_status = status;
+        goto clean_up_and_return;
+    }
+
+    /* Clean-up.  Deassign the terminal (SYS$COMMAND) channel. */
+clean_up_and_return:
     status = sys$dassgn(DevChan);
-    if (!(status & 1))
-        return status;
+    if ((status& STS$M_SEVERITY) != STS$K_SUCCESS)
+    {
+        /* I/O error.  Return error status. */
+        ret_status = status;
+    }
 
-    return SS$_NORMAL;   /* we be happy */
+    /* If no one has yet set a bad status, then use the last success. */
+    if (ret_status == 0)
+    {
+        ret_status = status;
+    }
+
+    return ret_status;
 
 } /* end function echo() */
 
@@ -516,7 +568,7 @@ int zgetch(__G__ f)
  * Simple compile-time check for source compatibility between
  * zcrypt and ttyio:
  */
-#if (!defined(CR_MAJORVER) || (CR_MAJORVER < 2) || (CR_MINORVER < 7))
+#if (!defined(CR_MAJORVER) || (CR_MAJORVER* 10 + CR_MINORVER < 27))
    error:  This Info-ZIP tool requires zcrypt 2.7 or later.
 #endif
 

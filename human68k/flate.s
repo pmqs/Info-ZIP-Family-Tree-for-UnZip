@@ -1,12 +1,12 @@
 ;===========================================================================
-; Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+; Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 ;
 ; See the accompanying file LICENSE, version 2000-Apr-09 or later
 ; (the contents of which are also included in unzip.h) for terms of use.
 ; If, for some reason, all these files are missing, the Info-ZIP license
 ; also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 ;===========================================================================
-; flate.a created by Paul Kienitz, 20 June 94.  Last modified 23 Mar 2002.
+; flate.a created by Paul Kienitz, 20 June 94.  Last modified 16 Jan 2012.
 ;
 ; 68000 assembly language version of inflate_codes(), for Amiga.  Prototype:
 ;
@@ -26,9 +26,9 @@
 ;
 ; Define INT16 if ints are short, otherwise it assumes ints are long.
 ;
-; Define USE_DEFLATE64 if we're supporting Deflate64 decompression.
+; Define DEFLATE64_SUPPORT if we're supporting Deflate64 decompression.
 ;
-; Do NOT define WSIZE; it is always 32K or 64K depending on USE_DEFLATE64.
+; Do NOT define WSIZE; it is always 32K or 64K depending on DEFLATE64_SUPPORT.
 ;
 ; 1999/09/23: for Human68k: Modified by Shimazaki Ryo.
 
@@ -141,7 +141,7 @@ G       reg     a6              ; Uz_Globs *
 ; Couple other items we need:
 
 savregs reg     d2-d7/a2/a3/a6
-                IFDEF   USE_DEFLATE64
+                IFDEF   DEFLATE64_SUPPORT
 WSIZE   equ     $10000          ; 64K... be careful not to treat as short!
                 ELSE
 WSIZE   equ     $08000          ; 32K... be careful not to treat as negative!

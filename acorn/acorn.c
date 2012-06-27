@@ -57,7 +57,7 @@ static int mimemap(const char *name);
 typedef struct uxdirattr {      /* struct for holding unix style directory */
     struct uxdirattr *next;     /*  info until can be sorted and set at end */
     char *fn;                   /* filename of directory */
-    unsigned int loadaddr,execaddr; /* RISC OS encoded timestamp */ 
+    unsigned int loadaddr,execaddr; /* RISC OS encoded timestamp */
     unsigned attr;              /* RISC OS file attribs */
     char fnbuf[1];              /* buffer stub for directory name */
 } uxdirattr;
@@ -920,7 +920,7 @@ void close_outfile(__G)
         } else
 #endif /* USE_EF_UT_TIME */
             m_time = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
-            
+
         uxtime2acornftime(&execaddr, &loadaddr, m_time);
     }
 
@@ -992,7 +992,7 @@ int defer_dir_attribs(__G__ pd)
         } else
 #endif /* USE_EF_UT_TIME */
             m_time = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
-            
+
         uxtime2acornftime(&execaddr, &loadaddr, m_time);
     }
 
@@ -1019,7 +1019,7 @@ int set_direc_attribs(__G__ d)
     int errval = PK_OK;
 
     SWI_OS_File_1(UxAtt(d)->fn,UxAtt(d)->loadaddr,UxAtt(d)->execaddr,UxAtt(d)->attr);
-    
+
     return errval;
 } /* end function set_direc_attribs() */
 

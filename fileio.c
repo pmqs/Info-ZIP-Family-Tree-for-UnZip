@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -60,6 +60,9 @@
 #define __FILEIO_C      /* identifies this source module */
 #define UNZIP_INTERNAL
 #include "unzip.h"
+#ifdef DLL
+#  include <api.h>
+#endif /* def DLL */
 #ifdef WINDLL
 #  ifdef POCKET_UNZIP
 #    include "wince/intrface.h"
@@ -135,7 +138,7 @@
 #  define WriteTxtErr(buf,len,strm)  WriteError(buf,len,strm)
 #endif
 
-#if (defined(USE_DEFLATE64) && defined(__16BIT__))
+#if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
 static int partflush OF((__GPRO__ uch *rawbuf, ulg size, int unshrink));
 #endif
 #ifdef VMS_TEXT_CONV
@@ -291,7 +294,7 @@ int open_outfile(__G)           /* return 1 if fail */
         G.apl_dbl_hdr_len = 0;
         G.apl_dbl_hdr_bytes = APL_DBL_HDR_SIZE;
         /* Append "/rsrc" suffix to the AppleDouble file name. */
-        strcat( G.ad_filename, APL_DBL_SFX);
+        strcat( G.ad_filename, APL_DBL_SUFX);
 
         /* Re-aim pointer instead of copying? */
         strcpy( G.filename, G.ad_filename);
@@ -698,7 +701,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
               (uch *)LoadFarString(ReadError),
               (ulg)strlen(LoadFarString(ReadError)), 0x401);
             echon();
-#ifdef WINDLL
+#if defined( WINDLL) || defined( DLL)
             longjmp(dll_error_return, 1);
 #else
             DESTROYGLOBALS();
@@ -711,16 +714,32 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
     }
 
 #if CRYPT
-    if (G.pInfo->encrypted) {
-        uch *p;
-        int n;
+    if (G.pInfo->encrypted)
+    {
+#  ifdef CRYPT_AES_WG
+        if (G.lrec.compression_method == AESENCRED)
+        {
+            int n;
+
+            n = (int)(IZ_MIN( G.incnt, G.ucsize_aes));
+            fcrypt_decrypt( G.inptr, n, G.zcx);
+            G.ucsize_aes -= n;
+        }
+        else
+#  endif /* def CRYPT_AES_WG */
+        {
+#  ifdef CRYPT_TRAD
+            uch *p;
+            int n;
 
         /* This was previously set to decrypt one byte beyond G.csize, when
          * incnt reached that far.  GRR said, "but it's required:  why?"  This
          * was a bug in fillinbuf() -- was it also a bug here?
          */
-        for (n = G.incnt, p = G.inptr;  n--;  p++)
-            zdecode(*p);
+            for (n = G.incnt, p = G.inptr;  n--;  p++)
+                zdecode(*p);
+#  endif /* def CRYPT_TRAD */
+        }
     }
 #endif /* CRYPT */
 
@@ -733,7 +752,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 
 
 
-#if defined(USE_ZLIB) || defined(USE_BZIP2)
+#if defined(USE_ZLIB) || defined(BZIP2_SUPPORT) || defined(LZMA_SUPPORT)
 
 /************************/
 /* Function fillinbuf() */
@@ -750,12 +769,28 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
     defer_leftover_input(__G);           /* decrements G.csize */
 
 #if CRYPT
-    if (G.pInfo->encrypted) {
-        uch *p;
-        int n;
+    if (G.pInfo->encrypted)
+    {
+#  ifdef CRYPT_AES_WG
+        if (G.lrec.compression_method == AESENCRED)
+        {
+            int n;
 
-        for (n = G.incnt, p = G.inptr;  n--;  p++)
-            zdecode(*p);
+            n = IZ_MIN( G.incnt, (long)G.ucsize_aes);
+            fcrypt_decrypt( G.inptr, n, G.zcx);
+            G.ucsize_aes -= n;
+        }
+        else
+#  endif /* def CRYPT_AES_WG */
+        {
+#  ifdef CRYPT_TRAD
+            uch *p;
+            int n;
+
+            for (n = G.incnt, p = G.inptr;  n--;  p++)
+                zdecode(*p);
+#  endif /* def CRYPT_TRAD */
+        }
     }
 #endif /* CRYPT */
 
@@ -763,7 +798,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
 
 } /* end function fillinbuf() */
 
-#endif /* USE_ZLIB || USE_BZIP2 */
+#endif /* USE_ZLIB || BZIP2_SUPPORT */
 
 
 
@@ -849,7 +884,7 @@ int flush(__G__ rawbuf, size, unshrink)
     uch *rawbuf;
     ulg size;
     int unshrink;
-#if (defined(USE_DEFLATE64) && defined(__16BIT__))
+#if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
 {
     int ret;
 
@@ -877,7 +912,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
     uch *rawbuf;        /* cannot be ZCONST, gets passed to (*G.message)() */
     ulg size;
     int unshrink;
-#endif /* USE_DEFLATE64 && __16BIT__ */
+#endif /* DEFLATE64_SUPPORT && __16BIT__ */
 {
     register uch *p;
     register uch *q;
@@ -940,7 +975,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
             if (size < G.apl_dbl_hdr_bytes)
             {
                 /* Fewer bytes than needed to complete the AppleDouble
-                 * header.  (Unlikely?)  Move them to the AppleDouble 
+                 * header.  (Unlikely?)  Move them to the AppleDouble
                  * header buffer, adjust the byte counts, and resume
                  * extraction.
                  */
@@ -966,8 +1001,8 @@ static int partflush(__G__ rawbuf, size, unshrink)
 
                 /* Truncate name at "/rsrc" for setattrlist(). */
                 btrbslash =
-                 G.filename[ strlen( G.filename)- strlen( APL_DBL_SFX)];
-                G.filename[ strlen( G.filename)- strlen( APL_DBL_SFX)] = '\0';
+                 G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)];
+                G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)] = '\0';
 
                 /* Clear attribute list structure. */
                 memset( &attr_list_fndr, 0, sizeof( attr_list_fndr));
@@ -1390,9 +1425,9 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
     uch *q=buf, *endbuf=buf+(unsigned)size;
 #ifdef MORE
     uch *p=buf;
-#if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
+# if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
     int islinefeed = FALSE;
-#endif
+# endif
 #endif
     FILE *outfp;
 
@@ -1434,6 +1469,32 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
         outfp = (FILE *)stderr;
     else
         outfp = (FILE *)stdout;
+
+    /* 2011-05-07 SMS.
+     * VMS needs to handle toggling between stdout and stderr in its own
+     * way.  We were putting out a message like "inflating <file_name>"
+     * to stdout (with no terminating "\n"), and then putting out an
+     * error message with a leading "\n" to stderr, to get the error
+     * message onto its own line.  This may look ok on UNIX, but it
+     * makes a mess on VMS with spurious blank lines, and the error
+     * message getting overwritten by the next message to stdout.  Now,
+     * we save the outfp value, and, when it changes, and we're not at
+     * start-of-line, we put out an explicit "\n" to the previous outfp.
+     * This closes the old stdout line properly, allowing the new error
+     * message to appear on its own line, with no spurious blank lines
+     * added.  This method seems to work on UNIX, too.
+     */
+
+    /* When outfp changes, "\n"-terminate any pending line. */
+    if (outfp != ((Uz_Globs *)pG)->outfp_prev)
+    {
+        if (!((Uz_Globs *)pG)->sol)
+        {
+            (void)WriteTxtErr( "\n", 1, ((Uz_Globs *)pG)->outfp_prev);
+            ((Uz_Globs *)pG)->sol = TRUE;
+        }
+        ((Uz_Globs *)pG)->outfp_prev = outfp;
+    }
 
 #ifdef QUERY_TRNEWLN
     /* some systems require termination of query prompts with '\n' to force
@@ -1481,9 +1542,9 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
 #ifdef MORE
             if (((Uz_Globs *)pG)->M_flag)
             {
-#if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
+# if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
                 ((Uz_Globs *)pG)->chars = 0;
-#endif
+# endif
                 ++((Uz_Globs *)pG)->numlines;
                 ++((Uz_Globs *)pG)->lines;
                 if (((Uz_Globs *)pG)->lines >= ((Uz_Globs *)pG)->height)
@@ -1509,14 +1570,14 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
 
 #ifdef MORE
     if (((Uz_Globs *)pG)->M_flag
-#ifdef OS2DLL
+# ifdef OS2DLL
          && !((Uz_Globs *)pG)->redirect_text
-#endif
+# endif
                                                  )
     {
         while (p < endbuf) {
             if (*p == '\n') {
-#if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
+# if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
                 islinefeed = TRUE;
             } else if (SCREENLWRAP) {
                 if (*p == '\r') {
@@ -1537,7 +1598,7 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
             if (islinefeed) {
                 islinefeed = FALSE;
                 ((Uz_Globs *)pG)->chars = 0;
-#endif /* (SCREENWIDTH && SCREEN_LWRAP) */
+# endif /* (SCREENWIDTH && SCREEN_LWRAP) */
                 ++((Uz_Globs *)pG)->numlines;
                 ++((Uz_Globs *)pG)->lines;
                 if (((Uz_Globs *)pG)->lines >= ((Uz_Globs *)pG)->height)
@@ -1634,7 +1695,7 @@ int UZ_EXP UzpInput(pG, buf, size, flag)
 
 
 
-#if (!defined(WINDLL) && !defined(MACOS))
+#if (!defined(WINDLL) && !defined(MACOS) && !defined( DLL))
 
 /***************************/
 /* Function UzpMorePause() */
@@ -1695,7 +1756,6 @@ void UZ_EXP UzpMorePause(pG, prompt, flag)
 
 
 
-
 #ifndef WINDLL
 
 /**************************/
@@ -1706,19 +1766,19 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
     zvoid *pG;         /* pointer to UnZip's internal global vars */
     int *rcnt;         /* retry counter */
     char *pwbuf;       /* buffer for password */
-    int size;          /* size of password buffer */
+    int size;          /* Usable size of password buffer */
     ZCONST char *zfn;  /* name of zip archive */
     ZCONST char *efn;  /* name of archive entry being processed */
 {
-#if CRYPT
+# if CRYPT
     int r = IZ_PW_ENTERED;
     char *m;
     char *prompt;
 
-#ifndef REENTRANT
+#  ifndef REENTRANT
     /* tell picky compilers to shut up about "unused variable" warnings */
     pG = pG;
-#endif
+#  endif
 
     if (*rcnt == 0) {           /* First call for current entry */
         *rcnt = 2;
@@ -1746,18 +1806,19 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
     }
     return r;
 
-#else /* !CRYPT */
+# else /* !CRYPT */
     /* tell picky compilers to shut up about "unused variable" warnings */
     pG = pG; rcnt = rcnt; pwbuf = pwbuf; size = size; zfn = zfn; efn = efn;
 
     return IZ_PW_ERROR;  /* internal error; function should never get called */
-#endif /* ?CRYPT */
+# endif /* ?CRYPT */
 
 } /* end function UzpPassword() */
 
+#endif /* ndef WINDLL */
 
 
-
+#if !defined( WINDLL) && !defined( DLL)
 
 /**********************/
 /* Function handler() */
@@ -1768,49 +1829,49 @@ void handler(signal)   /* upon interrupt, turn on echo and exit cleanly */
 {
     GETGLOBALS();
 
-#if !(defined(SIGBUS) || defined(SIGSEGV))      /* add a newline if not at */
+# if !(defined(SIGBUS) || defined(SIGSEGV))     /* add a newline if not at */
     (*G.message)((zvoid *)&G, slide, 0L, 0x41); /*  start of line (to stderr; */
-#endif                                          /*  slide[] should be safe) */
+# endif                                         /*  slide[] should be safe) */
 
-    echon();
+    /* Restore the original terminal echo setting. */
+    echorig();
 
-#ifdef SIGBUS
+# ifdef SIGBUS
     if (signal == SIGBUS) {
         Info(slide, 0x421, ((char *)slide, LoadFarString(ZipfileCorrupt),
           "bus error"));
         DESTROYGLOBALS();
         EXIT(PK_BADERR);
     }
-#endif /* SIGBUS */
+# endif /* SIGBUS */
 
-#ifdef SIGILL
+# ifdef SIGILL
     if (signal == SIGILL) {
         Info(slide, 0x421, ((char *)slide, LoadFarString(ZipfileCorrupt),
           "illegal instruction"));
         DESTROYGLOBALS();
         EXIT(PK_BADERR);
     }
-#endif /* SIGILL */
+# endif /* SIGILL */
 
-#ifdef SIGSEGV
+# ifdef SIGSEGV
     if (signal == SIGSEGV) {
         Info(slide, 0x421, ((char *)slide, LoadFarString(ZipfileCorrupt),
           "segmentation violation"));
         DESTROYGLOBALS();
         EXIT(PK_BADERR);
     }
-#endif /* SIGSEGV */
+# endif /* SIGSEGV */
 
     /* probably ctrl-C */
     DESTROYGLOBALS();
-#if defined(AMIGA) && defined(__SASC)
+# if defined(AMIGA) && defined(__SASC)
     _abort();
-#endif
+# endif
     EXIT(IZ_CTRLC);       /* was EXIT(0), then EXIT(PK_ERR) */
 }
 
-#endif /* !WINDLL */
-
+#endif /* !defined( WINDLL) && !defined( DLL) */
 
 
 
@@ -2273,8 +2334,20 @@ int do_string(__G__ length, option)   /* return PK-type error code */
     length of the string:  if zero, we're already done.
   ---------------------------------------------------------------------------*/
 
-    if (!length)
-        return PK_COOL;
+    /* 2012-05-01 SMS.
+     *
+     *     if (!length)
+     *         return PK_COOL;
+     *
+     * Well, no, if "length" is zero, then we're _not_ "already done".
+     * Exiting immediately would leave the destination buffer
+     * unmodified, so it would retain its previous value, instead of
+     * what should be a null string.  (The APPNOTE says, "If input came
+     * from standard input, the file name length is set to zero."  So,
+     * we need to handle that case accordingly.)  Cases DS_FN and DS_FNL
+     * now substitute NULL_NAME_REPL (unzpriv.h) for a null archive
+     * member name.  Other cases must handle a null name appropriately.
+     */
 
     switch (option) {
 
@@ -2439,6 +2512,23 @@ int do_string(__G__ length, option)   /* return PK-type error code */
     case DS_FN:
     case DS_FN_L:
 #ifdef UNICODE_SUPPORT
+        if (length == 0)
+        {
+            /* Replace a null name. */
+            extent fnbufsiz = sizeof( NULL_NAME_REPL);
+
+            if (G.fnfull_bufsize < fnbufsiz)
+            {
+                if (G.filename_full)
+                    free(G.filename_full);
+                G.filename_full = malloc( fnbufsiz);
+                if (G.filename_full == NULL)
+                    return PK_MEM;
+                G.fnfull_bufsize = fnbufsiz;
+            }
+            strcpy( G.filename_full, NULL_NAME_REPL);
+            return PK_COOL;
+        }
         /* get the whole filename as need it for Unicode checksum */
         if (G.fnfull_bufsize <= length) {
             extent fnbufsiz = FILNAMSIZ;
@@ -2468,6 +2558,11 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         strncpy(G.filename, G.filename_full, length);
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
 #else /* !UNICODE_SUPPORT */
+        if (length == 0)
+        {
+            strcpy( G.filename, NULL_NAME_REPL);
+            return PK_COOL;
+        }
         if (length >= FILNAMSIZ) {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(FilenameTooLongTrunc)));
@@ -2485,7 +2580,14 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
         flag = (option==DS_FN_L)?G.lrec.general_purpose_bit_flag:G.crec.general_purpose_bit_flag;
         /* skip ISO/OEM translation if stored name is UTF-8 */
-        if ((flag & UTF8_BIT) == 0) {
+        /* 2012-05-20 SMS.
+         * Added check for Java "CAFE" extra block, to avoid mistaking
+         * Java's mostly-zero header info for an MS-DOS origin.  A more
+         * rigorous hostnum test might be easier, but might break other
+         * stuff.
+         */
+        if (((flag & UTF8_BIT) == 0) && (uO.java_cafe <= 0))
+        {
           /* translate the Zip entry filename coded in host-dependent "extended
              ASCII" into the compiler's (system's) internal text code page */
           Ext_ASCII_TO_Native(G.filename, G.pInfo->hostnum, G.pInfo->hostver,
@@ -2519,6 +2621,11 @@ int do_string(__G__ length, option)   /* return PK-type error code */
      */
 
     case SKIP:
+        if (length == 0)
+        {
+            return PK_COOL;
+        }
+
         /* cur_zipfile_bufstart already takes account of extra_bytes, so don't
          * correct for it twice: */
         seek_zipf(__G__ G.cur_zipfile_bufstart - G.extra_bytes +
@@ -2531,6 +2638,10 @@ int do_string(__G__ length, option)   /* return PK-type error code */
      */
 
     case EXTRA_FIELD:
+        if (length == 0)
+        {
+            return PK_COOL;
+        }
         if (G.extra_field != (uch *)NULL)
             free(G.extra_field);
         if ((G.extra_field = (uch *)malloc(length)) == (uch *)NULL) {

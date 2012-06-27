@@ -124,7 +124,7 @@ Features added (or removed):
  - UNIX: added new "-^" command line option that switches off the control
     character filter for extracted filenames.  [Chr. Spieler]
  - UNIX: added support for restoring attributes and UID/GID for symbolic
-    links when appropiate OS support is provided.  [Chr. Spieler]
+    links when appropriate OS support is provided.  [Chr. Spieler]
 
 6.00d07 (26 Dec 07):
  - New "-D" option which allows skipping of timestamp restoration for extracted
@@ -390,7 +390,7 @@ Bugs fixed:
     determining the VMS fileorg setting. [Steven M. Schweda]
  - extract.c - extract_or_test_files(): the "back at endsig" checking code
     is not used for the SFX stub. [Steven M. Schweda]
- - win32: changed all Win32-API calls with string parameters to explicitely use
+ - win32: changed all Win32-API calls with string parameters to explicitly use
     the ANSI variant; this removes the dependency on the UNICODE and _UNICODE
     compile flags being undefined.  [NN, Chr. Spieler]
  - zipinfo.c: on WIN32, archive filename display must be fed through codepage
@@ -826,7 +826,7 @@ Bugs fixed:
     user-supplied BZIP2 (and ZLIB) libraries (user-supplied library is expected
     to work with any supported compiler on VAX, so no dependency on the
     specific compiler used).  [Steven M. Schweda]
- - unzip.c: replaced tab characters in output messages by appropiate number of
+ - unzip.c: replaced tab characters in output messages by appropriate number of
     spaces (assuming standard tab spacing of 8 chars), to prevent mis-formatted
     output on terminals with non-standard tabstop settings.  [S. M. Schweda]
  - unix/unix.c
@@ -1077,7 +1077,7 @@ Bugs fixed:
  - vms/build_unzip.com, vms/descrip.mms, vms/descrip_src.mms: resolved a
     /NAME=AS_IS case issue by changing the linking command for bzip2-enabled
     builds to read the unzip code library twice (before and after the bzip2
-    object library) to resolve the bzip2 error callback, instead of explicitely
+    object library) to resolve the bzip2 error callback, instead of explicitly
     loading the callback function.  [Steven M. Schweda]
  - vms/NOTES.TXT: cleaned up wording of the Symbolic Links section. [SMS]
  - extract.c, fileio.c, process.c, unzpriv.h: fixed recognition of "native
@@ -1091,7 +1091,7 @@ Bugs fixed:
  - unix/configure: added working check for lchmod.  [SMS]
  - unzip.c: added compile option display for MBCS support.  [Chr. Spieler]
  - unzpriv.h, unix/unxcfg.h, win32/w32cfg.h: the new preprocessor symbol
-    NO_MBCS allows to explicitely disable MBCS support.  [Chr. Spieler]
+    NO_MBCS allows to explicitly disable MBCS support.  [Chr. Spieler]
  - INSTALL: documented _MBCS and NO_MBCS preprocessor symbols.  [Chr. Spieler]
  - unix/configure: added checks for MBCS support.  [Chr. Spieler]
 

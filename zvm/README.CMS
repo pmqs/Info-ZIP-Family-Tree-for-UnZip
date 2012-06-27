@@ -1,4 +1,4 @@
-Using ZIP and UNZIP on VM/CMS
+Using ZIP and UNZIP on VM/CMS  (August 11, 2011)
 =============================
 
 
@@ -27,12 +27,23 @@ their level, etc.
 
 To restore them to executable MODULEs on CMS, do the following:
    1. Upload them to CMS with a Fixed record length with LRECL 1024.
-      Example, from a DOS or OS/2 window, type this:
-         SEND unzip.cmo A:unzip module a (RECFM F LRECL 1024
 
-      Example, using FTP from CMS, type this:
-         BINARY FIXED 1024
-         GET unzip.cmo unzip.module.a
+      Example, using CMS FTP client 
+        At a CMS command prompt, type this:
+          BINARY FIXED 1024
+          GET unzip.cmo unzip.module.a
+
+      Example, using other FTP client to CMS user 191 disk 
+        Note: CMS ID must be logged off during transfer
+        At the sending system command prompt, type this:
+          BINARY         
+          QUOTE SITE FIX 1024
+          PUT unzip.cmo unzip.module   
+
+      Example, using PCOMM terminal emulator IND$FILE transfer
+        Note: CMS ID must be logged on to PCOMM terminal emulator session
+        At the Windows "Command Prompt" window prompt, type this:
+          SEND unzip.cmo A:unzip module a (RECFM F LRECL 1024
 
       Note:  Replace "unzip.cmo" with the actual name.
 
@@ -47,19 +58,30 @@ To restore them to executable MODULEs on CMS, do the following:
 
    5. Upload the EXECs to CMS as text files (with ASCII-to-EBCDIC
       translation).
-      Example, from a DOS or OS/2 window, type this:
-         SEND unzip.exc A:unzip exec a (CRLF
+ 
+      Example, using CMS FTP client 
+        At a CMS command prompt, type this:
+          ASCII
+          GET unzip.exec unzip.exec.a
 
-      Example, using FTP from CMS, type this:
-         GET unzip.exc unzip.exec.a
+      Example, using other FTP client to CMS user 191 disk 
+        Note: CMS ID must be logged off during transfer
+        At the sending system command prompt, type this:
+          ASCII         
+          PUT unzip.exec unzip.exec   
 
-   6. Repeat steps 4 for each of the EXECs.
+      Example, using PCOMM terminal emulator IND$FILE transfer
+        Note: CMS ID must be logged on to PCOMM terminal emulator session
+        At the Windows "Command Prompt" window prompt, type this:
+          SEND unzip.exec A:unzip exec a (CRLF
+
+   6. Repeat step 5 for each of the EXECs.
 
 
 Preparing the environment
 -------------------------
 
-The executables provided were compiled with IBM C 3.1.0 and
+The executables provided were compiled with IBM XL C for z/VM V1R2 and
 require the the Language Environment (LE) runtime libraries.
 
 To provide access to the runtime libraries:
@@ -409,11 +431,26 @@ Filenames and directories
 
 
 
+All bug reports or patches should go to zip-bugs via the web site contact
+form at http://www.info-zip.org/zip-bug.html; 
 
-Please report all bugs and problems to:
-   Zip-Bugs@lists.wku.edu
+If you'd like to keep up to date with our Zip and UnZip development, join
+the ranks of BETA testers, add your own thoughts and contributions, etc.,
+check out the new discussion forum available (courtesy of Hunter Goatley)
+at http://www.info-zip.org/phpBB3/index.php .
 
+-----------------------------------------------------------------------
+Revised (08/2011) by Al Dunsmuir
+e-mail:  al.dunsmuir@sympatico.ca
 
+-----------------------------------------------------------------------
+Additional notes from Ian E. Gorman.
+e-mail:  ian@iosphere.net
+
+-----------------------------------------------------------------------
+Additional fixes and README re-write (4/1998) by Greg Hartwig.
+e-mail:  ghartwig@ix.netcom.com
+         ghartwig@vnet.ibm.com
 -----------------------------------------------------------------------
 Original CMS/MVS port by George Petrov.
 e-mail:  c888090@nlevdpsb.snads.philips.nl
@@ -423,12 +460,4 @@ Philips C&P
 Eindhoven
 The Netherlands
 
------------------------------------------------------------------------
-Additional fixes and README re-write (4/98) by Greg Hartwig.
-e-mail:  ghartwig@ix.netcom.com
-         ghartwig@vnet.ibm.com
-
------------------------------------------------------------------------
-Additional notes from Ian E. Gorman.
-e-mail:  ian@iosphere.net
 

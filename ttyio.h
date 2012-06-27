@@ -1,8 +1,8 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
-  (the contents of which are also included in zip.h) for terms of use.
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
+  (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
@@ -79,6 +79,7 @@
 #ifdef AMIGA
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define getch() Agetch()
 #  define HAVE_WORKING_GETCH
 #endif /* AMIGA */
@@ -86,6 +87,7 @@
 #ifdef ATARI
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  include <osbind.h>
 #  define getch() (Cnecin() & 0x000000ff)
 #  define HAVE_WORKING_GETCH
@@ -94,6 +96,7 @@
 #ifdef MACOS
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define getch() macgetch()
 #  define HAVE_WORKING_GETCH
 #endif
@@ -101,18 +104,21 @@
 #ifdef NLM
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define HAVE_WORKING_GETCH
 #endif
 
 #ifdef QDOS
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define HAVE_WORKING_GETCH
 #endif
 
 #ifdef RISCOS
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define getch() SWI_OS_ReadC()
 #  define HAVE_WORKING_GETCH
 #endif
@@ -120,6 +126,7 @@
 #ifdef DOS_H68_OS2_W32
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  ifdef WIN32
 #    ifndef getch
 #      define getch() getch_win32()
@@ -144,6 +151,7 @@
 #ifdef FLEXOS
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define getch() getchar() /* not correct, but may not be on a console */
 #  define HAVE_WORKING_GETCH
 #endif
@@ -156,11 +164,13 @@
 #ifdef CMS_MVS
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #endif
 
 #ifdef TANDEM
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define getch() zgetch() /* defined in TANDEMC */
 #  define HAVE_WORKING_GETCH
 #endif
@@ -173,6 +183,7 @@
 #ifdef THEOS
 #  define echoff(f)
 #  define echon()
+#  define echorig()
 #  define HAVE_WORKING_GETCH
 #endif
 
@@ -182,6 +193,7 @@
 #ifdef VMS
 #  define echoff(f)  echo(0)
 #  define echon()    echo(1)
+#  define echorig()  echo(-1)
 #  define getch()    tt_getch()
 #  define FGETCH(f)  tt_getch()
    int echo OF((int));
@@ -194,6 +206,7 @@
 #ifndef echoff
 #  define echoff(f)  Echoff(__G__ f)
 #  define echon()    Echon(__G)
+#  define echorig()  Echon(__G)
    void Echoff OF((__GPRO__ int f));
    void Echon OF((__GPRO));
 #endif
@@ -219,8 +232,9 @@
 /*
  * No need for non-echo keyboard/console input; provide dummy definitions.
  */
-#define echoff(f)
-#define echon()
+#  define echoff(f)
+#  define echon()
+#  define echorig()
 
 #endif /* ?(CRYPT || (UNZIP && !FUNZIP)) */
 

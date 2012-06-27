@@ -16,6 +16,7 @@
     ZCONST UzpVer *UzpVersion(void);
     unsigned UzpVersion2(UzpVer2 *version)
     int UzpMain(int argc, char *argv[]);
+    int UzpMainI( int argc, char *argv[], UzpCB *init)
     int UzpAltMain(int argc, char *argv[], UzpInit *init);
     int UzpValidate(char *archive, int AllCodes);
     void UzpFreeMemBuffer(UzpBuffer *retstr);
@@ -35,28 +36,32 @@
   ---------------------------------------------------------------------------*/
 
 
-#ifdef OS2
-#  define  INCL_DOSMEMMGR
-#  include <os2.h>
-#endif
-
-#define UNZIP_INTERNAL
-#include "unzip.h"
-#ifdef WINDLL
-#  ifdef POCKET_UNZIP
-#    include "wince/intrface.h"
-#  else
-#    include "windll/windll.h"
-#  endif
-#endif
-#include "unzvers.h"
-#include <setjmp.h>
-
 #ifdef DLL      /* This source file supplies DLL-only interface code. */
 
-#ifndef POCKET_UNZIP    /* WinCE pUnZip defines this elsewhere. */
+# ifdef OS2
+#  define  INCL_DOSMEMMGR
+#  include <os2.h>
+# endif /* def OS2 */
+
+# define UNZIP_INTERNAL
+# include "unzip.h"
+# ifdef WINDLL
+#  ifdef POCKET_UNZIP
+#   include "wince/intrface.h"
+#  else /* def POCKET_UNZIP */
+#   include "windll/windll.h"
+#  endif /* def POCKET_UNZIP [else] */
+# else /* def WINDLL */
+#  include "api.h"
+# endif /* def WINDLL [else] */
+# include "unzvers.h"
+# include "crypt.h"
+
+# include <setjmp.h>
+
+# ifndef POCKET_UNZIP    /* WinCE pUnZip defines this elsewhere. */
 jmp_buf dll_error_return;
-#endif
+# endif /* def POCKET_UNZIP */
 
 /*---------------------------------------------------------------------------
     Documented API entry points
@@ -69,27 +74,27 @@ ZCONST UzpVer * UZ_EXP UzpVersion()     /* returns pointer to const struct */
         /* structure size */
         UZPVER_LEN,
         /* version flags */
-#ifdef BETA
-# ifdef ZLIB_VERSION
+# ifdef BETA
+#  ifdef ZLIB_VERSION
         3,
-# else
+#  else /* def ZLIB_VERSION */
         1,
-# endif
-#else
-# ifdef ZLIB_VERSION
+#  endif /* def ZLIB_VERSION [else] */
+# else /* def BETA */
+#  ifdef ZLIB_VERSION
         2,
-# else
+#  else /* def ZLIB_VERSION */
         0,
-# endif
-#endif
+#  endif /* def ZLIB_VERSION [else] */
+# endif /* def BETA [else] */
         /* betalevel and date strings */
         UZ_BETALEVEL, UZ_VERSION_DATE,
         /* zlib_version string */
-#ifdef ZLIB_VERSION
+# ifdef ZLIB_VERSION
         ZLIB_VERSION,
-#else
+# else /* def ZLIB_VERSION */
         NULL,
-#endif
+# endif /* def ZLIB_VERSION [else] */
         /*== someday each of these may have a separate patchlevel: ==*/
         /* unzip version */
         {UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, 0},
@@ -99,18 +104,18 @@ ZCONST UzpVer * UZ_EXP UzpVersion()     /* returns pointer to const struct */
         {UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, 0},
         /* windll version (retained for backward compatibility)*/
         {UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, 0},
-#ifdef OS2DLL
+# ifdef OS2DLL
         /* os2dll API minimum compatible version*/
         {UZ_OS2API_COMP_MAJOR, UZ_OS2API_COMP_MINOR, UZ_OS2API_COMP_REVIS, 0}
-#else /* !OS2DLL */
-#ifdef WINDLL
+# else /* def OS2DLL */
+#  ifdef WINDLL
         /* windll API minimum compatible version*/
         {UZ_WINAPI_COMP_MAJOR, UZ_WINAPI_COMP_MINOR, UZ_WINAPI_COMP_REVIS, 0}
-#else /* !WINDLL */
+#  else /* def WINDLL */
         /* generic DLL API minimum compatible version*/
         {UZ_GENAPI_COMP_MAJOR, UZ_GENAPI_COMP_MINOR, UZ_GENAPI_COMP_REVIS, 0}
-#endif /* ?WINDLL */
-#endif /* ?OS2DLL */
+#  endif /* def WINDLL [else] */
+# endif /* def OS2DLL [else] */
     };
 
     return &version;
@@ -122,15 +127,15 @@ unsigned UZ_EXP UzpVersion2(UzpVer2 *version)
     if (version->structlen != sizeof(UzpVer2))
         return sizeof(UzpVer2);
 
-#ifdef BETA
+# ifdef BETA
     version->flag = 1;
-#else
+# else /* def BETA */
     version->flag = 0;
-#endif
+# endif /* def BETA [else] */
     strcpy(version->betalevel, UZ_BETALEVEL);
     strcpy(version->date, UZ_VERSION_DATE);
 
-#ifdef ZLIB_VERSION
+# ifdef ZLIB_VERSION
     /* Although ZLIB_VERSION is a compile-time constant, we implement an
        "overrun-safe" copy because its actual value is not under our control.
      */
@@ -138,9 +143,9 @@ unsigned UZ_EXP UzpVersion2(UzpVer2 *version)
             sizeof(version->zlib_version) - 1);
     version->zlib_version[sizeof(version->zlib_version) - 1] = '\0';
     version->flag |= 2;
-#else
+# else /* def ZLIB_VERSION */
     version->zlib_version[0] = '\0';
-#endif
+# endif /* def ZLIB_VERSION [else] */
 
     /* someday each of these may have a separate patchlevel: */
     version->unzip.major = UZ_MAJORVER;
@@ -160,33 +165,31 @@ unsigned UZ_EXP UzpVersion2(UzpVer2 *version)
     version->windll.minor = UZ_MINORVER;
     version->windll.patchlevel = UZ_PATCHLEVEL;
 
-#ifdef OS2DLL
+# ifdef OS2DLL
     /* os2dll API minimum compatible version*/
     version->dllapimin.major = UZ_OS2API_COMP_MAJOR;
     version->dllapimin.minor = UZ_OS2API_COMP_MINOR;
     version->dllapimin.patchlevel = UZ_OS2API_COMP_REVIS;
-#else /* !OS2DLL */
-#ifdef WINDLL
+# else /* def OS2DLL */
+#  ifdef WINDLL
     /* windll API minimum compatible version*/
     version->dllapimin.major = UZ_WINAPI_COMP_MAJOR;
     version->dllapimin.minor = UZ_WINAPI_COMP_MINOR;
     version->dllapimin.patchlevel = UZ_WINAPI_COMP_REVIS;
-#else /* !WINDLL */
+#  else /* def WINDLL */
     /* generic DLL API minimum compatible version*/
     version->dllapimin.major = UZ_GENAPI_COMP_MAJOR;
     version->dllapimin.minor = UZ_GENAPI_COMP_MINOR;
     version->dllapimin.patchlevel = UZ_GENAPI_COMP_REVIS;
-#endif /* ?WINDLL */
-#endif /* ?OS2DLL */
+#  endif /* def WINDLL [else] */
+# endif /* def OS2DLL [else] */
     return 0;
 }
 
 
 
-
-
-#ifndef SFX
-#ifndef WINDLL
+# ifndef SFX
+#  ifndef WINDLL
 
 int UZ_EXP UzpAltMain(int argc, char *argv[], UzpInit *init)
 {
@@ -212,12 +215,36 @@ int UZ_EXP UzpAltMain(int argc, char *argv[], UzpInit *init)
     RETURN(r);
 }
 
-#endif /* !WINDLL */
+
+int UZ_EXP UzpMainI( int argc, char *argv[], UzpCB *init)
+{
+    int r, (*dummyfn)();
+
+    CONSTRUCTGLOBALS();
+
+    if (init->structlen >= (sizeof(ulg) + sizeof(dummyfn)) && init->msgfn)
+        G.message = init->msgfn;
+
+    if (init->structlen >= (sizeof(ulg) + 2*sizeof(dummyfn)) && init->inputfn)
+        G.input = init->inputfn;
+
+    if (init->structlen >= (sizeof(ulg) + 3*sizeof(dummyfn)) && init->pausefn)
+        G.mpause = init->pausefn;
+
+    if (init->structlen >= (sizeof(ulg) + 4*sizeof(dummyfn)) && init->passwdfn)
+        G.decr_passwd = init->passwdfn;
+
+    r = unzip(__G__ argc, argv);
+    DESTROYGLOBALS();
+    RETURN(r);
+}
+
+#  endif /* ndef WINDLL */
 
 
 
 
-#ifndef __16BIT__
+#  ifndef __16BIT__
 
 void UZ_EXP UzpFreeMemBuffer(UzpBuffer *retstr)
 {
@@ -231,7 +258,7 @@ void UZ_EXP UzpFreeMemBuffer(UzpBuffer *retstr)
 
 
 
-#ifndef WINDLL
+#   ifndef WINDLL
 
 static int UzpDLL_Init OF((zvoid *pG, UzpCB *UsrFuncts));
 
@@ -271,12 +298,12 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
     UzpCB *UsrFuncts, UzpBuffer *retstr)
 {
     int r;
-#if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
     char *intern_zip, *intern_file;
-#endif
+#    endif
 
     CONSTRUCTGLOBALS();
-#if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
     intern_zip = (char *)malloc(strlen(zip)+1);
     if (intern_zip == NULL) {
        DESTROYGLOBALS();
@@ -290,9 +317,9 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
     }
     ISO_TO_INTERN(zip, intern_zip);
     ISO_TO_INTERN(file, intern_file);
-#   define zip intern_zip
-#   define file intern_file
-#endif
+#     define zip intern_zip
+#     define file intern_file
+#    endif /* (defined(WINDLL) && !defined(CRTL_CP_IS_ISO)) */
     /* Copy those options that are meaningful for UzpUnzipToMemory, instead of
      * a simple "memcpy(G.UzO, optflgs, sizeof(UzpOpts));"
      */
@@ -310,26 +337,26 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
     r = (unzipToMemory(__G__ zip, file, retstr) <= PK_WARN);
 
     DESTROYGLOBALS();
-#if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
-#  undef file
-#  undef zip
+#    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#     undef file
+#     undef zip
     free(intern_file);
     free(intern_zip);
-#endif
+#    endif
     if (!r && retstr->strlength) {
        free(retstr->strptr);
        retstr->strptr = NULL;
     }
     return r;
 }
-#endif /* !WINDLL */
-#endif /* !__16BIT__ */
+#   endif /* !WINDLL */
+#  endif /* !__16BIT__ */
 
 
 
 
 
-#ifdef OS2DLL
+#  ifdef OS2DLL
 
 int UZ_EXP UzpFileTree(char *name, cbList(callBack), char *cpInclude[],
                 char *cpExclude[])
@@ -363,8 +390,8 @@ int UZ_EXP UzpFileTree(char *name, cbList(callBack), char *cpInclude[],
     return r;
 }
 
-#endif /* OS2DLL */
-#endif /* !SFX */
+#  endif /* OS2DLL */
+# endif /* !SFX */
 
 
 
@@ -381,7 +408,7 @@ void setFileNotFound(__G)
 }
 
 
-#ifndef SFX
+# ifndef SFX
 
 int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
 {
@@ -411,7 +438,7 @@ int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
     return r;                   /* returns `PK_???' error values */
 }
 
-#endif /* !SFX */
+# endif /* ndef SFX */
 
 /*
     With the advent of 64 bit support, for now I am assuming that
@@ -422,51 +449,51 @@ int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
 int redirect_outfile(__G)
      __GDEF
 {
-#ifdef ZIP64_SUPPORT
-    __int64 check_conversion;
-#endif
+# ifdef ZIP64_SUPPORT
+    z_uint8 check_conversion;
+# endif
 
     if (G.redirect_size != 0 || G.redirect_buffer != NULL)
         return FALSE;
 
-#ifndef NO_SLIDE_REDIR
+# ifndef NO_SLIDE_REDIR
     G.redirect_slide = !G.pInfo->textmode;
-#endif
-#if (lenEOL != 1)
+# endif
+# if (lenEOL != 1)
     if (G.pInfo->textmode) {
         G.redirect_size = (ulg)(G.lrec.ucsize * lenEOL);
         if (G.redirect_size < G.lrec.ucsize)
             G.redirect_size = (ulg)((G.lrec.ucsize > (ulg)-2L) ?
                                     G.lrec.ucsize : -2L);
-#ifdef ZIP64_SUPPORT
+#  ifdef ZIP64_SUPPORT
         check_conversion = G.lrec.ucsize * lenEOL;
-#endif
+#  endif /* def ZIP64_SUPPORT */
     } else
-#endif
+# endif /* (lenEOL != 1) */
     {
         G.redirect_size = (ulg)G.lrec.ucsize;
-#ifdef ZIP64_SUPPORT
-        check_conversion = (__int64)G.lrec.ucsize;
-#endif
+# ifdef ZIP64_SUPPORT
+        check_conversion = (z_uint8)G.lrec.ucsize;
+# endif
     }
 
-#ifdef ZIP64_SUPPORT
-    if ((__int64)G.redirect_size != check_conversion)
+# ifdef ZIP64_SUPPORT
+    if ((z_uint8)G.redirect_size != check_conversion)
         return FALSE;
-#endif
+# endif
 
-#ifdef __16BIT__
+# ifdef __16BIT__
     if ((ulg)((extent)G.redirect_size) != G.redirect_size)
         return FALSE;
-#endif
-#ifdef OS2
+# endif
+# ifdef OS2
     DosAllocMem((void **)&G.redirect_buffer, G.redirect_size+1,
       PAG_READ|PAG_WRITE|PAG_COMMIT);
     G.redirect_pointer = G.redirect_buffer;
-#else
+# else /* def OS2 */
     G.redirect_pointer =
       G.redirect_buffer = malloc((extent)(G.redirect_size+1));
-#endif
+# endif /* def OS2 [else] */
     if (!G.redirect_buffer)
         return FALSE;
     G.redirect_pointer[G.redirect_size] = '\0';
@@ -516,9 +543,9 @@ int close_redirect(__G)
 
 
 
-#ifndef SFX
-#ifndef __16BIT__
-#ifndef WINDLL
+# ifndef SFX
+#  ifndef __16BIT__
+#   ifndef WINDLL
 
 /* Purpose: Determine if file in archive contains the string szSearch
 
@@ -623,8 +650,8 @@ int UZ_EXP UzpGrep(char *archive, char *file, char *pattern, int cmd,
 
     return retcode;
 }
-#endif /* !WINDLL */
-#endif /* !__16BIT__ */
+#   endif /* !WINDLL */
+#  endif /* !__16BIT__ */
 
 
 
@@ -638,9 +665,9 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
     uO.overwrite_none = 0;
     G.extract_flag = (!uO.zipinfo_mode &&
                       !uO.cflag && !uO.tflag && !uO.vflag && !uO.zflag
-#ifdef TIMESTAMP
+#  ifdef TIMESTAMP
                       && !uO.T_flag
-#endif
+#  endif
                      );
 
     uO.qflag = 2;                        /* turn off all messages */
@@ -662,20 +689,20 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
 
     G.wildzipfn = (char *)malloc(FILNAMSIZ);
     strcpy(G.wildzipfn, archive);
-#if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#  if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
     _ISO_INTERN(G.wildzipfn);
-#endif
+#  endif
 
-#ifdef WINDLL
+#  ifdef WINDLL
     Wiz_NoPrinting(TRUE);
-#endif
+#  endif
 
     G.process_all_files = TRUE;         /* for speed */
 
     if (setjmp(dll_error_return) != 0) {
-#ifdef WINDLL
+#  ifdef WINDLL
         Wiz_NoPrinting(FALSE);
-#endif
+#  endif
         free(G.wildzipfn);
         DESTROYGLOBALS();
         retcode = PK_BADERR;
@@ -685,9 +712,9 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
     retcode = process_zipfiles(__G);
 
     free(G.wildzipfn);
-#ifdef WINDLL
+#  ifdef WINDLL
     Wiz_NoPrinting(FALSE);
-#endif
+#  endif
     DESTROYGLOBALS();
 
     /* PK_WARN == 1 and PK_FIND == 11. When we are just looking at an
@@ -710,5 +737,11 @@ exit_retcode:
         return FALSE;
 }
 
-#endif /* !SFX */
-#endif /* DLL */
+# endif /* !SFX */
+
+#else /* def DLL */
+
+/* Dummy declaration to quiet compilers. */
+int dummy_api;
+
+#endif /* def DLL [else] */

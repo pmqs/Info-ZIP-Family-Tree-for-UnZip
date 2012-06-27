@@ -78,7 +78,7 @@ subdirectory of the Win32 command line port.
 In the default setup, the UnZip DLL is linked against the shared C runtime
 dll.  This configuration is most feasible for multi-module C/C++ based
 programs.  For usage with non-C projects (e.g. Visual Basic 5/6 or MS .NET
-managed code), a statically linked UnZip DLL might be more appropiate.
+managed code), a statically linked UnZip DLL might be more appropriate.
 Both the Visual Studio projects and the MSC Makefile in the win32/ subdir
 support statically linked builds through specific configurations (VC projects)
 or a configuration switch (for details look into ../win32/Makefile).
@@ -92,5 +92,5 @@ of the problems seen with 5.0 and can be used reliably.
 The UnZip DLL and SFXWiz have been successfully built with Borland C++ 5.5.1
 from the command line. However, we do not currently have the resources to
 supply project files for the Borland IDE environment (C Builder 5.x - 6.x).
-For compilation with Borland C++, please use the appropiate targets supplied
+For compilation with Borland C++, please use the appropriate targets supplied
 with the Borland Makefile in the Win32 subdirectory.

@@ -82,7 +82,7 @@
 /* The use of "ebcdic[LF]" is not reliable; VM/CMS C/370 uses the
  * EBCDIC specific "NL" ('NewLine') control character (and not the EBCDIC
  * equivalent of the ASCII "LF" ('LineFeed')) as line terminator!
- * To work around this problem, we explicitely emit the C compiler's native
+ * To work around this problem, we explicitly emit the C compiler's native
  * '\n' line terminator.
  */
 #if 0

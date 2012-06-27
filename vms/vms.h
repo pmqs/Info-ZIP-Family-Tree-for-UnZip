@@ -100,11 +100,11 @@
 
 #ifdef NAML$C_MAXRSS            /* NAML is available (ODS5 support...) */
 
-#  ifndef NAM_MAXRSS            /* May have been defined before. */
-#    define NAM_MAXRSS NAML$C_MAXRSS
+#  ifndef NAMX_MAXRSS           /* May have been defined before. */
+#    define NAMX_MAXRSS NAML$C_MAXRSS
 #  endif
 
-#  define NAM_STRUCT NAML
+#  define NAMX_STRUCT NAML
 
 #  define FAB_OR_NAML(fab, nam) (nam)
 #  define FAB_OR_NAML_DNA naml$l_long_defname
@@ -112,39 +112,41 @@
 #  define FAB_OR_NAML_FNA naml$l_long_filename
 #  define FAB_OR_NAML_FNS naml$l_long_filename_size
 
-#  define CC_RMS_NAM cc$rms_naml
-#  define FAB_NAM fab$l_naml
+#  define CC_RMS_NAMX cc$rms_naml
+#  define FAB_NAMX fab$l_naml
 
-#  define NAM_ESA naml$l_long_expand
-#  define NAM_ESL naml$l_long_expand_size
-#  define NAM_ESS naml$l_long_expand_alloc
-#  define NAM_RSA naml$l_long_result
-#  define NAM_RSL naml$l_long_result_size
-#  define NAM_RSS naml$l_long_result_alloc
-#  define NAM_DID naml$w_did
-#  define NAM_DVI naml$t_dvi
-#  define NAM_FID naml$w_fid
-#  define NAM_FNB naml$l_fnb
-#  define NAM_NOP naml$b_nop
-#  define NAM_M_SYNCHK NAML$M_SYNCHK
-#  define NAM_B_DEV naml$l_long_dev_size
-#  define NAM_L_DEV naml$l_long_dev
-#  define NAM_B_DIR naml$l_long_dir_size
-#  define NAM_L_DIR naml$l_long_dir
-#  define NAM_B_NAME naml$l_long_name_size
-#  define NAM_L_NAME naml$l_long_name
-#  define NAM_B_TYPE naml$l_long_type_size
-#  define NAM_L_TYPE naml$l_long_type
-#  define NAM_B_VER naml$l_long_ver_size
-#  define NAM_L_VER naml$l_long_ver
+#  define NAMX_ESA naml$l_long_expand
+#  define NAMX_ESL naml$l_long_expand_size
+#  define NAMX_ESS naml$l_long_expand_alloc
+#  define NAMX_RSA naml$l_long_result
+#  define NAMX_RSL naml$l_long_result_size
+#  define NAMX_RSS naml$l_long_result_alloc
+#  define NAMX_DID naml$w_did
+#  define NAMX_DVI naml$t_dvi
+#  define NAMX_FID naml$w_fid
+#  define NAMX_FNB naml$l_fnb
+#  define NAMX_NOP naml$b_nop
+#  define NAMX_M_SYNCHK NAML$M_SYNCHK
+#  define NAMX_B_DEV naml$l_long_dev_size
+#  define NAMX_L_DEV naml$l_long_dev
+#  define NAMX_B_DIR naml$l_long_dir_size
+#  define NAMX_L_DIR naml$l_long_dir
+#  define NAMX_B_NAME naml$l_long_name_size
+#  define NAMX_L_NAME naml$l_long_name
+#  define NAMX_B_TYPE naml$l_long_type_size
+#  define NAMX_L_TYPE naml$l_long_type
+#  define NAMX_B_VER naml$l_long_ver_size
+#  define NAMX_L_VER naml$l_long_ver
+#  define NAMX_DNA_FNA_SET( fab) (fab).fab$l_dna = (char *) -1; \
+    (fab).fab$l_fna = (char *) -1;
 
 #else /* !NAML$C_MAXRSS */      /* NAML is not available.  Use NAM. */
 
-#  ifndef NAM_MAXRSS            /* May have been defined before. */
-#    define NAM_MAXRSS NAM$C_MAXRSS
+#  ifndef NAMX_MAXRSS           /* May have been defined before. */
+#    define NAMX_MAXRSS NAM$C_MAXRSS
 #  endif
 
-#  define NAM_STRUCT NAM
+#  define NAMX_STRUCT NAM
 
 #  define FAB_OR_NAML(fab, nam) (fab)
 #  define FAB_OR_NAML_DNA fab$l_dna
@@ -152,30 +154,31 @@
 #  define FAB_OR_NAML_FNA fab$l_fna
 #  define FAB_OR_NAML_FNS fab$b_fns
 
-#  define CC_RMS_NAM cc$rms_nam
-#  define FAB_NAM fab$l_nam
-#  define NAM_ESA nam$l_esa
-#  define NAM_ESL nam$b_esl
-#  define NAM_ESS nam$b_ess
-#  define NAM_RSA nam$l_rsa
-#  define NAM_RSL nam$b_rsl
-#  define NAM_RSS nam$b_rss
-#  define NAM_DID nam$w_did
-#  define NAM_DVI nam$t_dvi
-#  define NAM_FID nam$w_fid
-#  define NAM_FNB nam$l_fnb
-#  define NAM_NOP nam$b_nop
-#  define NAM_M_SYNCHK NAM$M_SYNCHK
-#  define NAM_B_DEV nam$b_dev
-#  define NAM_L_DEV nam$l_dev
-#  define NAM_B_DIR nam$b_dir
-#  define NAM_L_DIR nam$l_dir
-#  define NAM_B_NAME nam$b_name
-#  define NAM_L_NAME nam$l_name
-#  define NAM_B_TYPE nam$b_type
-#  define NAM_L_TYPE nam$l_type
-#  define NAM_B_VER nam$b_ver
-#  define NAM_L_VER nam$l_ver
+#  define CC_RMS_NAMX cc$rms_nam
+#  define FAB_NAMX fab$l_nam
+#  define NAMX_ESA nam$l_esa
+#  define NAMX_ESL nam$b_esl
+#  define NAMX_ESS nam$b_ess
+#  define NAMX_RSA nam$l_rsa
+#  define NAMX_RSL nam$b_rsl
+#  define NAMX_RSS nam$b_rss
+#  define NAMX_DID nam$w_did
+#  define NAMX_DVI nam$t_dvi
+#  define NAMX_FID nam$w_fid
+#  define NAMX_FNB nam$l_fnb
+#  define NAMX_NOP nam$b_nop
+#  define NAMX_M_SYNCHK NAM$M_SYNCHK
+#  define NAMX_B_DEV nam$b_dev
+#  define NAMX_L_DEV nam$l_dev
+#  define NAMX_B_DIR nam$b_dir
+#  define NAMX_L_DIR nam$l_dir
+#  define NAMX_B_NAME nam$b_name
+#  define NAMX_L_NAME nam$l_name
+#  define NAMX_B_TYPE nam$b_type
+#  define NAMX_L_TYPE nam$l_type
+#  define NAMX_B_VER nam$b_ver
+#  define NAMX_L_VER nam$l_ver
+#  define NAMX_DNA_FNA_SET( fab)
 
 #endif /* ?NAML$C_MAXRSS */
 

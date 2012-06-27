@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -124,11 +124,11 @@
 #if (defined(DLL) && !defined(NO_SLIDE_REDIR))
 #  define wszimpl (unsigned)(G._wsize)
 #else
-#  if defined(USE_DEFLATE64) && defined(INT_16BIT)
+#  if defined(DEFLATE64_SUPPORT) && defined(INT_16BIT)
 #    define wszimpl (unsigned)(WSIZE>>1)
-#  else /* !(USE_DEFLATE64 && INT_16BIT) */
+#  else /* !(DEFLATE64_SUPPORT && INT_16BIT) */
 #    define wszimpl WSIZE
-#  endif /* !(USE_DEFLATE64 && INT_16BIT) */
+#  endif /* !(DEFLATE64_SUPPORT && INT_16BIT) */
 #endif
 
 /* routines here */
@@ -514,14 +514,14 @@ int explode(__G)
      */
     G._wsize = G.redirect_size, redirSlide = G.redirect_buffer;
   else
-#if defined(USE_DEFLATE64) && defined(INT_16BIT)
+#if defined(DEFLATE64_SUPPORT) && defined(INT_16BIT)
     /* For systems using 16-bit ints, reduce the used buffer size below
      * the limit of "unsigned int" numbers range.
      */
     G._wsize = WSIZE>>1, redirSlide = slide;
-#else /* !(USE_DEFLATE64 && INT_16BIT) */
+#else /* !(DEFLATE64_SUPPORT && INT_16BIT) */
     G._wsize = WSIZE, redirSlide = slide;
-#endif /* !(USE_DEFLATE64 && INT_16BIT) */
+#endif /* !(DEFLATE64_SUPPORT && INT_16BIT) */
 #endif /* DLL && !NO_SLIDE_REDIR */
 
   /* Tune base table sizes.  Note: I thought that to truly optimize speed,

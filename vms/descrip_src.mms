@@ -1,6 +1,6 @@
-#                                               1 March 2009.  SMS.
+#                                               16 June 2012.  SMS.
 #
-#    UnZip 6.0 for VMS - MMS (or MMK) Source Description File.
+#    UnZip 6.1 for VMS - MMS (or MMK) Source Description File.
 #
 
 # This description file is included by other description files.  It is
@@ -83,8 +83,10 @@ SEEK_BZ = $(DESTM)
 
 .IFDEF GNUC                     # GNUC
 GCC_ = _
+GCC_L = _L
 .ELSE                           # GNUC
 GCC_ =
+GCC_L =
 .ENDIF                          # GNUC
 
 # Check for option problems.
@@ -215,13 +217,53 @@ BUILD_BZIP2 = 1
 .ENDIF                              # VAX_MULTI_CMPL
 .ENDIF                          # UNK_DEST
 
+# AES_WG options.
+
+.IFDEF AES_WG                   # AES_WG
+CDEFS_AES = , CRYPT_AES_WG
+.ENDIF                          # AES_WG
+
 # BZIP2 options.
 
 .IFDEF IZ_BZIP2                 # IZ_BZIP2
-CDEFS_BZ = , USE_BZIP2
+CDEFS_BZ = , BZIP2_SUPPORT
 CFLAGS_INCL = /include = ([], [.VMS])
 LIB_BZIP2_OPTS = lib_bzip2:$(BZ2_OLB) /library,
 .ENDIF                          # IZ_BZIP2
+
+# LZMA options.
+
+.IFDEF LZMA                     # LZMA
+LZMA_PPMD = 1
+.IFDEF __VAX__                      # __VAX__
+CDEFS_LZMA = , LZMA_SUPPORT, _SZ_NO_INT_64
+.ELSE                               # __VAX__
+CDEFS_LZMA = , LZMA_SUPPORT
+.ENDIF                              # __VAX__
+.IFDEF CFLAGS_INCL                  # CFLAGS_INCL
+.ELSE                               # CFLAGS_INCL
+CFLAGS_INCL = /include = ([], [.VMS])
+.ENDIF                              # CFLAGS_INCL
+.ENDIF                          # LZMA
+
+# PPMd options.
+
+.IFDEF PPMD                     # PPMD
+.IFDEF LZMA                         # LZMA
+CDEFS_PPMD = , PPMD_SUPPORT
+.ELSE                               # LZMA
+LZMA_PPMD = 1
+.IFDEF __VAX__                          # __VAX__
+CDEFS_PPMD = , PPMD_SUPPORT, _SZ_NO_INT_64
+.ELSE                                   # __VAX__
+CDEFS_PPMD = , PPMD_SUPPORT
+.ENDIF                                  # __VAX__
+.ENDIF                              # LZMA
+.IFDEF CFLAGS_INCL                  # CFLAGS_INCL
+.ELSE                               # CFLAGS_INCL
+CFLAGS_INCL = /include = ([], [.VMS])
+.ENDIF                              # CFLAGS_INCL
+.ENDIF                          # PPMD
 
 # ZLIB options.
 
@@ -232,21 +274,26 @@ CDEFS_ZL = , USE_ZLIB
 CFLAGS_INCL = /include = ([], [.VMS])
 .ENDIF                              # CFLAGS_INCL
 LIB_ZLIB_OPTS = LIB_ZLIB:LIBZ.OLB /library,
-.ELSE                           # IZ_ZLIB
-.IFDEF CFLAGS_INCL                  # CFLAGS_INCL
-.ELSE                               # CFLAGS_INCL
-CFLAGS_INCL = /include = []
-.ENDIF                              # CFLAGS_INCL
 .ENDIF                          # IZ_ZLIB
 
-# DBG options.
+.IFDEF CFLAGS_INCL              # CFLAGS_INCL
+.ELSE                           # CFLAGS_INCL
+CFLAGS_INCL = /include = []
+.ENDIF                          # CFLAGS_INCL
+
+
+# DBG, TRC options.
 
 .IFDEF DBG                      # DBG
 CFLAGS_DBG = /debug /nooptimize
 LINKFLAGS_DBG = /debug /traceback
 .ELSE                           # DBG
 CFLAGS_DBG =
+.IFDEF TRC                          # TRC
+LINKFLAGS_DBG = /traceback
+.ELSE                               # TRC
 LINKFLAGS_DBG = /notraceback
+.ENDIF                              # TRC
 .ENDIF                          # DBG
 
 # Large-file options.
@@ -261,7 +308,8 @@ CDEFS_LARGE = , LARGE_FILE_SUPPORT
 C_LOCAL_UNZIP = , $(LOCAL_UNZIP)
 .ENDIF
 
-CDEFS = VMS $(CDEFS_BZ) $(CDEFS_LARGE) $(CDEFS_ZL) $(C_LOCAL_UNZIP)
+CDEFS = VMS $(CDEFS_AES) $(CDEFS_BZ) $(CDEFS_LARGE) $(CDEFS_LZMA) \
+ $(CDEFS_PPMD) $(CDEFS_ZL) $(C_LOCAL_UNZIP)
 
 CDEFS_UNX = /define = ($(CDEFS))
 
@@ -270,6 +318,8 @@ CDEFS_CLI = /define = ($(CDEFS), VMSCLI)
 CDEFS_SFX = /define = ($(CDEFS), SFX)
 
 CDEFS_SFX_CLI = /define = ($(CDEFS), SFX, VMSCLI)
+
+CDEFS_LIBUNZIP = /define = ($(CDEFS), DLL)
 
 # Other C compiler options.
 
@@ -401,7 +451,39 @@ MODS_OBJS_LIB_UNZIP_N = \
 MODS_OBJS_LIB_UNZIP_V = \
  VMS=[.$(DEST)]VMS.OBJ
 
-MODS_OBJS_LIB_UNZIP = $(MODS_OBJS_LIB_UNZIP_N) $(MODS_OBJS_LIB_UNZIP_V)
+#    Primary object library, [.AES_WG].
+
+.IFDEF AES_WG                   # AES_WG
+MODS_OBJS_LIB_UNZIP_AES = \
+ AESCRYPT=[.$(DEST)]AESCRYPT.OBJ \
+ AESKEY=[.$(DEST)]AESKEY.OBJ \
+ AESTAB=[.$(DEST)]AESTAB.OBJ \
+ FILEENC=[.$(DEST)]FILEENC.OBJ \
+ HMAC=[.$(DEST)]HMAC.OBJ \
+ PRNG=[.$(DEST)]PRNG.OBJ \
+ PWD2KEY=[.$(DEST)]PWD2KEY.OBJ \
+ SHA1=[.$(DEST)]SHA1.OBJ
+.ENDIF                          # AES_WG
+
+#    Primary object library, [.SZIP], LZMA.
+
+.IFDEF LZMA                     # LZMA
+MODS_OBJS_LIB_UNZIP_LZMA = \
+ LZFIND=[.$(DEST)]LZFIND.OBJ \
+ LZMADEC=[.$(DEST)]LZMADEC.OBJ
+.ENDIF                          # LZMA
+
+#    Primary object library, [.SZIP], PPMd.
+
+.IFDEF PPMD                     # PPMD
+MODS_OBJS_LIB_UNZIP_PPMD = \
+ PPMD8=[.$(DEST)]PPMD8.OBJ \
+ PPMD8DEC=[.$(DEST)]PPMD8DEC.OBJ
+.ENDIF                          # PPMD
+
+MODS_OBJS_LIB_UNZIP = $(MODS_OBJS_LIB_UNZIP_N) $(MODS_OBJS_LIB_UNZIP_V) \
+ $(MODS_OBJS_LIB_UNZIP_AES) $(MODS_OBJS_LIB_UNZIP_LZMA) \
+ $(MODS_OBJS_LIB_UNZIP_PPMD)
 
 #    CLI object library, [.VMS].
 
@@ -415,7 +497,7 @@ MODS_OBJS_LIB_UNZIP_CLI = \
  $(MODS_OBJS_LIB_UNZIPCLI_C_V) \
  $(MODS_OBJS_LIB_UNZIPCLI_CLD_V)
 
-# SFX object library, [].
+#    SFX object library, [].
 
 MODS_OBJS_LIB_UNZIPSFX_N = \
  CRC32$(GCC_)=[.$(DEST)]CRC32_.OBJ \
@@ -429,14 +511,47 @@ MODS_OBJS_LIB_UNZIPSFX_N = \
  TTYIO$(GCC_)=[.$(DEST)]TTYIO_.OBJ \
  UBZ2ERR$(GCC_)=[.$(DEST)]UBZ2ERR_.OBJ
 
-# SFX object library, [.VMS].
+#    SFX object library, [.VMS].
 
 MODS_OBJS_LIB_UNZIPSFX_V = \
  VMS$(GCC_)=[.$(DEST)]VMS_.OBJ
 
+#    SFX object library, [.AES_WG].
+
+.IFDEF AES_WG                   # AES_WG
+MODS_OBJS_LIB_UNZIPSFX_AES = \
+ AESCRYPT=[.$(DEST)]AESCRYPT.OBJ \
+ AESKEY=[.$(DEST)]AESKEY.OBJ \
+ AESTAB=[.$(DEST)]AESTAB.OBJ \
+ FILEENC=[.$(DEST)]FILEENC.OBJ \
+ HMAC=[.$(DEST)]HMAC.OBJ \
+ PRNG=[.$(DEST)]PRNG.OBJ \
+ PWD2KEY=[.$(DEST)]PWD2KEY.OBJ \
+ SHA1=[.$(DEST)]SHA1.OBJ
+.ENDIF                          # AES_WG
+
+#    Primary object library, [.SZIP], LZMA.
+
+.IFDEF LZMA                     # LZMA
+MODS_OBJS_LIB_UNZIPSFX_LZMA = \
+ LZFIND=[.$(DEST)]LZFIND.OBJ \
+ LZMADEC=[.$(DEST)]LZMADEC.OBJ
+.ENDIF                          # LZMA
+
+#    Primary object library, [.SZIP], PPMd.
+
+.IFDEF PPMD                     # PPMD
+MODS_OBJS_LIB_UNZIPSFX_PPMD = \
+ PPMD8=[.$(DEST)]PPMD8.OBJ \
+ PPMD8DEC=[.$(DEST)]PPMD8DEC.OBJ
+.ENDIF                          # PPMD
+
 MODS_OBJS_LIB_UNZIPSFX = \
  $(MODS_OBJS_LIB_UNZIPSFX_N) \
- $(MODS_OBJS_LIB_UNZIPSFX_V)
+ $(MODS_OBJS_LIB_UNZIPSFX_V) \
+ $(MODS_OBJS_LIB_UNZIPSFX_AES) \
+ $(MODS_OBJS_LIB_UNZIPSFX_LZMA) \
+ $(MODS_OBJS_LIB_UNZIPSFX_PPMD)
 
 # SFX object library, [.VMS] (no []).
 
@@ -449,6 +564,52 @@ MODS_OBJS_LIB_UNZIPSFX_CLI_CLD_V = \
 MODS_OBJS_LIB_UNZIPSFX_CLI = \
  $(MODS_OBJS_LIB_UNZIPSFX_CLI_C_V) \
  $(MODS_OBJS_LIB_UNZIPSFX_CLI_CLD_V)
+
+# LIBUNZIP object library.
+
+.IFDEF LIBUNZIP                 # LIBUNZIP
+
+#    Modules sensitive to DLL/REENTRANT.
+
+MODS_OBJS_LIB_LIBUNZIP_NL = \
+ API$(GCC_L)=[.$(DEST)]API_L.OBJ \
+ CRYPT$(GCC_L)=[.$(DEST)]CRYPT_L.OBJ \
+ EXPLODE$(GCC_L)=[.$(DEST)]EXPLODE_L.OBJ \
+ EXTRACT$(GCC_L)=[.$(DEST)]EXTRACT_L.OBJ \
+ FILEIO$(GCC_L)=[.$(DEST)]FILEIO_L.OBJ \
+ GLOBALS$(GCC_L)=[.$(DEST)]GLOBALS_L.OBJ \
+ INFLATE$(GCC_L)=[.$(DEST)]INFLATE_L.OBJ \
+ LIST$(GCC_L)=[.$(DEST)]LIST_L.OBJ \
+ PROCESS$(GCC_L)=[.$(DEST)]PROCESS_L.OBJ \
+ TTYIO$(GCC_L)=[.$(DEST)]TTYIO_L.OBJ \
+ UBZ2ERR$(GCC_L)=[.$(DEST)]UBZ2ERR_L.OBJ \
+ UNSHRINK$(GCC_L)=[.$(DEST)]UNSHRINK_L.OBJ \
+ UNZIP$(GCC_L)=[.$(DEST)]UNZIP_L.OBJ \
+ ZIPINFO$(GCC_L)=[.$(DEST)]ZIPINFO_L.OBJ
+
+MODS_OBJS_LIB_LIBUNZIP_V = \
+ VMS$(GCC_)=[.$(DEST)]VMS_L.OBJ
+
+#    Modules insensitive to DLL/REENTRANT.
+
+MODS_OBJS_LIB_LIBUNZIP_N = \
+ CRC32=[.$(DEST)]CRC32.OBJ \
+ ENVARGS=[.$(DEST)]ENVARGS.OBJ \
+ MATCH=[.$(DEST)]MATCH.OBJ \
+ UNREDUCE=[.$(DEST)]UNREDUCE.OBJ
+
+MODS_OBJS_LIB_LIBUNZIP_A = $(MODS_OBJS_LIB_UNZIP_AES)
+MODS_OBJS_LIB_LIBUNZIP_L = $(MODS_OBJS_LIB_UNZIP_LZMA)
+MODS_OBJS_LIB_LIBUNZIP_P = $(MODS_OBJS_LIB_UNZIP_PPMD)
+
+MODS_OBJS_LIB_LIBUNZIP = \
+ $(MODS_OBJS_LIB_LIBUNZIP_NL) \
+ $(MODS_OBJS_LIB_LIBUNZIP_V) \
+ $(MODS_OBJS_LIB_LIBUNZIP_N) \
+ $(MODS_OBJS_LIB_LIBUNZIP_A) \
+ $(MODS_OBJS_LIB_LIBUNZIP_L) \
+ $(MODS_OBJS_LIB_LIBUNZIP_P)
+.ENDIF                          # LIBUNZIP
 
 # Executables.
 

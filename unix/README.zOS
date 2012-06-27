@@ -1,0 +1,207 @@
+unix/README.zOS - UnZip 6.10                                        09 Sept 2011
+
+ Copyright (c) 2011 Info-ZIP.  All rights reserved.
+
+z/OS is IBM's follow-on to both the OS/390 and MVS operating systems.
+
+The UNIX System Services element of z/OS is a UNIX operating environment,
+implemented within the z/OS operating system. It is also known as z/OS UNIX.
+The z/OS support enables two open systems interfaces on the z/OS operating
+system: an application programming interface (API) and an interactive shell
+interface.
+
+z/OS UNIX System Services provides:
+- XPG4 UNIX 1995 conformance
+- Assembler callable services
+- TSO/E commands to manage the file system
+- ISPF shell environment
+
+The z/OS UNIX environment complies at the source and operational level with
+the POSIX open system environment (POSIX OSE), XOPEN and related standards.
+This includes:
+- A POSIX (Born) shell
+- A standard UNIX build environment and utilities
+- UNIX-style POSIX filesystems
+  - Older form is Hierarchial File System (HFS), where the filesystem storage is
+    contained within a z/OS MVS PDSE library.
+  - Newer form is z File System (zFS), where the filesystem storage is contained
+    within one or more z/OS disk volumes.  Unrelated to Solaris ZFS filesystem.
+
+Like the traditional z/OS MVS environment, the z/OS UNIX environment uses an
+EBCDIC-based character set by default.  The standard z/OS UNIX EBCDIC code page
+is IBM-1047, while the standard z/OS MVS EBCDIC code page is IBM-037.
+
+The z/OS UNIX port of InfoZIP UNZIP is a fairly straight-forward variation of 
+the UNZIP generic unix port, using the EBCDIC character set.
+- The standard line termination character for EBCDIC POSIX text files is the
+  Newline (NL, 0x15) character.
+  - This reflects the influence of the z/VM environment on z/OS UNIX.
+  - The EBCDIC Carriage Return (CR, 0x0D) and Line Feed (LF, 0x25) characters
+    derive from the legacy MVS serial communications (BiSync) telecomunications
+    interfaces, and are not normally used in z/OS UNIX text files.
+
+While the z/OS UNIX environment also provides some rather limited support for
+ASCII programs and files, this support is not used by the z/OS UNIX port of
+InfoZIP UNZIP.
+
+UNZIP for z/OS UNIX
+-----------------
+Allows you to extract files from ZIP archives, when invoked from the z/OS UNIX
+System Services shell command prompt.  This port uses standard Unix-style I/O
+routines and only supports POSIX-style files in HFS or zFS filesystems.
+
++----------------------------------------------------------------------------+
+| NOTE: This port does *NOT* work with non-POSIX (traditional MVS) files.    |
+|                                                                            |
+|       A new z/OS port is under development that will operate in both z/OS  |
+|       UNIX and MVS environments, and support both POSIX and non-POSIX      |
+|       z/OS files.                                                          |
+|                                                                            |
++----------------------------------------------------------------------------+
+
+Usage
+-----
+By default, UNZIP does not perform character-set translation, but has
+options to make it easy to convert text files to be compatible with
+other systems
+  unzip   zipfile          # extract the members from the archive 'zipfile'
+  unzip -a zipfile         # same as above, but translate text files to EBCDIC
+  unzip -al zipfile        # same as above, but translates all files to EBCDIC
+
+Build process
+-------------
+This port is normally built using the z/OS UNIX make and cc utilities, as
+follows:
+
+* Determine the z/OS POSIX directory where the build is to be performed,
+  and create as required.
+
+* Use a binary-mode transfer utility such as FTP or SFTP to transport the ZIP
+  source archive file to that directory.  The archive file to be used depends on
+  the utility that is available to unpack the archive.
+
+  * One may choose to use an existing or new installation of the z/OS UNIX
+    InfoZIP UNZIP utility.
+
+    Upload the unzip610.zip file, and issue the following command at the z/OS
+    UNIX shell prompt to extract the UNZIP source archive files, with text files
+    in EBCDIC:
+
+      unzip -a unzip610
+
+  * In the absence of InfoZIP UNZIP, one will use the zip610.tar.gz GNU zip
+    archive.
+
+    * If the z/OS UNIX port of  GNU zip (gzip) is available, upload the archive
+      in binary and issue the command
+
+        gzip -d unzip610.tar.gz
+
+      and create the unzip610.tar file.
+
+    * Otherwise, this command must be issued on a convenient workstation and
+      the resulting unzip610.tar file uploaded in binary to z/OS UNIX.
+
+    Unpack the archive and convert to EBCDIC with pax
+
+      pax -r -ofrom=ISO8859-1,to=IBM-1047 -f ../unzip610.tar
+
+* Switch to the resulting unzip610 directory.
+
+* Use the cat command on a sample of the source files to verify that they are
+  encoded in EBCDIC and suitable for input to the IBM z/OS XL C compiler.
+
+* Compile and link the z/OS UNIX UNZIP utility, using make and cc:
+
+    make -f unix/Makefile generic
+
+  This will generate the main unzip executable, as well as the other utility
+  executables (unzipsfx, funzip, and zipinfo).
+
+  Alternatively, one can use the GNU make (gmake utility) and cc:
+
+    gmake -f unix/Makefile generic
+
+* All object files and executables are built in the [UNZIP_ROOT] (unzip610)
+  directory.  To remove these file in preparation for a new build, enter:
+
+    make -f unix/Makefile clean 
+
+  or
+
+    gmake -f unix/Makefile clean
+
+* Optionally, InfoZIP UNZIP can be built with WinZIP-compatible AES encryption
+  support (based on Dr Brian Gladman's AES libraries).
+
+    make -f unix/Makefile generic AES_WG=1
+
+  or
+
+    gmake -f unix/Makefile generic AES_WG=1
+
+* Optionally, InfoZIP UNZIP can be built with LZMA compression support.
+
+    make -f unix/Makefile generic LZMA=1
+
+  or
+
+    gmake -f unix/Makefile generic LZMA=1
+
+
+* Optionally, InfoZIP UNZIP can be built with BZIP2 compression support, after
+  one first obtains the bzip2 compression source code from www.bzip2.org, and
+  extract to the contained files to the ./bzip2 directory.    
+
+    make -f unix/Makefile generic IZ_BZIP2=bzip2
+
+  or
+
+    gmake -f unix/Makefile generic IZ_BZIP2=bzip2
+
+  Note: While InfoZIP UNZIP can extract BZIP2-compressed files, there is an		
+        an outstanding bug that prevents InfoZIP ZIP from adding new archive
+        members encoded with the BZIP2 compression.
+
++----------------------------------------------------------------------------+
+| Overview of Changes for z/OS UNIX port                                     |
++----------------------------------------------------------------------------+
+UNZIP 6.10 changes by Al Dunsmuir (09 Sept 2011)
+
+The z/OS UNIX port is based on (and replaces) the original updated UNZIP 6.10
+"OS/390" port by Bob Woodside.
+
+- Replaced make target for _.o files by providing standard file-pattern rules
+  that is supported by both make and gmake.
+
+- For each .o file for source files outside the zip tree root directory, an
+  explicit .c->.o build rule is provided.  
+  - An initial iteration with file-pattern rules worked with z/OS make and
+    gmake, but these were beyone what the AIX and Solaris make utilities were
+    not able to handle.
+
+- Improve configure support for the IBM compilers (z/OS, z/VM. AIX. iSeries)
+  - Recognize compilers, use system-specific compiler and build options
+    - Build z/OS, z/VM and AIX UNIX ports with c89, with function checking.
+  - On z/OS, use "uname -I" to get z/OS-specific info (vs OS/390 compat info)
+  - Add zos/zcpp shell script for C preprocessor-based configure tests
+
+- Updated unix/unix.c to display actual IBM compiler identifier and z/OS
+  build system identifier.
+
+- Add support for listing file generation, with LIST=1 make parm
+  - Generates appropriate options to generate listings, and switches from	
+    the generic cc driver to zos/zcc and zos/zld shell scripts that support
+    compile and link listing capture (respectively).
+
+- Add zos/zcpp shell script to support unix/configure C preprocessor tests.
+
+- Eliminate make zos and os390 targets
+
+- Replaced all z/OS UNIX-specific (#ifdef OS390) preprocessor statements by
+  the more explicit (#ifdef ZOS_UNIX)
+
+- Add notes describing LZMA and BZIP2 compression support.
+
+- Add unix/README.zOS
+

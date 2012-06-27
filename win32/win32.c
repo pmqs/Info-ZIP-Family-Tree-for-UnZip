@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1160,8 +1160,10 @@ int SetFileSize(FILE *file, zusz_t filesize)
 #  endif
         return -1;
     /* extend/truncate file to the current position */
-    if (SetEndOfFile(os_fh) == 0)
+    if (SetEndOfFile(os_fh) == 0) {
+        SetFilePointer(os_fh, 0, 0, FILE_BEGIN);
         return -1;
+    }
     /* move file position pointer back to the start of the file! */
     return (SetFilePointer(os_fh, 0, 0, FILE_BEGIN) == 0xFFFFFFFF) ? -1 : 0;
 # endif /* ?__RSXNT__ */
@@ -2382,7 +2384,7 @@ int mapname(__G__ renamed)
         drive[0] = (char)('a' + G.nLabelDrive - 1);
         strcpy(drive + 1, ":\\");
         if (QCOND2)
-            Info(slide, 0, ((char *)slide, "labelling %s %-22s\n", drive,
+            Info(slide, 0, ((char *)slide, "labeling %s %-22s\n", drive,
               FnFilter1(G.filename)));
         if (!SetVolumeLabelA(drive, Ansi_Fname)) {
             Info(slide, 1, ((char *)slide,
@@ -2460,7 +2462,7 @@ int mapnamew(__G__ renamed)
             *ppw = '\0';
         }
     }
-    
+
     /* pathcomp is ignored unless renamed_fullpath is TRUE: */
     if ((error = checkdirw(__G__ pathcompw, INIT)) != 0)    /* init path buffer */
         return error;           /* ...unless no mem or vol label on hard disk */
@@ -2620,7 +2622,7 @@ int mapnamew(__G__ renamed)
         drivew[0] = (wchar_t)('a' + G.nLabelDrive - 1);
         wcscpy(drivew + 1, L":\\");
         if (QCOND2)
-            Info(slide, 0, ((char *)slide, "labelling %s %-22s\n", drive,
+            Info(slide, 0, ((char *)slide, "labeling %s %-22s\n", drive,
               FnFilter1(G.filename)));
         if (!SetVolumeLabelW(drivew, G.unipath_widefilename)) {
             Info(slide, 1, ((char *)slide,
@@ -3019,7 +3021,7 @@ int checkdir(__G__ pathcomp, flag)
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
-                 unable to process %s.\n",
+ unable to process %s.\n",
                   FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
@@ -3049,7 +3051,7 @@ int checkdir(__G__ pathcomp, flag)
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
-                 unable to process %s.\n",
+ unable to process %s.\n",
                   FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
@@ -3059,8 +3061,8 @@ int checkdir(__G__ pathcomp, flag)
             G.created_dir = TRUE;
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  %s exists but is not directory\n   \
-              unable to process %s.\n",
+              "checkdir error:  %s exists but is not directory\n\
+ unable to process %s.\n",
               FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
             free(G.buildpathHPFS);
             free(G.buildpathFAT);
@@ -3126,8 +3128,9 @@ int checkdir(__G__ pathcomp, flag)
         if ((G.endHPFS-G.buildpathHPFS) >= FILNAMSIZ) {
             G.buildpathHPFS[FILNAMSIZ-1] = '\0';
             Info(slide, 1, ((char *)slide,
-              "checkdir warning:  path too long; truncating\n \
-              %s\n                -> %s\n",
+              "checkdir warning:  path too long; truncating\n\
+    %s\n\
+ -> %s\n",
               FnFilter1(G.filename), FnFilter2(G.buildpathHPFS)));
             error = MPN_INF_TRUNC;  /* filename truncated */
         }
@@ -3422,7 +3425,7 @@ int checkdirw(__G__ pathcompw, flag)
                 if (i == -1) { /* create the directory */
                     Info(slide, 1, ((char *)slide,
                         "checkdir error:  cannot create %s\n\
-                	       unable to process %s.\n",
+ unable to process %s.\n",
                     FnFilter2(buildpathFAT), FnFilter1(fn)));
                     free(buildpathHPFS);
                     free(buildpathFAT);
@@ -3465,7 +3468,7 @@ int checkdirw(__G__ pathcompw, flag)
                 if (i == -1) { /* create the directory */
                     Info(slide, 1, ((char *)slide,
                         "checkdir error:  cannot create %s\n\
-                        unable to process %s.\n",
+ unable to process %s.\n",
                     FnFilter2(buildpathFAT), FnFilter1(fn)));
                     free(buildpathHPFS);
                     free(buildpathFAT);
@@ -3480,7 +3483,7 @@ int checkdirw(__G__ pathcompw, flag)
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
               "checkdir error:  %s exists but is not directory\n\
-                 unable to process %s.\n",
+ unable to process %s.\n",
             FnFilter2(buildpathFAT), FnFilter1(fn)));
             free(buildpathHPFS);
             free(buildpathFAT);
@@ -3565,8 +3568,9 @@ int checkdirw(__G__ pathcompw, flag)
             G.buildpathHPFSw[FILNAMSIZ-1] = '\0';
             buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
             Info(slide, 1, ((char *)slide,
-              "checkdir warning:  path too long; truncating\n \
-              %s\n                -> %s\n",
+              "checkdir warning:  path too long; truncating\n\
+    %s\n\
+ -> %s\n",
               FnFilter1(fn), FnFilter2(buildpathHPFS)));
             free(buildpathHPFS);
             error = MPN_INF_TRUNC;  /* filename truncated */
@@ -3642,13 +3646,13 @@ int checkdirw(__G__ pathcompw, flag)
                 }
                 G.nLabelDrive = (char)(*G.buildpathHPFSw - 'a' + 1); /* save for mapname() */
                 *G.buildpathHPFSw = (wchar_t)(G.nLabelDrive - 1 + 'a');
-			}
+            }
             if (uO.volflag == 0 || *G.buildpathHPFSw < 'a' /* no labels/bogus? */
                 || (uO.volflag == 1 && !isfloppy(G.nLabelDrive))) { /* !fixed */
                 free(G.buildpathHPFSw);
                 free(G.buildpathFATw);
                 return MPN_VOL_LABEL;  /* skipping with message */
-			}
+            }
             *G.buildpathHPFSw = '\0';
         } else if (G.renamed_fullpath) /* pathcomp = valid data */
             wcscpy(G.buildpathHPFSw, pathcompw);

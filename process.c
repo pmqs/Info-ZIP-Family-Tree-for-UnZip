@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -42,9 +42,6 @@
 #if defined(DYNALLOC_CRCTAB) || defined(UNICODE_SUPPORT)
 #  include "crc32.h"
 #endif
-#ifdef UNICODE_SUPPORT
-#  include <wchar.h>
-#endif /* def UNICODE_SUPPORT */
 
 static int    do_seekable        OF((__GPRO__ int lastchance));
 #ifdef DO_SAFECHECK_2GB
@@ -132,17 +129,17 @@ static ZCONST char Far CannotAllocateBuffers[] =
 #endif /* DO_SAFECHECK_2GB */
    static ZCONST char Far MaybeExe[] =
      "note:  %s may be a plain executable, not an archive\n";
-   static ZCONST char Far CentDirNotInZipMsg[] = "\n\
+   static ZCONST char Far CentDirNotInZipMsg[] = "\
    [%s]:\n\
      Zipfile is disk %lu of a multi-disk archive, and this is not the disk on\n\
      which the central zipfile directory begins (disk %lu).\n";
    static ZCONST char Far EndCentDirBogus[] =
-     "\nwarning [%s]:  end-of-central-directory record claims this\n\
+     "warning [%s]:  end-of-central-directory record claims this\n\
   is disk %lu but that the central directory starts on disk %lu; this is a\n\
   contradiction.  Attempting to process anyway.\n";
 # ifdef NO_MULTIPART
    static ZCONST char Far NoMultiDiskArcSupport[] =
-     "\nerror [%s]:  zipfile is part of multi-disk archive\n\
+     "error [%s]:  zipfile is part of multi-disk archive\n\
   (sorry, not yet supported).\n";
    static ZCONST char Far MaybePakBug[] = "warning [%s]:\
   zipfile claims to be 2nd disk of a 2-part archive;\n\
@@ -205,7 +202,7 @@ static ZCONST char Far Cent64EndSigSearchOff[] =
      "Updated time stamp for %s.\n";
 #endif
 static ZCONST char Far ZipfileCommTrunc1[] =
-  "\ncaution:  zipfile comment truncated\n";
+  "caution:  zipfile comment truncated\n";
 #ifndef NO_ZIPINFO
    static ZCONST char Far NoZipfileComment[] =
      "There is no zipfile comment.\n";
@@ -218,13 +215,13 @@ static ZCONST char Far ZipfileCommTrunc1[] =
      "========================= zipfile comment ends\
  ===========================\n";
    static ZCONST char Far ZipfileCommTrunc2[] =
-     "\n  The zipfile comment is truncated.\n";
+     "  The zipfile comment is truncated.\n";
 #endif /* !NO_ZIPINFO */
 #ifdef UNICODE_SUPPORT
    static ZCONST char Far UnicodeVersionError[] =
-     "\nwarning:  Unicode Path version > 1\n";
+     "warning:  Unicode Path version > 1\n";
    static ZCONST char Far UnicodeMismatchError[] =
-     "\nwarning:  Unicode Path checksum invalid\n";
+     "warning:  Unicode Path checksum invalid\n";
 #endif
 
 
@@ -582,7 +579,10 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     SYSTEM_SPECIFIC_DTOR(__G);
 #endif
 
+#ifdef DEFLATE_SUPPORT
     inflate_free(__G);
+#endif
+
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     if (G.has_win32_wide)
       checkdirw(__G__ (wchar_t *)NULL, END);
@@ -630,6 +630,26 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
         G.fnfull_bufsize = 0;
     }
 #endif /* UNICODE_SUPPORT */
+
+#ifdef LZMA_SUPPORT
+    /* Free any LZMA-related dynamic storage.
+     * (Note that LzmaDec_Free() does not check for pointer validity.)
+     */
+    if (G.state_lzma.probs != NULL)
+    {
+        LzmaDec_Free( &G.state_lzma, &G.g_Alloc);
+    }
+#endif /* def LZMA_SUPPORT */
+
+#ifdef PPMD_SUPPORT
+    /* Free any PPMd-related dynamic storage.
+     * (Note that Ppmd8_Free() does not check for pointer validity.)
+     */
+    if (G.ppmd8.Base != NULL)
+    {
+        Ppmd8_Free( &G.ppmd8, &G.g_Alloc);
+    }
+#endif /* def PPMD_SUPPORT */
 
 #ifndef SFX
     for (i = 0; i < DIR_BLKSIZ; i++) {
@@ -823,6 +843,10 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
     archives) or inconsistencies (missing or extra bytes in zipfile).
   ---------------------------------------------------------------------------*/
 
+    /* Apparently a few archives out there use 1 as the disk number in a
+       one disk archive, incorrectly.  Need to change this to allow for that
+       case.  */
+
 #ifdef NO_MULTIPART
     error = !uO.zipinfo_mode && (G.ecrec.number_this_disk == 1) &&
             (G.ecrec.num_disk_start_cdir == 1);
@@ -1010,7 +1034,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
 
 #ifdef TIMESTAMP
     if (uO.T_flag && !uO.zipinfo_mode && (nmember > 0L)) {
-# if defined(VMS) || defined(WIN32)
+# if defined(WIN32)
         if (stamp_file(__G__ G.zipfn, uxstamp)) {       /* TIME-STAMP 'EM */
 # else
         if (stamp_file(G.zipfn, uxstamp)) {             /* TIME-STAMP 'EM */
@@ -1283,7 +1307,8 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
             G.ecrec.number_this_disk, ecloc64_total_disks); fflush(stdout);
 #endif
     if ((G.ecrec.number_this_disk != 0xFFFF) &&
-        (G.ecrec.number_this_disk != ecloc64_total_disks - 1)) {
+        (G.ecrec.number_this_disk != ecloc64_total_disks - 1) &&
+        (ecloc64_total_disks != 0)) {
       /* Note: For some unknown reason, the developers at PKWARE decided to
          store the "zip64 total disks" value as a counter starting from 1,
          whereas all other "split/span volume" related fields use 0-based
@@ -1293,6 +1318,12 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
          When this is not the case, the found ecrec64 locator cannot be valid.
          -> This is not a Zip64 archive.
        */
+      /* Actually the central directory can span multiple disks, and the above
+         total - 1 check would fail in this case.  Should fix this.
+         
+         There are archive creators that put 0 in total disks when it should
+         be 1.  We should handle this.  This is done by the added check above.
+      */
       Trace((stderr,
              "\ninvalid ECLOC64, differing disk# (ECR %u, ECL64 %lu)\n",
              G.ecrec.number_this_disk, ecloc64_total_disks - 1));
@@ -1766,6 +1797,13 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
        that the standard path and comment are UTF-8. */
     G.pInfo->GPFIsUTF8
         = (G.crec.general_purpose_bit_flag & UTF8_BIT) == UTF8_BIT;
+#endif
+
+#ifdef SYMLINKS
+    /* Initialize the symlink flag.  The system-specific mapattr() (or
+     * other) function should set it properly.
+     */
+    G.pInfo->symlink = 0;
 #endif
 
     return PK_COOL;
@@ -2632,7 +2670,7 @@ zwchar *local_to_wide_string(local_string)
   if ((wide_string = (zwchar *)malloc((wsize + 1) * sizeof(zwchar))) == NULL) {
     return NULL;
   }
-  for (wsize = 0; wide_string[wsize] = (zwchar)wc_string[wsize]; wsize++) ;
+  for (wsize = 0; (wide_string[wsize] = (zwchar)wc_string[wsize]); wsize++) ;
   wide_string[wsize] = (zwchar) 0;
   free(wc_string);
 
@@ -2722,8 +2760,6 @@ zwchar *utf8_to_wide_string(utf8_string)
 
 #endif /* UNICODE_WCHAR */
 #endif /* UNICODE_SUPPORT */
-
-
 
 
 

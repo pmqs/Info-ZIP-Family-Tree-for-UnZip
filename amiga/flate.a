@@ -1,5 +1,5 @@
 ;===========================================================================
-; Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+; Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 ;
 ; See the accompanying file LICENSE, version 2000-Apr-09 or later
 ; (the contents of which are also included in unzip.h) for terms of use.
@@ -24,9 +24,9 @@
 ;
 ; Define INT16 if ints are short, otherwise it assumes ints are long.
 ;
-; Define USE_DEFLATE64 if we're supporting Deflate64 decompression.
+; Define DEFLATE64_SUPPORT if we're supporting Deflate64 decompression.
 ;
-; Do NOT define WSIZE; it is always 32K or 64K depending on USE_DEFLATE64.
+; Do NOT define WSIZE; it is always 32K or 64K depending on DEFLATE64_SUPPORT.
 ; You also do not need to define FUNZIP or SFX, if you create t:G_offs.a
 ; correctly (see below).
 ;
@@ -49,7 +49,7 @@
 ; Lastly, this include will define CRYPT as 1 if appropriate and supply flag
 ; definitions for major compile options that may affect the layout of the
 ; globals structure and the functionality of the core decompression routines
-; (currently FUNZIP, SFX, REENTRANT, DLL, NO_SLIDE_REDIR, USE_DEFLATE64).
+; (currently FUNZIP, SFX, REENTRANT, DLL, NO_SLIDE_REDIR, DEFLATE64_SUPPORT).
 
         INCLUDE "t:G_offs.a"
 
@@ -136,7 +136,7 @@ G       equr    a6              ; Uz_Globs *
 ; Couple other items we need:
 
 savregs reg     d2-d7/a2/a3/a6
-                IFD     USE_DEFLATE64
+                IFD     DEFLATE64_SUPPORT
 WSIZE   equ     $10000          ; 64K... be careful not to treat as short!
                 ELSE
 WSIZE   equ     $08000          ; 32K... be careful not to treat as negative!

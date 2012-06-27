@@ -2,7 +2,7 @@
 
   unzip.h (new)
 
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -17,7 +17,7 @@ ftp://ftp.info-zip.org/pub/infozip/license.html indefinitely and
 a copy at http://www.info-zip.org/pub/infozip/license.html.
 
 
-Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
 For the purposes of this copyright and license, "Info-ZIP" is defined as
 the following set of individuals:
@@ -181,7 +181,7 @@ freely, subject to the above disclaimer and the following restrictions:
 #  define MSDOS
 #endif
 
-/* RSXNTDJ (at least up to v1.3) compiles for WIN32 (RSXNT) using a derivate
+/* RSXNTDJ (at least up to v1.3) compiles for WIN32 (RSXNT) using a derivative
    of the EMX environment, but defines MSDOS and __GO32__. ARG !!! */
 #if (defined(MSDOS) && defined(WIN32))
 #  undef MSDOS                  /* WIN32 is >>>not<<< MSDOS */
@@ -333,7 +333,8 @@ freely, subject to the above disclaimer and the following restrictions:
 #    undef WIN32_LEAN_AND_MEAN
 #    undef IZ_HASDEFINED_WIN32LEAN
 #  endif
-#endif
+#endif /* def WINDLL */
+
 
 /*---------------------------------------------------------------------------
     Grab system-dependent definition of EXPENTRY for prototypes below.
@@ -510,6 +511,7 @@ typedef struct _UzpOpts {
 #ifdef J_FLAG
     int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS e. f. info (unzip) */
 #endif
+    int java_cafe;      /* Java CAFE extra block assumed/detected. */
 #if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
     int K_flag;         /* -K: keep setuid/setgid/tacky permissions */
 #endif
@@ -526,12 +528,7 @@ typedef struct _UzpOpts {
     int rflag;          /* -r: remove file extensions */
 #endif
 #ifndef FUNZIP
-#if (defined(MSDOS) || defined(FLEXOS) || defined(OS2) || defined(WIN32))
     int sflag;          /* -s: convert spaces in filenames to underscores */
-#endif
-#if (defined(NLM))
-    int sflag;          /* -s: convert spaces in filenames to underscores */
-#endif
 #ifdef VMS
     int S_flag;         /* -S: use Stream_LF for text files (-a[a]) */
 #endif
@@ -657,6 +654,7 @@ typedef struct _Uzp_cdir_Rec {
 #define PK_NOZIP           9   /* zipfile not found */
 #define PK_PARAM          10   /* bad or illegal parameters specified */
 #define PK_FIND           11   /* no files found */
+#define PK_COMPERR        19   /* error in compilation options */
 #define PK_DISK           50   /* disk full */
 #define PK_EOF            51   /* unexpected EOF */
 
@@ -689,6 +687,7 @@ typedef struct _Uzp_cdir_Rec {
 
 int      UZ_EXP UzpMain            OF((int argc, char **argv));
 int      UZ_EXP UzpAltMain         OF((int argc, char **argv, UzpInit *init));
+int      UZ_EXP UzpMainI           OF((int argc, char **argv, UzpCB *init));
 ZCONST UzpVer * UZ_EXP UzpVersion  OF((void));
 void     UZ_EXP UzpFreeMemBuffer   OF((UzpBuffer *retstr));
 #ifndef WINDLL
@@ -719,6 +718,11 @@ int      UZ_EXP UzpPassword      OF((zvoid *pG, int *rcnt, char *pwbuf,
                                      int size, ZCONST char *zfn,
                                      ZCONST char *efn));
 
+#ifdef VMS
+int      vms_status              OF((int err));                 /* vms.c */
+void     decc_init               OF((void));                    /* vms.c */
+#endif
+
 #define UTF8_BIT (1<<11)
 
 #ifdef __cplusplus
@@ -733,7 +737,6 @@ int      UZ_EXP UzpPassword      OF((zvoid *pG, int *rcnt, char *pwbuf,
 #ifdef UNZIP_INTERNAL
 #  include "unzpriv.h"
 #endif
-
 
 #endif /* !__unzip_h */
 

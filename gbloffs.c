@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -96,8 +96,8 @@ int main(argc, argv)
     (*set_flag)("NO_SLIDE_REDIR");
 # endif
 #endif
-#ifdef USE_DEFLATE64
-    (*set_flag)("USE_DEFLATE64");
+#ifdef DEFLATE64_SUPPORT
+    (*set_flag)("DEFLATE64_SUPPORT");
 #endif
 
     return 0;

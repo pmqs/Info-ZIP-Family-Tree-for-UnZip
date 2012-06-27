@@ -1,4 +1,4 @@
-Contents of the UnZip 6.00 source archive.  The OS-specific subdirectories
+Contents of the UnZip 6.10 source archive.  The OS-specific subdirectories
 at the end contain their own Contents listings:
 
   Contents      this file
@@ -16,7 +16,8 @@ at the end contain their own Contents listings:
   zipgrep.txt   ZipGrep manual page, human-readable format
   funzip.txt    fUnZip manual page, human-readable format
   file_id.diz   BBS-oriented file describing this archive
-  testmake.zip  test archive for checking whether newly compiled UnZip works
+  testmake.zip  test archive for checking whether newly built UnZip works
+
   api.c         generic DLL entry points, support functions (required for DLLs)
   apihelp.c     API help text for DLL versions (currently OS/2 only)
   consts.h      global, initialized variables that never change (required)
@@ -53,16 +54,16 @@ at the end contain their own Contents listings:
   unzvers.h     header with UnZip/UnZipSFX and ZipInfo version info (required)
   zip.h         dummy header for use with crypt.c (required*)
   zipinfo.c     UnZip listing routines, ZipInfo mode (required)
+
   acorn/        support files for compiling under Acorn RISC OS
   amiga/        support files for compiling under AmigaDOS
   aosvs/        support files for compiling under Data General AOS/VS
   atari/        support files for compiling under Atari TOS
   atheos/       support files for compiling under AtheOS/Syllable
   beos/         support files for compiling under BeOS
-  cmsmvs/       support files for compiling under VM/CMS and MVS
   flexos/       support files for compiling under FlexOS
   human68k/     support files for compiling under X68000/Human68K
-  macos/        support files for compiling under Macintosh OS
+  macos/        support files for compiling under Macintosh OS (pre-X)
   msdos/        support files for compiling under MS-DOS
   netware/      support files for compiling for Novell Netware NLM
   os2/          support files for compiling under OS/2 (includes DLL stuff)
@@ -75,10 +76,16 @@ at the end contain their own Contents listings:
   win32/        support files for compiling under Windows 9x and Windows NT
   wince/        support files for compiling under Windows CE (GUI version)
   windll/       support files for compiling Windows 3.x/9x/NT DLLs
-  bzip2/        subfolder for source of externally supplied bzip2 extension
+  zos/          support files for compiling under z/OS
+  zvm/          support files for compiling under VM/CMS and MVS
+
+  aes_wg/       where source code for optional AES WG encryption goes
+  bzip2/        where source code for optional bzip2 compression goes
+  szip/         where source code for optional LZMA and PPMd compression goes
+
   man/          nroff man-page sources for the main user documentation
   proginfo/     programming docs, additional technical info, contributor list
 
-Files marked "required*" are also needed to compile fUnZip.  The normal
+Files marked "required" are also needed to compile fUnZip.  The normal
 UnZip makefile targets now make both UnZipSFX and fUnZip, except in a few
 cases; ZipInfo is now incorporated into UnZip (see zipinfo.txt for usage).

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -442,7 +442,7 @@ int mapname(__G__ renamed)
         int fd;
 
         if (QCOND2)
-            Info(slide, 0, ((char *)slide, "  labelling: %s\n",
+            Info(slide, 0, ((char *)slide, "  labeling: %s\n",
               FnFilter1(G.filename)));
         if ((fd = _dos_newfile(G.filename, G.pInfo->file_attr)) < 0) {
             Info(slide, 1, ((char *)slide,

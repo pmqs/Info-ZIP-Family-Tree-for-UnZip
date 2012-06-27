@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -90,7 +90,7 @@ static ZCONST char Far WarnDirTraversSkip[] =
 static ZCONST char Far Creating[] = "   creating: %s\n";
 static ZCONST char Far ConversionFailed[] =
   "mapname:  conversion of %s failed\n";
-static ZCONST char Far Labelling[] = "labelling %c: %-22s\n";
+static ZCONST char Far Labeling[] = "labeling %c: %-22s\n";
 static ZCONST char Far ErrSetVolLabel[] =
   "mapname:  error setting volume label\n";
 static ZCONST char Far PathTooLong[] = "checkdir error:  path too long: %s\n";
@@ -724,7 +724,7 @@ int mapname(__G__ renamed)
 
     if (G.pInfo->vollabel) {    /* set the volume label now */
         if (QCOND2)
-            Info(slide, 0, ((char *)slide, LoadFarString(Labelling),
+            Info(slide, 0, ((char *)slide, LoadFarString(Labeling),
               (nLabelDrive + 'a' - 1),
               FnFilter1(G.filename)));
         if (volumelabel(G.filename)) {
@@ -1364,7 +1364,7 @@ static int volumelabel(newlabel)
       (unsigned int)(sregs.ds),
       (unsigned int)(WREGS(regs,dx))));
     Trace((stderr, "&fcb = %lx, pfcb = %lx\n", (ulg)&fcb, (ulg)pfcb));
-    Trace((stderr, "(2nd check:  labelling drive %c:)\n", pfcb->drive-1+'A'));
+    Trace((stderr, "(2nd check:  labeling drive %c:)\n", pfcb->drive-1+'A'));
     if (pfcb->flag != fcb.flag)
         fprintf(stderr, "error:  pfcb->flag = %d, fcb.flag = %d\n",
           pfcb->flag, fcb.flag);
@@ -1393,7 +1393,7 @@ static int volumelabel(newlabel)
     F_intdosx(&regs, &regs, &sregs);
 
 /*---------------------------------------------------------------------------
-    If not previously labelled, write a new label.  Otherwise just rename,
+    If not previously labeled, write a new label.  Otherwise just rename,
     since MS-DOS 2.x has a bug that damages the FAT when the old label is
     deleted.
   ---------------------------------------------------------------------------*/

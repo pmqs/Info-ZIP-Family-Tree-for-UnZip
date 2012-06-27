@@ -49,7 +49,7 @@ Also in August I added the same file I/O improvements for UNZIP (5.33f)
 
 I then added the ability to update the unzipped files last modified and last
 open timestamps - this required help from TNSC to allow me access to the
-priviliged procedure call.  Also can give the files back to the original user
+privileged procedure call.  Also can give the files back to the original user
 by use of the '-X' flag.
 
 At the end of 1998 I was given the go ahead to add the zipping of Enscribe

@@ -419,7 +419,7 @@ beta release. The final release will come out in January 1999.
 12) ADD: {Unzip} following switches were added:
        -J     [MacOS  only] ignore mac extra info. All macintosh
               info are not restored. Datafork and resource-fork
-              are restored separatly.
+              are restored separately.
 
        -i     [MacOS  only] ignore filenames stored in mac extra
               field. Use the most compatible filename stored in

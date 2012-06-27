@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -171,7 +171,7 @@ ulg LG(uch* p) { return ((ulg)(SH(p)) | ((ulg)(SH((p)+2)) << 16)); }
 
 /* Function prototypes */
 static void err OF((int, char *));
-#if (defined(USE_DEFLATE64) && defined(__16BIT__))
+#if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
 static int partflush OF((uch *rawbuf, unsigned w));
 #endif
 int main OF((int, char **));
@@ -229,7 +229,7 @@ char *m;
 }
 
 
-#if (defined(USE_DEFLATE64) && defined(__16BIT__))
+#if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
 
 static int partflush(rawbuf, w)
 uch *rawbuf;     /* start of buffer area to flush */
@@ -264,7 +264,7 @@ ulg w;          /* number of bytes to flush */
     return partflush(rawbuf, (extent)w);
 } /* end function flush() */
 
-#else /* !(USE_DEFLATE64 && __16BIT__) */
+#else /* !(DEFLATE64_SUPPORT && __16BIT__) */
 
 int flush(w)    /* used by inflate.c (FLUSH macro) */
 ulg w;          /* number of bytes to flush */
@@ -276,7 +276,7 @@ ulg w;          /* number of bytes to flush */
   return 0;
 }
 
-#endif /* ?(USE_DEFLATE64 && __16BIT__) */
+#endif /* ?(DEFLATE64_SUPPORT && __16BIT__) */
 
 
 int main(argc, argv)
@@ -389,7 +389,7 @@ char **argv;
     switch (method = SH(h + LOCHOW)) {
       case STORED:
       case DEFLATED:
-#ifdef USE_DEFLATE64
+#ifdef DEFLATE64_SUPPORT
       case ENHDEFLATED:
 #endif
         break;
@@ -494,7 +494,7 @@ char **argv;
         zdecode(c);
 #endif
       *G.outptr++ = (uch)c;
-#if (defined(USE_DEFLATE64) && defined(__16BIT__))
+#if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
       if (++G.outcnt == (WSIZE>>1))     /* do FlushOutput() */
 #else
       if (++G.outcnt == WSIZE)    /* do FlushOutput() */

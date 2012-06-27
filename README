@@ -1,12 +1,11 @@
 This file to be updated for UnZip 6.10.
 
-This is the README file for UnZip 6.10b, the 10 December 2010 public beta
+This is the README file for UnZip 6.10c, the xx August 2011 public beta
 release of the Info-ZIP group's portable UnZip zipfile-extraction program
 (and related utilities).
 
-unzip610b.zip       portable UnZip, version 6.1, source code distribution
-unzip610b.tar.Z     same as above, but compress'd tar format
-unzip610b.tar.gz    same as above, but gzip'd tar format
+unzip610c.zip       UnZip, version 6.1, source code distribution
+unzip610c.tgz       same as above, but tar+gzip format
 
 __________________________________________________________________________
 
@@ -55,7 +54,13 @@ vms/descrip.mms.
 
 CHANGES AND NEW FEATURES
 ------------------------
-UnZip 6.10b currently adds the following features:
+UnZip 6.10c adds the following features:
+
+   - Optional support for WinZip-compatible AES encryption (compression
+     method 99).
+   - Optional support for compression methods LZMA (14) and PPMd (98).
+
+UnZip 6.10b added the following features:
 
    - Implement Windows full Unicode support.
    - Add -I and -O options for setting ISO and OEM character sets,
@@ -149,7 +154,7 @@ The most important changes are:
    - fixed false "uncompressed size mismatch" messages when extracting
      encrypted archive entries
    - do not restore SUID/SGID/Tacky attribute bits on Unix (BeOS, AtheOS)
-     unless explicitely requested by new "-K" command line qualifier
+     unless explicitly requested by new "-K" command line qualifier
    - optional support for "-W" qualifier to modify the pattern matching syntax
      (with -W: "*" stops at directory delimiter, "**" matches unlimited)
    - prevent buffer overflow caused by bogus extra-long Zipfile specification
@@ -159,7 +164,7 @@ The most important changes are:
      explanation of their meanings and interactions to the windll documentation
 
 The 5.51 maintenance release adds a command-line CE port, intended for
-batch processing. With the integration of this port, the pUnZip port
+batch  processing.  With the integration of this port, the pUnZip port
 has been revised and "revitalized".
 The most important changes for the general public are a number of
 bug fixes, mostly related to security issues:
@@ -210,11 +215,11 @@ The 5.41 maintenance release adds another new port and fixes some bugs.
    - attribute handling of VMS port was broken in UnZip 5.4
    - decryption support integrated in the main source distribution
 
-The 5.4 release adds new ports, again. Other important items are changes
+The 5.4 release adds new ports, again.  Other important items are changes
 to the listing format, new supplemental features and several bug fixes
 (especially concerning time-stamp handling...):
 
-   - new IBM OS/390 port, a UNIX derivate (POSIX with EBCDIC charset)
+   - new IBM OS/390 port, a UNIX derivative (POSIX with EBCDIC charset)
    - complete revision of the MacOS port
    - changed listing formats to enlarge the file size fields for more digits
    - added capability to restore directory attributes on MSDOS, OS/2, WIN32
@@ -257,13 +262,6 @@ features:
 
 IN THE WORKS
 ------------
-
-It's likely that AES strong encryption will be implemented in both Zip and
-UnZip shortly.  Work has already started in Zip 3.1d and should be started
-in UnZip 6.1c.
-
-Also on the short list is implementing support for the LZMA and maybe PPMd
-compression methods.
 
 What is (still!) not added is multi-part archive support (a.k.a. "diskette
 spanning", though we really mean archive splitting and not the old diskette
@@ -365,7 +363,7 @@ If you'd like to keep up to date with our UnZip (and companion Zip utility)
 development, join the ranks of beta testers, add your own thoughts and
 contributions, or simply lurk, you may join one of our mailing lists.
 There is an announcements-only list (Info-ZIP-announce) and a general
-discussion/testing list (Info-ZIP). You must be a subscriber to post, and
+discussion/testing list (Info-ZIP).  You must be a subscriber to post, and
 you can subscribe via the links on our Frequently Asked Questions page:
 
         http://www.info-zip.org/pub/infozip/FAQ.html#lists
@@ -393,7 +391,7 @@ Find us on SourceForge at:
         https://sourceforge.net/projects/infozip/
 
 There is also a closed mailing list for internal discussions of our core
-development team. This list is now kept secret to prevent us from being
+development team.  This list is now kept secret to prevent us from being
 flooded with spam messages.
 
 
