@@ -1504,7 +1504,7 @@
 #define o_VALUE_LIST      3   /* this option takes a list of values */
 #define o_ONE_CHAR_VALUE  4   /* next char is value (does not end short opt string) */
 #define o_NUMBER_VALUE    5   /* value is integer (does not end short opt string) */
-
+#define o_OPT_EQ_VALUE    6   /* value optional, but "=" required for one. */
 
 /* negatable - a dash following the option (but before any value) sets negated. */
 #define o_NOT_NEGATABLE   0   /* trailing '-' to negate either starts value or generates error */

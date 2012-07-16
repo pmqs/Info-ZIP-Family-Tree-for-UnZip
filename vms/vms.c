@@ -4654,17 +4654,9 @@ int mapname(__G__ renamed)
        When pointer exceeds last_slash, then directory segments are
        done, and only the name (with version?) remains.
     */
-
     *pathcomp = '\0';           /* Initialize translation buffer. */
-    last_slash = strrchr(G.filename, '/');      /* Find last slash. */
-
-    if (uO.jflag)               /* If junking directories, */
-        cp = last_slash;        /* start at (will be after) the last slash. */
-
-    if (cp == NULL)             /* If no '/', or keeping directories, */
-        cp = G.filename;        /* start at the front of the pathname. */
-    else                        /* Else, with directories to junk, */
-        ++cp;                   /* start after the last slash. */
+    last_slash = strrchr( G.filename, '/');     /* Find last slash. */
+    cp = G.jdir_filename;       /* Start at beginning of non-junked path. */
 
     /* Loop through the directory segments. */
     while (cp < last_slash)

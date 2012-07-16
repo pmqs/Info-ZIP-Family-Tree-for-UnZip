@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -103,7 +103,9 @@ typedef struct stat z_stat;
 #ifdef __CYGWIN__
 #  include <unistd.h>
 #  define DIRENT
-#  define HAVE_TERMIOS_H
+#  ifndef HAVE_TERMIOS_H
+#    define HAVE_TERMIOS_H
+#  endif
 #  ifndef timezone
 #    define timezone _timezone
 #  endif

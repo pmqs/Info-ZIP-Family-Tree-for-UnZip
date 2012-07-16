@@ -1,4 +1,4 @@
-#                                               16 June 2012.  SMS.
+#                                               10 July 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Description File.
 #
@@ -109,9 +109,11 @@
 #
 #    CLEAN_TEST deletes all test directories.
 #
-#    TEST       Runs a brief test.
+#    HELP       generates HELP files.
 #
-#    TEST_PPMD  Runs a brief PPMd test.
+#    TEST       runs a brief test.
+#
+#    TEST_PPMD  runs a brief PPMd test.
 #
 # Example commands:
 #
@@ -276,6 +278,11 @@ CLEAN_TEST :
 	 delete [.test_dir_*]*.*;*
 	if (f$search( "test_dir_*.dir;*") .nes. "") then -
 	 delete test_dir_*.dir;*
+
+# HELP target.  Generate the HELP files.
+
+HELP : $(UNZIP_HELP)
+        @ write sys$output "Done."
 
 # TEST target.  Runs a test procedure.
 

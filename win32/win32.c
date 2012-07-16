@@ -2185,12 +2185,7 @@ int mapname(__G__ renamed)
     *pathcomp = '\0';           /* initialize translation buffer */
     pp = pathcomp;              /* point to translation buffer */
     if (!renamed) {             /* cp already set if renamed */
-        if (uO.jflag)           /* junking directories */
-            cp = (char *)MBSRCHR(G.filename, '/');
-        if (cp == NULL)         /* no '/' or not junking dirs */
-            cp = G.filename;    /* point to internal zipfile-member pathname */
-        else
-            ++cp;               /* point to start of last component of path */
+        cp = G.jdir_filename;   /* Start at beginning of non-junked path. */
     }
 
 /*---------------------------------------------------------------------------
@@ -2467,15 +2462,10 @@ int mapnamew(__G__ renamed)
     if ((error = checkdirw(__G__ pathcompw, INIT)) != 0)    /* init path buffer */
         return error;           /* ...unless no mem or vol label on hard disk */
 
-    *pathcompw = '\0';           /* initialize translation buffer */
-    ppw = pathcompw;              /* point to translation buffer */
+    *pathcompw = '\0';          /* initialize translation buffer */
+    ppw = pathcompw;            /* point to translation buffer */
     if (!renamed) {             /* cp already set if renamed */
-        if (uO.jflag)           /* junking directories */
-            cpw = wcschr(G.unipath_widefilename, '/');
-        if (cpw == NULL)         /* no '/' or not junking dirs */
-            cpw = G.unipath_widefilename;    /* point to internal zipfile-member pathname */
-        else
-            ++cpw;               /* point to start of last component of path */
+        cpw = G.unipath_jdir_widefilename;  /* Beginning of non-junked path. */
     }
 
 /*---------------------------------------------------------------------------

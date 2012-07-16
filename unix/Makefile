@@ -1,17 +1,17 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo            Last update: 21 Jun 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo            Last update: 04 Jul 2012
 #==============================================================================
 
 #==============================================================================
 #
 # INSTRUCTIONS (such as they are):
 #
-# "make -f unix/Makefile generic"         Make UnZip on most systems using "cc"
+# "make -f unix/Makefile generic"         Make UnZip on most systems using cc.
 #
-# "make -f unix/Makefile generic CC=gcc"  Make UnZip on most systems using "gcc"
+# "make -f unix/Makefile generic CC=gcc"  Make UnZip on most systems using gcc.
 #
-# "make -f unix/Makefile list"            Lists all supported targets
+# "make -f unix/Makefile list"            List all supported targets.
 #
 # "make -f unix/Makefile help"            Limited advice on which targets to
 #                                         try if problems occur.
@@ -150,20 +150,21 @@ help:
 	@echo '   make -f unix/Makefile list'
 	@echo ''
 	@echo 'Optional overrides on "make" command (or environment vars):'
-	@echo '    "CC=gcc"          Use "gcc" instead of "cc" for C compiler'
-	@echo '    "AES_WG=1"        Add AES encryption (WinZip/Gladman)'
-	@echo '    "LZMA=1"          Add LZMA compression'
-	@echo '    "PPMD=1"          Add PPMd compression'
-	@echo '    "IZ_BZIP2=bz2dir" Add BZIP2 compression from dir bz2dir'
-	@echo '    "IZ_ZLIB=zdir"    Use ZLIB from dir zdir for deflate'
-	@echo '    "LOCAL_UNZIP=opts" Add C compiler options and macro defines'
-	@echo '    "LIST=1"          Generate C compiler and linker listing'
+	@echo '    "AES_WG=1"        Add AES encryption (WinZip/Gladman).'
+	@echo '    "CC=gcc"          Use "gcc" instead of "cc" for C compiler.'
+	@echo '    "IZ_BZIP2=bz2dir" Add BZIP2 compression from dir bz2dir.'
+	@echo '    "IZ_ZLIB=zdir"    Use ZLIB from dir zdir for deflate.'
+	@echo '    "LIBUNZIP=1"      Create UnZip object library.'
+	@echo '    "LIST=1"          Generate C compiler and linker listing.'
+	@echo '    "LOCAL_UNZIP=opts" Add C compiler options, "opts".'
+	@echo '    "LZMA=1"          Add LZMA compression.'
+	@echo '    "PPMD=1"          Add PPMd compression.'
 	@echo ''
 	@echo 'Examples:'
 	@echo '   make -f unix/Makefile generic'
-	@echo '    - make UnZip programs using cc'
+	@echo '    - make UnZip programs using cc.'
 	@echo '   make -f unix/Makefile generic CC=gcc AES_WG=1'
-	@echo '    - make UnZip programs using gcc, with AES_WG encryption'
+	@echo '    - make UnZip programs using gcc, with AES_WG encryption.'
 	@echo ''
 	@echo 'First try "make -f unix/Makefile generic" (to use "cc")'
 	@echo '(or "make -f unix/Makefile generic CC=gcc" (to use "gcc")),'
@@ -1581,8 +1582,6 @@ linux: unix_make
 	$(MAKE) unzips CC=gcc LD=gcc AS=gcc \
          CFLAGS="-O3 -Wall -DASM_CRC" \
          AF="-Di386 $(AF)" OSDEP_OS="./crc_gcc.o"
-# GRR:  this echo is pointless; if user gets this far, no difference to install
-# @echo 'Be sure to use the install_asm target rather than the install target'
 
 linux_asm: linux
 

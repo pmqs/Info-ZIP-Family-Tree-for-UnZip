@@ -313,7 +313,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (15 Jun 2012):
+6.10c09 (14 Jul 2012):
  - Add optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -339,6 +339,18 @@ Features added (or removed):
    "configure" script now checks for chmod() and chown(), and unix.c now
    honors the resulting NO_CHMOD and NO_CHOWN macros.  (unix/configure,
    unix/unix.c) [SMS]
+ - Extended the -j/--junk-dirs option to accept an optional value, the
+   number of directory levels to discard.  Moved code to handle
+   directory junking out of the system-specific mapname[w]() functions
+   into the common extract.c:extract_or_test_entrylist[w]().  Not
+   implemented on Tandem.  Windows DLL sets uO.jflag from lpDCL->ndflag
+   as well as it can, but needs more than one bit to use the extended
+   capability.  (extract.c, globals.h, unzip.c, unzpriv.h, acorn/acorn.c,
+   amiga/amiga.c, aosvs/aosvs.c, atari/atari.c, atheos/atheos.c,
+   beos/beos.c, flexos/flexos.c, human68k/human68k.c,
+   macos/source/macos.c, msdos/msdos.c, netware/netware.c, os2/os2.c,
+   qdos/qdos.c, theos/theos.c, unix/unix.c, vms/vms.c, win32/win32.c,
+   windll/windll.c) [SMS]
 
 
 
@@ -743,7 +755,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (21 Jun 2012):
+6.10c09 (14 Jul 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.  (extract.c,
    unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block confused
@@ -848,7 +860,20 @@ Bugs fixed:
  - UnZipSFX could fail (SEGV) on systems with backslash ("\") file path
    separators (DOS, Windows, ...), if a list of member names to be
    extracted was specified on the command line.  (unzip.c) [SMS]
-
+ - Added a #ifndef condition to avoid redefining the C macro
+   HAVE_TERMIOS_H on Cygwin.  (unix/unxcfg.h) [SMS]
+ - Fixed assembler testing in configure script.  Defining NO_ASM or
+   NO_ASM_CRC in LOCAL_UNZIP disables use of assembly code for CRC.
+   (unix/configure) [SMS]
+ - Added Linux Exec Shield .section directive to assembly code, as in
+   Zip.  (crc_i386.S) [SMS]
+ - Added a check in DLL unzip() for proper NULL termination of argv[].
+   (unzip.c) [SMS]
+ - Revised VMS builders to make it easier to generate the help files
+   (only).  (vms/build_unzip.com, vms/descrip.mms) [SMS]
+ - Changed to avoid conflict between a user definition of the C macro
+   NO_EXCEPT_SIGNALS and an automatic one.  (unzip.c) [SMS]
+ - Disambiguated some option-related error messages.  (unzip.c) [SMS]
 ==================
 
 These changes occurred in beta versions 6.10a to 6.10.  This list may have

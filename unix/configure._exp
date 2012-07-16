@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   06 Jul 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   27 Apr 2012
 #==============================================================================
 
 #==============================================================================
@@ -94,9 +94,7 @@
 #    LFLAGS2     - Linker flag initial values (after output file spec)
 #
 #    OSDEP_H     - OS-dependent C header file names
-#    OSDEP_OCF   - OS-dependent C object file names, funzip
-#    OSDEP_OCS   - OS-dependent C object file names, unzipsfx
-#    OSDEP_OCU   - OS-dependent C object file names, unzip
+#    OSDEP_OC    - OS-dependent C object file names
 #    OSDEP_OS    - OS-dependent Assembler object file names
 #
 #    PGMEXT      - Binary program file extension
@@ -108,7 +106,6 @@
 #    AES_WG      - Enable AES encryption (WinZip/Gladman)
 #    IZ_BZIP2    - Enable BZIP2 compression
 #    IZ_ZLIB     - Use ZLIB for deflate compression
-#    LIBUNZIP    - Build UnZip object library
 #    LZMA        - Enable LZMA compression
 #    PPMD        - Enable PPMd compression
 #
@@ -140,13 +137,10 @@
 #  LIB_BZ      - BZIP2 compression build dependencies
 #  LIB_LZMA    - LZMA compression build dependencies
 #  LIB_PPMD    - PPMd compression build dependencies
-#  LIB_UNZIP   - UnZip object library
 #  LIB_Z       - ZLIB compression build dependencies
 #  MK_BZ       - BZIP2 compression build makefile
 #  OSDEP_H     - OS-dependent C header file names
-#  OSDEP_OCF   - OS-dependent C object file names, funzip
-#  OSDEP_OCS   - OS-dependent C object file names, unzipsfx
-#  OSDEP_OCU   - OS-dependent C object file names, unzip
+#  OSDEP_OC    - OS-dependent C object file names
 #  OSDEP_OS    - OS-dependent Assembler object file names
 #  PGMEXT      - Binary program file extension
 #  DLLEXT      - Binary program DLL (.so) file extension
@@ -167,11 +161,10 @@ echo ''
 echo 'Generating system-dependent flags...'
 
 # Evaluate only variables in this list.  Complain about others, but continue.
-valid_vars1='|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CPP|DLLEXT|IZ_BZIP2|IZ_ZLIB'
-valid_vars2='|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP|LZMA'
-valid_vars3='|OSDEP_H|OSDEP_OCF|OSDEP_OCS|OSDEP_OCU|OSDEP_OS'
-valid_vars4='|PGMEXT|PPMD|PROD|RANLIB|'
-valid_vars="${valid_vars1}${valid_vars2}${valid_vars3}${valid_vars4}"
+valid_vars1="|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CPP|DLLEXT|IZ_BZIP2|IZ_ZLIB"
+valid_vars2="|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP|LZMA"
+valid_vars3="|OSDEP_H|OSDEP_OC|OSDEP_OS|PGMEXT|PPMD|PROD|RANLIB|"
+valid_vars="${valid_vars1}${valid_vars2}${valid_vars3}"
 
 argc=$#
 while [ ${argc} -gt 0 ]; do
@@ -249,7 +242,6 @@ LIB_AES_WG=''                              # AES (WinZip/Gladman) encryption
 LIB_BZ=''                                  # BZIP2 compression
 LIB_LZMA=''                                # LZMA compression
 LIB_PPMD=''                                # PPMd compression
-LIB_UNZIP=''                               # UnZip object library
 LIB_Z=''                                   # ZLIB compression
 
 # Build makefiles.
@@ -258,9 +250,7 @@ MK_BZ='Makefile'                           # BZIP2 compression
 # OS-dependent files.
 # Defaults to unix files, customized based on PORT and tests.
 OSDEP_H=${OSDEP_H:-'unix/unxcfg.h'}        # C header file names
-OSDEP_OCF=${OSDEP_OC:-}                    # C object file names, funzip
-OSDEP_OCS=${OSDEP_OC:-"${PROD}/unix.o"}    # C object file names, unzipsfx
-OSDEP_OCU=${OSDEP_OC:-"${PROD}/unix.o"}    # C object file names, unzip
+OSDEP_OC=${OSDEP_OC:-"${PROD}/unix.o"}     # C object file names
 OSDEP_OS=${OSDEP_OS:-}                     # Assembler object file names
 
 # OS-dependent file extensions.
@@ -511,7 +501,6 @@ _EOF_
   status=$?
   if [ $status -eq 0 ]; then
     CFLAGS_OPT='-O3'
-    PORT='mingw64'
     echo "  MinGW 64 ($CFLAGS_OPT)"
   fi
 fi
@@ -532,7 +521,6 @@ _EOF_
   status=$?
   if [ $status -eq 0 ]; then
     CFLAGS_OPT='-O3'
-    PORT='mingw32'
     echo "  MinGW 32 ($CFLAGS_OPT)"
   fi
 fi
@@ -1040,80 +1028,63 @@ if [ "${PORT}" = "unix" ]; then
   echo "Standard Unix target"
   CFLAGS="${CFLAGS} -DUNIX"
   CFLAGS_BZ="${CFLAGS_BZ} -DUNIX"
+
+  # Always use old resource fork suffix on PowerPC, new suffix on Intel.
+  if [ "${UNAME_S}" = 'Darwin' -a "${UNAME_P}" != 'powerpc' ]; then
+    CFLAGS="${CFLAGS} -DAPPLE_NFRSRC"
+  fi
 else
   echo "Set build configuration for target \"${PORT}\" port"
   case "${PORT}" in
-     unix )
+     'unix' )
         # UNIX values set in defaults, customized based on tests.
         ;;
 
-     mingw* )
-        CFLAGS="${CFLAGS} -DWIN32"
-        CFLAGS_BZ="${CFLAGS_BZ} -D_WIN32"
-        OSDEP_H='win32/nt.h win32/rsxntwin.h win32/w32cfg.h'
-        OSDEP_OCF="${PROD}/win32.o ${PROD}/win32i64.o"
-        OSDEP_OCS="${PROD}/nt.o ${PROD}/win32.o ${PROD}/win32i64.o"
-        OSDEP_OCU="${PROD}/nt.o ${PROD}/win32.o ${PROD}/win32i64.o"
-        OSDEP_OS=''
-        PGMEXT='.exe'
-        DLLEXT='.dll'
-        ;;
-
-     msdos )
+     'msdos' )
         CFLAGS="${CFLAGS} -DMSDOS"
         CFLAGS_BZ="${CFLAGS_BZ} -DMSDOS"
         OSDEP_H='msdos/doscfg.h'
-        OSDEP_OCF="${PROD}/msdos.o"
-        OSDEP_OCS="${PROD}/msdos.o"
-        OSDEP_OCU="${PROD}/msdos.o"
+        OSDEP_OC="${PROD}/msdos.o"
         OSDEP_OS=''
         PGMEXT='.EXE'
         DLLEXT='.DLL'
         ;;
 
-     os2 )
+     'os2' )
         CFLAGS="${CFLAGS} -DOS2"
         CFLAGS_BZ="${CFLAGS_BZ} -DOS2"
         OSDEP_H='os2/os2acl.h  os2/os2cfg.h  os2/os2data.h'
-        OSDEP_OCF="${PROD}/os2.o"
-        OSDEP_OCS="${PROD}/os2.o"
-        OSDEP_OCU="${PROD}/os2.o"
+        OSDEP_OC="${PROD}/os2.o"
         OSDEP_OS=''
         PGMEXT='.EXE'
         DLLEXT='.DLL'
         ;;
 
-     qdos )
+     'qdos' )
         CFLAGS="${CFLAGS} -DQDOS"
         CFLAGS_BZ="${CFLAGS_BZ} -DQDOS"
         OSDEP_H='qdos/izqdos.h'
-        OSDEP_OCF="${PROD}/qdos.o ${PROD}/qfileio.o"
-        OSDEP_OCS="${PROD}/qdos.o ${PROD}/qfileio.o"
-        OSDEP_OCU="${PROD}/qdos.o ${PROD}/qfileio.o"
+        OSDEP_OC="${PROD}/qdos.o ${PROD}/qfileio.o"
         OSDEP_OS=''
         PGMEXT=''
         DLLEXT=''
         ;;
 
-     zos )
+     'zos' )
         CFLAGS="${CFLAGS} -DMVS"
         CFLAGS_BZ="${CFLAGS_BZ} -DMVS"
         OSDEP_H='zos/vmmvs.h'
-        OSDEP_OCF="${PROD}/vmmvs.o"
-        OSDEP_OCS="${PROD}/vmmvs.o"
-        OSDEP_OCU="${PROD}/vmmvs.o"
+        OSDEP_OC="${PROD}/vmmvs.o"
         OSDEP_OS=''
         PGMEXT=''
         DLLEXT=''
         ;;
 
-     zvm )
+     'zvm' )
         CFLAGS="${CFLAGS} -DVM_CMS"
         CFLAGS_BZ="${CFLAGS_BZ} -DVM_CMS"
         OSDEP_H='zvm/cstat.h zos/vmmvs.h'
-        OSDEP_OCF="${PROD}/vmmvs.o"
-        OSDEP_OCS="${PROD}/vmmvs.o"
-        OSDEP_OCU="${PROD}/vmmvs.o"
+        OSDEP_OC="${PROD}/vmmvs.o"
         OSDEP_OS=''
         PGMEXT=''
         DLLEXT=''
@@ -1171,42 +1142,26 @@ case "${UNAME_S}" in
    *  )
       # Other UNIX systems.
       # FIX_ME: Need to customize for ports.
-      echo 'Check if we can (and want to) use assembly code for CRC'
-      asm_crc=0
-      # CRC.  Fail intentionally, if NO_ASM or NO_ASM_CRC is defined.
-      cat > conftest.S << _EOF_
-#if defined( NO_ASM) || defined( NO_ASM_CRC)
-    bad code
-#else
-# include "crc_i386.S"
-#endif
-_EOF_
-      ${CPP_TST} ${CFLAGS} conftest.S > _crc_i386.s 2> /dev/null
-      status=$?
-      if [ $status -eq 0 -a -s _crc_i386.s ]; then
-        grep error _crc_i386.s > /dev/null
-        status=$?
-        if [ $status -ne 0 ]; then
-          $CC -c _crc_i386.s > /dev/null 2> /dev/null
+      echo 'Check if we can use assembler CRC code'
+      if eval "$CPP_TST crc_i386.S > _crc_i386.s 2>/dev/null"; then
+        if [ -s _crc_i386.s ]; then
+          :
+        elif [ grep error < _crc_i386.s >/dev/null ]; then
+          :
+        elif eval "$CC -c _crc_i386.s >/dev/null 2>/dev/null" && [ -f _crc_i386.o ]; then
+          echo '-- Using assembler CRC code'
+          CFLAGS_TST="${CFLAGS_TST} -DASM_CRC"
+          OSDEP_OS="${OSDEP_OS} ${PROD}/crc_gcc.o"
+
+          echo 'Check if compiler generates underlines (CPP, for .S)'
+          echo "int foo() { return 0;}" > conftest.c
+          $AS conftest.c >/dev/null 2>/dev/null
+          nm conftest.o | grep "(^|[^_])foo" >/dev/null 2>/dev/null
           status=$?
-          if [ $status -eq 0 -a -f _crc_i386.o ]; then
-            echo '-- Using assembly code for CRC'
-            asm_crc=1
-            CFLAGS_TST="${CFLAGS_TST} -DASM_CRC"
-            OSDEP_OS="${OSDEP_OS} ${PROD}/crc_gcc.o"
-          fi
+          [ $status -eq 0 ] && CPP="${CPP} -DNO_UNDERLINE"
         fi
       fi
-      # If using assembler for anything, then check for "_" name prefix.
-      if [ $asm_crc -ne 0 ]; then
-        echo 'Check if compiler generates underlines (CPP, for .S)'
-        echo "int foo() { return 0;}" > conftest.c
-        $AS conftest.c >/dev/null 2>/dev/null
-        nm conftest.o | grep "(^|[^_])foo" >/dev/null 2>/dev/null
-        status=$?
-        [ $status -eq 0 ] && CPP="${CPP} -DNO_UNDERLINE"
-      fi
-      rm -f conftest.S _crc_i386.s _crc_i386.o
+      rm -f _crc_i386.s _crc_i386.o
       ;;
 esac
 
@@ -1264,10 +1219,10 @@ if [ -n "${LZMA}" ]; then
     echo "  Check for LZMA header file in szip/"
     if [ -f "szip/LzmaDec.h" ]; then
       cat > conftest.c << _EOF_
-#include "szip/LzmaDec.h"
 int main()
 {
    typedef int zoff_t;
+#include "szip/LzmaDec.h"
 #ifndef LZMA_SUPPORT
    forget it
 #endif
@@ -1309,10 +1264,10 @@ if [ -n "${PPMD}" ]; then
     echo "  Check for PPMd header file in szip/"
     if [ -f "szip/Ppmd.h" ]; then
       cat > conftest.c << _EOF_
-#include "szip/Ppmd.h"
 int main()
 {
    typedef int zoff_t;
+#include "szip/Ppmd.h"
 #ifndef PPMD_SUPPORT
    forget it
 #endif
@@ -1549,15 +1504,6 @@ _EOF_
   fi
 else
   echo "ZLIB not used"
-fi
-
-#------------------------------------------------------------------------------
-# H') Configure UnZip object library.
-#------------------------------------------------------------------------------
-# UnZip object library.  (User must request: "LIBUNZIP=1".)
-if [ -n "${LIBUNZIP}" ]; then
-  LIB_UNZIP="libizunzip.a"
-  echo "-- Building UnZip object library (${LIB_UNZIP})"
 fi
 
 #------------------------------------------------------------------------------
@@ -2006,8 +1952,8 @@ status=$?
 
 # Check for missing functions.
 # - add NO_'function_name' to flags if missing.
-FUNCS='chmod chown fchmod fchown lchown mktemp mktime mkstemp'
-FUNCS="${FUNCS} nl_langinfo rename rmdir strchr strrchr"
+FUNCS='fchmod fchown lchown mktemp mktime mkstemp nl_langinfo rename rmdir'
+FUNCS="${FUNCS} strchr strrchr"
 #echo "Check for missing functions"
 for func in $FUNCS
 do
@@ -2347,21 +2293,6 @@ fi
 
 
 #------------------------------------------------------------------------------
-# M) Additional compiler command options.
-#------------------------------------------------------------------------------
-
-# Check validity of -Wno-format-security (for modern GCC).
-echo 'Check -Wno-format-security'
-cat > conftest.c << _EOF_
-int main() { return 0; }
-_EOF_
-CF_TEST='-Wno-format-security'
-${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c >/dev/null 2>/dev/null
-status=$?
-[ $status -eq 0 ] && CFLAGS_TST="${CFLAGS_TST} ${CF_TEST}"
-
-
-#------------------------------------------------------------------------------
 # Finalize the configuration values.
 #------------------------------------------------------------------------------
 
@@ -2415,13 +2346,10 @@ echo "CC=\"${CC}\" CF=\"${CFLAGS}\"" \
      "LIB_BZ=\"${LIB_BZ}\"" \
      "LIB_LZMA=\"${LIB_LZMA}\"" \
      "LIB_PPMD=\"${LIB_PPMD}\"" \
-     "LIB_UNZIP=\"${LIB_UNZIP}\"" \
      "LIB_Z=\"${LIB_Z}\"" \
      "MK_BZ=\"${MK_BZ}\"" \
      "OSDEP_H=\"${OSDEP_H}\"" \
-     "OSDEP_OCF=\"${OSDEP_OCF}\"" \
-     "OSDEP_OCS=\"${OSDEP_OCS}\"" \
-     "OSDEP_OCU=\"${OSDEP_OCU}\"" \
+     "OSDEP_OC=\"${OSDEP_OC}\"" \
      "OSDEP_OS=\"${OSDEP_OS}\"" \
      "PGMEXT=\"${PGMEXT}\" DLLEXT=\"${DLLEXT}\"" \
      "BINDIR=\"${BINDIR}\" BINPERMS=\"${BINPERMS}\"" \

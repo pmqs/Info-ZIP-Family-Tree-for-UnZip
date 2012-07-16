@@ -2,13 +2,14 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-06-16  SMS.
+$!     Last revised:  2012-07-10  SMS.
 $!
 $!     Command arguments:
 $!     - suppress C compilation (re-link): "NOCOMPILE"
 $!     - suppress linking executables: "NOLINK"
 $!     - suppress help file processing: "NOHELP"
 $!     - suppress message file processing: "NOMSG"
+$!     - define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
 $!     - select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - select AES_WG encryption support: "AES_WG"
 $!       By default, the SFX programs are built without AES_WG support.
@@ -147,6 +148,7 @@ $ MAKE_EXE = 1
 $ MAKE_HELP = 1
 $ MAKE_MSG = 1
 $ MAKE_OBJ = 1
+$ MAKE_SYM = 0
 $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
 $ PPMD = 0
@@ -239,7 +241,7 @@ $         MAKE_OBJ = 0
 $         goto argloop_end
 $     endif
 $!
-$     if (curr_arg .eqs. "NOEXE")
+$     if (curr_arg .eqs. "NOLINK")
 $     then
 $         MAKE_EXE = 0
 $         goto argloop_end
@@ -260,6 +262,12 @@ $!
 $     if (f$extract( 0, 4, curr_arg) .eqs. "PPMD")
 $     then
 $         PPMD = 1
+$         goto argloop_end
+$     endif
+$!
+$     if (curr_arg .eqs. "SYMBOLS")
+$     then
+$         MAKE_SYM = 1
 $         goto argloop_end
 $     endif
 $!
@@ -1110,13 +1118,18 @@ $ endif
 $!
 $!----------------------------- Symbols section ------------------------------
 $!
-$ there = here- "]"+ ".''dest']"
+$ if (MAKE_SYM)
+$ then
 $!
-$! Define the foreign command symbols.  Similar commands may be useful
-$! in SYS$MANAGER:SYLOGIN.COM and/or users' LOGIN.COM.
+$     there = here- "]"+ ".''dest']"
 $!
-$ unzip   == "$''there'''unzexec'.EXE"
-$ zipinfo == "$''there'''unzexec'.EXE ""-Z"""
+$!    Define the foreign command symbols.  Similar commands may be useful
+$!    in SYS$MANAGER:SYLOGIN.COM and/or users' LOGIN.COM.
+$!
+$     unzip   == "$''there'''unzexec'.EXE"
+$     zipinfo == "$''there'''unzexec'.EXE ""-Z"""
+$!
+$ endif
 $!
 $! Deassign the temporary process logical names, restore the original
 $! default directory, and restore the DCL verify status.

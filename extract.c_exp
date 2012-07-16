@@ -228,11 +228,6 @@ static ZCONST char Far AbsolutePathWarning[] =
   "warning:  stripped absolute path spec from %s\n";
 static ZCONST char Far SkipVolumeLabel[] =
   "   skipping: %-22s  %svolume label\n";
-static ZCONST char Far JunkTooMany[] =
-  "warning:  not enough directories (%d) to junk %d:";
-static ZCONST char Far JunkTooManyDir[] =
-  "warning:  not enough Directories (%d) to junk %d: %s\n";
-
 
 #if defined( UNIX) && defined( __APPLE__)
 static ZCONST char Far AplDblNameTooLong[] =
@@ -673,6 +668,16 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     ++num_skipped;
             } else {
                 int   do_this_file;
+
+/* SMSd. */
+fprintf( stderr, " e_o_t_f().  G.filespecs = %d.\n",
+ G.filespecs);
+
+fprintf( stderr, " e_o_t_f().  G.pfnames[0] = %08x .\n", G.pfnames[ 0]);
+if (G.pfnames[ 0] != NULL)
+{
+    fprintf( stderr, " e_o_t_f().  G.pfnames[0]: >%s<.\n", G.pfnames[ 0]);
+}
 
                 if (G.filespecs == 0)
                     do_this_file = TRUE;
@@ -1256,7 +1261,6 @@ static int extract_or_test_entrylist(__G__ numchunk,
     int skip_entry;
     zoff_t bufstart, inbuf_offset, request;
     int error, errcode;
-    char *slp;          /* Slash pointer for pre-mapname() processing. */
 
 #if defined( UNIX) && defined( __APPLE__)
     int cfn;
@@ -1715,72 +1719,21 @@ startover:
 #endif /* !SFX */
 
             if (!renamed) {
-                /* remove absolute path specs */
-                if (G.filename[0] == '/') {
-                    Info(slide, 0x401, ((char *)slide,
+               /* remove absolute path specs */
+               if (G.filename[0] == '/') {
+                   Info(slide, 0x401, ((char *)slide,
                         LoadFarString(AbsolutePathWarning),
                         FnFilter1(G.filename)));
-                    if (!error_in_archive)
-                        error_in_archive = PK_WARN;
-                    do {
-                        char *p = G.filename + 1;
-                        do {
-                            *(p-1) = *p;
-                        } while (*p++ != '\0');
-                    } while (G.filename[0] == '/');
-                }
+                   if (!error_in_archive)
+                       error_in_archive = PK_WARN;
+                   do {
+                       char *p = G.filename + 1;
+                       do {
+                           *(p-1) = *p;
+                       } while (*p++ != '\0');
+                   } while (G.filename[0] == '/');
+               }
             }
-
-            /* 2012-07-13 SMS.
-             * Moved -j/--junkdirs (.jflag) processing up to here from
-             * OS-specific mapname() functions.
-             * G.jdir_filename is a pointer (within G.filename) to the
-             * path being kept (not junked).
-             */
-            G.jdir_filename = G.filename; /* (Right, if "-j-", .jflag == 0.) */
-            if (uO.jflag < 0)
-            {
-                /* "-j": Junking all directories.  Find last slash (if any). */
-                slp = strrchr( G.filename, '/');
-                if (slp != NULL)
-                {
-                    /* Found a last slash.  Name begins after it. */
-                    G.jdir_filename = slp+ 1;
-                }
-            }
-            else if (uO.jflag > 0)
-            {
-                /* "-j=N": Junking N directories.  Loop through slashes. */
-                int i;
-
-                for (i = 0; i < uO.jflag; i++)
-                {
-                    slp = strchr( G.jdir_filename, '/');
-                    if (slp == NULL)
-                    {
-                        if (G.filename[ strlen( G.filename)- 1] == '/')
-                        {
-                            /* Directory.  (Won't be created, so show name.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooManyDir),
-                             i, uO.jflag, FnFilter1( G.filename)));
-                        }
-                        else
-                        {
-                            /* File.  (Will be extracted, so name follows.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooMany),
-                             i, uO.jflag));
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        /* Advance the retained-name pointer. */
-                        G.jdir_filename = ++slp;
-                    }
-                }
-            }   
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapname(__G__ renamed);
@@ -2115,17 +2068,16 @@ static int extract_or_test_entrylistw(__G__ numchunk,
     int skip_entry;
     zoff_t bufstart, inbuf_offset, request;
     int error, errcode;
-    wchar_t *wslp;      /* Wide slash pointer for pre-mapnamew() processing. */
 
-# if CRYPT && defined( CRYPT_AES_WG)
+#if CRYPT && defined( CRYPT_AES_WG)
     ush temp_compression_method;
     int temp_stored_size_decr;
-# endif /* CRYPT && defined( CRYPT_AES_WG) */
+#endif /* CRYPT && defined( CRYPT_AES_WG) */
 
 /* possible values for local skip_entry flag: */
-# define SKIP_NO         0      /* do not skip this entry */
-# define SKIP_Y_EXISTING 1      /* skip this entry, do not overwrite file */
-# define SKIP_Y_NONEXIST 2      /* skip this entry, do not create new file */
+#define SKIP_NO         0       /* do not skip this entry */
+#define SKIP_Y_EXISTING 1       /* skip this entry, do not overwrite file */
+#define SKIP_Y_NONEXIST 2       /* skip this entry, do not create new file */
 
     /*-----------------------------------------------------------------------
         Second loop:  process files in current block, extracting or testing
@@ -2361,7 +2313,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             G.pInfo->cfilname = (char Far *)NULL;
         }
 
-#  if CRYPT && defined( CRYPT_AES_WG)
+#if CRYPT && defined( CRYPT_AES_WG)
         /* Analyze any AES encryption extra block before calculating
          * the true uncompressed file size.
          */
@@ -2395,7 +2347,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             temp_compression_method = G.lrec.compression_method;
             temp_stored_size_decr = RAND_HEAD_LEN;
         }
-#  endif /* CRYPT && defined( CRYPT_AES_WG) */
+#endif /* CRYPT && defined( CRYPT_AES_WG) */
 
 # endif /* !SFX */
         /* Size consistency checks must come after reading in the local extra
@@ -2499,59 +2451,6 @@ startover:
                    } while (G.filename[0] == '/');
                }
             }
-
-            /* 2012-07-14 SMS.
-             * Moved -j/--junkdirs (.jflag) processing up to here from
-             * OS-specific mapnamew() function.
-             * G.unipath_jdir_widefilename is a pointer (within the
-             * G.unipath_widefilename string) to the path being kept
-             * (not junked).
-             */
-            G.unipath_jdir_widefilename = G.unipath_widefilename;
-            /* (Right, if "-j-", .jflag == 0.) */
-            if (uO.jflag < 0)
-            {
-                /* "-j": Junking all directories.  Find last slash (if any). */
-                wslp = wcschr( G.unipath_widefilename, '/');
-                if (wslp != NULL)
-                {
-                    /* Found a last slash.  Name begins after it. */
-                    G.unipath_jdir_widefilename = wslp+ 1;
-                }
-            }
-            else if (uO.jflag > 0)
-            {
-                /* "-j=N": Junking N directories.  Loop through slashes. */
-                int i;
-
-                for (i = 0; i < uO.jflag; i++)
-                {
-                    wslp = wcschr( G.unipath_jdir_widefilename, '/');
-                    if (wslp == NULL)
-                    {
-                        if (G.filename[ strlen( G.filename)- 1] == '/')
-                        {
-                            /* Directory.  (Won't be created, so show name.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooManyDir),
-                             i, uO.jflag, FnFilter1( G.filename)));
-                        }
-                        else
-                        {
-                            /* File.  (Will be extracted, so name follows.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooMany),
-                             i, uO.jflag));
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        /* Advance the retained-name pointer. */
-                        G.unipath_jdir_widefilename = ++wslp;
-                    }
-                }
-            }   
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapnamew(__G__ renamed);

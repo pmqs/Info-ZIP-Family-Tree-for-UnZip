@@ -503,12 +503,7 @@ int mapname(__G__ renamed)
     *pathcomp = '\0';           /* initialize translation buffer */
     pp = pathcomp;              /* point to translation buffer */
     if (!renamed) {             /* cp already set if renamed */
-        if (uO.jflag)           /* junking directories */
-            cp = (char *)strrchr(G.filename, '/');
-        if (cp == (char *)NULL) /* no '/' or not junking dirs */
-            cp = G.filename;    /* point to internal zipfile-member pathname */
-        else
-            ++cp;               /* point to start of last component of path */
+        cp = G.jdir_filename;   /* Start at beginning of non-junked path. */
     }
 
 /*---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -302,3 +302,10 @@ _crc32:                         /* ulg crc32(ulg crc, uch *buf, extent len) */
 #endif /* i386 || _i386 || _I386 || __i386 */
 
 #endif /* !USE_ZLIB && !CRC_TABLE_ONLY */
+
+
+/* Exec Shield. */
+#if defined( __ELF__) && defined( __linux__)
+.section .note.GNU-stack, "", @progbits
+.previous
+#endif /* defined( __ELF__) && defined( __linux__) */

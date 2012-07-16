@@ -228,11 +228,6 @@ static ZCONST char Far AbsolutePathWarning[] =
   "warning:  stripped absolute path spec from %s\n";
 static ZCONST char Far SkipVolumeLabel[] =
   "   skipping: %-22s  %svolume label\n";
-static ZCONST char Far JunkTooMany[] =
-  "warning:  not enough directories (%d) to junk %d:";
-static ZCONST char Far JunkTooManyDir[] =
-  "warning:  not enough Directories (%d) to junk %d: %s\n";
-
 
 #if defined( UNIX) && defined( __APPLE__)
 static ZCONST char Far AplDblNameTooLong[] =
@@ -281,10 +276,8 @@ static ZCONST char Far AplDblNameTooLong[] =
      "error:  invalid response [%s]\n";
 #endif /* !WINDLL */
 
-static ZCONST char Far ErrorUnexpectedEOF[] =
-  "error:  Unexpected end-of-file reading %s.\n";
 static ZCONST char Far ErrorInArchive[] =
-  "At least one %serror %swas detected in %s.\n";
+  "At least one %serror was detected in %s.\n";
 static ZCONST char Far ZeroFilesTested[] =
   "Caution:  zero files tested in %s.\n";
 
@@ -381,10 +374,6 @@ static ZCONST char Far InfoMsgLZMA[] =
   "\n     LZMA: dicSize = %u, lc = %u, lp = %u, pb = %u. ";
 static ZCONST char Far InfoMsgPPMd[] =
   "\n     PPMd: flags = 0x%04x.  Order = %d, Mem = %dMB, Restore = %d. ";
-
-/* Inconsistent Java "CAFE" extra fields (local v. central dir.). */
-static ZCONST char Far InfoInconsistentJavaCAFE[] =
-     "Inconsistent cantral-local Java CAFE.  Expect name warnings/problems.\n";
 
 
 
@@ -527,8 +516,6 @@ int extract_or_test_files(__G)    /* return PK-type error code */
             G.pInfo = &G.info[j];
 
             if (readbuf(__G__ G.sig, 4) == 0) {
-                Info(slide, 0x221, ((char *)slide,
-                 LoadFarString( ErrorUnexpectedEOF), G.zipfn));
                 error_in_archive = PK_EOF;
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
@@ -572,9 +559,17 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
+
+/* SMSd. */
+fprintf( stderr, " Pre-G.crec... c.len = %d.\n", G.crec.filename_length);
+
             if ((error = do_string(__G__ G.crec.filename_length, DS_FN)) !=
                  PK_COOL)
             {
+/* SMSd. */
+fprintf( stderr, " G.crec... error = %d, c.len = %d.\n",
+ error, G.crec.filename_length);
+
                 if (error > error_in_archive)
                     error_in_archive = error;
                 if (error > PK_WARN) {  /* fatal:  no more left to do */
@@ -585,6 +580,11 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     break;
                 }
             }
+
+/* SMSd. */
+fprintf( stderr, " G.crec... c.len = %d.\n",
+ G.crec.filename_length);
+
             if ((error = do_string(__G__ G.crec.extra_field_length,
                 EXTRA_FIELD)) != 0)
             {
@@ -598,55 +598,6 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     break;
                 }
             }
-            else if (uO.java_cafe == 0)
-            {
-                /* 2012-05-20 SMS.
-                 * Accommodation for Java "jar" archives whose
-                 * (over-)simplified central header info ("version made
-                 * by") lacks any accurate host-system info.  (Internal
-                 * and external file atributes are zero, high byte of
-                 * "version made by" is zero, so we see "MS-DOS", and
-                 * try to adjust names accordingly, which damages Java's
-                 * UTF-8-encoded names.  See fileio.c:do_string().)
-                 *
-                 * Look for, and remember finding, a Java "CAFE" extra
-                 * field (once).  This affects name processing, so
-                 * waiting for TestExtraField() to detect it in a
-                 * local-header extra field would cause complaints about
-                 * inconsistent file names.  Small-sample evidence
-                 * suggests that if a Java "CAFE" extra field is
-                 * present, then it'll be in the first header, and
-                 * alone, so most of the robustness here is probably
-                 * wasted.  Also, if uO.java_cafe is not set once before
-                 * the first file name is processed, then we'll be
-                 * handling names inconsistently, so this had better be
-                 * adequate.
-                 */
-                ush ebID;
-                unsigned ebLen;
-                unsigned ef_len = G.crec.extra_field_length;
-                uch *ef = G.extra_field;
-
-                while (ef_len >= EB_HEADSIZE)
-                {
-                    ebID = makeword( ef);
-                    if (ebID == EF_JAVA)
-                    {
-                        /* Found one. */
-                        uO.java_cafe = 1;
-                    }
-
-                    ebLen = (unsigned)makeword( ef+ EB_LEN);
-                    ef_len -= (ebLen + EB_HEADSIZE);
-                    ef += (ebLen + EB_HEADSIZE);
-                }
-                if (uO.java_cafe == 0)
-                {
-                    /* None found in the first extra field.  Quit looking. */
-                    uO.java_cafe = -1;
-                }
-            }
-
 #ifdef AMIGA
             G.filenote_slot = j;
             if ((error = do_string(__G__ G.crec.file_comment_length,
@@ -965,18 +916,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 
         if (uO.qflag < 2) {        /* GRR 930710:  was (uO.qflag == 1) */
             if (error_in_archive)
-            {
-                char errnrstr[ 16];
-
-                if (uO.vflag)
-                    sprintf( errnrstr, "(%d) ", error_in_archive);
-                else
-                    *errnrstr = '\0';
-
                 Info(slide, 0, ((char *)slide, LoadFarString(ErrorInArchive),
-                  (error_in_archive == PK_WARN)? "warning-" : "",
-                  errnrstr, G.zipfn));
-            }
+                  (error_in_archive == PK_WARN)? "warning-" : "", G.zipfn));
             else if (num == 0L)
                 Info(slide, 0, ((char *)slide, LoadFarString(ZeroFilesTested),
                   G.zipfn));
@@ -1256,7 +1197,6 @@ static int extract_or_test_entrylist(__G__ numchunk,
     int skip_entry;
     zoff_t bufstart, inbuf_offset, request;
     int error, errcode;
-    char *slp;          /* Slash pointer for pre-mapname() processing. */
 
 #if defined( UNIX) && defined( __APPLE__)
     int cfn;
@@ -1414,9 +1354,17 @@ static int extract_or_test_entrylist(__G__ numchunk,
             error_in_archive = error;   /* only PK_EOF defined */
             continue;   /* can still try next one */
         }
+
+/* SMSd. */
+fprintf( stderr, " Pre-G.lrec... l.len = %d.\n", G.lrec.filename_length);
+
         if ((error = do_string(__G__ G.lrec.filename_length, DS_FN_L)) !=
              PK_COOL)
         {
+/* SMSd. */
+fprintf( stderr, " G.lrec... error = %d, l.len = %d.\n",
+ error, G.lrec.filename_length);
+
             if (error > error_in_archive)
                 error_in_archive = error;
             if (error > PK_WARN) {
@@ -1425,6 +1373,11 @@ static int extract_or_test_entrylist(__G__ numchunk,
                 continue;   /* go on to next one */
             }
         }
+
+/* SMSd. */
+fprintf( stderr, " G.lrec... l.len = %d.\n",
+ G.lrec.filename_length);
+
         if (G.extra_field != (uch *)NULL) {
             free(G.extra_field);
             G.extra_field = (uch *)NULL;
@@ -1686,6 +1639,10 @@ static int extract_or_test_entrylist(__G__ numchunk,
         if (!uO.tflag && !uO.cflag)
 #endif
         {
+
+/* SMSd. */
+fprintf( stderr, " renamed = false.\n");
+
             renamed = FALSE;   /* user hasn't renamed output file yet */
 
 startover:
@@ -1715,76 +1672,27 @@ startover:
 #endif /* !SFX */
 
             if (!renamed) {
-                /* remove absolute path specs */
-                if (G.filename[0] == '/') {
-                    Info(slide, 0x401, ((char *)slide,
+               /* remove absolute path specs */
+               if (G.filename[0] == '/') {
+                   Info(slide, 0x401, ((char *)slide,
                         LoadFarString(AbsolutePathWarning),
                         FnFilter1(G.filename)));
-                    if (!error_in_archive)
-                        error_in_archive = PK_WARN;
-                    do {
-                        char *p = G.filename + 1;
-                        do {
-                            *(p-1) = *p;
-                        } while (*p++ != '\0');
-                    } while (G.filename[0] == '/');
-                }
+                   if (!error_in_archive)
+                       error_in_archive = PK_WARN;
+                   do {
+                       char *p = G.filename + 1;
+                       do {
+                           *(p-1) = *p;
+                       } while (*p++ != '\0');
+                   } while (G.filename[0] == '/');
+               }
             }
-
-            /* 2012-07-13 SMS.
-             * Moved -j/--junkdirs (.jflag) processing up to here from
-             * OS-specific mapname() functions.
-             * G.jdir_filename is a pointer (within G.filename) to the
-             * path being kept (not junked).
-             */
-            G.jdir_filename = G.filename; /* (Right, if "-j-", .jflag == 0.) */
-            if (uO.jflag < 0)
-            {
-                /* "-j": Junking all directories.  Find last slash (if any). */
-                slp = strrchr( G.filename, '/');
-                if (slp != NULL)
-                {
-                    /* Found a last slash.  Name begins after it. */
-                    G.jdir_filename = slp+ 1;
-                }
-            }
-            else if (uO.jflag > 0)
-            {
-                /* "-j=N": Junking N directories.  Loop through slashes. */
-                int i;
-
-                for (i = 0; i < uO.jflag; i++)
-                {
-                    slp = strchr( G.jdir_filename, '/');
-                    if (slp == NULL)
-                    {
-                        if (G.filename[ strlen( G.filename)- 1] == '/')
-                        {
-                            /* Directory.  (Won't be created, so show name.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooManyDir),
-                             i, uO.jflag, FnFilter1( G.filename)));
-                        }
-                        else
-                        {
-                            /* File.  (Will be extracted, so name follows.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooMany),
-                             i, uO.jflag));
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        /* Advance the retained-name pointer. */
-                        G.jdir_filename = ++slp;
-                    }
-                }
-            }   
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapname(__G__ renamed);
 
+/* SMSd. */
+fprintf( stderr, " Post mapname(), error = %d.\n", error);
 
 #if defined( UNIX) && defined( __APPLE__)
             /* If the destination volume attributes are still a mystery,
@@ -2115,17 +2023,16 @@ static int extract_or_test_entrylistw(__G__ numchunk,
     int skip_entry;
     zoff_t bufstart, inbuf_offset, request;
     int error, errcode;
-    wchar_t *wslp;      /* Wide slash pointer for pre-mapnamew() processing. */
 
-# if CRYPT && defined( CRYPT_AES_WG)
+#if CRYPT && defined( CRYPT_AES_WG)
     ush temp_compression_method;
     int temp_stored_size_decr;
-# endif /* CRYPT && defined( CRYPT_AES_WG) */
+#endif /* CRYPT && defined( CRYPT_AES_WG) */
 
 /* possible values for local skip_entry flag: */
-# define SKIP_NO         0      /* do not skip this entry */
-# define SKIP_Y_EXISTING 1      /* skip this entry, do not overwrite file */
-# define SKIP_Y_NONEXIST 2      /* skip this entry, do not create new file */
+#define SKIP_NO         0       /* do not skip this entry */
+#define SKIP_Y_EXISTING 1       /* skip this entry, do not overwrite file */
+#define SKIP_Y_NONEXIST 2       /* skip this entry, do not create new file */
 
     /*-----------------------------------------------------------------------
         Second loop:  process files in current block, extracting or testing
@@ -2361,7 +2268,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             G.pInfo->cfilname = (char Far *)NULL;
         }
 
-#  if CRYPT && defined( CRYPT_AES_WG)
+#if CRYPT && defined( CRYPT_AES_WG)
         /* Analyze any AES encryption extra block before calculating
          * the true uncompressed file size.
          */
@@ -2395,7 +2302,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             temp_compression_method = G.lrec.compression_method;
             temp_stored_size_decr = RAND_HEAD_LEN;
         }
-#  endif /* CRYPT && defined( CRYPT_AES_WG) */
+#endif /* CRYPT && defined( CRYPT_AES_WG) */
 
 # endif /* !SFX */
         /* Size consistency checks must come after reading in the local extra
@@ -2499,59 +2406,6 @@ startover:
                    } while (G.filename[0] == '/');
                }
             }
-
-            /* 2012-07-14 SMS.
-             * Moved -j/--junkdirs (.jflag) processing up to here from
-             * OS-specific mapnamew() function.
-             * G.unipath_jdir_widefilename is a pointer (within the
-             * G.unipath_widefilename string) to the path being kept
-             * (not junked).
-             */
-            G.unipath_jdir_widefilename = G.unipath_widefilename;
-            /* (Right, if "-j-", .jflag == 0.) */
-            if (uO.jflag < 0)
-            {
-                /* "-j": Junking all directories.  Find last slash (if any). */
-                wslp = wcschr( G.unipath_widefilename, '/');
-                if (wslp != NULL)
-                {
-                    /* Found a last slash.  Name begins after it. */
-                    G.unipath_jdir_widefilename = wslp+ 1;
-                }
-            }
-            else if (uO.jflag > 0)
-            {
-                /* "-j=N": Junking N directories.  Loop through slashes. */
-                int i;
-
-                for (i = 0; i < uO.jflag; i++)
-                {
-                    wslp = wcschr( G.unipath_jdir_widefilename, '/');
-                    if (wslp == NULL)
-                    {
-                        if (G.filename[ strlen( G.filename)- 1] == '/')
-                        {
-                            /* Directory.  (Won't be created, so show name.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooManyDir),
-                             i, uO.jflag, FnFilter1( G.filename)));
-                        }
-                        else
-                        {
-                            /* File.  (Will be extracted, so name follows.) */
-                            Info( slide, 0x401, ((char *)slide,
-                             LoadFarString( JunkTooMany),
-                             i, uO.jflag));
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        /* Advance the retained-name pointer. */
-                        G.unipath_jdir_widefilename = ++wslp;
-                    }
-                }
-            }   
 
             /* mapname can create dirs if not freshening or if renamed */
             error = mapnamew(__G__ renamed);
@@ -3542,23 +3396,6 @@ static int TestExtraField(__G__ ef, ef_len)
                           (extent)(ebLen-4)))
                     Info(slide, 1, ((char *)slide,
                       LoadFarString(BadCRC_EAs)));
-                break;
-            case EF_JAVA:
-                /* 2012-05-20 SMS.
-                 * Setting java_cafe here may be too late to be useful. 
-                 * If it wasn't done when the central directory was
-                 * processed, then now may be too late.  Perhaps it
-                 * would make some sense not to set the flag here, if
-                 * we're just now seeing a "CAFE" extra block here, than
-                 * to set the flag now, and risk inconsistency with
-                 * previous name processing.
-                 */
-                if (uO.java_cafe <= 0)
-                {
-                   Info( slide, 1, ((char *)slide,
-                     LoadFarString( InfoInconsistentJavaCAFE)));
-                }
-                uO.java_cafe = 1;
                 break;
             case EF_PKW32:
             case EF_PKUNIX:

@@ -1,388 +1,786 @@
-__________________________________________________________________________
+      INSTALL -- Info-ZIP UnZip Installation Instructions
+      ===================================================
 
-  This is the Info-ZIP file INSTALL (for UnZip), last updated 21 Apr 2012.
+   UnZip version 6.10.  Last update: 2012-07-16
 
-__________________________________________________________________________
+------------------------------------------------------------------------
 
-To build UnZip, UnZipSFX and/or fUnZip (quick-start instructions):
-======================================
+   On most system types, the general procedure to build and install
+UnZip follows these steps:
 
-    For brief VMS instructions, see the VMS-specific sections below.
-    For more details, see [.vms]INSTALL_VMS.txt.
+      1. Unpack the UnZip source kit.  (Some optional features, such as
+      optional compression or encryption methods, may require additional
+      source kits.  Obtain and unpack any additional source kits, if
+      needed.
 
-(1) Unpack everything into a work directory somewhere, and make sure you're
-    in the main UnZip directory (the one with this file in it).
-    (See note below (*) concerning line termination format used in the source
-    distribution.)
+      2. Build.  That is, compile and link the programs.  A C compiler
+      and a "make" program are usually required.  Other standard utility
+      programs for the build environment may also be needed.  (For
+      example, on a Unix(-like) system, "cat", "chmod", "cp", "ln",
+      "mkdir", "rm", "sed", and so on.)
 
-(2) Copy the appropriate makefile into the current directory, except under
-    OS/2.
+      3. Test.  The Unix and VMS builders include a very basic test
+      procedure.  Careful users should test any programs like these
+      using their own data and procedures before relying on them.
 
-(3) Run your "make" utility on the makefile (e.g., "nmake -f makefile.msc").
-    (Alternately, you may be able to directly reference the makefile:
-    make -f unix/Makefile.)
+      4, Install.  That is, move the executables and associated files to
+      their destination directories.
 
-(4) On Unix and VMS systems, the UnZip builders can run a basic test,
-    and, if PPMd compression was enabled, a PPMd test.  (See below for
-    notes on known PPMd problems.)  On Unix, typical commands look like
-    these:
-        make -f unix/Makefile test                  # General tests.
-        make -f unix/Makefile test_ppmd             # PPMd tests.
+   The details of these steps depend on the system type and on
+user-selected options.
 
-(5) Try out your new UnZip the way you would any new utility:  read the
-    docs first.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    For DOS and other OSes without explicit timezone support (i.e., everybody
-    but Unix, VMS, Windows 95 and later), make sure the "TZ" environment
-    variable is set to a valid and reasonable value; see your compiler docs
-    for details.
+   For Mac OS X, follow the Unix procedures.
 
-(*) The UnZip sources as well as other Info-ZIP source archives are generally
-    packaged in Unix format.  All text files use single LF (Ascii 0x0a)
-    characters as line terminators.  On systems that use different conventions
-    for plain text files (e.g.:DOS,Win9x,WinNT,OS/2 -> combined CR+LF; MacOS ->
-    single CR), some utilities (editors, compilers, etc.) may not accept source
-    files with LF line terminators.  For these systems, we recommend using
-    Info-ZIP's UnZip utility for extraction of our distribution archives,
-    applying the command option "-a" (= translate text files to native format)
-    in the extraction command.  In case this procedure is not applicable, an
-    appropriate third-party conversion utility may be used to achieve the
-    desired line termination style (examples: "flip", available for Unix, DOS,
-    OS/2; or "tr" on Unix).  However, as of UnZip 6.10 some text files
-    normally read directly by utilities (such as Visual Studio files) are
-    included in the source archives in native format to allow use without
-    conversion.  Extracting using unzip -a can still be used and these
-    utilities should still be able to use these files.
+   For VMS instructions, see [.vms]INSTALL_VMS.txt.
+
+   For Windows, using Cygwin or MinGW, follow the Unix procedures.
+
+   +-------------------------------------------------------------------+
+   | Many system types have a system-specific directory ("unix/",      |
+   | "[.vms]", "win32\", and so on).  For any system type, look in its |
+   | system-specific directory for a system-specific INSTALL*.* and/or |
+   | README*.* file, which should explain any system-specific details. |
+   +-------------------------------------------------------------------+
+
+------------------------------------------------------------------------
+
+      Unpack the Source Kit(s)
+      ------------------------
+
+   UnZip is normally distributed as a Zip archive (which requires some
+kind of unzip program to unpack), or as a gzip-compressed "tar" archive
+(which requires programs like "gzip" and "tar" to unpack).
+
+   To unpack a Zip-archive kit, use a command like the following:
+
+      unzip unzip61.zip
+
+(But see "Source File Format", below, for details on some relevant UnZip
+options.)
+
+   To unpack a tar+gzip kit, use a command like the following:
+
+      gzip -dc unzip61.tgz | tar xf -
+
+This should create an "unzip61" directory which contains the UnZip
+source kit, and that is where the rest of the work is done.
+
+   Some unzip programs, such as the Extraction Wizard in Windows, may
+want to add another add another "unzip61" directory above the top-level
+directory in the Zip archive.  This extra, top-level directory is not
+needed, and probably makes finding the archive's top-level directory
+harder.  Many of the instructions below assume that you're in the
+archive's main (top-level) directory, that is, the directory which
+contains this INSTALL file (and many other UnZip files and directories).
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Source File Format
+   ------------------
+
+   Text files in Info-ZIP source kits generally have Unix-compatible
+line endings (line-feed, LF, ASCII 0x0a).  On systems like MS-DOS or
+Windows, the norm is different (Carriage Return + Line Feed, CR+LF,
+ASCII 0x0d+0x0a).  On those systems, some programs (text editors,
+compilers, and so on) may have problems with LF line endings.  In such
+situations, one solution is to use Info-ZIP UnZip with its "-a" option
+to unpack the source kit.  With "-a", UnZip converts line endings in
+text files to the local standard as those files are extracted.  For
+example:
+
+      unzip -a unzip61.zip
+
+Alternatively, programs like "flip" or "unix2dos" (or Unix utilities
+like "sed" or "tr") can also be used to convert text file line endings.
+
+   Some system-specific text files in an UnZip kit, such as Visual
+Studio files, may be archived with CR+LF line endings, and these files
+should work on the appropriate systems whether or not "unzip -a" is used
+to extract them.  (Unix users could use "unzip -a" to make it easier to
+examine these files on their systems.)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      Optional Source Kits
+      --------------------
+
+   Advanced Encryption Standard (AES) Encryption
+   ---------------------------------------------
+
+   To enable support for AES encryption, a separate IZ_AES_WG source kit
+is needed.  On the Info-ZIP FTP server, the IZ_AES_WG source kit should
+be found in:
+
+      ftp://ftp.info-zip.org/pub/infozip/crypt/
+
+The latest kit should be:
+
+      ftp://ftp.info-zip.org/pub/infozip/crypt/iz_aes_wg.zip
+
+but other, older kits may also be available there.  Version
+compatibility information should be included in the IZ_AES_WG
+documentation.  The latest version of that should be:
+
+      ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
+
+It might be wise to read that before downloading any particular
+IZ_AES_WG kit.
+
+   The IZ_AES_WG kit should be unpacked in the main UnZip directory,
+where it should populate the "aes_wg" subdirectory.  For example, if the
+proper IZ_AES_WG kit is "iz_aes_wg10.zip", then use commands like the
+following:
+
+      cd unzip61                        # (If not already there.)
+      unzip ../iz_aes_wg10.zip
+
+   See the "Build" section, below, for details on how to build UnZip
+with AES encryption support.
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Bzip2 Compression
+   -----------------
+
+   To enable support for the bzip2 compression method, the UnZip
+programs must be linked with a bzip2 object library, such as "libbz2.a".
+For proper error handling, the bzip2 object library should be built with
+the C macro BZ_NO_STDIO defined (which is not the bzip2 default).  For
+general information on bzip2 compression, or to download a bzip2 source
+kit:
+
+      http://www.bzip.org/
+
+Any bzip2 version from 1.0.3 up should be compatible.
+
+   The UnZip builders for Unix systems can use a pre-built (BZ_NO_STDIO)
+object library, or they can build a proper bzip2 object library, if they
+find bzip2 source files in the "bzip2" subdirectory of the main UnZip
+directory.  To have the UnZip builders do the work, let's assume that
+you have downloaded a bzip2 kit, like, say, "bzip2-1.0.6.tar.gz", and
+put it in the same directory as the UnZip kit.  To unpack that kit, and
+put its contents where the UnZip builders expect them, use commands like
+the following:
+
+      cd unzip61                        # (If not already there.)
+      gzip -dc ../bzip2-1.0.6.tar.gz | tar xf -
+      mv bzip2-1.0.6/* bzip2
+
+   The UnZip builders will attempt to build a bzip2 object library from
+sources only in the "bzip2" subdirectory of the main UnZip directory.
+Existing bzip2 kits in other directory trees should be safe from damage
+by UnZip builders.
+
+   See the "Build" section, below, for details on how to build UnZip
+with bzip2 compression support.
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   LZMA and PPMd Compression
+   -------------------------
+
+   All the source files needed to enable support for the LZMA and PPMd
+compression methods are included in the UnZip kit.
+
+------------------------------------------------------------------------
+
+      Build
+      -----
+
+   What Gets Built
+   ---------------
+
+   On most systems, UnZip provides three programs: fUnZip,
+UnZip/ZipInfo, and UnZipSFX.  (Actual executable names depend on the
+operating system, so, for example, an UnZip executable might be named
+"unzip", "unzip.exe", UNZIP.EXE, and so on, on different systems.)
+fUnZip is not provided on VMS, where pipeline capabilities are too
+limited.  On Amiga, an additional executable, MakeSFX, is provided,
+because a self-extracting archive on Amiga cannot be created by simple
+concatenation ("cat", COPY), as it can on other systems.
+
+   Various documentation files (Unix "man" files, VMS HELP files, and so
+on) may also be created, if they were not already included in the kit.
+
+   Additional shell scripts, utility programs, and so on may also reside
+in system-dependent subdirectories.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   How to Build
+   ------------
+
+   Before starting the build, move into the unpacked archive's top-level
+directory, using a command like the following:
+
+      cd unzip61                        # (If not already there.)
+
+   In many Unix or Unix-like environments, the basic build command looks
+like the following:
+
+      make -f unix/Makefile generic
+
+but many options may be specified in the "make" command.  These are
+described below.
+
+   In some environments, where "make -f DIR/Makefile" does not work,
+copy the appropriate "make" file (in the example above, "DIR/Makefile"),
+into the main directory, and then use a "make" command without the "-f
+DIR/Makefile" option (or without the "DIR/" part of the path to the
+"make" file).
+
+   In most Unix(-like) environments, the "generic" target (as shown
+above) works best.  It uses a shell script, "unix/configure", to adjust
+the build procedure to the local environment.  (It's also tested better
+than the other, older "make" targets.)  If "generic" does not work, then
+the "help" target should list the other possible targets (and some of
+the popular "make" options):
+
+      make -f unix/Makefile help
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Build Options for the "generic" Target
+   --------------------------------------
+
+   When using "make generic", add the "make" macros listed below to
+enable the corresponding optional features:
+
+      AES_WG=1          Enable support for WinZip-compatible AES
+                        (strong) encryption.  This requires a separate
+                        IZ_AES_WG source kit, as described above
+                        ("Optional Source Kits").
+
+      CC=gcc            Compile and link using "gcc" instead of "cc".
+                        (This method replaces the separate "generic_gcc"
+                        target, which was used with UnZip 6.0, and has
+                        been removed.)
+
+      IZ_BZIP2=bz2dir   Enable support for the bzip2 compression method.
+                        "bz2dir" specifies the directory where the bzip2
+                        code resides.  Use "IZ_BZIP2=bzip2" to have the
+                        UnZip builders build the required bzip2 object
+                        library from source files in the "bzip2"
+                        subdirectory.
+
+      IZ_ZLIB=zdir      Use zlib for the Deflate compression method,
+                        instead of UnZip's internal Deflate code.
+                        "zdir" specifies the directory where the zlib
+                        code resides.
+
+      LIBUNZIP=1        Build an UnZip object library.
+
+      LOCAL_UNZIP=<opts>  Build using "<opts>" (C compiler options,
+                          typically defining C macros).
+
+      LZMA=1            Enable support for the LZMA compression method.
+
+      PPMD=1            Enable support for the PPMd compression method.
 
 
-To build UnZip, UnZipSFX and/or fUnZip (detailed instructions):
-======================================
+   For example, a build command using "gcc" as the C compiler, with all
+the optional compression and encryption methods enabled, might look like
+the following:
 
-(1) Unpack *.c and *.h (the actual source files), preserving the directory
-    structure (e.g., ./unix/unix.c).  The sole exception is TOPS-20, where
-    tops20/* should be unpacked into the current directory, but TOPS-20
-    is no longer fully supported anyway.
+      make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 LZMA=1 \
+       PPMD=1 generic
 
-    As of UnZip 5.41, full decryption support has been integrated in the
-    UnZip source distribution.  If you wish to build binaries without
-    decryption support, you must define the preprocessor flag NO_CRYPT.
-    For many environments, you may add this flag to the custom compilation
-    flags supplied by the "make" macro (or environment variable) LOCAL_UNZIP.
-    For more details, see the "make" procedures and accompanied documentation
-    for your particular target OS.
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    As of UnZip 5.53, support for the bzip2 compression algorithm has been
-    added to UnZip. However, this support requires the original sources of
-    the bzip2 compression library which have to be acquired separately;
-    see "http://www.bzip.org/" for further reference.
+   LOCAL_UNZIP
+   -----------
 
+   Environment Variables v. "make" Macros
+   --------------------------------------
 
-(2) Choose the appropriate makefile based on the description in the Contents
-    file for your OS.  (There's only one for Unix or OS/2, but MS-DOS and
-    several other OSes have several, depending on the compiler).  On many
-    systems, the makefile can be used where it resides, using make's "-f"
-    option.  For example, "make -f unix/Makefile".  On other systems, you may
-    need to copy it into the current directory (and rename it, if necessary
-    or desired).  On OS/2, os2\makefile.os2 expects to remain in the os2
-    subdirectory, so invoke it using a command like, for example:
-        nmake -f os2\makefile.os2 gcc
+   On many systems, defining an environment variable (or, on VMS, a DCL
+symbol) can substitute for specifying a "make" macro on the "make"
+command line.  For example, if you regularly build new versions of
+UnZip, and always want the same non-standard compiler options, then you
+may wish to specify those options in a LOCAL_UNZIP environment variable
+(assuming that it's supported in your "make" file).  Under MS-DOS, for
+example, you could add something like the following to AUTOEXEC.BAT:
 
-    Don't be afraid to read the makefile!  Many options will be explained only
-    in the comments therein.  The defaults may not quite suit your situation.
-    When making changes, remember that some "make" utilities expect tab
-    characters as part of the makefile syntax.  Failure with cryptic error
-    messages may result if your editor (quietly) replaces those tabs with
-    spaces.
+      set LOCAL_UNZIP=-DDOSWILD -DDATE_FORMAT=DF_DMY
 
-    Special point of confusion:  some non-MSDOS makefiles contain MS-DOS
-    targets (useful for cross-compilations). An example is the OS/2 makefile,
-    os2\makefile.os2, that contains the gccdos target for DOS emx+gcc and
-    some more DOS related targets for Watcom C and MSC.  But since UnZip
-    version 5.3, the msdos subdirectory contains makefiles for all supported
-    DOS compilers.  (The old djgpp, djgpp1 and gcc_dos targets in
-    unix/Makefile have been removed in UnZip 5.3; use msdos/makefile.dj*
-    instead.)
+For a Bourne-like shell on a Unix(-like) system, you could add something
+like the following to "~/.profile":
 
+      LOCAL_UNZIP='-DBZIP2_SFX' ; export LOCAL_UNZIP
 
-(3) To enable some optional features in UnZip, or to customize your
-    UnZip program in other ways, define one or more of the optional C
-    macros listed below, either by adding them to the LOCAL_UNZIP "make"
-    macro (or environment variable), or by editing your makefile as
-    appropriate.  The syntax differs from compiler to compiler, but a C
-    macro named MACRO_NAME is commonly defined using syntax like
-    "-DMACRO_NAME" (or "-DMACRO_NAME=value").  Note that, like all the
-    UnZip source code, the C macros used and/or supported may change
-    from one UnZip version to another.  Note also that very short
-    command lines in MS-DOS (128 characters) may place severe limits on
-    how many of these can be used; if need be, the definitions can be
-    placed at the top of unzip.h instead (it is included in all source
-    files).  For example, "#define MACRO_NAME" (or "#define MACRO_NAME
-    value"), one macro per line.
+You could also use the variable to hold special compiler options.  For
+example, -FPi87 for Microsoft C, if the x87 libraries are the only ones
+on your disk and they follow Microsoft's default naming conventions.
+(MSC also supports the CL environment variable, however.)
 
-      DOSWILD   (MS-DOS only)
-        Treat trailing "*.*" like Unix "*" (i.e., matches anything); treat
-        trailing "*." as match for files without a dot (i.e., matches any-
-        thing, as long as no dots in name).  Special treatment only occurs
-        if patterns are at end of arguments; i.e., "a*.*" matches all files
-        starting with "a", but "*.*c" matches all files ending in "c" *only*
-        if they have a dot somewhere before the "c".  [The default method of
-        specifying files without a dot would be "* -x *.*", making use of
-        UnZip's exclude-files option.]  The matching is actually the same as
-        Unix, if you assume that undotted filenames really have an invisible
-        dot at the end, which is how DOS and related systems treat filenames
-        in general.  All other regular expressions (including "?" and
-        "[range_of_chars]") retain their Unix-like behavior.
+   Hiding UnZip build options this way can also cause confusion, because
+it may not be obvious why some particular build option was active if
+it's not specified explicitly on the "make" command line.  Creating a
+shell script with the desired special options may be safer than setting
+a LOCAL_UNZIP environment variable.  Also, beware of changes to these
+"make" macros from one product version to another.
 
-      WILD_STOP_AT_DIR   (incompatible with WINDLL!)
-        Enables an additional option "-W".  When this qualifier is specified,
-        the pattern matching routine is modified so that both '?' (single-char
-        wildcard) and '*' (multi-char wildcard) do not match the directory
-        separator character '/'. Examples:
-          "*.c" matches "foo.c" but not "mydir/foo.c"
-          "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
-          "??*/*" matches "ab/foo" and "abc/foo" but not "a/foo" or "a/b/foo"
-        To enable matching across directory separator chars, two consecutive
-        multi-char wildcards "**" should be specified.
-        This modified behaviour is equivalent to the pattern matching style
-        used by the shells of some of UnZip's supported target OSs (one
-        example is Acorn RISC OS).
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      VMSWILD   (VMS only)
-        Use parentheses rather than brackets to delimit sets (ranges), and
-        use '%' instead of '?' as the single-character wildcard for internal
-        filename matching.  (External matching of zipfile names always uses
-        the standard VMS wildcard facilities; character sets are disallowed.)
+   Building with Bzip2 Compression
+   -------------------------------
 
-      VMSCLI   (VMS only)
-        Use VMS-style "slash options" (/FOOBAR) instead of the default Unix-
-        style hyphenated options (-f).  This capability does not affect options
-        stored in environment variables (UNZIP_OPTS or ZIPINFO_OPTS); those use
-        the Unix style regardless.  Beginning with UnZip 5.32, the supplied
-        VMS build methods generate both VMS-style and default "UNIX-style"
-        executables; you should NOT add VMSCLI to the custom options.
+   The Unix and VMS builders for UnZip can use a bzip2 source kit which
+has been placed in the "bzip2" subdirectory of the main UnZip directory,
+as described above ("Optional Source Kits").  Users who regularly work
+with multiple UnZip versions can avoid duplicating the bzip2 code by
+manually building a bzip2 object library ("libbz2.a" on Unix) with
+BZ_NO_STDIO defined, in some common location.  Then, when building
+UnZip, specify that bzip2 directory as the value of the "make" macro
+IZ_BZIP2.  For example:
 
-      CHECK_VERSIONS   (VMS only)
-        UnZip "extra fields" are used to store VMS (RMS) filesystem info,
-        and the format of this information may differ in various versions
-        of VMS.  Defining this option will enable UnZip warnings when the
-        stored extra-field VMS version(s) do(es) not match the version of
-        VMS currently being used.  This is a common occurrence in zipfiles
-        received from other sites, but since the format of the filesystem
-        does not seem to have changed in years (including on Alpha and
-        IA64 systems), the warnings are not enabled by default.
+      make -f unix/Makefile IZ_BZIP2=../../bzip2/bzip-1.0.6 generic
 
-      RETURN_CODES   (VMS only)
-        VMS interprets return codes according to a rigid set of guidelines,
-        which means it misinterprets normal UnZip return codes as all sorts
-        of really nasty errors.  Therefore VMS UnZip returns an alternate set
-        of return codes; since these may be difficult to interpret, define
-        RETURN_CODES for human-readable explanations.
+   Frequent UnZip builders may find it convenient to create a nearby
+bzip2 directory, or a nearby link to some particular bzip2 kit
+directory. For example:
 
-      VMS_TEXT_CONV   (everybody except VMS)
-        VMS Stream_LF-format text files archived with the "-V" option
-        (/VMS), but NOT with -VV (/VMS=ALL), should be fine when extracted
-        on other systems.  Stream_LF-files archived with -VV should be
-        readable as well, but they may get some junk appended.
-        Text files with other formats (like the default VFC, with its
-        embedded byte counts) may be only semi-readable at best when
-        extracted on other systems.  Defining this option enables UnZip's
-        -aa option to detect and convert VMS VFC-record text files into
-        native text format.  Non-VMS UnZips now use a rudimentary VMS extra
-        field analyser to reliably determine such text files. (Earlier
-        versions of UnZip applied some heuristics instead.)
-        Therefore this option is now enabled by default for the main program
-        (but not the SFX stub), because it can be extremely useful on those
-        rare occasions when a VMS text file must be extracted as normal text.
+      make -f unix/Makefile IZ_BZIP2=../iz_bzip2 generic
 
-      USE_DJGPP_ENV   (MS-DOS DJGPP 2.0x only)
-        Regular DJGPP v2.0x built programs which use ENVIRONMENT are able
-        to read from the file "djgpp.env" as well as those set in the
-        environment.  This adds about 1KB to the size of the executable.
-        This option is disabled by default in Info-ZIP source. If you are
-        able to use "djgpp.env" and don't like to clutter the environment
-        with many special purpose variables, you may want to build with
-        this option set.
+where "../iz_bzip2" is a real bzip2 directory or a link to one.
 
-      USE_DJGPP_GLOB  (MS-DOS DJGPP 2.0x only)
-        If you like to get UnZip binaries that handle command line arguments
-        similar to Unix tools which are run in an Unix shell, you might want
-        to set this compilation option.  This option enables the support for
-        globbing command line arguments containing wildcards that is built
-        into the DJGPP startup code.  When using a binary built with this
-        option, you may have to enclose wildcard arguments in double quotes
-        to get them passed to the program unmodified.  Enabling this option
-        is not recommended, because it results in Info-Zip binaries that do
-        not behave as expected for MS-DOS programs.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      USE_VFAT  (MS-DOS only, for using same executable under DOS and Win95/NT)
-        djgpp 2.x and emx/gcc+RSX 5.1 can detect when they are running under a
-        Win32 DOS box and will accordingly enable long-filename support.  For
-        now only djgpp 2.x and emx/gcc with RSX 5.1 or later have this feature
-        (and it is defined by default in msdos/makefile.dj2 and makefile.emx),
-        but if/when other compilers build in similar support, define this
-        macro to enable its use.  See also msdos/doscfg.h.  [Note that djgpp
-        2.0's LFN support is flaky; users should upgrade to 2.01 or later.]
+   UnZipSFX Considerations
+   -----------------------
 
-      NO_W32TIMES_IZFIX (Win32 including WinDLL, and WinCE)
-        By specifying this option, you can disable Info-ZIP's special timestamp
-        adjustment to get stable time stamps on NTFS disks that do not change
-        depending on the current time being normal vs. daylight saving time.
-        When this option is set, UnZip behaves exactly like other programs;
-        file timestamps on NTFS partitions are created so that their >current<
-        local time representation displayed by directory listings (cmd.exe
-        "dir" command or Windows Explorer listings) is the same as shown by
-        UnZip's listing. But the actual UTC timestamp values stored in the
-        NTFS file attributes vary depending on whether extraction is done
-        at summer or winter time.
-        This option is not recommended because it sacrifices the timestamp
-        comparison checks when extracting or modifying archives in "update
-        only newer" mode.
-        However, for environments where consistency of >displayed< dates
-        of files extracted to NTFS vs. FAT disks is considered more important
-        than correctly working update/freshen tasks of Zip&UnZip, this
-        option may be used.
-        >> DO NOT DISTRIBUTE OR PUBLISH executables that were built with
-        this option! <<
+   Building an optimal UnZipSFX executable is more complicated when
+optional compression or encryption methods will be used (or when the
+standard method, Deflate, will not be used).  Ideally, UnZipSFX should
+be built with only the required compression and encryption methods
+enabled, but the list of required compression and encryption methods is
+determined when an archive is created, while the list of available
+methods is determined when UnZipSFX is built.  As always, when creating
+a self-extracting archive, the resulting program+archive should be
+tested (on the target system).  Options like "-q -t" should be helpful
+for this.
 
-      NOTIMESTAMP
-        This option disables the -T option, which basically does exactly what
-        Zip's -go options do (i.e., set the timestamp of the zipfile to that of
-        the newest file in the archive without rewriting the archive).  Unlike
-        Zip, however, UnZip supports wildcard specifications for the archive
-        name; for example, "unzip -T *.zip" will set the dates of all zipfiles
-        in the current directory.  (UnZip's option is also much faster.)
+   Normally, to minimize its size, UnZipSFX, the self-extracting archive
+program, is built with support for only the Deflate compression method,
+and the Traditional (weak) encryption method.  To get an UnZipSFX with
+more capability, use the "make" macro LOCAL_UNZIP to specify the
+appropriate C macros (described below) when building UnZip.  For
+example, to build the same full-featured UnZip as in the earlier
+example build command, but also enabling support in UnZipSFX for AES
+encryption, and for LZMA and PPMd compression, use a command like the
+following:
 
-      DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
-        This option controls the order in which date components are printed
-        in non-ZipInfo-mode listings:  day-month-year or month-day-year or
-        year-month-day.
-        For DOS, FlexOS, OS2, Theos and Win32, the format is automatically
-        obtained from the operating system; most others default to DF_MDY.
+      make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 \
+       LOCAL_UNZIP='-DAES_WG_SFX -DLZMA_SFX -DPPMD_SFX' LZMA=1 \
+       PPMD=1 generic
 
-      DATE_SEPCHAR='-' or '.' or '/' etc.
-        This option controls the character that separates the date components
-        shown in (non-ZipInfo-mode) listings.  The Win32 port obtains the
-        separator automatically from the operating system's locale settings;
-        all others default to '-'.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      ACORN_FTYPE_NFS  (needs support for long filenames with embedded commas)
-        This option enables a -F option that instructs UnZip to interpret the
-        filetype information extracted from Acorn RiscOS extra field blocks.
-        The filetype IDs are translated into "NFS filetype extensions" and
-        appended to the names of the extracted files. This feature facilitates
-        maintenance of Unix-based NFS volumes that are exported to Acorn RiscOS
-        systems.
+   Helping "make generic"
+   ----------------------
 
-      QLZIP  (Unix only)
-        Add some support for QDOS extra fields. This option enables Unix
-        UnZip to append "datalen info" to QDOS exec type files in the same
-        format as used by QDOS cross-compilers on Unix or the qltools v2.2(+).
+   In some situations, the "unix/configure" script may not set all the
+build options as desired.  One way to work around problems with "make
+generic" is to use a two-step procedure.  First, instead of doing "make
+generic", do "make flags".  For example:
 
-      UNIXBACKUP   (default on OS/2, Unix, Win32)
-        This option enables a -B option that instructs UnZip to rename files
-        that would normally be overwritten.  The renamed files are given a
-        tilde suffix and a unique sequence number (`~#####').  Note that
-        previously renamed files may be overwritten without notice, even
-        if the -n option is given.
-        On target ports where UNIXBACKUP is enabled by default, the negated
-        option NO_UNIXBACKUP may be used to disable this feature.
+      make -f unix/Makefile [other-options ...] flags
 
-      OS2_EAS
-        List the sizes of OS/2 EAs and ACLs for each file as two extra columns
-        in "unzip -l" output.  This is primarily useful for OS/2 systems, but
-        because zipfiles are portable, OS2_EAS can be defined for any system.
-        (May be extended someday to show sizes of Mac resource forks, RISCOS
-        and VMS file info, etc.)
+This should run the "unix/configure" script, which generates a "flags"
+file in the main UnZip directory.  The (text) file "flags" contains all
+the "make" macros which will be used in the second step.  This file can
+be edited to make final adjustments to compile options, link options,
+and so on.
 
-      DELETE_IF_FULL  (anybody with unlink() function)
-        If a write error is encountered (most likely due to a full disk),
-        enabling this option will cause the incomplete file to be deleted
-        instead of closed normally.  This is particularly useful for the
-        Windows CE port, which must generally contend with extremely limited
-        resources.
+   When "flags" has been changed as desired, the second step is to build
+using the "generic" target.  For example:
 
-      ASM_CRC   (Amiga/Aztec C; many x86 systems:  DOS, OS/2, Win32, Unix)
-        Use an assembler routine to calculate the CRC for each file (speed).
+      make -f unix/Makefile generic
 
-      ASM_INFLATECODES   (Amiga/Aztec C only, for now)
-        Use an assembler version of inflate_codes() for speed.
+This should do the build using the changed "flags" file.
 
-      OLD_EXDIR
-        No longer supported.
+   Of course, it's also possible to edit "unix/configure" and/or
+"unix/Makefile", but normally that's not required.
 
-      SFX_EXDIR
-        Enable the "-d <extract_dir>" option for UnZipSFX.  This is now
-        enabled by default (since UnZip 5.5) to facilitate use with
-        automated installation scripts and the like.  For disabling
-        this feature, see the NO_SFX_EXDIR option.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      NO_SFX_EXDIR
-        Disables the "-d <extract_dir>" option for UnZipSFX to generate the
-        smallest possible executable stub.  (Prior to the UnZip 5.5 release,
-        this was the default.)
+   Non-"generic" Builds
+   --------------------
 
-      CHEAP_SFX_AUTORUN
-        Enable a simple "run command after extraction" feature for
-        the (command line) UnZipSFX stub.  This feature is currently
-        incompatible with the "-d <extract_dir>" command line option,
-        therefore CHEAP_SFX_AUTORUN implicitly sets the NO_SFX_EXDIR
-        option.
+   For systems where the "generic" target does not work, and a
+system-specific "make" file exists, use a "make" command which specifies
+the appropriate "make" program and "make" file.  For example:
 
-      NO_ZIPINFO
-        Build without ZipInfo mode (-Z) enabled; makes a smaller executable
-        because many text strings are left out.  Automatically enabled for
-        some small-model builds under MS-DOS and OS/2, so ordinarily there
-        is no need to specify this explicitly.  (Note that even with this
-        defined, the resulting executable may still be too big to extract
-        some zipfiles correctly, if built with the small memory model.)
+      nmake -f os2\makefile.os2 gcc
 
-      DEFLATE64_SUPPORT (default for UnZip and fUnZip)
-      NO_DEFLATE64 (default for UnZipSFX stub)
-        The "Deflate64" algorithm from PKZIP 4.0 (or newer) is an enhanced
-        variant of the Deflate algorithm that achieves slightly better
-        compression ratios on highly redundant data.  Normally, UnZip should
-        be built with support for this compression algorithm enabled.
-        However, this results in significantly larger memory requirements
-        to run the program.  For 16-bit executables (DOS and OS/2), the
-        special memory management to support the 64k history buffer results
-        in a slight performance (= speed) penalty.  And for the SFX stub,
-        "Deflate64" support might be unnecessary as long as the Info-ZIP
-        Zip utility does not support it (quite likely, this will never
-        get implemented).  So, the NO_DEFLATE64 option is provided to allow
-        exclusion of the Deflate64 support.
+Or, if necessary, copy that system-specific "make" file into the main
+UnZip directory (renaming it, if necessary), and use a "make" command
+without the "-f DIR/Makefile" option (or without the "DIR/" part of the
+path to the "make" file).  For example:
 
-      NO_DEFLATE_SFX
-        Disable Deflate compression support in UnZipSFX.  By default,
-        UnZipSFX supports the usual Deflate compression method, but
-        Deflate support can be disabled to reduce the size of the
-        UnZipSFX executable.  (Currently, Deflate support is always
-        enabled in UnZip itself.)
+      copy msdos\makefile.msc .
+      nmake -f makefile.msc
 
-      CRYPT_AES_WG (requires additional external code distribution)
-        Enable WinZip/Gladman AES strong encryption support.  Currently,
-        this support is integrated in the Make procedures of MSDOS 32-bit
-        (DJGPP), VMS, Win32, and many Unix systems.
-        Prerequisites:
-        A modified edition of a publicly available AES source kit must
-        exist in an "aes" subdirectory.  Distribution details are still
-        undetermined.
+   As with a "generic" build, it's also possible to edit a
+system-specific "make" file.
 
-      AES_WG_SFX
-        Enable WinZip/Gladman AES strong encryption support in UnZipSFX (if
-        it's enabled in UnZip).  By default, to reduce the size of the
-        UnZipSFX executable, AES_WG support is disabled in UnZipSFX even
-        when it's enabled in UnZip itself.
+   In some environments which have very limited command line lengths
+(like 128 characters for MS-DOS?), it may be necessary to add "#define"
+directives directly into the "unzip.h" header file (near the top),
+instead of specifying many options using the LOCAL_UNZIP "make" macro.
 
-      BZIP2_SUPPORT (requires additional external code distribution)
-        UnZip can optionally support the "bzip2" compression algorithm for
-        most ports on 32-bit (or higher) platforms. Currently, this support
-        is integrated in the Make procedures of MSDOS 32-bit (DJGPP), VMS,
-        Win32, and many Unix systems.
+   Non-"generic" targets are less well tested, and may need considerable
+help from the user to get optimal results (or any success at all).  To
+get a list of all possible system targets, use a command like:
+
+      make -f unix/Makefile list
+
+Then "make -f unix/Makefile <target>" for your chosen "<target>".
+
+   The "generic" target works for most systems, but if it fails with a
+message about "_ftime unresolved" or "timezone redefined", then try
+commands like the following:
+
+      make -f unix/Makefile clean
+      make -f unix/Makefile help
+and then:
+      make -f unix/Makefile generic2
+or:
+      make -f unix/Makefile generic3
+as instructed.  The comments in unix/Makefile may offer some useful
+information for building on various target systems.
+
+   Use of "make" targets other than "generic" requires some care,
+because other targets typically do not use the unix/configure script (or
+its intermediate "flags" file), and this may cause programs to be built
+without some expected features enabled.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Build Suggestions for Various Non-"generic" Targets
+   ---------------------------------------------------
+
+Macintosh (Mac OS X)
+   On Mac OS X, use the Unix build procedure, described above.  See
+   below for old infomation on pre-Mac-OS-X Macintosh.
+
+MS-DOS
+   See the msdos\Contents file for notes regarding which makefile(s) to
+   use with which compiler.  In summary, pick one of msdos\makefile.*
+   as appropriate, or use the OS/2 gccdos target for emx+gcc.  There is
+   also an mscdos cross-compilation target in os2\makefile.os2.  There
+   may have been an sco_dos cross-compilation target in the Unix
+   makefile, but it seems to be gone now.  For Watcom 16-bit or 32-bit
+   versions, see the comments in the OS/2 section below.
+
+   After choosing the appropriate makefile and editing as necessary or
+   desired, invoke the corresponding make utility.  Microsoft's NMAKE
+   and the free dmake and GNU make utilities are generally the most
+   versatile.  The makefiles in the msdos directory can be invoked in
+   place ("nmake -f msdos\makefile.msc", for example).
+
+MVS, z/OS
+   Unpack all the files and transfer them to an appropriate PDS with
+   ASCII -> EBCDIC conversion enabled, then edit UNZMVSC.JOB as required,
+   and execute it to compile and link all the sources.  C/370 2.1 or
+   later is required.  See README.MVS for further details.  (This is a
+   new port and may need a little more work even to compile.)  There has
+   been considerable work on the MVS and z/OS ports lately (indeed, z/OS
+   may be split off as its own port soon), so there should be updates to
+   these procedures shortly.
+
+VM/CMS
+   Unpack all the files and transfer them with ASCII -> EBCDIC
+   conversion to an appropriate directory/minidisk/whatever, then
+   execute UNZVMC to compile and link all the sources.  This may require
+   C/370 version 2.1 or later and certain `nucleus extensions,' although
+   UnZip 5.3 has been reported to compile fine with the `ADCYCLE C/370
+   v1.2 compiler.'  [See how current this information is?]  Note that it
+   will abend without access to the C/370 runtime library.  See the
+   README.CMS file for more details.
+
+Windows (XP, Vista, 7, and so on)
+   For creating Windows executables, the Microsoft Visual C++ compiler
+   platforms from version 2.x up to 8.0 (Visual Studio .Net C++ 2005)
+   should work.  Recent build test have been run on VC++ 6.0, 7.1 and
+   8.0.  The linker of newer Microsoft Visual C++ versions (beginning
+   with Visual C++ 2008 - [VC++ 9.0]) create executables that are marked
+   to run on Windows 2000 and newer, only.  Although these Visual C++
+   environments may succeed in building Windows Info-ZIP executables,
+   they cannot (and must not) be used to create binaries for public
+   distribution.
+
+   Alternative compilers for the Intel platforms are OpenWatcom C++,
+   GNU C (Cygwin and MinGW32 have been tested, others, such as emx/rsxnt
+   may also work), Borland C++, or lcc-win32.  DEC C/C++ for NT/Alpha
+   may or may not still work.
+
+   For the Watcom compiler, use WMAKE and win32\makefile.wat.
+
+   For the Microsoft compilers, use NMAKE and win32\Makefile.
+
+   For Cygwin or MinGW, use unix/Makefile and the "generic" target.
+   (An old win32\Makefile.gcc may still be included in the kit, but it
+   lacks support for many features, and may be of little value.)
+
+   With emx+gcc, a good choice is GNUMake 3.75 (or higher) from the
+   djgpp V2 distribution used on win32\Makefile.emx.
+
+   The unzip32.dll WinDLL executables can be built using the appropriate
+   Makefile in the win32\ subdirectory, or by using the Microsoft Visual
+   C++ project files supplied below the windll subdirectory.  Besides the
+   MSC compilers, gcc-mingw32, Watcom C and Borland C allow to build the
+   Windows UnZip DLL.  By default, the Makefiles for compilers that use
+   the Microsoft C runtime are configured to link against the shared
+   multithreading C runtime DLL.  Depending on the intended usage for
+   unzip32.dll, a statically linked dll might be more suitable.  The
+   "make" scripts for MSC support build variants with static linking; you
+   should look up the configuration switch DLLSTANDALONE in the MSC
+   Makefile or the "Static..." build configurations in the Visual Studio
+   project files.
+
+Windows CE
+   Only Microsoft Visual C++ 5.0, 6.0 or Visual C++ embedded 3.0 or later
+   are supported.  Use the appropriate version of the included project
+   files and check wince\README for details.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Build Suggestions for Various Old/Obsolete Non-"generic" Targets
+   ----------------------------------------------------------------
+
+   Note: Much of the following information is old, obsolete, and
+probably useless, and is included for completeness only.  These system
+types have not been tested with recent versions of Info-ZIP programs.
+Antique OS enthusiasts are always welcome to contribute changes to
+builders, code, or documentation for systems which the Info-ZIP team
+lacks.
+
+Acorn (RISC OS)
+   Extract the files from the archive and place in standard 'Acorn' C
+   form (i.e., *.c, *.h and *.s become c.*, h.* and s.*, respectively),
+   either using the UNZIP$EXTS environment variable and a pre-built UnZip
+   binary, or using Spark[FS] and doing it manually.  Then copy the
+   Acorn.Makefile to the main UnZip directory and either type 'amu' or
+   use the desktop "make" utility.
+
+AmigaDOS
+   SAS/Lattice C and Manx Aztec C are supported.  For SAS C 6.x do "smake
+   -f amiga/smakefile all"; for Aztec C do "make -f amiga/makefile.azt
+   all".  The Aztec C version supports assembly-language versions of two
+   routines; these are enabled by default.
+
+Atari TOS
+   Turbo C is no longer supported; use gcc and the MiNT libraries, and
+   do "make".  Note that all versions of gcc prior to 2.5.8 have a bug
+   affecting 68000-based machines (optimizer adds 68020 instructions).
+   See atari\README for comments on using other compilers.
+
+BeOS
+   make -f beos/Makefile
+
+Human68K
+   (This is a Japanese machine and OS.)  It appears that GNU "make" and
+   gcc are required.  Presumably, to build everything, just do:
+      gmake -f human68k/Makefile.gcc
+   This port has not been tested since the 5.12 release.
+
+Macintosh (Pre-Mac-OS-X)
+   On Mac OS X, use the Unix build procedure.  The following information
+   for pre-Mac-OS-X Macintosh is old, obsolete, and probably useless,
+   and is included for completeness only.
+
+   Metrowerks CodeWarrior Pro 4 with Universal Interfaces 3.1 is the only
+   currently supported compiler, although the Mac Programmer's Workbench
+   (MPW) and Think C were supported at one time and still have some hooks.
+   Other Compilers may work too, no compiler specific instructions
+   (pragma, header, macros, ...) were used in the code.
+
+   For CodeWarrior Pro 4, un-BinHex the CodeWarrior project file and
+   UnZip resource file (using Stuffit Expander or BinHex 4.0 or later),
+   then open the project and click on the compile button.  See
+   ":macos:Contents" for the possible project targets.  Link order of
+   the standard libraries is very important: Link all sources first and
+   all standard libraries last.
+
+OS/2
+   GNU "make", "nmake", or "dmake" may be used with the OS/2 makefile.
+   All are freely available on the net.  To get a list of supported
+   targets, use a command like the following:
+      nmake -f os2\makefile.os2
+   Comments at the top of the makefile explain the differences between
+   some of the same-compiler targets.
+
+TOPS-20
+   No longer fully supported due to new, unported features, although
+   patches are always welcome.  Unpack all files into the current
+   directory only (including those in the kit's tops20 directory), then
+   use make.mic and "do make".
+
+------------------------------------------------------------------------
+
+      Test
+      ----
+
+   On Unix(-like) systems, after a successful build, a very basic set of
+tests can be run using the "make" target "test".  For example:
+
+      make -f unix/Makefile test
+
+   If PPMd compression was enabled, some basic PPMd tests can be run
+using the "make" target "test_ppmd".    For example:
+
+      make -f unix/Makefile test_ppmd
+
+See "Known PPMd Compression Problems", below, for an explanation of why
+running the PPMd test is important.
+
+   These test sets are simple, not exhaustive.  Before relying on UnZip,
+more realistic tests should be run in the user's own environment,
+ideally, working with the user's own data.  This is especially true when
+using new features, such as new compression and encryption methods.
+
+------------------------------------------------------------------------
+
+      Install
+      -------
+
+   Installation details depend on the oprating system, and some user
+preferences.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Installation Suggestions for Unix Systems
+   -----------------------------------------
+
+   On Unix(-like) systems, after a successful build (and, ideally,
+testing), a command like the following should install the programs and
+the "man" files into their default locations, "/usr/local/bin" and
+"/usr/local/man/man1", respectively:
+
+      make -f unix/Makefile install
+
+   The "make" macros BINDIR and MANDIR can be used to specify different
+destination directories.  For example:
+
+      make -f unix/Makefile BINDIR=/usr/tools/bin \
+       MANDIR=/usr/tools/man1 install
+
+   The user who does the installation needs write permission in all the
+destination directories.  Permissions should be set to 755 for the
+executables, and 644 for the "man" files.  The "make" macros BINPERMS
+and MANPERMS can be used to specify other values.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Installation Suggestions for Non-Unix Systems
+   ---------------------------------------------
+
+Amiga, Atari, MS-DOS, OS/2, Windows
+   Move or copy unzip.exe (or unzip.ttp, or UnZip, or whatever) to the
+   desired destination directory.  Add that directory to your path, if
+   necessary.  Also possibly copy or link the UnZip executable to
+   zipinfo.exe (or ii.exe), or else create an alias or a batch/command
+   file for ZipInfo.  For example, for MS-DOS:
+      @unzip -Z %1 %2 %3 %4 %5 %6 %7 %8 %9
+   Under djgpp 2.x, zipinfo.exe is a 2K stub symbolically linked to
+   unzip.exe.
+
+Acorn RISC OS
+   Copy the executables (unzip, funzip, and zipinfo) to y=the desired
+   destination directory.  Add that directory to your Run$Path, if
+   necessary.  See your Welcome manual if you don't know about Run$Path.
+
+BeOS
+   The default installation location is "/boot/usr/local".  (Executables
+   and "man" files go into the "bin" and "man/man1" subdirectories
+   there, respectively.  The corresponding plain-text (".txt") files may
+   be more useful, however.
+
+Macintosh (Pre-Mac-OS-X)
+   MacZip requires at least System 7 and a Macintosh with a minimum of a
+   Motorola 68020 or PowerPC 601 processor. Other configurations may
+   work but it is not tested at all.
+   The application (MacZip) is distributed as a combination of zip and
+   unzip in one program. The official release is a fat binary with both
+   regular 68K and native PowerPC versions included.
+   Move the executable(s) somewhere.  For example, drag it (or them) to
+   your Applications folder.  For easy access, make an alias in the
+   Launcher Control Panel or directly on your desktop.
+   This port supports also Apple-event, so you can install it in your
+   Web browser as a helper-app.
+   See "macos/README.TXT" (or ":macos:README.TXT" on Mac) for further
+   info.
+
+MVS, VM/CMS, z/OS
+   More information may be coming soon.
+
+VMS
+   See [.vms]INSTALL_VMS.txt.
+
+Human68K, TOPS-20, AOS/VS, etc.
+   More information is unlikely to be coming soon.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Post-Installation
+   -----------------
+
+   Many operating systems require a timezone variable to be set
+correctly (often "TZ").  Unix and VMS generally do so by default.
+Windows does, if set up properly.  Other operating systems may not.  See
+the discussion of the -f and -u options in the UnZip man page (or
+unzip.txt).
+
+------------------------------------------------------------------------
+
+      C Macros to Control UnZip Behavior
+      ----------------------------------
+
+   Contents:
+
+      General C macros
+      System-Specific C macros
+      Unicode-related C macros
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   General C Macros
+   ----------------
+
+ACORN_FTYPE_NFS   (needs support for long filenames with embedded commas)
+   Enable a -F option that instructs UnZip to interpret the filetype
+   information extracted from Acorn RiscOS extra field blocks. The
+   filetype IDs are translated into "NFS filetype extensions" and
+   appended to the names of the extracted files.  This feature
+   facilitates maintenance of Unix-based NFS volumes that are exported
+   to Acorn RiscOS systems.
+
+AES_WG_SFX
+   Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
+   it's enabled in UnZip).  By default, to reduce the size of the
+   UnZipSFX executable, AES_WG support is disabled in UnZipSFX even when
+   it's enabled in UnZip itself.
+
+BZIP2_SFX
+   Enable bzip2 compression support in UnZipSFX (if it's enabled in
+   UnZip).  By default, to reduce the size of the UnZipSFX executable,
+   bzip2 compression support is disabled in UnZipSFX even when it's
+   enabled in UnZip itself.
+
+BZIP2_SUPPORT   (requires additional external code distribution)
+   Enable support for bzip2 compression.  UnZip can optionally support
+   the "bzip2" compression algorithm for most ports on 32-bit (or higher)
+   platforms.  Currently, this support is integrated in the builders for
+   MSDOS 32-bit (DJGPP), Unix, VMS, and Windows.
+
         Prerequisites:
         You have to obtain the bzip2 source distribution (version 1.03 or
         higher) and extract it into the "bzip2" subdirectory.
         Compilation:
-        - MSDOS, Win32: You have to supply the symbol definition
+        - MSDOS, Windows: You have to supply the symbol definition
           "USEBZ2=1" on the command line when you invoke the "make" program.
         - Unix: The target "generic" automatically activates bzip2
           support when its unix/configure script detects bzip2 sources
@@ -404,523 +802,438 @@ To build UnZip, UnZipSFX and/or fUnZip (detailed instructions):
           object library can be found using the IZ_BZIP2 parameter/macro.
           See [.vms]INSTALL_VMS.txt for details.
 
-      BZIP2_SFX
-        Enable bzip2 compression support in UnZipSFX (if it's enabled in
-        UnZip).  By default, to reduce the size of the UnZipSFX executable,
-        bzip2 compression support is disabled in UnZipSFX even when it's
-        enabled in UnZip itself.
-
-      LZMA_SUPPORT
-        Enable LZMA compression support.
-
-      LZMA_SFX
-        Enable LZMA compression support in UnZipSFX (if it's enabled in
-        UnZip).  By default, to reduce the size of the UnZipSFX executable,
-        LZMA compression support is disabled in UnZipSFX even when it's
-        enabled in UnZip itself.
-
-      PPMD_SUPPORT
-        Enable PPMd compression support.
-
-      PPMD_SFX
-        Enable PPMd compression support in UnZipSFX (if it's enabled in
-        UnZip).  By default, to reduce the size of the UnZipSFX executable,
-        PPMd compression support is disabled in UnZipSFX even when it's
-        enabled in UnZip itself.
-
-      MULT_VOLUME (experimental for 5.5x, do NOT use in production versions!)
-      NO_MULT_VOLUME (default)
-        The symbol MULT_VOLUME is used to flag code portions needed for
-        support of multi-volume archives. For now, this flag MUST NOT be
-        used to build a production version of UnZip. This flag has been
-        introduced to allow integration of experimental code for multi-volume
-        support in the master source tree.  This feature will become a default
-        option in the future 6.1 release of UnZip (with any luck).
-
-      LZW_CLEAN
-      UNSHRINK_SUPPORT (now default, as of January 2005)
-        The "shrinking" algorithm from PKZIP 1.0 is an LZW variant.  Unisys
-        patented the Lempel-Ziv-Welch algorithm in 1985 and has publicly
-        claimed that decompression is covered by it.  (IBM also patented the
-        same thing in a filing 3 weeks prior to Unisys's.)  In 2004, the
-        Unisys and IBM patents expired worldwide, so unshrinking is now
-        enabled again by default.  If you do not wish to include the LZW
-        method, you may still disable it by defining LZW_CLEAN.
-        (Unshrinking was used by PKZIP 1.0 and 1.1, and Zip 1.0 and 1.1.
-        All newer archives use only the deflation method.)
-
-      COPYRIGHT_CLEAN   (now default)
-      USE_SMITH_CODE
-        The last chunk of code in UnZip that was blatantly derived from Sam
-        Smith's unzip 2.0 (as in, "substantially similar") is in unreduce.c.
-        Since reducing was only used by very early PKZIP beta versions (0.9x),
-        support for it is now omitted by default (COPYRIGHT_CLEAN).  To in-
-        clude unreducing capability, define USE_SMITH_CODE and replace the
-        stub unreduce.c source file by the separately distributed full source
-        code module.  Note that this subjects UnZip to any and all restrictions
-        in Smith's copyright; see the UnZip COPYING.OLD file for details.
-
-      USE_CRYPT
-        Enable decryption support for all binaries.  The default setting
-        is to disable decryption support for the SFX stub to keep its size
-        as small as possible. For other binaries of the UnZip distribution,
-        decryption support is enabled by default.
-
-      NO_CRYPT
-        Disable decryption support for all binaries.
-
-      PASSWD_FROM_STDIN   (with full crypt sources only; Unix, VMS only)
-        Used to allow the password on encrypted files to be read from stdin
-        rather than the default stderr.  This was useful for those who wished
-        to automate the testing or decoding of encrypted archives (say, in a
-        shell script via ``echo "password" | unzip -tq archive''), but as of
-        version 5.3, UnZip has a -P option for passing a password directly to
-        the program.  PASSWD_FROM_STDIN will therefore probably be phased out
-        in future versions.  Note that the same security warnings given in the
-        description of the -P option apply here as well.
-
-      UNICODE_SUPPORT
-        Enable restoring from UTF-8 encoded paths.  These paths are stored
-        either in extra fields or directly in the path fields if a new
-        UTF-8 bit is set in the flag word.  If the extra field is used, the
-        UTF-8 is stored in a backward-compatible way so that archives with
-        UTF-8 paths still work on zips and unzips that don't support Unicode.
-        If the UTF-8 bit is used the UTF-8 is directly stored in the main
-        path field, so an unzip with Unicode support (such as UnZip 6.0 or
-        later) is needed to correctly interpret the UTF-8.  This support
-        follows the recent additions to the PKWare AppNote for Unicode support,
-        except that Unicode comments on systems where UTF-8 is not the current
-        character set is not implemented in this release.
-
-        Internally, Unicode support can be achieved by three methods:
-        a) The charset encoding used by the system is already UTF-8, so
-           the program just has to select the UTF-8 versions of the stored
-           filenames for file name handling.  (Such as most current Unix.)
-           This method is enabled by setting the symbol UTF8_MAYBE_NATIVE;
-           this activates code to check for native UTF-8 encoding in the
-           locale settings.
-        b) The operating system and the compilation environment support
-           "wide character" data in Unicode encoding (UCS-2/UTF-16 or UCS-4),
-           which are used to translate between UTF-8 and the native
-           extended-ASCII character encoding.
-           The code for this method is activated by setting the preprocessor
-           symbol UNICODE_WCHAR.
-           It may be activated together with UTF8_MAYBE_NATIVE to provide
-           more versatile Unicode support and additional "debugging" options
-           for checking the correct recognition of non-ASCII Unicode
-           characters.
-        c) The operating system and the compilation environment allow use of
-           unicode-encoded "wide character" data for native text strings
-           support.
-           Complete support for this method requires a throughout revision
-           of the UnZip code to convert the MBCS 8-bit string calls used now
-           to the equivalent wide character calls.  All internal string
-           handling and text output needs to be ported to use wchar_t
-           character storage, which for the most part requires just proper
-           type updating.  This capability could be included in
-           UnZip 6.10.
-
-        The latest UnZip 6.10 beta now includes full wide character support
-        of UTF-8 paths on Windows NT and later.  On these OS the UTF-8 is
-        converted to wide character paths and those paths used to recreate
-        the Unicode paths on the file system.  What's not implemented on
-        Windows is language-dependent messages, wide character console
-        input and output, and wide character list support.  This may be
-        implemented in UnZip 6.10 before release.
-
-        On current Linux and similar systems, UnZip now supports UTF-8
-        names and patterns on the command line as well as display of
-        UTF-8 listings on the console.
-
-        On some ports UNICODE_SUPPORT is set automatically:
-        - WIN32 (and WinCE) use method b) by defining UNICODE_SUPPORT and
-          UNICODE_WCHAR.  On Windows NT and later paths are now created
-          using wide character strings as in method c), but console input
-          and output still use method b).  These are now the defaults.
-        - On Unix, the automatic configuration script enables UNICODE_WCHAR
-          if ISO-10646 compatible wide characters are supported and
-          UTF8_MAYBE_NATIVE if the locale detection call is available.
-        For these ports, setting NO_UNICODE_SUPPORT forces deactivation of
-        the Unicode support.
-
-      NO_SETLOCALE (for Unix)
-        On Unix, it is now assumed that <locale.h> and the setlocale function
-        are available, to setup locale-aware filtering of displayed filenames.
-        The option NO_SETLOCALE disables the dependency on <locale.h> and
-        setlocale() on systems where this assumption is invalid (and the
-        auto-configuring "make" target "generic" cannot be used for
-        capabilities detection).
-
-      _MBCS
-      NO_MBCS
-       Enable multi-byte character set support.  This is the default for the
-       Human68k system (originated from Japan) and for Win32 (here only DBCS
-       "double-byte character set" support).  MBCS support should also be
-       enabled on systems which are capable of using UTF-8 as the native
-       charset.  For MBCS support, the C runtime library must supply
-       implementations for the mblen() function and the MB_CUR_MAX runtime
-       macro/function.  The NO_MBCS symbol explicitly disables MBCS support
-       for testing purpose, or when MBCS support does not work as expected.
-
-      HAVE_WORKING_ISPRINT
-      NO_WORKING_ISPRINT
-        The symbol HAVE_WORKING_ISPRINT enables enhanced non-printable chars
-        filtering for filenames in the fnfilter() function.  On some systems
-        (Unix, VMS, some Win32 compilers), this setting is enabled by default.
-        In cases where isprint() flags printable extended characters as
-        unprintable, defining NO_WORKING_ISPRINT allows to disable the enhanced
-        filtering capability in fnfilter().  (The ASCII control codes 0x01 to
-        0x1f are always escaped on ASCII systems.)  If UNICODE_SUPPORT is
-        enabled, the isprint() check is now done using wide characters to
-        avoid MBCS issues.
-
-      DEBUG
-        Used for debugging purposes; enables Trace() statements.  Generally
-        it's best to compile only one or two modules this way.
-
-      DEBUG_TIME
-        Used for debugging the timezone code in fileio.c; enables TTrace()
-        statements.  This code is only used for the freshen/update options
-        (-f and -u), and non-Unix compilers often get it wrong.
-
-
-(4) If you regularly build new versions of UnZip and always want the same
-    non-standard compiler options, then you may wish to specify them in a
-    LOCAL_UNZIP environment variable (assuming it's supported in your
-    makefile).  Under MS-DOS, for example, you could add something like this
-    to AUTOEXEC.BAT:
-
-        set LOCAL_UNZIP=-DDOSWILD -DDATE_FORMAT=DF_DMY
-
-    For a Bourne-like shell on a UNIX(-like) system, you could add
-    something like this to "~/.profile":
-
-        LOCAL_UNZIP='-DBZIP2_SFX' ; export LOCAL_UNZIP
-
-    You can also use the variable to hold special compiler options (e.g.,
-    -FPi87 for Microsoft C, if the x87 libraries are the only ones on your
-    disk and they follow Microsoft's default naming conventions; MSC also
-    supports the CL environment variable, however).
-
-
-(5) Run the "make" utility on your chosen makefile:
-
-      Unix
-        For most systems it's possible to use unix/Makefile in place, at the
-        possible cost of an ignorable warning.  Use a command like:
-            make -f unix/Makefile <target>
-        where "<target>" is the desired "make" target.  On most systems, the
-        best target to use is "generic", which uses "cc" as the C compiler.
-        To use a different compiler, typically "gcc", use a "make" macro to
-        specify it.  For example:
-            make -f unix/Makefile CC=gcc <target>
-        This target uses the unix/configure script to probe the compiler and
-        other parts of the environment to adjust the build procedure, and to
-        enable or disable some program features.  Other (older) targets are
-        less well tested, and may need considerable help from the user to get
-        optimal results (or any success at all).
-        To get a list of all possible system targets, use a command like:
-            make -f unix/Makefile list
-        Then "make -f unix/Makefile <target>" for your chosen "<target>".
-        The "generic" target works for most systems, but if it fails with a
-        message about "_ftime unresolved" or "timezone redefined", do
-        "make clean", "make help", and then try either "make generic2" or
-        "make generic3" as instructed.  The comments in unix/Makefile may
-        offer some useful information for building on various target systems.
-
-        When requesting bzip2 compression support, an existing bzip2 kit can
-        be used instead of dropping a bzip2 source kit into the UnZip "bzip2"
-        subdirectory.  Use the "make" macro IZ_BZIP2 with the "generic" target
-        to specify a directory where an existing bzip2 header file and
-        suitable object/shared library may be found.  For example:
-            make -f unix/Makefile IZ_BZIP2=../../bzip2/bzip-1.0.6 generic
-        Frequent builders may find it convenient to create a nearby bzip2
-        directory, or a nearby link to some particular bzip2 kit directory.
-        For example:
-            make -f unix/Makefile IZ_BZIP2=../iz_bzip2 generic
-        where "../iz_bzip2" is a real bzip2 directory or a link to one.
-
-        Similarly, use of zlib can be requested by specifying an appropriate
-        zlib header+library directory using the "make" macro IZ_ZLIB.  For
-        example:
-             make -f unix/Makefile IZ_ZLIB=../../zlib/zlib-1.2.6 generic
-
-        IZ_BZIP2 and IZ_ZLIB may both be specified, if desired.  Similarly,
-        a value for the LOCAL_UNZIP macro can also be specified in the "make"
-        command.  For example:
-            make -f unix/Makefile IZ_BZIP2=../iz_bzip2 \
-             LOCAL_UNZIP=-DBZIP2_SFX generic
-
-        Use of "make" targets other than "generic" requires some care,
-        because many other targets will not use the unix/configure script
-        (or its intermediate "flags" file), and this may cause programs
-        to be built without some expected features enabled.
-
-
-      VMS (OpenVMS):
-        The most complete information on building and installing UnZip
-        on VMS is in [.vms]INSTALL_VMS.txt.  Optimists in a hurry may
-        wish to try commands like these:
-
-            @ [.VMS]BUILD_UNZIP.COM
-        or:
-            MMS /DESCRIP = [.VMS]DESCRIP.MMS CLEAN      ! Or MMK ...
-            MMS /DESCRIP = [.VMS]DESCRIP.MMS            ! Or MMK ...
-
-        When the executables have been created (or located if already
-        installed), most users define foreign command symbols for the
-        UnZip executables, like this:
-
-            UNZIP :== $ dev:[dir]UNZIP.EXE      ! UNIX-style command line.
-        or:
-            UNZIP :== $ dev:[dir]UNZIP_CLI.EXE  ! VMS-style command line.
-
-        Such symbol definitions are often added to a user's
-        SYS$LOGIN:LOGIN.COM procedure, or to a common, site-specific
-        procedure, like SYS$MANAGER:SYLOGIN.COM.
-
-        Additional installation options are described in
-        [.vms]INSTALL_VMS.txt.
-
-      MS-DOS
-        See the msdos\Contents file for notes regarding which makefile(s) to
-        use with which compiler.  In summary:  pick one of msdos\makefile.*
-        as appropriate, or (as noted above) use the OS/2 gccdos target for
-        emx+gcc.  There is also an mscdos cross-compilation target in
-        os2\makefile.os2 and a sco_dos cross-compilation target in the Unix
-        makefile.  For Watcom 16-bit or 32-bit versions, see the comments in
-        the OS/2 section below.
-
-        After choosing the appropriate makefile and editing as necessary or
-        desired, invoke the corresponding make utility.  Microsoft's NMAKE
-        and the free dmake and GNU make utilities are generally the most
-        versatile.  The makefiles in the msdos directory can be invoked in
-        place ("nmake -f msdos\makefile.msc", for example).
-
-      OS/2
-        Either GNU "make", "nmake" or "dmake" may be used with the OS/2
-        makefile; all are freely available on the net.  Use a command like:
-            nmake -f os2\makefile.os2
-        for example, to get a list of supported targets.  More generally,
-        read the comments at the top of the makefile for an explanation of
-        the differences between some of the same-compiler targets.
-
-      Win32 (WinNT or Win9x)
-        For creating Win32 executables, the Microsoft Visual C++ compiler
-        platforms from version 2.x up to 8.0 (Visual Studio .Net C++ 2005)
-        are supported.  Recent build test have been run on VC++ 6.0, 7.1
-        and 8.0.  The linker of newer Microsoft Visual C++ versions (beginning
-        with Visual C++ 2008 - [VC++ 9.0]) create executables that are marked
-        to run on Windows 2000 and newer, only.  Although these Visual C++
-        environments may succeed in building Win32 Info-ZIP executables,
-        they cannot (and must not) be used to create binaries for public
-        distribution.
-        Alternative compilers for the Intel platforms are OpenWatcom C++,
-        GNU C (preferably the mingw32 port, CygWin and emx/rsxnt may also
-        work), Borland C++, or lcc-win32.
-        DEC C/C++ for NT/Alpha may or may not still work.
-        For the Watcom compiler, use WMAKE and win32\makefile.wat; for the
-        Microsoft compilers, use NMAKE and win32\Makefile; for mingw32 and
-        CygWin, GNU "make" and win32\Makefile.gcc should do the job.
-        With emx+gcc, a good choice is GNUMake 3.75 (or higher) from the
-        djgpp V2 distribution used on win32\Makefile.emx.
-
-        The unzip32.dll WinDLL executables can be built using the appropriate
-        Makefile in the win32\ subdirectory, or by using the Microsoft Visual
-        C++ project files supplied below the windll subdirectory.  Besides the
-        MSC compilers, gcc-mingw32, Watcom C and Borland C allow to build the
-        Windows UnZip DLL.  By default, the Makefiles for compilers that use
-        the Microsoft C runtime are configured to link against the shared
-        multithreading C runtime DLL.  Depending on the intended usage for
-        unzip32.dll, a statically linked dll might be more suitable.  The
-        "make" scripts for MSC support build variants with static linking; you
-        should look up the configuration switch DLLSTANDALONE in the MSC
-        Makefile or the "Static..." build configurations in the Visual Studio
-        project files.
-
-      WinCE (WinCE or WinNT)
-        Only Microsoft Visual C++ 5.0, 6.0 or Visual C++ embedded 3.0 or later
-        are supported.  Use the appropriate version of the included project
-        files and check wince\README for details.
-
-      AmigaDOS
-        SAS/Lattice C and Manx Aztec C are supported.  For SAS C 6.x do "smake
-        -f amiga/smakefile all"; for Aztec C do "make -f amiga/makefile.azt
-        all".  The Aztec C version supports assembly-language versions of two
-        routines; these are enabled by default.
-
-      Atari TOS
-        Turbo C is no longer supported; use gcc and the MiNT libraries, and
-        do "make".  Note that all versions of gcc prior to 2.5.8 have a bug
-        affecting 68000-based machines (optimizer adds 68020 instructions).
-        See atari\README for comments on using other compilers.
-
-      Macintosh
-        Metrowerks CodeWarrior Pro 4 with Universal Interfaces 3.1 is the only
-        currently supported compiler, although the Mac Programmer's Workbench
-        (MPW) and Think C were supported at one time and still have some hooks.
-        Other Compilers may work too, no compiler specific instructions
-        (pragma, header, macros, ...) were used in the code.
-        For CodeWarrior Pro 4, un-BinHex the CodeWarrior project file and
-        UnZip resource file (using Stuffit Expander or BinHex 4.0 or later),
-        then open the project and click on the compile button.
-        See ":macos:Contents" for the possible project targets.
-        Link order of the standard libraries is very important: Link all
-        sources first and all standard libraries last.
-        Mac OS X is considered a Unix port and those procedures should be used.
-
-      Acorn (RISC OS)
-        Extract the files from the archive and place in standard 'Acorn' C
-        form (i.e., *.c, *.h and *.s become c.*, h.* and s.*, respectively),
-        either using the UNZIP$EXTS environment variable and a pre-built UnZip
-        binary, or using Spark[FS] and doing it manually.  Then copy the
-        Acorn.Makefile to the main UnZip directory and either type 'amu' or
-        use the desktop "make" utility.
-
-      VM/CMS
-        Unpack all the files and transfer them with ASCII -> EBCDIC conver-
-        sion to an appropriate directory/minidisk/whatever, then execute
-        UNZVMC to compile and link all the sources.  This may require C/370
-        version 2.1 or later and certain `nucleus extensions,' although
-        UnZip 5.3 has been reported to compile fine with the `ADCYCLE C/370
-        v1.2 compiler.'  Note that it will abend without access to the C/370
-        runtime library.  See the README.CMS file for more details.
-
-      MVS, z/OS
-        Unpack all the files and transfer them to an appropriate PDS with
-        ASCII -> EBCDIC conversion enabled, then edit UNZMVSC.JOB as required,
-        and execute it to compile and link all the sources.  C/370 2.1 or
-        later is required.  See README.MVS for further details.  [This is a
-        new port and may need a little more work even to compile.]
-        There has been considerable work on the MVS and z/OS ports lately
-        (indeed, z/OS may be split off as its own port soon), so there
-        should be updates to these procedures shortly.
-
-      Human68K
-        [This is a Japanese machine and OS.]  It appears that GNU "make" and
-        gcc are required; presumably just do "gmake -f human68k/Makefile.gcc"
-        to build everything.  This port has not been tested since the 5.12
-        release.
-
-      TOPS-20
-        [No longer fully supported due to new, unported features, although
-        patches are always accepted.]  Unpack all files into the current
-        directory only (including those in the zipfile's tops20 directory),
-        then use make.mic and "do make".
-
-      BeOS
-        You can run the BeOS makefile in place by typing "make -f
-        beos/Makefile".  In fact, this is how the author tests it.
-
-    Running the appropriate "make" utility should produce three executables on
-    most systems, one for UnZip/ZipInfo, one for UnZipSFX, and one for fUnZip.
-    (VMS is one prominent exception:  fUnZip makes no sense on it.  The Amiga
-    produces a fourth executable called MakeSFX, which is necessary because
-    Amiga self-extracting archives cannot be created by simple concatenation.
-    If necessary the source amiga/makesfx.c can be compiled on other systems.)
-    Read any OS-specific README files for notes on setting things up for
-    normal use (especially for VMS) and for warnings about known quirks and
-    bugs in various compilers (especially for MS-DOS).
-
-    Also note that many OSes require a timezone variable to be set correctly
-    (often "TZ"); Unix and VMS generally do so by default, Win95/NT do if set
-    up properly, but other OSes generally do not.  See the discussion of the
-    -f and -u options in the UnZip man page (or unzip.txt).  BeOS doesn't
-    currently support timezone information at all, but this will probably be
-    added soon.
-
-    Then test your new UnZip on a few archives and let us know if there are
-    problems (but *please* first make certain that the archives aren't actu-
-    ally corrupted and that you didn't make one of the silly mistakes dis-
-    cussed in the documentation).  If possible, double-check any problems
-    with PKUNZIP or with a previous version of UnZip prior to reporting a
-    "bug."  The zipfile itself may be damaged.
-
-    Building an optimal UnZipSFX executable is more complicated when
-    optional compression methods will be used (or when the standard
-    method, Deflate, will not be used).  Ideally, UnZipSFX should be
-    built with only the required compression methods enabled, but the
-    list of required compression methods is determined when an archive
-    is created, while the list of available methods is determined when
-    UnZipSFX is built.  As always, when creating a self-extracting
-    archive, the resulting program+archive should be tested (on the
-    target system).  Options like "-q -t" should be helpful for this.
-
-
-
-To install:
-===========
-
-Unix
-  The default prefix for the installation location is /usr/local (things
-  go into the bin and man/man1 subdirectories beneath the prefix), and
-  the default man-page extension is "1" (corresponding to man/man1, above).
-  To install as per the defaults, do "make install"; otherwise do "make
-  prefix=/your/path manext=your_extension install".  (For Intel Unix flavors
-  where the assembler CRC routines were used [ASM_CRC], use the install_asm
-  target instead of the regular install target.)  For example, to install
-  in your home directory with "l" as the man-page extension (for "local"),
-  do "make prefix=$HOME manext=l install".  Permissions will be 755 for the
-  executables and 644 for the man pages.  In general root must perform in-
-  stallation into a public directory.  Do "rehash" if your shell requires
-  it in order to find the new executables.
-
-VMS (OpenVMS)
-  For additional installation instructions for VMS, see
-  [.vms]INSTALL_VMS.txt.  This covers DCL foreign command symbols, help
-  libraries, and preparation for creating self-extracting archives.
-
-OS/2, MS-DOS, NT, Atari, Amiga
-  Move or copy unzip.exe (or unzip.ttp, or UnZip, or whatever) to a direc-
-  tory in your path; also possibly copy the UnZip executable to zipinfo.exe
-  (or ii.exe), or else create an alias or a batch/command file for ZipInfo
-  ("@unzip -Z %1 %2 %3 %4 %5 %6 %7 %8 %9" under MS-DOS).  The latter is only
-  relevant if NO_ZIPINFO was *not* defined, obviously...  Under djgpp 2.x,
-  zipinfo.exe is a 2K stub symbolically linked to unzip.exe.
-
-Acorn RISC OS
-  Copy the executables unzip, funzip and zipinfo to somewhere in your
-  Run$Path.  See your Welcome manual if you don't know about Run$Path.
-
-BeOS
-  The default prefix for the installation location is /boot/usr/local
-  (things go into the bin and man/man1 subdirectories beneath the prefix),
-  and the default man-page extension is "1" (corresponding to the man/man1,
-  above).  Of course, these Unix man-pages aren't useful until someone ports
-  something that can format them... plain text versions are also installed
-  with an extension of ".txt".  To install, do a "make install", or to
-  change the prefix, do "make prefix=/your/path install".  For example, to
-  install in /boot/bin, do "make prefix=/boot/bin install".
-
-Macintosh
-  (This port is for Macintosh OS before Mac OS X.  See Unix Apple below for
-  Mac OS X and later.)
-  MacZip requires at least System 7 and a Macintosh with a minimum of a
-  Motorola 68020 or PowerPC 601 processor. Other configurations may work
-  but it is not tested at all.
-  The application (MacZip) is distributed as a combination of zip and unzip
-  in one program. The official release is a fat binary with both regular 68K
-  and native PowerPC versions included.
-  Move the executable(s) somewhere--for example, drag it (or them) to your
-  Applications folder.  For easy access, make an alias in the Launcher Control
-  Panel or directly on your desktop.
-  This port supports also Apple-event.So you can install it in your
-  WWW-Browser as a helper-app.
-  Look into "macos/README.TXT" (or ":macos:README.TXT" on Mac) for further
-  info.
-
-Macintosh OS X (Unix Apple)
-  Mac OS X and later are based on BSD Unix and are supported by the Unix
-  port.  See the Unix port for details.  Beginning with version 6.1,
-  UnZip supports AppleDouble storage of Finder info and resource forks.
-
-MVS, VM/CMS, z/OS
-  More information may be coming soon.
-
-Human68K, TOPS-20, AOS/VS, etc.
-  Dunno, sorry...
-
-__________________________________________________________________________
+CHEAP_SFX_AUTORUN
+   Enable a simple "run command after extraction" feature for
+   (command-line) UnZipSFX.  This feature is currently incompatible
+   with the "-d <extract_dir>" command line option, therefore
+   CHEAP_SFX_AUTORUN implicitly sets the NO_SFX_EXDIR option (below).
+
+COPYRIGHT_CLEAN   (now default)
+USE_SMITH_CODE
+   The last chunk of code in UnZip that was blatantly derived from Sam
+   Smith's unzip 2.0 (as in, "substantially similar") is in unreduce.c.
+   Since reducing was only used by very early PKZIP beta versions (0.9x),
+   support for it is now omitted by default (COPYRIGHT_CLEAN).  To
+   include unreducing capability, define USE_SMITH_CODE and replace the
+   stub unreduce.c source file by the separately distributed full source
+   code module.  Note that this subjects UnZip to any and all
+   restrictions in Smith's copyright; see the UnZip COPYING.OLD file for
+   details.
+
+CRYPT_AES_WG   (requires additional external code distribution)
+   Enable WinZip/Gladman AES strong encryption support.  Currently, this
+   support is integrated in the Make procedures of MSDOS 32-bit (DJGPP),
+   VMS, Windows, and many Unix systems.  A separately distributed
+   IZ_AES_WG source code kit is required.
+
+DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
+   Specify the order in which date components are printed in
+   non-ZipInfo-mode listings: day-month-year, month-day-year, or
+   year-month-day.
+   For DOS, FlexOS, OS2, Theos and Windows, the format is automatically
+   obtained from the operating system; most others default to DF_MDY.
+
+DATE_SEPCHAR='-' or '.' or '/' etc.
+   Specify the character that separates the date components shown in
+   (non-ZipInfo-mode) listings.  The Windows port obtains the separator
+   automatically from the operating system's locale settings.  All
+   others default to '-'.
+
+DEBUG
+   Used for debugging purposes; enables Trace() statements.  It's
+   generally best to compile only one or two modules this way.
+
+DEBUG_TIME
+   Used for debugging the timezone code in fileio.c; enables TTrace()
+   statements.  This code is only used for the freshen/update options
+   (-f and -u), and non-Unix compilers often get it wrong.
+
+DEFLATE64_SUPPORT   (default for UnZip and fUnZip)
+NO_DEFLATE64   (default for UnZipSFX)
+   The "Deflate64" compression algorithm from PKZIP 4.0 (or newer) is an
+   enhanced variant of the Deflate algorithm that achieves slightly
+   better compression ratios on highly redundant data.  For better
+   compatibility with archives which use this method, UnZip should be
+   built with support for Deflate64 enabled.  However, this results in
+   significantly larger memory requirements to run the program.  For
+   16-bit executables (DOS and OS/2), the special memory management to
+   support the 64K history buffer results in a slight speed penalty.
+   For UnZipSFX, "Deflate64" support should be unnecessary so long as
+   the Info-ZIP Zip utility does not support it.  The NO_DEFLATE64
+   option disables Deflate64 support.
+
+DELETE_IF_FULL   (any system with unlink() function)
+   If a write error is encountered (most likely due to a full disk),
+   enabling this option will cause the incomplete file to be deleted
+   instead of closed normally.  This is particularly useful for the
+   Windows CE port, which must generally contend with extremely limited
+   resources.
+
+LZMA_SFX
+   Enable LZMA compression support in UnZipSFX (if it's enabled in
+   UnZip).  By default, to reduce the size of the UnZipSFX executable,
+   LZMA compression support is disabled in UnZipSFX even when it's
+   enabled in UnZip itself.
+
+LZMA_SUPPORT
+   Enable LZMA compression support in UnZip.
+
+LZW_CLEAN
+UNSHRINK_SUPPORT   (now default, as of January 2005)
+   The "shrinking" algorithm from PKZIP 1.0 is an LZW variant.  Unisys
+   patented the Lempel-Ziv-Welch algorithm in 1985 and has publicly
+   claimed that decompression is covered by it.  (IBM also patented the
+   same thing in a filing 3 weeks prior to Unisys's.)  In 2004, the
+   Unisys and IBM patents expired worldwide, so unshrinking is now
+   enabled again by default.  If you do not wish to include the LZW
+   method, you may still disable it by defining LZW_CLEAN.  (Unshrinking
+   was used by PKZIP 1.0 and 1.1, and Zip 1.0 and 1.1. All newer archives
+   use only the deflation method.)
+
+MULT_VOLUME   (experimental for 5.5x, do NOT use in production versions!)
+NO_MULT_VOLUME   (default)
+   The symbol MULT_VOLUME is used to flag code portions needed for
+   support of multi-volume archives. For now, this flag MUST NOT be used
+   to build a production version of UnZip. This flag has been introduced
+   to allow integration of experimental code for multi-volume support in
+   the master source tree.  This feature will become a default option in
+   the future 6.1 release of UnZip (with any luck).
+
+NO_ASM
+NO_ASM_CRC
+   Used by unix/configure ("make generic") to disable automatic
+   selection of assembly code for CRC calculations.
+
+NO_CRYPT
+   Disable encryption support for all programs.
+
+NO_DEFLATE_SFX
+   Disable Deflate compression support in UnZipSFX.  By default,
+   UnZipSFX supports the usual Deflate compression method, but Deflate
+   support can be disabled to reduce the size of the UnZipSFX
+   executable.  (Currently, Deflate support is always enabled in UnZip
+   itself.)
+
+NO_SFX_EXDIR
+   Disable the "-d <extract_dir>" option for UnZipSFX.  Since UnZip 5.5,
+   this has been enabled by default, to facilitate use with automated
+   installation scripts and the like.
+
+NO_ZIPINFO
+   Disable ZipInfo mode (-Z).  This makes a smaller UnZip executable,
+   because many text strings are left out.  Automatically enabled for
+   some small-model builds under MS-DOS and OS/2, so ordinarily there is
+   no need to specify this explicitly.  (Note that even with this
+   defined, the resulting executable may still be too big to extract
+   some zipfiles correctly, if built with the small memory model.)
+
+NOTIMESTAMP
+   Disable the -T option, which basically does exactly what Zip's -go
+   options do.  That is, set the timestamp of the archive to that of the
+   newest file in the archive without rewriting the archive. Unlike Zip,
+   however, UnZip supports wildcard specifications for the archive name.
+   For example, "unzip -T *.zip" will set the dates of all zipfiles in
+   the current directory.  (UnZip's option is also much faster.)
+
+OS2_EAS
+   List the sizes of OS/2 EAs and ACLs for each file as two extra columns
+   in "unzip -l" output.  This is primarily useful for OS/2 systems, but
+   because zipfiles are portable, OS2_EAS can be defined for any system.
+   (May be extended someday to show sizes of Mac resource forks, RISCOS
+   and VMS file info, etc.)
+
+PPMD_SFX
+   Enable PPMd compression support in UnZipSFX (if it's enabled in
+   UnZip).  By default, to reduce the size of the UnZipSFX executable,
+   PPMd compression support is disabled in UnZipSFX even when it's
+   enabled in UnZip itself.
+
+PPMD_SUPPORT
+   Enable PPMd compression support in UnZip.
+
+UNIXBACKUP   (default on OS/2, Unix, Windows)
+   Enable a -B option that instructs UnZip to rename files that would
+   normally be overwritten.  The renamed files are given a tilde suffix
+   and a unique sequence number (`~#####').  Note that previously renamed
+   files may be overwritten without notice, even if the -n option is given.
+   On target ports where UNIXBACKUP is enabled by default, the negated
+   option, NO_UNIXBACKUP, may be used to disable this feature.
+
+USE_CRYPT
+   Enable Traditional encryption support for UnZipSFX.  The default
+   setting is to disable Traditional encryption for UnZipSFX, to
+   minimize its size.  For UnZip, encryption support is enabled by
+   default.
+
+VMS_TEXT_CONV   (everybody except VMS)
+NO_VMS_TEXT_CONV
+   VMS_TEXT_CONV enables conversion of some VMS-specific text file
+   formats, and is defined by default for UnZip (but not for UnZipSFX).
+   Defining NO_VMS_TEXT_CONV disables this capability.
+   VMS Stream_LF-format text files archived with the "-V" option (/VMS),
+   but NOT with -VV (/VMS=ALL), should be fine when extracted on other
+   systems.  Stream_LF-files archived with -VV should be readable as well,
+   but they may get some junk appended.  Text files with other record
+   formats (like the common variable-length format, with its embedded
+   byte counts) may be only semi-readable at best when extracted on other
+   systems.  Defining VMS_TEXT_CONV enables UnZip's -aa option to detect
+   and convert VMS variable-length record format text files into the
+   native text format.  UnZip on non-VMS systems uses a simple VMS extra
+   field analyzer to identify such text files.  (Very old versions of
+   UnZip applied some heuristics instead.)
+
+WILD_STOP_AT_DIR   (incompatible with WINDLL!)
+   Enables an additional option "-W".  When "-W" is specified, the
+   pattern-matching routine is modified so that both '?' (single-char
+   wildcard) and '*' (multi-char wildcard) do not match the directory
+   separator character '/'. Examples:
+      "*.c" matches "foo.c" but not "mydir/foo.c"
+      "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
+      "??*/*" matches "ab/foo" and "abc/foo" but not "a/foo" or "a/b/foo"
+   To enable matching across directory separator chars, specify two
+   consecutive multi-char wildcards ("**").  This modified behavior is
+   like the pattern matching style used by the shells of some of UnZip's
+   supported target OSs (for example, Acorn RISC OS).
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   System-Specific C Macros
+   ------------------------
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Multi-System
+   ------------
+
+ASM_CRC   (Amiga/Aztec C; many x86 systems:  DOS, OS/2, Windows, Unix)
+   Use an assembler routine to calculate the CRC checksums.  (Faster
+   than the C code?)
+
+ASM_INFLATECODES   (Amiga/Aztec C only, for now)
+   Use an assembler version of inflate_codes() for speed.
+
+PASSWD_FROM_STDIN   (Unix, VMS only)
+   Used to allow the password on encrypted files to be read from stdin
+   rather than the default stderr.  This was useful for those who wished
+   to automate the testing or decoding of encrypted archives (say, in a
+   shell script via ``echo "password" | unzip -tq archive''), but as of
+   version 5.3, UnZip has a -P option for passing a password directly to
+   the program.  PASSWD_FROM_STDIN will therefore probably be phased
+   out in future versions.  Note that the same security warnings given
+   in the description of the -P option apply here as well.
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   MS-DOS
+   ------
+
+DOSWILD   (MS-DOS only)
+   Treat trailing "*.*" like Unix "*" (i.e., matches anything); treat
+   trailing "*." as match for files without a dot (i.e., matches
+   anything, as long as no dots in name).  Special treatment only occurs
+   if patterns are at end of arguments.  That is, "a*.*" matches all
+   files starting with "a", but "*.*c" matches all files ending in "c"
+   only if they have a dot somewhere before the "c".  (The default method
+   of specifying files without a dot would be "* -x *.*", making use of
+   UnZip's exclude-files option.)  The matching is similar to that in
+   Unix, if you pretend that undotted filenames really have an invisible
+   dot at the end, which is how DOS and related systems treat filenames
+   in general.  All other regular expressions (including "?" and
+   "[range_of_chars]") retain their Unix-like behavior.
+
+USE_DJGPP_ENV   (MS-DOS DJGPP 2.0x only)
+   Regular DJGPP v2.0x built programs which use ENVIRONMENT are able
+   to read from the file "djgpp.env" as well as those set in the
+   environment.  This adds about 1KB to the size of the executable. This
+   option is disabled by default in Info-ZIP source. If you are able to
+   use "djgpp.env" and don't like to clutter the environment with many
+   special purpose variables, you may want to build with this option set.
+
+USE_DJGPP_GLOB  (MS-DOS DJGPP 2.0x only)
+   Enable Unix-shell-like expansion of command-line wildcards (built-in
+   "globbing").  This option enables the globbing built into the DJGPP
+   startup code.  When using an executable built with this option, you
+   normally need to quote wildcard arguments ("*"), to get them passed
+   to the program unmodified.  Enabling this option is not recommended,
+   because it results in Info-Zip binaries that do not behave as
+   expected for MS-DOS programs.
+
+USE_VFAT   (MS-DOS only, for using same executable under DOS and Windows)
+   djgpp 2.x and emx/gcc+RSX 5.1 can detect when they are running under
+   a Windows DOS box and will accordingly enable long-filename support.
+   For now, only djgpp 2.x and emx/gcc with RSX 5.1 or later have this
+   feature (and it is defined by default in msdos/makefile.dj2 and
+   makefile.emx), but if/when other compilers build in similar support,
+   define this macro to enable its use.  See also msdos/doscfg.h.  (Note
+   that djgpp 2.0's LFN support is flaky; users should upgrade to 2.01
+   or later.)
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   QDOS
+   ----
+
+QLZIP   (Unix only)
+   Add some support for QDOS extra fields.  This option enables Unix
+   UnZip to append "datalen info" to QDOS exec type files in the same
+   format as used by QDOS cross-compilers on Unix or the qltools v2.2(+).
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   VMS
+   ---
+
+CHECK_VERSIONS   (VMS only)
+   Obsolete.  Enable a warning when the VMS version of the system where
+   UnZip is being used differs from the VMS version where an archive was
+   created.  Long ago, some Info-ZIP developers were concerned that the
+   format of the VMS (RMS) file-attribute data (stored in Zip "extra
+   fields") might differ between different versions of VMS.  This has
+   not been a problem, so this warning has long been disabled by
+   default.
+
+RETURN_CODES   (VMS only)
+   Obsolete.  Enable a final status (success/error) message which is
+   sent to the user's terminal when UnZip exits.  UnZip's internal
+   Unix-style exit status codes are normally converted to VMS-style
+   status codes in a DCL environment, so enabling this exit message
+   would probably be more confusing than helpful.
+
+VMSCLI   (VMS only)
+   For internal use only.  Use VMS-style "slash options" (/FOOBAR)
+   instead of the default Unix-style hyphen options (-f).  Automatic
+   options stored in DCL symbols or logical names (UNZIP_OPTS or
+   ZIPINFO_OPTS) must always be in the Unix style.  Beginning with UnZip
+   5.32, the VMS builders generate both VMS-style (*_CLI.EXE) and
+   Unix-style executables, so a user normally does NOT need to specify
+   VMSCLI.
+
+VMSWILD   (VMS only)
+   Use parentheses rather than brackets to delimit sets (ranges), and
+   use "%" instead of "?" as the single-character wildcard for internal
+   filename matching.  (External matching of zipfile names always uses
+   the standard VMS wildcard facilities; character sets are disallowed.)
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Windows
+   -------
+
+NO_W32TIMES_IZFIX   (Windows, including WinDLL, and Windows CE)
+   Disable Info-ZIP's special timestamp adjustment to get stable time
+   stamps on NTFS disks that do not change depending on the current time
+   being normal vs. daylight saving time.  When this option is set,
+   UnZip behaves like other programs; file timestamps on NTFS partitions
+   are created so that their current local time representation displayed
+   by directory listings (cmd.exe "dir" command or Windows Explorer
+   listings) is the same as shown by UnZip's listing. But the actual UTC
+   timestamp values stored in the NTFS file attributes vary depending on
+   whether extraction is done at summer or winter time.
+   This option is not recommended because it sacrifices the timestamp
+   comparison checks when extracting or modifying archives in "update
+   only newer" mode.  However, for environments where consistency of
+   displayed dates of files extracted to NTFS vs. FAT disks is
+   considered more important than correctly working update/freshen tasks
+   of Zip and UnZip, this option may be used.
+   PLEASE DO NOT PUBLISH executables that were built with this option!
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+   Unicode-Related C Macros
+   ------------------------
+
+UNICODE_SUPPORT
+   Enable restoring from UTF-8 encoded paths.  These paths are stored
+   either in extra fields or directly in the path fields if a new UTF-8
+   bit is set in the flag word.  If the extra field is used, the UTF-8
+   is stored in a backward-compatible way so that archives with UTF-8
+   paths still work on zips and unzips that don't support Unicode. If
+   the UTF-8 bit is used the UTF-8 is directly stored in the main path
+   field, so an unzip with Unicode support (such as UnZip 6.0 or later)
+   is needed to correctly interpret the UTF-8.  This support follows the
+   recent additions to the PKWARE APPNOTE for Unicode support, except
+   that Unicode comments on systems where UTF-8 is not the current
+   character set is not implemented in this release.
+
+   Internally, Unicode support can be achieved by three methods:
+   a) The charset encoding used by the system is already UTF-8, so
+      the program just has to select the UTF-8 versions of the stored
+      filenames for file name handling.  (Such as most current Unix.)
+      This method is enabled by setting the symbol UTF8_MAYBE_NATIVE;
+      this activates code to check for native UTF-8 encoding in the
+      locale settings.
+   b) The operating system and the compilation environment support
+      "wide character" data in Unicode encoding (UCS-2/UTF-16 or UCS-4),
+      which are used to translate between UTF-8 and the native
+      extended-ASCII character encoding.  The code for this method is
+      activated by setting the preprocessor symbol UNICODE_WCHAR.  It
+      may be activated together with UTF8_MAYBE_NATIVE to provide more
+      versatile Unicode support and additional "debugging" options for
+      checking the correct recognition of non-ASCII Unicode characters.
+   c) The operating system and the compilation environment allow use of
+      Unicode-encoded "wide character" data for native text strings
+      support.  Complete support for this method requires a thorough
+      revision of the UnZip code to convert the MBCS 8-bit string calls
+      used now to the equivalent wide character calls.  All internal
+      string handling and text output needs to be ported to use wchar_t
+      character storage, which for the most part requires just proper
+      type updating.  This capability could be included in UnZip 6.10.
+
+   UnZip 6.10b (beta) now includes full wide character support of UTF-8
+   paths on Windows NT and later.  On these OS the UTF-8 is converted to
+   wide character paths and those paths used to recreate the Unicode
+   paths on the file system.  What are not implemented on Windows are
+   language-dependent messages, wide-character console input and output,
+   and wide character list support.  These may be implemented in UnZip
+   6.10.
+
+   On current Linux and similar systems, UnZip now supports UTF-8 names
+   and patterns on the command line as well as display of UTF-8 listings
+   on the console.
+
+   On some ports UNICODE_SUPPORT is set automatically:
+   - Windows (and WinCE) use method b) by defining UNICODE_SUPPORT and
+     UNICODE_WCHAR.  On Windows NT and later, paths are now created
+     using wide character strings as in method c), but console input and
+     output still use method b).  These are now the defaults.
+   - On Unix, the automatic configuration script enables UNICODE_WCHAR
+     if ISO-10646 compatible wide characters are supported and
+     UTF8_MAYBE_NATIVE if the locale detection call is available.  For
+     these ports, setting NO_UNICODE_SUPPORT forces deactivation of the
+     Unicode support.
+
+HAVE_WORKING_ISPRINT
+NO_WORKING_ISPRINT
+   HAVE_WORKING_ISPRINT enables enhanced filtering of non-printable
+   characters in filenames by the fnfilter() function.  On some systems
+   (Unix, VMS, some Windows compilers), this setting is enabled by
+   default. In cases where isprint() flags printable extended characters
+   as unprintable, defining NO_WORKING_ISPRINT disables the enhanced
+   filtering capability in fnfilter().  (The ASCII control codes 0x01 to
+   0x1f are always escaped on ASCII systems.)  If UNICODE_SUPPORT is
+   enabled, the isprint() check is now done using wide characters for
+   MBCS compatibility.
+
+NO_SETLOCALE (for Unix)
+   On Unix, it is now assumed that <locale.h> and the setlocale function
+   are available, to set up locale-aware filtering of displayed
+   filenames.  The option NO_SETLOCALE disables the dependency on
+   <locale.h> and setlocale() on systems where this assumption is
+   invalid (and the auto-configuring "make" target "generic" cannot be
+   used for automatic capability detection).
+
+_MBCS
+NO_MBCS
+   Enable multi-byte character set support.  This is the default for the
+   Human68k system (originated from Japan) and for Windows (here only
+   DBCS "double-byte character set" support).  MBCS support should also
+   be enabled on systems which are capable of using UTF-8 as the native
+   charset.  For MBCS support, the C runtime library must supply
+   implementations for the mblen() function and the MB_CUR_MAX runtime
+   macro/function.  NO_MBCS explicitly disables MBCS support for testing
+   purposes, or when MBCS support does not work as expected.
+
+------------------------------------------------------------------------
 
         Known PPMd Compression Problems
         ===============================
@@ -953,3 +1266,4 @@ program is behving properly.
    We would be grateful to receive reports describing environments where
 this problem occurs.
 
+------------------------------------------------------------------------

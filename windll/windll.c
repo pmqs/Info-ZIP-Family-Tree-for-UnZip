@@ -355,7 +355,12 @@ LPDCL lpDCL;
     G.pfnames = (char **)&fnames[0];    /* assign default file name vector */
     G.pxnames = (char **)&fnames[1];
 
-    uO.jflag = (lpDCL->ndflag == 0);
+    /* 2012-07-14 SMS.
+     * Not using extended "-j" capability, which needs more than a bit,
+     * but may work as before.  Was:
+     * uO.jflag = (lpDCL->ndflag == 0);
+     */
+    uO.jflag = (lpDCL->ndflag == 0) ? -1 : 0;
     uO.ddotflag = (lpDCL->ndflag >= 2);
     uO.cflag = lpDCL->ncflag;
     uO.tflag = lpDCL->ntflag;
