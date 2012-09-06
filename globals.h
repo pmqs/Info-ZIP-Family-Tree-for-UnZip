@@ -49,7 +49,7 @@
 
   If you make the inclusion of any variables conditional, be sure to only
   check macros that are GUARANTEED to be included in every module.
-  For instance, newzip and pwdarg are needed only if CRYPT is TRUE,
+  For instance, newzip and pwdarg are needed only if CRYPT_ANY is defined,
   but this is defined after unzip.h has been read.  If you are not careful,
   some modules will expect your variable to be part of this struct while
   others won't.  This will cause BIG problems. (Inexplicable crashes at

@@ -1,4 +1,4 @@
-#                                               10 July 2012.  SMS.
+#                                               3 September 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Description File.
 #
@@ -72,6 +72,13 @@
 #                   SFX programs are built without PPMd support.  Add
 #                   "PPMD_SFX=1" to the LOCAL_UNZIP C macros to enable
 #                   it.  (See LOCAL_UNZIP, above.)
+#
+#    PROD=subdir    Use [.subdir] as the destination for
+#                   architecture-specific product files (.EXE, .OBJ,
+#                   .OLB, and so on).  The default is a name
+#                   automatically generated using rules defined in
+#                   [.VMS]DESCRIP_SRC.MMS.  Note that using this option
+#                   carelessly can confound the CLEAN* targets.
 #
 #    USEBZ2=1       Build with optional BZIP2 support.  This macro
 #                   is a shortcut for IZ_BZIP2=SYS$DISK:[.BZIP2].
@@ -200,14 +207,15 @@ CLEAN :
 	 delete $(DEST).dir;*
 
 # CLEAN_ALL target.  Delete:
-#    The [.$(DEST)] directories and everything in them.
+#    The [.$(DEST)] directory and everything in it (CLEAN),
+#    The standard [.$(DEST)] directories and everything in them,
 #    All help-related derived files,
-#    All individual C dependency files.
+#    All individual C dependency files,
 #    All test_dir_* directories.
 # Also mention:
 #    Comprehensive dependency file.
 #
-CLEAN_ALL :
+CLEAN_ALL : CLEAN
 	if (f$search( "[.ALPHA*]*.*") .nes. "") then -
 	 delete [.ALPHA*]*.*;*
 	if (f$search( "ALPHA*.dir", 1) .nes. "") then -
@@ -309,8 +317,10 @@ $(LIB_UNZIPSFX) : $(LIB_UNZIPSFX)($(MODS_OBJS_LIB_UNZIPSFX))
 $(LIB_UNZIPSFX_CLI) : $(LIB_UNZIPSFX_CLI)($(MODS_OBJS_LIB_UNZIPSFX_CLI))
 	@ write sys$output "$(MMS$TARGET) updated."
 
+.IFDEF LIBUNZIP                 # LIBUNZIP
 $(LIB_LIBUNZIP) : $(LIB_LIBUNZIP)($(MODS_OBJS_LIB_LIBUNZIP))
 	@ write sys$output "$(MMS$TARGET) updated."
+.ENDIF                          # LIBUNZIP
 
 # Module ID options files.
 
@@ -539,6 +549,7 @@ $(UNZIP_MSG_OBJ) : $(UNZIP_MSG_MSG)
 
 # Library link options file.
 
+.IFDEF LIBUNZIP                 # LIBUNZIP
 $(LIBUNZIP_OPT) : [.VMS]STREAM_LF.FDL
 	def_dev_dir_orig = f$environment( "default")
 	set default [.$(DEST)]
@@ -558,6 +569,7 @@ $(LIBUNZIP_OPT) : [.VMS]STREAM_LF.FDL
 	if ("$(LIB_ZLIB_OPTS)" .nes. "") then -
          write opt_file_lib "$(LIB_ZLIB_OPTS)" - ","
 	close opt_file_lib
+.ENDIF                          # LIBUNZIP
 
 # Include generated source dependencies.
 

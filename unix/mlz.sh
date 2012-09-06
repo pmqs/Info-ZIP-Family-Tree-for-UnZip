@@ -27,5 +27,5 @@ cd ..
 if test -f "$aro" ; then
   rm -f "$aro"
 fi
-ar r "$aro" $o_zip ` ( cd "$tmpdir" ; ls ) `
+ar r "$aro" $o_zip ` ( cd "$tmpdir" ; find . -name '*.o' -print ) `
 

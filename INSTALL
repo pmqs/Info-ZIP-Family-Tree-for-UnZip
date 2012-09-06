@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Last update: 2012-07-16
+   UnZip version 6.10.  Revised: 2012-07-25
 
 ------------------------------------------------------------------------
 
@@ -758,12 +758,6 @@ ACORN_FTYPE_NFS   (needs support for long filenames with embedded commas)
    facilitates maintenance of Unix-based NFS volumes that are exported
    to Acorn RiscOS systems.
 
-AES_WG_SFX
-   Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
-   it's enabled in UnZip).  By default, to reduce the size of the
-   UnZipSFX executable, AES_WG support is disabled in UnZipSFX even when
-   it's enabled in UnZip itself.
-
 BZIP2_SFX
    Enable bzip2 compression support in UnZipSFX (if it's enabled in
    UnZip).  By default, to reduce the size of the UnZipSFX executable,
@@ -772,7 +766,7 @@ BZIP2_SFX
 
 BZIP2_SUPPORT   (requires additional external code distribution)
    Enable support for bzip2 compression.  UnZip can optionally support
-   the "bzip2" compression algorithm for most ports on 32-bit (or higher)
+   the "bzip2" compression algorithm on most ports on 32-bit (or higher)
    platforms.  Currently, this support is integrated in the builders for
    MSDOS 32-bit (DJGPP), Unix, VMS, and Windows.
 
@@ -803,7 +797,7 @@ BZIP2_SUPPORT   (requires additional external code distribution)
           See [.vms]INSTALL_VMS.txt for details.
 
 CHEAP_SFX_AUTORUN
-   Enable a simple "run command after extraction" feature for
+   Enable a simple "run command after extraction" feature in
    (command-line) UnZipSFX.  This feature is currently incompatible
    with the "-d <extract_dir>" command line option, therefore
    CHEAP_SFX_AUTORUN implicitly sets the NO_SFX_EXDIR option (below).
@@ -826,11 +820,23 @@ CRYPT_AES_WG   (requires additional external code distribution)
    VMS, Windows, and many Unix systems.  A separately distributed
    IZ_AES_WG source code kit is required.
 
+CRYPT_AES_WG_SFX
+   Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
+   it's enabled in UnZip).  By default, to reduce the size of the
+   UnZipSFX executable, AES_WG support is disabled in UnZipSFX even when
+   it's enabled in UnZip itself.
+
+CRYPT_TRAD_SFX
+   Enable Traditional encryption support in UnZipSFX.  The default
+   setting is to disable Traditional encryption in UnZipSFX, to reduce
+   its size.  In UnZip, encryption support is enabled by default.  See
+   also NO_CRYPT, below.
+
 DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
    Specify the order in which date components are printed in
    non-ZipInfo-mode listings: day-month-year, month-day-year, or
    year-month-day.
-   For DOS, FlexOS, OS2, Theos and Windows, the format is automatically
+   On DOS, FlexOS, OS2, Theos and Windows, the format is automatically
    obtained from the operating system; most others default to DF_MDY.
 
 DATE_SEPCHAR='-' or '.' or '/' etc.
@@ -848,8 +854,8 @@ DEBUG_TIME
    statements.  This code is only used for the freshen/update options
    (-f and -u), and non-Unix compilers often get it wrong.
 
-DEFLATE64_SUPPORT   (default for UnZip and fUnZip)
-NO_DEFLATE64   (default for UnZipSFX)
+DEFLATE64_SUPPORT   (default in UnZip and fUnZip)
+NO_DEFLATE64   (default in UnZipSFX)
    The "Deflate64" compression algorithm from PKZIP 4.0 (or newer) is an
    enhanced variant of the Deflate algorithm that achieves slightly
    better compression ratios on highly redundant data.  For better
@@ -865,9 +871,8 @@ NO_DEFLATE64   (default for UnZipSFX)
 DELETE_IF_FULL   (any system with unlink() function)
    If a write error is encountered (most likely due to a full disk),
    enabling this option will cause the incomplete file to be deleted
-   instead of closed normally.  This is particularly useful for the
-   Windows CE port, which must generally contend with extremely limited
-   resources.
+   instead of closed normally.  This is particularly useful on Windows
+   CE, which must generally contend with extremely limited resources.
 
 LZMA_SFX
    Enable LZMA compression support in UnZipSFX (if it's enabled in
@@ -893,11 +898,11 @@ UNSHRINK_SUPPORT   (now default, as of January 2005)
 MULT_VOLUME   (experimental for 5.5x, do NOT use in production versions!)
 NO_MULT_VOLUME   (default)
    The symbol MULT_VOLUME is used to flag code portions needed for
-   support of multi-volume archives. For now, this flag MUST NOT be used
-   to build a production version of UnZip. This flag has been introduced
-   to allow integration of experimental code for multi-volume support in
-   the master source tree.  This feature will become a default option in
-   the future 6.1 release of UnZip (with any luck).
+   support of multi-volume archives.  For now, this flag MUST NOT be
+   used to build a production version of UnZip. This flag has been
+   introduced to allow integration of experimental code for multi-volume
+   support in the master source tree.  This feature will become a
+   default option in the future 6.1 release of UnZip (with any luck).
 
 NO_ASM
 NO_ASM_CRC
@@ -905,7 +910,10 @@ NO_ASM_CRC
    selection of assembly code for CRC calculations.
 
 NO_CRYPT
-   Disable encryption support for all programs.
+   Disable all encryption support in all programs.
+
+NO_CRYPT_TRAD
+   Disable Traditional encryption support in all programs.
 
 NO_DEFLATE_SFX
    Disable Deflate compression support in UnZipSFX.  By default,
@@ -915,13 +923,13 @@ NO_DEFLATE_SFX
    itself.)
 
 NO_SFX_EXDIR
-   Disable the "-d <extract_dir>" option for UnZipSFX.  Since UnZip 5.5,
+   Disable the "-d <extract_dir>" option in UnZipSFX.  Since UnZip 5.5,
    this has been enabled by default, to facilitate use with automated
    installation scripts and the like.
 
 NO_ZIPINFO
    Disable ZipInfo mode (-Z).  This makes a smaller UnZip executable,
-   because many text strings are left out.  Automatically enabled for
+   because many text strings are left out.  Automatically enabled in
    some small-model builds under MS-DOS and OS/2, so ordinarily there is
    no need to specify this explicitly.  (Note that even with this
    defined, the resulting executable may still be too big to extract
@@ -937,7 +945,7 @@ NOTIMESTAMP
 
 OS2_EAS
    List the sizes of OS/2 EAs and ACLs for each file as two extra columns
-   in "unzip -l" output.  This is primarily useful for OS/2 systems, but
+   in "unzip -l" output.  This is primarily useful on OS/2 systems, but,
    because zipfiles are portable, OS2_EAS can be defined for any system.
    (May be extended someday to show sizes of Mac resource forks, RISCOS
    and VMS file info, etc.)
@@ -959,16 +967,10 @@ UNIXBACKUP   (default on OS/2, Unix, Windows)
    On target ports where UNIXBACKUP is enabled by default, the negated
    option, NO_UNIXBACKUP, may be used to disable this feature.
 
-USE_CRYPT
-   Enable Traditional encryption support for UnZipSFX.  The default
-   setting is to disable Traditional encryption for UnZipSFX, to
-   minimize its size.  For UnZip, encryption support is enabled by
-   default.
-
 VMS_TEXT_CONV   (everybody except VMS)
 NO_VMS_TEXT_CONV
    VMS_TEXT_CONV enables conversion of some VMS-specific text file
-   formats, and is defined by default for UnZip (but not for UnZipSFX).
+   formats, and is defined by default in UnZip (but not in UnZipSFX).
    Defining NO_VMS_TEXT_CONV disables this capability.
    VMS Stream_LF-format text files archived with the "-V" option (/VMS),
    but NOT with -VV (/VMS=ALL), should be fine when extracted on other
@@ -1055,8 +1057,8 @@ USE_DJGPP_GLOB  (MS-DOS DJGPP 2.0x only)
    startup code.  When using an executable built with this option, you
    normally need to quote wildcard arguments ("*"), to get them passed
    to the program unmodified.  Enabling this option is not recommended,
-   because it results in Info-Zip binaries that do not behave as
-   expected for MS-DOS programs.
+   because it results in Info-Zip binaries that do not behave as users
+   might expect for an MS-DOS program.
 
 USE_VFAT   (MS-DOS only, for using same executable under DOS and Windows)
    djgpp 2.x and emx/gcc+RSX 5.1 can detect when they are running under

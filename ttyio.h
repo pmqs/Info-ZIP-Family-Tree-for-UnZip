@@ -17,7 +17,7 @@
 #  include "crypt.h"  /* ensure that encryption header file has been seen */
 #endif
 
-#if (CRYPT || (defined(UNZIP) && !defined(FUNZIP)))
+#if defined( CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP))
 /*
  * Non-echo keyboard/console input support is needed and enabled.
  */
@@ -223,11 +223,11 @@
 #  endif
 #endif /* UNZIP && !FUNZIP */
 
-#if (CRYPT && !defined(WINDLL))
+#if defined(CRYPT_ANY) && !defined(WINDLL)
    char *getp OF((__GPRO__ ZCONST char *m, char *p, int n));
 #endif
 
-#else /* !(CRYPT || (UNZIP && !FUNZIP)) */
+#else /* defined( CRYPT_ANY || (defined(UNZIP) && !defined(FUNZIP)) */
 
 /*
  * No need for non-echo keyboard/console input; provide dummy definitions.
@@ -236,6 +236,6 @@
 #  define echon()
 #  define echorig()
 
-#endif /* ?(CRYPT || (UNZIP && !FUNZIP)) */
+#endif /* defined( CRYPT_ANY || (defined(UNZIP) && !defined(FUNZIP)) [else] */
 
 #endif /* !__ttyio_h */

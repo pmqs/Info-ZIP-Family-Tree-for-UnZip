@@ -135,8 +135,11 @@ static char *zi_time   OF((__GPRO__ ZCONST ulg *datetimez,
 static ZCONST char nullStr[] = "";
 static ZCONST char PlurSufx[] = "s";
 
+/* ZipInfHeader1[] is actually LogInitline[], which is put out in
+ * process.c:do_seekable().
+ */
 static ZCONST char Far ZipInfHeader2[] =
-  "Zip file size: %s bytes, number of entries: %s\n";
+  "Archive size: %s bytes, number of members: %s\n";
 static ZCONST char Far EndCentDirRec[] = "\nEnd-of-central-directory record:\n";
 static ZCONST char Far LineSeparators[] = "-------------------------------\n\n";
 static ZCONST char Far ZipFSizeVerbose[] = "\
@@ -683,9 +686,7 @@ int zi_opts(__G__ pargc, pargv)
                         uO.W_flag = TRUE;
                     break;
 #endif /* WILD_STOP_AT_DIR */
-                case ('x'):    /* extract:  default */
-                    /* add -x file to linked list */
-
+                case ('x'):     /* Exclude.  Add -x file to linked list. */
                     if (in_xfiles_count == 0) {
                         /* first entry */
                         if ((in_xfiles = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {

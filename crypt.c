@@ -41,7 +41,7 @@
 #include "zip.h"
 #include "crypt.h"              /* Get CRYPT defined as desired. */
 
-#if CRYPT
+#ifdef CRYPT_ANY
 
 # include "ttyio.h"
 
@@ -1260,9 +1260,9 @@ local int testkey(__G__ hd_len, h, key)
 
 # endif /* (defined(UNZIP) && !defined(FUNZIP)) */
 
-#else /* CRYPT */
+#else /* def CRYPT_ANY */
 
 /* something "externally visible" to shut up compiler/linker warnings */
 int zcr_dummy;
 
-#endif /* CRYPT [else] */
+#endif /* def CRYPT_ANY [else] */

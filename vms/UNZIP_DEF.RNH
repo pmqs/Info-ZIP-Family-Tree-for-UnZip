@@ -58,58 +58,89 @@
 .noflags
 .lm4 .rm72
 .indent -4
-1 UNZIP
+1 UnZip
 .br
-UnZip is used to extract files compressed and packaged by Zip (see HELP ZIP
-for information on ZIP).
+UnZip lists, tests, or extracts files from a ZIP archive (an archive
+format commonly used on many different systems).  The default behavior
+(with no options) is to extract into the current directory (and
+subdirectories below it) all files from the specified ZIP archive.  A
+companion program, Zip, creates ZIP archives.
 .sk
-For a brief help on Zip and Unzip, run each without specifying any
-parameters on the command line, or specify the -h flag (but not in UnZip's
-Zipinfo mode).
+Info-ZIP UnZip and Zip were intended to be compatible with archives
+created by PKWARE's PKZIP and PKUNZIP programs (originally for MS-DOS),
+but in many cases the program options or default behaviors differ. 
+Nowadays, many other programs are available which work with ZIP
+archives.
 .sk
-UNZIP will list, test, or extract from a ZIP archive.  ZIP archives are commonly
-found on MS-DOS systems; a VMS version of ZIP can also be found here.
+Note: Beginning with UnZip version 6.10, the old command-line parser has
+been replaced by one like the one used in Zip.  One significant change
+is that option negation now uses a TRAILING hyphen ("-"), so, for
+example, -B- negates the -B option.  This change was made because a
+double hyphen ("--") now introduces a long option.  To list all
+available options for a particular UnZip program, use the command:
+.lm+4;.literal
+unzip --show-options
+.end literal;.lm-4
 .sk
-Archive member extraction is implied by the absence of the -c, -p, -t, -l, -v or
--z options.  All archive members are processed unless a filespec is provided to
-specify a subset of the archive members.
-Format:
-.sk;.lm+1;.literal
-UNZIP [-cfhlptTuvxz[ajnoqCDLMSVXY:2]] file[.zip] [list] [-x xlist] [-d out_dir]
-.end literal;.lm-1
+To display the extended help, use the command:
+.lm+4;.literal
+unzip -hh
+.end literal;.lm-4
+The extended help may be more current than this manual page, especially
+between full product releases.
+.sk
+Usage:
+.lm+4;.literal
+unzip [ unzip_options ] [ file[.zip] ] [ member ... ]
+unzip -Z [ zipinfo_options ] [ file[.zip] ] [ member ... ]
+.end literal;.lm-4
 .!------------------------------------------------------------------------------
 .indent -4
 2 Parameters
 .sk;.indent -4
 file[.zip]
 .sk
-File specification for the ZIP archive(s) with optional wildcards. UnZip will
-perform actions specified for every zipfile matching the specification.
-Default file specification is SYS$DISK:[].ZIP.
-Note that self-extracting ZIP files are supported; just specify the .EXE
-suffix yourself.
-.sk;.indent -4
-[list]
+File path/name of a ZIP archive.  A wildcard name may be used to specify
+multiple ZIP archives to be processed in one command.  On VMS systems,
+any of the standard wildcards for a directory/file specification may be
+used: "...", "*", or "%" (or, since VMS V7.2, "?").  The default archive
+file specification is "[]*.ZIP".
 .sk
-An optional list of archive members to be processed; if no list is given, all
-archive members are processed.  Expressions may be
-used to match multiple members.  Expressions should be enclosed in double-quotes
-to prevent interpretation by DCL.  Multiple filenames should be separated by
-blanks.  Each file specification is similar to a Unix egrep expression and may
-contain:
+Note that a ".zip" or ".ZIP" file type on an archive is merely a
+convention, not a requirement.  For example, a self-extracting ZIP
+archive named "fred" or "fred.exe" could be processed as if it were an
+ordinary archive; just specify the actual file name with its actual name
+ending (if any), whatever that may be.
+.sk;.indent -4
+member ...
+.sk
+An optional list of archive members to be processed, separated by
+spaces.  Unix-like ("globbing") wildcard patterns may be used to match
+multiple members:
 .sk
 .literal
-     *       matches a sequence of 0 or more characters
-     ?       matches exactly 1 character
-     [...]   matches any single character found inside the brackets;
-             ranges are specified by a beginning character, a hyphen,
-             and an ending character.  If a '!' or '^' immediately
-             follows the left bracket, then any character not in the
-             given range is matched.
-             Hint: To specify a verbatim left bracket '[', the
-                   three-character sequence "[[]" has to be used.
+    *      Matches a sequence of 0 or more characters.
+    ?      Matches exactly 1 character.
+    [...]  Matches any single character found inside the brackets. 
+           Ranges are specified by a beginning character, a hyphen, and
+           an ending character.  If an exclamation point ("!") or a
+           caret ("^") follows the left bracket, then the range of
+           characters within the brackets is complemented.  That is,
+           anything except the characters inside the brackets is
+           considered a match.  To specify a literal left bracket, use
+           the three-character sequence "[[]".
 .end literal
 .sk
+Member name patterns should be quoted to avoid case changes by DCL
+and/or the C RTL.
+.sk
+
+
+
+
+
+
+
 .sk;.indent -4
 [-x xlist]
 .sk

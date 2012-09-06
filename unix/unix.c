@@ -605,7 +605,14 @@ int mapname(__G__ renamed)
             case ' ':             /* change spaces to underscore under */
                 *pp++ = '_';      /*  MTS; leave as spaces under Unix */
                 break;
-#endif
+#else /* def MTS */               /* 2012-08-08 SMS.  Added "-s" processing. */
+            case ' ':
+                if (uO.sflag)
+                {
+                    *pp++ = '_';  /* With "-s", change space to underscore. */
+                    break;
+                }
+#endif /* def MTS [else] */
 
             default:
                 /* disable control character filter when requested,

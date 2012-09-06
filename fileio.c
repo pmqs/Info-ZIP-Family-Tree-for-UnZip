@@ -80,14 +80,14 @@
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
 /* setup of codepage conversion for decryption passwords */
-#if CRYPT
+#ifdef CRYPT_ANY
 #  if (defined(CRYP_USES_ISO2OEM) && !defined(IZ_ISO2OEM_ARRAY))
 #    define IZ_ISO2OEM_ARRAY            /* pull in iso2oem[] table */
 #  endif
 #  if (defined(CRYP_USES_OEM2ISO) && !defined(IZ_OEM2ISO_ARRAY))
 #    define IZ_OEM2ISO_ARRAY            /* pull in oem2iso[] table */
 #  endif
-#endif
+#endif /* def CRYPT_ANY */
 #include "ebcdic.h"   /* definition/initialization of ebcdic[] */
 
 
@@ -203,7 +203,7 @@ static ZCONST char Far ExtraFieldTooLong[] =
      "--- Press `Q' to quit, or any other key to continue ---";
    static ZCONST char Far HidePrompt[] = /* "\r                       \r"; */
      "\r                                                         \r";
-#  if CRYPT
+#  ifdef CRYPT_ANY
 #    ifdef MACOS
        /* SPC: are names on MacOS REALLY so much longer than elsewhere ??? */
        static ZCONST char Far PasswPrompt[] = "[%s]\n %s password: ";
@@ -212,7 +212,7 @@ static ZCONST char Far ExtraFieldTooLong[] =
 #    endif
      static ZCONST char Far PasswPrompt2[] = "Enter password: ";
      static ZCONST char Far PasswRetry[] = "password incorrect--reenter: ";
-#  endif /* CRYPT */
+#  endif /* def CRYPT_ANY */
 #endif /* !WINDLL */
 
 
@@ -713,7 +713,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
         defer_leftover_input(__G);           /* decrements G.csize */
     }
 
-#if CRYPT
+#ifdef CRYPT_ANY
     if (G.pInfo->encrypted)
     {
 #  ifdef CRYPT_AES_WG
@@ -741,7 +741,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 #  endif /* def CRYPT_TRAD */
         }
     }
-#endif /* CRYPT */
+#endif /* def CRYPT_ANY */
 
     --G.incnt;
     return *G.inptr++;
@@ -768,7 +768,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
     G.inptr = G.inbuf;
     defer_leftover_input(__G);           /* decrements G.csize */
 
-#if CRYPT
+#ifdef CRYPT_ANY
     if (G.pInfo->encrypted)
     {
 #  ifdef CRYPT_AES_WG
@@ -792,7 +792,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
 #  endif /* def CRYPT_TRAD */
         }
     }
-#endif /* CRYPT */
+#endif /* def CRYPT_ANY */
 
     return G.incnt;
 
@@ -1770,7 +1770,7 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
     ZCONST char *zfn;  /* name of zip archive */
     ZCONST char *efn;  /* name of archive entry being processed */
 {
-# if CRYPT
+# ifdef CRYPT_ANY
     int r = IZ_PW_ENTERED;
     char *m;
     char *prompt;
@@ -1806,12 +1806,12 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
     }
     return r;
 
-# else /* !CRYPT */
+# else /* def CRYPT_ANY */
     /* tell picky compilers to shut up about "unused variable" warnings */
     pG = pG; rcnt = rcnt; pwbuf = pwbuf; size = size; zfn = zfn; efn = efn;
 
     return IZ_PW_ERROR;  /* internal error; function should never get called */
-# endif /* ?CRYPT */
+# endif /* def CRYPT_ANY [else] */
 
 } /* end function UzpPassword() */
 
@@ -2919,7 +2919,7 @@ char *fzofft(__G__ val, pre, post)
 
 
 
-#if CRYPT
+#ifdef CRYPT_ANY
 
 #ifdef NEED_STR2ISO
 /**********************/
@@ -2972,7 +2972,7 @@ char *str2oem(dst, src)
 }
 #endif /* NEED_STR2OEM */
 
-#endif /* CRYPT */
+#endif /* def CRYPT_ANY */
 
 
 #ifdef ZMEM  /* memset/memcmp/memcpy for systems without either them or */

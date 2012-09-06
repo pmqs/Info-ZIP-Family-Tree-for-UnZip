@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo            Last update: 04 Jul 2012
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2012-09-04
 #==============================================================================
 
 #==============================================================================
@@ -276,6 +276,7 @@ MAKEF = '-f unix/Makefile'
 #    BZIP2 compression
 #    LZMA compression
 #    PPMd compression
+#    Callable UnZip
 #    ZLIB compression
 LIB_AES_WG  =
 LIB_BZ      =
@@ -445,7 +446,7 @@ O_UNZIPL = api_l.o      \
            unshrink_l.o \
            unzip_l.o    \
            zipinfo_l.o  \
-           $(OSDEP_OCU:.o=_l.o) \
+           $(OSDEP_OCU:.o=_l.o)
 
 # object files: UnZip object library.  Modules insensitive to DLL/REENTRANT.
 O_UNZIPN = crc32.o      \
@@ -634,7 +635,7 @@ VERSION = Version 6.1
 
 # C Compile rule: unzip
 
-# A) Core unzip C files
+# A) Core UnZip C files
 unzip.o:      unzip.c     $(H_UNZIP) consts.h crypt.h unzvers.h
 	$(CC) -c $(CF) -o $@ unzip.c
 
@@ -736,7 +737,7 @@ zipinfo_l.o:  zipinfo.c   $(H_UNZIPL)
 ./unix_l.o:   unix/unix.c $(H_UNZIPL) unix/macosx.h
 	$(CC) -c $(CF) -DDLL -o $@ unix/unix.c
 
-# B) unzip C files for specific ports
+# B) UnZip C files for specific ports
 #    - Files under msdos and os2 are used when cross compiling for those ports
 #    - Generated when referenced by OSDEP_OC*
 #    - OSDEP_OC* are customized by unix/configure, based on PORT macro
@@ -759,16 +760,29 @@ zipinfo_l.o:  zipinfo.c   $(H_UNZIPL)
 ./win32i64.o:  win32/win32i64.c  $(H_UNZIP)
 	$(CC) -c $(CF) -o $@ win32/win32i64.c
 
-# C Compile rule: unzip DLL
+# C Compile rule: UnZip DLL
 api.o:        api.c       $(H_UNZIP)
 	$(CC) -c $(CF) -DDLL -o $@ api.c
 
 unzipstb.o:   unzipstb.c  $(H_UNZIP)
 	$(CC) -c $(CF) -o $@ unzipstb.c
 
+# B) UnZip DLL C files for specific ports
+#    - Generated when referenced by OSDEP_OC*
+#    - OSDEP_OC* are customized by unix/configure, based on PORT macro
+
+./nt_l.o:       win32/nt.c  $(H_UNZIP)
+	$(CC) -c $(CF) -DDLL -o $@ win32/nt.c
+
+./win32_l.o:    win32/win32.c  $(H_UNZIP)
+	$(CC) -c $(CF) -DDLL -o $@ win32/win32.c
+
+./win32i64_l.o: win32/win32i64.c  $(H_UNZIP)
+	$(CC) -c $(CF) -DDLL -o $@ win32/win32i64.c
+
 # C Compile rule: unzipsfx
 
-# A) Core unzipsfx C files
+# A) Core UnZipSFX C files
 unzipsfx.o:   unzip.c     $(H_UNZIP) crypt.h unzvers.h consts.h
 	$(CC) -c $(CF) -DSFX -o $@ unzip.c
 
@@ -802,7 +816,7 @@ ttyio_s.o:    ttyio.c     $(H_UNZIP) zip.h crypt.h ttyio.h
 ubz2err_s.o:  ubz2err.c   $(H_UNZIP)
 	$(CC) -c $(CF) -DSFX -o $@ ubz2err.c
 
-# B) unzipsfx C files for specific ports
+# B) UnZipSFX C files for specific ports
 #    - Generated when referenced by OSDEP_OC*
 #    - OSDEP_OC* are customized by unix/configure, based on PORT macro
 
@@ -843,7 +857,7 @@ inflate_f.o:  inflate.c   $(H_UNZIP) inflate.h
 ttyio_f.o:    ttyio.c     $(H_UNZIP) zip.h crypt.h ttyio.h
 	$(CC) -c $(CF) -DFUNZIP -o $@ ttyio.c
 
-# B) funzip C files for specific ports
+# B) fUnZip C files for specific ports
 #    - Generated when referenced by OSDEP_OC*
 #    - OSDEP_OC* are customized by unix/configure, based on PORT macro
 
@@ -916,16 +930,16 @@ Ppmd8Dec.o:  szip/Ppmd8Dec.c    $(H_PPMD)
 #
 # 1) Assembler rule: CRC, 16-bit only, MSDOS
 $(O_CRC_I):  msdos/crc_i86.asm
-	$(AS) $(AF) msdos/crc_i86.asm $(ASEOL)
+	$(AS) $(AF) -c msdos/crc_i86.asm $(ASEOL)
 
 # 2) Assembler rule: CRC 32bit, GNU AS
 $(O_CRC_G):  crc_i386.S $(ACONF_DEP)
-	$(AS) $(AF) -x assembler-with-cpp -c -o $@ crc_i386.S
+	$(AS) $(AF) -c -o $@ crc_i386.S
 
 # 3) Assembler rule: CRC 32bit, SysV AS
 $(O_CRC_SV): crc_i386.S $(ACONF_DEP)
 	$(CPP) $(AF) crc_i386.S > _crc_i386s.s
-	$(AS) -o $@ crc_i386s.s
+	$(AS) -c -o $@ crc_i386s.s
 	$(RM) crc_i386s.s
 
 #----------------------------------------------------------------------------

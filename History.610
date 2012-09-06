@@ -351,6 +351,8 @@ Features added (or removed):
    macos/source/macos.c, msdos/msdos.c, netware/netware.c, os2/os2.c,
    qdos/qdos.c, theos/theos.c, unix/unix.c, vms/vms.c, win32/win32.c,
    windll/windll.c) [SMS]
+ - Added C macro DIAG_SFX for developers to enable the "-v" diagnostic
+   report in UnZipSFX.  Discouraged for normal use.  (unzip.c) [SMS]
 
 
 
@@ -502,9 +504,6 @@ Bugs fixed:
    [SMS]
  - Message wording changes.  (vms/collect_deps.com) [SMS]
  - Add new COMPERR error.  (vms/unzip_msg.msg) [SMS]
- - VMS-specific problem could cause "unzip -a" to truncate the last line
-   in a text file which had a one-character line ending (like LF) which
-   fell at the end of an internal buffer.  (vms/vms.c) [SMS]
  - Change NAM to NAMX.  Add some SYS defines.  (vms/vms.c, vms/vms.h,
    vms/vmscfg.h) [SMS]
  - Reset file pointer even on failure to fix problem.  (win32/win32.c) [????]
@@ -755,7 +754,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (14 Jul 2012):
+6.10c09 (08 Aug 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.  (extract.c,
    unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block confused
@@ -874,6 +873,27 @@ Bugs fixed:
  - Changed to avoid conflict between a user definition of the C macro
    NO_EXCEPT_SIGNALS and an automatic one.  (unzip.c) [SMS]
  - Disambiguated some option-related error messages.  (unzip.c) [SMS]
+ - Changed, on VMS, the way a "-d" (/DIRECTORY) destination directory is
+   tested for validity.  Previously, some VMS-invalid directory
+   specifications (such as "." or "..") would generate no error, and
+   then be (silently) ignored.
+ - Reformed the multi-value C macro CRYPT into simpler CRYPT_ANY and
+   CRYPT_TRAD.  The actual encryption code should now use only
+   CRYPT_AES_WG and CRYPT_TRAD (plus CRYPT_ANY, derived from them).  At
+   build time, users specify more controlled options: CRYPT_AES_WG,
+   CRYPT_AES_WG_SFX, CRYPT_TRAD_SFX, NO_CRYPT, NO_CRYPT_TRAD.  (crypt.c,
+   crypt.h, ebcdic.h, extract.c, fileio.c, funzip.c, gbloffs.c,
+   globals.h, INSTALL, ttyio.c, ttyio.h, unzip.c, amiga/filedate.c,
+   qdos/qdos.c, windll/windll.c) [SMS]
+ - Changed C macro USE_UNZIP_LIB$INITIALIZE to USE_UNZIP_LIB_INITIALIZE
+   for compatibility with Zip, where Sun C objected to the "$" in the
+   corresponding code.  (vms/vms.c) [SMS]
+ - Changed some assembler-related details, including the test for an
+   "_" prefix on global names.  (unix/configure, unix/Makefile) [SMS]
+ - Supposedly, the "-s" (--space_to_uscore) option became OS-generic in
+   6.10c01, but its implementation relies on OS-specific mapname()
+   processing, and there was none on Unix or VMS.  It may still be
+   missing on other, more obscure systems.  (unix/unix.c, vms/vms.c) [SMS]
 ==================
 
 These changes occurred in beta versions 6.10a to 6.10.  This list may have

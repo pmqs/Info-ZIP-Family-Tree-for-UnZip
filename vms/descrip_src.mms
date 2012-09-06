@@ -1,4 +1,4 @@
-#                                               16 June 2012.  SMS.
+#                                               3 September 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Source Description File.
 #
@@ -76,7 +76,12 @@ DESTL = L
 .ENDIF                              # __VAX__
 .ENDIF                          # LARGE
 
-DEST = $(DESTM)$(DESTL)
+DEST_STD = $(DESTM)$(DESTL)
+.IFDEF PROD                     # PROD
+DEST = $(PROD)
+.ELSE                           # PROD
+DEST = $(DEST_STD)
+.ENDIF                          # PROD
 SEEK_BZ = $(DESTM)
 
 # Library module name suffix for XXX_.OBJ with GNU C.

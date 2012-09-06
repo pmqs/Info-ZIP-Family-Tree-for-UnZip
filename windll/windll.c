@@ -832,7 +832,7 @@ int UZ_EXP UzpPassword(pG, rcnt, pwbuf, size, zfn, efn)
     ZCONST char *zfn;   /* name of zip archiv */
     ZCONST char *efn;   /* name of archiv entry being processed */
 {
-#if CRYPT
+#ifdef CRYPT_ANY
     LPCSTR m;
 
     if (*rcnt == 0) {
@@ -844,9 +844,9 @@ int UZ_EXP UzpPassword(pG, rcnt, pwbuf, size, zfn, efn)
     }
 
     return (*G.lpUserFunctions->password)((LPSTR)pwbuf, size, m, (LPCSTR)efn);
-#else /* !CRYPT */
+#else /* def CRYPT_ANY */
     return IZ_PW_ERROR; /* internal error, function should never get called */
-#endif /* ?CRYPT */
+#endif /* def CRYPT_ANY [else] */
 } /* end function UzpPassword() */
 
 /* Turn off all messages to the calling application */

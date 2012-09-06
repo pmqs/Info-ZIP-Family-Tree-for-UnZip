@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-07-10  SMS.
+$!     Last revised:  2012-09-03  SMS.
 $!
 $!     Command arguments:
 $!     - suppress C compilation (re-link): "NOCOMPILE"
@@ -60,7 +60,11 @@ $!       "VMSCLI" or "CLI"
 $!     - force installation of UNIX interface version of UnZip
 $!       (override LOCAL_UNZIP environment): "NOVMSCLI" or "NOCLI"
 $!     - build a callable-UnZip library, LIBIZUNZIP.OLB: "LIBUNZIP"
-$!     - run basic UnZip tests: TEST, TEST_PPMD
+$!     - choose a destination directory for architecture-specific
+$!       product files (.EXE, .OBJ,.OLB, and so on): "PROD=subdir", to
+$!       use "[.subdir]".  The default is a name automatically generated
+$!       using rules defined below.
+$!     - run basic UnZip tests: "TEST", "TEST_PPMD"
 $!
 $!     To specify additional options, define the symbol LOCAL_UNZIP
 $!     as a comma-separated list of the C macros to be defined, and
@@ -152,6 +156,7 @@ $ MAKE_SYM = 0
 $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
 $ PPMD = 0
+$ PROD = ""
 $ TEST = 0
 $ TEST_PPMD = 0
 $!
@@ -265,6 +270,14 @@ $         PPMD = 1
 $         goto argloop_end
 $     endif
 $!
+$     if (f$extract( 0, 4, curr_arg) .eqs. "PROD")
+$     then
+$         opts = f$edit( curr_arg, "COLLAPSE")
+$         eq = f$locate( "=", opts)
+$         PROD = f$extract( (eq+ 1), 1000, opts)
+$         goto argloop_end
+$     endif
+$!
 $     if (curr_arg .eqs. "SYMBOLS")
 $     then
 $         MAKE_SYM = 1
@@ -357,7 +370,8 @@ $         endif
 $     endif
 $ endif
 $!
-$ dest = arch
+$ destl = ""
+$ destm = arch
 $ cmpl = "DEC/Compaq/HP C"
 $ opts = ""
 $ if (arch .nes. "VAX")
@@ -407,7 +421,7 @@ $         defs = "''LOCAL_UNZIP'VMS"
 $         if ((.not. HAVE_VAXC_VAX .and. MAY_HAVE_GNUC) .or. MAY_USE_GNUC)
 $         then
 $             cc = "gcc"
-$             dest = "''dest'G"
+$             destm = "''destm'G"
 $             cmpl = "GNU C"
 $             opts = "GNU_CC:[000000]GCCLIB.OLB /LIBRARY,"
 $         else
@@ -417,10 +431,10 @@ $                 cc = "cc /vaxc"
 $             else
 $                 cc = "cc"
 $             endif
-$             dest = "''dest'V"
+$             destm = "''destm'V"
 $             cmpl = "VAX C"
 $         endif
-$         opts = "''opts' SYS$DISK:[.''dest']VAXCSHR.OPT /OPTIONS,"
+$         opts = "''opts' SYS$DISK:[.''destm']VAXCSHR.OPT /OPTIONS,"
 $     endif
 $ endif
 $!
@@ -460,10 +474,18 @@ $ endif
 $!
 $! Change the destination directory, if the large-file option is enabled.
 $!
-$ destb = dest
+$ destb = destm
 $ if (LARGE_FILE .ne. 0)
 $ then
-$     dest = "''dest'L"
+$     destl = "L"
+$ endif
+$!
+$ dest_std = destm+ destl
+$ if (PROD .eqs. "")
+$ then
+$     dest = dest_std
+$ else
+$     dest = PROD
 $ endif
 $!
 $ lib_libunzip = "SYS$DISK:[.''dest']''lib_libunzip_name'"

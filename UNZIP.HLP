@@ -1,24 +1,36 @@
 
 
 
-1 UNZIP
-    UnZip is used to extract files compressed and packaged by  Zip  (see
-    HELP ZIP for information on ZIP).
+1 UnZip
+    UnZip lists, tests, or extracts files from a ZIP archive (an archive
+    format  commonly  used  on  many  different  systems).   The default
+    behavior (with no options) is to extract into the current  directory
+    (and  subdirectories  below  it)  all  files  from the specified ZIP
+    archive.  A companion program, Zip, creates ZIP archives.
 
-    For a brief help on Zip and Unzip, run each without  specifying  any
-    parameters  on  the command line, or specify the -h flag (but not in
-    UnZip's Zipinfo mode).
+    Info-ZIP UnZip and Zip were intended to be compatible with  archives
+    created  by  PKWARE's  PKZIP  and  PKUNZIP  programs (originally for
+    MS-DOS), but in many cases the program options or default  behaviors
+    differ.  Nowadays, many other programs are available which work with
+    ZIP archives.
 
-    UNZIP will list, test, or extract from a ZIP archive.  ZIP  archives
-    are  commonly found on MS-DOS systems; a VMS version of ZIP can also
-    be found here.
+    Note:  Beginning with  UnZip  version  6.10,  the  old  command-line
+    parser  has  been  replaced  by  one  like the one used in Zip.  One
+    significant change is that  option  negation  now  uses  a  TRAILING
+    hyphen  ("-"),  so,  for  example,  -B- negates the -B option.  This
+    change was made because a double hyphen ("--") now introduces a long
+    option.   To  list  all  available  options  for  a particular UnZip
+    program, use the command:
+        unzip --show-options
 
-    Archive member extraction is implied by the absence of the  -c,  -p,
-    -t,  -l, -v or -z options.  All archive members are processed unless
-    a filespec is provided to specify a subset of the  archive  members.
-    Format:
+    To display the extended help, use the command:
+        unzip -hh
+    The extended help  may  be  more  current  than  this  manual  page,
+    especially between full product releases.
 
-     UNZIP [-cfhlptTuvxz[ajnoqCDLMSVXY:2]] file[.zip] [list] [-x xlist] [-d out_dir]
+    Usage:
+        unzip [ unzip_options ] [ file[.zip] ] [ member ... ]
+        unzip -Z [ zipinfo_options ] [ file[.zip] ] [ member ... ]
 2 Parameters
 
 file[.zip]
@@ -44,6 +56,9 @@ file[.zip]
                  ranges are specified by a beginning character, a hyphen,
                  and an ending character.  If a '!' or '^' immediately
                  follows the left bracket, then any character not in the
+                                                                Page 2
+
+
                  given range is matched.
                  Hint: To specify a verbatim left bracket '[', the
                        three-character sequence "[[]" has to be used.
@@ -55,8 +70,6 @@ file[.zip]
     The xlist overrides any files included in the normal list.
 
 [-d out_dir]
-                                                                Page 2
-
 
     Optional directory specification to be used as target root directory
     for  files  to  be  extracted.   Directory  should  be  specified in
@@ -101,6 +114,8 @@ file[.zip]
     Note that uppercase options (-C, -D, -L, -M, -P, -S, -T, -V, -X, -Y,
     and -Z) must be specified in quotes (unless SET PROC/PARSE=EXTEND is
     set).  For example:
+                                                                Page 3
+
 
         unzip "-VX" -a zipfile
 
@@ -113,9 +128,6 @@ file[.zip]
     any -b option, see below.)
 
     The output conversion options -b and -a may be combined  to  perform
-                                                                Page 3
-
-
     binary  conversions  on  binary  files  and  text conversion on text
     files.  But note:  For compatibility with  implementation  on  other
     systems,  -b  cancels  any -a option; to get the intended result, -a
@@ -160,6 +172,9 @@ file[.zip]
       Warning       1      One or more warnings  were  encountered, but
                            processing  completed  successfully  anyway.
                            This  includes  archives  where  one or more
+                                                                Page 4
+
+
                            (but not all)  files were skipped because of
                            unsupported compress or encrypt methods,  or
                            bad passwords.
@@ -171,9 +186,6 @@ file[.zip]
                            ing probably failed immediately.
       Fatal         4      Memory allocation failed in program initial-
                            ization.
-                                                                Page 4
-
-
       Fatal         5      Memory  allocation  failed  in password pro-
                            cessing.
       Fatal         6      Memory allocation failed while decompressing
@@ -218,6 +230,9 @@ file[.zip]
 
     UNZIP_OPTS may be defined as a symbol rather than  a  logical  name,
     but if both are defined, the logical name takes precedence.
+                                                                Page 5
+
+
 2 Authors
     Info-ZIP; currently maintained by Christian  Spieler.   VMS  support
     maintained  by  Christian  Spieler  and  Hunter Goatley.  Originally

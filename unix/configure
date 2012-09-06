@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   06 Jul 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   06 Aug 2012
 #==============================================================================
 
 #==============================================================================
@@ -199,7 +199,7 @@ CFLAGS_USR=${LOCAL_UNZIP:-}                # C compiler user override options
 
 CPP=${CPP:-"${CC} -E"}                     # C preprocessor name
 
-AS=${AS:-"${CC} -c"}                       # Assembler name (core components)
+AS=${AS:-"${CC}"}                          # Assembler name (core components)
 AFLAGS=${AFLAGS:-}                         # Assembler flags
 
 LD=${LD:-"${CC}"}                          # Linker name
@@ -1187,7 +1187,7 @@ _EOF_
         grep error _crc_i386.s > /dev/null
         status=$?
         if [ $status -ne 0 ]; then
-          $CC -c _crc_i386.s > /dev/null 2> /dev/null
+          $AS -c _crc_i386.s > /dev/null 2> /dev/null
           status=$?
           if [ $status -eq 0 -a -f _crc_i386.o ]; then
             echo '-- Using assembly code for CRC'
@@ -1197,16 +1197,22 @@ _EOF_
           fi
         fi
       fi
-      # If using assembler for anything, then check for "_" name prefix.
+      # If using assembler for anything, then check the C compiler for a
+      # "_" prefix on global names.
       if [ $asm_crc -ne 0 ]; then
-        echo 'Check if compiler generates underlines (CPP, for .S)'
+        echo 'Check if C compiler adds "_" prefix to global names'
         echo "int foo() { return 0;}" > conftest.c
-        $AS conftest.c >/dev/null 2>/dev/null
-        nm conftest.o | grep "(^|[^_])foo" >/dev/null 2>/dev/null
+        $CC -c conftest.c >/dev/null 2>/dev/null
+        nm conftest.o | grep foo >/dev/null 2>/dev/null
         status=$?
-        [ $status -eq 0 ] && CPP="${CPP} -DNO_UNDERLINE"
+        if [ $status -eq 0 ]; then
+          # Found "foo".  Look for "_foo".
+          nm conftest.o | grep _foo >/dev/null 2>/dev/null
+          status=$?
+          [ $status -ne 0 ] && AFLAGS="${AFLAGS} -DNO_UNDERLINE"
+        fi
       fi
-      rm -f conftest.S _crc_i386.s _crc_i386.o
+      rm -f conftest.c conftest.S _crc_i386.s _crc_i386.o
       ;;
 esac
 

@@ -1,6 +1,10 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
+   UnZip version 6.10.  Revised: 2012-09-04.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
       Source Kits
       -----------
 
@@ -180,11 +184,22 @@ the command-line options used to select a different compiler.
          MMS /DESC = [.VMS] /MACRO = (LARGE=1, AES_WG=1)
 
 
-   System-architecture-specific files (like objects and executables) are
-placed in separate directories, such as [.ALPHA], [.IA64], or [.VAX].
-Large-file products get their own directories, [.ALPHAL] or [.IA64L].
-On VAX, VAX C products are placed in [.VAXV], GNU C products in [.VAXG].
-Each product builder announces what the destination directory will be
+   By default, system-architecture-specific files (like objects and
+executables) are placed in separate subdirectories, such as [.ALPHA],
+[.IA64], or [.VAX].  Large-file products get their own subdirectories,
+[.ALPHAL] or [.IA64L].  On VAX, VAX C products are placed in [.VAXV],
+GNU C products in [.VAXG].  If desired, the user may specify some other
+subdirectory, using the PROD symbol/macro.  For example, to build
+large-file programs in a [.ALPHA_LARGE] subdirectory:
+
+         @ [.VMS]BUILD_UNZIP LARGE PROD=ALPHA_LARGE
+      or:
+         MMS /DESC = [.VMS] /MACRO = (LARGE=1, PROD=ALPHA_LARGE)
+
+This option makes it easier to build multiple Zip variants with
+different options using the same source tree.
+
+   Each product builder announces what the destination directory will be
 when it is run.
 
    Common files, such as the help libraries (UNZIP.HLP for the default

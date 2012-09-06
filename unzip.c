@@ -108,12 +108,15 @@ typedef struct _sign_info
 static int setsignalhandler OF((__GPRO__ savsigs_info **p_savedhandler_chain,
                                 int signal_type, void (*newhandler)(int)));
 # endif
-# ifndef SFX
+
+static void  show_license       OF((__GPRO));
+#ifndef SFX
 static void  help_extended      OF((__GPRO));
 static void  show_options       OF((__GPRO));
+#endif /* ndef SFX */
+# if !defined( SFX) || defined( DIAG_SFX)
 static void  show_version_info  OF((__GPRO));
-# endif
-static void  show_license       OF((__GPRO));
+# endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 # ifdef ENABLE_USER_PROGRESS
 #  ifdef VMS
@@ -134,7 +137,7 @@ USER_PROGRESS_CLASS void user_progress OF((int));
 
 /* constant local variables: */
 
-# ifndef SFX
+# if !defined( SFX) || defined( DIAG_SFX)
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
    static ZCONST char Far EnvUnZip[] = ENV_UNZIP;
    static ZCONST char Far EnvUnZip2[] = ENV_UNZIP2;
@@ -148,7 +151,8 @@ USER_PROGRESS_CLASS void user_progress OF((int));
 #  endif /* !_WIN32_WCE */
    static ZCONST char Far CmdLineParamTooLong[] =
     "error:  command line parameter #%d exceeds internal size limit\n";
-# endif /* !SFX */
+# endif /* !defined( SFX) || defined( DIAG_SFX) */
+
 static ZCONST char Far NoMemArgsList[] =
   "error:  no memory for arguments list";
 
@@ -157,20 +161,21 @@ static ZCONST char Far NoMemArgsList[] =
     "error:  cannot save signal handler settings\n";
 # endif
 
-# if (!defined(SFX) || defined(SFX_EXDIR))
+# if !defined( SFX) || defined( DIAG_SFX) || defined( SFX_EXDIR)
    static ZCONST char Far NotExtracting[] =
      "caution:  not extracting; -d ignored\n";
    static ZCONST char Far MustGiveExdir[] =
      "error:  must specify directory to which to extract with -d option\n";
    static ZCONST char Far OnlyOneExdir[] =
      "error:  -d option used more than once (only one exdir allowed)\n";
-# endif
+# endif /* !defined( SFX) || defined( DIAG_SFX) || defined( SFX_EXDIR) */
+
 # if (defined(UNICODE_SUPPORT) && !defined(UNICODE_WCHAR))
   static ZCONST char Far UTF8EscapeUnSupp[] =
     "warning:  -U \"escape all non-ASCII UTF-8 chars\" is not supported\n";
 # endif
 
-# if CRYPT
+# ifdef CRYPT_ANY
    static ZCONST char Far MustGivePasswd[] =
      "error:  must give decryption password with -P option\n";
 # endif
@@ -178,7 +183,8 @@ static ZCONST char Far NoMemArgsList[] =
 # ifndef SFX
    static ZCONST char Far Zfirst[] =
    "error:  -Z must be first option for ZipInfo mode (check UNZIP variable?)\n";
-# endif
+# endif /* ndef SFX */
+
 static ZCONST char Far InvalidOptionsMsg[] = "error:\
   -fn or any combination of -c, -l, -p, -t, -u and -v options invalid\n";
 static ZCONST char Far IgnoreOOptionMsg[] =
@@ -346,7 +352,7 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #    endif /* ?ATH_BEO_UNX */
 #   endif /* ?VMS */
 #  endif /* ?DOS_FLX_OS2_W32 */
-# endif /* !SFX */
+# endif /* ndef SFX */
 
 # ifndef NO_ZIPINFO
 #  ifdef VMS
@@ -404,10 +410,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
      "UnZipSFX %d.%d%d%s of %s, by Info-ZIP (http://www.info-zip.org).\n";
 #  ifdef SFX_EXDIR
     static ZCONST char Far UnzipSFXOpts[] =
-   "Valid options are -tfupcz and -d <exdir>; modifiers are -abjnoqCL%sV%s.\n";
+   "Valid options are -cfptuz; modifiers are -abCdjLnoPq%sV%s.\n";
 #  else
     static ZCONST char Far UnzipSFXOpts[] =
-     "Valid options are -tfupcz; modifiers are -abjnoqCL%sV%s.\n";
+     "Valid options are -cfptuz; modifiers are -abCjLnoPq%sV%s.\n";
 #  endif
 #  ifdef VMS
     static ZCONST char Far UnzipSFXOptsV[] =
@@ -415,7 +421,9 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  endif /* def VMS */
     static ZCONST char Far UnzipSFXOpts2[] =
      "For license info: \"--license\".\n";
-# else /* !SFX */
+# endif /* def SFX */
+
+# if !defined( SFX) || defined( DIAG_SFX)
     static ZCONST char Far CompileOptions[] =
      "UnZip special compilation options:\n";
     static ZCONST char Far CompileOptFormat[] = "        %s\n";
@@ -641,7 +649,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
     static ZCONST char Far AesWgDecryption[] =
 "        CRYPT_AES_WG         (AES encryption (WinZip/Gladman), ver %d.%d%s)\n";
 #  endif
-#  if CRYPT
+#  ifdef CRYPT_ANY
 #   ifdef CRYPT_TRAD
     static ZCONST char Far TraditionalEncryptionNotice1[] =
      "\nTraditional Zip Encryption notice:\n";
@@ -654,13 +662,13 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
         including the USA under License Exception TSU of the U.S. Export\n\
         Administration Regulations (section 740.13(e)) of 6 June 2002.\n";
     static ZCONST char Far Decryption[] =
-"        CRYPT                (Traditional (weak) encryption, ver %d.%d%s)\n";
+"        CRYPT_TRAD           (Traditional (weak) encryption, ver %d.%d%s)\n";
     static ZCONST char Far CryptDate[] = CR_VERSION_DATE;
 #   endif /* def CRYPT_TRAD */
 #   ifdef PASSWD_FROM_STDIN
     static ZCONST char Far PasswdStdin[] = "PASSWD_FROM_STDIN";
 #   endif
-#  endif
+#  endif /* def CRYPT_ANY */
 #  ifndef __RSXNT__
 #   ifdef __EMX__
     static ZCONST char Far EnvEMX[] = "EMX";
@@ -671,7 +679,9 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
     static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 #   endif
 #  endif /* !__RSXNT__ */
+# endif /* !defined( SFX) || defined( DIAG_SFX) */
 
+# ifndef SFX
 #  ifdef VMS
 /* UnzipUsageLine1[] is also used in vms/cmdline.c:  do not make it static */
     ZCONST char Far UnzipUsageLine1[] = "\
@@ -821,9 +831,8 @@ See \"unzip -hh\" for more help.  \"unzip --license\" for license.  Examples:\n\
   unzip data1 -x joe   => extract all files except joe from zipfile data1.zip\n\
 %s\
   unzip -fo foo %-6s => quietly replace existing %s if archive file newer\n";
-# endif /* ?SFX */
 
-
+# endif /* ndef SFX */
 
 
 
@@ -1589,11 +1598,11 @@ static struct option_struct far options[] = {
 
   /* short longopt                 value_type        negatable
        ID    name */
-# ifdef RISCOS
-    {UZO, "/",  "extensions",      o_REQUIRED_VALUE, o_NEGATABLE,
-       '/',  "override Unzip$Exts"},
+# ifdef VMS
+    {UZO, "2",  "force-ods2",      o_NO_VALUE,       o_NEGATABLE,
+       '2',  "Force ODS2-compliant names."},
 # endif
-    {UZO, "a",  "ASCII",           o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "a",  "ascii",           o_NO_VALUE,       o_NEGATABLE,
        'a',  "text convert (EOL char, ASCII->EBCDIC)"},
 # if (defined(DLL) && defined(API_DOC))
     {UZO, "A",  "api-help",        o_NO_VALUE,       o_NEGATABLE,
@@ -1631,13 +1640,13 @@ static struct option_struct far options[] = {
     {UZO, "e",  "extract",         o_NO_VALUE,       o_NEGATABLE,
        'e',  "extract (not used?)"},
 # ifdef MACOS
-    {UZO, "E",  "Mac-efs",         o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "E",  "mac-efs",         o_NO_VALUE,       o_NEGATABLE,
        'E',  "display Mac e.f. when restoring"},
 # endif
     {UZO, "f",  "freshen",         o_NO_VALUE,       o_NEGATABLE,
        'f',  "freshen (extract only newer files)"},
 # if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
-    {UZO, "F",  "keep-NFS",        o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "F",  "keep-nfs",        o_NO_VALUE,       o_NEGATABLE,
        'F',  "Acorn filetype & NFS extension handling"},
 # endif
     {UZO, "h",  "help",            o_NO_VALUE,       o_NOT_NEGATABLE,
@@ -1645,7 +1654,7 @@ static struct option_struct far options[] = {
     {UZO, "hh", "long-help",       o_NO_VALUE,       o_NOT_NEGATABLE,
        o_hh,  "long help"},
 # ifdef MACOS
-    {UZO, "i",  "no-Mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "i",  "no-mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
        'i',  "ignore filenames stored in Mac ef"},
 # endif
 #ifdef USE_ICONV_MAPPING
@@ -1663,12 +1672,12 @@ static struct option_struct far options[] = {
     {UZO, "",   "jar",             o_NO_VALUE,       o_NEGATABLE,
        o_ja, "Treat archive(s) as Java JAR (UTF-8)"},
 # ifdef ATH_BEO_UNX
-    {UZO, "K",  "keep-S-attrs",    o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "K",  "keep-s-attrs",    o_NO_VALUE,       o_NEGATABLE,
        'K',  "retain SUID/SGID/Tacky attrs"},
 # endif
 # ifndef SFX
-    {UZO, "l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
-        'l',  "listing verbosity"},
+    {UZO, "l",  "list",            o_NO_VALUE,       o_NEGATABLE,
+        'l',  "list archive members"},
 # endif
 # ifndef CMS_MVS
     {UZO, "L",  "lowercase-names", o_NO_VALUE,       o_NEGATABLE,
@@ -1681,7 +1690,7 @@ static struct option_struct far options[] = {
     {UZO, "m",  "more",            o_NO_VALUE,       o_NEGATABLE,
        'm',  "pipe output through more"},
 #  endif
-    {UZO, "M",  "More",            o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
        'M',  "pipe output through more"},
 # endif /* MORE */
     {UZO, "n",  "never-overwrite", o_NO_VALUE,       o_NEGATABLE,
@@ -1692,7 +1701,7 @@ static struct option_struct far options[] = {
 # endif
 #ifdef USE_ICONV_MAPPING
 # ifdef UNIX
-    {UZO, "O",  "OEM-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+    {UZO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'O',  "OEM char set to use"},
 # endif
 #endif
@@ -1700,7 +1709,7 @@ static struct option_struct far options[] = {
        'o',  "overwrite files without prompting"},
     {UZO, "p",  "pipe-to-stdout",  o_NO_VALUE,       o_NEGATABLE,
        'p',  "pipe extraction to stdout, no messages"},
-# if CRYPT
+# ifdef CRYPT_ANY
     {UZO, "P",  "password",        o_REQUIRED_VALUE, o_NEGATABLE,
        'P',  "password"},
 # endif
@@ -1717,17 +1726,17 @@ static struct option_struct far options[] = {
     {UZO, "s",  "space_to_uscore", o_NO_VALUE,       o_NEGATABLE,
        's',  "spaces to underscores"},
 # ifdef VMS
-    {UZO, "S",  "stream-LF",       o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "S",  "stream_lf",       o_NO_VALUE,       o_NEGATABLE,
        'S',  "VMS extract text as Stream LF"},
 # endif
 #ifndef SFX
-    {UZO, "",  "commandline",      o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "",   "show-command",    o_NO_VALUE,       o_NEGATABLE,
        o_sc, "show processed command line and exit"},
 #if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
     {UZO, "si", "show-pid",        o_NO_VALUE,       o_NEGATABLE,
        o_si, "show process ID"},
 #endif /* #if !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
-    {UZO, "",  "options",          o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "",   "show-options",    o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
 #endif /* ndef SFX */
     {UZO, "t",  "test",            o_NO_VALUE,       o_NEGATABLE,
@@ -1739,15 +1748,15 @@ static struct option_struct far options[] = {
     {UZO, "u",  "update",          o_NO_VALUE,       o_NEGATABLE,
        'u',  "update (extract only new/newer files)"},
 # ifdef UNICODE_SUPPORT
-    {UZO, "U",  "Unicode",         o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "U",  "unicode",         o_NO_VALUE,       o_NEGATABLE,
        'U',  "escape non-ASCII Unicode, disable Unicode"},
 # endif /* ?UNICODE_SUPPORT */
-# ifndef SFX
+# if !defined( SFX) || defined( DIAG_SFX)
     {UZO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
        'v',  "verbose"},
 # endif
 # ifndef CMS_MVS
-    {UZO, "V",  "keep-vers-nums",  o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "V",  "keep-versions",  o_NO_VALUE,       o_NEGATABLE,
        'V',  "don't strip VMS version numbers"},
 # endif
 # ifdef WILD_STOP_AT_DIR
@@ -1761,18 +1770,18 @@ static struct option_struct far options[] = {
        'X',  "restore owner/prot or UID/GID or ACLs"},
 # endif
 # ifdef VMS
-    {UZO, "Y",  "dot-ver-as-sem",  o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "Y",  "dot-version",     o_NO_VALUE,       o_NEGATABLE,
        'Y',  "VMS treat .nnn as ;nnn version"},
 # endif
     {UZO, "z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
        'z',  "display zipfile comment"},
 # ifndef SFX
-    {UZO, "Z",  "ZipInfo-mode",    o_NO_VALUE,       o_NOT_NEGATABLE,
+    {UZO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NOT_NEGATABLE,
        'Z',  "ZipInfo mode (must be first option)"},
 # endif
-# ifdef VMS
-    {UZO, "2",  "force-ODS2",      o_NO_VALUE,       o_NEGATABLE,
-       '2',  "Force ODS2-compliant names."},
+# ifdef RISCOS
+    {UZO, "/",  "extensions",      o_REQUIRED_VALUE, o_NEGATABLE,
+       '/',  "override Unzip$Exts"},
 # endif
 # ifdef DOS_H68_OS2_W32
     {UZO, "$",  "volume-labels",   o_NO_VALUE,       o_NEGATABLE,
@@ -1792,63 +1801,63 @@ static struct option_struct far options[] = {
 
   /* short longopt                 value_type        negatable
        ID    name (help text) */
-    {ZIO, "1",  "shortest-list",   o_NO_VALUE,       o_NEGATABLE,
-       '1',  "shortest list"},
-    {ZIO, "2",  "names-headers",   o_NO_VALUE,       o_NEGATABLE,
-       '2',  "names and headers"},
+    {ZIO, "1",  "names-only",      o_NO_VALUE,       o_NEGATABLE,
+       '1',  "names-only list"},
+    {ZIO, "2",  "names-mostly",    o_NO_VALUE,       o_NEGATABLE,
+       '2',  "names-mostly list"},
 #  ifndef CMS_MVS
     {ZIO, "C",  "ignore-case",     o_NO_VALUE,       o_NEGATABLE,
        'C',  "ignore case"},
 #  endif
-    {ZIO, "h",  "headers",         o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "h",  "header",          o_NO_VALUE,       o_NEGATABLE,
        'h',  "header line"},
 #  ifdef USE_ICONV_MAPPING
 #   ifdef UNIX
-    {ZIO, "I",  "ISO-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+    {ZIO, "I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'I',  "ISO charset to use"},
 #   endif
 #  endif
     {ZIO, "l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
-       'l',  "longer listing"},
+       'l',  "long list"},
     {ZIO, "m",  "medium-list",     o_NO_VALUE,       o_NEGATABLE,
-       'm',  "medium listing"},
+       'm',  "medium list"},
 #  ifdef MORE
     {ZIO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
        'M',  "output like more"},
 # endif
 # ifdef USE_ICONV_MAPPING
 #  ifdef UNIX
-    {ZIO, "O",  "OEM-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+    {ZIO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'O',  "OEM charset to use"},
 #  endif
 # endif
-    {ZIO, "s",  "shorter-list",    o_NO_VALUE,       o_NEGATABLE,
-       's',  "shorter list"},
+    {ZIO, "s",  "short-list",      o_NO_VALUE,       o_NEGATABLE,
+       's',  "short list"},
 # ifndef SFX
-    {ZIO, "",  "commandline",      o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "",   "show-command",    o_NO_VALUE,       o_NEGATABLE,
        o_sc, "show processed command line and exit"},
-    {ZIO, "",  "options",          o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "",   "show-options",    o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
 # endif /* ndef SFX */
-    {ZIO, "t",  "totals-line",     o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "t",  "totals",          o_NO_VALUE,       o_NEGATABLE,
        't',  "totals line"},
     {ZIO, "T",  "decimal-time",    o_NO_VALUE,       o_NEGATABLE,
        'T',  "decimal time format"},
 #  ifdef UNICODE_SUPPORT
-    {ZIO, "U",  "Unicode",         o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "U",  "unicode",         o_NO_VALUE,       o_NEGATABLE,
        'U',  "escape non-ASCII Unicode, disable Unicode"},
 #  endif
-    {ZIO, "v",  "verboselist",     o_NO_VALUE,       o_NEGATABLE,
-       'v',  "turbo-verbose listing"},
+    {ZIO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
+       'v',  "very detailed list"},
 #  ifdef WILD_STOP_AT_DIR
-    {ZIO, "W",  "wild-dir-parts",  o_NO_VALUE,       o_NEGATABLE,
-       'W',  "wild stop at /"},
+    {ZIO, "W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
+       'W',  "wildcard * doesn't span /"},
 #  endif
     {ZIO, "x",  "exclude",         o_VALUE_LIST,     o_NOT_NEGATABLE,
        'x',  "exclude this list of files"},
     {ZIO, "z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
        'z',  "print zipfile comment"},
-    {ZIO, "Z",  "ZipInfo-mode",    o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NEGATABLE,
        'Z',  "ZipInfo mode"},
 # endif /* !NO_ZIPINFO */
 
@@ -2249,7 +2258,7 @@ int uz_opts(__G__ pargc, pargv)
                     uO.qflag += 999;
                 }
                 break;
-# if CRYPT
+# ifdef CRYPT_ANY
             /* GRR:  yes, this is highly insecure, but dozens of people
              * have pestered us for this, so here we go... */
             case ('P'):
@@ -2276,7 +2285,7 @@ int uz_opts(__G__ pargc, pargv)
                     /* else pwdarg points at decryption password */
                 }
                 break;
-# endif /* CRYPT */
+# endif /* def CRYPT_ANY */
             case ('q'):    /* quiet:  fewer comments/messages */
                 if (negative) {
                     uO.qflag = MAX(uO.qflag-negative,0);
@@ -2355,7 +2364,7 @@ int uz_opts(__G__ pargc, pargv)
                     uO.U_flag++;
                 break;
 # endif /* ?UNICODE_SUPPORT */
-# ifndef SFX
+# if !defined( SFX) || defined( DIAG_SFX)
             case ('v'):    /* verbose */
                 if (negative) {
                     uO.vflag = MAX(uO.vflag-negative,0);
@@ -2365,7 +2374,7 @@ int uz_opts(__G__ pargc, pargv)
                 else
                     uO.vflag = 2;
                 break;
-# endif /* !SFX */
+# endif /* !defined( SFX) || defined( DIAG_SFX) */
 # ifndef CMS_MVS
             case ('V'):    /* Version (retain VMS/DEC-20 file versions) */
                 if (negative)
@@ -2382,9 +2391,7 @@ int uz_opts(__G__ pargc, pargv)
                     uO.W_flag = TRUE;
                 break;
 # endif /* WILD_STOP_AT_DIR */
-            case ('x'):    /* extract:  default */
-                /* add -x file to linked list */
-
+            case ('x'):    /* Exclude.  Add -x file to linked list. */
                 if (in_xfiles_count == 0) {
                     /* first entry */
                     if ((in_xfiles = (struct file_list *)
@@ -2635,26 +2642,48 @@ int uz_opts(__G__ pargc, pargv)
 # endif
 
 # ifdef SFX
+#  ifdef DIAG_SFX
+    if ((showhelp == 0) || error)
+#  else /* def DIAG_SFX */
     if (error)
-# else
-    if (showhelp == 0 && ((G.wildzipfn == NULL) || error))
-# endif
+#  endif /* def DIAG_SFX [else] */
+# else /* def SFX */
+    if ((showhelp == 0) && ((G.wildzipfn == NULL) || error))
+# endif /* def SFX [else] */
     {
+# if defined( SFX) && defined( DIAG_SFX)
+        int argc_orig;
+
+        argc_orig = argc;
+# endif /* defined( SFX) && defined( DIAG_SFX) */
+
         /* tell caller to exit */
         if (argc <= 2)
             argc = -1;
 
         *pargc = argc;
         *pargv = args;
-# ifndef SFX
+
+        /* 2012-07-27 SMS.
+         * Allow (only) "-v" report in SFX, if DIAG_SFX is defined.
+         */
+# if !defined( SFX) || defined( DIAG_SFX)
         if (uO.vflag >= 2 && argc == -1) {              /* "unzip -v" */
             show_version_info(__G);
             return PK_OK;
         }
+#  ifndef SFX
         if (!G.noargs && !error)
             error = TRUE;       /* had options (not -h or -v) but no zipfile */
-# endif /* !SFX */
+#  endif /* ndef SFX */
+#  ifndef DIAG_SFX
         return USAGE(error);
+#  endif /* ndef DIAG_SFX */
+# endif /* !defined( SFX) || defined( DIAG_SFX) */
+
+# if defined( SFX) && defined( DIAG_SFX)
+        argc = argc_orig;
+# endif /* defined( SFX) && defined( DIAG_SFX) */
     }
 
 #if 0 /* Duplicate below. */
@@ -2740,7 +2769,7 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
         G.M_flag = 0;
 # endif
 
-# ifdef SFX
+# if defined( SFX) && !defined( DIAG_SFX)
     if (error)
 # else
     if ((argc-- == 0) || error)
@@ -2755,11 +2784,14 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
         }
         if (!G.noargs && !error)
             error = TRUE;       /* had options (not -h or -v) but no zipfile */
-# endif /* !SFX */
+# endif /* ndef SFX */
         return USAGE(error);
+# ifndef DIAG_SFX
+# endif /* ndef DIAG_SFX */
     }
 
 # ifdef SFX
+/* # if defined( SFX) && !defined( DIAG_SFX) */
     /* print our banner unless we're being fairly quiet */
     if (uO.qflag < 2)
         Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXBanner),
@@ -2948,6 +2980,80 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
 # endif /* ?SFX */
 
 
+/* Print license to stdout. */
+static void show_license(__G)
+    __GDEF
+{
+    extent i;             /* counter for license array */
+
+    /* license array */
+    static ZCONST char *text[] = {
+  "Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.",
+  "",
+  "This is version 2009-Jan-02 of the Info-ZIP license.",
+  "",
+  "For the purposes of this copyright and license, \"Info-ZIP\" is defined as",
+  "the following set of individuals:",
+  "",
+  "   Mark Adler, John Bush, Karl Davis, Harald Denker, Jean-Michel Dubois,",
+  "   Jean-loup Gailly, Hunter Goatley, Ed Gordon, Ian Gorman, Chris Herborth,",
+  "   Dirk Haase, Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz,",
+  "   David Kirschbaum, Johnny Lee, Onno van der Linden, Igor Mandrichenko,",
+  "   Steve P. Miller, Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs,",
+  "   Kai Uwe Rommel, Steve Salisbury, Dave Smith, Steven M. Schweda,",
+  "   Christian Spieler, Cosmin Truta, Antoine Verheijen, Paul von Behren,",
+  "   Rich Wales, Mike White",
+  "",
+  "This software is provided \"as is,\" without warranty of any kind, express",
+  "or implied.  In no event shall Info-ZIP or its contributors be held liable",
+  "for any direct, indirect, incidental, special or consequential damages",
+  "arising out of the use of or inability to use this software.",
+  "",
+  "Permission is granted to anyone to use this software for any purpose,",
+  "including commercial applications, and to alter it and redistribute it",
+  "freely, subject to the above disclaimer and the following restrictions:",
+  "",
+  "    1. Redistributions of source code (in whole or in part) must retain",
+  "       the above copyright notice, definition, disclaimer, and this list",
+  "       of conditions.",
+  "",
+  "    2. Redistributions in binary form (compiled executables and libraries)",
+  "       must reproduce the above copyright notice, definition, disclaimer,",
+  "       and this list of conditions in documentation and/or other materials",
+  "       provided with the distribution.  Additional documentation is not needed",
+  "       for executables where a command line license option provides these and",
+  "       a note regarding this option is in the executable's startup banner.  The",
+  "       sole exception to this condition is redistribution of a standard",
+  "       UnZipSFX binary (including SFXWiz) as part of a self-extracting archive;",
+  "       that is permitted without inclusion of this license, as long as the",
+  "       normal SFX banner has not been removed from the binary or disabled.",
+  "",
+  "    3. Altered versions--including, but not limited to, ports to new operating",
+  "       systems, existing ports with new graphical interfaces, versions with",
+  "       modified or added functionality, and dynamic, shared, or static library",
+  "       versions not from Info-ZIP--must be plainly marked as such and must not",
+  "       be misrepresented as being the original source or, if binaries,",
+  "       compiled from the original source.  Such altered versions also must not",
+  "       be misrepresented as being Info-ZIP releases--including, but not",
+  "       limited to, labeling of the altered versions with the names \"Info-ZIP\"",
+  "       (or any variation thereof, including, but not limited to, different",
+  "       capitalizations), \"Pocket UnZip,\" \"WiZ\" or \"MacZip\" without the",
+  "       explicit permission of Info-ZIP.  Such altered versions are further",
+  "       prohibited from misrepresentative use of the Zip-Bugs or Info-ZIP",
+  "       e-mail addresses or the Info-ZIP URL(s), such as to imply Info-ZIP",
+  "       will provide support for the altered versions.",
+  "",
+  "    4. Info-ZIP retains the right to use the names \"Info-ZIP,\" \"Zip,\" \"UnZip,\"",
+  "       \"UnZipSFX,\" \"WiZ,\" \"Pocket UnZip,\" \"Pocket Zip,\" and \"MacZip\" for its",
+  "       own source and binary releases.",
+  ""
+    };
+
+    for (i = 0; i < sizeof(text)/sizeof(char *); i++)
+    {
+        Info(slide, 0, ((char *)slide, "%s\n", text[i]));
+    }
+} /* end function show_license() */
 
 
 # ifndef SFX
@@ -3051,9 +3157,9 @@ static void help_extended(__G)
   "         ACORN_FTYPE_NFS] Translate filetype and append to name.",
   "  -i   [MacOS] Ignore filenames in MacOS extra field.  Instead, use name in",
   "         standard header.",
-#ifdef USE_ICONV_MAPPING
+#  ifdef USE_ICONV_MAPPING
   "  -I   [UNIX] ISO code page to use.",
-#endif
+#  endif
   "  -j   Junk paths and deposit all files in extraction directory.",
   "  -J   [BeOS] Junk file attributes.  [MacOS] Ignore MacOS specific info.",
   "  --jar Treat archive(s) as Java JAR (UTF-8 names).",
@@ -3065,11 +3171,11 @@ static void help_extended(__G)
   "  -N   [Amiga] Extract file comments as Amiga filenotes.",
   "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
   "         care.",
-#ifdef USE_ICONV_MAPPING
+#  ifdef USE_ICONV_MAPPING
   "  -O   [UNIX] OEM code page to use.  Now, if USE_ICONV_MAPPING compile option",
   "         is used, and -O is not used, UnZip tries to automatically set OEM",
   "         code page based on current environment language setting.",
-#endif
+#  endif
   "  -P p Use password p to decrypt files.  THIS IS INSECURE!  Some OS show",
   "         command line to other users.",
   "  -q   Perform operations quietly.  The more q (as in -qq) the quieter.",
@@ -3173,10 +3279,10 @@ static void help_extended(__G)
   "        representing the Unicode character number of the character in hex.",
   "  -UU [UNICODE]  Disable use of any UTF-8 path information.",
   "  -z  Include archive comment if any in listing.",
-#ifdef USE_ICONV_MAPPING
+#  ifdef USE_ICONV_MAPPING
   "  -I   [UNIX] ISO code page to use.",
   "  -O   [UNIX] OEM code page to use.",
-#endif
+#  endif
   "",
   "",
   "funzip stream extractor:",
@@ -3231,84 +3337,6 @@ static void help_extended(__G)
     }
 } /* end function help_extended() */
 
-# endif /* !SFX */
-
-/* Print license to stdout. */
-static void show_license(__G)
-    __GDEF
-{
-    extent i;             /* counter for license array */
-
-    /* license array */
-    static ZCONST char *text[] = {
-  "Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.",
-  "",
-  "This is version 2009-Jan-02 of the Info-ZIP license.",
-  "",
-  "For the purposes of this copyright and license, \"Info-ZIP\" is defined as",
-  "the following set of individuals:",
-  "",
-  "   Mark Adler, John Bush, Karl Davis, Harald Denker, Jean-Michel Dubois,",
-  "   Jean-loup Gailly, Hunter Goatley, Ed Gordon, Ian Gorman, Chris Herborth,",
-  "   Dirk Haase, Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz,",
-  "   David Kirschbaum, Johnny Lee, Onno van der Linden, Igor Mandrichenko,",
-  "   Steve P. Miller, Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs,",
-  "   Kai Uwe Rommel, Steve Salisbury, Dave Smith, Steven M. Schweda,",
-  "   Christian Spieler, Cosmin Truta, Antoine Verheijen, Paul von Behren,",
-  "   Rich Wales, Mike White",
-  "",
-  "This software is provided \"as is,\" without warranty of any kind, express",
-  "or implied.  In no event shall Info-ZIP or its contributors be held liable",
-  "for any direct, indirect, incidental, special or consequential damages",
-  "arising out of the use of or inability to use this software.",
-  "",
-  "Permission is granted to anyone to use this software for any purpose,",
-  "including commercial applications, and to alter it and redistribute it",
-  "freely, subject to the above disclaimer and the following restrictions:",
-  "",
-  "    1. Redistributions of source code (in whole or in part) must retain",
-  "       the above copyright notice, definition, disclaimer, and this list",
-  "       of conditions.",
-  "",
-  "    2. Redistributions in binary form (compiled executables and libraries)",
-  "       must reproduce the above copyright notice, definition, disclaimer,",
-  "       and this list of conditions in documentation and/or other materials",
-  "       provided with the distribution.  Additional documentation is not needed",
-  "       for executables where a command line license option provides these and",
-  "       a note regarding this option is in the executable's startup banner.  The",
-  "       sole exception to this condition is redistribution of a standard",
-  "       UnZipSFX binary (including SFXWiz) as part of a self-extracting archive;",
-  "       that is permitted without inclusion of this license, as long as the",
-  "       normal SFX banner has not been removed from the binary or disabled.",
-  "",
-  "    3. Altered versions--including, but not limited to, ports to new operating",
-  "       systems, existing ports with new graphical interfaces, versions with",
-  "       modified or added functionality, and dynamic, shared, or static library",
-  "       versions not from Info-ZIP--must be plainly marked as such and must not",
-  "       be misrepresented as being the original source or, if binaries,",
-  "       compiled from the original source.  Such altered versions also must not",
-  "       be misrepresented as being Info-ZIP releases--including, but not",
-  "       limited to, labeling of the altered versions with the names \"Info-ZIP\"",
-  "       (or any variation thereof, including, but not limited to, different",
-  "       capitalizations), \"Pocket UnZip,\" \"WiZ\" or \"MacZip\" without the",
-  "       explicit permission of Info-ZIP.  Such altered versions are further",
-  "       prohibited from misrepresentative use of the Zip-Bugs or Info-ZIP",
-  "       e-mail addresses or the Info-ZIP URL(s), such as to imply Info-ZIP",
-  "       will provide support for the altered versions.",
-  "",
-  "    4. Info-ZIP retains the right to use the names \"Info-ZIP,\" \"Zip,\" \"UnZip,\"",
-  "       \"UnZipSFX,\" \"WiZ,\" \"Pocket UnZip,\" \"Pocket Zip,\" and \"MacZip\" for its",
-  "       own source and binary releases.",
-  ""
-    };
-
-    for (i = 0; i < sizeof(text)/sizeof(char *); i++)
-    {
-        Info(slide, 0, ((char *)slide, "%s\n", text[i]));
-    }
-} /* end function show_license() */
-
-# ifndef SFX
 
 /* Print available options. */
 static void show_options(__G)
@@ -3334,7 +3362,7 @@ static void show_options(__G)
                                is found */
   char Far *name;           /* optional string for option returned on some
                                errors */
-#endif
+#endif /* 0 */
 
     sprintf(optiontext, "%s\n\n%s\n%s",
       "Available options on this system",
@@ -3378,6 +3406,8 @@ static void show_options(__G)
                 strcpy(val_type, "char"); break;
             case o_NUMBER_VALUE:
                 strcpy(val_type, "numb"); break;
+            case o_OPT_EQ_VALUE:
+                strcpy(val_type, "=val"); break;
             default:
                 strcpy(val_type, "?   ");
         }
@@ -3428,6 +3458,9 @@ void show_commandline( args)
 extern char *getenv();
 #   endif
 #  endif
+# endif /* ndef SFX */
+
+# if !defined( SFX) || defined( DIAG_SFX)
 
 /********************************/
 /* Function show_version_info() */
@@ -3445,12 +3478,15 @@ static void show_version_info(__G)
 #  endif
         int numopts = 0;
 
+#  ifndef SFX
         Info(slide, 0, ((char *)slide, LoadFarString(UnzipUsageLine1v),
           UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
           LoadFarStringSmall(VersionDate)));
         Info(slide, 0, ((char *)slide,
           LoadFarString(UnzipUsageLine2v)));
         version(__G);
+#  endif /* ndef SFX */
+
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptions)));
 #  ifdef ACORN_FTYPE_NFS
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
@@ -3701,23 +3737,23 @@ static void show_version_info(__G)
           LoadFarStringSmall(WildStopAtDir)));
         ++numopts;
 #  endif
-#  if CRYPT
+#  ifdef CRYPT_ANY
 #   ifdef PASSWD_FROM_STDIN
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(PasswdStdin)));
         ++numopts;
-#   endif
+#   endif /* def CRYPT_ANY */
 #   ifdef CRYPT_TRAD
         Info(slide, 0, ((char *)slide, LoadFarString(Decryption),
           CR_MAJORVER, CR_MINORVER, CR_BETA_VER));
         ++numopts;
 #   endif /* def CRYPT_TRAD */
-#   if CRYPT_AES_WG
+#   ifdef CRYPT_AES_WG
         Info(slide, 0, ((char *)slide, LoadFarStringSmall(AesWgDecryption),
           IZ_AES_WG_MAJORVER, IZ_AES_WG_MINORVER, IZ_AES_WG_BETA_VER));
         ++numopts;
-#   endif
-#  endif /* CRYPT */
+#   endif /* def CRYPT_AES_WG */
+#  endif /* def CRYPT_ANY */
         if (numopts == 0)
             Info(slide, 0, ((char *)slide,
               LoadFarString(CompileOptFormat),
@@ -3730,12 +3766,12 @@ static void show_version_info(__G)
          LoadFarString(TraditionalEncryptionNotice2)));
 #  endif /* def CRYPT_TRAD */
 
-#  if CRYPT_AES_WG
+#  ifdef CRYPT_AES_WG
         Info(slide, 0, ((char *)slide,
          LoadFarString(AesWgEncryptionNotice1)));
         Info(slide, 0, ((char *)slide,
          LoadFarString(AesWgEncryptionNotice2)));
-#  endif /* CRYPT_AES_WG */
+#  endif /* def CRYPT_AES_WG */
 
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
         Info(slide, 0, ((char *)slide, LoadFarString(EnvOptions)));
@@ -3796,7 +3832,7 @@ static void show_version_info(__G)
     }
 } /* end function show_version() */
 
-# endif /* !SFX */
+# endif /* !defined( SFX) || defined( DIAG_SFX) */
 #endif /* !WINDLL */
 
 

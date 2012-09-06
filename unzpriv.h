@@ -82,18 +82,54 @@
 #endif
 
 /* Disable AES_WG support for SFX stub, unless explicitly requested. */
-#if (defined(SFX) && !defined(AES_WG_SFX) && defined(CRYPT_AES_WG))
+#if (defined(SFX) && !defined(CRYPT_AES_WG_SFX) && defined(CRYPT_AES_WG))
 #  undef CRYPT_AES_WG
 #endif
 
-/* If traditional CRYPT is disabled, and no other encryption method is
- * enabled, then ensure that all encryption is disabled.
+/* Encryption rules.
+ *
+ * User-specified macros:
+ * NO_CRYPT, NO_CRYPT_TRAD, CRYPT_TRAD_SFX, CRYPT_AES_WG, CRYPT_AES_WG_SFX.
+ *
+ * Macros used in code: CRYPT_AES_WG, CRYPT_ANY, CRYPT_TRAD.
+ *
+ * By default, in normal UnZip, enable Traditional, disable AES_WG.
+ * NO_CRYPT disables all.
+ * NO_CRYPT_TRAD disables Traditional.
+ * CRYPT_TRAD_SFX (and not NO_CRYPT_TRAD) enables Traditional in UnZipSFX.
+ * CRYPT_AES_WG enables AES_WG in normal UnZip.
+ * CRYPT_AES_WG_SFX (and CRYPT_AES_WG) enables AES_WG in UnZipSFX.
  */
-#ifdef NO_TRADITIONAL_CRYPT
-# ifndef CRYPT_AES_WG
-#  define NO_CRYPT
-# endif
-#endif
+
+# ifdef NO_CRYPT
+   /* Disable all encryption. */
+#  undef CRYPT_AES_WG
+#  undef CRYPT_TRAD
+# else /* def NO_CRYPT */
+   /* Enable some kind of encryption. */
+#  ifdef NO_CRYPT_TRAD
+    /* Disable Traditional encryption. */
+#   undef CRYPT_TRAD
+#  else /* def NO_CRYPT_TRAD */
+   /* Enable Traditional encryption? */
+#   ifdef SFX
+#    ifdef CRYPT_TRAD_SFX
+      /* UnZipSFX, and user requested Traditional encryption in UnZipSFX. */
+#     define CRYPT_TRAD 1
+#    endif /* def CRYPT_TRAD_SFX */
+#   else /* def CRYPT_TRAD_SFX */
+     /* Normal UnZip, so default to Traditional encryption. */
+#    define CRYPT_TRAD 1
+#   endif /* def CRYPT_TRAD_SFX [else] */
+#  endif /* def NO_CRYPT_TRAD [else] */
+#  ifdef CRYPT_AES_WG
+    /* User requested AES_WG encryption. */
+#   if defined( SFX) && !defined( CRYPT_AES_WG_SFX)
+     /* UnZipSFX, and user did not request AES_WG encryption in UnZipSFX. */
+#    undef CRYPT_AES_WG
+#   endif /* defined( SFX) && !defined( CRYPT_AES_WG_SFX) */
+#  endif /* def CRYPT_AES_WG */
+# endif /* def NO_CRYPT [else] */
 
 /* Disable bzip2 support for SFX stub, unless explicitly requested. */
 #if (defined(SFX) && !defined(BZIP2_SFX) && defined(BZIP2_SUPPORT))

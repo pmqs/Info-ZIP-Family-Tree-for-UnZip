@@ -4316,8 +4316,11 @@ int dest_struct_level(char *path)
 }
 
 /* 2005-02-12 SMS.
-   Note that these name conversion functions do no length checking.
-   Buffer overflows are possible.
+ * Note that these name conversion functions do no length checking.
+ * Buffer overflows are possible.
+ *
+ * 2012-08-08 SMS.
+ * Added "-s" (uO.sflag) processing.
 */
 
 static void adj_dir_name_ods2(char *dest, char *src, int src_len)
@@ -4346,7 +4349,7 @@ static void adj_dir_name_ods2(char *dest, char *src, int src_len)
 }
 
 
-static void adj_dir_name_ods5(char *dest, char *src, int src_len)
+static void adj_dir_name_ods5(__GPRO__ char *dest, char *src, int src_len)
 {
     /* The source string (src) typically extends beyond the directory
        segment of interest, hence the confining src_len argument.
@@ -4359,7 +4362,11 @@ static void adj_dir_name_ods5(char *dest, char *src, int src_len)
     {
         prop = char_prop[uchr = *src];          /* Get source char, props. */
         prop = char_prop[uchr];                 /* Get source char props. */
-        if ((prop & (32+8+4)) != 0)             /* Escape 1-char, including */
+        if (uO.sflag && (prop & 8) != 0)
+        {                                       /* With "-s", simply    */
+            uchr = '_';                         /* replace SP with "_". */
+        }
+        else if ((prop & (32+ 8+ 4)) != 0)      /* Escape 1-char, including */
         {                                       /* SP and dot. */
             *dest++ = '^';                      /* Insert caret. */
             if ((prop & 8) != 0)                /* Replace SP with "_". */
@@ -4515,7 +4522,11 @@ static void adj_file_name_ods5(__GPRO__ char *dest, char *src)
     {
         /* Note that "src" has been incremented, affecting "src <=". */
         prop = char_prop[uchr];                 /* Get source char props. */
-        if ((prop & (32+8)) != 0)               /* Escape 1-char, including */
+        if (uO.sflag && (prop & 8) != 0)
+        {                                       /* With "-s", simply    */
+            uchr = '_';                         /* replace SP with "_". */
+        }
+        else if ((prop & (32+ 8)) != 0)         /* Escape 1-char, including */
         {                                       /* SP (but not dot). */
             if (src <= versionp)                /* No escapes for version. */
             {
@@ -4687,7 +4698,7 @@ int mapname(__G__ renamed)
             }
             else                /* Make directory name ODS5-compliant. */
             {
-                adj_dir_name_ods5(pathcomp, cp, dir_len);
+                adj_dir_name_ods5(__G__ pathcomp, cp, dir_len);
             }
             if (((error = checkdir(__G__ pathcomp, APPEND_DIR))
                  & MPN_MASK) > MPN_INF_TRUNC)
@@ -4806,13 +4817,25 @@ int checkdir(__G__ pathcomp, fcn)
 
         NAMX_DNA_FNA_SET( fab)
 
+        /* 2012-07-17 SMS.
+         * Changed the ("-d") root directory test to avoid silently
+         * accepting (and then ignoring) directory-less directory
+         * specifications, like "." and "..".  The old code used
+         * pathcomp as the file spec, and PATH_DEFAULT as the default
+         * spec.  Now we use TEST_NAME as the file spec, and pathcomp as
+         * the default spec.  It's still not fool-proof, but it may be
+         * better.  The "(includes file name)" error message now shows
+         * the user-specified name, instead of the expanded name.
+         */
+#define TEST_NAME "UNLIKELY.UNLIKELY;99999"
+
         /* Specified file spec. */
         FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNA = pathcomp;
-        FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNS = strlen(pathcomp);
+        FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNS = strlen( pathcomp);
 
         /* Default file spec. */
-        FAB_OR_NAML(fab, nam).FAB_OR_NAML_DNA = PATH_DEFAULT;
-        FAB_OR_NAML(fab, nam).FAB_OR_NAML_DNS = strlen(PATH_DEFAULT);
+        FAB_OR_NAML(fab, nam).FAB_OR_NAML_DNA = TEST_NAME;
+        FAB_OR_NAML(fab, nam).FAB_OR_NAML_DNS = strlen( TEST_NAME);
 
         /* Expanded file spec. */
         nam.NAMX_ESA = pathbuf;
@@ -4832,13 +4855,15 @@ int checkdir(__G__ pathcomp, fcn)
         }
 
         /* Should be only a device:[directory], so name+type+version
-           should have length 2 (".;").
-        */
-        if (nam.NAMX_B_NAME + nam.NAMX_B_TYPE + nam.NAMX_B_VER > 2)
+         * should match TEST_NAME.
+         */
+        if ((nam.NAMX_B_NAME + nam.NAMX_B_TYPE + nam.NAMX_B_VER !=
+         strlen( TEST_NAME)) ||
+         (strcasecmp( nam.NAMX_L_NAME, TEST_NAME) != 0))
         {
             Info(slide, 1, ((char *)slide,
               "Invalid destination directory (includes file name): %s\n",
-              FnFilter1(nam.NAMX_ESA)));
+              FnFilter1( pathcomp)));
             return MPN_ERR_SKIP;
         }
 
@@ -5850,6 +5875,42 @@ int acc_cb(int *id_arg, struct FAB *fab, struct RAB *rab)
     return 0;
 }
 
+
+/* 2012-09-05 SMS.
+ * Copied from Zip [.vms]vmszip.c.  Prototype in [.vms]vmscfg.h.)
+ *
+ * 2004-09-25 SMS.
+ * str[n]casecmp() replacement for old C RTL.
+ * Assumes a prehistorically incompetent toupper().
+ */
+#ifndef HAVE_STRCASECMP
+
+int strncasecmp( char *s1, char *s2, size_t n)
+{
+  /* Initialization prepares for n == 0. */
+  char c1 = '\0';
+  char c2 = '\0';
+
+  while (n-- > 0)
+  {
+    /* Set c1 and c2.  Convert lower-case characters to upper-case. */
+    if (islower( c1 = *s1))
+      c1 = toupper( c1);
+
+    if (islower( c2 = *s2))
+      c2 = toupper( c2);
+
+    /* Quit at inequality or NUL. */
+    if ((c1 != c2) || (c1 == '\0'))
+      break;
+
+    s1++;
+    s2++;
+  }
+return ((unsigned int) c1- (unsigned int) c2);
+}
+
+#endif /* ndef HAVE_STRCASECMP */
 
 
 /*

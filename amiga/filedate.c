@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -502,7 +502,7 @@ time_t time(time_t *tp)
 #endif /* !FUNZIP && !UTIL */
 
 
-#if CRYPT || !defined(FUNZIP)
+#if defined( CRYPT_ANY) || !defined(FUNZIP)
 
 /*  sendpkt.c
  *  by A. Finkel, P. Lindsay, C. Sheppner
@@ -566,10 +566,10 @@ LONG action,                   /* packet type (desired action)              */
 
 } /* sendpkt() */
 
-#endif /* CRYPT || !FUNZIP */
+#endif /* defined( CRYPT_ANY) || !defined(FUNZIP) */
 
 
-#if CRYPT || (defined(UNZIP) && !defined(FUNZIP))
+#if defined( CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP))
 
 /* Agetch() reads one raw keystroke -- uses sendpkt() */
 
@@ -594,6 +594,6 @@ int Agetch(void)
     return c;
 }
 
-#endif /* CRYPT || (UNZIP && !FUNZIP) */
+#endif /* defined( CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP)) */
 
 #endif /* __amiga_filedate_c*/

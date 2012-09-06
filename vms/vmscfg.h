@@ -72,12 +72,29 @@
 #  include <unistd.h>
 #endif
 
-#  include <types.h>                    /* GRR:  experimenting... */
-#  include <stat.h>
-#  include <time.h>                     /* the usual non-BSD time functions */
-#  include <file.h>                     /* same things as fcntl.h has */
-#  include <unixio.h>
-#  include <rms.h>
+#include <types.h>                      /* GRR:  experimenting... */
+#include <stat.h>
+#include <time.h>                       /* the usual non-BSD time functions */
+#include <file.h>                       /* same things as fcntl.h has */
+#include <unixio.h>
+#include <rms.h>
+
+/* 2012-09-05 SMS.
+ * Judge availability of str[n]casecmp() in C RTL.
+ * (Note: This must follow a "#include <decc$types.h>" in something to
+ * ensure that __CRTL_VER is as defined as it will ever be.  DEC C on
+ * VAX may not define it itself.)
+ */
+#if __CRTL_VER >= 70000000
+# define HAVE_STRCASECMP
+#endif /* __CRTL_VER >= 70000000 */
+
+#ifdef HAVE_STRCASECMP
+# include <strings.h>    /* str[n]casecmp() */
+#else /* def HAVE_STRCASECMP */
+# define strcasecmp( s1, s2) strncasecmp( s1, s2, UINT_MAX)
+extern int strncasecmp( char *, char *, size_t);
+#endif /* def HAVE_STRCASECMP [else] */
 
 /* Define maximum path length according to NAM[L] member size. */
 #  ifndef NAMX_MAXRSS
