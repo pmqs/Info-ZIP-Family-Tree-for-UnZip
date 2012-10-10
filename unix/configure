@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   06 Aug 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   29 Sep 2012
 #==============================================================================
 
 #==============================================================================
@@ -1763,23 +1763,23 @@ if [ $status -ne 0 ]; then
   errmes="-- UID/GID test failed on compile"
   errmes="${errmes} - disabling old 16-bit UID/GID support"
   echo "${errmes}"
-  CFLAGS_TST="${CFLAGS_TST} -DUIDGID_NOT_16BIT"
+  CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
 else
   ./conftest
   status=$?
   if [ $status -eq 1 ]; then
-    echo '-- UID not 2 bytes - disabling old 16-bit UID/GID support'
-    CFLAGS_TST="${CFLAGS_TST} -DUIDGID_NOT_16BIT"
+    echo '-- UID not 2 bytes - enabling "ux" UID/GID support'
+    CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
   elif [ $status -eq 2 ]; then
-    echo '-- GID not 2 bytes - disabling old 16-bit UID/GID support'
-    CFLAGS_TST="${CFLAGS_TST} -DUIDGID_NOT_16BIT"
+    echo '-- GID not 2 bytes - enabling "ux" UID/GID support'
+    CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
   elif [ $status -eq 3 ]; then
     echo '-- 16-bit UIDs and GIDs - keeping old 16-bit UID/GID support'
   else
     errmes="-- test failed - conftest returned $status"
-    errmes="${errmes} - disabling old 16-bit UID/GID support"
+    errmes="${errmes} - enabling "ux" UID/GID support"
     echo "${errmes}"
-    CFLAGS_TST="${CFLAGS_TST} -DUIDGID_NOT_16BIT"
+    CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
   fi
 fi
 

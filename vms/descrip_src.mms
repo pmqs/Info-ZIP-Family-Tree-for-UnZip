@@ -1,4 +1,4 @@
-#                                               3 September 2012.  SMS.
+#                                               3 October 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Source Description File.
 #
@@ -88,9 +88,11 @@ SEEK_BZ = $(DESTM)
 
 .IFDEF GNUC                     # GNUC
 GCC_ = _
+GCC_C = _C
 GCC_L = _L
 .ELSE                           # GNUC
 GCC_ =
+GCC_C =
 GCC_L =
 .ENDIF                          # GNUC
 
@@ -490,6 +492,11 @@ MODS_OBJS_LIB_UNZIP = $(MODS_OBJS_LIB_UNZIP_N) $(MODS_OBJS_LIB_UNZIP_V) \
  $(MODS_OBJS_LIB_UNZIP_AES) $(MODS_OBJS_LIB_UNZIP_LZMA) \
  $(MODS_OBJS_LIB_UNZIP_PPMD)
 
+#    CLI object library, [].
+
+MODS_OBJS_LIB_UNZIPCLI_C_N = \
+ ZIPINFO$(GCC_C)=[.$(DEST)]ZIPINFO_C.OBJ
+
 #    CLI object library, [.VMS].
 
 MODS_OBJS_LIB_UNZIPCLI_C_V = \
@@ -499,6 +506,7 @@ MODS_OBJS_LIB_UNZIPCLI_CLD_V = \
  VMS_UNZIP_CLD=[.$(DEST)]UNZ_CLI.OBJ
 
 MODS_OBJS_LIB_UNZIP_CLI = \
+ $(MODS_OBJS_LIB_UNZIPCLI_C_N) \
  $(MODS_OBJS_LIB_UNZIPCLI_C_V) \
  $(MODS_OBJS_LIB_UNZIPCLI_CLD_V)
 
@@ -567,6 +575,7 @@ MODS_OBJS_LIB_UNZIPSFX_CLI_CLD_V = \
  VMS_UNZIP_CLD=[.$(DEST)]UNZ_CLI.OBJ
 
 MODS_OBJS_LIB_UNZIPSFX_CLI = \
+ $(MODS_OBJS_LIB_UNZIPSFX_CLI_C) \
  $(MODS_OBJS_LIB_UNZIPSFX_CLI_C_V) \
  $(MODS_OBJS_LIB_UNZIPSFX_CLI_CLD_V)
 

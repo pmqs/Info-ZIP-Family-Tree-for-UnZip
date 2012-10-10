@@ -486,6 +486,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  ifdef DOSWILD
     static ZCONST char Far DosWild[] = "DOSWILD";
 #  endif
+#  ifdef IZ_HAVE_UXUIDGID
+    static ZCONST char Far ux_Uid_Gid[] =
+     "IZ_HAVE_UXUIDGID     (UID, GID > 16-bit (\"ux\" extra block) supported)";
+#  endif
 #  ifdef LZW_CLEAN
     static ZCONST char Far LZW_Clean[] =
      "LZW_CLEAN            (PKZIP/Zip 1.x unshrink method not supported)";
@@ -791,7 +795,7 @@ Modifiers:\n\
   -n  never overwrite or make a new version of an existing file\n\
   -o  always make a new version (-oo: overwrite original) of an existing file\n\
   -q  quiet mode (-qq => quieter)            -a  auto-convert any text files\n\
-  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
+  -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
@@ -800,7 +804,7 @@ static ZCONST char Far UnzipUsageLine4[] = "\
 Modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
   -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
-  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
+  -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
@@ -812,7 +816,7 @@ Modifiers:\n\
   -n  never overwrite or make a new version of an existing file\n\
   -o  always make a new version (-oo: overwrite original) of an existing file\n\
   -q  quiet mode (-qq => quieter)            -a  auto-convert any text files\n\
-  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
+  -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
 #   else /* !VMS */
@@ -820,7 +824,7 @@ static ZCONST char Far UnzipUsageLine4[] = "\
 Modifiers:\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
   -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
-  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
+  -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
 #   endif /* ?VMS */
@@ -1723,11 +1727,11 @@ static struct option_struct far options[] = {
     {UZO, "r",  "remove-exts",     o_NO_VALUE,       o_NEGATABLE,
        'r',  "remove file extensions"},
 # endif
-    {UZO, "s",  "space_to_uscore", o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "s",  "space-to-uscore", o_NO_VALUE,       o_NEGATABLE,
        's',  "spaces to underscores"},
 # ifdef VMS
-    {UZO, "S",  "stream_lf",       o_NO_VALUE,       o_NEGATABLE,
-       'S',  "VMS extract text as Stream LF"},
+    {UZO, "S",  "streamlf",        o_NO_VALUE,       o_NEGATABLE,
+       'S',  "VMS extract text as Stream_LF"},
 # endif
 #ifndef SFX
     {UZO, "",   "show-command",    o_NO_VALUE,       o_NEGATABLE,
@@ -3115,7 +3119,7 @@ static void help_extended(__G)
   "-------------------------------------------------------------------------",
   "",
   "UnZip now allows most options to appear anywhere in the command line.",
-  "An exception is xfile list, which still must be last unless list is",
+  "An exception is \"-x file_list\", which still must be last unless list is",
   "terminated by \"@\" argument as in \"-x f1 f2 f3 @ -B\".",
   "",
   "",
@@ -3160,7 +3164,7 @@ static void help_extended(__G)
 #  ifdef USE_ICONV_MAPPING
   "  -I   [UNIX] ISO code page to use.",
 #  endif
-  "  -j   Junk paths and deposit all files in extraction directory.",
+  "  -j[=N] Junk paths.  Strip all (or top N) directories from extracted files.",
   "  -J   [BeOS] Junk file attributes.  [MacOS] Ignore MacOS specific info.",
   "  --jar Treat archive(s) as Java JAR (UTF-8 names).",
   "  -K   [AtheOS, BeOS, Unix] Restore SUID/SGID/Tacky file attributes.",
@@ -3263,10 +3267,10 @@ static void help_extended(__G)
   "",
   "zipinfo options (these are used in zipinfo mode (unzip -Z ...)):",
   "  -1  List names only, one per line.  No headers/trailers.  Good for scripts.",
-  "  -2  List names only as -1, but include headers, trailers, and comments.",
+  "  -2  List names only as -1, but allow headers, trailers, and comments.",
   "  -s  List archive entries in short Unix ls -l format.  Default list format.",
-  "  -m  List in long Unix ls -l format.  As -s, but includes compression %.",
-  "  -l  List in long Unix ls -l format.  As -m, but compression in bytes.",
+  "  -m  List in long Unix ls -l format.  Like -s, but includes compression %.",
+  "  -l  List in long Unix ls -l format.  Like -m, but compression in bytes.",
   "  -v  List zipfile information in verbose, multi-page format.",
   "  -h  List header line.  Includes archive name, actual size, total files.",
   "  -M  Pipe all output through internal pager similar to Unix more(1) command.",
@@ -3278,6 +3282,9 @@ static void help_extended(__G)
   "        not in current character set as text #Uxxxx and #Lxxxxxx escapes",
   "        representing the Unicode character number of the character in hex.",
   "  -UU [UNICODE]  Disable use of any UTF-8 path information.",
+  "  -W   [Only if WILD_STOP_AT_DIR] Modify pattern matching so ? and * do not",
+  "         match directory separator /, but ** does.  Allows matching at specific",
+  "         directory levels.",
   "  -z  Include archive comment if any in listing.",
 #  ifdef USE_ICONV_MAPPING
   "  -I   [UNIX] ISO code page to use.",
@@ -3317,8 +3324,8 @@ static void help_extended(__G)
   "  -o     - Overwrite without prompting.",
   "  -q     - Quiet operation.",
   "  -C     - Match names case-insensitively.",
-  "  -j     - Junk paths.",
-  "  -V     - Keep version numbers.",
+  "  -j[=N] Junk paths.  Strip all (or top N) directories from extracted files.",
+  "  -V     - Retain VMS file version numbers (like: \";123\").",
   "  -s     - Convert spaces to underscores.",
   "  -$     - Restore volume label.",
   "",
@@ -3536,6 +3543,11 @@ static void show_version_info(__G)
 #  ifdef DOSWILD
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(DosWild)));
+        ++numopts;
+#  endif
+#  ifdef IZ_HAVE_UXUIDGID
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(ux_Uid_Gid)));
         ++numopts;
 #  endif
 #  ifdef LZW_CLEAN

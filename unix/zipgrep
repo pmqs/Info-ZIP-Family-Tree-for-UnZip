@@ -96,7 +96,8 @@ IFS='
 
 # Escape shell-special characters in "pat".
 pat=` echo "$pat" | \
- sed -e 's/\\\\/\\\\\\\\/g' -e 's/|/\\\|/g' -e 's/&/\\\&/g' `
+ sed -e 's/\\\\/\\\\\\\\/g' -e 's/|/\\\|/g' -e 's/&/\\\&/g' \
+  -e 's/*/\\\*/g' -e 's/?/\\\?/g' -e 's/\[/\\\[/g' `
 
 # Use "unzip -Z1" to get a listing of the specified members from the
 # specified archive.  Escape any backslashes in a file name.
@@ -116,7 +117,8 @@ for i in `$unzip -Z1 "$zipfile" ${1+"$@"} | sed -e 's/\\\\/\\\\\\\\/g' `; do
     # Escape (or re-escape) shell-special characters in the archive
     # member name, "i".
     i=` echo "$i" | \
-     sed -e 's/\\\\/\\\\\\\\/g' -e 's/|/\\\|/g' -e 's/&/\\\&/g' `
+     sed -e 's/\\\\/\\\\\\\\/g' -e 's/|/\\\|/g' -e 's/&/\\\&/g' \
+      -e 's/*/\\\*/g' -e 's/?/\\\?/g' -e 's/\[/\\\[/g' `
 
     # Globally, send fd 4 to stdout.  In the pipeline, send normal
     # stdout to fd 4, and send grep status to fd 3.  Collect fd 3

@@ -272,7 +272,7 @@ freely, subject to the above disclaimer and the following restrictions:
 #  undef PROTO
 #endif
 
-/* used to remove arguments in function prototypes for non-ANSI C */
+/* Function prototype control.  (See also globals.h.) */
 #ifdef PROTO
 #  define OF(a) a
 #else

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -43,6 +43,13 @@
 **              returned to UnZip.
 **
 **  Modified by:
+**
+**      02-017          S. Schweda              06-Oct-2012 17:00
+**              Added /DECIMAL_TIME, /[NO]JAR, /JUNK_DIRS=n,
+**              /MATCH (replacing /CASE_MATCH).  Restored and deprecated
+**              /[NO]CASE_INSENSITIVE.  Changed /NAMES = [NO]LOWERCASE
+**              to /NAMES = [NO]DOWNCASE.  Added Zip-like
+**              /VERBOSE={NORMAL|MORE}, deprecating /BRIEF and /FULL.
 **
 **      02-016          S. Schweda              11-Aug-2011 17:00
 **              Added /NAMES = [ [NO]LOWERCASE | [NO]ODS2 | [NO]SPACES ].
@@ -203,24 +210,27 @@ $DESCRIPTOR(cli_binary,         "BINARY");              /* -b[b] */
 $DESCRIPTOR(cli_binary_auto,    "BINARY.AUTO");         /* -b */
 $DESCRIPTOR(cli_binary_all,     "BINARY.ALL");          /* -bb */
 $DESCRIPTOR(cli_binary_none,    "BINARY.NONE");         /* -b- */
-#if 0
-/* /[NO]CASE_INSENSITIVE dropped for conflict with /CASE_MATCH. */
 $DESCRIPTOR(cli_case_insensitive, "CASE_INSENSITIVE");  /* -C */
-#endif /* 0 */
-$DESCRIPTOR(cli_case_match,     "CASE_MATCH");          /* -C[-] */
-$DESCRIPTOR(cli_case_match_blind, "CASE_MATCH.BLIND");  /* -C */
-$DESCRIPTOR(cli_case_match_sens, "CASE_MATCH.SENSITIVE"); /* -C- */
+$DESCRIPTOR(cli_match,          "MATCH");               /* -C, -W */
+$DESCRIPTOR(cli_match_case,     "MATCH.CASE");          /* -C[-] */
+$DESCRIPTOR(cli_match_case_blind, "MATCH.CASE.BLIND");    /* -C */
+$DESCRIPTOR(cli_match_case_sens, "MATCH.CASE.SENSITIVE"); /* -C- */
+#ifdef WILD_STOP_AT_DIR
+$DESCRIPTOR(cli_match_wild,     "MATCH.WILD_MATCH_SLASH"); /* -W[-] */
+#endif /* def WILD_STOP_AT_DIR */
 $DESCRIPTOR(cli_screen,         "SCREEN");              /* -c */
 $DESCRIPTOR(cli_directory,      "DIRECTORY");           /* -d */
 $DESCRIPTOR(cli_freshen,        "FRESHEN");             /* -f */
 $DESCRIPTOR(cli_help,           "HELP");                /* -h */
 $DESCRIPTOR(cli_help_normal,    "HELP.NORMAL");         /* -h */
 $DESCRIPTOR(cli_help_extended,  "HELP.EXTENDED");       /* -hh */
-$DESCRIPTOR(cli_junk,           "JUNK");                /* -j */
+$DESCRIPTOR(cli_jar,            "JAR");                 /* --jar */
+$DESCRIPTOR(cli_junk_dirs,      "JUNK_DIRS");           /* -j */
 $DESCRIPTOR(cli_lowercase,      "LOWERCASE");           /* -L */
 $DESCRIPTOR(cli_license,        "LICENSE");             /* --license */
 $DESCRIPTOR(cli_list,           "LIST");                /* -l */
 $DESCRIPTOR(cli_brief,          "BRIEF");               /* -l */
+$DESCRIPTOR(cli_page,           "PAGE");                /* -M , -ZM */
 $DESCRIPTOR(cli_full,           "FULL");                /* -v */
 $DESCRIPTOR(cli_full_diags,     "FULL.DIAGNOSTICS");    /* -vv */
 $DESCRIPTOR(cli_existing,       "EXISTING");            /* -o, -oo, -n */
@@ -233,7 +243,7 @@ $DESCRIPTOR(cli_super_quiet,    "QUIET.SUPER");         /* -qq */
 $DESCRIPTOR(cli_test,           "TEST");                /* -t */
 $DESCRIPTOR(cli_pipe,           "PIPE");                /* -p */
 $DESCRIPTOR(cli_password,       "PASSWORD");            /* -P */
-$DESCRIPTOR(cli_names_lowercase, "NAMES.LOWERCASE");    /* -L */
+$DESCRIPTOR(cli_names_downcase, "NAMES.DOWNCASE");      /* -L */
 $DESCRIPTOR(cli_names_ods2,     "NAMES.ODS2");          /* -2 */
 $DESCRIPTOR(cli_names_spaces,   "NAMES.SPACES");        /* -s */
 $DESCRIPTOR(cli_timestamp,      "TIMESTAMP");           /* -T */
@@ -252,18 +262,19 @@ $DESCRIPTOR(cli_exclude,        "EXCLUDE");             /* -x */
 $DESCRIPTOR(cli_ods2,           "ODS2");                /* -2 */
 $DESCRIPTOR(cli_traverse,       "TRAVERSE_DIRS");       /* -: */
 
-$DESCRIPTOR(cli_information,    "ZIPINFO");             /* -Z */
+$DESCRIPTOR(cli_zipinfo,        "ZIPINFO");             /* -Z */
 $DESCRIPTOR(cli_header,         "HEADER");              /* -Zh */
 $DESCRIPTOR(cli_long,           "LONG");                /* -Zl */
 $DESCRIPTOR(cli_medium,         "MEDIUM");              /* -Zm */
 $DESCRIPTOR(cli_one_line,       "ONE_LINE");            /* -Z2 */
-$DESCRIPTOR(cli_page,           "PAGE");                /* -M , -ZM */
 $DESCRIPTOR(cli_short,          "SHORT");               /* -Zs */
+$DESCRIPTOR(cli_decimal_time,   "DECIMAL_TIME");        /* -ZT */
 $DESCRIPTOR(cli_times,          "TIMES");               /* -ZT */
 $DESCRIPTOR(cli_totals,         "TOTALS");              /* -Zt */
 $DESCRIPTOR(cli_noverbose,      "NOVERBOSE");           /* -v-, -Zv- */
 $DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v, -Zv */
 $DESCRIPTOR(cli_verbose_normal, "VERBOSE.NORMAL");      /* -v, -Zv */
+$DESCRIPTOR(cli_verbose_more,   "VERBOSE.MORE");        /* -vv, -Zvv */
 $DESCRIPTOR(cli_verbose_command, "VERBOSE.COMMAND");    /* (none) */
 
 $DESCRIPTOR(cli_yyz,            "YYZ_UNZIP");
@@ -361,8 +372,8 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     DESCRIPTOR_D( work_str);
     DESCRIPTOR_D( foreign_cmdline);
     DESCRIPTOR_D( output_directory);    /* Arg for /DIRECTORY = dir_name. */
+    DESCRIPTOR_D( junk_dirs_arg);       /* Arg for /JUNK_DIRS = level. */
     DESCRIPTOR_D( password_arg);        /* Arg for /PASSWORD = passwd. */
-
 
     /*
     **  See if the program was invoked by the CLI (SET COMMAND) or by
@@ -386,7 +397,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             show_VMSCLI_usage = FALSE;
             return SS$_NORMAL;
         }
-
         str$concat(&work_str, &unzip_command, &foreign_cmdline);
         status = cli$dcl_parse(&work_str, &vms_unzip_cld, lib$get_input,
                         lib$get_input, 0);
@@ -408,12 +418,11 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
      * UnZip or ZipInfo?
      */
     zipinfo = 0;
-    status = cli$present( &cli_information);
+    status = cli$present( &cli_zipinfo);
     if (status & 1)
     {
         /* ZipInfo ("unzip -Z"). */
         zipinfo = 1;
-
         /* Put out "-Z" option first. */
 #define IPT__Z   "-Z"           /* "-Z"  ZipInfo. */
         ADD_ARG( IPT__Z);
@@ -421,7 +430,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     else
     {
         /* UnZip (normal). */
-
         /* Process special qualifiers (those with deferred or no
          * new-command-line activity).
          */
@@ -470,34 +478,34 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     }
 
     /*
-     * Filename matching case-sensitivity (-C).
-     * Clear any existing "-C" option with "-C-", then add
-     * the desired "C" value.
+     * Member name matching:
+     * Case-sensitivity (-C), and
+     * Wildcards match directory slash (-W-).
      */
-#define OPT__C   "-C-C"         /* "-C"  Case-blind matching. */
+#define OPT__C   "-C"           /* "-C"  Case-blind matching. */
 #define OPT__CN  "-C-"          /* ""    Case-sensitive matching (default). */
+#define OPT__W   "-W"           /* "-W"  Wildcards stop at dir slash. */
+#define OPT__WN  "-W-"          /* ""    Wildcards match dir slash (dflt). */
 
-    status = cli$present( &cli_case_match);
+    status = cli$present( &cli_match_case);
     if (status & 1)
     {
-        status = cli$present( &cli_case_match_blind);
+        status = cli$present( &cli_match_case_blind);
         if (status & 1)
         {
-            /* /CASE_MATCH = BLIND */
+            /* /MATCH = CASE = BLIND */
             opt = OPT__C;
         }
         else
         {
-            /* /CASE_MATCH = SENSITIVE */
+            /* /MATCH = CASE = SENSITIVE */
             opt = OPT__CN;
         }
         ADD_ARG( opt);
     }
 
-#if 0
-    /*
+    /* Deprecated.
      * Filename matching case-sensitivity (-C)
-     * /[NO]CASE_INSENSITIVE dropped for conflict with /CASE_MATCH.
      * Clear any existing "-C" option with "-C-", then add
      * the desired "C" value.
      */
@@ -517,7 +525,24 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
         ADD_ARG( opt);
     }
-#endif /* 0 */
+
+#ifdef WILD_STOP_AT_DIR
+    status = cli$present( &cli_match_wild);
+    if ((status & 1) || (status == CLI$_NEGATED))
+    {
+        if (status == CLI$_NEGATED)
+        {
+            /* /MATCH = NOWILD_MATCH_SLASH */
+            opt = OPT__W;
+        }
+        else
+        {
+            /* /MATCH = WILD_MATCH_SLASH */
+            opt = OPT__WN;
+        }
+        ADD_ARG( opt);
+    }
+#endif /* def WILD_STOP_AT_DIR */
 
     /*
      * Use built-in ("more") pager for all screen output.
@@ -542,7 +567,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
         ADD_ARG( opt);
     }
-
 
     if (zipinfo == 0)
     {
@@ -756,24 +780,67 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 
         /*
          * Junk stored directory names when extracting.
-         * Clear any existing "-j" option with "-j-", then add
-         * the desired "j" value.
+         * Specify an explict "-j=N" value to override any existing "j"
+         * value.
          */
-#define OPT_J   "-j-j"          /* "-j"  Junk directory names. */
-#define OPT_JN  "-j-"           /* ""    Use directory names. (default). */
+#define J0      "0"             /* "-j=0"  Junk no directory names (default). */
+#define JM1     "-1"            /* "-j=-1" Junk all directory names. */
+#define OPT_JE  "-j="           /* "-j=N"  Junk "N" directory names. */
 
-        status = cli$present( &cli_junk);
+        status = cli$present( &cli_junk_dirs);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            char *jdp;
+            int jdl;
+
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOJUNK_DIRS */
+                jdp = J0;
+                jdl = sizeof( J0)- 1;
+            }
+            else
+            {
+                /* /JUNK_DIRS */
+                status = cli$get_value( &cli_junk_dirs, &junk_dirs_arg);
+                if (junk_dirs_arg.dsc$w_length == 0)
+                {
+                    /* If no value was specified, use "-1" (all). */
+                    jdp = JM1;
+                    jdl = sizeof( JM1)- 1;
+                }
+                else
+                {
+                    jdp = junk_dirs_arg.dsc$a_pointer;
+                    jdl = junk_dirs_arg.dsc$w_length;
+                }
+            }
+            x = cmdl_len;
+            cmdl_len += sizeof( OPT_JE)+ jdl;
+            CHECK_BUFFER_ALLOCATION( the_cmd_line, cmdl_size, cmdl_len)
+            strcpy( &the_cmd_line[ x], OPT_JE);
+            strncpy( &the_cmd_line[ x+ sizeof( OPT_JE)- 1], jdp, jdl);
+            the_cmd_line[ cmdl_len- 1] = '\0';
+        }
+
+        /*
+         * Process archive as Java JAR.
+         */			
+#define OPT_JAR  "--jar"        /* "--jar"   Process as Java JAR. */
+#define OPT_JARN "--jar-"       /* "--jar-"  Process normally. */
+
+        status = cli$present( &cli_jar);
         if ((status & 1) || (status == CLI$_NEGATED))
         {
             if (status == CLI$_NEGATED)
             {
-                /* /NOJUNK */
-                opt = OPT_JN;
+                /* /NOJAR */
+                opt = OPT_JARN;
             }
             else
             {
-                /* /JUNK */
-                opt = OPT_J;
+                /* /JAR */
+                opt = OPT_JAR;
             }
             ADD_ARG( opt);
         }
@@ -815,6 +882,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
+         * Deprecated.  Use /NAMES = [NO]DOWNCASE.
          * Make (some) names lowercase.
          * Clear any existing "-L" option with "-L-", then add
          * the desired "L" value.
@@ -839,6 +907,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
+         * Deprecated.  Use /NAMES = [NO]DOWNCASE.
          * Uppercase (don't convert to lower case).
          * Clear any existing "-L" option with "-L-", then add
          * the desired "L" value.
@@ -929,17 +998,17 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 #define OPT_S   "-s-s"          /* "-s"  Convert spaces. */
 #define OPT_SN  "-s-"           /* ""    Preserve spaces (default). */
 
-        status = cli$present( &cli_names_lowercase);
+        status = cli$present( &cli_names_downcase);
         if ((status & 1) || (status == CLI$_NEGATED))
         {
             if (status == CLI$_NEGATED)
             {
-                /* /NAMES = NOLOWERCASE */
+                /* /NAMES = NODOWNCASE */
                 opt = OPT__LN;
             }
             else
             {
-                /* /NAMES = LOWERCASE */
+                /* /NAMES = DOWNCASE */
                 opt = OPT__L;
             }
             ADD_ARG( opt);
@@ -1131,11 +1200,12 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 
         /*
          * Verbose/version ("-v" report).
-         * Clear any existing "-v" option with "-v-", then add
+         * Clear any existing "-v" options with "-v-v-", then add
          * the desired "v" value.
          */
-#define OPT_V   "-v-v"          /* "-v"  Verbose/version report. */
-#define OPT_VN  "-v-"           /* ""    Normal extract (default). */
+#define OPT_V   "-v-v-v"        /* "-v"  Verbose (normal). */
+#define OPT_VV  "-v-v-vv"       /* "-vv" Verbose (more). */
+#define OPT_VN  "-v-v-"         /* ""    Normal extract (default). */
 
         status = cli$present( &cli_noverbose);
         if (status & 1)
@@ -1154,8 +1224,24 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             }
             else
             {
-                /* /VERBOSE */
+                /* /VERBOSE = NORMAL */
                 opt = OPT_V;
+            }
+            ADD_ARG( opt);
+        }
+
+        status = cli$present( &cli_verbose_more);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOVERBOSE (?) */
+                opt = OPT_VN;
+            }
+            else
+            {
+                /* /VERBOSE = MORE */
+                opt = OPT_VV;
             }
             ADD_ARG( opt);
         }
@@ -1302,7 +1388,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
          * Clear any existing "-2" option with "-2-", then add
          * the desired "2" value.
          */
-#define IPT_2   "-2-2"          /* "-2"  Named-only format. */
+#define IPT_2   "-2-2"          /* "-2"  Names-only format. */
 #define IPT_2N  "-2-"           /* ""    Normal format (default). */
 
         status = cli$present( &cli_one_line);
@@ -1454,12 +1540,12 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         {
             if (status == CLI$_NEGATED)
             {
-                /* /NOTIMES */
+                /* /NODECIMAL_TIME */
                 opt = IPT__TN;
             }
             else
             {
-                /* /TIMES */
+                /* /DECIMAL_TIME */
                 opt = IPT__T;
             }
             ADD_ARG( opt);
@@ -1746,26 +1832,17 @@ check_cli (struct dsc$descriptor_s *qual)
 
 
 #ifndef TEST
-#ifdef SFX
-
-#ifdef SFX_EXDIR
-#  define SFXOPT_EXDIR "\n                   and /DIRECTORY=exdir-spec"
-#else
-#  define SFXOPT_EXDIR ""
-#endif
-
-#ifdef MORE
-#  define SFXOPT1 "/PAGE, "
-#else
-#  define SFXOPT1 ""
-#endif
 
 int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 {
+# ifdef SFX
+
+    /* UnZipSFX Usage Guide. */
+
     extern ZCONST char UnzipSFXBanner[];
-#ifdef BETA
+#  ifdef BETA
     extern ZCONST char BetaVersion[];
-#endif
+#  endif
     int flag;
 
     if (!show_VMSCLI_usage)
@@ -1774,34 +1851,76 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
     flag = (error? 1 : 0);
 
     Info(slide, flag, ((char *)slide, UnzipSFXBanner,
-      UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL, UZ_VERSION_DATE));
+     UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL, UZ_VERSION_DATE));
+
     Info(slide, flag, ((char *)slide, "\
-Valid main options are /TEST, /FRESHEN, /UPDATE, /PIPE, /SCREEN, /COMMENT%s.\n",
-      SFXOPT_EXDIR));
+\n\
+Usage: MCR %s -\n\
+        [/unzip_qualifiers] [member [,...]]\n\
+", G.zipfn));
+
     Info(slide, flag, ((char *)slide, "\
-Modifying options are /TEXT, /BINARY, /JUNK, /EXISTING, /QUIET,\n\
-                      /CASE_MATCH, /LOWERCASE, %s/VERSION, /RESTORE.\n",
-      SFXOPT1));
-#ifdef BETA
+\n\
+Primary mode SFX qualifiers:\n\
+  /COMMENT, /FRESHEN, /LICENSE, /PIPE, /SCREEN, /TEST, /UPDATE\n\
+General SFX qualifiers:\n\
+  /[NO]BINARY[=ALL|AUTO|NONE], %s/DOT_VERSION,\n\
+  /EXCLUDE=(member [,...]), /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT},\n\
+",
+#  ifdef SFX_EXDIR
+"/DIRECTORY=dir, "
+#  else /* def SFX_EXDIR */
+""
+#  endif /* def SFX_EXDIR [else] */
+));
+
+    Info(slide, flag, ((char *)slide,
+#  ifdef WILD_STOP_AT_DIR
+"\
+  /JAR, /MATCH=(CASE={BLIND|SENSITIVE}, [NO]WILD_MATCH_SLASH),\n\
+%s\n",
+#  else /* def WILD_STOP_AT_DIR */
+"\
+  /JAR, /MATCH=(CASE={BLIND|SENSITIVE}),\n\
+%s\n",
+#  endif /* def WILD_STOP_AT_DIR [else] */
+"\
+  /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\
+"));
+
+    Info(slide, flag, ((char *)slide, "\
+  %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
+  /RESTORE=([NO]OWNER_PROT, [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERSION\n\
+\n\
+Quote member names if /MATCH=CASE=SENSITIVE (default).  For details, see\n\
+UnZip documentation.  For more options, use an external (full-featured)\n\
+UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
+",
+#  ifdef MORE
+"/[NO]PAGE, "
+#  else /* def MORE */
+""
+#  endif /* def MORE [else] */
+));
+
+#  ifdef BETA
     Info(slide, flag, ((char *)slide, BetaVersion, "\n", "SFX"));
-#endif
+#  endif
 
     if (error)
         return PK_PARAM;
     else
         return PK_COOL;     /* just wanted usage screen: no error */
 
-} /* end function VMSCLI_usage() */
+# else /* def SFX */
 
+    /* Normal UnZip or ZipInfo Usage Guide. */
 
-#else /* !SFX */
-
-int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
-{
     extern ZCONST char UnzipUsageLine1[];
-#ifdef BETA
+#  ifdef BETA
     extern ZCONST char BetaVersion[];
-#endif
+#  endif
     int flag;
 
     if (!show_VMSCLI_usage)
@@ -1813,88 +1932,128 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 
     flag = (error? 1 : 0);
 
-
 /*---------------------------------------------------------------------------
     Print either ZipInfo usage or UnZip usage, depending on incantation.
   ---------------------------------------------------------------------------*/
 
     if (uO.zipinfo_mode) {
 
-#ifndef NO_ZIPINFO
+#  ifndef NO_ZIPINFO
+
+        /* ZipInfo Usage guide. */
 
         Info(slide, flag, ((char *)slide, "\
-ZipInfo %d.%d%d%s %s, by Newtware and the fine folks at Info-ZIP.\n\n\
-List name, date/time, attribute, size, compression method, etc., about files\n\
-in list (excluding those in xlist) contained in the specified .zip archive(s).\
-\n\"file[.zip]\" may be a wildcard name containing * or %% (e.g., \"*font-%%\
-.zip\").\n", ZI_MAJORVER, ZI_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          UZ_VERSION_DATE));
+ZipInfo %d.%d%d%s %s, by Newtware and the fine folks at Info-ZIP.\n\n",
+          ZI_MAJORVER, ZI_MINORVER,
+          UZ_PATCHLEVEL, UZ_BETALEVEL, UZ_VERSION_DATE));
 
         Info(slide, flag, ((char *)slide, "\
-   usage:  zipinfo file[.zip] [list] [/EXCL=(xlist)] [/DIR=exdir] /options\n\
-   or:  unzip /ZIPINFO file[.zip] [list] [/EXCL=(xlist)] [/DIR=exdir] /options\
-\n\nmain\
- listing-format options:              /SHORT   short \"ls -l\" format (def.)\n\
-  /ONE_LINE  just filenames, one/line     /MEDIUM  medium Unix \"ls -l\" format\n\
-  /VERBOSE   verbose, multi-page format   /LONG    long Unix \"ls -l\" format\n\
+Usage:  ZIPINFO [/zipinfo_qualifiers] [file[.zip]] [member [,...]]\n\
+   or:  UNZIP /ZIPINFO [/zipinfo_qualifiers] [file[.zip]] [member [,...]]\n\
+\n\
+  Report archive (\"file.zip\") and member properties (name, date-time,\n\
+  compression and/or encryption method, and so on).\n\
+\n\
+Primary listing-format qualifiers:\n\
+  /LONG    long Unix \"ls -l\" format    /ONE_LINE  filenames only, one/line\n\
+  /MEDIUM  medium Unix \"ls -l\" format  /SHORT   short \"ls -l\" format (default.)\n\
+  /VERBOSE verbose, very detailed format\n\n\
 "));
 
         Info(slide, flag, ((char *)slide, "\
-miscellaneous options:\n  \
-/HEADER   print header line       /TOTALS  totals for listed files or for all\n\
-  /COMMENT  print zipfile comment   /TIMES   times in sortable decimal format\n\
-  /CASE_MATCH = [ BLIND | SENSITIVE ]  match filenames case-[in]sensitively\n\
-  /[NO]PAGE page output through built-in \"more\"\n\
-  /EXCLUDE=(file-spec1,etc.)  exclude file-specs from listing\n"));
+General qualifiers:\n\
+  /COMMENT  include archive comment   /DECIMAL_TIME sortable dec'l time format\n\
+  /EXCLUDE=(member [,...])  exclude members from listing\n\
+  /HEADER  include header            /PAGE  page output through built-in \"more\"\n\
+%s\
+%s",
+#   ifdef WILD_STOP_AT_DIR
+ "\
+  /MATCH=(CASE={BLIND|SENSITIVE}, [NO]WILD_MATCH_SLASH)  member name matching\n\
+",
+#   else /* def WILD_STOP_AT_DIR */
+ "\
+  /MATCH=(CASE={BLIND|SENSITIVE})  member name matching\n\
+",
+#   endif /* def WILD_STOP_AT_DIR [else] */
+ "\
+  /TOTALS  include totals trailer for listed files\n\
+"));
 
         Info(slide, flag, ((char *)slide, "\n\
-Type unzip \"-Z\" for Unix style flags\n\
-Remember that non-lowercase filespecs must be\
- quoted in VMS (e.g., \"Makefile\").\n"));
+Type 'unzip \"-Z\"' for Unix-style usage guide.\n\
+Quote member names if /MATCH=CASE=SENSITIVE (default).\n\
+"));
 
-#endif /* !NO_ZIPINFO */
+#  endif /* ndef NO_ZIPINFO */
 
     } else {   /* UnZip mode */
+
+        /* Normal UnZip Usage Guide. */
 
         Info(slide, flag, ((char *)slide, UnzipUsageLine1,
           UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
           UZ_VERSION_DATE));
 
-#ifdef BETA
+#  ifdef BETA
         Info(slide, flag, ((char *)slide, BetaVersion, "", ""));
-#endif
+#  endif
 
         Info(slide, flag, ((char *)slide, "\
-Usage: unzip file[.zip] [list] [/EXCL=(xlist)] [/DIR=exdir] /options /modifiers\
-\n  Default action is to extract files in list, except those in xlist, to exdir\
-;\n  file[.zip] may be a wildcard.  %s\n\n",
-#ifdef NO_ZIPINFO
-          "(ZipInfo mode is disabled in this version.)"
-#else
-          "Type \"unzip /ZIPINFO\" for ZipInfo-mode usage."
-#endif
-          ));
+Usage: UNZIP [/unzip_qualifiers] [file[.zip]] [member [,...]]\n\
+  Default action is to extract specified (or all) members from file.zip\n\
+%s\n",
+#  ifdef NO_ZIPINFO
+          "  (ZipInfo mode is disabled in this version.)"
+#  else
+          "  Do \"UNZIP /ZIPINFO\" for ZipInfo-mode usage."
+#  endif
+));
 
         Info(slide, flag, ((char *)slide, "\
-Major options include (type unzip -h for Unix style flags):\n\
-   /[NO]TEST, /LIST, /[NO]SCREEN, /PIPE, /[NO]FRESHEN, /[NO]UPDATE,\n\
-   /[NO]COMMENT, /DIRECTORY=directory-spec, /EXCLUDE=(file-spec1,etc.)\n\n\
-Modifiers include:\n\
-   /BRIEF, /FULL, /[NO]TEXT[=NONE|AUTO|ALL], /[NO]BINARY[=NONE|AUTO|ALL],\n\
-   /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT}, /[NO]JUNK, /[NO]PAGE,\n\
-   /CASE_MATCH[=BLIND|SENSITIVE], /[NO]LOWERCASE, /[NO]VERSION,\n\
-   /NAMES=[[NO]LOWERCASE]|[[NO]ODS2]|[NO]SPACES], /QUIET[=SUPER],\n\
-   /RESTORE[=([NO]OWNER_PROT[,NODATE|DATE={ALL|FILES}])]\n\n"));
+Primary mode qualifiers (Do \"unzip -h\" for Unix-style options):\n\
+  /COMMENT, /FRESHEN, /HELP[=EXTENDED], /LICENSE, /LIST, /PIPE, /SCREEN,\n\
+  /TEST, /TIMESTAMP, /UPDATE, /VERBOSE\n\
+General qualifiers:\n\
+  /[NO]BINARY[=ALL|AUTO|NONE], /DIRECTORY=dir, /DOT_VERSION,\n\
+  /EXCLUDE=(member [,...]), /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT},\n\
+"));
+
+        Info(slide, flag, ((char *)slide,
+#  ifdef WILD_STOP_AT_DIR
+ "\
+  /JAR, /MATCH=(CASE={BLIND|SENSITIVE}, [NO]WILD_MATCH_SLASH),\n\
+%s\n",
+#  else /* def WILD_STOP_AT_DIR */
+ "\
+  /JAR, /MATCH=(CASE={BLIND|SENSITIVE}),\n\
+%s",
+#  endif /* def WILD_STOP_AT_DIR [else] */
+ "\
+  /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\
+"));
+
+        Info(slide, flag, ((char *)slide, "\
+  %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
+  /RESTORE=([NO]OWNER_PROT, [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERBOSE, /VERSION\n\
+",
+#  ifdef MORE
+"/[NO]PAGE, "
+#  else /* def MORE */
+""
+#  endif /* def MORE [else] */
+));
 
         Info(slide, flag, ((char *)slide, "\
 Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
-   unzip edit1 /EXCL=joe.jou /CASE_MATCH = BLIND  => Extract all files except\
+   unzip edit1 /EXCL=joe.jou /MATCH = CASE=BLIND  => Extract all files except\
 \n\
       joe.jou (or JOE.JOU, or any combination of case) from zipfile edit1.zip.\
 \n  \
  unzip zip201 \"Makefile.VMS\" vms/*.[ch]         => extract VMS Makefile and\
 \n\
-      *.c and *.h files; must quote uppercase names if /CASE = SENS.\
+      *.c and *.h files.  Quote member names if /MATCH=CASE=SENS (default).\
 \n\
    unzip foo /DIR=tmp:[.test] /JUNK /TEXT /EXIS=NEW  => extract all files to\
 \n\
@@ -1908,10 +2067,11 @@ Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
     else
         return PK_COOL;     /* just wanted usage screen: no error */
 
+# endif /* def SFX [else] */
+
 } /* end function VMSCLI_usage() */
 
-#endif /* ?SFX */
-#endif /* !TEST */
+#endif /* ndef TEST */
 
 
 #ifdef TEST

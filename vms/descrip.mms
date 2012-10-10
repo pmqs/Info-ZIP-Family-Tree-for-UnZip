@@ -1,4 +1,4 @@
-#                                               3 September 2012.  SMS.
+#                                               3 October 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Description File.
 #
@@ -116,7 +116,9 @@
 #
 #    CLEAN_TEST deletes all test directories.
 #
-#    HELP       generates HELP files.
+#    HELP       generates HELP library source files (.HLP).
+#
+#    HELP_TEXT  generates HELP output text files (.HTX).
 #
 #    TEST       runs a brief test.
 #
@@ -148,6 +150,11 @@
 #
 ########################################################################
 
+# Explicit suffix list.  (Added .HTX before .HLB.)
+
+.SUFFIXES
+.SUFFIXES : .EXE .OLB .HTX .HLB .OBJ .C .CLD .MSG .HLP .RNH
+
 # Include primary product description file.
 
 INCL_DESCRIP_SRC = 1
@@ -171,9 +178,13 @@ LIB_UNZIPSFX_CLI = SYS$DISK:[.$(DEST)]$(LIB_UNZIPSFX_CLI_NAME)
 LIB_LIBUNZIP = SYS$DISK:[.$(DEST)]$(LIB_LIBUNZIP_NAME)
 .ENDIF                          # LIBUNZIP
 
-# Help file names.
+# Help library source file names.
 
 UNZIP_HELP = UNZIP.HLP UNZIP_CLI.HLP
+
+# Help output text file names.
+
+UNZIP_HELP_TEXT = UNZIP.HTX UNZIP_CLI.HTX
 
 # Message file names.
 
@@ -234,12 +245,18 @@ CLEAN_ALL : CLEAN
 	 set protection = w:d VAX*.dir;*
 	if (f$search( "VAX*.dir", 2) .nes. "") then -
 	 delete VAX*.dir;*
+	if (f$search( "help_temp_*.*") .nes. "") then -
+	 delete help_temp_*.*;*
 	if (f$search( "[.VMS]UNZIP_CLI.RNH") .nes. "") then -
 	 delete [.VMS]UNZIP_CLI.RNH;*
 	if (f$search( "UNZIP_CLI.HLP") .nes. "") then -
 	 delete UNZIP_CLI.HLP;*
+	if (f$search( "UNZIP_CLI.HTX") .nes. "") then -
+	 delete UNZIP_CLI.HTX;*
 	if (f$search( "UNZIP.HLP") .nes. "") then -
 	 delete UNZIP.HLP;*
+	if (f$search( "UNZIP.HTX") .nes. "") then -
+	 delete UNZIP.HTX;*
 	if (f$search( "test_dir_*.dir;*") .nes. "") then -
 	 set protection = w:d [.test_dir_*...]*.*;*
 	if (f$search( "test_dir_*.dir;*") .nes. "") then -
@@ -265,12 +282,12 @@ CLEAN_ALL : CLEAN
  "distribution kit.)  See [.VMS]DESCRIP_MKDEPS.MMS for instructions on"
 	@ write sys$output -
  "generating [.VMS]DESCRIP_DEPS.MMS."
-        @ write sys$output ""
+	@ write sys$output ""
 
 # CLEAN_EXE target.  Delete the executables in [.$(DEST)].
 
 CLEAN_EXE :
-        if (f$search( "[.$(DEST)]*.EXE") .nes. "") then -
+	if (f$search( "[.$(DEST)]*.EXE") .nes. "") then -
          delete [.$(DEST)]*.EXE;*
 
 # CLEAN_TEST target.  Delete the test directories, [.test_dir_*...].
@@ -287,10 +304,15 @@ CLEAN_TEST :
 	if (f$search( "test_dir_*.dir;*") .nes. "") then -
 	 delete test_dir_*.dir;*
 
-# HELP target.  Generate the HELP files.
+# HELP target.  Generate the HELP library source files.
 
 HELP : $(UNZIP_HELP)
-        @ write sys$output "Done."
+	@ write sys$output "Done."
+
+# HELP_TEXT target.  Generate the HELP output text files.
+
+HELP_TEXT : $(UNZIP_HELP_TEXT)
+	@ write sys$output "Done."
 
 # TEST target.  Runs a test procedure.
 
@@ -330,7 +352,7 @@ OPT_ID_SFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OPT
 # Default C compile rule.
 
 .C.OBJ :
-        $(CC) $(CFLAGS) $(CDEFS_UNX) $(MMS$SOURCE)
+	$(CC) $(CFLAGS) $(CDEFS_UNX) $(MMS$SOURCE)
 
 # Normal sources in [.VMS].
 
@@ -344,7 +366,14 @@ OPT_ID_SFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OPT
 [.$(DEST)]UNZIPCLI.OBJ : UNZIP.C
 	$(CC) $(CFLAGS) $(CDEFS_CLI) $(MMS$SOURCE)
 
-[.$(DEST)]UNZ_CLI.OBJ : [.VMS]UNZ_CLI.CLD
+[.$(DEST)]UNZ_CLI.OBJ : [.$(DEST)]UNZ_CLI.CLD
+
+[.$(DEST)]UNZ_CLI.CLD : [.VMS]UNZ_CLI.CLD
+	@[.vms]cppcld.com "$(CC) $(CFLAGS_ARCH)" -
+         $(MMS$SOURCE) $(MMS$TARGET) "$(CDEFS)"
+
+[.$(DEST)]ZIPINFO_C.OBJ : ZIPINFO.C
+	$(CC) $(CFLAGS) $(CDEFS_CLI) $(MMS$SOURCE)
 
 # SFX variant sources.
 
@@ -527,7 +556,7 @@ $(UNZIPSFX_CLI) : [.$(DEST)]UNZSFXCLI.OBJ \
 	 $(NOSHARE_OPTS)
 
 
-# Help files.
+# Help library source files.
 
 UNZIP.HLP : [.VMS]UNZIP_DEF.RNH
 	runoff /output = $(MMS$TARGET) $(MMS$SOURCE)
@@ -536,16 +565,36 @@ UNZIP_CLI.HLP : [.VMS]UNZIP_CLI.HELP [.VMS]CVTHELP.TPU
 	edit /tpu /nosection /nodisplay /command = [.VMS]CVTHELP.TPU -
 	 $(MMS$SOURCE)
 	rename UNZIP_CLI.RNH [.VMS]
-        purge /nolog /keep = 1 [.VMS]UNZIP_CLI.RNH
+	purge /nolog /keep = 1 [.VMS]UNZIP_CLI.RNH
 	runoff /output = $(MMS$TARGET) [.VMS]UNZIP_CLI.RNH
+
+# Help output text files.
+
+.HLP.HTX :
+	help_temp_name = "help_temp_"+ f$getjpi( 0, "PID")
+	if (f$search( help_temp_name+ ".HLB") .nes. "") then -
+         delete 'help_temp_name'.HLB;*
+	library /create /help 'help_temp_name'.HLB $(MMS$SOURCE)
+	help /library = sys$disk:[]'help_temp_name'.HLB -
+         /output = 'help_temp_name'.OUT unzip...
+	delete 'help_temp_name'.HLB;*
+	create /fdl = [.VMS]STREAM_LF.FDL $(MMS$TARGET)
+	open /append help_temp $(MMS$TARGET)
+	copy 'help_temp_name'.OUT help_temp
+	close help_temp
+	delete 'help_temp_name'.OUT;*
+
+UNZIP.HTX : UNZIP.HLP [.VMS]STREAM_LF.FDL
+
+UNZIP_CLI.HTX : UNZIP_CLI.HLP [.VMS]STREAM_LF.FDL
 
 # Message file.
 
 $(UNZIP_MSG_EXE) : $(UNZIP_MSG_OBJ)
-        link /shareable = $(MMS$TARGET) $(UNZIP_MSG_OBJ)
+	link /shareable = $(MMS$TARGET) $(UNZIP_MSG_OBJ)
 
 $(UNZIP_MSG_OBJ) : $(UNZIP_MSG_MSG)
-        message /object = $(MMS$TARGET) /nosymbols $(UNZIP_MSG_MSG)
+	message /object = $(MMS$TARGET) /nosymbols $(UNZIP_MSG_MSG)
 
 # Library link options file.
 

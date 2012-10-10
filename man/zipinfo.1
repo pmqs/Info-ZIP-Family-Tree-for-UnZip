@@ -51,10 +51,10 @@ file system) of the archive-creating program, and so on.  The default
 behavior (with no options) is to show a single-line entry for each
 member in the archive, with a header and a trailer providing summary
 information for the entire archive.  The format is a cross between Unix
-"\fCls \-l\fR" and "\fCunzip \-v\fR" output.  See
+"\fCls \-l\fR" and "\fCunzip \-lv\fR" output.  See
 .B "DETAILED DESCRIPTION"
 below.  \fIZipInfo\fP is the same program as \fIUnZip\fP.  (On Unix,
-"\fCzipinfo\fR" may be a link to "\fCunzip\fR").  However, \fIZipInfo\fP
+"\fCzipinfo\fR" may be a link to "\fCunzip\fR".)  However, \fIZipInfo\fP
 support may have been disabled when \fIUnZip\fP was built.
 .PD
 .\" =========================================================================
@@ -215,18 +215,18 @@ Pipe all output through an internal pager similar to the Unix
 may be viewed by pressing the Enter (Return) key or the space
 bar.  \fIZipInfo\fP can be terminated by pressing the "q" key, or, on
 some systems, the Enter/Return key.  Unlike Unix \fImore\fP(1), there is
-no forward-searching or editing capability. Also, \fIZipInfo\fP doesn't
+no forward-searching or editing capability.  Also, \fIZipInfo\fP doesn't
 notice if long lines wrap at the edge of the screen, effectively
 resulting in the printing of two or more lines and the likelihood that
-some text will scroll off the top of the screen before being viewed.  On
-some systems the number of available lines on the screen is not
-detected, in which case \fIZipInfo\fP assumes the height is 24 lines.
+some text will scroll off the top of the screen before being viewed.  If
+the actual number of lines on the screen can not be determined, 24 lines
+will be assumed.
 .PP
 .PD 0
 .B \-T
 .TP
 .PD
-.B \-\-decimal-time
+.B \-\-decimal\-time
 .br
 Show the file date-times in a sortable, all-numeric, "YYYYMMDD.hhmmss"
 format.  The default date format is an alpha-numeric
@@ -274,7 +274,7 @@ is suspected of damaging extracted filenames.
 .IP
 \fB\-UU\fP disables the recognition of UTF-8 encoded filenames.  The
 handling of filename codings within \fIZipInfo\fP falls back to the
-behavior of previous versions.
+behavior of pre-Unicode versions.
 .PP
 .PD 0
 .B \-W
@@ -411,27 +411,27 @@ encryption is treated as a compression method here.  Not all of the
 methods shown in the table below are supported.  (Some are obsolete.)
 .PP
 .WX
- Num   Abbr   Name, description
------+------+-----------------------------------------------------------
-   0   stor   Store (no compression)
-   1   shrk   Shrink
-   2   re:1   Reduce (factor 1)
-   3   re:2   Reduce (factor 2)
-   4   re:3   Reduce (factor 3)
-   5   re:4   Reduce (factor 4)
-   6   i#:#   Implode (dictonary_size:Shannon-Fano_trees)
-   7   tokn   Tokenize
-   8   def#   Deflate (N: normal, X: maximum, F: fast, S: super-fast)
-   9   d64#   Deflate64 (N: normal, X: maximum, F: fast, S: super-fast)
-  10   dcli   PKWARE Data Compression Library Imploding - IBM TERSE (old)
-  12   bzp2   bzip2
-  14   lzma   LZMA
-  18   ters   IBM TERSE (new)
-  19   lz77   IBM LZ77 z Architecture (PFS)
-  96   jpeg   JPEG
-  97   wavp   WavPack
-  98   ppmd   PPMd version I, Rev 1
-  99   aesw   AES_WG encryption
+ Num Abbr  Name, description
+----+----+------------------------------------------------------------
+  0  stor  Store (no compression)
+  1  shrk  Shrink
+  2  re:1  Reduce (factor 1)
+  3  re:2  Reduce (factor 2)
+  4  re:3  Reduce (factor 3)
+  5  re:4  Reduce (factor 4)
+  6  i#:#  Implode (dictonary_size:Shannon-Fano_trees)
+  7  tokn  Tokenize
+  8  def#  Deflate (N: normal, X: maximum, F: fast, S: super-fast)
+  9  d64#  Deflate64 (N: normal, X: maximum, F: fast, S: super-fast)
+ 10  dcli  PKWARE Data Compression Library Imploding - IBM TERSE (old)
+ 12  bzp2  bzip2
+ 14  lzma  LZMA
+ 18  ters  IBM TERSE (new)
+ 19  lz77  IBM LZ77 z Architecture (PFS)
+ 96  jpeg  JPEG
+ 97  wavp  WavPack
+ 98  ppmd  PPMd version I, Rev 1
+ 99  aesw  AES_WG encryption
 .WE
 .PP
 Fields 8 and 9 (ModDate, Mtime) show the file modification date-time
@@ -457,18 +457,18 @@ For example, to make the default format the long Unix format instead of
 the short Unix format, one could use commands like the following:
 .TP
   Unix Bourne (or similar) shell:
-UNZIP='\-l'; export UNZIP
+ZIPINFO='\-l'; export ZIPINFO
 .TP
   Unix C shell:
-setenv\ UNZIP\ '\-l'
+setenv\ ZIPINFO\ '\-l'
 .TP
   OS/2 or MS-DOS:
-set\ UNZIP="\-l"
+set\ ZIPINFO="\-l"
 .TP
   VMS (with quotation to preserve lower case in DCL):
-define\ UNZIP_OPTS\ "\-l"          ! Logical name, or
+define\ ZIPINFO_OPTS\ "\-l"        ! Logical name, or
 .br
-UNZIP_OPTS\ =\ "\-l"               ! DCL symbol.  (Either works.)
+ZIPINFO_OPTS\ =\ "\-l"             ! DCL symbol.  (Either works.)
 .IP
 Environment options are treated the same as any other command-line
 options, except that they are effectively the first options on the
@@ -478,18 +478,18 @@ totals trailer line by default, one could use commands like the
 following:
 .TP
   Unix Bourne (or similar) shell:
-UNZIP='\-t\-'; export UNZIP
+ZIPINFO='\-t\-'; export ZIPINFO
 .TP
   Unix C shell:
-setenv\ UNZIP\ '\-t\-'
+setenv\ ZIPINFO\ '\-t\-'
 .TP
   OS/2 or MS-DOS:
-set\ UNZIP="\-t\-"
+set\ ZIPINFO="\-t\-"
 .TP
   VMS (with quotation to preserve lower case in DCL):
-define\ UNZIP_OPTS\ "\-t\-"         ! Logical name, or
+define\ ZIPINFO_OPTS\ "\-t\-"       ! Logical name, or
 .br
-UNZIP_OPTS\ =\ "\-t\-"              ! DCL symbol.  (Either works.)
+ZIPINFO_OPTS\ =\ "\-t\-"            ! DCL symbol.  (Either works.)
 .IP
 The examples show short (one-character) options, but long ("\-\-")
 options are also allowed.
@@ -514,16 +514,16 @@ zipinfo zip31c.zip
 zipinfo zip31c
 .EE
 .PP
-To produce a basic, long-format listing (not verbose), including header and
-totals lines, use \fB\-l\fP:
+To produce a basic, long-format listing (not verbose), including header
+and totals lines, use \fB\-l\fP:
 .PP
 .EX
 zipinfo \-l zip31c.zip
 .EE
 .PP
 To list the complete contents of the archive without header and totals
-lines, either negate the \fB\-h\fP and \fB\-t\fP options or else specify the
-contents explicitly:
+lines, either negate the \fB\-h\fP and \fB\-t\fP options or else specify
+the contents explicitly:
 .PP
 .EX
 zipinfo \-h\- \-t\- zip31c.zip
@@ -537,7 +537,7 @@ To list information on a single archive member, in medium format,
 specify the member name explicitly:
 .PP
 .EX
-zipinfo \-m unzip60.zip */unshrink.c
+zipinfo \-m unzip60.zip "*/unshrink.c"
 .EE
 .PP
 When any member name is specified, the header and totals trailer are, by

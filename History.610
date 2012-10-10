@@ -313,7 +313,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (14 Jul 2012):
+6.10c09 (2 Oct 2012):
  - Add optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -349,12 +349,19 @@ Features added (or removed):
    amiga/amiga.c, aosvs/aosvs.c, atari/atari.c, atheos/atheos.c,
    beos/beos.c, flexos/flexos.c, human68k/human68k.c,
    macos/source/macos.c, msdos/msdos.c, netware/netware.c, os2/os2.c,
-   qdos/qdos.c, theos/theos.c, unix/unix.c, vms/vms.c, win32/win32.c,
-   windll/windll.c) [SMS]
+   qdos/qdos.c, theos/theos.c, unix/unix.c, vms/cmdline.c,
+   vms/unz_cli.cld, vms/vms.c, win32/win32.c, windll/windll.c) [SMS]
  - Added C macro DIAG_SFX for developers to enable the "-v" diagnostic
    report in UnZipSFX.  Discouraged for normal use.  (unzip.c) [SMS]
-
-
+ - On VMS, added HELP_TEXT as a builder option/target.  Specifying
+   HELP_TEXT creates the text files UNZIP.HTX and UNZIP_CLI.HTX, which
+   are the output from "help unzip..." commands using the corresponding
+   .HLP help library source files.  (vms/build_unzip.com,
+   vms/descrip.mms) [SMS]
+ - VMS CLI changes: Restore but deprecate /[NO]CASE_INSENSITIVE, replace
+   /CASE_MATCH (6.10a07) with more general /MATCH = CASE (-C).  When C
+   macro WILD_STOP_AT_DIR is defined, add /MATCH = [NO]WILD_MATCH_SLASH
+   (-W).  (vms/cmdline.c, vms/unzip_cli.help, vms/unz_cli.cld) [SMS]
 
 
 Bugs fixed:
@@ -754,21 +761,21 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (08 Aug 2012):
- - Minor code tidying: UZbunzip2() and UZlzma() are now static.  (extract.c,
-   unzpriv.h) [SMS]
- - A bare "#if" directive embedded in a multi-line comment block confused
-   old C preprocessors (SunOS 4.1.4 bundled C, VAX C V3.1-051).  (unzpriv.h)
-   [SMS]
+6.10c09 (10 Oct 2012):
+ - Minor code tidying: UZbunzip2() and UZlzma() are now static.
+   (extract.c, unzpriv.h) [SMS]
+ - A bare "#if" directive embedded in a multi-line comment block
+   confused old C preprocessors (SunOS 4.1.4 bundled C, VAX C V3.1-051).
+   (unzpriv.h) [SMS]
  - Less lame handling of LZMA and PPMd data structures.  More things are
    allocated and/or initialized once per job, rather than once per
    archive member.  (extract.c, globals.h, process.c) [SMS]
  - Remove definition of unused LZMA- and PPMd-related C macro _7ZIP_ST
    from builders.  (unix/configure, vms/build_unzip.com,
    vms/descrip_src.mms) [SMS]
- - Miscellaneous code tidying for user-triggered progress message on VMS:
-   Portability to old VAX versions, coping with batch mode, better comments
-   and messages.  (vms/vms.c, vms/vmscfg.h) [SMS]
+ - Miscellaneous code tidying for user-triggered progress message on
+   VMS: Portability to old VAX versions, coping with batch mode, better
+   comments and messages.  (vms/vms.c, vms/vmscfg.h) [SMS]
  - Remove lzma/Alloc.c and lzma/Alloc.h (MyAlloc() and MyFree()
    functions).  (extract.c, unix/Makefile, vms/descrip_src.mms) [SMS]
  - Remove (unused) lzma/SzFile.c and lzma/SzFile.h.  (unix/Makefile,
@@ -818,8 +825,9 @@ Bugs fixed:
    self-extracting "SFX".  (extract.c, fileio.c, unix/macosx.h) [SMS]
  - Added some minimal/lame support in the unix/zipgrep script for (up to
    four) GNU long-form options for egrep, and fixed some lame error
-   handling (when the "unzip -Z1" command failed, for example).  Many
-   limitations and problems remain.
+   handling (when the "unzip -Z1" command failed, for example).  Added
+   "\" escapes for globbing characters ("*", "?", and "[") in archive
+   member names.  Many limitations and problems remain.  (unix/zipgrep) [SMS]
  - Renamed "lzma" directory to "szip".  (Contents, INSTALL, extract.c,
    globals.h, unzip.c, unix/configure, unix/Makefile, vms/build_unzip.com,
    vms/descrip_deps.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
@@ -894,6 +902,40 @@ Bugs fixed:
    6.10c01, but its implementation relies on OS-specific mapname()
    processing, and there was none on Unix or VMS.  It may still be
    missing on other, more obscure systems.  (unix/unix.c, vms/vms.c) [SMS]
+ - Changed the archive file default file spec on VMS from "[]*.ZIP" to
+   ".ZIP", to avoid undesired behavior in some unusual cases.
+   (vms/vms.c) [SMS]
+ - VMS-specific problem could cause "unzip -a" to truncate the last line
+   in a text file if it lacked a normal line ending (like LF).  (This
+   problem was close to, but different from, the similar one which was
+   fixed in version 6.10c01.)  (vms/vms.c) [SMS]
+ - The Unix builders detected a UID and/or GID bigger than 16 bits, but
+   then defined the wrong C macro, disabling support for the new "ux"
+   extra block.  This could prevent UnZip (-X) from restoring UID and
+   GID on files extracted from archives created by Zip 3.0 or later,
+   where the new "ux" extra block was used.  Never defining the right C
+   macro also hid some defective code, which would cause a build failure
+   if the right C macro was defined.  Also, the "-v" report did not
+   mention this option (IZ_HAVE_UXUIDGID).  Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=3&t=402
+   (process.c, unzip.c, unix/configure) [SMS]
+ - VMS CLI changes.  Added /[NO]JAR (--jar), /WILD_MATCH (-W).
+   Deprecated /[NO]TIMES in favor of new /[NO]DECIMAL_TIME.
+   (vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help) [SMS]
+ - VMS CLI UnZip executables (UNZIP_CLI.EXE) were being built with a
+   ZipInfo module (zipinfo.c) which was compiled for the Unix-style
+   interface, not the VMS CLI interface.  An obvious symptom was a
+   Unix-style usage guide instead of a VMS CLI-style usage guide.
+   (vms/build_unzip.com, vms/descrip.mms, vms/descrip_mkdeps.mms,
+   vms/descrip_src.mms) [SMS]
+ - With -c (--to-stdout, /SCREEN) or -p (--pipe-to-stdout, /PIPE),
+   various progress messages ("Archive: xxx", "inflating: yyy", and so
+   on) were sent to stdout along with the extracted data, and only
+   -q (--quiet, /QUIET) could stop them.  Now, with -c or -p, these
+   messages should be sent to stderr, making them visible to the user
+   without corrupting the extracted data stream.  (fileio.c, unzpriv.h,
+   vms/vms.c) [SMS]
+
 ==================
 
 These changes occurred in beta versions 6.10a to 6.10.  This list may have

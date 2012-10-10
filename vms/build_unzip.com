@@ -2,23 +2,24 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-09-03  SMS.
+$!     Last revised:  2012-10-03  SMS.
 $!
 $!     Command arguments:
-$!     - suppress C compilation (re-link): "NOCOMPILE"
-$!     - suppress linking executables: "NOLINK"
-$!     - suppress help file processing: "NOHELP"
-$!     - suppress message file processing: "NOMSG"
-$!     - define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
-$!     - select compiler environment: "VAXC", "DECC", "GNUC"
-$!     - select AES_WG encryption support: "AES_WG"
+$!     - Suppress C compilation (re-link): "NOCOMPILE"
+$!     - Suppress linking executables: "NOLINK"
+$!     - Suppress help file processing: "NOHELP"
+$!     - Suppress message file processing: "NOMSG"
+$!     - Create help output text files: "HELP_TEXT"
+$!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
+$!     - Select compiler environment: "VAXC", "DECC", "GNUC"
+$!     - Select AES_WG encryption support: "AES_WG"
 $!       By default, the SFX programs are built without AES_WG support.
 $!       Add "AES_WG_SFX=1" to the LOCAL_UNZIP C macros to enable it.
 $!       (See LOCAL_UNZIP, below.)
-$!     - select BZIP2 support: "USEBZ2"
+$!     - Select BZIP2 support: "USEBZ2"
 $!       This option is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]", and
 $!       runs the DCL build procedure there,
-$!     - select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
+$!     - Select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
 $!       (or a suitable logical name) tells where to find "bzlib.h".
 $!       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
 $!       a "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
@@ -26,45 +27,45 @@ $!       example), or in that directory itself.
 $!       By default, the SFX programs are built without BZIP2 support.
 $!       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
 $!       (See LOCAL_UNZIP, below.)
-$!     - select LZMA compression support: "LZMA"
+$!     - Select LZMA compression support: "LZMA"
 $!       By default, the SFX programs are built without LZMA support.
 $!       Add "LZMA_SFX=1" to the LOCAL_UNZIP C macros to enable it.
 $!       (See LOCAL_UNZIP, below.)
-$!     - select PPMd compression support: "PPMD"
+$!     - Select PPMd compression support: "PPMD"
 $!       By default, the SFX programs are built without PPMd support.
 $!       Add "PPMD_SFX=1" to the LOCAL_UNZIP C macros to enable it.
 $!       (See LOCAL_UNZIP, below.)
-$!     - use ZLIB compression library: "IZ_ZLIB=dev:[dir]", where
+$!     - Use ZLIB compression library: "IZ_ZLIB=dev:[dir]", where
 $!       "dev:[dir]" (or a suitable logical name) tells where to find
 $!       "zlib.h".  The ZLIB object library (LIBZ.OLB) is expected to be
 $!       in a "[.dest]" directory under that one ("dev:[dir.ALPHAL]",
 $!       for example), or in that directory itself.
-$!     - select large-file support: "LARGE"
-$!     - select compiler listings: "LIST"  Note that the whole argument
+$!     - Select large-file support: "LARGE"
+$!     - Select compiler listings: "LIST"  Note that the whole argument
 $!       is added to the compiler command, so more elaborate options
 $!       like "LIST/SHOW=ALL" (quoted or space-free) may be specified.
-$!     - supply additional compiler options: "CCOPTS=xxx"  Allows the
+$!     - Supply additional compiler options: "CCOPTS=xxx"  Allows the
 $!       user to add compiler command options like /ARCHITECTURE or
 $!       /[NO]OPTIMIZE.  For example, CCOPTS=/ARCH=HOST/OPTI=TUNE=HOST
 $!       or CCOPTS=/DEBUG/NOOPTI.  These options must be quoted or
 $!       space-free.
-$!     - supply additional linker options: "LINKOPTS=xxx"  Allows the
+$!     - Supply additional linker options: "LINKOPTS=xxx"  Allows the
 $!       user to add linker command options like /DEBUG or /MAP.  For
 $!       example: LINKOPTS=/DEBUG or LINKOPTS=/MAP/CROSS.  These options
 $!       must be quoted or space-free.  Default is
 $!       LINKOPTS=/NOTRACEBACK, but if the user specifies a LINKOPTS
 $!       string, /NOTRACEBACK will not be included unless specified by
 $!       the user.
-$!     - select installation of CLI interface version of UnZip:
+$!     - Select installation of CLI interface version of UnZip:
 $!       "VMSCLI" or "CLI"
-$!     - force installation of UNIX interface version of UnZip
+$!     - Force installation of UNIX interface version of UnZip
 $!       (override LOCAL_UNZIP environment): "NOVMSCLI" or "NOCLI"
-$!     - build a callable-UnZip library, LIBIZUNZIP.OLB: "LIBUNZIP"
-$!     - choose a destination directory for architecture-specific
+$!     - Build a callable-UnZip library, LIBIZUNZIP.OLB: "LIBUNZIP"
+$!     - Choose a destination directory for architecture-specific
 $!       product files (.EXE, .OBJ,.OLB, and so on): "PROD=subdir", to
 $!       use "[.subdir]".  The default is a name automatically generated
 $!       using rules defined below.
-$!     - run basic UnZip tests: "TEST", "TEST_PPMD"
+$!     - Run basic UnZip tests: "TEST", "TEST_PPMD"
 $!
 $!     To specify additional options, define the symbol LOCAL_UNZIP
 $!     as a comma-separated list of the C macros to be defined, and
@@ -150,6 +151,7 @@ $ LIBUNZIP = 0
 $ LZMA = 0
 $ MAKE_EXE = 1
 $ MAKE_HELP = 1
+$ MAKE_HELP_TEXT = 0
 $ MAKE_MSG = 1
 $ MAKE_OBJ = 1
 $ MAKE_SYM = 0
@@ -197,6 +199,12 @@ $         then
 $             IZ_BZIP2 = "SYS$DISK:[.BZIP2]"
 $             BUILD_BZIP2 = 1
 $         endif
+$         goto argloop_end
+$     endif
+$!
+$     if (f$extract( 0, 9, curr_arg) .eqs. "HELP_TEXT")
+$     then
+$         MAKE_HELP_TEXT = 1
 $         goto argloop_end
 $     endif
 $!
@@ -702,6 +710,24 @@ $ then
 $     runoff /out = UNZIP.HLP [.VMS]UNZIP_DEF.RNH
 $ endif
 $!
+$! Make the Unix-style help output text file, if desired.
+$!
+$ if (MAKE_HELP .and. MAKE_HELP_TEXT)
+$ then
+$     help_temp_name = "help_temp_"+ f$getjpi( 0, "PID")
+$     if (f$search( help_temp_name+ ".HLB") .nes. "") then -
+       delete 'help_temp_name'.HLB;*
+$     library /create /help 'help_temp_name'.HLB UNZIP.HLP
+$     help /library = sys$disk:[]'help_temp_name'.HLB -
+       /output = 'help_temp_name'.OUT unzip...
+$     delete 'help_temp_name'.HLB;*
+$     create /fdl = [.VMS]STREAM_LF.FDL UNZIP.HTX
+$     open /append help_temp UNZIP.HTX
+$     copy 'help_temp_name'.OUT help_temp
+$     close help_temp
+$     delete 'help_temp_name'.OUT;*
+$ endif
+$!
 $! Process the message file, if desired.
 $!
 $ if (MAKE_MSG)
@@ -965,18 +991,41 @@ $     set default [-]
 $     runoff /output = UNZIP_CLI.HLP [.VMS]UNZIP_CLI.RNH
 $ endif
 $!
+$! Make the CLI help output text file, if desired.
+$!
+$ if (MAKE_HELP .and. MAKE_HELP_TEXT)
+$ then
+$     help_temp_name = "help_temp_"+ f$getjpi( 0, "PID")
+$     if (f$search( help_temp_name+ ".HLB") .nes. "") then -
+       delete 'help_temp_name'.HLB;*
+$     library /create /help 'help_temp_name'.HLB UNZIP_CLI.HLP
+$     help /library = sys$disk:[]'help_temp_name'.HLB -
+       /output = 'help_temp_name'.OUT unzip...
+$     delete 'help_temp_name'.HLB;*
+$     create /fdl = [.VMS]STREAM_LF.FDL UNZIP_CLI.HTX
+$     open /append help_temp UNZIP_CLI.HTX
+$     copy 'help_temp_name'.OUT help_temp
+$     close help_temp
+$     delete 'help_temp_name'.OUT;*
+$ endif
+$!
 $ if (MAKE_OBJ)
 $ then
 $!
 $! Compile the CLI sources.
 $!
 $     cc 'DEF_CLI' /object = [.'dest']UNZIPCLI.OBJ UNZIP.C
+$     cc 'DEF_CLI' /object = [.'dest']ZIPINFO_C.OBJ ZIPINFO.C
 $     cc 'DEF_CLI' /object = [.'dest']CMDLINE.OBJ -
        [.VMS]CMDLINE.C
 $!
 $! Create the command definition object file.
 $!
-$     set command /object = [.'dest']UNZ_CLI.OBJ [.VMS]UNZ_CLI.CLD
+$     cppcld_verify = f$verify( 0)
+$     @ [.vms]cppcld.com "''cc'" [.VMS]UNZ_CLI.CLD -
+       [.'dest']UNZ_CLI.CLD "''defs'"
+$     tmp = f$verify( cppcld_verify)
+$     set command /object = [.'dest']UNZ_CLI.OBJ [.'dest']UNZ_CLI.CLD
 $!
 $! Create the CLI object library.
 $!
@@ -985,6 +1034,7 @@ $     if (f$search( lib_unzipcli) .eqs. "") then -
 $!
 $     libr /object /replace 'lib_unzipcli' -
        [.'dest']CMDLINE.OBJ, -
+       [.'dest']ZIPINFO_C.OBJ, -
        [.'dest']UNZ_CLI.OBJ
 $!
 $ endif

@@ -995,6 +995,7 @@
 #define MSG_NO_DLL2(f) (f & 0x0400)   /* bit 10:  1 = skip if OS/2 DLL */
 #define MSG_NO_NDLL(f) (f & 0x0800)   /* bit 11:  1 = skip if WIN32 DLL */
 #define MSG_NO_WDLL(f) (f & 0x1000)   /* bit 12:  1 = skip if Windows DLL */
+#define MSG_STDOUT(f)  (f & 0x2000)   /* bit 13:  1 = stdout, for sure */
 
 #if (defined(MORE) && !defined(SCREENLINES))
 #  ifdef DOS_FLX_NLM_OS2_W32

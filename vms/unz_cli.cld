@@ -1,5 +1,5 @@
 	Module		VMS_UNZIP_CLD
-	Ident		"03-004"
+	Ident		"03-005"
 
 Define	Verb		UNZIP
 	Parameter	P1, Label=ZIPFILE, Prompt="Zip file"
@@ -7,51 +7,61 @@ Define	Verb		UNZIP
 	Qualifier	BINARY, VALUE(TYPE=CONVBIN_KEYWORDS), Negatable
 	Qualifier	TEXT, VALUE(TYPE=CONVTEXT_KEYWORDS, LIST), Negatable
 	Qualifier	SCREEN, Negatable
-	Qualifier	DIRECTORY, VALUE(REQUIRED,TYPE=$FILE), Nonnegatable
+	Qualifier	DIRECTORY, VALUE(REQUIRED,TYPE=$FILE), NonNegatable
 	Qualifier	FRESHEN, Negatable
-	Qualifier	HELP, NonNegatable, VALUE(type=HELP_OPTS)
-	Qualifier	JUNK, Negatable
-	Qualifier	LIST, Nonnegatable
-	Qualifier	LICENSE, Nonnegatable
-	Qualifier	BRIEF, Nonnegatable, Default
-	Qualifier	FULL, VALUE(TYPE=FULL_MODIFIER), Nonnegatable
+	Qualifier	HELP, NonNegatable, VALUE(TYPE=HELP_OPTS)
+	Qualifier	JAR, Negatable
+	Qualifier	JUNK_DIRS, Negatable, VALUE(TYPE=$NUMBER)
+	Qualifier	LIST, NonNegatable
+	Qualifier	LICENSE, NonNegatable
+	Qualifier	BRIEF, NonNegatable, DEFAULT
+	Qualifier	FULL, VALUE(TYPE=FULL_MODIFIER), NonNegatable
 	Qualifier	EXISTING, VALUE(REQUIRED, TYPE=EXISTING_KEYWORDS),
-			Nonnegatable
+			NonNegatable
 	Qualifier	NAMES, VALUE(REQUIRED, TYPE=NAMES_KEYWORDS),
-			Nonnegatable
+			NonNegatable
 	Qualifier	OVERWRITE, Negatable
-	Qualifier	QUIET, VALUE(TYPE=QUIET_MODIFIER), Nonnegatable
+	Qualifier	QUIET, VALUE(TYPE=QUIET_MODIFIER), NonNegatable
 	Qualifier	TEST, Negatable
-	Qualifier	PIPE, Nonnegatable
-	Qualifier	PASSWORD, VALUE(REQUIRED), Nonnegatable
-	Qualifier	TIMESTAMP, Nonnegatable
+	Qualifier	PIPE, NonNegatable
+	Qualifier	PASSWORD, VALUE(REQUIRED), NonNegatable
+	Qualifier	TIMESTAMP, NonNegatable
 	Qualifier	TRAVERSE_DIRS, Negatable
 	Qualifier	UPPERCASE, Negatable
 	Qualifier	UPDATE, Negatable
-	Qualifier	VERBOSE, NonNegatable, VALUE(type=VERBOSE_OPTS, list)
+	Qualifier	VERBOSE, NonNegatable, VALUE(TYPE=VERBOSE_OPTS, LIST)
 	Qualifier	NOVERBOSE, NonNegatable
 	Qualifier	VERSION, Negatable
 	Qualifier	RESTORE, VALUE(TYPE=RESTORE_KEYWORDS, LIST), Negatable
 	Qualifier	COMMENT, Negatable
-	Qualifier	EXCLUDE, VALUE(LIST), Nonnegatable
-	Qualifier	CASE_MATCH, VALUE(type=CASE_MATCH_OPTS)
+	Qualifier	EXCLUDE, VALUE(LIST), NonNegatable
+	Qualifier	CASE_INSENSITIVE, Negatable
+#if 0
+	Qualifier	CASE_MATCH, VALUE(TYPE=CASE_OPTS)
+#endif /* 0 */
+	Qualifier	MATCH, VALUE(REQUIRED, TYPE=MATCH_OPTS, LIST)
 	Qualifier	LOWERCASE, Negatable
 	Qualifier	PAGE, Negatable
 	Qualifier	DOT_VERSION, Negatable
 	Qualifier	ODS2, Negatable
-	Qualifier	YYZ_UNZIP, NonNegatable, Default
+	Qualifier	YYZ_UNZIP, NonNegatable, DEFAULT
 	Qualifier	ZIPINFO, Syntax=INFORMATION, NonNegatable
+
 	DisAllow	BRIEF and FULL
 	DisAllow	DIRECTORY and SCREEN
 	DisAllow	BINARY and TEXT.ALL
 	DisAllow	BINARY.ALL and TEXT
+	DisAllow	CASE_INSENSITIVE and MATCH.CASE.SENSITIVE
+	DisAllow	(neg CASE_INSENSITIVE) and MATCH.CASE.BLIND
 	DisAllow	LOWERCASE and UPPERCASE
 	DisAllow	(neg LOWERCASE) and (neg UPPERCASE)
 	DisAllow	(OVERWRITE or (neg OVERWRITE)) and EXISTING
-	DisAllow	LOWERCASE and (neg NAMES.LOWERCASE)
-	DisAllow	(neg LOWERCASE) and NAMES.LOWERCASE
-	DisAllow	UPPERCASE and NAMES.LOWERCASE
-	DisAllow	(neg UPPERCASE) and NAMES.LOWERCASE
+	DisAllow	LOWERCASE and (neg NAMES.DOWNCASE)
+	DisAllow	(neg LOWERCASE) and NAMES.DOWNCASE
+	DisAllow	UPPERCASE and NAMES.DOWNCASE
+	DisAllow	(neg UPPERCASE) and NAMES.DOWNCASE
+	DisAllow	MATCH and ((neg MATCH.CASE) and (neg
+			 MATCH.WILD_MATCH_SLASH))
 	DisAllow	ODS2 and (neg NAMES.ODS2)
 	DisAllow	(neg ODS2) and NAMES.ODS2
 	DisAllow	(neg RESTORE) and RESTORE.DATE
@@ -67,7 +77,8 @@ Define	Verb		UNZIP
 	DisAllow	TEXT.NONE and TEXT.ALL
 	DisAllow	TEXT.NONE and TEXT.STMLF
 	DisAllow	(neg TEXT) and TEXT.STMLF
-	DisAllow	NOVERBOSE and VERBOSE.NORMAL
+	DisAllow	NOVERBOSE and (VERBOSE.NORMAL or VERBOSE.MORE)
+	DisAllow	VERBOSE.MORE and VERBOSE.NORMAL
 	DisAllow	ZIPINFO and HELP
 
 Define	Type		CONVBIN_KEYWORDS
@@ -81,7 +92,7 @@ Define	Type		CONVTEXT_KEYWORDS
 	Keyword		NONE
 	Keyword		STMLF
 
-Define	Type		CASE_MATCH_OPTS
+Define	Type		CASE_OPTS
 	Keyword		SENSITIVE, DEFAULT
 	Keyword		BLIND
 
@@ -94,16 +105,20 @@ Define	Type		HELP_OPTS
 	Keyword		NORMAL, DEFAULT
 	Keyword		EXTENDED
 
+Define	Type		MATCH_OPTS
+	Keyword		CASE, VALUE(REQUIRED, TYPE=CASE_OPTS)
+	Keyword		WILD_MATCH_SLASH, Negatable
+
 Define	Type		NAMES_KEYWORDS
-	Keyword		LOWERCASE, Negatable
+	Keyword		DOWNCASE, Negatable
 	Keyword		ODS2, Negatable
 	Keyword		SPACES, Negatable
 
 Define	Type		RESTORE_KEYWORDS
-	Keyword		DATE, VALUE(TYPE=RESTOREDATE_KEYS, Required),
-			Negatable
+	Keyword		DATE, VALUE(REQUIRED, TYPE=RESTOREDATE_KEYS),
+			 Negatable
 	Keyword		ACL, Negatable
-	Keyword		PROTECTION, Default, Negatable
+	Keyword		PROTECTION, DEFAULT, Negatable
 
 Define	Type		RESTOREDATE_KEYS
 	Keyword		FILES, DEFAULT
@@ -116,26 +131,33 @@ Define	Type		FULL_MODIFIER
 	Keyword		DIAGNOSTICS
 
 Define	Type		VERBOSE_OPTS
-	Keyword		NORMAL, DEFAULT, Negatable
+	Keyword		NORMAL, DEFAULT
+	Keyword		MORE
 	Keyword		COMMAND
 
 Define Syntax INFORMATION
 	Parameter	P1, Label=ZIPFILE, Prompt="Zip file"
 	Parameter	P2, Label=INFILE, VALUE(LIST), Prompt="Files to display"
-	Qualifier	ZIPINFO, NonNegatable, Default
+
+	Qualifier	ZIPINFO, NonNegatable, DEFAULT
+	Qualifier	LONG, Negatable
+	Qualifier	MEDIUM, Negatable
 	Qualifier	ONE_LINE, Negatable
 	Qualifier	SHORT, Negatable
-	Qualifier	MEDIUM, Negatable
-	Qualifier	LONG, Negatable
-	Qualifier	VERBOSE, NonNegatable, VALUE(type=VERBOSE_OPTS, list)
+	Qualifier	VERBOSE, NonNegatable, VALUE(TYPE=VERBOSE_OPTS, LIST)
 	Qualifier	NOVERBOSE, NonNegatable
-	Qualifier	HEADER, Negatable
+	Qualifier	CASE_INSENSITIVE, Negatable
+#if 0
+	Qualifier	CASE_MATCH, VALUE(TYPE=CASE_OPTS)
+#endif /* 0 */
 	Qualifier	COMMENT, Negatable
-	Qualifier	TOTALS, Negatable
-	Qualifier	TIMES, Negatable
-	Qualifier	EXCLUDE, VALUE(LIST), Nonnegatable
-	Qualifier	CASE_MATCH, VALUE(type=CASE_MATCH_OPTS)
+	Qualifier	DECIMAL_TIME, Negatable
+	Qualifier	EXCLUDE, VALUE(LIST), NonNegatable
+	Qualifier	HEADER, Negatable
+	Qualifier	MATCH, VALUE(REQUIRED, TYPE=MATCH_OPTS, LIST)
 	Qualifier	PAGE, Negatable
+	Qualifier	TIMES, Negatable
+	Qualifier	TOTALS, Negatable
 
 	DisAllow	NOVERBOSE and VERBOSE.NORMAL
 	DisAllow	ONE_LINE and SHORT

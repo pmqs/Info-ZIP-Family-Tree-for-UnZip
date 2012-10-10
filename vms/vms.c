@@ -2422,8 +2422,11 @@ static int _flush_stream(__G__ rawbuf, size, final_flag)
             {
                 if ( eol_off >= size )
                 {
-                    /* 2011-02-07 SMS.
-                     * Does this ever happen?
+                    /* 2012-09-19 SMS.
+                     * No EOL found (at EOF?).  See note below. 
+                     * Previously, the following memcpy() was not being
+                     * done in this case, either, causing loss of data
+                     * at the end of a last line with no line ending.
                      */
                     end = size;
                     complete = 0;
@@ -2447,13 +2450,13 @@ static int _flush_stream(__G__ rawbuf, size, final_flag)
                         /* Found certain 1- or 2-char line end. */
                         complete = 1;
                     }
-                    /* Append available data to the data in locbuf. */
-                    memcpy(locptr, rawbuf, eol_off);
-                    recsize = loccnt + eol_off;
-                    locptr += eol_off;
-                    loccnt += eol_off;
-                    end = eol_off + eol_len;
                 }
+                /* Append available data to the data in locbuf. */
+                memcpy(locptr, rawbuf, eol_off);
+                recsize = loccnt + eol_off;
+                locptr += eol_off;
+                loccnt += eol_off;
+                end = eol_off + eol_len;
             }
         }
 
@@ -2538,7 +2541,7 @@ static int WriteBuffer(__G__ buf, len)
 
     if (uO.cflag)
     {
-        (void)(*G.message)((zvoid *)&G, buf, len, 0);
+        (void)(*G.message)((zvoid *)&G, buf, len, 0x2000);
     }
     else
     {
@@ -2585,8 +2588,8 @@ static int WriteRecord(__G__ rec, len)
 
     if (uO.cflag)
     {
-        (void)(*G.message)((zvoid *)&G, rec, len, 0);
-        (void)(*G.message)((zvoid *)&G, (uch *) ("\n"), 1, 0);
+        (void)(*G.message)((zvoid *)&G, rec, len, 0x2000);
+        (void)(*G.message)((zvoid *)&G, (uch *) ("\n"), 1, 0x2000);
     }
     else
     {
@@ -3923,7 +3926,7 @@ char *do_wild( __G__ wld )
     static struct FAB fab;
     static struct NAMX_STRUCT nam;
     static int first_call = 1;
-    static ZCONST char deflt[] = "[]*.ZIP";
+    static ZCONST char deflt[] = ".ZIP";
 
     if ( first_call || strcmp(wld, last_wild) )
     {   /* (Re)Initialize everything */

@@ -136,9 +136,20 @@
 #define __globals_h
 
 #ifdef USE_ZLIB
+   /* zlib.h may define OF(), conflicting with our definition.
+    * First, protect zlib.h from our definition.
+    */
+#  undef OF
 #  include "zlib.h"
 #  ifdef zlib_version           /* This name is used internally in unzip */
 #    undef zlib_version         /*  and must not be defined as a macro. */
+#  endif
+   /* Finally, restore our definition. */
+#  undef OF
+#  ifdef PROTO
+#    define OF(a) a
+#  else
+#    define OF(a) ()
 #  endif
 #endif
 

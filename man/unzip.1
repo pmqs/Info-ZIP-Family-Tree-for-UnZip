@@ -54,19 +54,27 @@ parser has been replaced by one like the one used in \fIZip\fP.  One
 significant change is that \fIoption negation now uses a TRAILING hyphen
 ("\-")\fP, so, for example, \fB\-B\-\fP negates the \fB\-B\fP
 option.  This change was made because a double hyphen ("\-\-") now
-introduces a long option.  To list all available options for a
-particular \fIUnZip\fP program, use the command:
-.EX
-unzip \-\-show\-options
-.EE
+introduces a long option.
 .PP
-To display the extended help, use the command:
+To display the basic built-in help, use the command:
+.EX
+unzip \-h
+.EE
+To display the extended built-in help, use the command:
 .EX
 unzip \-hh
 .EE
-The extended help may be more current than this manual page, especially
+The built-in help may be more current than this manual page, especially
 between full product releases.
 .PP
+To list all available options for a particular \fIUnZip\fP program, use
+the command:
+.EX
+unzip \-\-show\-options
+.EE
+This report will not include any options which are available only on
+other system types, or options which must be enabled at build-time but
+were not enabled in the particular UnZip program being used.
 .\" =========================================================================
 .SH ARGUMENTS
 .TP
@@ -117,10 +125,11 @@ without specifying an archive.
 .TP
 .IR member " ..."
 An optional list of archive members to be processed, separated by
-spaces.  Wildcard patterns (like those used for an archive file name on
-Unix, described above) may be used to match multiple members.  Again, be
-sure to quote expressions that would otherwise be expanded or modified
-by the operating system or shell.
+spaces.  If no member list is specified, then all archive members are
+processed.  Wildcard patterns (like those used for an archive file name
+on Unix, described above) may be used to match multiple members.  Again,
+be sure to quote expressions that would otherwise be expanded or
+modified by the operating system or shell.
 .IP
 Note that on VMS systems, the wildcard rules used for archive members
 are the same as on Unix systems.  VMS wildcard rules are used only for
@@ -145,8 +154,8 @@ manual page for a description of those options.
 .\" --------------------------------------------------------------------
 .SH OPTIONS (Primary Mode)
 Options in this group (\fB\-c \-f \-h \-l \-p \-t \-T \-u \-v \-z\fP)
-specify the primary mode of operation of  \fIUnZip\fP.  Only one of
-these primary mode options may be specified.
+specify the primary mode of operation of \fIUnZip\fP.  Only one of these
+primary mode options may be specified.
 .PP
 .PD 0
 .B \-c
@@ -237,6 +246,12 @@ name, then \fIUnZip\fP acts as if "\fB\-l\fP \fB\-v\fP" were specified,
 and a detailed listing is generated.
 .PP
 .PD 0
+.B \-\-license
+.TP
+.PD
+Primary Mode.  Display the Info-ZIP license.
+.PP
+.PD 0
 .B \-p
 .TP
 .PD
@@ -255,7 +270,7 @@ conversions).
 .B \-\-timestamp\-new
 .br
 Primary Mode.  Set the timestamp on the archive(s) to that of the newest
-file in each one.  This corresponds to \fIZip\fP's \fB\-go\fP option
+file in each one.  This corresponds to \fIZip\fP's \fB\-go\fP option,
 except that it can be used on wildcard archives (for example,
 "\fCunzip\ \-T\ '*.zip'\fR") and is much faster.
 .PP
@@ -348,13 +363,14 @@ are stored, byte-for-byte.  With \fB\-a\fP, line endings in a text
 file are adjusted to the local standard as the file is extracted.  When
 appropriate, ASCII<\-\->EBCDIC conversion is also done.
 .IP
-\fIzip\fP (or a similar program) identifies text files when they are
-archived.  (A short-format \fIZipInfo\fP report denotes a text file with
-a "t", instead of a "b".)  \fIZip\fP's identification of text files may
-not be perfect.  \fIUnZip\fP therefore prints "\fC[text]\fR" or
-"\fC[binary]\fR" as a visual check for each file it extracts with
-\fB\-a\fP.  The \fB\-aa\fP option forces all files to be extracted (and
-converted) as text, regardless of the supposed file type.
+\fIZip\fP (or a similar archiving program) identifies files as "binary"
+or "text" when they are archived.  (A short-format \fIZipInfo\fP report
+denotes a binary file with a "b", and a text file with a "t".) 
+\fIZip\fP's identification of text files may not be perfect, so
+\fIUnZip\fP prints "\fC[binary]\fR" or "\fC[text]\fR" as a visual check
+for each file it extracts with \fB\-a\fP.  The \fB\-aa\fP option forces
+all files to be extracted (and converted) as text, regardless of the
+supposed file type.
 .IP
 [VMS] On VMS, for archives with VMS attribute information (made with
 "zip\ \-V"), files are always created with their original record
@@ -402,9 +418,19 @@ and replaced by the new backup version without notice.
 .PD
 .B \-\-binary
 .br
-[general] Treat all files as binary (no text conversions).  \fB\-b\fP
-may conflict or interact with \fB\-a\fP in different ways on different
-system types.
+[Tandem, VMS] Selects the file record format used when extracting binary
+files.  -b may conflict or interact with -a in different ways on
+different system types.  -b is ignored on systems other than Tandem and
+VMS.
+.IP
+\fIZip\fP (or a similar archiving program) identifies files as "binary"
+or "text" when they are archived.  (A short-format \fIZipInfo\fP report
+denotes a binary file with a "b", and a text file with a "t".) 
+.\" \fIZip\fP's identification of text files may not be perfect, so
+.\" \fIUnZip\fP prints "\fC[binary]\fR" or "\fC[text]\fR" as a visual check
+.\" for each file it extracts with \fB\-b\fP.  The \fB\-bb\fP option forces
+.\" all files to be extracted (and converted) as binary, regardless of the
+.\" supposed file type.
 .IP
 [Tandem] Force the creation files with filecode type 180 ('C') when
 extracting archive members marked as "text". (On Tandem, \fB\-a\fP is
@@ -416,10 +442,10 @@ formats.  For archives without VMS attribute information (not made with
 "zip\ \-V"), files are normally created with Stream_LF record
 format.  With \fB\-b\fP, binary files are created with fixed-length,
 512-byte record format.  With \fB\-bb\fP, all files are treated as
-binary files. When extracting to standard output (\fB\-c\fP or \fB\-p\fP
-option in effect), the default conversion of text record delimiters is
-disabled for binary files (with \fB\-b\fP), or for all files (with
-\fB\-bb\fP).
+binary files.  When extracting to standard output (\fB\-c\fP or
+\fB\-p\fP option in effect), the default conversion of text record
+delimiters is disabled for binary files (with \fB\-b\fP), or for all
+files (with \fB\-bb\fP).
 .PP
 .PD 0
 .B \-C
@@ -548,24 +574,6 @@ fields.  Instead, the most compatible filename stored in the generic
 part of the member's header is used.
 .PP
 .PD 0
-.B \-j[=depth]
-.TP
-.PD
-.B \-\-junk\-dirs[=depth]
-.br
-Junk directories.  With \fB\-j\fP, all directory information is stripped
-from an archive member name, so all files are extracted into the
-destination directory.  (See also \fB\-d\fP.)
-.IP
-If a depth (\fB=depth\fP, where \fBdepth\fP is a positive integer) is
-specified, then that number of directory levels will be stripped from an
-archive member name.  For example, an archive member like
-"a/b/c/d/ee.txt" would normally be extracted as "a/b/c/d/ee.txt".  With
-\fB\-j\fP, it would be extracted as "ee.txt".  With \fB\-j=2\fP, the
-first two directory levels would be stripped, so it would be extracted
-as "c/d/ee.txt".
-.PP
-.PD 0
 .B \-J
 .TP
 .PD
@@ -576,7 +584,26 @@ restored, only the file's data.
 .IP
 [MacOS] Ignore MacOS extra fields.  All Macintosh-specific info is
 skipped.  AppleDouble files are restored as separate files.
+.PP
+.PD 0
+.B \-j[=depth]
 .TP
+.PD
+.B \-\-junk\-dirs[=depth]
+.br
+Junk directories on extracted files.  With \fB\-j\fP, all directory
+information is stripped from an archive member name, so all files are
+extracted into the destination directory.  (See also \fB\-d\fP.)
+.IP
+If a depth (\fB=depth\fP, where \fBdepth\fP is a positive integer) is
+specified, then that number of directory levels will be stripped from an
+archive member name.  For example, an archive member like
+"a/b/c/d/ee.txt" would normally be extracted as "a/b/c/d/ee.txt".  With
+\fB\-j\fP, it would be extracted as "ee.txt".  With \fB\-j=2\fP, the
+first two directory levels would be stripped, so it would be extracted
+as "c/d/ee.txt".
+.PP
+.PD 0
 .B \-\-jar
 .br
 Treat archive(s) as Java JAR.  Over-simplification in Java JAR archives
@@ -639,14 +666,14 @@ Pipe all output through an internal pager similar to the Unix
 \fImore\fP(1) command.  At the end of a screenful of output, \fIUnZip\fP
 pauses with a "\-\-More\-\-" prompt; the next screenful may be viewed by
 pressing the Enter (Return) key or the space bar.  \fIUnZip\fP can be
-terminated by pressing the "q" key and, on some systems, the
+terminated by pressing the "Q" key and, on some systems, the
 Enter/Return key.  Unlike Unix \fImore\fP(1), there is no
 forward-searching or editing capability. Also, \fIUnZip\fP doesn't
 notice if long lines wrap at the edge of the screen, effectively
 resulting in the printing of two or more lines and the likelihood that
-some text will scroll off the top of the screen before being viewed. On
-some systems the number of available lines on the screen is not
-detected, in which case \fIUnZip\fP assumes the height is 24 lines.
+some text will scroll off the top of the screen before being viewed.  If
+the actual number of lines on the screen can not be determined, 24 lines
+will be assumed.
 .PP
 .PD 0
 .B \-N
@@ -664,12 +691,21 @@ Amiga port of \fIZip\fP, which stores filenotes as comments.
 .PD
 .B \-\-never\-overwrite
 .br
-Never overwrite existing files.  If a file already exists, skip the
-extraction of that file without prompting.  By default \fIUnZip\fP
-queries before extracting any file that already exists.  The user may
-choose to overwrite only the current file, overwrite all files, skip
-extraction of the current file, skip extraction of all existing files,
-or rename the current file.
+When extracting, never overwrite existing files.  If a file already
+exists, then skip the extraction of that file without asking.  See also
+-o (--overwrite).
+.IP
+By default, \fIUnZip\fP queries the user before extracting any file that
+already exists.  The user may choose to overwrite only the current file,
+overwrite all files, skip extraction of the current file, skip
+extraction of all existing files, or rename the current file (choose a
+new name for the extracted file).
+.IP
+[VMS] On VMS, the usual query choices are to create a new version of an
+existing file, to skip extraction, or to rename the current file.  In
+the case where an archive member name includes a version number, and -V
+("retain VMS file version numbers") is in effect, then an additional
+query choice is offered: to overwrite the existing file.
 .PP
 .PD 0
 .B \-O char_set
@@ -685,10 +721,26 @@ or rename the current file.
 .PD
 .B \-\-overwrite
 .br
-Always overwrite existing files without prompting.  This is a
-\fIdangerous\fP option, so use it with care.  (It is often used with
-\fB\-f\fP, however, and is the only way to overwrite directory EAs on
-OS/2.)
+When extracting, always overwrite existing files without
+prompting.  This is a \fIdangerous\fP option, so use it with care.  (It
+is often used with \fB\-f\fP, however, and is the only way to overwrite
+directory EAs on OS/2.)  See also -n (--never-overwrite).
+.IP
+By default, \fIUnZip\fP queries the user before extracting any file that
+already exists.
+.IP
+[Non-VMS] On non-VMS systems, the user may choose to overwrite only the
+current file, overwrite all files, skip extraction of the current file,
+skip extraction of all existing files, or rename the current file
+(choose a new name for the extracted file).
+.IP
+[VMS] On VMS, the usual query choices are to create a new version of an
+existing file, to skip extraction, or to rename the current file.  In
+the case where an archive member name includes a version number, and -V
+("retain VMS file version numbers") is in effect, then an additional
+query choice is offered: to overwrite the existing file.  In this case,
+-o selects the "new version" choice, and -oo (or "-o -o") selects the
+"overwrite" choice.
 .PP
 .PD 0
 .B \-P password
@@ -705,7 +757,7 @@ command line in an automated script can be even less secure,  Whenever
 possible, use the non-echoing, interactive prompt to enter
 passwords.  Where security is truly important, use a strong encryption
 method, such as AES, instead of the relatively weak encryption provided
-by Traditional ZIP encryption. Or, use an external encryption program,
+by Traditional ZIP encryption.  Or, use an external encryption program,
 such as GnuPG, before archiving the file.  (Note that \fIZip\fP will
 probably not be able to do significant compression on a file which has
 already been encrypted.)
@@ -736,7 +788,7 @@ or all of these messages.
 .B \-r
 .TP
 .PD
-.B \-\-remove-exts
+.B \-\-remove\-exts
 .br
 [Tandem] Remove file extensions.
 .PP
@@ -744,7 +796,7 @@ or all of these messages.
 .B \-S
 .TP
 .PD
-.B \-\-stream_lf
+.B \-\-streamlf
 .br
 [VMS] Use Stream_LF record format when converting extracted text files
 (\fB\-a\fP, \fB\-aa\fP), instead of the text-file default,
@@ -763,7 +815,7 @@ files.  See also \fB\-a\fP and \fB\-b\fP.
 .B \-s
 .TP
 .PD
-.B \-\-space_to_uscore
+.B \-\-space\-to\-uscore
 .br
 [OS/2, NT, MS-DOS] convert spaces in filenames to underscores.  Because
 all these operating systems allow spaces in filenames, \fIUnZip\fP
@@ -809,7 +861,8 @@ use in program development, not in normal use.
 .PD
 .B \-\-timestamp\-new
 .br
-See Primary Mode options.
+Primary Mode.  Set the timestamp on the archive(s) to that of the newest
+file in each one.  For details, see Primary Mode options.
 .PP
 .PD 0
 .B \-t
@@ -835,7 +888,7 @@ is suspected to mangle up extracted filenames.
 .IP
 \fB\-UU\fP disables the recognition of UTF-8 encoded filenames.  The
 handling of filename codings within \fIUnZip\fP falls back to the
-behavior of previous versions.
+behavior of pre-Unicode versions.
 .IP
 [old, obsolete usage] Leave filenames uppercase if created on MS-DOS,
 VMS, and so on.  See \fB\-L\fP.
@@ -895,17 +948,20 @@ and a detailed listing is generated.
 .PD
 .B \-\-wild\-no\-span
 .br
-[WILD_STOP_AT_DIR] (Valid when the program was built with
-WILD_STOP_AT_DIR enabled.)  Modify the pattern-matching behavior so that
-both "?" (single-character wildcard) and "*" (multi-character wildcard)
-do not match the directory separator character "/".  (The two-character
+[WILD_STOP_AT_DIR] (Valid when the program was built with the C macro
+WILD_STOP_AT_DIR defined.)  By default, the wildcard characters "?"
+(single-character wildcard) and "*" (multi-character wildcard) match any
+character in a member path/name.  "\fC\-W\fR" modifies the
+pattern-matching behavior for archive members so that both "?"
+(single-character wildcard) and "*" (multi-character wildcard) do not
+match the directory separator character "/".  (The two-character
 sequence "**" acts as a multi-character wildcard that includes the
 directory separator in its matched characters.)  For example, with
 "\fC\-W\fR":
 .PP
 .EX
-    "*.c" matches "foo.c" but not "mydir/foo.c"
-    "**.c" matches both "foo.c" and "mydir/foo.c"
+    "*.c"   matches "foo.c" but not "mydir/foo.c"
+    "**.c"  matches both "foo.c" and "mydir/foo.c"
     "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
     "??*/*" matches "ab/foo" and "abc/foo"
             but not "a/foo" or "a/b/foo"
@@ -915,12 +971,13 @@ This modified behavior is equivalent to the pattern matching style used
 by the shells of some of \fIUnZip\fP's supported target OSs (one example
 is Acorn RISC OS).  This option may not be available on systems where
 the Zip archive's internal directory separator character "/" is allowed
-as regular character in native operating system filenames. (Currently,
-\fIUnZip\fP uses the same pattern matching rules for both wildcard
-archive file name specifications and archive member selection patterns
-on most system types.  For systems allowing "/" as regular filename
-character, the \-W option would not work as expected on a wildcard file
-name specification.)
+as regular character in native operating system filenames.
+.IP
+[non-VMS] Currently, \fIUnZip\fP uses the same pattern matching rules
+for both wildcard archive file name specifications and archive member
+selection patterns on most system types.  For systems allowing "/" as
+regular filename character, the \-W option would not work as expected on
+a wildcard file name specification.
 .PP
 .PD 0
 .B \-X
@@ -942,7 +999,7 @@ always restored.  This option applies only to optional, extra ownership
 info available on some operating systems. (NT's access control lists do
 not appear to be especially compatible with OS/2's, so no attempt is
 made at cross-platform portability of access privileges.  It is not
-clear under what conditions this would ever be useful anyway.)
+clear under which conditions this would ever be useful anyway.)
 .PP
 .PD 0
 .BR "\-x member" " ..."
@@ -980,9 +1037,9 @@ options).  That is, the following two commands are equivalent:
 .br
 [VMS] Treat archive member name endings of ".nnn" (where "nnn" is a
 decimal number) as if they were VMS version numbers (";nnn").  (The
-default is to treat them as file types.)  Example:
+default is to treat them as file types.)  For example:
 .EX
-     "a.b.3" -> "a.b;3".
+     "a.b.3" -> "a.b;3"
 .EE
 .PP
 .PD 0
@@ -1043,9 +1100,9 @@ path components ("../") from the path names of archive members as they
 are extracted.  This safety feature (new for version 5.50) prevents
 \fIUnZip\fP from accidentally writing files to directories outside
 the current destination directory tree.  The \fB\-:\fP option sets
-\fIUnZip\fP switch back to its previous, more liberal behavior, allowing
-exact extraction of archives that use "../" path components to create
-multiple directory trees at \fIor above\fP the level of the destination
+\fIUnZip\fP back to its previous, more liberal behavior, allowing exact
+extraction of archives that use "../" path components to create multiple
+directory trees at \fIor above\fP the level of the destination
 directory.
 .IP
 This option does not enable writing explicitly to the root
@@ -1083,8 +1140,8 @@ restored.
 .\" =========================================================================
 .SH "ENVIRONMENT OPTIONS"
 \fIUnZip\fP's default behavior may be modified by placing command-line
-options in an environment variable.  This can be done with any option, but it
-is probably most useful options like \fB\-a\fP (auto-convert text
+options in an environment variable.  This can be done with any option,
+but it is probably most useful options like \fB\-a\fP (auto-convert text
 files), \fB\-L\fP (downcase file names from systems with all uppercase
 file names), \fB\-C\fP (use case-insensitive name matching), \fB\-q\fP
 (quiet), \fB\-o\fP (always overwrite), or \fB\-n\fP (never overwrite).
@@ -1136,7 +1193,7 @@ unzip\ \-q\-\ \-q\-\ \-t\ archive
 .IP
 Note that multiple one-character options like "\-q" and "\-q" can be
 combined into a single "\-qq", but it's generally clearer to keep each
-instamce of each option separate.  Similarly, negated one-character
+instance of each option separate.  Similarly, negated one-character
 options can be combined, as with "\-q\-q\-", but "\-q\-\ \-q\-" is
 generally clearer.
 .IP
@@ -1158,7 +1215,7 @@ variable is ignored on these systems.
 encryption method, which we call Traditional ZIP encryption.  The source
 code for Traditional encryption is included in the source kits, and
 support for Traditional encryption is enabled by default.  (Build-time C
-macro: CRYPT.)
+macro: CRYPT_TRAD.)
 .PP
 Beginning with \fIUnZip\fP version 6.10 and \fIZip\fP version 3.1,
 these programs also offer a stronger, Advanced Encryption Standard (AES)
@@ -1316,8 +1373,9 @@ be older):
 unzip \-f \-o sources
 .EE
 .PP
-To extract newer versions of the files already in the current directory and
-to create any files not already there (same caveat as previous example):
+To extract newer versions of the files already in the current directory
+and to create any files not already there (same caveat as previous
+example):
 .PP
 .EX
 unzip \-u \-o sources
@@ -1368,45 +1426,45 @@ PKWARE and takes on the following values (except on VMS):
 Normal.  No errors or warnings detected.
 .IP 1
 One or more warnings were encountered, but processing completed
-successfully.  This includes archives where one or more files were
-skipped due to an unsupported compression or encryption method, or a bad
-encryption password.
+successfully.  This includes archives where one or more (but not all)
+files were skipped because of an unsupported compression or encryption
+method, or a bad encryption password.
 .IP 2
-A generic error in the archive format was detected.  Processing may or
-may not have completed successfully.
+Error in the archive format.  Processing may or may not have completed
+successfully.
 .IP 3
-A severe error in the archive format was detected.  Processing probably
-failed immediately.
+Severe error in the archive format.  Processing probably failed
+immediately.
 .IP 4
-Failure to allocate memory for one or more buffers during program
-initialization.
+Memory allocation failed in program initialization.
 .IP 5
-Failure to allocate memory, or unable to obtain a access the user's
-terminal to read the encryption password(s).
+Memory allocation or terminal I/O failed in encryption password
+processing.
 .IP 6
-Failure to allocate memory during decompression to disk.
+Memory allocation failed while decompressing to disk.
 .IP 7
-Failure to allocate memory during in-memory decompression.
+Memory allocation failed while decompressing in memory.
 .IP 8
-[currently not used]
+Memory allocation failed.  (Currently not used.)
 .IP 9
-The specified archive files were not found.
+Specified archive files were not found.
 .IP 10
-Invalid options were specified on the command line.
+Invalid command-line options or parameters.
 .IP 11
 No matching files were found.
 .IP 50
-The disk (file system) was filled during extraction.
+Disk (file system) filled during extraction.
 .IP 51
-The end of the archive was encountered prematurely.
+Unexpected end-of-file while reading the archive.
 .IP 80
-The user interrupted the program using control-C (or similar).
+User interrupt (Ctrl/C or similar).
 .IP 81
-Extraction or testing of one or more archive members failed due to
-unsupported compression or encryption methods.
+No files were processed, because of unsupported compression or
+encryption methods.
 .IP 82
-Extraction or testing of all archive members failed due to unsupported
-compression or encryption methods.
+No files were processed, because of bad encryption password(s).
+.IP 83
+Large-file archive could not be processed by this small-file program.
 .RE
 .PP
 [VMS] On VMS, the standard Unix exit status values are translated into
@@ -1433,7 +1491,7 @@ Archives encrypted with 8-bit-character passwords (such as passwords
 with accented European characters) may not be portable across systems
 and/or other archivers.  See also \fBENCRYPTION/DECRYPTION\fP.
 .PP
-\fIUnZip\fP's \fB\-M\fP ("more") option tries to take into account
+\fIUnZip\fP's \fB\-M\fP ("\-\-more") option tries to take into account
 automatic wrapping of long lines. However, the code may fail to detect
 the correct wrapping locations. First, TAB characters (and similar
 control sequences) are not taken into account, they are handled as
@@ -1452,7 +1510,7 @@ regular files, directories, and symbolic (soft) links.
 [OS/2] Extended attributes for existing directories are only updated if
 the \fB\-o\fP ("overwrite all") option is given.  This is a limitation
 of the operating system; because directories only have a creation time
-associated with them, \fIunzip\fP has no way to determine whether the
+associated with them, \fIUnZip\fP has no way to determine whether the
 stored attributes are newer or older than those on disk.  In practice
 this may mean a two-pass approach is required:  first unpack the archive
 normally (with or without freshening/updating existing files), then

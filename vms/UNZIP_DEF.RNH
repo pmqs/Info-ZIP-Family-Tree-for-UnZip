@@ -54,12 +54,14 @@
 .!              updated the documentation of the VMS exit codes.
 .!      02-010          S. Schweda, C. Spieler  28-Dec-2007 21:28
 .!              Added description for the -D "timestamp restoration" option.
+.!      03-001          S. Schweda              05-Oct-2012
+.!              General update for version 6.10c09.  Still imperfect.
 .!
 .noflags
-.lm4 .rm72
-.indent -4
+.lm2 .rm70
+.indent -2
 1 UnZip
-.br
+.sk
 UnZip lists, tests, or extracts files from a ZIP archive (an archive
 format commonly used on many different systems).  The default behavior
 (with no options) is to extract into the current directory (and
@@ -68,60 +70,80 @@ companion program, Zip, creates ZIP archives.
 .sk
 Info-ZIP UnZip and Zip were intended to be compatible with archives
 created by PKWARE's PKZIP and PKUNZIP programs (originally for MS-DOS),
-but in many cases the program options or default behaviors differ. 
-Nowadays, many other programs are available which work with ZIP
+but in many cases the program options or default behaviors
+differ.  Nowadays, many other programs are available which work with ZIP
 archives.
+.sk
+This help file describes the Unix-style command-line edition of
+UnZip.  A VMS CLI edition is also available, with a separate help file.
+.sk
+Format
+.sk
+.literal
+  unzip [ unzip_options ] [ file[.zip] ] [ member ... ]
+  unzip -Z [ zipinfo_options ] [ file[.zip] ] [ member ... ]
+.end literal
 .sk
 Note: Beginning with UnZip version 6.10, the old command-line parser has
 been replaced by one like the one used in Zip.  One significant change
 is that option negation now uses a TRAILING hyphen ("-"), so, for
 example, -B- negates the -B option.  This change was made because a
-double hyphen ("--") now introduces a long option.  To list all
-available options for a particular UnZip program, use the command:
-.lm+4;.literal
-unzip --show-options
-.end literal;.lm-4
+double hyphen ("--") now introduces a long option.
 .sk
-To display the extended help, use the command:
-.lm+4;.literal
-unzip -hh
-.end literal;.lm-4
-The extended help may be more current than this manual page, especially
+To display the basic built-in help, use the command:
+.br
+.literal
+  unzip -h
+.end literal
+.sk
+To display the extended built-in help, use the command:
+.br
+.literal
+  unzip -hh
+.end literal
+.sk
+The built-in help may be more current than this help file, especially
 between full product releases.
 .sk
-Usage:
-.lm+4;.literal
-unzip [ unzip_options ] [ file[.zip] ] [ member ... ]
-unzip -Z [ zipinfo_options ] [ file[.zip] ] [ member ... ]
-.end literal;.lm-4
-.!------------------------------------------------------------------------------
-.indent -4
-2 Parameters
-.sk;.indent -4
+To list all available options for a particular UnZip program, use the
+command:
+.br
+.literal
+  unzip --show-options
+.end literal
+.sk
+This report will not include any options which are available only on
+other system types, or options which must be enabled at build-time but
+were not enabled in the particular UnZip program being used.
+.!----------------------------------------------------------------------
+.indent -2
+2 Command_Parameters
+.sk;.indent -2
 file[.zip]
 .sk
 File path/name of a ZIP archive.  A wildcard name may be used to specify
 multiple ZIP archives to be processed in one command.  On VMS systems,
 any of the standard wildcards for a directory/file specification may be
 used: "...", "*", or "%" (or, since VMS V7.2, "?").  The default archive
-file specification is "[]*.ZIP".
+file specification is ".ZIP".
 .sk
 Note that a ".zip" or ".ZIP" file type on an archive is merely a
 convention, not a requirement.  For example, a self-extracting ZIP
 archive named "fred" or "fred.exe" could be processed as if it were an
 ordinary archive; just specify the actual file name with its actual name
 ending (if any), whatever that may be.
-.sk;.indent -4
+.sk;.indent -2
 member ...
 .sk
 An optional list of archive members to be processed, separated by
-spaces.  Unix-like ("globbing") wildcard patterns may be used to match
-multiple members:
+spaces.  If no member list is specified, then all archive members are
+processed.  Unix-like ("globbing") wildcard patterns may be used to
+match multiple members:
 .sk
 .literal
     *      Matches a sequence of 0 or more characters.
     ?      Matches exactly 1 character.
-    [...]  Matches any single character found inside the brackets. 
+    [...]  Matches any single character found inside the brackets.
            Ranges are specified by a beginning character, a hyphen, and
            an ending character.  If an exclamation point ("!") or a
            caret ("^") follows the left bracket, then the range of
@@ -130,106 +152,1300 @@ multiple members:
            considered a match.  To specify a literal left bracket, use
            the three-character sequence "[[]".
 .end literal
-.sk
-Member name patterns should be quoted to avoid case changes by DCL
-and/or the C RTL.
-.sk
-
-
-
-
-
-
-
-.sk;.indent -4
-[-x xlist]
-.sk
-An optional list of archive members to be excluded from processing.  The xlist
-overrides any files included in the normal list.
-.sk;.indent -4
-[-d out_dir]
-.sk
-Optional directory specification to be used as target root directory
-for files to be extracted.  Directory should be specified in "[.foo]"
-format rather than "foo.dir" or "foo/" format.
-.!------------------------------------------------------------------------------
-.indent -4
-2 Options
+.!----------------------------------------------------------------------
+.indent -2
+2 Options_Primary_Mode
 .br
-The default action of UnZip is to extract all zipfile entries.  The following
-options and modifiers can be provided:
-.sk;.literal
-   -Z   ZipInfo mode
-   -c   extract files to SYS$OUTPUT (terminal)
-   -f   freshen existing files (replace if newer); create none
-   -h   show brief help screen and exit quietly
-   -l   list archive files (short format)
-   -p   extract files to SYS$OUTPUT; no informational messages
-   -t   test archive files
-   -T   set zipfile timestamps to that of each archive's newest entry
-   -u   update existing files; create new ones if needed
-   -v   list archive files (verbose format)
-   -z   display only the archive comment
-.end literal;.sk;.literal
- MODIFIERS
-   -a   extract text files in standard VMS text file format
-   -aa  extract all files as text
-   -b   auto-extract only binary files in fixed 512-byte record format
-   -bb  extract all files as binary in fixed 512-byte record format
-   -j   junk paths (don't recreate archive's directory structure)
-   -n   never overwrite or make a new version of an existing file
-   -o   always make a new version (-oo: overwrite orig) existing file
-   -q   perform operations quietly (-qq => even quieter)
-   -C   match filenames case-insensitively
-   -D   do not restore any timestamps (--D restore them even for dirs)
-   -L   convert filenames to lowercase if created under DOS, VMS, etc.
-   -M   feed screen output through built-in "more" pager
-   -P<password> supply decryption password on the cmd line (insecure!)
-   -S   use Stream_LF record format to extract text files (with -a[a])
-   -V   retain (VMS) file version numbers
-   -X   restore owner/ACL protection info (may require privileges)
-   -Y   treat ".nnn" suffix as version number ("a.b.3" -> "a.b;3")
-   -:   allow "../" path components to traverse across top extract dir
-   -2   force creation of ODS2-compatible file names
-.end literal;.sk
-Note that uppercase options (-C, -D, -L, -M, -P, -S, -T, -V, -X, -Y, and
--Z) must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
-For example:
+Options in this group specify the primary mode of operation of
+UnZip.  Only one of these primary mode options may be specified.
+.sk
+Note that uppercase options (like -T) must be specified in quotes
+(unless SET PROCESS/PARSE_STYLE=EXTENDED is set). For example:
+.sk
+.literal
+  unzip "-VX" -a zipfile
+.end literal;
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -c
+.br;.indent -2
+-c
+.br;.indent -2
+--to-stdout
+.sk
+Primary Mode.  Extract files to stdout/screen.  This option is similar
+to the -p option except that the name of each file is displayed as it is
+extracted, and the -a option is allowed, which can provide automatic
+ASCII-EBCDIC conversion, where appropriate.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -f
+.br;.indent -2
+-f
+.br;.indent -2
+--freshen
+.sk
+Primary Mode.  Freshen existing files.  That is, extract only those
+files that already exist on disk and that are newer than the disk
+copies.  By default UnZip queries before overwriting, but the -o option
+may be used to suppress the queries.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -h
+.br;.indent -2
+-h
+.br;.indent -2
+--help
+.sk
+Primary Mode.  Display brief (roughly 24 lines) usage instructions.  See
+also -hh.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -hh
+.br;.indent -2
+-hh
+.br;.indent -2
+--long-help
+.sk
+Primary Mode.  Display extended help (more complete usage
+instructions).  See also -h.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -l
+.br;.indent -2
+-l
+.br;.indent -2
+--list
+.sk
+Primary Mode.  List archive members.  By default, a brief format is
+used, which includes the following items: member name, uncompressed
+file size ("Length"), and modification date-time of the member.  A
+summary is included at the end of the report, showing total size and
+count for all the members in the report.  Specifying a member list
+limits the report to those members.
+.sk
+Adding -v (--verbose) to an "unzip -l" command line adds the following
+items to the report: compression method, compressed size ("Size"),
+compression ratio, and 32-bit CRC.
+.sk
+In contrast to some other programs, UnZip does not include the
+12-byte encryption header in the compressed size values for a
+Traditionally encrypted member.  Therefore, compressed size and
+compression ratio figures are independent of the member's encryption
+status and show the correct compression performance.  (The complete size
+of the encrypted compressed data stream for archive members is reported
+by the more verbose ZipInfo reports.  See ZipInfo.
+.sk
+If UnZip was built with OS2_EAS enabled, then the -l report also
+includes the sizes of stored OS/2 extended attributes (EAs) and OS/2
+access control lists (ACLs).  In addition, the archive comment and
+individual member comments (if any) are displayed.
+.sk
+If a file was archived from a single-case file system (for example, the
+old MS-DOS FAT file system) and the -L option was given, the
+filename is converted to lowercase and is shown prefixed with a caret
+(^).
+.sk
+Note: If only -v (--verbose) is specified with an archive name, then
+UnZip acts as if "-l -v" were specified, and a detailed listing is
+generated.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 --license
+.sk
+Primary Mode.  Display the Info-ZIP license.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -p
+.br;.indent -2
+-p
+.br;.indent -2
+--pipe-to-stdout
+.sk
+Primary Mode.  Extract files to stdout (pipe).  Only the actual file
+data for the members are sent to stdout (no file names, or other
+information, as would be displayed with -c, and the files are always
+extracted in binary format, just as they are stored (no conversions).
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -T
+.br;.indent -2
+-T
+.br;.indent -2
+--timestamp-new
+.sk
+Primary Mode.  Set the timestamp on the archive(s) to that of the newest
+file in each one.  This corresponds to Zip's -go option, except that it
+can be used on wildcard archives (for example, "unzip -T *.zip"), and is
+much faster.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -t
+.br;.indent -2
+-t
+.br;.indent -2
+--test
+.sk
+Primary Mode.  Test archive members.  Testing means that each archive
+member is extracted in memory (expanding and decrypting, as needed), but
+not written to a file.  The resulting CRC (cyclic redundancy check, an
+enhanced checksum) of the extracted data is then compared with the
+original file's stored CRC value, and an error message is emitted if a
+CRC mismatch is detected.
+.sk
+Adding -v to -t adds some diagnostic information to the report for
+archive members with LZMA or PPMd compression.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -u
+.br;.indent -2
+-u
+.br;.indent -2
+--update
+.sk
+Primary mode.  Update existing files and create new ones if
+needed.  This mode performs the same function as the Freshen (-f) mode,
+extracting (with query) files that are newer than those with the same
+name on disk, but it also extracts those files that do not already exist
+on disk.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -v
+.br;.indent -2
+-v
+.br;.indent -2
+--verbose
+.sk
+Primary mode (when alone) or option.  When used as a primary mode
+(alone), and no archive is specified, an "unzip -v" command generates a
+report showing the program version, build options, and relevant
+envrironment variables.
+.sk
+When used with some other primary mode option, -v can make output more
+verbose (detailed).
+.sk
+If no other primary mode is specified, and an archive is specified, then
+UnZip acts as if "-l -v" were specified, and a detailed listing is
+generated.  See -l.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -z
+.br;.indent -2
+-z
+.br;.indent -2
+--zipfile-comment
+.sk
+Primary mode.  Display only the archive comment.
+.!----------------------------------------------------------------------
+.indent -2
+2 Options_Ordinary
+.br
+Options in this group modify the operation of UnZip.
+.sk
+Note that uppercase options (like -V) must be specified in quotes
+(unless SET PROC/PARSE=EXTEND is set). For example:
 .sk;.literal
     unzip "-VX" -a zipfile
 .end literal;.sk
-When extracting to SYS$OUTPUT (-c or -p options) redirected to a file,
-you may want to override the default text file conversion by specifying
-the -b option. A single "-b" option switches to "binary piping" mode
-for Zip entries marked as non-text, only. To force "binary piping" mode
-even for Zip file entries marked as text, the "-bb" option should be used.
-(Please note that a later "-a" cancels any -b option, see below.)
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -2
+.br;.indent -2
+-2
+.br;.indent -2
+--force-ods2
 .sk
-The output conversion options -b and -a may be combined to perform
-binary conversions on binary files and text conversion on text files.
-But note: For compatibility with implementation on other systems, -b cancels
-any -a option; to get the intended result, -a must be specified AFTER -b.
-And, in combination, "text" recognition takes precedence; this means
-that -bba (-bb -a) has the same effect as -ba (-b -a), and -aa overrides
-binary conversion for ALL files.
+[VMS] Convert extracted file names to ODS2-compatible names, even on an
+ODS5 file system.  By default, if the destination file system is ODS5,
+case is preserved, and extended file name characters are caret-escaped
+as needed, while if the destination file system is ODS2, invalid
+characters are replaced by underscores.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -A
+.br;.indent -2
+-A
+.br;.indent -2
+--api-help
 .sk
-The conversion option -S is only effective when used together with
--a or -aa. When specified, "text" files are written in Stream-LF record
-format instead of the VMS default of Variable-Length record format.
-(When no conversion options are specified, all non-VMS entries are always
-written as Stream-LF files.)
+[OS/2, Unix DLL] Print extended help for the DLL's application
+programming interface (API).
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -a
+.br;.indent -2
+-a
+.br;.indent -2
+--ascii
 .sk
-Please note that using the "-P<password>" option is higly insecure, the
-plaintext password may be seen by others. For this reason (and because of
-lack of space), the "-P<password>" option is not advertised on UnZip's
-online help screen.
-.!------------------------------------------------------------------------------
-.indent -4
+Convert text files.  Ordinarily, all files are extracted exactly as they
+are stored, byte-for-byte.  With -a, line endings in a text
+file are adjusted to the local standard as the file is extracted.  When
+appropriate, ASCII<-->EBCDIC conversion is also done.
+.sk
+Zip (or a similar archiving program) identifies files as "binary"
+or "text" when they are archived.  (A short-format ZipInfo report
+denotes a binary file with a "b", and a text file with a "t".)
+Zip's identification of text files may not be perfect, so UnZip prints
+"[binary]" or "[text]" as a visual check for each file it extracts with
+-a.  The -aa option forces all files to be extracted (and converted) as
+text, regardless of the supposed file type.
+.sk
+[VMS] On VMS, for archives with VMS attribute information (made with
+"zip -V"), files are always created with their original record
+formats.  For archives without VMS attribute information (not made with
+"zip -V"), all files are normally created with Stream_LF record
+format.  With -a, text files are normally created with variable-length
+record format, but adding -S gives them Stream_LF record format.  With
+-aa, all files are treated as text files.  See also -b and -S.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -B
+.br;.indent -2
+-B
+.br;.indent -2
+--backup
+.sk
+[when built with UNIXBACKUP enabled] Save a backup copy of each
+overwritten file.  The backup file gets the name of the target file with
+a tilde and optionally a unique sequence number (up to 5 digits)
+appended.  The sequence number is appended whenever another file with
+the original name plus tilde already exists.  When used together with
+the "overwrite all" option, -o, numbered backup files are never
+created.  In this case, all backup files are named as the original file
+with an appended tilde, and existing backup files are deleted without
+notice.  This feature works similarly to the default behavior of
+emacs(1) in many locations.
+.sk
+Example: the old copy of "foo" is renamed to "foo~".
+.sk
+Warning: Users should be aware that the -B option does not prevent loss
+of existing data under all circumstances.  For example, when UnZip is
+run in overwrite-all mode, an existing "foo~" file is deleted before
+UnZip attempts to rename "foo" to "foo~".  When this rename attempt
+fails (because of a file lock, insufficient privileges, or any other
+reason), the extraction of "foo~" gets cancelled, but the old
+backup file is already lost.  A similar scenario takes place when the
+sequence number range for numbered backup files gets exhausted (99999,
+or 65535 for 16-bit systems).  In this case, the backup file with the
+maximum sequence number is deleted and replaced by the new backup
+version without notice.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -b
+.br;.indent -2
+-b
+.br;.indent -2
+--binary
+.sk
+[Tandem, VMS] Selects the file record format used when extracting binary
+files.  -b may conflict or interact with -a in different ways on
+different system types.  -b is ignored on systems other than Tandem and
+VMS.
+.sk
+Zip (or a similar archiving program) identifies files as "binary" or
+"text" when they are archived.  (A short-format ZipInfo report denotes a
+binary file with a "b", and a text file with a "t".)
+.!  Zip's
+.! identification of text files may not be perfect, so UnZip prints
+.! "[binary]" or "[text]" as a visual check for each file it extracts with
+.! -b.  The -bb option forces all files to be extracted (and converted) as
+.! binary, regardless of the supposed file type.
+.sk
+[Tandem] Force the creation files with filecode type 180 ('C') when
+extracting archive members marked as "text". (On Tandem, -a is
+enabled by default, see above).
+.sk
+[VMS] On VMS, for archives with VMS attribute information (made with
+"zip -V"), files are always created with their original record
+formats.  For archives without VMS attribute information (not made with
+"zip -V"), files are normally created with Stream_LF record
+format.  With -b, binary files are created with fixed-length, 512-byte
+record format.  With -bb, all files are created with fixed-length,
+512-byte record format.  When extracting to standard output (-c or -p
+option in effect), the default conversion of text record delimiters is
+disabled for binary files (with -b), or for all files (with -bb).
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -C
+.br;.indent -2
+-c
+.br;.indent -2
+.literal
+--ignore-case    ([CMS, MVS] --CMS-MVS-lower)
+.end literal
+.sk
+Use case-insensitive name matching for names in the member list and
+the -x excluded-member list on the command line.  By default,
+case-sensitive matching is done.  For example, specifying
+"makefile" on the command line will match only "makefile" in
+the archive, not "Makefile" or "MAKEFILE".  On many systems, the local
+file system is case-insensitive, so case-insensitive name matching would
+be more natural.  With -C, "makefile" would match
+"makefile", "Makefile", or "MAKEFILE".
+.sk
+-C does not affect the search for the ZIP archive file(s), nor
+the matching of archive members to existing files on the extraction
+path.  So, on a case-sensitive file system, UnZip will never try
+to overwrite a file "FOO" when extracting a member named "foo"!
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -c
+.br;.indent -2
+-c
+.br;.indent -2
+--to-stdout
+.sk
+Primary Mode.  Extract files to stdout/screen.  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -D
+.br;.indent -2
+-D
+.br;.indent -2
+--dir-timestamps
+.sk
+Control timestamps on extracted files and directories.  By default,
+UnZip restores timestamps for extracted files, but not for directories
+it creates.  Specifying -D tells UnZip not to restore any
+timestamps.  Specifying -D- tells UnZip to restore timestamps for
+directories as well as other items.  -D- works only on systems that
+support setting timestamps for directories (currently ATheOS, BeOS,
+MacOS, OS/2, Unix, VMS, Win32).  On  other systems, -D- has no effect.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -d
+.br;.indent -2
+-d dest_dir
+.br;.indent -2
+--extract-dir dest_dir
+.sk
+Specifies a destination directory for extracted files.  By default,
+files are extracted (and subdirectories created) in the current
+directory.  With "-d dest_dir", extraction is done into the
+specified directory, instead.
+.sk
+The option and directory may be concatenated without any white space
+between them, but this may cause normal shell behavior to be
+suppressed.  For example, "-d ~" (tilde) is expanded by Unix shells into
+the name of the user's home directory, but "-d~" is treated as a literal
+"~" subdirectory of the current directory.
+.sk
+[VMS] On VMS, only a VMS-style device:[directory] specification is
+permitted.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -f
+.br;.indent -2
+-f
+.br;.indent -2
+--freshen
+.sk
+Primary Mode.  Freshen existing files.  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -h
+.br;.indent -2
+-h
+.br;.indent -2
+--help
+.sk
+Primary Mode.  Display brief (roughly 24 lines) usage instructions.  For
+details, see Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -hh
+.br;.indent -2
+-hh
+.br;.indent -2
+--long-help
+.sk
+Primary Mode.  Display complete usage instructions.  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -i
+.br;.indent -2
+-i
+.br;.indent -2
+--no-mac-ef-names
+.sk
+[MacOS (pre-OS-X)] Ignore filenames stored in MacOS extra
+fields.  Instead, the most compatible filename stored in the generic
+part of the member's header is used.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -J
+.br;.indent -2
+-J
+.br;.indent -2
+--junk-attrs
+.sk
+[BeOS] Junk file attributes.  The file's BeOS file attributes are not
+restored, only the file's data.
+.sk
+[MacOS] Ignore MacOS extra fields.  All Macintosh-specific info is
+skipped.  AppleDouble files are restored as separate files.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -j
+.br;.indent -2
+-j[=depth]
+.br;.indent -2
+--junk-dirs[=depth]
+.sk
+Junk directories on extracted files.  With -j, all directory information
+is stripped from an archive member name, so all files are extracted into
+the destination directory.  (See also -d.)
+.sk
+If a depth ("=depth", where "depth" is a positive integer) is specified,
+then that number of directory levels will be stripped from an archive
+member name.  For example, an archive member like "a/b/c/d/ee.txt" would
+normally be extracted as "[.a.b.c.d]ee.txt".  With -j, it would be
+extracted as "ee.txt".  With -j=2, the first two directory levels would
+be stripped, so it would be extracted as "[.c.d]ee.txt".
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 --jar
+.sk
+Treat archive(s) as Java JAR.  Over-simplification in Java JAR archives
+can cause UnZip to transform UTF-8 file names according to
+inappropriate (MS-DOS) rules, yielding corrupt names on extracted files
+(typically those with ASCII codes 128-255).  Archives containing a Java
+"CAFE" extra field should be detected automatically, and handled
+correctly, but not all JAR archives include that extra
+field.  Specifying --jar tells UnZip to expect UTF-8 file names,
+regardless of whether the archive contains a "CAFE" extra field.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -K
+.br;.indent -2
+-K
+.br;.indent -2
+--keep-s-attrs
+.sk
+[AtheOS, BeOS, Unix] Retain SUID/SGID/Tacky permission bits.  By
+default, these permission bits are cleared, for security reasons.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -L
+.br;.indent -2
+-L
+.br;.indent -2
+--lowercase-names
+.sk
+Convert to lowercase any filename originating on an uppercase-only
+operating system or file system.  (This was UnZip's default behavior in
+versions before 5.11.  The current default behavior is the same as the
+old behavior with the -U option.  -U is now used for another purpose.)
+.sk
+Depending on the archiver, files archived from single-case file systems
+(old MS-DOS FAT, VMS ODS2, and so on) may be stored as all-uppercase
+names; this can be ugly or inconvenient when extracting to a
+case-preserving file system such as OS/2 HPFS or a case-sensitive one
+such as on Unix.  By default UnZip lists and extracts such filenames
+exactly as they're stored (excepting truncation, conversion of
+unsupported characters, an so on).  With -L, the names of all files from
+certain systems will be converted to lowercase. With -LL, all file names
+will be down-cased, regardless of the originating file system.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -l
+.br;.indent -2
+-l
+.br;.indent -2
+--list
+.sk
+Primary Mode.  List archive members.  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -M
+.br;.indent -2
+-M    ([CMS,MVS] Or: " -m )
+.br;.indent -2
+--more
+.sk
+Pipe all output through an internal pager similar to the Unix more(1)
+command.  At the end of a screenful of output, UnZip pauses with a
+"--More--" prompt; the next screenful may be viewed by pressing the
+Enter (Return) key or the space bar.  UnZip can be terminated by
+pressing the "q" key and, on some systems, the Enter/Return key.  Unlike
+Unix more(1), there is no forward-searching or editing
+capability.  Also, UnZip doesn't notice if long lines wrap at the edge
+of the screen, effectively resulting in the printing of two or more
+lines and the likelihood that some text will scroll off the top of the
+screen before being viewed.  If the actual number of lines on the screen
+can not be determined, 24 lines will be assumed.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -N
+.br;.indent -2
+-N
+.br;.indent -2
+--comment-to-note
+.sk
+[Amiga] Extract member comments as Amiga filenotes.  Member comments are
+created with the -c option of Zip, or with the -N option of the Amiga
+port of Zip, which stores filenotes as comments.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -n
+.br;.indent -2
+-n
+.br;.indent -2
+--never-overwrite
+.sk
+When extracting, never overwrite existing files.  If a file already
+exists, skip the extraction of that file without asking.  See also
+-o (--overwrite).
+.sk
+By default, UnZip queries the user before extracting any file that
+already exists.  The user may choose to overwrite only the current file,
+overwrite all files, skip extraction of the current file, skip
+extraction of all existing files, or rename the current file (choose a
+new name for the extracted file).
+.sk
+[VMS] On VMS, the usual query choices are to create a new version of an
+existing file, to skip extraction, or to rename the current file.  In
+the case where an archive member name includes a version number, and -V
+("retain VMS file version numbers") is in effect, then an additional
+query choice is offered: to overwrite the existing file.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -O
+.br;.indent -2
+-O
+.br;.indent -2
+--oem-char-set char_set
+.sk
+[Unix] Select OEM character set char_set.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -o
+.br;.indent -2
+-o
+.br;.indent -2
+--overwrite
+.sk
+Always overwrite existing files without prompting.  This is a dangerous
+option, so use it with care.  (It is often used with -f, however, and is
+the only way to overwrite directory EAs on OS/2.)
+.sk
+By default, UnZip queries the user before extracting any file that
+already exists.
+.sk
+[Non-VMS] On non-VMS systems, the user may choose to overwrite only the
+current file, overwrite all files, skip extraction of the current file,
+skip extraction of all existing files, or rename the current file
+(choose a new name for the extracted file).
+.sk
+[VMS] On VMS, the usual query choices are to create a new version of an
+existing file, to skip extraction, or to rename the current file.  In
+the case where an archive member name includes a version number, and -V
+("retain VMS file version numbers") is in effect, then an additional
+query choice is offered: to overwrite the existing file.  In this case,
+-o selects the "new version" choice, and -oo (or "-o -o") selects the
+"overwrite" choice.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -P
+.br;.indent -2
+-P password
+.br;.indent -2
+--password password
+.sk
+Use "password" to decrypt encrypted archive members (if any).  THIS IS
+INSECURE!  Many multi-user operating systems provide ways for any user
+to see the current command line of any other user.  Even on stand-alone
+systems, there is always the threat of over-the-shoulder
+peeking.  Storing the plaintext password as part of a command line in an
+automated script can be even less secure,  Whenever possible, use the
+non-echoing, interactive prompt to enter passwords.  Where security is
+truly important, use a strong encryption method, such as AES, instead of
+the relatively weak encryption provided by Traditional ZIP
+encryption.  Or, use an external encryption program, such as GnuPG,
+before archiving the file.  (Note that Zip will probably not be able to
+do significant compression on a file which has already been encrypted.)
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -p
+.br;.indent -2
+-p
+.br;.indent -2
+--pipe-to-stdout
+.sk
+Primary Mode.  Extract files to stdout (pipe).  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -q
+.br;.indent -2
+-q
+.br;.indent -2
+--quiet
+.sk
+Perform operations quietly.  (-qq: even more quietly).  By default,
+UnZip prints the names of the files it's extracting or testing, the
+extraction methods, any member or archive comments that may be stored in
+the archive, and possibly a summary when finished with each
+archive.  The -q[q] options suppress the printing of some or all of
+these messages.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -r
+.br;.indent -2
+-r
+.br;.indent -2
+--remove-exts
+.sk
+[Tandem] Remove file extensions.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -S
+.br;.indent -2
+-S
+.br;.indent -2
+--streamlf
+.sk
+[VMS] Use Stream_LF record format when converting extracted text files
+(-a, -aa), instead of the text-file default, variable-length record
+format.
+.sk
+[VMS] On VMS, for archives with VMS attribute information (made with
+"zip -V"), files are always created with their original record
+formats.  For archives without VMS attribute information (not made with
+"zip -V"), all files are normally created with Stream_LF record
+format.  With -a, text files are normally created with variable-length
+record format, but adding -S gives them Stream_LF record format.  With
+-aa, all files are treated as text files.  See also -a and -b.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -s
+.br;.indent -2
+-s
+.br;.indent -2
+--space-to-uscore
+.sk
+[OS/2, NT, MS-DOS] convert spaces in filenames to underscores.  Because
+all these operating systems allow spaces in filenames, UnZip
+normally extracts filenames with spaces intact (for example,
+"EA DATA. SF").  Working with such file names can be awkward,
+however, so -s can be used to replace spaces with underscores.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -sc
+.br;.indent -2
+-sc
+.br;.indent -2
+--show-command
+.sk
+Show processed command line (options, arguments), and then exit.
+.sk
+Strictly speaking this is a primary-mode option, but it's intended for
+use in program development, not in normal use.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -si
+.br;.indent -2
+-si
+.br;.indent -2
+--show-pid
+.sk
+[Non-VMS] Show the UnZip program's process ID (pid) before
+performing any other work.  This value can then be used in a
+"kill -USR1 pid" command to trigger a user-triggered progress report.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -so
+.br;.indent -2
+-so
+.br;.indent -2
+--show-options
+.sk
+Display all valid program options, then exit.
+.sk
+Strictly speaking this is a primary-mode option, but it's intended for
+use in program development, not in normal use.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -T
+.br;.indent -2
+-T
+.br;.indent -2
+--timestamp-new
+.sk
+Primary Mode.  Set the timestamp on the archive(s) to that of the newest
+file in each one.  For details, see Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -t
+.br;.indent -2
+-t
+.br;.indent -2
+--test
+.sk
+Primary Mode.  Test archive members.  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -U
+.br;.indent -2
+-U
+.br;.indent -2
+--unicode
+.sk
+[UNICODE_SUPPORT] Control UTF-8 handling.  When UNICODE_SUPPORT is
+available, -U forces UnZip to escape all non-ASCII characters from UTF-8
+coded filenames as "#Uxxxx' (for UCS-2 characters, or "#Lxxxxxx" for
+unicode codepoints needing 3 octets).  This option is mainly provided
+for debugging purpose when the fairly new UTF-8 support is suspected to
+mangle up extracted filenames.
+.sk
+-UU disables the recognition of UTF-8 encoded filenames.  The handling
+of filename codings within UnZip falls back to the behavior of previous
+versions.
+.sk
+[old, obsolete usage] Leave filenames uppercase if created on MS-DOS,
+VMS, and so on.  See -L.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -u
+.br;.indent -2
+-u
+.br;.indent -2
+--update
+.sk
+Primary mode.  Update existing files and create new ones if needed.  For
+details, see Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -V
+.br;.indent -2
+-V
+.br;.indent -2
+--keep-versions
+.sk
+[Non-CMS-MVS]  Retain VMS file version numbers.  VMS files can be stored
+with a version number, in the format "file.type;##", where "##" is a
+decimal number.  By default the ";##" version numbers are stripped, but
+this option allows them to be retained.  (On file systems that limit
+filenames to particularly short lengths, the version numbers may be
+truncated or stripped regardless of this option.)
+.sk
+[Non-VMS] Note that currently, on a non-VMS system, a file with a name
+like "fred;123" will, by default, be extracted as "fred", even if the
+file did not originate on a VMS system (so that ";123" was probably not
+really a VMS version number).  Many people would consider this a bug,
+and the default behavior on non-VMS systems may be changed in the
+future.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -v
+.br;.indent -2
+-v
+.br;.indent -2
+--verbose
+.sk
+When used with some primary mode option, -v can make output more
+verbose.  See also Primary Mode options, and -l in particular.
+.sk
+Note: If only -v (--verbose) is specified with an archive name, then
+UnZip acts as if "-l -v" were specified, and a detailed listing is
+generated.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -W
+.br;.indent -2
+-W
+.br;.indent -2
+--wild-no-span
+.sk
+[WILD_STOP_AT_DIR] (Valid when the program was built with the C macro
+WILD_STOP_AT_DIR defined.)  By default, the wildcard characters "?"
+(single-character wildcard) and "*" (multi-character wildcard) match any
+character in a member path/name.  "-W" modifies the
+pattern-matching behavior for archive members so that both "?"
+(single-character wildcard) and "*" (multi-character wildcard) do not
+match the directory separator character "/".  (The two-character
+sequence "**" acts as a multi-character wildcard that includes the
+directory separator in its matched characters.)  For example, with
+"-W":
+.sk
+.literal
+    "*.c"   matches "foo.c" but not "mydir/foo.c"
+    "**.c"  matches both "foo.c" and "mydir/foo.c"
+    "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
+    "??*/*" matches "ab/foo" and "abc/foo"
+            but not "a/foo" or "a/b/foo"
+.end literal
+.sk
+This modified behavior is equivalent to the pattern matching style used
+by the shells of some of UnZip's supported target OSs (one example
+is Acorn RISC OS).  This option may not be available on systems where
+the Zip archive's internal directory separator character "/" is allowed
+as regular character in native operating system filenames.
+.sk
+[non-VMS] Currently, UnZip uses the same pattern matching rules for both
+wildcard archive file name specifications and archive member selection
+patterns on most system types.  For systems allowing "/" as regular
+filename character, the -W option would not work as expected on a
+wildcard file name specification.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -X
+.br;.indent -2
+-X
+.br;.indent -2
+--restore-info
+.sk
+[VMS, Unix, OS/2, NT, Tandem] Restore owner/protection info (UICs and
+ACL entries on VMS, or user and group info (UID/GID) on Unix, or
+access control lists (ACLs) on certain network-enabled versions of
+OS/2 (Warp Server with IBM LAN Server/Requester 3.0 to 5.0; Warp Connect
+with IBM Peer 1.0), or security ACLs on Windows NT.)  In most cases
+this will require special system privileges, and doubling the option
+(-XX) on NT instructs UnZip to use privileges for
+extraction; but on Unix, for example, a user who belongs to several
+groups can restore files owned by any of those groups, so long as the
+user IDs match the user's own. Note that ordinary file attributes are
+always restored.  This option applies only to optional, extra ownership
+info available on some operating systems. (NT's access control lists do
+not appear to be especially compatible with OS/2's, so no attempt is
+made at cross-platform portability of access privileges.  It is not
+clear under which conditions this would ever be useful anyway.)
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -x
+.br;.indent -2
+-x member ...
+.br;.indent -2
+--exclude member ...
+.sk
+An optional list of archive members to be excluded from
+processing.  Because wildcard characters normally match "/" directory
+separators (for exceptions see the option -W), this option may be used
+to exclude any files that are in subdirectories.  For example, "unzip
+foo *.[ch] -x */*" would extract all C source files (*.c, *.h) in the
+main directory, but none in any subdirectories.  Without the -x option,
+all C source files in all directories within the archive would be
+extracted.
+.sk
+When the program sees -x (--exclude) on a command line, it stops
+scanning for options, and treats every succeeding item as an archive
+member name.  To avoid confusion between member names and command
+options, it's simplest to specify -x (--exclude) and its member list as
+the last items on a command line.  Alternatively, the special name "@"
+can be used to terminate the member list (and cause the program to
+resume scanning for options).  That is, the following two commands are
+equivalent:
+.sk
+.literal
+      unzip fred.zip -b -x file1 file2 file3
+      unzip fred.zip -x file1 file2 file3 @ -b
+.end literal
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -Y
+.br;.indent -2
+-Y
+.br;.indent -2
+--dot-version
+.sk
+[VMS] Treat archive member name endings of ".nnn" (where "nnn" is a
+decimal number) as if they were VMS version numbers (";nnn").  (The
+default is to treat them as file types.)  For example:
+.sk
+.literal
+     "a.b.3" -> "a.b;3"
+.end literal
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -Z
+.br;.indent -2
+-Z
+.br;.indent -2
+--zipinfo-mode
+.sk
+ZipInfo mode.  If the first option on the command line is
+-Z, then the program runs in ZipInfo mode, which is used to display
+information about an archive and its members.  Remaining
+options are interpreted as ZipInfo options.  See ZipInfo_mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -z
+.br;.indent -2
+-z
+.br;.indent -2
+--zipfile-comment
+.sk
+Primary mode.  Display only the archive comment.  For details, see
+Options_Primary_Mode.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -$
+.br;.indent -2
+-$
+.br;.indent -2
+--volume-labels
+.sk
+[MS-DOS, OS/2, NT] restore the volume label if the extraction medium is
+removable (for example, a diskette).  Doubling the option (-$$)
+allows fixed media (hard disks) to be labeled as well.  By default,
+volume labels are ignored.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -/
+.br;.indent -2
+-/
+.br;.indent -2
+--extensions
+.sk
+[Acorn] Overrides the extension list supplied by the Unzip$Ext
+environment variable.  During extraction, filename extensions that match
+one of the items in this extension list are swapped in front of the base
+name of the extracted file.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -:
+.br;.indent -2
+-:
+.br;.indent -2
+--do-double-dots
+.sk
+[all but Acorn, VM/CMS, MVS, Tandem] Allows UnZip to extract
+archive members into locations outside of the current extraction
+destination directory (and its subdirectories).
+.sk
+For security reasons, UnZip normally removes "parent directory"
+path components ("../") from the path names of archive members as they
+are extracted.  This safety feature (new for version 5.50) prevents
+UnZip from accidentally writing files to directories outside
+the current destination directory tree.  The -: option sets UnZip back
+to its previous, more liberal behavior, allowing exact extraction of
+archives that use "../" path components to create multiple directory
+trees at or above the level of the destination directory.
+.sk
+This option does not enable writing explicitly to the root
+directory ("/").  To achieve this, it is necessary to set the extraction
+target folder to "/" (by using an option like "-d /").  However,
+when the -: option is specified, it is still possible implicitly
+to write to the root directory if member paths specifying enough "../"
+path components.
+.sk
+Use this option with extreme caution.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+3 -^
+.br;.indent -2
+-^
+.br;.indent -2
+--control-in-name
+.sk
+[Unix] Allow control characters in file names of extracted ZIP archive
+members.  On Unix, a file name may contain any (8-bit) character code
+with the two exceptions of "/" (the directory delimiter) and NUL (0x00,
+the C string-termination character), unless the specific file system has
+more restrictive conventions.  Generally, this allows embedding ASCII
+control characters or escape sequences in file names.  However, this
+feature allows the use of malicious file names which can cause various
+kinds of bad trouble when displayed on a user's
+terminal/emulator.  (Even a file name with unprintable but otherwise
+harmless characters can cause problems for users.)
+.sk
+For these reasons, by default, UnZip applies a filter that removes
+potentially dangerous control characters from the extracted file
+names.  The -^ option overrides this filter in the rare case that
+embedded filename dangerous control characters are to be intentionally
+restored.
+.!----------------------------------------------------------------------
+.indent -2
+2 Environment_Options
+.br
+UnZip's default behavior may be modified by placing command-line options
+in an environment variable.  This can be done with any option, but it is
+probably most useful options like -a (auto-convert text files), -L
+(downcase file names from systems with all uppercase file names), -C
+(use case-insensitive name matching), -q (quiet), -o (always overwrite),
+or -n (never overwrite).
+.sk
+For UnZip, the environment variable name on VMS is UNZIP_OPTS
+(non-VMS: UNZIP).  The name on VMS is different to avoid conflict with
+a foreign-command DCL symbol, UNZIP.  For compatibility with Zip, if
+UNZIP_OPTS is not defined, then UnZip will use UNZIPOPT the same
+way.
+.sk
+For ZipInfo ("unzip -Z"), the environment variable name on VMS is
+ZIPINFO_OPTS (non-VMS: ZIPINFO).  For compatibility with Zip,
+if ZIPINFO_OPTS is not defined, then ZipInfo will use ZIPINFOOPT the
+same way.
+.sk
+For example, to make UnZip act as quietly as possible, only
+reporting errors, one could use commands like the following:
+.sk
+.literal
+Unix Bourne (or similar) shell:
+  UNZIP='-q -q'; export UNZIP
+.end literal
+.sk
+.literal
+Unix C shell:
+  setenv UNZIP '-q -q'
+.end literal
+.sk
+.literal
+OS/2 or MS-DOS:
+  set UNZIP="-q -q"
+.end literal
+.sk
+.literal
+VMS (with quotation to preserve lower case in DCL):
+  define UNZIP_OPTS "-q -q"       ! Logical name, or
+  UNZIP_OPTS = "-q -q"            ! DCL symbol.  (Either works.)
+.end literal
+.sk
+Environment options are treated the same as any other command-line
+options, except that they are effectively the first options on the
+command line.  To override an environment option, one may use an
+explicit option to cancel or override it.  For example, to override one
+of the "quiet" flags in the example above, use a command like:
+.sk
+.literal
+  unzip -q- [other options] archive.zip
+.end literal
+.sk
+The leading hyphen is the normal option character, and the trailing one
+negates the option, canceling one level of quietness.  To cancel
+multiple "quiet" flags, use multiple -q- options:
+.sk
+.literal
+  unzip -t -q- -q- archive
+  unzip -q- -q- -t archive
+.end literal
+.sk
+Note that multiple one-character options like "-q" and "-q" can be
+combined into a single "-qq", but it's generally clearer to keep each
+instance of each option separate.  Similarly, negated one-character
+options can be combined, as with "-q-q-", but "-q- -q-" is
+generally clearer.
+.sk
+The examples show short (one-character) options, but long ("--")
+options are also allowed.
+.!----------------------------------------------------------------------
+.indent -2
+2 Encryption_Decryption
+.br
+Zip and UnZip have long supported a relatively weak encryption method,
+which we call Traditional ZIP encryption.  The source code for
+Traditional encryption is included in the source kits, and support for
+Traditional encryption is enabled by default.  (Build-time C macro:
+CRYPT_TRAD.)
+.sk
+Beginning with UnZip version 6.10 and Zip version 3.1,
+these programs also offer a stronger, Advanced Encryption Standard (AES)
+encryption method, which we call AES WinZip/Gladman (AES_WG)
+encryption.  (The encryption code was supplied by Brian Gladman, and the
+archive format is intended to be compatible with that used by the
+WinZip program.  WinZip is a registered trademark of WinZip
+International LLC.)  The source code for AES_WG encryption is
+distributed in a separate kit (for export control reasons), and support
+for AES_WG encryption must be enabled explicitly at build
+time.  (Build-time C macro: CRYPT_AES_WG.)  See the INSTALL file in the
+source kit for details on how to enable AES_WG encryption (or how to
+disable Traditional encryption).
+.sk
+For details on the WinZip AES scheme, see:
+.br
+.indent 4
+http://www.winzip.com/aes_info.htm
+.sk
+For information on the separate AES_WG source kit, see:
+.br
+.indent 4
+ftp://ftp.info-zip.org/pub/infozip/crypt/
+.br
+.indent 4
+ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
+.sk
+Normally, encryption passwords are supplied by the user interactively
+when requested by the program.  See the -P option for a (less secure)
+method of specifying a password on the command line.
+.sk
+With Traditional encryption, when decrypting, a password will be checked
+against header data, and used if it appears to be correct.  The correct
+password will always check out against the header data, but there is a
+1-in-256 chance that an incorrect password will as well.  (This is a
+security feature of the PKWARE archive format; it helps prevent
+brute-force attacks that might otherwise gain a large speed advantage by
+testing only the header.)  In the case that an incorrect password is
+given but it passes the header test anyway, either an incorrect CRC will
+be generated for the extracted data or else UnZip will fail during
+the extraction because the "decrypted" bytes do not constitute a valid
+compressed data stream.
+.sk
+If the first password fails the header check on some file, UnZip
+will prompt for another password, and so on until all files are
+extracted.  If a password is not known, entering a null password (that
+is, just a carriage return or "Enter") is taken as a signal to skip all
+further prompting. Only unencrypted files in the archive(s) will
+thereafter be extracted.  (The situation is actually a little more
+complicated.  Some old versions of Zip and ZipCloak allowed
+null passwords, so UnZip checks each encrypted file to see if the
+null password works.  This may result in "false positives" and
+extraction errors, as noted above.)
+.sk
+Archives encrypted with 8-bit-character passwords (for example,
+passwords with accented European characters) may not be portable across
+systems or to other archivers.  This problem stems from the use of
+multiple encoding methods for such characters, including Latin-1 (ISO
+8859-1) and OEM code page 850. DOS PKZIP 2.04g uses the OEM code
+page; Windows PKZIP 2.50 uses Latin-1 (and is therefore
+incompatible with DOS PKZIP; Info-ZIP uses the OEM code page on
+DOS, OS/2 and Win3.x ports but ISO coding (Latin-1 etc.) everywhere
+else; and Nico Mak's WinZip 6.x does not allow 8-bit-character
+passwords at all.  UnZip 5.3 (or newer) attempts to use the
+default character set first (e.g., Latin-1), followed by the alternate
+one (e.g., OEM code page) to test passwords.  On EBCDIC systems, if both
+of these fail, EBCDIC encoding will be tested as a last resort.  (EBCDIC
+is not tested on non-EBCDIC systems, because there are no known
+archivers that encrypt using EBCDIC encoding.)  ISO character encodings
+other than Latin-1 are not supported.  The new addition of (partial)
+Unicode (UTF-8) support in UnZip 6.0 has not yet been adapted to
+the encryption password handling in UnZip.  On systems that use
+UTF-8 as native character encoding, UnZip simply tries decryption
+with the native UTF-8 encoded password; the built-in attempts to check
+the password in translated encoding have not yet been adapted for UTF-8
+support and will consequently fail.
+.!----------------------------------------------------------------------
+.indent -2
+2 Examples
+.br
+To use UnZip to extract all members of the archive letters.zip into the
+current directory and subdirectories below it, creating any
+subdirectories as necessary:
+.sk
+.literal
+  unzip letters
+.end literal
+.sk
+To extract all members of letters.zip into the current directory only:
+.sk
+.literal
+  unzip -j letters
+.end literal
+.sk
+To test letters.zip, printing only a summary message indicating
+whether the archive is OK or not:
+.sk
+.literal
+  unzip -t -q letters
+.end literal
+.sk
+To test all ".zip" archives in the current directory, printing
+only the summaries:
+.sk
+.literal
+  unzip -t -q *.zip
+.end literal
+.sk
+(On a Unix system, the wildcard archive name would typically need to be
+quoted to keep a a Unix shell from expanding ("globbing") it.  This is
+not necessary on VMS.)
+.sk
+The following command extracts to standard output all members of
+letters.zip whose names end in ".tex", auto-converting to the
+local end-of-line convention, in Stream_LF record format, and piping the
+output into TYPE /PAGE:
+.sk
+.literal
+  pipe unzip -c -a -S letters *.tex | type /page sys$input
+.end literal
+.sk
+To extract from source.zip all Fortran and C source files (*.f,
+*.c, *.h) and Makefile into the SYS$SCRATCH directory:
+.sk
+.literal
+  unzip source.zip *.[fch] Makefile -d sys$scratch
+.end literal
+.sk
+To extract all FORTRAN and C source files, regardless of case (for
+example, both *.c and *.C, and any makefile, Makefile, MAKEFILE or
+similar):
+.sk
+.literal
+  unzip -C source.zip *.[fch] makefile -d sys$scratch
+.end literal
+.sk
+The following command extracts only newer versions of the files already
+in the current directory, without querying.  (Note: Be careful of
+extracting in one timezone an archive created in another.  ZIP archives
+created by Zip versions before 2.1 contain no timezone
+information, and a "newer" file from an eastern timezone may, in fact,
+be older):
+.sk
+.literal
+  unzip -f -o sources
+.end literal
+.sk
+To extract newer versions of the files already in the current directory
+and to create any files not already there (same caveat as previous
+example):
+.sk
+.literal
+  unzip -u -o sources
+.end literal
+.sk
+To display a configuration report showing the program version, the OS
+and compiler used to build it, a list of optional features enabled at
+build time, and the values of all the relevant environment variables:
+.sk
+.literal
+  unzip -v
+.end literal
+.sk
+In the last five examples, assume that UNZIP_OPTS is set to -q.  To do a
+(singly) quiet listing:
+.sk
+.literal
+  unzip -l file.zip
+.end literal
+.sk
+To do a doubly quiet listing:
+.sk
+.literal
+  unzip -l -q file.zip
+.end literal
+.sk
+(Note that the ".zip" is generally not necessary.)  To do a standard
+listing:
+.sk
+.literal
+  unzip -l -q- file.zip
+.end literal
+.sk
+or:
+.sk
+.literal
+  unzip -lq- file.zip
+.end literal
+.sk
+or:
+.sk
+.literal
+  unzip -q-l file.zip
+.end literal
+.sk
+.!----------------------------------------------------------------------
+.indent -2
 2 Exit_Status
 .br
-On VMS, UnZip's UNIX-style exit values are mapped into VMS-style status
-codes with facility code 1954 = %x7A2, and with the inhibit-message
-(%x10000000) and facility-specific (%x00008000) bits set:
+UnZip's exit status approximates the exit codes defined by
+PKWARE.  On VMS, UnZip's UNIX-style exit values are translated into
+VMS-style status codes with facility code 1954 = %x7A2, and with the
+inhibit-message (%x10000000) and facility-specific (%x00008000) bits
+set:
 .sk
 .literal
    %x17A28001                        normal exit
@@ -248,80 +1464,713 @@ The UnZip VMS exit codes include severity values which approximate those
 defined by PKWARE, as shown in the following table:
 .literal
 
-    VMS     UnZip err
-  severity    code     Error description
- ----------+---------+----------------------------------------------
-  Success       0      Normal.  No errors or warnings detected.
-  Warning       1      One or more warnings  were  encountered, but
-                       processing  completed  successfully  anyway.
-                       This  includes  archives  where  one or more
-                       (but not all)  files were skipped because of
-                       unsupported compress or encrypt methods,  or
-                       bad passwords.
-  Error         2      Error in the archive format.  Processing may
-                       have completed  successfully  anyway.   Some
-                       defects in archives (made by other programs)
-                       can be repaired transparently.
-  Fatal         3      Severe error in the archive format. Process-
-                       ing probably failed immediately.
-  Fatal         4      Memory allocation failed in program initial-
-                       ization.
-  Fatal         5      Memory  allocation  failed  in password pro-
-                       cessing.
-  Fatal         6      Memory allocation failed while decompressing
-                       to disk.
-  Fatal         7      Memory allocation failed while decompressing
-                       in memory.
-  Fatal         8      Memory  allocation  failed    (reserved  for
-                       future use).
-  Error         9      Specified archive files were not found.
-  Error        10      Invalid command-line options or parameters.
-  Error        11      No files matched selection criteria.
-  Fatal        50      Disk full.
-  Fatal        51      Unexpected  end-of-file  while  reading  the
-                       archive.
-  Error        80      User interrupt (Ctrl/C).
-  Error        81      No files were processed,  because  of unsup-
-                       ported compress or encrypt methods.
-  Error        82      No  files  were  processed,  because  of bad
-                       password(s).
-  Fatal        83      Large-file archive could not be processed by
-                       this small-file program.
+    VMS        UnZip
+  severity   err code   Error description
+ ----------+----------+----------------------------------------------
+  Success       0       Normal.  No errors or warnings detected.
+  Warning       1       One or more warnings were encountered, but
+                        processing completed successfully.  This
+                        includes archives where one or more (but not
+                        all) files were skipped because of an
+                        unsupported compression or encryption method,
+                        or a bad encryption password.
+  Error         2       Error in the archive format.  Processing may
+                        or may not have completed  successfully.
+  Fatal         3       Severe error in the archive format.
+                        Processing probably failed immediately.
+  Fatal         4       Memory allocation failed in program
+                        initialization.
+  Fatal         5       Memory  allocation or terminal I/O failed in
+                        password processing.
+  Fatal         6       Memory allocation failed while decompressing
+                        to disk.
+  Fatal         7       Memory allocation failed while decompressing
+                        in memory.
+  Fatal         8       Memory allocation failed.  (Currently not
+                        used.)
+  Error         9       Specified archive files were not found.
+  Error        10       Invalid command-line options or parameters.
+  Error        11       No matching files were found.
+  Fatal        50       Disk (file system) filled during extraction.
+  Fatal        51       Unexpected end-of-file while reading the
+                        archive.
+  Error        80       User interrupt (Ctrl/C).
+  Error        81       No files were processed, because of
+                        unsupported compression or encryption
+                        methods.
+  Error        82       No files were processed, because of bad
+                        encryption password(s).
+  Fatal        83       Large-file archive could not be processed by
+                        this small-file program.
 .end literal
-.!------------------------------------------------------------------------------
-.indent -4
-2 Logical_Names
+.!----------------------------------------------------------------------
+.indent -2
+2 Bugs
 .br
-UnZip allows to modify its default behaviour by specifying option defaults
-via the UNZIP_OPTS logical name.
-For example, the following will cause UnZip to restore owner/protection
-information and perform all operations at quiet-level 1 by default:
+Multi-part archives are not yet supported, except in conjunction with
+Zip.  (All parts must be concatenated together in order, and then
+"zip -F" (for Zip 2.x) or "zip -FF" (for Zip 3.x) must be
+performed on the concatenated archive in order to "fix" it.  Also,
+zip 3.0 and later can combine multi-part (split) archives into a
+combined single-file archive using "zip -s- inarchive -O
+outarchive".  See the zip manual page for more information.)  This may
+be corrected in the next major release.
+.sk
+Archives read from standard input are not yet supported, except with
+UnZip (and then only the first member of the archive can be extracted).
+.sk
+Archives encrypted with 8-bit-character passwords (such as passwords
+with accented European characters) may not be portable across systems
+and/or other archivers.  See also Encryption_Decryption.
+.sk
+UnZip's -M ("--more") option tries to take into account
+automatic wrapping of long lines. However, the code may fail to detect
+the correct wrapping locations. First, TAB characters (and similar
+control sequences) are not taken into account, they are handled as
+ordinary printable characters. Second, depending on the actual system
+type, UnZip may not detect the true terminal/emulator geometry,
+but instead may rely on "commonly used" default dimensions.  The correct
+handling of tabs would require the implementation of a query for the
+actual tab setup on the output terminal/emulator.
+.sk
+[Unix] Unix special files such as FIFO buffers (named pipes), block
+devices and character devices are not restored even if they are somehow
+represented in the archive, nor are hard-linked files
+relinked.  Basically, the only file types restored by UnZip are
+regular files, directories, and symbolic (soft) links.
+.sk
+[OS/2] Extended attributes for existing directories are only updated if
+the -o ("--overwrite") option is given.  This is a limitation of the
+operating system; because directories only have a creation time
+associated with them, UnZip has no way to determine whether the stored
+attributes are newer or older than those on disk.  In practice this may
+mean a two-pass approach is required:  first unpack the archive normally
+(with or without freshening/updating existing files), then overwrite
+just the directory entries (for example, "unzip -o foo */").
+.sk
+Note that uppercase options (-C, -D, -L, -M, -P, -S, -T, -V, -X, -Y, and
+-Z) must be specified in quotes (unless SET PROC/PARSE=EXTEND is set).
+For example:
 .sk;.literal
-    define UNZIP_OPTS "-qX"
+  unzip "-VX" -a zipfile
 .end literal;.sk
-Note that the quotation marks here are required to preserve lowercase options
-(opposite of the command-line behavior).
-To negate a default option on the command line, add one or more minus
-signs before the option letter, in addition to the leading switch character
-`-':
-.sk;.literal
-    unzip --ql zipfile
-.end literal
-or
+When extracting to SYS$OUTPUT (-c or -p options) redirected to a file,
+you may want to override the default text file conversion by specifying
+the -b option. A single "-b" option switches to "binary piping" mode
+for Zip entries marked as non-text, only. To force "binary piping" mode
+even for Zip file entries marked as text, the "-bb" option should be
+used.  (Please note that a later "-a" cancels any -b option, see below.)
+.sk
+The output conversion options -b and -a may be combined to perform
+binary conversions on binary files and text conversion on text
+files.  But note: For compatibility with implementation on other
+systems, -b cancels any -a option; to get the intended result, -a must
+be specified AFTER -b. And, in combination, "text" recognition takes
+precedence; this means that -bba (-bb -a) has the same effect as -ba (-b
+-a), and -aa overrides binary conversion for ALL files.
+.sk
+The conversion option -S is only effective when used together with
+-a or -aa. When specified, "text" files are written in Stream_LF record
+format instead of the VMS default of Variable-Length record
+format.  (When no conversion options are specified, all non-VMS entries
+are always written as Stream_LF files.)
+.sk
+Please note that using the "-P<password>" option is higly insecure, the
+plaintext password may be seen by others. For this reason (and because of
+lack of space), the "-P<password>" option is not advertised on UnZip's
+online help screen.
+.!----------------------------------------------------------------------
+.indent -2
+2 URL
+.br
+The Info-ZIP main Web page is:
+.br
+.indent 4
+http://www.info-zip.org/
+.sk
+FTP access is available, too:
+.br
+.indent 4
+ftp://ftp.info-zip.org/pub/infozip/
+.!======================================================================
+.indent -2
+2 ZipInfo_mode
+.br
+If the first option on the UnZip command line is "-Z", then the program
+runs in ZipInfo mode.  Remaining options are interpreted as ZipInfo
+options.
+.sk
+ZipInfo reports detailed information about a ZIP archive and its
+members.  This information may include file access permissions,
+compression method, encryption method, version and operating system (or
+file system) of the archive-creating program, and so on.  The default
+behavior (with no options) is to show a single-line entry for each
+member in the archive, with a header and a trailer providing summary
+information for the entire archive.  The format is a cross between Unix
+"ls -l" and "unzip -lv" output.  See Detailed_Description.  ZipInfo is
+the same program as UnZip.  (On Unix, "zipinfo" may be a
+link to "unzip".  On VMS, "zipinfo" is normally a DCL symbol defined as
+"''unzip' -Z".)  However, ZipInfo support may have been disabled when
+UnZip was built.
+.sk
+Format
+.sk
+.indent 4
+zipinfo [ zipinfo_options ] [ file[.zip] ] [ member ... ]
+.br
+.indent 4
+unzip -Z [ zipinfo_options ] [ file[.zip] ] [ member ... ]
+.!----------------------------------------------------------------------
+.indent -2
+3 Command_Parameters
+.sk;.indent -2
+file[.zip]
+.sk
+File path/name of a ZIP archive.  A wildcard name may be used to specify
+multiple ZIP archives to be processed in one command.  On VMS systems,
+any of the standard wildcards for a directory/file specification may be
+used: "...", "*", or "%" (or, since VMS V7.2, "?").  The default archive
+file specification is "[]*.ZIP".
+.sk
+Note that a ".zip" or ".ZIP" file type on an archive is merely a
+convention, not a requirement.  For example, a self-extracting ZIP
+archive named "fred" or "fred.exe" could be processed as if it were an
+ordinary archive; just specify the actual file name with its actual name
+ending (if any), whatever that may be.
+.sk;.indent -2
+member ...
+.sk
+An optional list of archive members to be processed, separated by
+spaces.  Unix-like ("globbing") wildcard patterns may be used to match
+multiple members:
+.sk
 .literal
-    unzip -l-q zipfile
-.end literal;.sk
-At present it is not possible to decrement an option below zero--that is,
-more than a few minuses have no effect.
-.sk
-UNZIP_OPTS may be defined as a symbol rather than a logical name, but if
-both are defined, the logical name takes precedence.
-.!-----------------------------------------------------------------------------
-.indent -4
-2 Authors
+    *      Matches a sequence of 0 or more characters.
+    ?      Matches exactly 1 character.
+    [...]  Matches any single character found inside the brackets.
+           Ranges are specified by a beginning character, a hyphen, and
+           an ending character.  If an exclamation point ("!") or a
+           caret ("^") follows the left bracket, then the range of
+           characters within the brackets is complemented.  That is,
+           anything except the characters inside the brackets is
+           considered a match.  To specify a literal left bracket, use
+           the three-character sequence "[[]".
+.end literal
+.!----------------------------------------------------------------------
+.indent -2
+3 Options_Primary_Format
 .br
-Info-ZIP; currently maintained by Christian Spieler.  VMS support maintained
-by Christian Spieler and Hunter Goatley.  Originally based on a program
-by Samuel H. Smith.
+Options in this group (-1, -2, -l, -m, -s, -v) specify the primary
+report format of ZipInfo.  Only one of these primary format options may
+be specified.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -1
+.br;.indent -2
+-1
+.br;.indent -2
+--names-only
 .sk
-VMS on-line help ported from UNZIP.TXT by Hunter Goatley.
+Primary Format.  Show member names only, one per line.  This option
+excludes all others, and the report does not include headers, trailers,
+or archive comments.  This format may be useful with Unix shell (or
+other) scripts.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -2
+.br;.indent -2
+-2
+.br;.indent -2
+--names-mostly
+.sk
+Primary Format.  Show member names only, one per line (as with "-1"),
+but allow headers (-h), trailers (-t), and archive comments (-z), if
+requested explicitly.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -l
+.br;.indent -2
+-l
+.br;.indent -2
+--long-list
+.sk
+Primary Format.  Show member info in long Unix "ls -l" format.  Like the
+-m format, except that the compressed size (in bytes) is printed instead
+of the compression ratio.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -m
+.br;.indent -2
+-m
+.br;.indent -2
+--medium-list
+.sk
+Primary Format.  Show member info in medium-length Unix "ls -l"
+format.  Like the -s format, except that the compression factor,
+expressed as a percentage, is also included.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -s
+.br;.indent -2
+-s
+.br;.indent -2
+--short-list
+.sk
+Primary Format.  Show member info in short Unix "ls -l" format.  This is
+the default behavior, unless -h or -t is specified.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -v
+.br;.indent -2
+-v
+.br;.indent -2
+--verbose
+.sk
+Primary Format.  The verbose report is very detailed, and mostly
+self-explanatory, but it does assume some familiarity with the ZIP
+archive format.  It also includes the archive comment, if any.  Extra
+fields in the central directory are broken dowm into subfields, with
+brief descriptions of recognized subfields (or abbreviated dumps of
+unrecognized subfields).
+.!----------------------------------------------------------------------
+.indent -2
+3 Options_Ordinary
+.br
+Options in this group modify the operation or report format of ZipInfo.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -C
+.br;.indent -2
+-C
+.br;.indent -2
+.literal
+--ignore-case    ([CMS, MVS] --CMS-MVS-lower)
+.end literal
+.sk
+Use case-insensitive name matching for names in the member list and
+the -x excluded-member list on the command line.  By default,
+case-sensitive matching is done.  For example, specifying
+"makefile" on the command line will match only "makefile" in
+the archive, not "Makefile" or "MAKEFILE".  On many systems, the local
+file system is case-insensitive, so case-insensitive name matching would
+be more natural.  With -C, "makefile" would match
+"makefile", "Makefile", or "MAKEFILE".
+.sk
+/CASE_MATCH does not affect the search for the ZIP archive file(s).
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -h
+.br;.indent -2
+-h
+.br;.indent -2
+--header
+.sk
+Include a header in the report, showing the archive name, the archive
+size (in bytes), and the number of members in the archive.
+.sk
+For the Unix-format reports (options -l, -m, -s), the header is included
+by default, if no archive members are specified.  If -h is specified
+alone, that is, without one of the Unix-format options, and without a
+member list, then only the header lines will be put out.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -M
+.br;.indent -2
+-M    ([CMS,MVS] Or: -m)
+.br;.indent -2
+--more
+.sk
+Pipe all output through an internal pager similar to the Unix
+more(1) command.  At the end of a screenful of output,
+Zipinfo pauses with a "--More--" prompt; the next screenful
+may be viewed by pressing the Enter (Return) key or the space
+bar.  ZipInfo can be terminated by pressing the "q" key, or, on
+some systems, the Enter/Return key.  Unlike Unix more(1), there is
+no forward-searching or editing capability.  Also, ZipInfo doesn't
+notice if long lines wrap at the edge of the screen, effectively
+resulting in the printing of two or more lines and the likelihood that
+some text will scroll off the top of the screen before being viewed.  If
+the actual number of lines on the screen can not be determined, 24 lines
+will be assumed.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -T
+.br;.indent -2
+-T
+.br;.indent -2
+--decimal-time
+.sk
+Show the file date-times in a sortable, all-numeric, "YYYYMMDD.hhmmss"
+format.  The default date format is an alpha-numeric
+"YY-Mmm-DD hh:mm".  For example ("-s", "-s -T"):
+.sk
+.literal
+-rw-a--     3.1 fat   211916 tx defX 10-Jun-18 00:27 zip31c/zip.c
+-rw-a--     3.1 fat   211916 tx defX 20100618.002703 zip31c/zip.c
+.end literal
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -t
+.br;.indent -2
+-t
+.br;.indent -2
+--totals
+.sk
+Include a totals summary at the end of the report, showing the number of
+members in the report, the sum of their uncompressed sizes, the sum of
+their compressed sizes, and the compression factor as a percentage.
+.sk
+For the Unix-format reports (options -l, -m, -s), the totals summary is
+included by default, if no archive members are specified.  If -t is
+specified alone, that is, without one of the Unix-format options, and
+without a member list, then only the totals summary trailer lines will
+be put out.
+.sk
+The total "bytes compressed" reported includes only the actual data, not
+the ZIP archive meta-data, so the size of the archive will always be
+greater than this value.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -U
+.br;.indent -2
+-U
+.br;.indent -2
+--unicode
+.sk
+[UNICODE_SUPPORT] Control UTF-8 handling.  When UNICODE_SUPPORT is
+available, -U forces ZipInfo to escape all non-ASCII
+characters from UTF-8 coded filenames as "#Uxxxx" (for UCS-2 characters,
+or "#Lxxxxxx" for Unicode codepoints needing 3 octets).  This option is
+mainly provided for debugging purpose when the fairly new UTF-8 support
+is suspected of damaging extracted filenames.
+.sk
+-UU disables the recognition of UTF-8 encoded filenames.  The
+handling of filename codings within ZipInfo falls back to the
+behavior of pre-Unicode versions.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -W
+.br;.indent -2
+-W
+.br;.indent -2
+--wild-no-span
+.sk
+[WILD_STOP_AT_DIR] (Valid when the program was built with the C macro
+WILD_STOP_AT_DIR defined.)  By default, the wildcard characters "?"
+(single-character wildcard) and "*" (multi-character wildcard) match any
+character in a member path/name.  "-W" modifies the
+pattern-matching behavior for archive members so that both "?"
+(single-character wildcard) and "*" (multi-character wildcard) do not
+match the directory separator character "/".  (The two-character
+sequence "**" acts as a multi-character wildcard that includes the
+directory separator in its matched characters.)  For example, with
+"-W":
+.sk
+.literal
+    "*.c"   matches "foo.c" but not "mydir/foo.c"
+    "**.c"  matches both "foo.c" and "mydir/foo.c"
+    "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
+    "??*/*" matches "ab/foo" and "abc/foo"
+            but not "a/foo" or "a/b/foo"
+.end literal
+.sk
+This modified behavior is equivalent to the pattern matching style used
+by the shells of some of UnZip's supported target OSs (one example
+is Acorn RISC OS).  This option may not be available on systems where
+the Zip archive's internal directory separator character "/" is allowed
+as regular character in native operating system filenames. (Currently,
+UnZip uses the same pattern matching rules for both wildcard
+archive file name specifications and archive member selection patterns
+on most system types.  For systems allowing "/" as regular filename
+character, the -W option would not work as expected on a wildcard file
+name specification.)
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -x
+.br;.indent -2
+-x member ...
+.br;.indent -2
+--exclude member ...
+.sk
+An optional list of archive members to be excluded from
+processing.  Because wildcard characters normally match "/" directory
+separators (for exceptions see the option -W), this option may be used
+to exclude any files that are in subdirectories.  For example, "unzip
+foo *.[ch] -x */*" would extract all C source files (*.c, *.h) in the
+main directory, but none in any subdirectories.  Without the -x option,
+all C source files in all directories within the archive would be
+extracted.
+.sk
+When the program sees -x (--exclude) on a command line, it stops
+scanning for options, and treats every succeeding item as an archive
+member name.  To avoid confusion between member names and command
+options, it's simplest to specify -x (--exclude) and its member list as
+the last items on a command line.  Alternatively, the special name "@"
+can be used to terminate the member list (and cause the program to
+resume scanning for options).  That is, the following two commands are
+equivalent:
+.sk
+.literal
+  zipinfo fred.zip -2 -t -x file1 file2 file3
+  zipinfo fred.zip -x file1 file2 file3 @ -2 -t
+.end literal
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
+4 -z
+.br;.indent -2
+-z
+.br;.indent -2
+--zipfile-comment
+.sk
+Include the archive comments (if any) in the report.
+.!----------------------------------------------------------------------
+.indent -2
+3 Detailed_Description
+.br
+ZipInfo has three basic report formats, providing different degrees of
+detail in the information about the members of an archive: a simple list
+of names (-1, -2), a Unix ls-style listing (-l, -m, -s), and a very
+detailed analysis (-v).  Some of the information, such as file sizes, is
+easy to interpret.  Some of the information involves fairly obscure
+details of ZIP archive structure.  ZIP archive structure is documented
+in the PKWARE Inc. APPNOTE.TXT:
+.br
+http://www.pkware.com/documents/casestudies/APPNOTE.TXT
+.sk
+The table below shows some typical -l report entries:
+.sk
+.literal
+Perm/Prot  Zver Ofs UncSize At CmpSize Cmth  ModDate  Mtime Name
+----------+----+---+-------+--+-------+----+---------------+----------
+-rw-a--     3.1 fat  211916 tx   53467 defX 10-Jun-18 00:27 zip3/zip.c
+-rwxr-x---  3.1 unx     709 Tx     311 aesw 11-Aug-21 22:20 endian.c
+RWED,RE,    3.1 vms    6656 bx    2295 defN 07-Aug-15 14:12 it/T.EXE;8
+.end literal
+.sk
+Field 1 (Perm/Prot) shows the file permission/protection attributes,
+formatted according to the original operating system or file system
+where the archive was created.
+.sk
+Field 2 (Zver) shows the (approximate) version of the Zip program which
+created the archive.
+.sk
+Field 3 (Ofs) shows the original operating system where the archive was
+created, or the file system on which the member file was stored.
+.sk
+Field 4 (UncSize) shows the original, uncompressed file size.
+.sk
+Field 5 (At) shows some archive member attributes, as detailed in the
+tables below.  The first character indicates whether a file was binary
+or text, and whether it was encrypted.  The second character indicates
+the presence of a data descriptor and/or an extra field in the member
+data.
+.sk
+.literal
+              |   File Type     Extra Field |
+  First char  | binary  text      yes   no  |  Second char
+--------------+-------+-----    ------+-----+--------------------
+Encrypted  no |   b      t         x     -  | no  Data Descriptor
+          yes |   B      T         X     l  | yes
+.end literal
+.sk
+A Data Descriptor holds CRC and size data at an alternate place in the
+archive (after processed member data instead of before), and is
+normally used when the archiving program can't seek in the output
+archive data/file.  An Extra Field can hold a wide variety of data,
+including 64-bit file sizes, many kinds of OS-specific attribute data,
+UTC times, and so on.
+.sk
+Field 6 (CmpSize) shows the compressed file size.  With -m, this
+field shows the compression fraction as a percentage.  With -s
+(the default), this field is omitted.  This compressed size value
+(unlike the one in an "unzip -l" report) includes all the
+overhead resulting from Traditional encryption.
+.sk
+Field 7 (Cmth) shows the compression method used.  Note that AES_WG
+encryption is treated as a compression method here.  Not all of the
+methods shown in the table below are supported.  (Some are obsolete.)
+.sk
+.literal
+ Num Abbr  Name, description
+----+----+------------------------------------------------------------
+  0  stor  Store (no compression)
+  1  shrk  Shrink
+  2  re:1  Reduce (factor 1)
+  3  re:2  Reduce (factor 2)
+  4  re:3  Reduce (factor 3)
+  5  re:4  Reduce (factor 4)
+  6  i#:#  Implode (dictonary_size:Shannon-Fano_trees)
+  7  tokn  Tokenize
+  8  def#  Deflate (N: normal, X: maximum, F: fast, S: super-fast)
+  9  d64#  Deflate64 (N: normal, X: maximum, F: fast, S: super-fast)
+ 10  dcli  PKWARE Data Compression Library Imploding - IBM TERSE (old)
+ 12  bzp2  bzip2
+ 14  lzma  LZMA
+ 18  ters  IBM TERSE (new)
+ 19  lz77  IBM LZ77 z Architecture (PFS)
+ 96  jpeg  JPEG
+ 97  wavp  WavPack
+ 98  ppmd  PPMd version I, Rev 1
+ 99  aesw  AES_WG encryption
+.end literal
+.sk
+Fields 8 and 9 (ModDate, Mtime) show the file modification date-time
+(MS-DOS format, local time).
+.sk
+Field 10 (Name) shows the file path/name.
+.!----------------------------------------------------------------------
+.indent -2
+3 Environment_Options
+.br
+ZipInfo's default behavior may be modified by placing command-line
+options in an environment variable.  This can be done with any option,
+but it is probably most useful options like -T (decimal time format) or
+one of the non-default Unix format options: -l, -m.
+.sk
+For ZipInfo ("unzip -Z"), the environment variable name on VMS is
+ZIPINFO_OPTS (non-VMS: ZIPINFO).  For compatibility with Zip, if
+ZIPINFO_OPTS is not defined, then ZipInfo will use ZIPINFOOPT the same
+way.
+.sk
+For example, to make the default format the long Unix format instead of
+the short Unix format, one could use commands like the following:
+.sk
+.literal
+Unix Bourne (or similar) shell:
+  ZIPINFO='-l'; export UNZIP
+.end literal
+.sk
+.literal
+Unix C shell:
+  setenv ZIPINFO '-l'
+.end literal
+.sk
+.literal
+OS/2 or MS-DOS:
+  set ZIPINFO="-l"
+.end literal
+.sk
+.literal
+VMS (with quotation to preserve lower case in DCL):
+  define ZIPINFO_OPTS "-l"        ! Logical name, or
+  ZIPINFO_OPTS = "-l"             ! DCL symbol.  (Either works.)
+.end literal
+.sk
+Environment options are treated the same as any other command-line
+options, except that they are effectively the first options on the
+command line.  To override an environment option, one may use an
+explicit option to cancel or override it.  For example, to disable the
+totals trailer line by default, one could use commands like the
+following:
+.sk
+.literal
+Unix Bourne (or similar) shell:
+  ZIPINFO='-t-'; export ZIPINFO
+.end literal
+.sk
+.literal
+Unix C shell:
+  setenv ZIPINFO '-t-'
+.end literal
+.sk
+.literal
+VMS (with quotation to preserve lower case in DCL):
+  define ZIPINFO_OPTS "-t-"       ! Logical name, or
+  ZIPINFO_OPTS = "-t-"            ! DCL symbol.  (Either works.)
+.end literal
+.sk
+The examples show short (one-character) options, but long ("--")
+options are also allowed.
+.!----------------------------------------------------------------------
+.indent -2
+3 Examples
+.br
+To get a basic, short-format listing of the complete contents of a ZIP
+archive zip31c.zip, with both header and totals lines, use only the
+archive name as an argument to zipinfo:
+.sk
+.literal
+  zipinfo zip31c.zip
+  zipinfo zip31c
+.end literal
+.sk
+To produce a basic, long-format listing (not verbose), including header
+and totals lines, use -l:
+.sk
+.literal
+  zipinfo -l zip31c.zip
+.end literal
+.sk
+To list the complete contents of the archive without header and totals
+lines, either negate the -h and -t options or else specify the contents
+explicitly:
+.sk
+.literal
+  zipinfo -h- -t- zip31c.zip
+  zipinfo zip31c.zip *
+.end literal
+.sk
+(On a Unix system, the wildcard member name would typically need to be
+quoted to keep a a Unix shell from expanding ("globbing") it.  This is
+not necessary on VMS.)
+.sk
+To list information on a single archive member, in medium format,
+specify the member name explicitly:
+.sk
+.literal
+  zipinfo -m unzip60.zip */unshrink.c
+.end literal
+.sk
+When any member name is specified, the header and totals trailer are, by
+default, not included in the report, but explicitly specifying -h and/or
+-t will restore them.  For example:
+.sk
+.literal
+  zipinfo -m -t unzip610b.zip *.[ch] */Make*
+.end literal
+.sk
+On a Unix system, one could use the -T option along with an
+external sorting program (and another filter like "head" or
+"tail") to get a listing of the least or most recently modified
+files in the archive:
+.sk
+.literal
+  zipinfo -l -T -h- -t- zip31c.zip | sort -k 8 | head -12
+  zipinfo -l -T -h- -t- zip31c.zip | sort -r -k 8 | head -12
+.end literal
+.sk
+The "sort" option "-k 8" tells it to sort on field 8, which is the
+date-time field in a long- or medium-format (-l, -m) ZipInfo
+report.  (Use "-k 7" for the short (-s) format.)  The -r option reverses
+the default smallest-to-largest sort order.
+.!----------------------------------------------------------------------
+.indent -2
+3 Bugs
+.br
+As with UnZip, ZipInfo's -M ("--more") option is overly
+simplistic in its handling of screen output.  As noted above, it fails
+to detect the wrapping of long lines and may thereby cause lines at the
+top of the screen to be scrolled off before being read.  ZipInfo
+should detect and treat each occurrence of line-wrap as one additional
+line printed.  This requires knowledge of the screen's width as well as
+its height.  In addition, ZipInfo should detect the true screen
+geometry on all systems.
+.sk
+The interactions among the various listing format, header, and trailer
+options (-h, -l, -m, -s, -t) are unnecessarily complex and should be
+simplified, despite the potential disruption to current users.
+.!----------------------------------------------------------------------
+.indent -2
+3 URL
+.br
+The Info-ZIP main Web page is:
+.br
+.indent 4
+http://www.info-zip.org/
+.sk
+FTP access is available, too:
+.br
+.indent 4
+ftp://ftp.info-zip.org/pub/infozip/
+.!----------------------------------------------------------------------
+.!======================================================================

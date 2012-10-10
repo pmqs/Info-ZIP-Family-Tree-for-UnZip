@@ -1,8 +1,8 @@
 !       TITLE   CVTHELP.TPU
-!       IDENT   01-001
+!       IDENT   01-002
 !
 !++
-! Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+! Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 !
 ! See the accompanying file LICENSE, version 2000-Apr-09 or later
 ! (the contents of which are also included in zip.h) for terms of use.
@@ -25,6 +25,10 @@
 !       $ EDIT/TPU/NOJOURNAL/NODISPLAY/COMMAND=CVTHELP file.HELP
 !
 !  Modified by:
+!
+!       01-002          Steven Schweda            1-OCT-2012 23:53
+!               Added <LITERALW> and <WLARETIL> for wide literals
+!               (too wide for indentation).
 !
 !       01-001          Hunter Goatley            7-FEB-2001 15:40
 !               Added <NEXT> for qualifier separators.
@@ -53,6 +57,8 @@ Local   temp
    hg$substitute_comment(current_buffer,"<INIT>",".noflags;.lm3;.rm70");
    hg$substitute_comment(current_buffer,"<LITERAL>",".lm+4;.literal");
    hg$substitute_comment(current_buffer,"<LARETIL>",".end literal;.lm-4");
+   hg$substitute_comment(current_buffer,"<LITERALW>",".literal");
+   hg$substitute_comment(current_buffer,"<WLARETIL>",".end literal");
    hg$substitute_comment(current_buffer,"<DOT1LIST>",'.list 1,"o"');
    hg$substitute_comment(current_buffer,"<DOT0LIST>",'.list 0,"o"');
    hg$substitute_comment(current_buffer,"<ENTRY>",".le");
