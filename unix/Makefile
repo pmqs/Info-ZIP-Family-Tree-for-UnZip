@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2012-09-04
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2012-11-05
 #==============================================================================
 
 #==============================================================================
@@ -1264,9 +1264,9 @@ testmake_zip:
 	@( cd testmake ; \
          ../unzip ../$(TESTZIP) > /dev/null ; \
          touch testmake.zipinfo ; \
-         $(PGM_ZIP) $(TESTZIP) notes testmake.zipinfo > /dev/null ; \
+         $(PGM_ZIP) -X $(TESTZIP) notes testmake.zipinfo > /dev/null ; \
          ../unzip -Z $(TESTZIP) > testmake.zipinfo ; \
-         $(PGM_ZIP) $(TESTZIP) notes testmake.zipinfo > /dev/null ; \
+         $(PGM_ZIP) -X $(TESTZIP) notes testmake.zipinfo > /dev/null ; \
          ../unzip -Z $(TESTZIP) > testmake.zipinfo_new ; \
          mv $(TESTZIP) ../$(TESTZIP) )
 	@if diff testmake/testmake.zipinfo \
@@ -1290,10 +1290,10 @@ testmake_ppmd_zip:
 	@( cd testmake ; \
          ../unzip ../$(TESTZIP_PPMD) > /dev/null ; \
          touch testmake.zipinfo ; \
-         $(PGM_ZIP) -Z ppmd $(TESTZIP_PPMD) notes testmake.zipinfo > \
+         $(PGM_ZIP) -X -Z ppmd $(TESTZIP_PPMD) notes testmake.zipinfo > \
          /dev/null ; \
          ../unzip -Z $(TESTZIP_PPMD) > testmake.zipinfo ; \
-         $(PGM_ZIP) -Z ppmd $(TESTZIP_PPMD) notes testmake.zipinfo > \
+         $(PGM_ZIP) -X -Z ppmd $(TESTZIP_PPMD) notes testmake.zipinfo > \
          /dev/null ; \
          ../unzip -Z $(TESTZIP_PPMD) > testmake.zipinfo_new ; \
          mv $(TESTZIP_PPMD) ../$(TESTZIP_PPMD) )

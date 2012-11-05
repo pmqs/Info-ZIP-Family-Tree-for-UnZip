@@ -139,7 +139,7 @@ static ZCONST char PlurSufx[] = "s";
  * process.c:do_seekable().
  */
 static ZCONST char Far ZipInfHeader2[] =
-  "Archive size: %s bytes, number of members: %s\n";
+  "Archive size: %s bytes; Members: %s\n";
 static ZCONST char Far EndCentDirRec[] = "\nEnd-of-central-directory record:\n";
 static ZCONST char Far LineSeparators[] = "-------------------------------\n\n";
 static ZCONST char Far ZipFSizeVerbose[] = "\
@@ -169,9 +169,19 @@ static ZCONST char Far NoMemArguments[] =
 
 static ZCONST char Far CentralDirEntry[] =
   "\nCentral directory entry #%lu:\n---------------------------\n\n";
+#if 0
 static ZCONST char Far ZipfileStats[] =
   "%lu file%s, %s bytes uncompressed, %s bytes compressed:  %s%d.%d%%\n";
-
+#endif /* 0 */
+static ZCONST char Far ZipfileStats2a[] =
+  "Members: %lu; Bytes uncompressed: %s, compressed: %s, %s%d.%d%%\n";
+#ifdef SYMLINKS
+static ZCONST char Far ZipfileStats2b[] =
+  "Directories: %lu, Files: %lu, Links: %lu\n";
+#else /* def SYMLINKS */
+static ZCONST char Far ZipfileStats2b[] =
+  "Directories: %lu, Files/links: %lu\n";
+#endif /* def SYMLINKS [else] */
 /* zi_long() strings */
 static ZCONST char Far OS_FAT[] = "MS-DOS, OS/2 or NT FAT";
 static ZCONST char Far OS_Amiga[] = "Amiga";
@@ -940,7 +950,14 @@ int zipinfo(__G)   /* return PK-type error code */
 {
     int do_this_file=FALSE, error, error_in_archive=PK_COOL;
     int *fn_matched=NULL, *xn_matched=NULL;
-    ulg j, members=0L;
+    ulg j;
+    ulg members = 0L;
+    ulg members_dir = 0L;
+#ifdef SYMLINKS
+    ulg members_link = 0L;
+#else /* def SYMLINKS */
+# define members_link 0L
+#endif /* def SYMLINKS [else] */
     zusz_t tot_csize=0L, tot_ucsize=0L;
     zusz_t endprev;   /* buffers end of previous entry for zi_long()'s check
                        *  of extra bytes */
@@ -1113,7 +1130,19 @@ int zipinfo(__G)   /* return PK-type error code */
             tot_ucsize += G.crec.ucsize;
             if (G.crec.general_purpose_bit_flag & 1)
                 tot_csize -= 12;   /* don't count encryption header */
-            ++members;
+
+            /* Count (all) members. */
+            members++;
+
+            /* Count directory members. */
+            if (G.filename[ strlen( G.filename)- 1] == '/')
+                members_dir++;
+
+#ifdef SYMLINKS
+            /* Count link members. */
+            if (S_ISLNK( (unsigned)(G.crec.external_file_attributes >>16)))
+                members_link++;
+#endif /* def SYMLINKS */
 
 #ifdef DLL
             if ((G.statreportcb != NULL) &&
@@ -1149,11 +1178,27 @@ int zipinfo(__G)   /* return PK-type error code */
             sgn = "-";
             cfactor = -cfactor;
         }
+#if 0
         Info(slide, 0, ((char *)slide, LoadFarString(ZipfileStats),
           members, (members==1L)? nullStr:PlurSufx,
           FmZofft(tot_ucsize, NULL, "u"),
           FmZofft(tot_csize, NULL, "u"),
           sgn, cfactor/10, cfactor%10));
+#endif /* 0 */
+
+        Info(slide, 0, ((char *)slide, LoadFarString( ZipfileStats2a),
+         members,
+         FmZofft( tot_ucsize, NULL, "u"),
+         FmZofft( tot_csize, NULL, "u"),
+         sgn, cfactor/10, cfactor%10));
+
+        Info(slide, 0, ((char *)slide, LoadFarString( ZipfileStats2b),
+         members_dir,
+         (members- members_dir- members_link)
+#ifdef SYMLINKS
+         , members_link
+#endif /* def SYMLINKS */
+         ));
     }
 
 /*---------------------------------------------------------------------------

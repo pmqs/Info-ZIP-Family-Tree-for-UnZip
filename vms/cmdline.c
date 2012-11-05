@@ -243,7 +243,9 @@ $DESCRIPTOR(cli_super_quiet,    "QUIET.SUPER");         /* -qq */
 $DESCRIPTOR(cli_test,           "TEST");                /* -t */
 $DESCRIPTOR(cli_pipe,           "PIPE");                /* -p */
 $DESCRIPTOR(cli_password,       "PASSWORD");            /* -P */
-$DESCRIPTOR(cli_names_downcase, "NAMES.DOWNCASE");      /* -L */
+$DESCRIPTOR(cli_names_down,     "NAMES.DOWNCASE");      /* -L, -LL */
+$DESCRIPTOR(cli_names_down_all, "NAMES.DOWNCASE.ALL");  /* -LL */
+$DESCRIPTOR(cli_names_nodown,   "NAMES.NODOWNCASE");    /* -L-L- */
 $DESCRIPTOR(cli_names_ods2,     "NAMES.ODS2");          /* -2 */
 $DESCRIPTOR(cli_names_spaces,   "NAMES.SPACES");        /* -s */
 $DESCRIPTOR(cli_timestamp,      "TIMESTAMP");           /* -T */
@@ -257,7 +259,7 @@ $DESCRIPTOR(cli_restore_date,   "RESTORE.DATE");        /* -DD */
 $DESCRIPTOR(cli_restore_date_all, "RESTORE.DATE.ALL");  /* -D- */
 $DESCRIPTOR(cli_restore_date_files, "RESTORE.DATE.FILES"); /* -D */
 $DESCRIPTOR(cli_dot_version,    "DOT_VERSION");         /* -Y */
-$DESCRIPTOR(cli_comment,        "COMMENT");             /* -z */
+$DESCRIPTOR(cli_comment,        "COMMENT");             /* -z, -Zz */
 $DESCRIPTOR(cli_exclude,        "EXCLUDE");             /* -x */
 $DESCRIPTOR(cli_ods2,           "ODS2");                /* -2 */
 $DESCRIPTOR(cli_traverse,       "TRAVERSE_DIRS");       /* -: */
@@ -564,6 +566,30 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         {
             /* /PAGE */
             opt = OPT__M;
+        }
+        ADD_ARG( opt);
+    }
+
+    /*
+     * Display (only) the archive comment.
+     * Clear any existing "-z" option with "-z-", then add
+     * the desired "z" value.
+     */
+#define OPT_Z   "-z-z"          /* "-z"  Display the comment (only). */
+#define OPT_ZN  "-z-"           /* ""    Don't display the comment (only). */
+
+    status = cli$present( &cli_comment);
+    if ((status & 1) || (status == CLI$_NEGATED))
+    {
+        if (status == CLI$_NEGATED)
+        {
+            /* /NOCOMMENT */
+            opt = OPT_ZN;
+        }
+        else
+        {
+            /* /COMMENT */
+            opt = OPT_Z;
         }
         ADD_ARG( opt);
     }
@@ -884,11 +910,12 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         /*
          * Deprecated.  Use /NAMES = [NO]DOWNCASE.
          * Make (some) names lowercase.
-         * Clear any existing "-L" option with "-L-", then add
+         * Clear any existing "-L" option with "-L-L-", then add
          * the desired "L" value.
          */
-#define OPT__L   "-L-L"         /* "-L"    Downcase (some) names. */
-#define OPT__LN  "-L-"          /* ""      Normal extract (default). */
+#define OPT__L   "-L-L-L"       /* "-L"    Downcase (some) names. */
+#define OPT__LL  "-L-L-LL"      /* "-LL"   Downcase all names. */
+#define OPT__LN  "-L-L-"        /* ""      Normal extract (default). */
 
         status = cli$present( &cli_lowercase);
         if ((status & 1) || (status == CLI$_NEGATED))
@@ -909,7 +936,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         /*
          * Deprecated.  Use /NAMES = [NO]DOWNCASE.
          * Uppercase (don't convert to lower case).
-         * Clear any existing "-L" option with "-L-", then add
+         * Clear any existing "-L" option with "-L-L-", then add
          * the desired "L" value.
          */
         status = cli$present( &cli_uppercase);
@@ -998,18 +1025,28 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 #define OPT_S   "-s-s"          /* "-s"  Convert spaces. */
 #define OPT_SN  "-s-"           /* ""    Preserve spaces (default). */
 
-        status = cli$present( &cli_names_downcase);
-        if ((status & 1) || (status == CLI$_NEGATED))
+        status = cli$present( &cli_names_nodown);
+        if (status & 1)
         {
-            if (status == CLI$_NEGATED)
+            /* /NAMES = NODOWNCASE */
+            ADD_ARG( OPT__LN);
+        }
+        else
+        {
+            status = cli$present( &cli_names_down);
+            if (status & 1)
             {
-                /* /NAMES = NODOWNCASE */
-                opt = OPT__LN;
-            }
-            else
-            {
-                /* /NAMES = DOWNCASE */
-                opt = OPT__L;
+                status = cli$present( &cli_names_down_all);
+                if (status & 1)
+                {
+                    /* /NAMES = DOWNCASE = ALL */
+                    opt = OPT__LL;
+                }
+                else
+                {
+                    /* /NAMES = DOWNCASE = SOME */
+                    opt = OPT__L;
+                }
             }
             ADD_ARG( opt);
         }
@@ -1331,30 +1368,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
-         * Display (only) the archive comment.
-         * Clear any existing "-z" option with "-z-", then add
-         * the desired "z" value.
-         */
-#define OPT_Z   "-z-z"          /* "-z"  Extract files with versions. */
-#define OPT_ZN  "-z-"           /* ""    Normal extract (default). */
-
-        status = cli$present( &cli_comment);
-        if ((status & 1) || (status == CLI$_NEGATED))
-        {
-            if (status == CLI$_NEGATED)
-            {
-                /* /NOCOMMENT */
-                opt = OPT_ZN;
-            }
-            else
-            {
-                /* /COMMENT */
-                opt = OPT_Z;
-            }
-            ADD_ARG( opt);
-        }
-
-        /*
          * Traverse directories (don't skip "../" path components).
          * Clear any existing "-:" option with "-:-", then add
          * the desired ":" value.
@@ -1516,12 +1529,12 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         {
             if (status == CLI$_NEGATED)
             {
-                /* /NOCOMMENT */
+                /* /NOTOTALS */
                 opt = IPT_TN;
             }
             else
             {
-                /* /COMMENT */
+                /* /TOTALS */
                 opt = IPT_T;
             }
             ADD_ARG( opt);
@@ -1535,7 +1548,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 #define IPT__T   "-T-T"         /* "-T"  Put out sortable date-times. */
 #define IPT__TN  "-T-"          /* ""    Put out normal date-times (deflt). */
 
-        status = cli$present( &cli_times);
+        status = cli$present( &cli_decimal_time);
         if ((status & 1) || (status == CLI$_NEGATED))
         {
             if (status == CLI$_NEGATED)
@@ -1546,6 +1559,22 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             else
             {
                 /* /DECIMAL_TIME */
+                opt = IPT__T;
+            }
+            ADD_ARG( opt);
+        }
+
+        status = cli$present( &cli_times);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOTIMES (deprecated) */
+                opt = IPT__TN;
+            }
+            else
+            {
+                /* /TIMES (deprecated) */
                 opt = IPT__T;
             }
             ADD_ARG( opt);
@@ -1578,30 +1607,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             {
                 /* /VERBOSE */
                 opt = IPT_V;
-            }
-            ADD_ARG( opt);
-        }
-
-        /*
-         * Put out archive comment.
-         * Clear any existing "-z" option with "-z-", then add
-         * the desired "z" value.
-         */
-#define IPT_Z   "-z-z"          /* "-z"  Put out archive comment. */
-#define IPT_ZN  "-z-"           /* ""    Omit header line (default). */
-
-        status = cli$present( &cli_comment);
-        if ((status & 1) || (status == CLI$_NEGATED))
-        {
-            if (status == CLI$_NEGATED)
-            {
-                /* /NOCOMMENT */
-                opt = IPT_ZN;
-            }
-            else
-            {
-                /* /COMMENT */
-                opt = IPT_Z;
             }
             ADD_ARG( opt);
         }
@@ -1890,7 +1895,7 @@ General SFX qualifiers:\n\
 
     Info(slide, flag, ((char *)slide, "\
   %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
-  /RESTORE=([NO]OWNER_PROT, [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
+  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
   /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERSION\n\
 \n\
 Quote member names if /MATCH=CASE=SENSITIVE (default).  For details, see\n\
@@ -2035,7 +2040,7 @@ General qualifiers:\n\
 
         Info(slide, flag, ((char *)slide, "\
   %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
-  /RESTORE=([NO]OWNER_PROT, [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
+  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
   /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERBOSE, /VERSION\n\
 ",
 #  ifdef MORE

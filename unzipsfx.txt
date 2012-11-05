@@ -130,7 +130,8 @@ OPTIONS (Primary Mode)
               (no conversions).
 
        -t
-       --test Primary Mode.  Test archive members.  Testing  means  that  each
+       --test
+              Primary Mode.  Test archive members.  Testing  means  that  each
               archive member is extracted in memory (expanding and decrypting,
               as needed), but not  written  to  a  file.   The  resulting  CRC
               (cyclic redundancy check, an enhanced checksum) of the extracted
@@ -286,7 +287,8 @@ OPTIONS (Ordinary)
               cased, regardless of the originating file system.
 
        -M    [CMS,MVS] Or: -m)
-       --more Pipe all output through an internal pager similar  to  the  Unix
+       --more
+              Pipe all output through an internal pager similar  to  the  Unix
               more(1)  command.   At  the  end of a screenful of output, UnZip
               pauses with a "--More--"  prompt;  the  next  screenful  may  be
               viewed  by  pressing  the  Enter  (Return) key or the space bar.
@@ -553,7 +555,7 @@ EXAMPLES
 
        More work is needed when options or arguments are desired.   For  exam-
        ple:
-       mcr sys$disk:[] example_sfx.exe -t -x fred.txt
+       mcr sys$disk:[]example_sfx.exe -t -x fred.txt
        Or, define a foreign-command DCL symbol, and use that:
        example_sfx = "$ ''f$environment( "default")'example_sfx.exe"
        example_sfx -t -x fred.txt

@@ -1,7 +1,7 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
-   UnZip version 6.10.  Revised: 2012-09-04.
+   UnZip version 6.10.  Revised: 2012-10-15.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -36,7 +36,7 @@ If the UnZip kit is elsewhere, specify its actual location:
      build the bzip2 software ("http://www.bzip.org/" or, for a more
      VMS-friendly kit, "http://antinode.info/dec/sw/bzip2.html").  The
      build instructions below explain how to use the appropriate bzip2
-     header files and object library to build Zip with bzip2 support.
+     header files and object library to build UnZip with bzip2 support.
 
    o Encryption
 
@@ -77,19 +77,19 @@ main source directory, not the [.VMS] subdirectory.
      MMK /DESCRIP = [.VMS]DESCRIP.MMS
 
    Various options for each build method are explained in comments in
-the main builder file, either [.VMS]BUILD_UNZIP.COM or
+each main builder file, either [.VMS]BUILD_UNZIP.COM or
 [.VMS]DESCRIP.MMS.
 
    On VAX, the builders attempt to cope with the various available C
 compilers, DEC/Compaq/HP C, VAX C, or GNU C.  If DEC/Compaq/HP C is not
-available or not desired, comments in the relevant builder file explain
-the command-line options used to select a different compiler.
+available or not desired, comments in each main builder file explain the
+command-line options used to select a different compiler.
 
       Note that on non-VAX systems with VMS V7.2 or later (and with a
       sufficiently new C compiler), UnZip 6.0 (and later) can support
       files (both data files and Zip archives) larger than 2GB.  For the
-      greatest compatibility with previous UnZip versions, the builders
-      by default create old-style, small-file programs.  The user must
+      greatest compatibility with previous UnZip versions, by default,
+      the builders create old-style, small-file programs.  The user must
       specify the appropriate builder command-line option to create
       large-file-capable programs.
 
@@ -103,8 +103,8 @@ the command-line options used to select a different compiler.
 
    o Re-link the executables (small-file and large-file):
 
-        @ [.VMS]BUILD_UNZIP LINK
-        @ [.VMS]BUILD_UNZIP LARGE LINK
+        @ [.VMS]BUILD_UNZIP NOCOMPILE
+        @ [.VMS]BUILD_UNZIP LARGE NOCOMPILE
      or
         MMK /DESC = [.VMS] CLEAN_EXE  ! Delete existing executables.
         MMK /DESC = [.VMS]            ! Build new executables.
@@ -196,7 +196,7 @@ large-file programs in a [.ALPHA_LARGE] subdirectory:
       or:
          MMS /DESC = [.VMS] /MACRO = (LARGE=1, PROD=ALPHA_LARGE)
 
-This option makes it easier to build multiple Zip variants with
+This option makes it easier to build multiple UnZip variants with
 different options using the same source tree.
 
    Each product builder announces what the destination directory will be
@@ -282,10 +282,10 @@ small-file and large-file programs.  For example:
    UNZIP*L :== $ dev:[dir.ALPHAL]UNZIP.EXE ! UNZIP[L] =large-file UnZip.
 
 
-   The builders create help text files, UNZIP.HLP and UNZIP_CLI.HLP.
-These may be incorporated into an existing help library, or a separate
-UnZip help library may be created using commands like these, using either
-UNZIP.HLP (as shown) or UNZIP_CLI.HLP:
+   The builders create help library source files, UNZIP.HLP and
+UNZIP_CLI.HLP.  These may be incorporated into an existing help library,
+or a separate UnZip help library may be created using commands like
+these, using either UNZIP.HLP (as shown) or UNZIP_CLI.HLP:
 
    $ LIBRARY /HELP dev:[dir]existing_library.HLB UNZIP.HLP
 

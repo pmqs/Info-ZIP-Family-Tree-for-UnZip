@@ -69,7 +69,7 @@
 .!              Added /LICENSE qualifier.
 .!      03-006          S. Schweda              11-AUG-2011 20:00
 .!              Added /NAMES qualifier.
-.!      03-007          S. Schweda              08-OCT-2011 20:00
+.!      03-007          S. Schweda              14-OCT-2011 20:00
 .!              Restored but deprecated /[NO]CASE_INSENSITIVE.  Changed
 .!              /CASE_MATCH to /MATCH = CASE, Added /MATCH =
 .!              [NO]WILD_MATCH_SLASH) for "-W".  Restored but deprecated
@@ -323,10 +323,10 @@ The optional keywords are:
 
 <LITERAL>
 |ALL      Extract all files with fixed-length, 512-byte record
-|         format.
+|         format.  (-bb)
 |AUTO     Extract binary files with fixed-length, 512-byte
 |         record format.  (Default value keyword: "/BINARY" is
-|         equivalent to "/BINARY=AUTO".)
+|         equivalent to "/BINARY=AUTO".)  (-b)
 |NONE     Same as /NOBINARY.  Extract binary files with
 |         Stream_LF record format.  (Default condition.)
 <LARETIL>
@@ -427,9 +427,9 @@ Specifies the action when extracting files, and a file already exists.
 The optional keywords are:
 
 <LITERAL>
-|NEW_VERSION  Create a new version of an existing file.
-|OVERWRITE    Overwrite an existing file.
-|NOEXTRACT    Do not extract, leaving an existing file intact.
+|NEW_VERSION  Create a new version of an existing file.  (-o)
+|OVERWRITE    Overwrite an existing file.  (-oo)
+|NOEXTRACT    Do not extract.  Leave an existing file intact.  (-n)
 <LARETIL>
 
 By default, UnZip queries the user before extracting any file that
@@ -513,7 +513,7 @@ the /EXCLUDE excluded-member list on the command line.
 The optional keywords and values are:
 
 <LITERAL>
-|CASE=BLIND          Name matching is case-insensitive.
+|CASE=BLIND          Name matching is case-insensitive.  (-C)
 |CASE=SENSITIVE      Name matching is case-sensitive.  (Default.)
 <LARETIL>
 
@@ -533,7 +533,7 @@ overwrite a file "FOO" when extracting a member named "foo"!
 time, then an additional keyword is allowed:
 
 <LITERAL>
-|NOWILD_MATCH_SLASH  Wildcards stop at directory slash.
+|NOWILD_MATCH_SLASH  Wildcards stop at directory slash.  (-W)
 |WILD_MATCH_SLASH    Wildcards match directory slash.  (Default.)
 <LARETIL>
 
@@ -577,13 +577,14 @@ Selects name transformations during extraction.  The keywords are:
 
 <LITERAL>
 DOWNCASE      Convert filenames from all-uppercase operating
-              systems to lowercase.
+              systems to lowercase.  (-L)
+DOWNCASE=ALL  Convert all filenames to lowercase.  (-LL)
 ODS2          Restrict names to ODS2 conventions, regardless
               of the destination file system.  (Invalid
-              character -> "_".)
+              character -> "_".)  (-2)
 [NO]SPACES    SPACES: Permit space characters in (ODS5) names.
               (Default condition.)
-              NOSPACES: Change spaces to underscores.
+              NOSPACES: Change spaces to underscores.  (-s)
 <LARETIL>
 
 The default is to use ODS5-compatible file names (including spaces) when
@@ -656,9 +657,11 @@ Selects restoration options for some meta-data.  The optional keywords
 are:
 
 <LITERAL>
-|OWNER_PROT    Restore file owner and ACL protection settings.
-|NOOWNER_PROT  Do not restore file owner and ACL protection
-|              settings.
+|ACL           Restore file protection, owner, and ACL settings.
+|              (-XX)
+|PROTECTION    Restore file protection settings.  (Default.)
+|NOPROTECTION  Do not restore file owner and ACL protection
+|              settings.  (-X-)
 |NODATE        Do not restore any timestamps.
 |DATE=ALL      Restore timestamps for all extracted entries,
 |              files and directories.
@@ -675,8 +678,8 @@ deprecated short forms are still accepted:
 
 <LITERAL>
 |Deprecated form:      Modern form:
-|/RESTORE              /RESTORE=OWNER_PROT
-|/NORESTORE            /RESTORE=NOOWNER_PROT
+|/RESTORE              /RESTORE=PROTECTION
+|/NORESTORE            /RESTORE=NOPROTECTION
 <LARETIL>
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 <SUBTOPIC>
@@ -694,18 +697,18 @@ The optional keywords are:
 <LITERAL>
 |ALL      Extract all files with variable-length record format.
 |         Adjust line endings to local standard, and convert
-|         EBCDIC to  ASCII, as needed.
+|         EBCDIC to  ASCII, as needed.  (-aa)
 |AUTO     Extract text files with variable-length record format.
 |         Adjust line endings to local standard, and convert
 |         EBCDIC to ASCII, as needed.  (Default value keyword:
-|         "/TEXT" is equivalent to "/TEXT=AUTO".)
+|         "/TEXT" is equivalent to "/TEXT=AUTO".)  (-a)
 |NONE     Same as /NOTEXT.  Extract text files with Stream_LF
 |         record format without conversions.  (Default
 |         condition.)
 |STMLF    Use Stream_LF record format for text files (instead of
 |         variable-length record format) when ALL or AUTO is in
 |         effect.  Adjust line endings to local standard, and
-|         convert EBCDIC to ASCII, as needed.
+|         convert EBCDIC to ASCII, as needed.  (-S)
 <LARETIL>
 
 Selects the file record format, character encoding, and line-ending type
@@ -778,9 +781,9 @@ The optional keywords are:
 <LITERAL>
 |NORMAL   Make a report more detailed/verbose.  (Default value
 |         keyword: "/VERBOSE" is equivalent to
-|         "/VERBOSE=NORMAL".)  Unix-style: "-v".
+|         "/VERBOSE=NORMAL".)  (-v)
 |MORE     Enable special developer I/O diagnostics.  See below.
-|         Unix-style: "-vv".
+|         (-vv)
 |COMMAND  Enable special developer CLI diagnostics.  See below.
 <LARETIL>
 
@@ -983,9 +986,12 @@ only the summaries:
 unzip /test /quiet *.zip
 <LARETIL>
 
-(On a Unix system, the wildcard archive name would typically need to be
+(On a Unix system, the wildcard member name would typically need to be
 quoted to keep a a Unix shell from expanding ("globbing") it.  This is
-not necessary on VMS.)
+not necessary on VMS.  However, a name with a slash ("/") character,
+such as "*/zip*.*", must be quoted.  Otherwise, DCL may interpret the
+slash as introducing a qualifier, causing unexpected behavior or an
+"%CLI-W-IVQUAL, unrecognized qualifier" error.)
 
 The following command extracts to standard output all members of
 letters.zip whose names end in ".tex", auto-converting to the
@@ -1341,7 +1347,7 @@ the /EXCLUDE excluded-member list on the command line.
 The optional keywords and values are:
 
 <LITERAL>
-|CASE=BLIND          Name matching is case-insensitive.
+|CASE=BLIND          Name matching is case-insensitive.  (-C)
 |CASE=SENSITIVE      Name matching is case-sensitive.  (Default.)
 <LARETIL>
 
@@ -1361,7 +1367,7 @@ overwrite a file "FOO" when extracting a member named "foo"!
 time, then an additional keyword is allowed:
 
 <LITERAL>
-|NOWILD_MATCH_SLASH  Wildcards stop at directory slash.
+|NOWILD_MATCH_SLASH  Wildcards stop at directory slash.  (-W)
 |WILD_MATCH_SLASH    Wildcards match directory slash.  (Default.)
 <LARETIL>
 
@@ -1586,7 +1592,10 @@ zipinfo zip31c.zip *
 
 (On a Unix system, the wildcard member name would typically need to be
 quoted to keep a a Unix shell from expanding ("globbing") it.  This is
-not necessary on VMS.)
+not necessary on VMS.  However, a name with a slash ("/") character,
+such as "*/zip*.*", must be quoted.  Otherwise, DCL may interpret the
+slash as introducing a qualifier, causing unexpected behavior or an
+"%CLI-W-IVQUAL, unrecognized qualifier" error.)
 
 To list information on a single archive member, in medium format,
 specify the member name explicitly:
@@ -1594,6 +1603,20 @@ specify the member name explicitly:
 <LITERAL>
 zipinfo /medium unzip60.zip */unshrink.c
 <LARETIL>
+
+On a VMS system, one could use /DECIMAL_TIME along with an external
+sorting program to get a listing of files in the archive in date-time
+order:
+
+<LITERAL>
+pipe zipinfo /decimal_time /long /noheader /nototals zip31c.zip | -
+ sort sys$input sys$output /key = (position:47, size:15, descend)
+<LARETIL>
+
+For a /LONG (-l) format report, the date-time field should begin at
+position 47; for /MEDIUM (-m), 42; for /SHORT (-s), 38.  HELP SORT
+[/KEY] should lead to an explanation of the various SORT options.
+(Unlike Unix, VMS does not include a useful "head" or "tail" program.)
 
 On a Unix system, one could use the -T option along with an
 external sorting program (and another filter like "head" or

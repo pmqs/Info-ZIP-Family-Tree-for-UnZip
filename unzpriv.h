@@ -217,7 +217,7 @@
    Unicode support unless UNICODE_WCHAR is set.
 
    What we should do is define three possibilities:
-   UNICODE_WIDE   = we have the wide character support we need for Unicode.
+   UNICODE_WCHAR  = we have the wide character support we need for Unicode.
                     If unix/configure found the port is missing something,
                     the port needs to provide it and turn Unicode back on.
                     Check for HAVE_TOWUPPER and so on.

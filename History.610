@@ -680,7 +680,6 @@ Bugs fixed:
 
 6.10c07 (12 Sep 2011):
  - Change type of ucsize_lzma to SizeT.  (extract.c) [SMS]
- - Change default to -D everywhere, not only on VMS.
  - CF_BZ now has "-DBZ_NO_STDIO" to build correct bzip2 variation.
    (unix/configure, unix/Makefile) [AD]
  - CF_BZ now contains "-D_FILE_OFFSET_BITS=64 -D_LARGE_FILES" if large files
@@ -761,7 +760,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (10 Oct 2012):
+6.10c09 (04 Nov 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -935,6 +934,15 @@ Bugs fixed:
    messages should be sent to stderr, making them visible to the user
    without corrupting the extracted data stream.  (fileio.c, unzpriv.h,
    vms/vms.c) [SMS]
+ - Format changes to ZipInfo header and totals report sections.  The
+   totals section now includes separate member counts for directories
+   and files, and, where SYMLINKS is defined, links.  New test archives
+   with new-format ZipInfo reports.  (testmake.zip, testmake_ppmd.zip,
+   zipinfo.c) [SMS]
+ - Attempt to support Zip64 in fUnZip.  Changed to skip directory
+   members at the beginning of an archive, instead of doing nothing when
+   the first archive member was a directory.  Changed some messages and
+   exit status codes.  Still crude in many places.  (funzip.c) [SMS]
 
 ==================
 

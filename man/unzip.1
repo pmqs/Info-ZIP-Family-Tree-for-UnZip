@@ -20,7 +20,7 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "16 August 2012 (v6.10)" "Info-ZIP"
+.TH UNZIP 1L "16 October 2012 (v6.10)" "Info-ZIP"
 .SH NAME
 unzip \- list, test, or extract compressed files in a ZIP archive
 .PP
@@ -75,6 +75,10 @@ unzip \-\-show\-options
 This report will not include any options which are available only on
 other system types, or options which must be enabled at build-time but
 were not enabled in the particular UnZip program being used.
+.PP
+[VMS] On VMS, alternate program editions with VMS-style command-line
+interfaces are also available.  For details, see the VMS-specific
+documentation.
 .\" =========================================================================
 .SH ARGUMENTS
 .TP
@@ -133,7 +137,7 @@ modified by the operating system or shell.
 .IP
 Note that on VMS systems, the wildcard rules used for archive members
 are the same as on Unix systems.  VMS wildcard rules are used only for
-archive file specifications, not for archive member patterns. 
+archive file specifications, not for archive member patterns.
 .\" =========================================================================
 .SH OPTIONS
 .PP
@@ -365,7 +369,7 @@ appropriate, ASCII<\-\->EBCDIC conversion is also done.
 .IP
 \fIZip\fP (or a similar archiving program) identifies files as "binary"
 or "text" when they are archived.  (A short-format \fIZipInfo\fP report
-denotes a binary file with a "b", and a text file with a "t".) 
+denotes a binary file with a "b", and a text file with a "t".)
 \fIZip\fP's identification of text files may not be perfect, so
 \fIUnZip\fP prints "\fC[binary]\fR" or "\fC[text]\fR" as a visual check
 for each file it extracts with \fB\-a\fP.  The \fB\-aa\fP option forces
@@ -425,7 +429,7 @@ VMS.
 .IP
 \fIZip\fP (or a similar archiving program) identifies files as "binary"
 or "text" when they are archived.  (A short-format \fIZipInfo\fP report
-denotes a binary file with a "b", and a text file with a "t".) 
+denotes a binary file with a "b", and a text file with a "t".)
 .\" \fIZip\fP's identification of text files may not be perfect, so
 .\" \fIUnZip\fP prints "\fC[binary]\fR" or "\fC[text]\fR" as a visual check
 .\" for each file it extracts with \fB\-b\fP.  The \fB\-bb\fP option forces
@@ -490,6 +494,23 @@ restore timestamps for directories as well as other items.  \fB\-D\-\fP
 works only on systems that support setting timestamps for directories
 (currently ATheOS, BeOS, MacOS, OS/2, Unix, VMS, Win32).  On  other
 systems, \fB\-D\-\fP has no effect.
+.IP
+[Non-VMS] Timestamp restoration behavior changed between UnZip versions
+6.00 and 6.10.  The following table shows the effects of various
+\fB\-D\fP options for both versions.
+.IP
+.EX
+       UnZip version      |
+      6.00    |   6.10    | Restore timestamps on:
+   -----------+-----------+------------------------
+       -DD    |    -D     | Nothing.
+       -D     | (default) | Files, not directories.
+    (default) |    -D-    | Files and directories.
+.EE
+.IP
+[VMS] The old behavior on VMS was the same as the new behavior on all
+systems.  (The old negated \fB\-\-D\fP option is now \fB\-D\-\fP,
+because of changes to the command-line parser.)
 .PP
 .PD 0
 .B \-d dest_dir
@@ -817,7 +838,7 @@ files.  See also \fB\-a\fP and \fB\-b\fP.
 .PD
 .B \-\-space\-to\-uscore
 .br
-[OS/2, NT, MS-DOS] convert spaces in filenames to underscores.  Because
+[OS/2, NT, MS-DOS] Convert spaces in filenames to underscores.  Because
 all these operating systems allow spaces in filenames, \fIUnZip\fP
 normally extracts filenames with spaces intact (for example,
 "\fCEA\ DATA.\ SF\fR").  Working with such file names can be awkward,
@@ -882,7 +903,7 @@ options.
 [UNICODE_SUPPORT] Control UTF-8 handling.  When UNICODE_SUPPORT is
 available, \fB\-U\fP forces \fIUnZip\fP to escape all non-ASCII
 characters from UTF-8 coded filenames as "#Uxxxx' (for UCS-2 characters,
-or "#Lxxxxxx" for unicode codepoints needing 3 octets).  This option is
+or "#Lxxxxxx" for Unicode codepoints needing 3 octets).  This option is
 mainly provided for debugging purpose when the fairly new UTF-8 support
 is suspected to mangle up extracted filenames.
 .IP
@@ -908,7 +929,7 @@ details, see Primary Mode options.
 .PD
 .B \-\-keep\-versions
 .br
-[Non-CMS-MVS]  Retain VMS file version numbers.  VMS files can be stored
+[Non-CMS-MVS] Retain VMS file version numbers.  VMS files can be stored
 with a version number, in the format "\fCfile.type;##\fR", where "##" is
 a decimal number.  By default the "\fC;##\fR" version numbers are
 stripped, but this option allows them to be retained.  (On file systems
@@ -1069,7 +1090,7 @@ Primary Mode options.
 .B \-\-volume\-labels
 .br
 .\" [Amiga support possible eventually, but not yet.]
-[MS-DOS, OS/2, NT] restore the volume label if the extraction medium is
+[MS-DOS, OS/2, NT] Restore the volume label if the extraction medium is
 removable (for example, a diskette).  Doubling the option (\fB\-$$\fP)
 allows fixed media (hard disks) to be labeled as well.  By default,
 volume labels are ignored.

@@ -2,14 +2,13 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-10-03  SMS.
+$!     Last revised:  2012-10-17  SMS.
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"
 $!     - Suppress linking executables: "NOLINK"
 $!     - Suppress help file processing: "NOHELP"
 $!     - Suppress message file processing: "NOMSG"
-$!     - Create help output text files: "HELP_TEXT"
 $!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
 $!     - Select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - Select AES_WG encryption support: "AES_WG"
@@ -66,6 +65,7 @@ $!       product files (.EXE, .OBJ,.OLB, and so on): "PROD=subdir", to
 $!       use "[.subdir]".  The default is a name automatically generated
 $!       using rules defined below.
 $!     - Run basic UnZip tests: "TEST", "TEST_PPMD"
+$!     - Create help output text files: "HELP_TEXT"
 $!
 $!     To specify additional options, define the symbol LOCAL_UNZIP
 $!     as a comma-separated list of the C macros to be defined, and
@@ -703,7 +703,7 @@ $!
 $!------------------------------- UnZip section ------------------------------
 $!
 $!
-$! Process the help file, if desired.
+$! Process the Unix-style help file, if desired.
 $!
 $ if (MAKE_HELP)
 $ then

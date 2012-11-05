@@ -349,6 +349,21 @@ member ...
   that  support  setting timestamps for directories (currently ATheOS,
   BeOS, MacOS, OS/2, Unix, VMS, Win32).  On other systems, -D- has  no
   effect.
+
+  [Non-VMS]  Timestamp  restoration  behavior  changed  between  UnZip
+  versions  6.00  and  6.10.  The following table shows the effects of
+  various -D options for both versions.
+
+         UnZip version      |
+        6.00    |   6.10    | Restore timestamps on:
+     -----------+-----------+------------------------
+         -DD    |    -D     | Nothing.
+         -D     | (default) | Files, not directories.
+      (default) |    -D-    | Files and directories.
+
+  [VMS] The old behavior on VMS was the same as the  new  behavior  on
+  all  systems.   (The  old  negated --D option is now -D-, because of
+  changes to the command-line parser.)
 3 -d
 -d dest_dir
 --extract-dir dest_dir
@@ -586,7 +601,7 @@ member ...
 -s
 --space-to-uscore
 
-  [OS/2, NT, MS-DOS]  convert  spaces  in  filenames  to  underscores.
+  [OS/2, NT, MS-DOS]  Convert  spaces  in  filenames  to  underscores.
   Because all these operating systems allow spaces in filenames, UnZip
   normally extracts filenames with spaces  intact  (for  example,  "EA
   DATA.   SF").  Working with such file names can be awkward, however,
@@ -633,7 +648,7 @@ member ...
   [UNICODE_SUPPORT] Control UTF-8 handling.  When  UNICODE_SUPPORT  is
   available,  -U  forces UnZip to escape all non-ASCII characters from
   UTF-8  coded  filenames  as  "#Uxxxx'  (for  UCS-2  characters,   or
-  "#Lxxxxxx" for unicode codepoints needing 3 octets).  This option is
+  "#Lxxxxxx" for Unicode codepoints needing 3 octets).  This option is
   mainly provided for debugging purpose  when  the  fairly  new  UTF-8
   support is suspected to mangle up extracted filenames.
 
@@ -781,7 +796,7 @@ member ...
 -$
 --volume-labels
 
-  [MS-DOS, OS/2, NT] restore the volume label if the extraction medium
+  [MS-DOS, OS/2, NT] Restore the volume label if the extraction medium
   is  removable  (for example, a diskette).  Doubling the option (-$$)
   allows fixed media (hard disks) to be labeled as well.  By  default,
   volume labels are ignored.

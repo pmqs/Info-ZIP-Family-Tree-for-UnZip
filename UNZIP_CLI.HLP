@@ -191,10 +191,10 @@
    The optional keywords are:
 
        ALL      Extract all files with fixed-length, 512-byte record
-                format.
+                format.  (-bb)
        AUTO     Extract binary files with fixed-length, 512-byte
                 record format.  (Default value keyword: "/BINARY" is
-                equivalent to "/BINARY=AUTO".)
+                equivalent to "/BINARY=AUTO".)  (-b)
        NONE     Same as /NOBINARY.  Extract binary files with
                 Stream_LF record format.  (Default condition.)
 
@@ -267,9 +267,9 @@
 
    The optional keywords are:
 
-       NEW_VERSION  Create a new version of an existing file.
-       OVERWRITE    Overwrite an existing file.
-       NOEXTRACT    Do not extract, leaving an existing file intact.
+       NEW_VERSION  Create a new version of an existing file.  (-o)
+       OVERWRITE    Overwrite an existing file.  (-oo)
+       NOEXTRACT    Do not extract.  Leave an existing file intact.  (-n)
 
    By default, UnZip queries the user before extracting any file  that
    already exists.
@@ -338,7 +338,7 @@
 
    The optional keywords and values are:
 
-       CASE=BLIND          Name matching is case-insensitive.
+       CASE=BLIND          Name matching is case-insensitive.  (-C)
        CASE=SENSITIVE      Name matching is case-sensitive.  (Default.)
 
    By  default,  case-sensitive  matching  is  done.    For   example,
@@ -357,7 +357,7 @@
    [WILD_STOP_AT_DIR] If the C macro WILD_STOP_AT_DIR  is  defined  at
    build time, then an additional keyword is allowed:
 
-       NOWILD_MATCH_SLASH  Wildcards stop at directory slash.
+       NOWILD_MATCH_SLASH  Wildcards stop at directory slash.  (-W)
        WILD_MATCH_SLASH    Wildcards match directory slash.  (Default.)
 
    By default, the wildcard characters "?" (single-character wildcard)
@@ -395,13 +395,14 @@
    Selects name transformations during extraction.  The keywords are:
 
        DOWNCASE      Convert filenames from all-uppercase operating
-                     systems to lowercase.
+                     systems to lowercase.  (-L)
+       DOWNCASE=ALL  Convert all filenames to lowercase.  (-LL)
        ODS2          Restrict names to ODS2 conventions, regardless
                      of the destination file system.  (Invalid
-                     character -> "_".)
+                     character -> "_".)  (-2)
        [NO]SPACES    SPACES: Permit space characters in (ODS5) names.
                      (Default condition.)
-                     NOSPACES: Change spaces to underscores.
+                     NOSPACES: Change spaces to underscores.  (-s)
 
    The default is to use ODS5-compatible file names (including spaces)
    when  the destination file system is ODS5, and to convert the names
@@ -458,9 +459,11 @@
    Selects restoration  options  for  some  meta-data.   The  optional
    keywords are:
 
-       OWNER_PROT    Restore file owner and ACL protection settings.
-       NOOWNER_PROT  Do not restore file owner and ACL protection
-                     settings.
+       ACL           Restore file protection, owner, and ACL settings.
+                     (-XX)
+       PROTECTION    Restore file protection settings.  (Default.)
+       NOPROTECTION  Do not restore file owner and ACL protection
+                     settings.  (-X-)
        NODATE        Do not restore any timestamps.
        DATE=ALL      Restore timestamps for all extracted entries,
                      files and directories.
@@ -475,8 +478,8 @@
    following deprecated short forms are still accepted:
 
        Deprecated form:      Modern form:
-       /RESTORE              /RESTORE=OWNER_PROT
-       /NORESTORE            /RESTORE=NOOWNER_PROT
+       /RESTORE              /RESTORE=PROTECTION
+       /NORESTORE            /RESTORE=NOPROTECTION
 3 /TEXT (-a, -aa, -S)
 
    /TEXT[=(keyword, ...)]
@@ -486,18 +489,18 @@
 
        ALL      Extract all files with variable-length record format.
                 Adjust line endings to local standard, and convert
-                EBCDIC to  ASCII, as needed.
+                EBCDIC to  ASCII, as needed.  (-aa)
        AUTO     Extract text files with variable-length record format.
                 Adjust line endings to local standard, and convert
                 EBCDIC to ASCII, as needed.  (Default value keyword:
-                "/TEXT" is equivalent to "/TEXT=AUTO".)
+                "/TEXT" is equivalent to "/TEXT=AUTO".)  (-a)
        NONE     Same as /NOTEXT.  Extract text files with Stream_LF
                 record format without conversions.  (Default
                 condition.)
        STMLF    Use Stream_LF record format for text files (instead of
                 variable-length record format) when ALL or AUTO is in
                 effect.  Adjust line endings to local standard, and
-                convert EBCDIC to ASCII, as needed.
+                convert EBCDIC to ASCII, as needed.  (-S)
 
    Selects the file record format, character encoding, and line-ending
    type used when extracting text files.
@@ -559,9 +562,9 @@
 
        NORMAL   Make a report more detailed/verbose.  (Default value
                 keyword: "/VERBOSE" is equivalent to
-                "/VERBOSE=NORMAL".)  Unix-style: "-v".
+                "/VERBOSE=NORMAL".)  (-v)
        MORE     Enable special developer I/O diagnostics.  See below.
-                Unix-style: "-vv".
+                (-vv)
        COMMAND  Enable special developer CLI diagnostics.  See below.
 
    MORE and NORMAL may  not  be  specified  together.   (MORE  implies
@@ -740,9 +743,12 @@
 
        unzip /test /quiet *.zip
 
-   (On a Unix system, the wildcard archive name would  typically  need
-   to be quoted to keep a a Unix shell from expanding ("globbing") it.
-   This is not necessary on VMS.)
+   (On a Unix system, the wildcard member name would typically need to
+   be  quoted  to  keep a a Unix shell from expanding ("globbing") it.
+   This is not necessary on VMS.  However, a name with a  slash  ("/")
+   character,  such as "*/zip*.*", must be quoted.  Otherwise, DCL may
+   interpret the slash as introducing a qualifier, causing  unexpected
+   behavior or an "%CLI-W-IVQUAL, unrecognized qualifier" error.)
 
    The following command extracts to standard output  all  members  of
    letters.zip whose names end in ".tex", auto-converting to the local
@@ -1022,7 +1028,7 @@
 
    The optional keywords and values are:
 
-       CASE=BLIND          Name matching is case-insensitive.
+       CASE=BLIND          Name matching is case-insensitive.  (-C)
        CASE=SENSITIVE      Name matching is case-sensitive.  (Default.)
 
    By  default,  case-sensitive  matching  is  done.    For   example,
@@ -1041,7 +1047,7 @@
    [WILD_STOP_AT_DIR] If the C macro WILD_STOP_AT_DIR  is  defined  at
    build time, then an additional keyword is allowed:
 
-       NOWILD_MATCH_SLASH  Wildcards stop at directory slash.
+       NOWILD_MATCH_SLASH  Wildcards stop at directory slash.  (-W)
        WILD_MATCH_SLASH    Wildcards match directory slash.  (Default.)
 
    By default, the wildcard characters "?" (single-character wildcard)
@@ -1238,12 +1244,28 @@
 
    (On a Unix system, the wildcard member name would typically need to
    be  quoted  to  keep a a Unix shell from expanding ("globbing") it.
-   This is not necessary on VMS.)
+   This is not necessary on VMS.  However, a name with a  slash  ("/")
+   character,  such as "*/zip*.*", must be quoted.  Otherwise, DCL may
+   interpret the slash as introducing a qualifier, causing  unexpected
+   behavior or an "%CLI-W-IVQUAL, unrecognized qualifier" error.)
 
    To list information on a single archive member, in  medium  format,
    specify the member name explicitly:
 
        zipinfo /medium unzip60.zip */unshrink.c
+
+   On a VMS system, one could use /DECIMAL_TIME along with an external
+   sorting  program  to  get  a  listing  of  files  in the archive in
+   date-time order:
+
+       pipe zipinfo /decimal_time /long /noheader /nototals zip31c.zip | -
+        sort sys$input sys$output /key = (position:47, size:15, descend)
+
+   For a /LONG (-l) format report, the date-time field should begin at
+   position  47; for /MEDIUM (-m), 42; for /SHORT (-s), 38.  HELP SORT
+   [/KEY] should lead to an explanation of the various  SORT  options.
+   (Unlike  Unix,  VMS  does  not  include  a  useful "head" or "tail"
+   program.)
 
    On a Unix system, one  could  use  the  -T  option  along  with  an
    external sorting program (and another filter like "head" or "tail")

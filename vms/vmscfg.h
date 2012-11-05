@@ -202,6 +202,12 @@ extern int strncasecmp( char *, char *, size_t);
 typedef struct stat z_stat;
 #define Z_STAT_DEFINED
 
+#if defined( UNICODE_SUPPORT) && defined( UNICODE_WCHAR)
+# define HAVE_CTYPE_H
+# define HAVE_LOCALE_H
+# define HAVE_WCHAR_H
+# define HAVE_WCTYPE_H
+#endif /* defined( UNICODE_SUPPORT) && defined( UNICODE_WCHAR) */
 
 #ifdef __DECC
 

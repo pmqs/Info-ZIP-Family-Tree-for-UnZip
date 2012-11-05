@@ -56,10 +56,11 @@ Define	Verb		UNZIP
 	DisAllow	LOWERCASE and UPPERCASE
 	DisAllow	(neg LOWERCASE) and (neg UPPERCASE)
 	DisAllow	(OVERWRITE or (neg OVERWRITE)) and EXISTING
-	DisAllow	LOWERCASE and (neg NAMES.DOWNCASE)
+	DisAllow	LOWERCASE and (NAMES.NODOWNCASE)
 	DisAllow	(neg LOWERCASE) and NAMES.DOWNCASE
 	DisAllow	UPPERCASE and NAMES.DOWNCASE
 	DisAllow	(neg UPPERCASE) and NAMES.DOWNCASE
+	DisAllow	NAMES.DOWNCASE and NAMES.NODOWNCASE
 	DisAllow	MATCH and ((neg MATCH.CASE) and (neg
 			 MATCH.WILD_MATCH_SLASH))
 	DisAllow	ODS2 and (neg NAMES.ODS2)
@@ -96,6 +97,10 @@ Define	Type		CASE_OPTS
 	Keyword		SENSITIVE, DEFAULT
 	Keyword		BLIND
 
+Define	Type		DOWNCASE_OPTS
+	Keyword		SOME, DEFAULT
+	Keyword		ALL
+
 Define	Type		EXISTING_KEYWORDS
 	Keyword		NEW_VERSION
 	Keyword		OVERWRITE
@@ -110,7 +115,8 @@ Define	Type		MATCH_OPTS
 	Keyword		WILD_MATCH_SLASH, Negatable
 
 Define	Type		NAMES_KEYWORDS
-	Keyword		DOWNCASE, Negatable
+	Keyword		DOWNCASE, VALUE(TYPE=DOWNCASE_OPTS), NonNegatable
+	Keyword		NODOWNCASE, NonNegatable
 	Keyword		ODS2, Negatable
 	Keyword		SPACES, Negatable
 
@@ -159,6 +165,8 @@ Define Syntax INFORMATION
 	Qualifier	TIMES, Negatable
 	Qualifier	TOTALS, Negatable
 
+	DisAllow	DECIMAL_TIME and (neg TIMES)
+	DisAllow	(neg DECIMAL_TIME) and TIMES
 	DisAllow	NOVERBOSE and VERBOSE.NORMAL
 	DisAllow	ONE_LINE and SHORT
 	DisAllow	ONE_LINE and MEDIUM
