@@ -760,7 +760,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (04 Nov 2012):
+6.10c09 (06 Nov 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -943,6 +943,10 @@ Bugs fixed:
    members at the beginning of an archive, instead of doing nothing when
    the first archive member was a directory.  Changed some messages and
    exit status codes.  Still crude in many places.  (funzip.c) [SMS]
+ - With UNICODE_SUPPORT, UnZip could fail (SIGBUS, SIGSEGV,
+   %SYSTEM-F-ACCVIO, ...) when processing a non-Unicode name which
+   contained character codes above 127.  More thought/work may be needed
+   here.  (extract.c) [SMS]
 
 ==================
 

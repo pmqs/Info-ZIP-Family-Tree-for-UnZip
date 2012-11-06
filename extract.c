@@ -4003,11 +4003,19 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
 
 #ifndef NATIVE   /* ASCII:  filter ANSI escape codes, etc. */
 
-# ifdef UNICODE_SUPPORT
-/* If Unicode support is enabled, do the isprint() checks by first
-   converting to wide characters and checking those.  That avoids
-   issues doing checks on multi-byte characters.  After the replacements
-   the wide string is converted back to the local character set. */
+    ZCONST uch *r;
+    uch *s = space;
+    uch *slim = NULL;
+    uch *se = NULL;
+    int have_overflow = FALSE;
+
+# if defined( UNICODE_SUPPORT) && defined( _MBCS)
+/* If Unicode support is enabled, and we have multi-byte characters,
+ * then do the isprint() checks by first converting to wide characters
+ * and checking those.  This avoids our having to parse multi-byte
+ * characters for ourselves.  After the wide-char replacements have been
+ * made, the wide string is converted back to the local character set.
+ */
 
     wchar_t *wstring;    /* wchar_t version of raw */
     size_t wslen;        /* length of wstring */
@@ -4016,129 +4024,169 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
     size_t woslen;       /* length of wostring */
     wchar_t *woc;        /* pointer to char in wostring */
     char *newraw;        /* new raw */
-    ZCONST uch *r;
-    uch *s=space;
-    uch *slim=NULL;
-    uch *se=NULL;
-    int have_overflow = FALSE;
 
-    wslen = mbstowcs(NULL, raw, 0 );
-    if ((wstring = (wchar_t *)malloc((wslen + 1) * sizeof(wchar_t))) == NULL) {
-        strcpy( (char *)space, raw);
-        return (char *)space;
-    }
-    if ((wostring = (wchar_t *)malloc(2 * (wslen + 1) * sizeof(wchar_t))) ==
-     NULL) {
-        free(wstring);
-        strcpy( (char *)space, raw);
-        return (char *)space;
-    }
-    wslen = mbstowcs(wstring, raw, wslen + 1);
-    wc = wstring;
-    woc = wostring;
+    /* 2012-11-06 SMS.
+     * Changed to check the value returned by mbstowcs(), and bypass the
+     * Unicode processing if it fails.  This seems to fix a problem
+     * reported in the SourceForge forum, but it's not clear that we
+     * should be doing any Unicode processing without some evidence that
+     * the name actually is Unicode.  (Check bit 11 in the flags before
+     * coming here?)
+     * https://sourceforge.net/tracker/?func=detail&aid=3584238&\
+     * group_id=118012&atid=679786
+     */
 
-    while (*wc) {
-        if (!iswprint(*wc)) {
-            if (*wc < 32) {
-                /* ASCII control codes are escaped as "^{letter}". */
-                *woc++ = (wchar_t)'^';
-                *woc++ = (wchar_t)(64 + *wc);
-            } else {
-                /* Other unprintable codes are replaced by the
-                 * placeholder character. */
-                *woc++ = (wchar_t)UZ_FNFILTER_REPLACECHAR;
-            }
-        } else {
-            *woc++ = *wc;
+    if (MB_CUR_MAX <= 1)
+    {
+        /* There's no point to converting multi-byte chars if there are
+         * no multi-byte chars.
+         */
+        wslen = (size_t)-1;
+    }
+    else
+    {
+        /* Get Unicode wide character count (for storage allocation). */
+        wslen = mbstowcs( NULL, raw, 0);
+    }
+
+    if (wslen != (size_t)-1)
+    {
+        /* Apparently valid Unicode.  Allocate wide-char storage. */
+        wstring = (wchar_t *)malloc((wslen + 1) * sizeof(wchar_t));
+        if (wstring == NULL) {
+            strcpy( (char *)space, raw);
+            return (char *)space;
         }
-        wc++;
-    }
-    *woc = (wchar_t)0;
+        wostring = (wchar_t *)malloc(2 * (wslen + 1) * sizeof(wchar_t));
+        if (wostring == NULL) {
+            free(wstring);
+            strcpy( (char *)space, raw);
+            return (char *)space;
+        }
 
-    /* convert back to local string to work with output buffer */
-    woslen = wcstombs(NULL, wostring, 0 );
-    if ((newraw = malloc(woslen + 1)) == NULL) {
+        /* Convert the multi-byte Unicode to wide chars. */
+        wslen = mbstowcs(wstring, raw, wslen + 1);
+        wc = wstring;
+        woc = wostring;
+
+        /* Filter the wide chars. */
+        while (*wc) {
+            if (!iswprint(*wc)) {
+                if (*wc < 32) {
+                    /* ASCII control codes are escaped as "^{letter}". */
+                    *woc++ = (wchar_t)'^';
+                    *woc++ = (wchar_t)(64 + *wc);
+                } else {
+                    /* Other unprintable codes are replaced by the
+                     * placeholder character. */
+                    *woc++ = (wchar_t)UZ_FNFILTER_REPLACECHAR;
+                }
+            } else {
+                *woc++ = *wc;
+            }
+            wc++;
+        }
+        *woc = (wchar_t)0;
+
+        /* Convert filtered wide chars back to multi-byte. */
+        woslen = wcstombs( NULL, wostring, 0);
+        if ((newraw = malloc(woslen + 1)) == NULL) {
+            free(wstring);
+            free(wostring);
+            strcpy( (char *)space, raw);
+            return (char *)space;
+        }
+        woslen = wcstombs( newraw, wostring, (woslen * MB_CUR_MAX) + 1);
+
+        if (size > 0) {
+            slim = space + size - 4;
+        }
+        r = (ZCONST uch *)newraw;
+        while (*r) {
+            if (size > 0 && s >= slim && se == NULL) {
+                se = s;
+            }
+#  ifdef QDOS
+            if (qlflag & 2) {
+                if (*r == '/' || *r == '.') {
+                    if (se != NULL && (s > (space + (size-3)))) {
+                        have_overflow = TRUE;
+                        break;
+                    }
+                    ++r;
+                    *s++ = '_';
+                    continue;
+                }
+            } else
+#  endif
+            {
+                if (se != NULL && (s > (space + (size-3)))) {
+                    have_overflow = TRUE;
+                    break;
+                }
+                *s++ = *r++;
+            }
+        }
+        if (have_overflow) {
+            strcpy((char *)se, "...");
+        } else {
+            *s = '\0';
+        }
+
         free(wstring);
         free(wostring);
-        strcpy( (char *)space, raw);
-        return (char *)space;
+        free(newraw);
     }
-    woslen = wcstombs(newraw, wostring, (woslen * MB_CUR_MAX) + 1 );
+    else
+# endif /* def UNICODE_SUPPORT */
+    {
+        /* No Unicode support, or apparently invalid Unicode. */
+        r = (ZCONST uch *)raw;
 
-
-    if (size > 0) {
-        slim = space + size - 4;
-    }
-    r = (ZCONST uch *)newraw;
-    while (*r) {
-        if (size > 0 && s >= slim && se == NULL) {
-            se = s;
-        }
-#  ifdef QDOS
-        if (qlflag & 2) {
-            if (*r == '/' || *r == '.') {
-                if (se != NULL && (s > (space + (size-3)))) {
-                    have_overflow = TRUE;
-                    break;
-                }
-                ++r;
-                *s++ = '_';
-                continue;
-            }
-        } else
-#  endif
-        {
-            if (se != NULL && (s > (space + (size-3)))) {
-                have_overflow = TRUE;
-                break;
-            }
-            *s++ = *r++;
-        }
-    }
-    if (have_overflow) {
-        strcpy((char *)se, "...");
-    } else {
-        *s = '\0';
-    }
-
-    free(wstring);
-    free(wostring);
-    free(newraw);
-
-# else /* !UNICODE_SUPPORT */
-
-    ZCONST uch *r=(ZCONST uch *)raw;
-    uch *s=space;
-    uch *slim=NULL;
-    uch *se=NULL;
-    int have_overflow = FALSE;
-
-    if (size > 0) {
-        slim = space + size
+        if (size > 0) {
+            slim = space + size
 #  ifdef _MBCS
-                     - (MB_CUR_MAX - 1)
+                         - (MB_CUR_MAX - 1)
 #  endif
-                     - 4;
-    }
-    while (*r) {
-        if (size > 0 && s >= slim && se == NULL) {
-            se = s;
+                         - 4;
         }
-#  ifdef QDOS
-        if (qlflag & 2) {
-            if (*r == '/' || *r == '.') {
-                if (se != NULL && (s > (space + (size-3)))) {
-                    have_overflow = TRUE;
-                    break;
-                }
-                ++r;
-                *s++ = '_';
-                continue;
+        while (*r) {
+            if (size > 0 && s >= slim && se == NULL) {
+                se = s;
             }
-        } else
+#  ifdef QDOS
+            if (qlflag & 2) {
+                if (*r == '/' || *r == '.') {
+                    if (se != NULL && (s > (space + (size-3)))) {
+                        have_overflow = TRUE;
+                        break;
+                    }
+                    ++r;
+                    *s++ = '_';
+                    continue;
+                }
+            } else
 #  endif
 #  ifdef HAVE_WORKING_ISPRINT
-        if (!isprint(*r)) {
+            if (!isprint(*r)) {
+                if (*r < 32) {
+                    /* ASCII control codes are escaped as "^{letter}". */
+                    if (se != NULL && (s > (space + (size-4)))) {
+                        have_overflow = TRUE;
+                        break;
+                    }
+                    *s++ = '^', *s++ = (uch)(64 + *r++);
+                } else {
+                    /* Other unprintable codes are replaced by the
+                     * placeholder character. */
+                    if (se != NULL && (s > (space + (size-3)))) {
+                        have_overflow = TRUE;
+                        break;
+                    }
+                    *s++ = UZ_FNFILTER_REPLACECHAR;
+                    INCSTR(r);
+                }
+#  else /* !HAVE_WORKING_ISPRINT */
             if (*r < 32) {
                 /* ASCII control codes are escaped as "^{letter}". */
                 if (se != NULL && (s > (space + (size-4)))) {
@@ -4146,49 +4194,31 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                     break;
                 }
                 *s++ = '^', *s++ = (uch)(64 + *r++);
+#  endif /* ?HAVE_WORKING_ISPRINT */
             } else {
-                /* Other unprintable codes are replaced by the
-                 * placeholder character. */
+#  ifdef _MBCS
+                unsigned i = CLEN(r);
+                if (se != NULL && (s > (space + (size-i-2)))) {
+                    have_overflow = TRUE;
+                    break;
+                }
+                for (; i > 0; i--)
+                    *s++ = *r++;
+#  else /* def _MBCS */
                 if (se != NULL && (s > (space + (size-3)))) {
                     have_overflow = TRUE;
                     break;
                 }
-                *s++ = UZ_FNFILTER_REPLACECHAR;
-                INCSTR(r);
-            }
-#  else /* !HAVE_WORKING_ISPRINT */
-        if (*r < 32) {
-            /* ASCII control codes are escaped as "^{letter}". */
-            if (se != NULL && (s > (space + (size-4)))) {
-                have_overflow = TRUE;
-                break;
-            }
-            *s++ = '^', *s++ = (uch)(64 + *r++);
-#  endif /* ?HAVE_WORKING_ISPRINT */
-        } else {
-#  ifdef _MBCS
-            unsigned i = CLEN(r);
-            if (se != NULL && (s > (space + (size-i-2)))) {
-                have_overflow = TRUE;
-                break;
-            }
-            for (; i > 0; i--)
                 *s++ = *r++;
-#  else
-            if (se != NULL && (s > (space + (size-3)))) {
-                have_overflow = TRUE;
-                break;
-            }
-            *s++ = *r++;
-#  endif
-         }
+#  endif /* def _MBCS [else] */
+             }
+        }
+        if (have_overflow) {
+            strcpy((char *)se, "...");
+        } else {
+            *s = '\0';
+        }
     }
-    if (have_overflow) {
-        strcpy((char *)se, "...");
-    } else {
-        *s = '\0';
-    }
-# endif /* !UNICODE_SUPPORT */
 
 # ifdef WINDLL
     INTERN_TO_ISO((char *)space, (char *)space);  /* translate to ANSI */
