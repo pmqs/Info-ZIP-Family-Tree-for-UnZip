@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   29 Sep 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   14 Nov 2012
 #==============================================================================
 
 #==============================================================================
@@ -106,6 +106,7 @@
 #
 #   UnZip optional feature configuration:
 #    AES_WG      - Enable AES encryption (WinZip/Gladman)
+#    ICONV       - Enable ISO/OEM character conversion using iconv.
 #    IZ_BZIP2    - Enable BZIP2 compression
 #    IZ_ZLIB     - Use ZLIB for deflate compression
 #    LIBUNZIP    - Build UnZip object library
@@ -167,8 +168,8 @@ echo ''
 echo 'Generating system-dependent flags...'
 
 # Evaluate only variables in this list.  Complain about others, but continue.
-valid_vars1='|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CPP|DLLEXT|IZ_BZIP2|IZ_ZLIB'
-valid_vars2='|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP|LZMA'
+valid_vars1='|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CPP|DLLEXT|ICONV'
+valid_vars2='|IZ_BZIP2|IZ_ZLIB|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP|LZMA'
 valid_vars3='|OSDEP_H|OSDEP_OCF|OSDEP_OCS|OSDEP_OCU|OSDEP_OS'
 valid_vars4='|PGMEXT|PPMD|PROD|RANLIB|'
 valid_vars="${valid_vars1}${valid_vars2}${valid_vars3}${valid_vars4}"
@@ -238,6 +239,7 @@ PORT_SPEC=''                               # Port specification method
                                            #   Implicit ('I') via config test
 
 AES_WG=${AES_WG:-}                         # AES (WinZip/Gladman) encryption
+ICONV=${ICONV:-}                           # ISO/OEM (iconv) conversion
 IZ_BZIP2=${IZ_BZIP2:-}                     # BZIP2 compression
 IZ_ZLIB=${IZ_ZLIB:-}                       # ZLIB compression
 LZMA=${LZMA:-}                             # LZMA compression
@@ -1261,7 +1263,50 @@ else
 fi
 
 #------------------------------------------------------------------------------
-# F) Configure optional LZMA compression library.
+# F) Configure optional ISO/OEM (iconv) conversion library.
+#------------------------------------------------------------------------------
+# ICONV conversion.  (User must request: "ICONV=1".)
+if [ -n "${ICONV}" ]; then
+  echo "Check ISO/OEM (iconv) conversion support"
+  cat > conftest.c << _EOF_
+#include <iconv.h>
+int main()
+{
+#ifndef ICONV_MAPPING
+   forget it
+#endif
+   iconv_t rslt;
+   rslt = iconv_open( "ASCII", "ASCII");
+   return ((rslt == (iconv_t)(-1)) ? -1 : 0);
+}
+_EOF_
+  $CC_TST $CFLAGS -DICONV_MAPPING -c conftest.c >/dev/null 2>/dev/null
+  status=$?
+  if [ $status -eq 0 ]; then
+    # Try linking with no special library.
+    $CC_TST $LFLAGS1 -o conftest conftest.o >/dev/null 2>/dev/null
+    status=$?
+    if [ $status -ne 0 ]; then
+      # That failed, so try linking with libiconv.
+      $CC_TST $LFLAGS1 -liconv -o conftest conftest.o >/dev/null 2>/dev/null
+      status=$?
+      if [ $status -eq 0 ]; then
+        LFLAGS2="${LFLAGS2} -liconv"
+      fi
+    fi
+  fi
+  if [ $status -eq 0 ]; then
+    CFLAGS_TST="${CFLAGS_TST} -DICONV_MAPPING"
+    echo "-- Including ISO/OEM (iconv) conversion support"
+  else
+    echo "^^ Unable to include ISO/OEM (iconv) conversion support"
+  fi
+else
+  echo "No ISO/OEM (iconv) conversion"
+fi
+
+#------------------------------------------------------------------------------
+# F') Configure optional LZMA compression library.
 #------------------------------------------------------------------------------
 # LZMA compression.  (User must request: "LZMA=1".)
 if [ -n "${LZMA}" ]; then
@@ -1306,7 +1351,7 @@ else
 fi
 
 #------------------------------------------------------------------------------
-# F') Configure optional PPMd compression library.
+# F'') Configure optional PPMd compression library.
 #------------------------------------------------------------------------------
 # PPMd compression.  (User must request: "PPMD=1".)
 if [ -n "${PPMD}" ]; then
@@ -2357,11 +2402,21 @@ fi
 #------------------------------------------------------------------------------
 
 # Check validity of -Wno-format-security (for modern GCC).
-echo 'Check -Wno-format-security'
+CF_TEST='-Wno-format-security'
+echo "Check ${CF_TEST}"
 cat > conftest.c << _EOF_
 int main() { return 0; }
 _EOF_
-CF_TEST='-Wno-format-security'
+${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c >/dev/null 2>/dev/null
+status=$?
+[ $status -eq 0 ] && CFLAGS_TST="${CFLAGS_TST} ${CF_TEST}"
+
+# Check validity of -Wno-format-nonliteral (for Clang).
+CF_TEST='-Wno-format-nonliteral'
+echo "Check ${CF_TEST}"
+cat > conftest.c << _EOF_
+int main() { return 0; }
+_EOF_
 ${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -eq 0 ] && CFLAGS_TST="${CFLAGS_TST} ${CF_TEST}"

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -34,6 +34,11 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 
+#ifdef ICONV_MAPPING
+#include <iconv.h>
+#include <langinfo.h>
+#endif /* ICONV_MAPPING */
+
 #include "beos.h"
 #include <errno.h>             /* Just make sure we've got a few things... */
 #include <sys/types.h>
@@ -44,7 +49,7 @@
 
 /* For the new post-DR8 file attributes */
 #include <kernel/fs_attr.h>
-#include <support/byteorder.h>
+#include <support/ByteOrder.h>
 #include <storage/Mime.h>
 
 static unsigned filtattr OF((__GPRO__ unsigned perms));
@@ -1539,3 +1544,89 @@ static void assign_MIME( const char *file )
     retval = update_mime_info( fullname, FALSE, TRUE, TRUE );
 }
 #endif
+
+
+#ifdef ICONV_MAPPING
+typedef struct {
+    char *local_charset;
+    char *archive_charset;
+} CHARSET_MAP;
+
+/* A mapping of local <-> archive charsets used by default to convert filenames
+ * of DOS/Windows Zip archives. Currently very basic. */
+static CHARSET_MAP dos_charset_map[] = {
+    { "ANSI_X3.4-1968", "CP850" },
+    { "ISO-8859-1", "CP850" },
+    { "CP1252", "CP850" },
+    { "UTF-8", "CP866" },
+    { "KOI8-R", "CP866" },
+    { "KOI8-U", "CP866" },
+    { "ISO-8859-5", "CP866" }
+};
+
+char OEM_CP[MAX_CP_NAME] = "";
+char ISO_CP[MAX_CP_NAME] = "";
+
+/* Try to guess the default value of OEM_CP based on the current locale.
+ * ISO_CP is left alone for now. */
+void init_conversion_charsets()
+{
+    const char *local_charset;
+    int i;
+
+    /* Make a guess only if OEM_CP not already set. */ 
+    if(*OEM_CP == '\0') {
+    	local_charset = nl_langinfo(CODESET);
+    	for(i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
+    		if(!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
+    			strncpy(OEM_CP, dos_charset_map[i].archive_charset,
+    					sizeof(OEM_CP));
+    			break;
+    		}
+    }
+}
+
+/* Convert a string from one encoding to the current locale using iconv().
+ * Be as non-intrusive as possible. If error is encountered during
+ * convertion just leave the string intact. */
+static void charset_to_intern(char *string, char *from_charset)
+{
+    iconv_t cd;
+    char *s,*d, *buf;
+    size_t slen, dlen, buflen;
+    const char *local_charset;
+
+    if (*from_charset == '\0')
+        return;
+
+    buf = NULL;
+    local_charset = nl_langinfo(CODESET);
+
+    if ((cd = iconv_open(local_charset, from_charset)) == (iconv_t)-1)
+        return;
+
+    slen = strlen(string);
+    s = string;
+    dlen = buflen = 2 * slen;
+    d = buf = malloc(buflen + 1);
+    if (d) {
+        memset( buf, 0, buflen);
+        if(iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1)
+            strncpy(string, buf, buflen);
+        free(buf);
+    }
+    iconv_close(cd);
+}
+
+/* Convert a string from OEM_CP to the current locale charset. */
+inline void oem_intern(char *string)
+{
+    charset_to_intern(string, OEM_CP);
+}
+
+/* Convert a string from ISO_CP to the current locale charset. */
+inline void iso_intern(char *string)
+{
+    charset_to_intern(string, ISO_CP);
+}
+#endif /* def ICONV_MAPPING */

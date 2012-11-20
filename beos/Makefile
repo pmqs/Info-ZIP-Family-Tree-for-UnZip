@@ -49,7 +49,7 @@
 SHELL = /bin/sh
 
 # Punish those of you not running on SMP hardware...
-MAKE  = make -j 4 -f beos/Makefile
+MAKE  = make -f beos/Makefile
 
 LOC=$(LOCAL_UNZIP) -DPASSWD_FROM_STDIN
 AF=$(LOC)
@@ -82,7 +82,7 @@ OBJS = $(OBJS1) $(OBJS2) $(OBJS3) $M$O $(BEOS_MAIN)
 LOBJS = $(OBJS)
 OBJSDLL = $(OBJS) api$O
 OBJX = unzipsfx$O crc32_$O crypt_$O extract_$O fileio_$O globals_$O \
-	inflate_$O match_$O process_$O ttyio_$O ubz2err_$O $M_$O $(BEOS_MAIN)
+	inflate_$O process_$O ttyio_$O ubz2err$O $M_$O match$O $(BEOS_MAIN)
 LOBJX = $(OBJX)
 OBJF = funzip$O crc32f$O cryptf$O globalsf$O inflatef$O ttyiof$O
 UNZIP_H = unzip.h unzpriv.h globals.h $(OSDEP_H)
@@ -157,12 +157,12 @@ endif
 ifeq "$(WHAT)" "x86-gcc"
 CC=gcc
 LD=gcc
-CF=-O3 -mpentiumpro \
+CF=-O3 -march=pentiumpro -DUNIX \
    -Wall -Wno-multichar -Wno-trigraphs \
-   -ansi -I. -I/boot/develop/headers/be/support \
+   -I. -I/boot/develop/headers/be/support \
    -I/boot/develop/headers/be/storage $(LOC)
 LF=-o unzip
-LF2=-L/boot/develop/lib/x86 -lbe -lroot
+LF2=-L/boot/develop/lib/x86 -lbe -lroot -liconv
 BEOS_MAIN=beosmain$O
 TARGET=$(UNZIPS)
 endif
@@ -310,7 +310,7 @@ ttyio_$O:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
 
 ubz2err$O:	ubz2err.c $(UNZIP_H)
 	$(CP) ubz2err.c ubz2err_.c
-	$(CC) -c $(CF) -DSFX ubz2err_.c
+	$(CC) -c $(CF) -DSFX ubz2err_.c -o ubz2err$O
 	$(RM) ubz2err_.c
 
 # funzip compilation section

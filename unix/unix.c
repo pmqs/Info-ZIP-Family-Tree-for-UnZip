@@ -30,10 +30,10 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # include <iconv.h>
 # include <langinfo.h>
-#endif /* USE_ICONV_MAPPING */
+#endif /* ICONV_MAPPING */
 
 #ifdef SCO_XENIX
 # define SYSNDIR
@@ -2158,7 +2158,7 @@ static void qlfix(__G__ ef_ptr, ef_len)
 #endif /* def QLZIP */
 
 
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 typedef struct {
 /*  char *local_charset; */
     char *local_lang;
@@ -2308,7 +2308,7 @@ static void charset_to_intern(char *string, char *from_charset)
     dlen = buflen = 2 * slen;
     d = buf = malloc(buflen + 1);
     if (d) {
-        bzero(buf, buflen);
+        memset( buf, 0, buflen);
         if(iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1)
             strncpy(string, buf, buflen);
         free(buf);
@@ -2327,7 +2327,7 @@ inline void iso_intern(char *string)
 {
     charset_to_intern(string, ISO_CP);
 }
-#endif /* def USE_ICONV_MAPPING */
+#endif /* def ICONV_MAPPING */
 
 
 #if defined( UNIX) && defined( __APPLE__)

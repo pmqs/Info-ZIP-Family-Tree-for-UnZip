@@ -486,6 +486,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  ifdef DOSWILD
     static ZCONST char Far DosWild[] = "DOSWILD";
 #  endif
+#  ifdef ICONV_MAPPING
+    static ZCONST char Far Iconv[] =
+     "ICONV_MAPPING        (ISO/OEM (iconv) conversion supported)";
+#  endif
 #  ifdef IZ_HAVE_UXUIDGID
     static ZCONST char Far ux_Uid_Gid[] =
      "IZ_HAVE_UXUIDGID     (UID, GID > 16-bit (\"ux\" extra block) supported)";
@@ -966,11 +970,11 @@ int unzip(__G__ argc, argv)
 # endif /* UNICODE_SUPPORT */
 
 
-# ifdef USE_ICONV_MAPPING
+# ifdef ICONV_MAPPING
 #  ifdef UNIX
     init_conversion_charsets();
 #  endif
-# endif /* USE_ICONV_MAPPING */
+# endif /* ICONV_MAPPING */
 
 # if (defined(__IBMC__) && defined(__DEBUG_ALLOC__))
     extern void DebugMalloc(void);
@@ -1244,24 +1248,39 @@ int unzip(__G__ argc, argv)
 
     G.noargs = (argc == 1);   /* no options, no zipfile, no anything */
 
+/* Ignore argv[0] for DLL or object library.
+ * (Must use "-Z" for ZipInfo mode.)
+ */
+#  ifdef DLL
+#   ifndef IGNORE_ARGV0
+#    define IGNORE_ARGV0
+#   endif
+#  endif
+
 #  ifndef NO_ZIPINFO
+#   ifndef IGNORE_ARGV0
     for (p = argv[0] + strlen(argv[0]); p >= argv[0]; --p) {
         if (*p == DIR_END
-#   ifdef DIR_END2
+#    ifdef DIR_END2
             || *p == DIR_END2
-#   endif
+#    endif
            )
             break;
     }
     ++p;
+#   endif /* ndef IGNORE_ARGV0 */
 
-#   ifdef THEOS
+#   ifdef IGNORE_ARGV0
+    if (
+#   else /* def IGNORE_ARGV0 */
+#    ifdef THEOS
     if (strncmp(p, "ZIPINFO.",8) == 0 || strstr(p, ".ZIPINFO:") != NULL ||
         strncmp(p, "II.",3) == 0 || strstr(p, ".II:") != NULL ||
-#   else
+#    else /* def THEOS */
     if (STRNICMP(p, LoadFarStringSmall(Zipnfo), 7) == 0 ||
         STRNICMP(p, "ii", 2) == 0 ||
-#   endif
+#    endif /* def THEOS [else] */
+#   endif /* def IGNORE_ARGV0 [else] */
         (argc > 1 && strncmp(argv[1], "-Z", 2) == 0))
     {
         uO.zipinfo_mode = TRUE;
@@ -1661,7 +1680,7 @@ static struct option_struct far options[] = {
     {UZO, "i",  "no-mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
        'i',  "ignore filenames stored in Mac ef"},
 # endif
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # ifdef UNIX
     {UZO, "I",  "ISO-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'I',  "ISO char set to use"},
@@ -1703,7 +1722,7 @@ static struct option_struct far options[] = {
     {UZO, "N",  "comment-to-note", o_NO_VALUE,       o_NEGATABLE,
        'N',  "restore comments as filenotes"},
 # endif
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # ifdef UNIX
     {UZO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'O',  "OEM char set to use"},
@@ -1815,7 +1834,7 @@ static struct option_struct far options[] = {
 #  endif
     {ZIO, "h",  "header",          o_NO_VALUE,       o_NEGATABLE,
        'h',  "header line"},
-#  ifdef USE_ICONV_MAPPING
+#  ifdef ICONV_MAPPING
 #   ifdef UNIX
     {ZIO, "I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'I',  "ISO charset to use"},
@@ -1829,7 +1848,7 @@ static struct option_struct far options[] = {
     {ZIO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
        'M',  "output like more"},
 # endif
-# ifdef USE_ICONV_MAPPING
+# ifdef ICONV_MAPPING
 #  ifdef UNIX
     {ZIO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'O',  "OEM charset to use"},
@@ -1899,7 +1918,7 @@ int uz_opts(__G__ pargc, pargv)
     int fna = 0;          /* current first non-opt arg */
     int optnum = 0;       /* index in table */
 
-# ifdef USE_ICONV_MAPPING
+# ifdef ICONV_MAPPING
 #  ifdef UNIX
     extern char OEM_CP[MAX_CP_NAME];
     extern char ISO_CP[MAX_CP_NAME];
@@ -2122,7 +2141,7 @@ int uz_opts(__G__ pargc, pargv)
                 }
                 break;
 # endif  /* MACOS */
-# ifdef USE_ICONV_MAPPING
+# ifdef ICONV_MAPPING
 #  ifdef UNIX
             case ('I'): /* -I [UNIX] ISO char set of input entries */
                 strncpy(ISO_CP, value, sizeof(ISO_CP));
@@ -2244,7 +2263,7 @@ int uz_opts(__G__ pargc, pargv)
                 } else
                     ++uO.overwrite_all;
                 break;
-# ifdef USE_ICONV_MAPPING
+# ifdef ICONV_MAPPING
 #  ifdef UNIX
             case ('O'): /* -O [UNIX] OEM char set of input entries */
                 strncpy(OEM_CP, value, sizeof(OEM_CP));
@@ -3161,7 +3180,7 @@ static void help_extended(__G)
   "         ACORN_FTYPE_NFS] Translate filetype and append to name.",
   "  -i   [MacOS] Ignore filenames in MacOS extra field.  Instead, use name in",
   "         standard header.",
-#  ifdef USE_ICONV_MAPPING
+#  ifdef ICONV_MAPPING
   "  -I   [UNIX] ISO code page to use.",
 #  endif
   "  -j[=N] Junk paths.  Strip all (or top N) directories from extracted files.",
@@ -3175,8 +3194,8 @@ static void help_extended(__G)
   "  -N   [Amiga] Extract file comments as Amiga filenotes.",
   "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
   "         care.",
-#  ifdef USE_ICONV_MAPPING
-  "  -O   [UNIX] OEM code page to use.  Now, if USE_ICONV_MAPPING compile option",
+#  ifdef ICONV_MAPPING
+  "  -O   [UNIX] OEM code page to use.  Now, if ICONV_MAPPING compile option",
   "         is used, and -O is not used, UnZip tries to automatically set OEM",
   "         code page based on current environment language setting.",
 #  endif
@@ -3286,7 +3305,7 @@ static void help_extended(__G)
   "         match directory separator /, but ** does.  Allows matching at specific",
   "         directory levels.",
   "  -z  Include archive comment if any in listing.",
-#  ifdef USE_ICONV_MAPPING
+#  ifdef ICONV_MAPPING
   "  -I   [UNIX] ISO code page to use.",
   "  -O   [UNIX] OEM code page to use.",
 #  endif
@@ -3543,6 +3562,11 @@ static void show_version_info(__G)
 #  ifdef DOSWILD
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(DosWild)));
+        ++numopts;
+#  endif
+#  ifdef ICONV_MAPPING
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(Iconv)));
         ++numopts;
 #  endif
 #  ifdef IZ_HAVE_UXUIDGID

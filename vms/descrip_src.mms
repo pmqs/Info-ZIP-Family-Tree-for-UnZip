@@ -1,4 +1,4 @@
-#                                               3 October 2012.  SMS.
+#                                               20 November 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Source Description File.
 #
@@ -235,7 +235,7 @@ CDEFS_AES = , CRYPT_AES_WG
 .IFDEF IZ_BZIP2                 # IZ_BZIP2
 CDEFS_BZ = , BZIP2_SUPPORT
 CFLAGS_INCL = /include = ([], [.VMS])
-LIB_BZIP2_OPTS = lib_bzip2:$(BZ2_OLB) /library,
+LIB_BZIP2_OPTS = LIB_BZIP2:$(BZ2_OLB) /library,
 .ENDIF                          # IZ_BZIP2
 
 # LZMA options.

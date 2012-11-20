@@ -244,7 +244,7 @@ typedef struct stat z_stat;
 /*    and notfirstcall are used by do_wild().                          */
 
 
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # define MAX_CP_NAME 25
 
 # ifdef SETLOCALE
@@ -269,6 +269,6 @@ typedef struct stat z_stat;
 void iso_intern(char *);
 void oem_intern(char *);
 void init_conversion_charsets(void);
-#endif /* USE_ICONV_MAPPING */
+#endif /* def ICONV_MAPPING */
 
 #endif /* !__unxcfg_h */

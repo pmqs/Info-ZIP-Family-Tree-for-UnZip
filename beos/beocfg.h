@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -57,5 +57,33 @@
 /* rootlen, rootpath, buildpath and end are used by checkdir().        */
 /* wild_dir, dirname, wildname, matchname[], dirnamelen, have_dirname, */
 /*    and notfirstcall are used by do_wild().                          */
+
+#define ICONV_MAPPING /* part of vanilla Haiku distribution */
+#ifdef ICONV_MAPPING
+# define MAX_CP_NAME 25 
+   
+# ifdef SETLOCALE
+#  undef SETLOCALE
+# endif
+# define SETLOCALE(category, locale) setlocale(category, locale)
+# include <locale.h>
+   
+# ifdef _ISO_INTERN
+#  undef _ISO_INTERN
+# endif
+# define _ISO_INTERN(str1) iso_intern(str1)
+
+# ifdef _OEM_INTERN
+#  undef _OEM_INTERN
+# endif
+# ifndef IZ_OEM2ISO_ARRAY
+#  define IZ_OEM2ISO_ARRAY
+# endif
+# define _OEM_INTERN(str1) oem_intern(str1)
+
+void iso_intern(char *);
+void oem_intern(char *);
+void init_conversion_charsets(void);
+#endif /* def ICONV_MAPPING */
 
 #endif /* !__beocfg_h */

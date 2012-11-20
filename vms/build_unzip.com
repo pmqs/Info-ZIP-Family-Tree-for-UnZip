@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-10-17  SMS.
+$!     Last revised:  2012-11-19  SMS.
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"
@@ -703,17 +703,20 @@ $!
 $!------------------------------- UnZip section ------------------------------
 $!
 $!
-$! Process the Unix-style help file, if desired.
-$!
 $ if (MAKE_HELP)
 $ then
-$     runoff /out = UNZIP.HLP [.VMS]UNZIP_DEF.RNH
-$ endif
 $!
-$! Make the Unix-style help output text file, if desired.
+$! Process the Unix-style help file.
+$!
+$     runoff /out = UNZIP.HLP [.VMS]UNZIP_DEF.RNH
+$!
+$ endif
 $!
 $ if (MAKE_HELP .and. MAKE_HELP_TEXT)
 $ then
+$!
+$! Make the Unix-style help output text file.
+$!
 $     help_temp_name = "help_temp_"+ f$getjpi( 0, "PID")
 $     if (f$search( help_temp_name+ ".HLB") .nes. "") then -
        delete 'help_temp_name'.HLB;*
@@ -726,15 +729,18 @@ $     open /append help_temp UNZIP.HTX
 $     copy 'help_temp_name'.OUT help_temp
 $     close help_temp
 $     delete 'help_temp_name'.OUT;*
-$ endif
 $!
-$! Process the message file, if desired.
+$ endif
 $!
 $ if (MAKE_MSG)
 $ then
+$!
+$! Process the message file.
+$!
 $     message /object = [.'dest']UNZIP_MSG.OBJ /nosymbols -
        [.VMS]UNZIP_MSG.MSG
 $     link /shareable = [.'dest']UNZIP_MSG.EXE [.'dest']UNZIP_MSG.OBJ
+$!
 $ endif
 $!
 $ if (MAKE_OBJ)
@@ -806,6 +812,45 @@ $     then
 $         cc 'DEF_UNX' /object = [.'dest']PPMD8.OBJ [.SZIP]PPMD8.C
 $         cc 'DEF_UNX' /object = [.'dest']PPMD8DEC.OBJ [.SZIP]PPMD8DEC.C
 $     endif
+$!
+$     if (LIBUNZIP .ne. 0)
+$     then
+$!
+$! Create the callable library link options file.
+$!
+$         def_dev_dir_orig = f$environment( "default")
+$         set default [.'dest']
+$         def_dev_dir = f$environment( "default")
+$         set default 'def_dev_dir_orig'
+$         create /fdl = [.VMS]STREAM_LF.FDL 'libunzip_opt'
+$         open /append opt_file_lib 'libunzip_opt'
+$         write opt_file_lib "! DEFINE LIB_IZUNZIP ''def_dev_dir'"
+$         if (IZ_BZIP2 .nes. "")
+$         then
+$             write opt_file_lib "! DEFINE LIB_BZIP2 ''f$trnlnm( "lib_bzip2")'"
+$         endif
+$         if (IZ_ZLIB .nes. "")
+$         then
+$             write opt_file_lib "! DEFINE LIB_ZLIB ''f$trnlnm( "lib_zlib")'"
+$         endif
+$         write opt_file_lib "LIB_IZUNZIP:''lib_unzip_name' /library"
+$         if (IZ_BZIP2 .nes. "")
+$         then
+$             write opt_file_lib "''lib_bzip2_opts'" - ", " - ","
+$         endif
+$         write opt_file_lib "LIB_IZUNZIP:''lib_unzip_name' /library"
+$         if (IZ_ZLIB .nes. "")
+$         then
+$             write opt_file_lib "''libunzip_opt'" - ", " - ","
+$         endif
+$         close opt_file_lib
+$!
+$     endif
+$!
+$ endif
+$!
+$ if (MAKE_EXE)
+$ then
 $!
 $! Create the primary object library.
 $!
@@ -919,35 +964,6 @@ $             libr /object /replace 'lib_libunzip' -
                [.'dest']PPMD8DEC.OBJ
 $         endif
 $!
-$! Create the callable library link options file.
-$!
-$         def_dev_dir_orig = f$environment( "default")
-$         set default [.'dest']
-$         def_dev_dir = f$environment( "default")
-$         set default 'def_dev_dir_orig'
-$         create /fdl = [.VMS]STREAM_LF.FDL 'libunzip_opt'
-$         open /append opt_file_lib 'libunzip_opt'
-$         write opt_file_lib "! DEFINE LIB_IZUNZIP ''def_dev_dir'"
-$         if (IZ_BZIP2 .nes. "")
-$         then
-$             write opt_file_lib "! DEFINE LIB_BZIP2 ''f$trnlnm( "lib_bzip2")'"
-$         endif
-$         if (IZ_ZLIB .nes. "")
-$         then
-$             write opt_file_lib "! DEFINE LIB_ZLIB ''f$trnlnm( "lib_zlib")'"
-$         endif
-$         write opt_file_lib "LIB_IZUNZIP:''lib_unzip_name' /library"
-$         if (IZ_BZIP2 .nes. "")
-$         then
-$             write opt_file_lib "''lib_bzip2_opts'" - ", " - ","
-$         endif
-$         write opt_file_lib "LIB_IZUNZIP:''lib_unzip_name' /library"
-$         if (IZ_ZLIB .nes. "")
-$         then
-$             write opt_file_lib "''libunzip_opt'" - ", " - ","
-$         endif
-$         close opt_file_lib
-$!
 $     endif
 $!
 $ endif
@@ -1027,6 +1043,11 @@ $     @ [.vms]cppcld.com "''cc'" [.VMS]UNZ_CLI.CLD -
 $     tmp = f$verify( cppcld_verify)
 $     set command /object = [.'dest']UNZ_CLI.OBJ [.'dest']UNZ_CLI.CLD
 $!
+$ endif
+$!
+$ if (MAKE_EXE)
+$ then
+$!
 $! Create the CLI object library.
 $!
 $     if (f$search( lib_unzipcli) .eqs. "") then -
@@ -1075,6 +1096,11 @@ $     cc 'DEF_SXUNX' /object = [.'dest']PROCESS_.OBJ PROCESS.C
 $     cc 'DEF_SXUNX' /object = [.'dest']TTYIO_.OBJ TTYIO.C
 $     cc 'DEF_SXUNX' /object = [.'dest']UBZ2ERR_.OBJ UBZ2ERR.C
 $     cc 'DEF_SXUNX' /object = [.'dest']VMS_.OBJ [.VMS]VMS.C
+$!
+$ endif
+$!
+$ if (MAKE_EXE)
+$ then
 $!
 $! Create the SFX object library.
 $!
@@ -1159,6 +1185,11 @@ $!
 $     cc 'DEF_SXCLI' /object = [.'dest']UNZSXCLI.OBJ UNZIP.C
 $     cc 'DEF_SXCLI' /object = [.'dest']CMDLINE_.OBJ -
        [.VMS]CMDLINE.C
+$!
+$ endif
+$!
+$ if (MAKE_EXE)
+$ then
 $!
 $! Create the SFX CLI object library.
 $!

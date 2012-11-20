@@ -200,8 +200,8 @@ static ZCONST char Far ExtraFieldTooLong[] =
      static ZCONST char Far MorePrompt[] = "--More--(%lu)";
 #  endif
    static ZCONST char Far QuitPrompt[] =
-     "--- Press `Q' to quit, or any other key to continue ---";
-   static ZCONST char Far HidePrompt[] = /* "\r                       \r"; */
+        "--- Press `Q' to quit, or any other key to continue ---";
+   static ZCONST char Far HidePrompt[] = /* (Match max prompt length.) */
      "\r                                                         \r";
 #  ifdef CRYPT_ANY
 #    ifdef MACOS
@@ -1475,6 +1475,11 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
     else
         outfp = (FILE *)stdout;
 
+#ifdef VMS
+    /* Save the output file for the prompt function. */
+    ((Uz_Globs *)pG)->msgfp = outfp;
+#endif /* def VMS */
+
     /* 2011-05-07 SMS.
      * VMS needs to handle toggling between stdout and stderr in its own
      * way.  We were putting out a message like "inflating <file_name>"
@@ -1712,6 +1717,22 @@ void UZ_EXP UzpMorePause(pG, prompt, flag)
     int flag;             /* 0 = any char OK; 1 = accept only '\n', ' ', q */
 {
     uch c;
+    FILE *outfp;
+
+/* 2012-11-17 SMS.
+ * On VMS, match the message output file because, as usual, carriage
+ * control differs on VMS, and mixing stderr and stdout causes spurious
+ * blank lines and similar problems.  If anyone else cares, then this
+ * scheme could be used elsewhere, too.  Note that VMS does not need to
+ * use fflush() for terminal output.
+ */
+#ifdef VMS
+    outfp = ((Uz_Globs *)pG)->msgfp;
+    if (outfp == NULL)
+        outfp = stderr; /* (For emergency use only.) */
+#else /* def VMS */
+    outfp = stderr;
+#endif /* def VMS [else] */
 
 /*---------------------------------------------------------------------------
     Print a prompt and wait for the user to press a key, then erase prompt
@@ -1719,29 +1740,33 @@ void UZ_EXP UzpMorePause(pG, prompt, flag)
   ---------------------------------------------------------------------------*/
 
     if (!((Uz_Globs *)pG)->sol)
-        fprintf(stderr, "\n");
+        fprintf( outfp, "\n");
     /* numlines may or may not be used: */
-    fprintf(stderr, prompt, ((Uz_Globs *)pG)->numlines);
-    fflush(stderr);
+    fprintf( outfp, prompt, ((Uz_Globs *)pG)->numlines);
+#ifndef VMS
+    fflush( outfp);
+#endif /* ndef VMS */
     if (flag & 1) {
         do {
             c = (uch)FGETCH(0);
         } while (
-#ifdef THEOS
+# ifdef THEOS
                  c != 17 &&     /* standard QUIT key */
-#endif
+# endif
                  c != '\r' && c != '\n' && c != ' ' && c != 'q' && c != 'Q');
     } else
         c = (uch)FGETCH(0);
 
     /* newline was not echoed, so cover up prompt line */
-    fprintf(stderr, LoadFarString(HidePrompt));
-    fflush(stderr);
+    fprintf( outfp, LoadFarString(HidePrompt));
+#ifndef VMS
+    fflush( outfp);
+#endif /* ndef VMS */
 
     if (
-#ifdef THEOS
+# ifdef THEOS
         (c == 17) ||            /* standard QUIT key */
-#endif
+# endif
         (ToLower(c) == 'q')) {
         DESTROYGLOBALS();
         EXIT(PK_COOL);
@@ -1749,15 +1774,15 @@ void UZ_EXP UzpMorePause(pG, prompt, flag)
 
     ((Uz_Globs *)pG)->sol = TRUE;
 
-#ifdef MORE
+# ifdef MORE
     /* space for another screen, enter for another line. */
     if ((flag & 1) && c == ' ')
         ((Uz_Globs *)pG)->lines = 0;
-#endif /* MORE */
+# endif /* MORE */
 
 } /* end function UzpMorePause() */
 
-#endif /* !WINDLL && !MACOS */
+# endif /* (!defined(WINDLL) && !defined(MACOS) && !defined( DLL)) */
 
 
 

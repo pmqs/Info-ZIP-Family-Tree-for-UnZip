@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2012-11-05
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2012-11-16
 #==============================================================================
 
 #==============================================================================
@@ -149,9 +149,10 @@ help:
 	@echo 'For a list including specific targets for older systems:'
 	@echo '   make -f unix/Makefile list'
 	@echo ''
-	@echo 'Optional overrides on "make" command (or environment vars):'
+	@echo '"make" macros to enable varions optional features:'
 	@echo '    "AES_WG=1"        Add AES encryption (WinZip/Gladman).'
 	@echo '    "CC=gcc"          Use "gcc" instead of "cc" for C compiler.'
+	@echo '    "ICONV_MAPPING"   Enable ISO/OEM (iconv) conversion.'
 	@echo '    "IZ_BZIP2=bz2dir" Add BZIP2 compression from dir bz2dir.'
 	@echo '    "IZ_ZLIB=zdir"    Use ZLIB from dir zdir for deflate.'
 	@echo '    "LIBUNZIP=1"      Create UnZip object library.'
@@ -165,6 +166,10 @@ help:
 	@echo '    - make UnZip programs using cc.'
 	@echo '   make -f unix/Makefile generic CC=gcc AES_WG=1'
 	@echo '    - make UnZip programs using gcc, with AES_WG encryption.'
+	@echo ''
+	@echo 'Note that many of these option "make" macros direct the'
+	@echo '"unix/configure" script, and so may work only with the'
+	@echo '"generic" target.'
 	@echo ''
 	@echo 'First try "make -f unix/Makefile generic" (to use "cc")'
 	@echo '(or "make -f unix/Makefile generic CC=gcc" (to use "gcc")),'

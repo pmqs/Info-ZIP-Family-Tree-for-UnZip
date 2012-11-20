@@ -417,10 +417,10 @@
 #endif
 
 /*---------------------------------------------------------------------------
-    BeOS section:
+    BeOS/Haiku section:
   ---------------------------------------------------------------------------*/
 
-#ifdef __BEOS__
+#if defined( __BEOS__) || defined( __HAIKU__)
 #  include "beos/beocfg.h"
 #endif
 

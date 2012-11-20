@@ -501,10 +501,10 @@ typedef struct _UzpOpts {
  * HP C V7.3-009 dislikes "defined" in macro in #if (%CC-I-EXPANDEDDEFINED).
  * It seems safest to avoid any continuation lines in either.
  */
-#if defined(__ATHEOS__) || defined(__BEOS__) || defined(MACOS)
+#if defined(__ATHEOS__) || defined(__BEOS__) || defined(__HAIKU__)
 # define J_FLAG 1
 #else
-# if defined( UNIX) && defined( __APPLE__)
+# if defined(MACOS) || (defined( UNIX) && defined( __APPLE__))
 #  define J_FLAG 1
 # endif
 #endif

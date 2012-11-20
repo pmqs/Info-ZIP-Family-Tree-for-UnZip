@@ -340,8 +340,8 @@ static ZCONST char Far efIZUnix[] = "old Info-ZIP Unix/OS2/NT";
 static ZCONST char Far efIZUnix2[] = "Unix UID/GID (16-bit)";
 static ZCONST char Far efIZUnix3[] = "Unix UID/GID (any size)";
 static ZCONST char Far efTime[] = "universal time";
-static ZCONST char Far efU8Path[] = "UTF8 path name";
-static ZCONST char Far efU8Commnt[] = "UTF8 entry comment";
+static ZCONST char Far efU8Path[] = "UTF-8 path name";
+static ZCONST char Far efU8Commnt[] = "UTF-8 entry comment";
 static ZCONST char Far efJLMac[] = "old Info-ZIP Macintosh";
 static ZCONST char Far efMac3[] = "new Info-ZIP Macintosh";
 static ZCONST char Far efZipIt[] = "ZipIt Macintosh";
@@ -385,9 +385,9 @@ static ZCONST char Far UTmodification[] = "modification";
 static ZCONST char Far UTaccess[] = "access";
 static ZCONST char Far UTcreation[] = "creation";
 static ZCONST char Far U8PthCmnComplete[] = ".\n\
-    The UTF8 data of the extra field (V%u, ASCII name CRC `%.8lx') are:\n   ";
+    The UTF-8 data of the extra field (V%u, ASCII name CRC `%.8lx') are:\n   ";
 static ZCONST char Far U8PthCmnF24[] = ". The first\n\
-    24 UTF8 bytes in the extra field (V%u, ASCII name CRC `%.8lx') are:\n   ";
+    24 UTF-8 bytes in the extra field (V%u, ASCII name CRC `%.8lx') are:\n   ";
 static ZCONST char Far ZipItFname[] = ".\n\
     The Mac long filename is %s";
 static ZCONST char Far Mac3data[] = ".\n\
@@ -506,7 +506,7 @@ int zi_opts(__G__ pargc, pargv)
     int optnum = 0;       /* index in table */
     int showhelp = 0;     /* for --commandline */
 
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # ifdef UNIX
     extern char OEM_CP[MAX_CP_NAME];
     extern char ISO_CP[MAX_CP_NAME];
@@ -611,7 +611,7 @@ int zi_opts(__G__ pargc, pargv)
                             uO.lflag = 0;
                     }
                     break;
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # ifdef UNIX
                 case ('I'):    /* -I:  map ISO name to internal */
                     strncpy(ISO_CP, value, sizeof(ISO_CP));
@@ -639,7 +639,7 @@ int zi_opts(__G__ pargc, pargv)
                         G.M_flag = TRUE;
                     break;
 #endif
-#ifdef USE_ICONV_MAPPING
+#ifdef ICONV_MAPPING
 # ifdef UNIX
                 case ('O'):    /* -O:  map OEM name to internal */
                     strncpy(OEM_CP, value, sizeof(OEM_CP));
