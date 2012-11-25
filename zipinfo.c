@@ -323,12 +323,12 @@ static ZCONST char Far TheosFTypP32[] = "386 program ";
 static ZCONST char Far TheosFTypUkn[] = "???         ";
 
 static ZCONST char Far ExtraFieldTrunc[] = "\n\
-  error: EF data block (type 0x%04x) size %u exceeds remaining extra field\n\
-         space %u; block length has been truncated.\n";
+  error: EF data block (type 0x%04x) size %ld exceeds remaining extra field\n\
+         space %ld; block length has been truncated.\n";
 static ZCONST char Far ExtraFields[] = "\n\
   The central-directory extra field contains:";
 static ZCONST char Far ExtraFieldType[] = "\n\
-  - A subfield with ID 0x%04x (%s) and %u data bytes";
+  - A subfield with ID 0x%04x (%s) and %ld data bytes";
 static ZCONST char Far efPKSZ64[] = "PKWARE 64-bit sizes";
 static ZCONST char Far efAV[] = "PKWARE AV";
 static ZCONST char Far efOS2[] = "OS/2";
@@ -1653,10 +1653,18 @@ static int zi_long(__G__ pEndprev, error_in_archive)
     entry...
   ---------------------------------------------------------------------------*/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len and ef_len from unsigned to signed, to catch underflow
+ * of ef_len caused by corrupt/malicious data.  (32-bit is adequate.
+ * Used "long" to accommodate any systems with 16-bit "int".)
+ * Renamed "eb_datalen" to "el_len" for consistency with other code.
+ */
+
     if (G.crec.extra_field_length > 0) {
         uch *ef_ptr = G.extra_field;
-        ush ef_len = G.crec.extra_field_length;
-        ush eb_id, eb_datalen;
+        long ef_len = G.crec.extra_field_length;
+        ush eb_id;
+        long eb_len;
         ZCONST char Far *ef_fieldname;
 
         if (error_in_archive > PK_WARN)   /* fatal:  can't continue */
@@ -1669,14 +1677,14 @@ static int zi_long(__G__ pEndprev, error_in_archive)
 
         while (ef_len >= EB_HEADSIZE) {
             eb_id = makeword(&ef_ptr[EB_ID]);
-            eb_datalen = makeword(&ef_ptr[EB_LEN]);
+            eb_len = makeword(&ef_ptr[EB_LEN]);
             ef_ptr += EB_HEADSIZE;
             ef_len -= EB_HEADSIZE;
 
-            if (eb_datalen > (ush)ef_len) {
+            if (eb_len > (ush)ef_len) {
                 Info(slide, 0x421, ((char *)slide,
-                  LoadFarString(ExtraFieldTrunc), eb_id, eb_datalen, ef_len));
-                eb_datalen = ef_len;
+                  LoadFarString(ExtraFieldTrunc), eb_id, eb_len, ef_len));
+                eb_len = ef_len;
             }
 
             switch (eb_id) {
@@ -1688,7 +1696,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                            the local e.f. size, local Z64 e.f. block has no
                            offset; when only local offset present, the entire
                            local PKSZ64 block is missing. */
-                        *pEndprev -= (eb_datalen == 8 ? 12 : 8);
+                        *pEndprev -= (eb_len == 8 ? 12 : 8);
                     }
                     break;
                 case EF_AV:
@@ -1803,7 +1811,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     break;
             }
             Info(slide, 0, ((char *)slide, LoadFarString(ExtraFieldType),
-                 eb_id, LoadFarStringSmall(ef_fieldname), eb_datalen));
+                 eb_id, LoadFarStringSmall(ef_fieldname), eb_len));
 
             /* additional, field-specific information: */
             switch (eb_id) {
@@ -1848,7 +1856,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                 }
                 case EF_OS2:
                 case EF_ACL:
-                    if (eb_datalen >= EB_OS2_HLEN) {
+                    if (eb_len >= EB_OS2_HLEN) {
                         if (eb_id == EF_OS2)
                             ef_fieldname = OS2EAs;
                         else
@@ -1861,7 +1869,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_NTSD:
-                    if (eb_datalen >= EB_NTSD_C_LEN) {
+                    if (eb_len >= EB_NTSD_C_LEN) {
                         Info(slide, 0, ((char *)slide, LoadFarString(NTSDData),
                           makelong(ef_ptr)));
                         *pEndprev = 0L;   /* no clue about csize of local */
@@ -1870,7 +1878,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_IZVMS:
-                    if (eb_datalen >= 8) {
+                    if (eb_len >= 8) {
                         char *p, q[8];
                         unsigned compr = makeword(ef_ptr+EB_IZVMS_FLGS)
                                         & EB_IZVMS_BCMASK;
@@ -1895,7 +1903,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                                 p = "XABKEY"; break;
                             case 0x56534D56: /* "VMSV" */
                                 p = "version";
-                                if (eb_datalen >= 16) {
+                                if (eb_len >= 16) {
                                     /* put termitation first, for A_TO_N() */
                                     q[7] = '\0';
                                     q[0] = ' ';
@@ -1918,7 +1926,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_TIME:
-                    if (eb_datalen > 0) {
+                    if (eb_len > 0) {
                         char types[80];
                         int num = 0, len;
 
@@ -1953,15 +1961,15 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     break;
                 case EF_UNIPATH:
                 case EF_UNICOMNT:
-                    if (eb_datalen >= 5) {
+                    if (eb_len >= 5) {
                         unsigned i, n;
                         ulg name_crc = makelong(ef_ptr+1);
 
-                        if (eb_datalen <= 29) {
+                        if (eb_len <= 29) {
                             Info(slide, 0, ((char *)slide,
                                  LoadFarString(U8PthCmnComplete),
                                  (unsigned)ef_ptr[0], name_crc));
-                            n = eb_datalen;
+                            n = eb_len;
                         } else {
                             Info(slide, 0, ((char *)slide,
                                  LoadFarString(U8PthCmnF24),
@@ -1976,7 +1984,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_MAC3:
-                    if (eb_datalen >= EB_MAC3_HLEN) {
+                    if (eb_len >= EB_MAC3_HLEN) {
                         ulg eb_uc = makelong(ef_ptr);
                         unsigned mac3_flgs = makeword(ef_ptr+EB_FLGS_OFFS);
                         unsigned eb_is_uc = mac3_flgs & EB_M3_FL_UNCMPR;
@@ -2001,10 +2009,10 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_ZIPIT2:
-                    if (eb_datalen >= 5 &&
+                    if (eb_len >= 5 &&
                         makelong(ef_ptr) == 0x5449505A /* "ZPIT" */) {
 
-                        if (eb_datalen >= 12) {
+                        if (eb_len >= 12) {
                             zi_showMacTypeCreator(__G__ &ef_ptr[4]);
                         }
                     } else {
@@ -2012,11 +2020,11 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_ZIPIT:
-                    if (eb_datalen >= 5 &&
+                    if (eb_len >= 5 &&
                         makelong(ef_ptr) == 0x5449505A /* "ZPIT" */) {
                         unsigned fnlen = ef_ptr[4];
 
-                        if ((unsigned)eb_datalen >= fnlen + (5 + 8)) {
+                        if ((unsigned)eb_len >= fnlen + (5 + 8)) {
                             uch nullchar = ef_ptr[fnlen+5];
 
                             ef_ptr[fnlen+5] = '\0'; /* terminate filename */
@@ -2031,7 +2039,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_JLMAC:
-                    if (eb_datalen >= 40 &&
+                    if (eb_len >= 40 &&
                         makelong(ef_ptr) == 0x45454C4A /* "JLEE" */)
                     {
                         zi_showMacTypeCreator(__G__ &ef_ptr[4]);
@@ -2045,7 +2053,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_SMARTZIP:
-                    if ((eb_datalen == EB_SMARTZIP_HLEN) &&
+                    if ((eb_len == EB_SMARTZIP_HLEN) &&
                         makelong(ef_ptr) == 0x70695A64 /* "dZip" */) {
                         char filenameBuf[32];
                         zi_showMacTypeCreator(__G__ &ef_ptr[4]);
@@ -2067,14 +2075,14 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                         Info(slide, 0, ((char *)slide,
                              LoadFarString(VmMvsExtraField),
                              (getVMMVSexfield(type, ef_ptr-EB_HEADSIZE,
-                             (unsigned)eb_datalen) > 0)?
+                             (unsigned)eb_len) > 0)?
                              type : LoadFarStringSmall(VmMvsInvalid)));
                     }
                     break;
 #endif /* CMS_MVS */
                 case EF_ATHEOS:
                 case EF_BEOS:
-                    if (eb_datalen >= EB_BEOS_HLEN) {
+                    if (eb_len >= EB_BEOS_HLEN) {
                         ulg eb_uc = makelong(ef_ptr);
                         unsigned eb_is_uc =
                           *(ef_ptr+EB_FLGS_OFFS) & EB_BE_FL_UNCMPR;
@@ -2097,7 +2105,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_QDOS:
-                    if (eb_datalen >= 4) {
+                    if (eb_len >= 4) {
                         Info(slide, 0, ((char *)slide, LoadFarString(QDOSdata),
                           ef_ptr[0], ef_ptr[1], ef_ptr[2], ef_ptr[3]));
                     } else {
@@ -2105,7 +2113,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_AOSVS:
-                    if (eb_datalen >= 5) {
+                    if (eb_len >= 5) {
                         Info(slide, 0, ((char *)slide, LoadFarString(AOSVSdata),
                           ((int)(uch)ef_ptr[4])/10, ((int)(uch)ef_ptr[4])%10));
                     } else {
@@ -2113,7 +2121,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_TANDEM:
-                    if (eb_datalen == 20) {
+                    if (eb_len == 20) {
                         unsigned type, code;
 
                         type = (ef_ptr[18] & 0x60) >> 5;
@@ -2135,7 +2143,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }
                     break;
                 case EF_MD5:
-                    if (eb_datalen >= 19) {
+                    if (eb_len >= 19) {
                         char md5[33];
                         int i;
 
@@ -2148,13 +2156,13 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     }   /* else: fall through !! */
                 default:
 ef_default_display:
-                    if (eb_datalen > 0) {
+                    if (eb_len > 0) {
                         unsigned i, n;
 
-                        if (eb_datalen <= 24) {
+                        if (eb_len <= 24) {
                             Info(slide, 0, ((char *)slide,
                                  LoadFarString(ColonIndent)));
-                            n = eb_datalen;
+                            n = eb_len;
                         } else {
                             Info(slide, 0, ((char *)slide,
                                  LoadFarString(First20)));
@@ -2168,8 +2176,8 @@ ef_default_display:
             }
             (*G.message)((zvoid *)&G, (uch *)".", 1L, 0);
 
-            ef_ptr += eb_datalen;
-            ef_len -= eb_datalen;
+            ef_ptr += eb_len;
+            ef_len -= eb_len;
         }
         (*G.message)((zvoid *)&G, (uch *)"\n", 1L, 0);
     }

@@ -1929,13 +1929,19 @@ int process_local_file_hdr(__G)    /* return PK-type error code */
 /* Function getZip64Data() */
 /*******************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len and ef_len from unsigned to signed, to catch underflow
+ * of ef_len caused by corrupt/malicious data.  (32-bit is adequate.
+ * Used "long" to accommodate any systems with 16-bit "int".)
+ */
+
 int getZip64Data(__G__ ef_buf, ef_len)
     __GDEF
     ZCONST uch *ef_buf; /* buffer containing extra field */
-    unsigned ef_len;    /* total length of extra field */
+    long ef_len;        /* total length of extra field */
 {
     unsigned eb_id;
-    unsigned eb_len;
+    long eb_len;
 
 /*---------------------------------------------------------------------------
     This function scans the extra field for zip64 information, ie 8-byte
@@ -1958,7 +1964,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
         if (eb_len > (ef_len - EB_HEADSIZE)) {
             /* discovered some extra field inconsistency! */
             Trace((stderr,
-              "getZip64Data: block length %u > rest ef_size %u\n", eb_len,
+              "getZip64Data: block length %ld > rest ef_size %ld\n", eb_len,
               ef_len - EB_HEADSIZE));
             break;
         }
@@ -1999,13 +2005,17 @@ int getZip64Data(__G__ ef_buf, ef_len)
 /* Function getUnicodeData() */
 /*******************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * See note at getZip64Data().
+ */
+
 int getUnicodeData(__G__ ef_buf, ef_len)
     __GDEF
     ZCONST uch *ef_buf; /* buffer containing extra field */
-    unsigned ef_len;    /* total length of extra field */
+    long ef_len;        /* total length of extra field */
 {
     unsigned eb_id;
-    unsigned eb_len;
+    long eb_len;
 
 /*---------------------------------------------------------------------------
     This function scans the extra field for Unicode information, ie UTF-8
@@ -2800,10 +2810,14 @@ static int read_ux3_value(dbuf, uidgid_sz, p_uidgid)
 /* Function ef_scan_for_izux() */
 /*******************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * See note at getZip64Data().
+ */
+
 unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                           z_utim, z_uidgid)
     ZCONST uch *ef_buf; /* buffer containing extra field */
-    unsigned ef_len;    /* total length of extra field */
+    long ef_len;        /* total length of extra field */
     int ef_is_c;        /* flag indicating "is central extra field" */
     ulg dos_mdatetime;  /* last_mod_file_date_time in DOS format */
     iztimes *z_utim;    /* return storage: atime, mtime, ctime */
@@ -2811,7 +2825,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 {
     unsigned flags = 0;
     unsigned eb_id;
-    unsigned eb_len;
+    long eb_len;
     int have_new_type_eb = 0;
     long i_time;        /* buffer for Unix style 32-bit integer time value */
 #ifdef TIME_T_TYPE_DOUBLE
@@ -3174,12 +3188,16 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 /* Function getRISCOSexfield() */
 /*******************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * See note at getZip64Data().
+ */
+
 zvoid *getRISCOSexfield(ef_buf, ef_len)
     ZCONST uch *ef_buf; /* buffer containing extra field */
-    unsigned ef_len;    /* total length of extra field */
+    long ef_len;        /* total length of extra field */
 {
     unsigned eb_id;
-    unsigned eb_len;
+    long eb_len;
 
 /*---------------------------------------------------------------------------
     This function scans the extra field for a Acorn SPARK filetype ef-block.

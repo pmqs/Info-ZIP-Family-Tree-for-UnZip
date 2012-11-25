@@ -371,9 +371,15 @@ ush SH(uch* p) { return ((ush)(uch)((p)[0]) | ((ush)(uch)((p)[1]) << 8)); }
 /* Function ef_scan_for_aes() */
 /******************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len and ef_len from unsigned to signed, to catch underflow
+ * of ef_len caused by corrupt/malicious data.  (32-bit is adequate.
+ * Used "long" to accommodate any systems with 16-bit "int".)
+ */
+
 int ef_scan_for_aes( ef_buf, ef_len, vers, vend, mode, mthd)
     ZCONST uch *ef_buf;         /* Buffer containing extra field */
-    unsigned ef_len;            /* Total length of extra field */
+    long ef_len;                /* Total length of extra field */
     ush *vers;                  /* Return storage: AES encryption version. */
     ush *vend;                  /* Return storage: AES encryption vendor. */
     char *mode;                 /* Return storage: AES encryption mode. */
@@ -381,7 +387,7 @@ int ef_scan_for_aes( ef_buf, ef_len, vers, vend, mode, mthd)
 {
     int ret = 0;
     unsigned eb_id;
-    unsigned eb_len;
+    long eb_len;
 
 /*---------------------------------------------------------------------------
     This function scans the extra field for an EF_AES_WG block
@@ -396,7 +402,7 @@ int ef_scan_for_aes( ef_buf, ef_len, vers, vend, mode, mthd)
         return 0;
 
     Trace(( stderr,
-     "\nef_scan_for_aes: scanning extra field of length %u\n",
+     "\nef_scan_for_aes: scanning extra field of length %ld\n",
      ef_len));
 
     /* Scan the extra field blocks. */
@@ -408,7 +414,7 @@ int ef_scan_for_aes( ef_buf, ef_len, vers, vend, mode, mthd)
         {
             /* Discovered some extra field inconsistency! */
             Trace(( stderr,
-             "ef_scan_for_aes: block length %u > rest ef_size %u\n",
+             "ef_scan_for_aes: block length %ld > rest ef_size %ld\n",
              eb_len, (ef_len- EB_HEADSIZE)));
             ret = -1;
             break;
@@ -466,16 +472,23 @@ int ef_scan_for_aes( ef_buf, ef_len, vers, vend, mode, mthd)
 /* Function ef_strip_aes() */
 /***************************/
 
-int ef_strip_aes( ef_buf, ef_len)
-    ZCONST uch *ef_buf;         /* Buffer containing extra field */
-    unsigned ef_len;            /* Total length of extra field */
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len, ef_len, and ef_len_d from unsigned to signed, to
+ * catch underflow of ef_len caused by corrupt/malicious data.  (32-bit
+ * is adequate.  Used "long" to accommodate any systems with 16-bit
+ * "int".)  Made function static.
+ */
+
+local int ef_strip_aes( ef_buf, ef_len)
+          ZCONST uch *ef_buf;   /* Buffer containing extra field */
+          long ef_len;          /* Total length of extra field */
 {
     int ret = -1;               /* Return value. */
     unsigned eb_id;             /* Extra block ID. */
-    unsigned eb_len;            /* Extra block length. */
+    long eb_len;                /* Extra block length. */
     uch *eb_aes;                /* Start of AES block. */
     uch *ef_buf_d;              /* Sliding extra field pointer. */
-    unsigned ef_len_d;          /* Remaining extra field length. */
+    long ef_len_d;              /* Remaining extra field length. */
 
 /*---------------------------------------------------------------------------
     This function strips an EF_AES_WG block from an extra field.
@@ -488,7 +501,7 @@ int ef_strip_aes( ef_buf, ef_len)
         return -1;
 
     Trace(( stderr,
-     "\nef_strip_aes: scanning extra field of length %u\n",
+     "\nef_strip_aes: scanning extra field of length %ld\n",
      ef_len));
 
     eb_aes = NULL;              /* Start of AES block. */
@@ -505,7 +518,7 @@ int ef_strip_aes( ef_buf, ef_len)
         {
             /* Discovered some extra field inconsistency! */
             Trace(( stderr,
-             "ef_strip_aes: block length %u > rest ef_size %u\n",
+             "ef_strip_aes: block length %ld > rest ef_size %ld\n",
              eb_len, (ef_len_d- EB_HEADSIZE)));
             ret = -1;
             break;
@@ -1038,8 +1051,19 @@ int decrypt(__G__ passwrd)
      * try to decrypt the same data twice) */
     GLOBAL(pInfo->encrypted) = FALSE;
     defer_leftover_input(__G);
-    for (n = 0; n < HEAD_LEN; n++) {
-        b = NEXTBYTE;
+    for (n = 0; n < HEAD_LEN; n++)
+    {
+        /* 2012-11-23 SMS.  (OUSPG report.)
+         * Quit early if compressed size < HEAD_LEN.  The resulting
+         * error message ("unable to get password") could be improved,
+         * but it's better than trying to read nonexistent data, and
+         * then continuing with a negative G.csize.  (See
+         * fileio.c:readbyte()).
+         */
+        if ((b = NEXTBYTE) == (ush)EOF)
+        {
+            return PK_ERR;
+        }
         h[n] = (uch)b;
         Trace((stdout, " (%02x)", h[n]));
     }

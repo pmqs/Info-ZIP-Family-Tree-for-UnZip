@@ -769,7 +769,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (19 Nov 2012):
+6.10c09 (23 Nov 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -967,6 +967,11 @@ Bugs fixed:
    this.  (fileio.c, globals.h)  [SMS]
  - Revised VMS DCL builder to recreate object libraries when not
    compiling (NOCOMPILE).  (vms/build_unzip.com) [SMS]
+ - Fixed some bad behavior (program aborts or loops) caused by
+   (intentionally) defective/corrupt archives.  Reported by OUSPG
+   ("https://www.ee.oulu.fi/research/ouspg/").  (crypt.c, extract.c,
+   fileio.c, fileio.c, funzip.c, process.c, unzpriv.h, zipinfo.c)
+   [Aki Helin, SMS]
 
 ==================
 

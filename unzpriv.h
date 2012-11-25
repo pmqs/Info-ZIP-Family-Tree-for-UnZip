@@ -2587,16 +2587,16 @@ void     free_G_buffers          OF((__GPRO));
 int      process_cdir_file_hdr   OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
 int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
-                                     unsigned ef_len));
+                                     long ef_len));
 #ifdef UNICODE_SUPPORT
   int    getUnicodeData          OF((__GPRO__ ZCONST uch *ef_buf,
-                                     unsigned ef_len));
+                                     long ef_len));
 #endif
-unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, unsigned ef_len,
+unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, long ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
                                      iztimes *z_utim, ulg *z_uidgid));
 #ifdef CRYPT_AES_WG
-int ef_scan_for_aes              OF((ZCONST uch *ef_buf, unsigned ef_len,
+int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
                                      ush *vers, ush *vend,
                                      char *mode, ush *mthd));
 #endif /* def CRYPT_AES_WG */

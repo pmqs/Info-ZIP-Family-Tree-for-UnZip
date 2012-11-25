@@ -142,7 +142,7 @@
 static int partflush OF((__GPRO__ uch *rawbuf, ulg size, int unshrink));
 #endif
 #ifdef VMS_TEXT_CONV
-static int is_vms_varlen_txt OF((__GPRO__ uch *ef_buf, unsigned ef_len));
+static int is_vms_varlen_txt OF((__GPRO__ uch *ef_buf, long ef_len));
 #endif
 static int disk_error OF((__GPRO));
 
@@ -1253,13 +1253,19 @@ static int partflush(__G__ rawbuf, size, unshrink)
 /* Function is_vms_varlen_txt() */
 /********************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len and ef_len from unsigned to signed, to catch underflow
+ * of ef_len caused by corrupt/malicious data.  (32-bit is adequate. 
+ * Used "long" to accommodate any systems with 16-bit "int".)
+ */
+
 static int is_vms_varlen_txt(__G__ ef_buf, ef_len)
     __GDEF
     uch *ef_buf;        /* buffer containing extra field */
-    unsigned ef_len;    /* total length of extra field */
+    long ef_len;        /* total length of extra field */
 {
     unsigned eb_id;
-    unsigned eb_len;
+    long eb_len;
     uch *eb_data;
     unsigned eb_datlen;
 #define VMSREC_C_UNDEF  0
@@ -1287,8 +1293,8 @@ static int is_vms_varlen_txt(__G__ ef_buf, ef_len)
         if (eb_len > (ef_len - EB_HEADSIZE)) {
             /* discovered some extra field inconsistency! */
             Trace((stderr,
-              "is_vms_varlen_txt: block length %u > rest ef_size %u\n", eb_len,
-              ef_len - EB_HEADSIZE));
+             "is_vms_varlen_txt: block length %ld > rest ef_size %ld\n",
+             eb_len, ef_len - EB_HEADSIZE));
             break;
         }
 
@@ -1932,6 +1938,12 @@ time_t dos_to_unix_time(dosdatetime)
     tm = localtime(&now);
     tm->tm_isdst = -1;          /* let mktime determine if DST is in effect */
 
+    /* MS-DOS date-time format:
+     * Bits:    31:25     24:21   20:16   15:11  10:05  04:00
+     * Value: year-1980   month    day     hour   min   sec/2
+     *                   (1-12)  (1-31)
+     */
+
     /* dissect date */
     tm->tm_year = ((int)(dosdatetime >> 25) & 0x7f) + (1980 - YRBASE);
     tm->tm_mon  = ((int)(dosdatetime >> 21) & 0x0f) - 1;
@@ -1976,6 +1988,11 @@ time_t dos_to_unix_time(dosdatetime)
 #endif /* !MACOS && !RISCOS && !QDOS && !TANDEM */
 #endif /* ?TOPS20 */
 
+    /* MS-DOS date-time format:
+     * Bits:    31:25     24:21   20:16   15:11  10:05  04:00
+     * Value: year-1980   month    day     hour   min   sec/2
+     *                   (1-12)  (1-31)
+     */
 
     /* dissect date */
     yr = ((int)(dosdatetime >> 25) & 0x7f) + (1980 - YRBASE);
@@ -1986,6 +2003,14 @@ time_t dos_to_unix_time(dosdatetime)
     hh = (int)((unsigned)dosdatetime >> 11) & 0x1f;
     mm = (int)((unsigned)dosdatetime >> 5) & 0x3f;
     ss = (int)((unsigned)dosdatetime & 0x1f) * 2;
+
+    /* 2012-11-23 SMS.  (OUSPG report.)
+     * Return the mktime() error status for obviously invalid values.
+     * (This avoids the use of "ydays[mo]" for an invalid "mo".  Other
+     * invalid values should cause less trouble.)
+     */
+    if ((mo > 11) || (dy < 0) || (ss > 59))
+        return (time_t)-1;
 
 #ifdef TOPS20
     tmx = (struct tmx *)malloc(sizeof(struct tmx));

@@ -118,10 +118,10 @@ static int extract_or_test_entrylist OF((__GPRO__ unsigned numchunk,
 #endif
 static int extract_or_test_member OF((__GPRO));
 #ifndef SFX
-   static int TestExtraField OF((__GPRO__ uch *ef, unsigned ef_len));
-   static int test_compr_eb OF((__GPRO__ uch *eb, unsigned eb_size,
+   static int TestExtraField OF((__GPRO__ uch *ef, long ef_len));
+   static int test_compr_eb OF((__GPRO__ uch *eb, long eb_size,
         unsigned compr_offset,
-        int (*test_uc_ebdata)(__GPRO__ uch *eb, unsigned eb_size,
+        int (*test_uc_ebdata)(__GPRO__ uch *eb, long eb_size,
                               uch *eb_ucptr, ulg eb_ucsize)));
 #endif
 #if (defined(VMS) || defined(VMS_TEXT_CONV))
@@ -622,23 +622,29 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                  * handling names inconsistently, so this had better be
                  * adequate.
                  */
-                ush ebID;
-                unsigned ebLen;
-                unsigned ef_len = G.crec.extra_field_length;
+                /* 2012-11-25 SMS.  (OUSPG report.)
+                 * Changed eb_len and ef_len from unsigned to signed, to
+                 * catch underflow of ef_len caused by corrupt/malicious
+                 * data.  (32-bit is adequate.  Used "long" to
+                 * accommodate any systems with 16-bit "int".)
+                 */
+                ush eb_id;
+                long eb_len;
+                long ef_len = (long)G.crec.extra_field_length;
                 uch *ef = G.extra_field;
 
                 while (ef_len >= EB_HEADSIZE)
                 {
-                    ebID = makeword( ef);
-                    if (ebID == EF_JAVA)
+                    eb_id = makeword( ef);
+                    if (eb_id == EF_JAVA)
                     {
                         /* Found one. */
                         uO.java_cafe = 1;
                     }
 
-                    ebLen = (unsigned)makeword( ef+ EB_LEN);
-                    ef_len -= (ebLen + EB_HEADSIZE);
-                    ef += (ebLen + EB_HEADSIZE);
+                    eb_len = (unsigned)makeword( ef+ EB_LEN);
+                    ef_len -= (eb_len + EB_HEADSIZE);
+                    ef += (eb_len + EB_HEADSIZE);
                 }
                 if (uO.java_cafe == 0)
                 {
@@ -3385,13 +3391,20 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
 /*  Function TestExtraField()  */
 /*******************************/
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len and ef_len from unsigned to signed, to
+ * catch underflow of ef_len caused by corrupt/malicious
+ * data.  (32-bit is adequate.  Used "long" to
+ * accommodate any systems with 16-bit "int".)
+ */
+
 static int TestExtraField(__G__ ef, ef_len)
     __GDEF
     uch *ef;
-    unsigned ef_len;
+    long ef_len;
 {
-    ush ebID;
-    unsigned ebLen;
+    ush eb_id;
+    long eb_len;
     unsigned eb_cmpr_offs = 0;
     int r;
 
@@ -3399,50 +3412,50 @@ static int TestExtraField(__G__ ef, ef_len)
      * wouldn't be here ==> print filename if any extra-field errors found
      */
     while (ef_len >= EB_HEADSIZE) {
-        ebID = makeword(ef);
-        ebLen = (unsigned)makeword(ef+EB_LEN);
+        eb_id = makeword(ef);
+        eb_len = (unsigned)makeword(ef+EB_LEN);
 
-        if (ebLen > (ef_len - EB_HEADSIZE)) {
+        if (eb_len > (ef_len - EB_HEADSIZE)) {
            /* Discovered some extra field inconsistency! */
             if (uO.qflag)
                 Info(slide, 1, ((char *)slide, "%-22s ",
                   FnFilter1(G.filename)));
             Info(slide, 1, ((char *)slide, LoadFarString(InconsistEFlength),
-              ebLen, (ef_len - EB_HEADSIZE)));
+              eb_len, (ef_len - EB_HEADSIZE)));
             return PK_ERR;
         }
 
-        switch (ebID) {
+        switch (eb_id) {
             case EF_OS2:
             case EF_ACL:
             case EF_MAC3:
             case EF_BEOS:
             case EF_ATHEOS:
-                switch (ebID) {
+                switch (eb_id) {
                   case EF_OS2:
                   case EF_ACL:
                     eb_cmpr_offs = EB_OS2_HLEN;
                     break;
                   case EF_MAC3:
-                    if (ebLen >= EB_MAC3_HLEN &&
+                    if (eb_len >= EB_MAC3_HLEN &&
                         (makeword(ef+(EB_HEADSIZE+EB_FLGS_OFFS))
                          & EB_M3_FL_UNCMPR) &&
-                        (makelong(ef+EB_HEADSIZE) == ebLen - EB_MAC3_HLEN))
+                        (makelong(ef+EB_HEADSIZE) == eb_len - EB_MAC3_HLEN))
                         eb_cmpr_offs = 0;
                     else
                         eb_cmpr_offs = EB_MAC3_HLEN;
                     break;
                   case EF_BEOS:
                   case EF_ATHEOS:
-                    if (ebLen >= EB_BEOS_HLEN &&
+                    if (eb_len >= EB_BEOS_HLEN &&
                         (*(ef+(EB_HEADSIZE+EB_FLGS_OFFS)) & EB_BE_FL_UNCMPR) &&
-                        (makelong(ef+EB_HEADSIZE) == ebLen - EB_BEOS_HLEN))
+                        (makelong(ef+EB_HEADSIZE) == eb_len - EB_BEOS_HLEN))
                         eb_cmpr_offs = 0;
                     else
                         eb_cmpr_offs = EB_BEOS_HLEN;
                     break;
                 }
-                if ((r = test_compr_eb(__G__ ef, ebLen, eb_cmpr_offs, NULL))
+                if ((r = test_compr_eb(__G__ ef, eb_len, eb_cmpr_offs, NULL))
                     != PK_OK) {
                     if (uO.qflag)
                         Info(slide, 1, ((char *)slide, "%-22s ",
@@ -3451,7 +3464,7 @@ static int TestExtraField(__G__ ef, ef_len)
                         case IZ_EF_TRUNC:
                             Info(slide, 1, ((char *)slide,
                               LoadFarString(TruncEAs),
-                              ebLen-(eb_cmpr_offs+EB_CMPRHEADLEN), "\n"));
+                              eb_len-(eb_cmpr_offs+EB_CMPRHEADLEN), "\n"));
                             break;
                         case PK_ERR:
                             Info(slide, 1, ((char *)slide,
@@ -3482,11 +3495,11 @@ static int TestExtraField(__G__ ef, ef_len)
                 break;
 
             case EF_NTSD:
-                Trace((stderr, "ebID: %i / ebLen: %u\n", ebID, ebLen));
-                r = ebLen < EB_NTSD_L_LEN ? IZ_EF_TRUNC :
+                Trace((stderr, "eb_id: %i / eb_len: %u\n", eb_id, eb_len));
+                r = eb_len < EB_NTSD_L_LEN ? IZ_EF_TRUNC :
                     ((ef[EB_HEADSIZE+EB_NTSD_VERSION] > EB_NTSD_MAX_VER) ?
                      (PK_WARN | 0x4000) :
-                     test_compr_eb(__G__ ef, ebLen, EB_NTSD_L_LEN, TEST_NTSD));
+                     test_compr_eb(__G__ ef, eb_len, EB_NTSD_L_LEN, TEST_NTSD));
                 if (r != PK_OK) {
                     if (uO.qflag)
                         Info(slide, 1, ((char *)slide, "%-22s ",
@@ -3495,7 +3508,7 @@ static int TestExtraField(__G__ ef, ef_len)
                         case IZ_EF_TRUNC:
                             Info(slide, 1, ((char *)slide,
                               LoadFarString(TruncNTSD),
-                              ebLen-(EB_NTSD_L_LEN+EB_CMPRHEADLEN), "\n"));
+                              eb_len-(EB_NTSD_L_LEN+EB_CMPRHEADLEN), "\n"));
                             break;
 #if (defined(WIN32) && defined(NTSD_EAS))
                         case PK_WARN:
@@ -3539,7 +3552,7 @@ static int TestExtraField(__G__ ef, ef_len)
             case EF_PKVMS:
                 if (makelong(ef+EB_HEADSIZE) !=
                     crc32(CRCVAL_INITIAL, ef+(EB_HEADSIZE+4),
-                          (extent)(ebLen-4)))
+                          (extent)(eb_len-4)))
                     Info(slide, 1, ((char *)slide,
                       LoadFarString(BadCRC_EAs)));
                 break;
@@ -3574,8 +3587,8 @@ static int TestExtraField(__G__ ef, ef_len)
             default:
                 break;
         }
-        ef_len -= (ebLen + EB_HEADSIZE);
-        ef += (ebLen + EB_HEADSIZE);
+        ef_len -= (eb_len + EB_HEADSIZE);
+        ef += (eb_len + EB_HEADSIZE);
     }
 
     if (!uO.qflag)
@@ -3597,15 +3610,15 @@ static int TestExtraField(__G__ ef, ef_len)
 static int test_compr_eb(
     __GPRO__
     uch *eb,
-    unsigned eb_size,
+    long eb_size,
     unsigned compr_offset,
-    int (*test_uc_ebdata)(__GPRO__ uch *eb, unsigned eb_size,
+    int (*test_uc_ebdata)(__GPRO__ uch *eb, long eb_size,
                           uch *eb_ucptr, ulg eb_ucsize))
 #else /* !PROTO */
 static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
     __GDEF
     uch *eb;
-    unsigned eb_size;
+    long eb_size;
     unsigned compr_offset;
     int (*test_uc_ebdata)();
 #endif /* ?PROTO */

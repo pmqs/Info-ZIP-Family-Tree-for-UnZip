@@ -288,6 +288,11 @@ ulg w;          /* number of bytes to flush */
 
 #endif /* defined(DEFLATE64_SUPPORT) && defined(__16BIT__) [else] */
 
+/* 2012-11-25 SMS.  (OUSPG report.)
+ * Changed eb_len and ef_len from unsigned to signed, to catch underflow
+ * of ef_len caused by corrupt/malicious data.  (32-bit is adequate.
+ * Used "long" to accommodate any systems with 16-bit "int".)
+ */
 
 int main(argc, argv)
 int argc;
@@ -295,10 +300,10 @@ char **argv;
 /* Given a zipfile on stdin, decompress the first entry to stdout. */
 {
   unsigned eb_id;
-  unsigned eb_len;
+  long eb_len;
   uch *ef_buf;
   uch *ef_bufx;
-  unsigned ef_len;
+  long ef_len;
   zusz_t csize;
   zusz_t ucsiz;
   zusz_t ucsize;
