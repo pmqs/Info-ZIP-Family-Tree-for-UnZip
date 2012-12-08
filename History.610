@@ -769,7 +769,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (23 Nov 2012):
+6.10c09 (07 Dec 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -960,18 +960,45 @@ Bugs fixed:
    point function not to look for "zipinfo" in argv[0].  To get ZipInfo
    mode, specify "-Z" in argv[1].  (unzip.c) [SMS]
  - Changed iconv code to use memset() instead of bzero(), for
-   consistency and portability.  (beos/beos.c, unix/unix.c) [SMS]
+   consistency and portability.  Added a missing free().  Added
+   ICONV_ARG2 macro to facilitate user addition of a "const" type
+   qualifier to satisfy Sun C.  Copied newer Unix code into BeOS.
+   (beos/beos.c, unix/unix.c) [SMS]
  - -M (/MORE) used bad carriage control on VMS, adding spurious blank
    lines to the output.  Changed the prompt function on VMS to use the
    same output file as the message function (stderr or stdout) to avoid
    this.  (fileio.c, globals.h)  [SMS]
  - Revised VMS DCL builder to recreate object libraries when not
    compiling (NOCOMPILE).  (vms/build_unzip.com) [SMS]
- - Fixed some bad behavior (program aborts or loops) caused by
-   (intentionally) defective/corrupt archives.  Reported by OUSPG
-   ("https://www.ee.oulu.fi/research/ouspg/").  (crypt.c, extract.c,
-   fileio.c, fileio.c, funzip.c, process.c, unzpriv.h, zipinfo.c)
-   [Aki Helin, SMS]
+ - Fixed some bad behavior (program aborts or loops, or faulty memory
+   access) caused by (intentionally) defective/corrupt archives.
+   Reported by OUSPG ("https://www.ee.oulu.fi/research/ouspg/").
+   Removed some harmless but redundant free() instances from extract.c.
+   (crypt.c, crypt.h, extract.c, fileio.c, funzip.c, os2/os2.c,
+   process.c, unzpriv.h, win32/win32.c, zipinfo.c) [Aki Helin, SMS]
+ - memcpy() was being used in some cases on overlapping buffers, which
+   could cause bad extracted data (and "bad CRC" errors).  Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=406
+   New code uses memcpy() only on disjoint buffers.  New C macros
+   replace old NOMEMCPY: Define C macro NO_SLIDE_MEMCPY to disable use
+   of memcpy().  Define SLIDE_MEMMOVE to enable use of memmove() for a
+   case where it works.  Limited testing suggests that using memcpy() is
+   faster, but using memmove() is not, so that's the default scheme, but
+   we're open to evidence reports.  (explode.c, inflate.c) [SMS]
+ - Changed LLVM Clang compiler version identification to cope with v1.x,
+   where __clang_major__ and friends were not defined.  (unix/unix.c) [SMS]
+ - Made the configuration test for lchmod() stricter, to detect a "not
+   implemented" compiler warning message (Clang and GCC on GNU/Linux).
+   (unix/configure) [SMS]
+ - Changed the definitions of macros _ISO_INTERN and _OEM_INTERN on Unix
+   to use function charset_to_intern() (now not static) directly, instead
+   of using inline functions, iso_intern() and oem_intern() (now gone).
+   HP-UX bundled C compiler (at least) does not support "inline".
+   (beos/beocfg.h, beos/beos.c, unix/unix.c, unix/unxcfg.h, unzip.c) [SMS]
+ - Added macro "Tracing", defined when macro "Trace" is non-empty, for use
+   where Trace() was the only thing in the body of an "if" statement,
+   and Clang complained, "if statement has empty body".  (extract.c,
+   unzpriv.h) [SMS]
 
 ==================
 

@@ -69,8 +69,6 @@
 
 #include "os2acl.h"
 
-extern ZCONST char Far TruncEAs[];
-
 /* local prototypes */
 
 #ifdef TIMESTAMP
@@ -1327,7 +1325,7 @@ int mapname(__G__ renamed)
                         Info(slide, 1, ((char *)slide, "%-22s ",
                           FnFilter1(G.filename)));
                     Info(slide, 1, ((char *)slide, LoadFarString(TruncEAs),
-                      makeword(G.extra_field+2)-10, "\n"));
+                      (long)makeword(G.extra_field+2)-10, "\n"));
                 } else if (!uO.qflag)
                     (*G.message)((zvoid *)&G, (uch *)"\n", 1L, 0);
             } else if (!uO.qflag)
@@ -1348,7 +1346,7 @@ int mapname(__G__ renamed)
                 Info(slide, 0x421, ((char *)slide, "%-22s ",
                   FnFilter1(G.filename)));
                 Info(slide, 0x401, ((char *)slide, LoadFarString(TruncEAs),
-                  makeword(G.extra_field+2)-10, "\n"));
+                  (long)makeword(G.extra_field+2)-10, "\n"));
             }
 
             /* set date/time stamps (dirs only have creation times) */
@@ -2062,7 +2060,7 @@ void close_outfile(__G)   /* only for extracted files, not directories */
                 Info(slide, 1, ((char *)slide, "%-22s ",
                   FnFilter1(G.filename)));
             Info(slide, 1, ((char *)slide, LoadFarString(TruncEAs),
-              makeword(G.extra_field+2)-10, uO.qflag? "\n" : ""));
+              (long)makeword(G.extra_field+2)-10, uO.qflag? "\n" : ""));
         }
     }
 

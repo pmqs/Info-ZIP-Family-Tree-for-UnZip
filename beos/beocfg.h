@@ -58,8 +58,12 @@
 /* wild_dir, dirname, wildname, matchname[], dirnamelen, have_dirname, */
 /*    and notfirstcall are used by do_wild().                          */
 
+/* ISO/OEM (iconv) character conversion. */
+
 #define ICONV_MAPPING /* part of vanilla Haiku distribution */
+
 #ifdef ICONV_MAPPING
+
 # define MAX_CP_NAME 25 
    
 # ifdef SETLOCALE
@@ -71,7 +75,7 @@
 # ifdef _ISO_INTERN
 #  undef _ISO_INTERN
 # endif
-# define _ISO_INTERN(str1) iso_intern(str1)
+# define _ISO_INTERN( string) charset_to_intern( string, ISO_CP)
 
 # ifdef _OEM_INTERN
 #  undef _OEM_INTERN
@@ -79,11 +83,21 @@
 # ifndef IZ_OEM2ISO_ARRAY
 #  define IZ_OEM2ISO_ARRAY
 # endif
-# define _OEM_INTERN(str1) oem_intern(str1)
+# define _OEM_INTERN( string) charset_to_intern( string, OEM_CP)
 
-void iso_intern(char *);
-void oem_intern(char *);
+/* Character set names. */
+extern char ISO_CP[ MAX_CP_NAME];
+extern char OEM_CP[ MAX_CP_NAME];
+
+/* Conversion function prototypes. */
+void charset_to_intern( char *, char *);
 void init_conversion_charsets(void);
+
+/* Possible "const" type qualifier for arg 2 of iconv(). */
+# ifndef ICONV_ARG2
+#  define ICONV_ARG2
+# endif /* ndef ICONV_ARG2 */
+
 #endif /* def ICONV_MAPPING */
 
 #endif /* !__beocfg_h */

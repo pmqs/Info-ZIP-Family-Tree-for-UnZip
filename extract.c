@@ -346,14 +346,18 @@ static ZCONST char Far FileUnknownCompMethod[] =
   "%s:  unknown compression method\n";
 static ZCONST char Far BadCRC[] = " bad CRC %08lx  (should be %08lx)\n";
 
-      /* TruncEAs[] also used in OS/2 mapname(), close_outfile() */
-char ZCONST Far TruncEAs[] = " compressed EA data missing (%d bytes)%s";
-char ZCONST Far TruncNTSD[] =
-  " compressed WinNT security data missing (%d bytes)%s";
+/* TruncEAs[] also used in os2/os2.c:[close_outfile(), mapname()]. */
+ZCONST char Far TruncEAs[] = " compressed EA data missing (%ld bytes)%s";
+
+/* TruncNTSD also used in win32/win32.c:[close_outfile(),
+ *  set_direc_attribs(), set_direc_attribsw()].
+ */
+ZCONST char Far TruncNTSD[] = 
+ " compressed WinNT security data missing (%ld bytes)%s";
 
 #ifndef SFX
    static ZCONST char Far InconsistEFlength[] = "bad extra-field entry:\n \
-     EF block length (%u bytes) exceeds remaining EF data (%u bytes)\n";
+     EF block length (%ld bytes) exceeds remaining EF data (%ld bytes)\n";
    static ZCONST char Far InvalidComprDataEAs[] =
      " invalid compressed data for EAs\n";
 # if (defined(WIN32) && defined(NTSD_EAS))
@@ -1431,10 +1435,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
                 continue;   /* go on to next one */
             }
         }
-        if (G.extra_field != (uch *)NULL) {
-            free(G.extra_field);
-            G.extra_field = (uch *)NULL;
-        }
+
         if ((error =
              do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != 0)
         {
@@ -2296,10 +2297,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
                 continue;   /* go on to next one */
             }
         }
-        if (G.extra_field != (uch *)NULL) {
-            free(G.extra_field);
-            G.extra_field = (uch *)NULL;
-        }
+
         if (G.unipath_filename) {
             free(G.unipath_filename);
             G.unipath_filename = NULL;
@@ -3495,7 +3493,7 @@ static int TestExtraField(__G__ ef, ef_len)
                 break;
 
             case EF_NTSD:
-                Trace((stderr, "eb_id: %i / eb_len: %u\n", eb_id, eb_len));
+                Trace((stderr, "eb_id: %i / eb_len: %ld\n", eb_id, eb_len));
                 r = eb_len < EB_NTSD_L_LEN ? IZ_EF_TRUNC :
                     ((ef[EB_HEADSIZE+EB_NTSD_VERSION] > EB_NTSD_MAX_VER) ?
                      (PK_WARN | 0x4000) :
@@ -4323,15 +4321,18 @@ __GDEF
 
         if (err == BZ_MEM_ERROR)
             return 3;
+#ifdef Tracing  /* 2012-12-03 SMS.  Avoid complaints about empty if(). */
         else if (err != BZ_OK)
             Trace((stderr, "oops!  (BZ2_bzDecompressInit() err = %d)\n", err));
+#endif /* def Tracing */
     }
 
 #ifdef FUNZIP
     while (err != BZ_STREAM_END) {
 #else /* !FUNZIP */
     while (G.csize > 0) {
-        Trace((stderr, "first loop:  G.csize = %lld\n", G.csize));
+        Trace((stderr, "first loop:  G.csize = %s\n",
+         FmZofft( G.csize, NULL, "u")));
 #endif /* ?FUNZIP */
         while (bstrm.avail_out > 0) {
             err = BZ2_bzDecompress(&bstrm);
@@ -4340,8 +4341,11 @@ __GDEF
                 retval = 2; goto uzbunzip_cleanup_exit;
             } else if (err == BZ_MEM_ERROR) {
                 retval = 3; goto uzbunzip_cleanup_exit;
-            } else if (err != BZ_OK && err != BZ_STREAM_END)
+            }
+#ifdef Tracing  /* 2012-12-03 SMS.  Avoid complaints about empty if(). */
+            else if (err != BZ_OK && err != BZ_STREAM_END)
                 Trace((stderr, "oops!  (bzip(first loop) err = %d)\n", err));
+#endif /* def Tracing */
 
 #ifdef FUNZIP
             if (err == BZ_STREAM_END)    /* "END-of-entry-condition" ? */
@@ -4408,8 +4412,10 @@ __GDEF
 
 uzbunzip_cleanup_exit:
     err = BZ2_bzDecompressEnd(&bstrm);
+#ifdef Tracing  /* 2012-12-03 SMS.  Avoid complaints about empty if(). */
     if (err != BZ_OK)
         Trace((stderr, "oops!  (BZ2_bzDecompressEnd() err = %d)\n", err));
+#endif /* def Tracing */
 
     return retval;
 } /* end function UZbunzip2() */
@@ -4611,7 +4617,7 @@ __GDEF
             {
                 next_in += in_buf_size_len;
             }
-            Trace((stderr, "     avail_in = %u\n", avail_in));
+            Trace((stderr, "     avail_in = %lu\n", (unsigned long)avail_in));
         }
     } /* while ((G.csize > 0) || (G.incnt > 0)) */
 
@@ -4771,7 +4777,7 @@ __GDEF
                 goto uzppmd_cleanup_exit;
             Trace((stderr,
              "inside loop:  flushing %ld bytes (ptr diff = %ld)\n",
-             (wsize- avail_out),
+             (unsigned long)(wsize- avail_out),
              (next_out- redirSlide)));
         }
 

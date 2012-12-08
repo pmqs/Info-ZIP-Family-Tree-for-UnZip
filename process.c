@@ -1320,13 +1320,13 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
        */
       /* Actually the central directory can span multiple disks, and the above
          total - 1 check would fail in this case.  Should fix this.
-         
+
          There are archive creators that put 0 in total disks when it should
          be 1.  We should handle this.  This is done by the added check above.
       */
       Trace((stderr,
-             "\ninvalid ECLOC64, differing disk# (ECR %u, ECL64 %lu)\n",
-             G.ecrec.number_this_disk, ecloc64_total_disks - 1));
+       "\ninvalid ECLOC64, differing disk# (ECR %u, ECL64 %lu)\n",
+       G.ecrec.number_this_disk, (unsigned long)(ecloc64_total_disks - 1)));
       return PK_COOL;
     }
 
@@ -1954,7 +1954,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
     if (ef_len == 0 || ef_buf == NULL)
         return PK_COOL;
 
-    Trace((stderr,"\ngetZip64Data: scanning extra field of length %u\n",
+    Trace((stderr,"\ngetZip64Data: scanning extra field of length %ld\n",
       ef_len));
 
     while (ef_len >= EB_HEADSIZE) {
@@ -2033,7 +2033,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
     if (ef_len == 0 || ef_buf == NULL)
         return PK_COOL;
 
-    Trace((stderr,"\ngetUnicodeData: scanning extra field of length %u\n",
+    Trace((stderr,"\ngetUnicodeData: scanning extra field of length %ld\n",
       ef_len));
 
     while (ef_len >= EB_HEADSIZE) {
@@ -2043,7 +2043,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
         if (eb_len > (ef_len - EB_HEADSIZE)) {
             /* discovered some extra field inconsistency! */
             Trace((stderr,
-              "getUnicodeData: block length %u > rest ef_size %u\n", eb_len,
+              "getUnicodeData: block length %ld > rest ef_size %ld\n", eb_len,
               ef_len - EB_HEADSIZE));
             break;
         }
@@ -3036,9 +3036,9 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 
         /*
           Version       1 byte      version of this extra field, currently 1
-          UIDSize       1 byte      Size of UID field
+          UIDSize       1 byte      Size of UID field (min = 2)
           UID           Variable    UID for this entry
-          GIDSize       1 byte      Size of GID field
+          GIDSize       1 byte      Size of GID field (min = 2)
           GID           Variable    GID for this entry
         */
 
@@ -3051,20 +3051,36 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
              (z_uidgid != NULL) &&
              (*((EB_HEADSIZE + 0) + ef_buf) == 1))
             {
-                uch uid_size;
-                uch gid_size;
+                /* 2012-12-07 SMS.  (OUSPG report.)
+                 * First, clear "flags".  Then, check the validity of
+                 * uid_size before using it to find gid_size.
+                 * Made Xid_size bigger than "uch" for safer arithmetic.
+                 */
+                unsigned uid_size;
+                unsigned gid_size;
+
+                flags &= ~0x0ff;        /* Ignore any previous UNIX field. */
 
                 uid_size = *((EB_HEADSIZE + 1) + ef_buf);
-                gid_size = *((EB_HEADSIZE + uid_size + 2) + ef_buf);
 
-                flags &= ~0x0ff;      /* ignore any previous UNIX field */
-
-                if (read_ux3_value( (EB_HEADSIZE + 2) + ef_buf,
-                 uid_size, &z_uidgid[0]) &&
-                 read_ux3_value( (EB_HEADSIZE + uid_size + 3) + ef_buf,
-                 gid_size, &z_uidgid[1]))
+                /* Valid: 1 (Version) + 1 (UIDSize) + UIDSize +
+                 *        1 (GIDSize) + 2 (min GIDSize) <= eb_len.
+                 */
+                if (5+ uid_size <= eb_len)
                 {
-                    flags |= EB_UX2_VALID;   /* signal success */
+                    gid_size = *((EB_HEADSIZE + uid_size + 2) + ef_buf);
+
+                    /* Last, check total claimed xID sizes against eb_len. */
+                    if (3+ uid_size+ gid_size == eb_len)
+                    {
+                        if (read_ux3_value( (EB_HEADSIZE + 2) + ef_buf,
+                         uid_size, &z_uidgid[0]) &&
+                         read_ux3_value( (EB_HEADSIZE + uid_size + 3) + ef_buf,
+                         gid_size, &z_uidgid[1]))
+                        {
+                        flags |= EB_UX2_VALID;   /* signal success */
+                        }
+                    }
                 }
             }
 #endif /* IZ_HAVE_UXUIDGID */

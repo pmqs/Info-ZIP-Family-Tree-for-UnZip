@@ -2004,12 +2004,12 @@ time_t dos_to_unix_time(dosdatetime)
     mm = (int)((unsigned)dosdatetime >> 5) & 0x3f;
     ss = (int)((unsigned)dosdatetime & 0x1f) * 2;
 
-    /* 2012-11-23 SMS.  (OUSPG report.)
+    /* 2012-11-26 SMS.  (OUSPG report.)
      * Return the mktime() error status for obviously invalid values.
      * (This avoids the use of "ydays[mo]" for an invalid "mo".  Other
      * invalid values should cause less trouble.)
      */
-    if ((mo > 11) || (dy < 0) || (ss > 59))
+    if ((mo < 0) || (mo > 11) || (dy < 0) || (ss > 59))
         return (time_t)-1;
 
 #ifdef TOPS20
@@ -2693,12 +2693,20 @@ int do_string(__G__ length, option)   /* return PK-type error code */
      */
 
     case EXTRA_FIELD:
-        if (length == 0)
-        {
-            return PK_COOL;
-        }
+        /* 2012-12-05 SMS.  Changed to free old storage always, and to
+         * null G.extra_field if the length is zero.
+         */
+        /* Free any previous extra field storage. */
         if (G.extra_field != (uch *)NULL)
             free(G.extra_field);
+
+        /* Return early, if no data are expected. */
+        if (length == 0)
+        {
+            G.extra_field = (uch *)NULL;
+            return PK_COOL;
+        }
+        /* Allocate new extra field storage, and fill it. */
         if ((G.extra_field = (uch *)malloc(length)) == (uch *)NULL) {
             Info(slide, 0x401, ((char *)slide, LoadFarString(ExtraFieldTooLong),
               length));

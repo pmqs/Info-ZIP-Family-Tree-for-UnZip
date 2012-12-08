@@ -1546,55 +1546,156 @@ static void assign_MIME( const char *file )
 #endif
 
 
+/* ISO/OEM (iconv) character conversion. */
+
 #ifdef ICONV_MAPPING
+
 typedef struct {
-    char *local_charset;
+/*  char *local_charset; */
+    char *local_lang;
     char *archive_charset;
 } CHARSET_MAP;
 
-/* A mapping of local <-> archive charsets used by default to convert filenames
- * of DOS/Windows Zip archives. Currently very basic. */
+/* Was:  A mapping of local <-> archive charsets used by default to convert
+ *  filenames of DOS/Windows Zip archives.  Currently very basic.
+ */
+/* Now:  A mapping of environment language <-> archive charsets used by default
+ * to convert filenames of DOS/Windows Zip archives.  Currently incomplete.
+ */
+
+/*
+ * static CHARSET_MAP dos_charset_map[] = {
+ *     { "ANSI_X3.4-1968", "CP850" },
+ *     { "ISO-8859-1", "CP850" },
+ *     { "CP1252", "CP850" },
+ *     { "UTF-8", "CP866" },
+ *     { "KOI8-R", "CP866" },
+ *     { "KOI8-U", "CP866" },
+ *     { "ISO-8859-5", "CP866" }
+ * };
+ */
+
 static CHARSET_MAP dos_charset_map[] = {
-    { "ANSI_X3.4-1968", "CP850" },
-    { "ISO-8859-1", "CP850" },
-    { "CP1252", "CP850" },
-    { "UTF-8", "CP866" },
-    { "KOI8-R", "CP866" },
-    { "KOI8-U", "CP866" },
-    { "ISO-8859-5", "CP866" }
+    { "C", "CP850" },
+    { "en", "CP850" },
+    /*  a lot of latin1 not included, by default it will be "CP850"  */
+    { "bs", "CP852" },
+    { "cs", "CP852" },
+    { "hr", "CP852" },
+    { "hsb", "CP852" },
+    { "hu", "CP852" },
+    { "pl", "CP852" },
+    { "ro", "CP852" },
+    { "sk", "CP852" },
+    { "sl", "CP852" },
+    { "ru", "CP866" },
+    { "be", "CP866" },
+    { "bg", "CP866" },
+    { "mk", "CP866" },
+    { "uk", "CP866" },
+    { "ar", "CP864" },
+    { "el", "CP869" },
+    { "he", "CP862" },
+    { "iw", "CP862" },
+    { "ku", "CP857" },
+    { "tr", "CP857" },
+    { "zh", "CP950" },  /*  CP936   */
+    { "ja", "CP932" },
+    { "ko", "CP949" },
+    { "th", "CP874" },
+    { "da", "CP865" },
+    { "nb", "CP865" },
+    { "nn", "CP865" },
+    { "no", "CP865" },
+    { "is", "CP861" },
+    { "lt", "CP775" },
+    { "lv", "CP775" },
 };
 
-char OEM_CP[MAX_CP_NAME] = "";
+/* Character set names. */
 char ISO_CP[MAX_CP_NAME] = "";
+char OEM_CP[MAX_CP_NAME] = "";
 
 /* Try to guess the default value of OEM_CP based on the current locale.
- * ISO_CP is left alone for now. */
+ * ISO_CP is left alone for now.
+ */
 void init_conversion_charsets()
 {
-    const char *local_charset;
-    int i;
+/*
+ *  const char *local_charset;
+ *  int i;
+ */
+    char *locale;
+    char *loc = NULL;
 
-    /* Make a guess only if OEM_CP not already set. */ 
-    if(*OEM_CP == '\0') {
-    	local_charset = nl_langinfo(CODESET);
-    	for(i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
-    		if(!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
-    			strncpy(OEM_CP, dos_charset_map[i].archive_charset,
-    					sizeof(OEM_CP));
-    			break;
-    		}
+    /* Make a guess only if OEM_CP not already set. */
+/*
+ *  if(*OEM_CP == '\0') {
+ *      local_charset = nl_langinfo(CODESET);
+ *      for (i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
+ *          if (!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
+ *              strncpy(OEM_CP, dos_charset_map[i].archive_charset,
+ *               sizeof(OEM_CP));
+ *              break;
+ *          }
+ *  }
+ */
+
+    if (*OEM_CP != '\0')
+        return;
+
+    locale = getenv("LC_ALL");
+    if (!locale)
+        locale = getenv("LANG");
+
+    if (locale && (loc = malloc(strlen(locale) + 1)) != NULL)
+    {
+        char *p;
+        int i;
+
+        strcpy(loc, locale);
+
+        /*  Extract language part   */
+        p = strchr(loc, '.');
+        if (p)
+            *p = '\0';
+
+        /*  Extract main language part   */
+        p = strchr(loc, '_');
+        if (p)
+            *p = '\0';
+
+        for (i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
+        {
+            if (!strcmp(loc, dos_charset_map[i].local_lang))
+            {
+              strncpy( OEM_CP, dos_charset_map[i].archive_charset,
+               sizeof(OEM_CP));
+              break;
+            }
+        }
+        /* 2012-11-27 SMS. */
+        free( loc);
     }
+
+    if (*OEM_CP == '\0')        /*  set default one   */
+        strncpy(OEM_CP, "CP850", sizeof(OEM_CP));
 }
 
 /* Convert a string from one encoding to the current locale using iconv().
  * Be as non-intrusive as possible. If error is encountered during
- * convertion just leave the string intact. */
-static void charset_to_intern(char *string, char *from_charset)
+ * convertion just leave the string intact.
+ */
+void charset_to_intern(char *string, char *from_charset)
 {
     iconv_t cd;
-    char *s,*d, *buf;
-    size_t slen, dlen, buflen;
+    char *buf;
+    char *d;
     const char *local_charset;
+    ICONV_ARG2 char *s;
+    size_t buflen;
+    size_t dlen;
+    size_t slen;
 
     if (*from_charset == '\0')
         return;
@@ -1609,7 +1710,8 @@ static void charset_to_intern(char *string, char *from_charset)
     s = string;
     dlen = buflen = 2 * slen;
     d = buf = malloc(buflen + 1);
-    if (d) {
+    if (d)
+    {
         memset( buf, 0, buflen);
         if(iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1)
             strncpy(string, buf, buflen);
@@ -1618,15 +1720,4 @@ static void charset_to_intern(char *string, char *from_charset)
     iconv_close(cd);
 }
 
-/* Convert a string from OEM_CP to the current locale charset. */
-inline void oem_intern(char *string)
-{
-    charset_to_intern(string, OEM_CP);
-}
-
-/* Convert a string from ISO_CP to the current locale charset. */
-inline void iso_intern(char *string)
-{
-    charset_to_intern(string, ISO_CP);
-}
 #endif /* def ICONV_MAPPING */

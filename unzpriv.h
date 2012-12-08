@@ -3024,6 +3024,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #  else
 #    define Trace(x)   fprintf x
 #  endif
+#  define Tracing 1
 #else
 #  define Trace(x)
 #endif
@@ -3418,7 +3419,10 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
    extern ZCONST char Far  CompiledWith[];
 #endif /* !SFX */
 
-
+/* Defined in extract.c, used in os2/os2.c. */
+extern ZCONST char Far TruncEAs[];
+/* Defined in extract.c, used in win32/win32.c. */
+extern ZCONST char Far TruncNTSD[];
 
 /***********************************/
 /*  Global (shared?) RTL variables */

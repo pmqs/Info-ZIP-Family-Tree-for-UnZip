@@ -1658,7 +1658,7 @@ static struct option_struct far options[] = {
 # if (!defined(NO_TIMESTAMPS))
        /* seems the best long option name I can think of */
     {UZO, "D",  "dir-timestamps",  o_NO_VALUE,       o_NEGATABLE,
-       'D',  "restore dir times (-D- = no dir or file)"},
+       'D',  "restore no times (-D- = dir and file)"},
 # endif
     {UZO, "e",  "extract",         o_NO_VALUE,       o_NEGATABLE,
        'e',  "extract (not used?)"},
@@ -1917,13 +1917,6 @@ int uz_opts(__G__ pargc, pargv)
     int negative = 0;     /* 1 = option negated */
     int fna = 0;          /* current first non-opt arg */
     int optnum = 0;       /* index in table */
-
-# ifdef ICONV_MAPPING
-#  ifdef UNIX
-    extern char OEM_CP[MAX_CP_NAME];
-    extern char ISO_CP[MAX_CP_NAME];
-#  endif
-# endif
 
 
     /* since get_option() returns xfiles and files one at a time, store them

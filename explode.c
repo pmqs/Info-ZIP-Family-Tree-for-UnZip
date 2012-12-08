@@ -249,6 +249,13 @@ unsigned n;             /* number expected */
 }
 
 
+/* 2012-12-04 SMS.  Memory copy method selection. */
+#  ifndef NO_SLIDE_MEMCPY
+#   define SLIDE_MEMCPY
+#  endif
+#  ifndef NO_SLIDE_MEMMOVE
+#   define SLIDE_MEMMOVE_disabled       /* Some testing suggests unhelpful. */
+#  endif
 
 static int explode_lit(__G__ tb, tl, td, bb, bl, bd, bdl)
      __GDEF
@@ -333,18 +340,50 @@ unsigned bdl;                   /* number of distance low bits */
           d += e;
         }
         else
-#ifndef NOMEMCPY
+        {
+#ifdef SLIDE_MEMCPY
+# ifdef BAD_SLIDE_MEMCPY
+          /* 2012-12-04 SMS.
+           * http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=406
+           * This test can be erroneous if w < d.  Unsigned overflow
+           * is always greater than "e", so memcpy() could be used on
+           * overlapping regions when d - w < e.  See below.
+           */
           if (w - d >= e)       /* (this test assumes unsigned comparison) */
           {
+# else /* def BAD_SLIDE_MEMCPY */
+          /* Use memcpy(), if no overlap. */
+          if (labs( (long)w - (long)d) >= e)
+          {
+# endif /* def BAD_SLIDE_MEMCPY [else] */
             memcpy(redirSlide + w, redirSlide + d, e);
             w += e;
             d += e;
           }
-          else                  /* do it slow to avoid memcpy() overlap */
-#endif /* !NOMEMCPY */
+# ifdef SLIDE_MEMMOVE
+          /* 2012-12-04 SMS.  Use memmove() where it does what we want. */
+          else if ((long)w < (long)d)
+          {
+            /* memmove() does the right thing, so use it. */
+            memmove( redirSlide + (unsigned)w, redirSlide + d, e);
+            w += e;
+            d += e;
+          }
+# endif /* def SLIDE_MEMMOVE */
+          else
+          {
+#else /* def SLIDE_MEMCPY */
+          {
+#endif /* def SLIDE_MEMCPY [else] */
+            /* Advancing copy, probably slower than memcpy().
+             * (Possibly faster than memmove() on VMS Alpha?)
+             * When w > d, this copies blocks of size w-d repeatedly.
+             */
             do {
               redirSlide[w++] = redirSlide[d++];
             } while (--e);
+          }
+        }
         if (w == wszimpl)
         {
           if ((retval = flush(__G__ redirSlide, (ulg)w, 0)) != 0)
@@ -451,18 +490,50 @@ unsigned bdl;           /* number of distance low bits */
           d += e;
         }
         else
-#ifndef NOMEMCPY
+        {
+#ifdef SLIDE_MEMCPY
+# ifdef BAD_SLIDE_MEMCPY
+          /* 2012-12-04 SMS.
+           * http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=406
+           * This test can be erroneous if w < d.  Unsigned overflow
+           * is always greater than "e", so memcpy() could be used on
+           * overlapping regions when d - w < e.  See below.
+           */
           if (w - d >= e)       /* (this test assumes unsigned comparison) */
           {
+# else /* def BAD_SLIDE_MEMCPY */
+          /* Use memcpy(), if no overlap. */
+          if (labs( (long)w - (long)d) >= e)
+          {
+# endif /* def BAD_SLIDE_MEMCPY [else] */
             memcpy(redirSlide + w, redirSlide + d, e);
             w += e;
             d += e;
           }
-          else                  /* do it slow to avoid memcpy() overlap */
-#endif /* !NOMEMCPY */
+# ifdef SLIDE_MEMMOVE
+          /* 2012-12-04 SMS.  Use memmove() where it does what we want. */
+          else if ((long)w < (long)d)
+          {
+            /* memmove() does the right thing, so use it. */
+            memmove( redirSlide + (unsigned)w, redirSlide + d, e);
+            w += e;
+            d += e;
+          }
+# endif /* def SLIDE_MEMMOVE */
+          else
+          {
+#else /* def SLIDE_MEMCPY */
+          {
+#endif /* def SLIDE_MEMCPY [else] */
+            /* Advancing copy, probably slower than memcpy().
+             * (Possibly faster than memmove() on VMS Alpha?)
+             * When w > d, this copies blocks of size w-d repeatedly.
+             */
             do {
               redirSlide[w++] = redirSlide[d++];
             } while (--e);
+          }
+        }
         if (w == wszimpl)
         {
           if ((retval = flush(__G__ redirSlide, (ulg)w, 0)) != 0)

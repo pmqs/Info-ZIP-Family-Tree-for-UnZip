@@ -2070,7 +2070,9 @@ do
     CFLAGS_TST="${CFLAGS_TST} -DNO_`echo $func | tr '[a-z]' '[A-Z]'`"
 done
 
-# Check (seriously) for a working lchmod().
+# Check (very seriously) for a working lchmod().
+# On GNU/Linux (Clang, GCC) look for a # compile-time warning like
+# "lchmod is not implemented and will always fail".
 echo 'Check for lchmod'
 temp_file="/tmp/unzip_test_$$"
 temp_link="link_$$"
@@ -2078,11 +2080,19 @@ temp_link="link_$$"
   echo "int main() { lchmod(\"${temp_file}\", 0666); }" \
 ) > conftest.c
 ln -s "${temp_link}" "${temp_file}" && \
-$CC_TST $CFLAGS $BIF_TST -o conftest conftest.c >/dev/null 2>/dev/null && \
- ./conftest
+$CC_TST $CFLAGS $BIF_TST -o conftest conftest.c >/dev/null 2> conftest.err
 status=$?
+if [ $status -eq 0 ]; then
+  grep implemented < conftest.err > /dev/null 2> /dev/null
+  status=$?
+  [ $status -eq 0 ] && status=666
+fi
+if [ $status -eq 0 ]; then
+  ./conftest
+  status=$?
+fi
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNO_LCHMOD"
-rm -f "${temp_file}"
+rm -f "${temp_file}" conftest.err
 
 # Check for memset().
 echo 'Check for memset'
@@ -2360,9 +2370,6 @@ echo 'Check for /usr/local/man'
 echo 'Check for symbolic links'
 ln -s /dev/null null >/dev/null 2>/dev/null || LN=ln
 
-# Remove work files from configuration tests.
-rm -f a.out conftest.c conftest.o conftest.err conftest.lst conftest null
-
 
 #------------------------------------------------------------------------------
 # L) Generate system identification.
@@ -2420,6 +2427,10 @@ _EOF_
 ${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -eq 0 ] && CFLAGS_TST="${CFLAGS_TST} ${CF_TEST}"
+
+
+# Remove work files from configuration tests.
+rm -f a.out conftest.c conftest.o conftest.err conftest.lst conftest null
 
 
 #------------------------------------------------------------------------------
