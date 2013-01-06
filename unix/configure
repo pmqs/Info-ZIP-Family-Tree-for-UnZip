@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   14 Nov 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   13 Dec 2012
 #==============================================================================
 
 #==============================================================================
@@ -86,6 +86,7 @@
 #    RANLIB      - Archive index program name (default: ranlib)
 #
 #    CFLAGS      - C Compiler flag initial values
+#    CFLAGS_OPT  - C Compiler optimization option override (non-null)
 #    LOCAL_UNZIP - C compiler flag user override values
 #
 #    AFLAGS      - Assembler flag initial values
@@ -168,7 +169,7 @@ echo ''
 echo 'Generating system-dependent flags...'
 
 # Evaluate only variables in this list.  Complain about others, but continue.
-valid_vars1='|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CPP|DLLEXT|ICONV'
+valid_vars1='|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CFLAGS_OPT|CPP|DLLEXT|ICONV'
 valid_vars2='|IZ_BZIP2|IZ_ZLIB|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP|LZMA'
 valid_vars3='|OSDEP_H|OSDEP_OCF|OSDEP_OCS|OSDEP_OCU|OSDEP_OS'
 valid_vars4='|PGMEXT|PPMD|PROD|RANLIB|'
@@ -195,7 +196,7 @@ CC_BZ=${CC_BZ:-${CC}}                      # C compiler name (BZIP2 components)
 CC_LIST=''                                 # C compiler name, if LIST enabled
 CFLAGS=${CFLAGS:-}' -I.'                   # C compiler flags (core components)
 CFLAGS_BZ=${CFLAGS_BZ:-}' -I'              # C cmplr flags (BZIP2 components)
-CFLAGS_OPT=''                              # C cmplr optimze (and list) options
+CFLAGS_OPT=${CFLAGS_OPT:-}                 # C cmplr optimze (and list) options
 CFLAGS_USR=${LOCAL_UNZIP:-}                # C compiler user override options
 
 CPP=${CPP:-"${CC} -E"}                     # C preprocessor name
@@ -1218,6 +1219,7 @@ _EOF_
       ;;
 esac
 
+lprod=0
 #------------------------------------------------------------------------------
 # E) Configure optional AES (WinZip/Gladman) encryption library.
 #------------------------------------------------------------------------------
@@ -1242,7 +1244,10 @@ _EOF_
       if [ $status -eq 0 ]; then
         LIB_AES_WG="libaes.a"
         CFLAGS_TST="${CFLAGS_TST} -DCRYPT_AES_WG"
-        LFLAGS1="${LFLAGS1} -L."
+        if [ $lprod -eq 0 ]; then
+          lprod=1
+          LFLAGS1="${LFLAGS1} -L${PROD}"
+        fi
         LFLAGS2="${LFLAGS2} -laes"
         echo "-- Including AES_WG encryption support"
         echo "-- Building libaes.a in ${PROD}"
@@ -1263,50 +1268,7 @@ else
 fi
 
 #------------------------------------------------------------------------------
-# F) Configure optional ISO/OEM (iconv) conversion library.
-#------------------------------------------------------------------------------
-# ICONV conversion.  (User must request: "ICONV=1".)
-if [ -n "${ICONV}" ]; then
-  echo "Check ISO/OEM (iconv) conversion support"
-  cat > conftest.c << _EOF_
-#include <iconv.h>
-int main()
-{
-#ifndef ICONV_MAPPING
-   forget it
-#endif
-   iconv_t rslt;
-   rslt = iconv_open( "ASCII", "ASCII");
-   return ((rslt == (iconv_t)(-1)) ? -1 : 0);
-}
-_EOF_
-  $CC_TST $CFLAGS -DICONV_MAPPING -c conftest.c >/dev/null 2>/dev/null
-  status=$?
-  if [ $status -eq 0 ]; then
-    # Try linking with no special library.
-    $CC_TST $LFLAGS1 -o conftest conftest.o >/dev/null 2>/dev/null
-    status=$?
-    if [ $status -ne 0 ]; then
-      # That failed, so try linking with libiconv.
-      $CC_TST $LFLAGS1 -liconv -o conftest conftest.o >/dev/null 2>/dev/null
-      status=$?
-      if [ $status -eq 0 ]; then
-        LFLAGS2="${LFLAGS2} -liconv"
-      fi
-    fi
-  fi
-  if [ $status -eq 0 ]; then
-    CFLAGS_TST="${CFLAGS_TST} -DICONV_MAPPING"
-    echo "-- Including ISO/OEM (iconv) conversion support"
-  else
-    echo "^^ Unable to include ISO/OEM (iconv) conversion support"
-  fi
-else
-  echo "No ISO/OEM (iconv) conversion"
-fi
-
-#------------------------------------------------------------------------------
-# F') Configure optional LZMA compression library.
+# F) Configure optional LZMA compression library.
 #------------------------------------------------------------------------------
 # LZMA compression.  (User must request: "LZMA=1".)
 if [ -n "${LZMA}" ]; then
@@ -1330,7 +1292,10 @@ _EOF_
       if [ $status -eq 0 ]; then
         LIB_LZMA="liblzma.a"
         CFLAGS_TST="${CFLAGS_TST} -DLZMA_SUPPORT"
-        LFLAGS1="${LFLAGS1} -L."
+        if [ $lprod -eq 0 ]; then
+          lprod=1
+          LFLAGS1="${LFLAGS1} -L${PROD}"
+        fi
         LFLAGS2="${LFLAGS2} -llzma"
         echo "-- Including LZMA compression support"
         echo "-- Building liblzma.a in ${PROD}"
@@ -1375,7 +1340,10 @@ _EOF_
       if [ $status -eq 0 ]; then
         LIB_PPMD="libppmd.a"
         CFLAGS_TST="${CFLAGS_TST} -DPPMD_SUPPORT"
-        LFLAGS1="${LFLAGS1} -L."
+        if [ $lprod -eq 0 ]; then
+          lprod=1
+          LFLAGS1="${LFLAGS1} -L${PROD}"
+        fi
         LFLAGS2="${LFLAGS2} -lppmd"
         echo "-- Including PPMd compression support"
         echo "-- Building libppmd.a in ${PROD}"
@@ -1953,6 +1921,7 @@ _EOF_
   done
 
   # Check for wide char for Unicode support.
+  iconv_ok=0
   echo 'Check for wide char Unicode support'
   cat > conftest.c << _EOF_
 #include <stdlib.h>
@@ -2010,6 +1979,7 @@ _EOF_
     elif [ $status -eq 2 ]; then
       echo '-- have wchar_t with known UCS encoding - enabling Unicode support'
       CFLAGS_TST="${CFLAGS_TST} -DUNICODE_SUPPORT -DUNICODE_WCHAR"
+      iconv_ok=1
     else
       echo "^^ no Unicode (wchar_t) support - conftest returned $status"
     fi
@@ -2036,6 +2006,52 @@ else
   echo '^^ no Unicode (UTF-8 native) support'
   CFLAGS_TST="${CFLAGS_TST} -DNO_SETLOCALE"
 fi
+
+# Configure optional ISO/OEM (iconv) conversion library.
+# (User must request: "ICONV=1", and UNICODE_SUPPORT must be enabled.)
+if [ -n "${ICONV}" ]; then
+  if [ $iconv_ok -eq 0 ]; then
+    echo "^^ No wide Unicode support, so no ISO/OEM (iconv) conversion support."
+  else
+    echo "Check ISO/OEM (iconv) conversion support"
+    cat > conftest.c << _EOF_
+#include <iconv.h>
+int main()
+{
+#ifndef ICONV_MAPPING
+   forget it
+#endif
+   iconv_t rslt;
+   rslt = iconv_open( "ASCII", "ASCII");
+   return ((rslt == (iconv_t)(-1)) ? -1 : 0);
+}
+_EOF_
+    $CC_TST $CFLAGS -DICONV_MAPPING -c conftest.c >/dev/null 2>/dev/null
+    status=$?
+    if [ $status -eq 0 ]; then
+      # Try linking with no special library.
+      $CC_TST $LFLAGS1 -o conftest conftest.o >/dev/null 2>/dev/null
+      status=$?
+      if [ $status -ne 0 ]; then
+        # That failed, so try linking with libiconv.
+        $CC_TST $LFLAGS1 -liconv -o conftest conftest.o >/dev/null 2>/dev/null
+        status=$?
+        if [ $status -eq 0 ]; then
+          LFLAGS2="${LFLAGS2} -liconv"
+        fi
+      fi
+    fi
+    if [ $status -eq 0 ]; then
+      CFLAGS_TST="${CFLAGS_TST} -DICONV_MAPPING"
+      echo "-- Including ISO/OEM (iconv) conversion support"
+    else
+      echo "^^ Unable to include ISO/OEM (iconv) conversion support"
+    fi
+  fi
+else
+  echo "No ISO/OEM (iconv) conversion support"
+fi
+
 
 # Check for gcc no-builtin flag.
 # - gnu C supports -fno-builtin since version 2

@@ -29,7 +29,7 @@
 #include "zip.h"
 #include "crypt.h"
 
-#if defined(CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP))
+#if defined(IZ_CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP))
 /* Non-echo console/keyboard input is needed for (en/de)cryption's password
  * entry, and for UnZip(SFX)'s MORE and Pause features.
  * (The corresponding #endif is found at the end of this module.)
@@ -562,7 +562,7 @@ int zgetch(__G__ f)
 #endif /* !HAVE_WORKING_GETCH */
 
 
-#ifdef CRYPT_ANY                /* getp() is only used with full encryption */
+#ifdef IZ_CRYPT_ANY             /* getp() is only used with full encryption */
 
 /*
  * Simple compile-time check for source compatibility between
@@ -753,5 +753,5 @@ char *getp(__G__ m, p, n)
 
 #endif /* VMS || CMS_MVS */
 #endif /* ?HAVE_WORKING_GETCH */
-#endif /* def CRYPT_ANY */
-#endif /* defined(CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP)) */
+#endif /* def IZ_CRYPT_ANY */
+#endif /* defined(IZ_CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP)) */

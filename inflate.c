@@ -1090,7 +1090,7 @@ unsigned bl, bd;        /* number of bits decoded by tl[] and td[] */
           {
 #   else /* def BAD_SLIDE_MEMCPY */
           /* Use memcpy(), if no overlap. */
-          if (labs( (long)w - (long)d) >= e)
+          if (labs( (long)w - (long)d) >= (long)e)
           {
 #   endif /* def BAD_SLIDE_MEMCPY [else] */
             memcpy(redirSlide + (unsigned)w, redirSlide + d, e);

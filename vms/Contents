@@ -1,35 +1,38 @@
-Contents of the "vms" sub-directory for UnZip 6.10
+      Contents of the UnZip 6.10 Source Archive "vms" directory
+      ---------------------------------------------------------
 
-  build_unzip.com     DCL procedure to build UnZip (and friends)
-  bzlib.h             VMS wrapper header file for the bzip2 library definitions
-  cmdline.c           VMS-style command-line-interface code (if VMSCLI defined)
-  collect_deps.com    DCL procedure used in source dependencies creation
-  Contents            This file
-  cvthelp.tpu         TPU macro file to convert .help file to RUNOFF format
-  descrip.mms         MMK/MMS description for UnZip/ZipInfo and UnZipSFX
-  descrip_deps.mms    MMK/MMS include file for source dependencies
-  descrip_mkdeps.mms  MMK/MMS description for generating descrip_deps.mms
-  descrip_src.mms     MMK/MMS include file for common matter
-  find_bzip2_lib.com  DCL procedure to locate bzip2 and zlib libraries
-  hlp_lib_next.com    DCL procedure to find next HLP$LIBRARY[_*] logical
-  infback9.h          VMS wrapper header file for zlib inflate64 definitions
-  INSTALL_VMS.txt     VMS-specific build and install instructions
-  makesfx.com         DCL procedure to create a self-extracting archive
-  memory.h            Replacement for <memory.h>, where missing.
-  mod_dep.com         DCL procedure used in source dependencies creation
-  NOTES.TXT           VMS-specific usage notes
-  optgen.com          DCL procedure used to create module-ID link option files
-  test_unzip.com      DCL procedure to run basic UnZip tests
-  unixio_gcc.h        unixio.h system header replacement for gcc
-  unixlib_gcc.h       unixlib.h system header replacement for gcc
-  unzipsfx.hlp        UnZipSFX pre-formatted help page
-  unzip_cli.help      UnZip VMSCLI help page (TPU source)
-  unzip_def.rnh       UnZip default help page (RUNOFF source)
-  UNZIP_MSG.MSG       Message utility source file
-  unz_cli.cld         Command definition file for UnZip and ZipInfo
-  vms.c               VMS-specific C source
-  vms.h               VMS-specific C header file
-  vmscfg.h            VMS-specific C header file for inclusion in unzpriv.h
-  vmsdefs.h           VMS system declarations (missing C compiler support)
-  zlib.h              VMS wrapper header file for zlib library definitions
+build_unzip.com     DCL script to build UnZip (and friends)
+bzlib.h             VMS wrapper header file for the bzip2 library definitions
+cmdline.c           VMS-style command-line-interface code (if VMSCLI defined)
+collect_deps.com    DCL script used in source dependencies creation
+Contents            This file
+cppcld.com          DCL script to use CC /PREPROCESS_ONLY on .CLD file
+cvthelp.tpu         TPU command file to convert .help file to RUNOFF format
+descrip.mms         MMK/MMS description with UnZip/ZipInfo and UnZipSFX
+descrip_deps.mms    MMK/MMS include file for source dependencies
+descrip_mkdeps.mms  MMK/MMS description for generating descrip_deps.mms
+descrip_src.mms     MMK/MMS include file with common matter
+find_bzip2_lib.com  DCL script to locate bzip2 and zlib libraries
+hlp_lib_next.com    DCL script to find next HLP$LIBRARY[_*] logical
+infback9.h          VMS wrapper header file for zlib inflate64 definitions
+INSTALL_VMS.txt     VMS-specific build and install instructions
+makesfx.com         DCL script to create a self-extracting archive
+memory.h            Replacement for <memory.h>, where missing.
+mod_dep.com         DCL script used in source dependencies creation
+NOTES.TXT           VMS-specific usage notes
+optgen.com          DCL script used to create module-ID link option files
+stream_lf.fdl       FDL file used to create Stream_LF files.
+test_unzip.com      DCL script to run basic UnZip tests
+unixio_gcc.h        unixio.h system header replacement for gcc
+unixlib_gcc.h       unixlib.h system header replacement for gcc
+unzipsfx.hlp        UnZipSFX pre-formatted help page
+unzip_cli.help      UnZip VMS-style command line help page (TPU source)
+UNZIP_DEF.RNH       UnZip Unix-style command line help page (RUNOFF source)
+UNZIP_MSG.MSG       Message utility source file
+unz_cli.cld         Command definition file for UnZip and ZipInfo
+vms.c               VMS-specific C source
+vms.h               VMS-specific C header file
+vmscfg.h            VMS-specific C header file for inclusion in unzpriv.h
+vmsdefs.h           VMS system declarations (missing C compiler support)
+zlib.h              VMS wrapper header file for zlib library definitions
 

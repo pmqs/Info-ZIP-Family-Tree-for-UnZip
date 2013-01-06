@@ -1,4 +1,4 @@
-#                                               5 October 2012.  SMS.
+#                                               20 December 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS Dependency Description File.
 #
@@ -13,7 +13,7 @@
 #       LZMA=1, PPMD=1, LIBUNZIP=1, "LOCAL_UNZIP=''L_U'")
 #
 # If the IZ_AES_WG encryption source kit has not been installed, then
-# the macros AES_WG and AES_WG_SFX should not be defined.
+# the macros AES_WG and CRYPT_AES_WG_SFX should not be defined.
 #
 # Note that this description file must be used from the main
 # distribution directory, not from the [.VMS] subdirectory.

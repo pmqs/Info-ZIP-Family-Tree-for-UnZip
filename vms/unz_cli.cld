@@ -161,6 +161,7 @@ Define Syntax INFORMATION
 	Qualifier	EXCLUDE, VALUE(LIST), NonNegatable
 	Qualifier	HEADER, Negatable
 	Qualifier	MATCH, VALUE(REQUIRED, TYPE=MATCH_OPTS, LIST)
+	Qualifier	MEMBER_COUNTS, Negatable
 	Qualifier	PAGE, Negatable
 	Qualifier	TIMES, Negatable
 	Qualifier	TOTALS, Negatable

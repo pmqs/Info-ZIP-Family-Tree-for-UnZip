@@ -1460,6 +1460,17 @@ a wildcard file name specification.)
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .!------------------------------------------------------
 .indent-3
+4 /MEMBER_COUNTS (default) (-mc)
+.br
+/NOMEMBER_COUNTS
+.br
+Control inclusion of separate member counts for directories, files, and
+(if symlinks are supported) links, after the totals summary at the end
+of the report.  By default, they are included.  Use /NOMEMBER_COUNTS" to
+suppress them.  See also /TOTALS.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.!------------------------------------------------------
+.indent-3
 4 /PAGE (-M)
 .br
 Pipe all output through an internal pager similar to the Unix more(1)
@@ -1491,6 +1502,8 @@ be put out.
 The total "bytes compressed" reported includes only the actual data, not
 the ZIP archive meta-data, so the size of the archive will always be
 greater than this value.
+.sk
+See also /MEMBER_COUNTS.
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .!------------------------------------------------------
 .indent-3

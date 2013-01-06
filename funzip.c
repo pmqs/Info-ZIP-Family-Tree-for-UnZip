@@ -211,7 +211,7 @@ __GDEF
     return 0;
   G.inptr = G.inbuf;
 
-# ifdef CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
   if (encrypted) {
     uch *p;
     int n;
@@ -219,7 +219,7 @@ __GDEF
     for (n = G.incnt, p = G.inptr;  n--;  p++)
       zdecode(*p);
   }
-# endif /* def CRYPT_ANY */
+# endif /* def IZ_CRYPT_ANY */
 
   return G.incnt;
 
@@ -313,19 +313,19 @@ char **argv;
   uch h[LOCHDR];                /* first local header (GZPHDR < LOCHDR) */
   int g = 0;                    /* true if gzip format */
   unsigned method = 0;          /* initialized here to shut up gcc warning */
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
   char *s = " [-password]";
   char *p;                      /* password */
-#else /* def CRYPT_ANY */
+#else /* def IZ_CRYPT_ANY */
   char *s = "";
-#endif /* def CRYPT_ANY [else] */
+#endif /* def IZ_CRYPT_ANY [else] */
   CONSTRUCTGLOBALS();
 
   /* skip executable name */
   argc--;
   argv++;
 
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
   /* get the command line password, if any */
   p = (char *)NULL;
   if (argc && **argv == '-')
@@ -333,7 +333,7 @@ char **argv;
     argc--;
     p = 1 + *argv++;
   }
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
 
 #ifdef MALLOC_WORK
   /* The following expression is a cooked-down simplification of the
@@ -534,7 +534,7 @@ char **argv;
 
   /* if entry encrypted, decrypt and validate encryption header */
   if (encrypted)
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
     {
       ush i, e;
 
@@ -553,9 +553,9 @@ char **argv;
       if (e != (ush)(h[LOCFLG] & EXTFLG ? h[LOCTIM + 1] : h[LOCCRC + 3]))
         err(PK_PARAM, "incorrect password for first entry");
     }
-#else /* def CRYPT_ANY */
+#else /* def IZ_CRYPT_ANY */
     err(PK_COMPERR, "encrypted member, but no CRYPT support");
-#endif /* def CRYPT_ANY [else] */
+#endif /* def IZ_CRYPT_ANY [else] */
 
   /* prepare output buffer and crc */
   G.outptr = slide;
@@ -583,27 +583,28 @@ char **argv;
   }
   else
   {                             /* stored entry */
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
     if (ucsize != csize - (encrypted ? RAND_HEAD_LEN : 0)) {
-#else /* def CRYPT_ANY */
+#else /* def IZ_CRYPT_ANY */
     if (ucsize != csize) {
-#endif /* def CRYPT_ANY [else] */
+#endif /* def IZ_CRYPT_ANY [else] */
 #ifdef ZIP64_SUPPORT
       Info(slide, 1, ((char *)slide, "len %lld, siz %lld\n",
+       ucsize, csize));
 #else /* def ZIP64_SUPPORT */
       Info(slide, 1, ((char *)slide, "len %ld, siz %ld\n",
-#endif /*  def ZIP64_SUPPORT [else] */
        ucsize, csize));
+#endif /*  def ZIP64_SUPPORT [else] */
       err(PK_BADERR, "invalid compressed data--length mismatch");
     }
 
     ucsiz = ucsize;
     while (ucsiz--) {
       ush c = getc(G.in);
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
       if (encrypted)
         zdecode(c);
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
       *G.outptr++ = (uch)c;
 #if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
       if (++G.outcnt == (WSIZE>>1))     /* do FlushOutput() */

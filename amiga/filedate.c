@@ -502,7 +502,7 @@ time_t time(time_t *tp)
 #endif /* !FUNZIP && !UTIL */
 
 
-#if defined( CRYPT_ANY) || !defined(FUNZIP)
+#if defined( IZ_CRYPT_ANY) || !defined(FUNZIP)
 
 /*  sendpkt.c
  *  by A. Finkel, P. Lindsay, C. Sheppner
@@ -566,10 +566,10 @@ LONG action,                   /* packet type (desired action)              */
 
 } /* sendpkt() */
 
-#endif /* defined( CRYPT_ANY) || !defined(FUNZIP) */
+#endif /* defined( IZ_CRYPT_ANY) || !defined(FUNZIP) */
 
 
-#if defined( CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP))
+#if defined( IZ_CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP))
 
 /* Agetch() reads one raw keystroke -- uses sendpkt() */
 
@@ -594,6 +594,6 @@ int Agetch(void)
     return c;
 }
 
-#endif /* defined( CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP)) */
+#endif /* defined( IZ_CRYPT_ANY) || (defined(UNZIP) && !defined(FUNZIP)) */
 
 #endif /* __amiga_filedate_c*/

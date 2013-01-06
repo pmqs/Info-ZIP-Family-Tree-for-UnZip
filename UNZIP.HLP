@@ -489,6 +489,14 @@ member ...
   text  will scroll off the top of the screen before being viewed.  If
   the actual number of lines on the screen can not be  determined,  24
   lines will be assumed.
+3 -mc
+-mc
+--member-counts
+
+  Control inclusion of separate member counts for directories,  files,
+  and  links,  after  the totals summary at the end of the report.  By
+  default, they are included.  Use  "-mc-"  or  "--member-counts-"  to
+  suppress them.  See also -t.
 3 -N
 -N
 --comment-to-note
@@ -1394,6 +1402,8 @@ member ...
   The total "bytes compressed" reported includes only the actual data,
   not  the  ZIP  archive  meta-data,  so  the size of the archive will
   always be greater than this value.
+
+  See also -mc.
 4 -U
 -U
 --unicode

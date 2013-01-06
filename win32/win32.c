@@ -224,8 +224,6 @@ typedef struct {
 /* static int fnlen;            */     /* ditto */
 /* static unsigned nLabelDrive; */     /* ditto */
 
-extern char Far TruncNTSD[];    /* in extract.c */
-
 
 
 # ifdef SFX
@@ -528,7 +526,7 @@ static int FindSDExtraField(__GPRO__
 int test_NTSD(__G__ eb, eb_size, eb_ucptr, eb_ucsize)
     __GDEF
     uch *eb;
-    unsigned eb_size;
+    long eb_size;
     uch *eb_ucptr;
     ulg eb_ucsize;
 {
@@ -1241,7 +1239,7 @@ void close_outfile(__G)
       if((G.pInfo->file_attr & 0x7F) & ~FILE_ATTRIBUTE_ARCHIVE) {
           if (!SetFileAttributesA(Ansi_Fname, G.pInfo->file_attr & 0x7F))
               Info(slide, 1, ((char *)slide,
-                "\nwarning (%d): could not set file attributes\n",
+                "\nwarning (%d): could not set file attributes (1)\n",
                 (int)GetLastError()));
       }
 
@@ -1275,7 +1273,7 @@ void close_outfile(__G)
       if (uO.D_flag <= 1) {
         if ( hFile == INVALID_HANDLE_VALUE )
             Info(slide, 1, ((char *)slide,
-              "\nCreateFile() error %d when trying set file time\n",
+              "\nCreateFile(1) error %d when trying to set file time\n",
               (int)GetLastError()));
         else {
             if (gotTime) {
@@ -1285,7 +1283,7 @@ void close_outfile(__G)
 
                 if (!SetFileTime(hFile, pCreft, pAccft, pModft))
                     Info(slide, 0, ((char *)slide,
-                      "\nSetFileTime failed: %d\n", (int)GetLastError()));
+                      "\nSetFileTime(1) failed: %d\n", (int)GetLastError()));
             }
             CloseHandle(hFile);
         }
@@ -1338,7 +1336,7 @@ void close_outfile(__G)
       if((G.pInfo->file_attr & 0x7F) & ~FILE_ATTRIBUTE_ARCHIVE) {
           if (!SetFileAttributesW(G.unipath_widefilename, G.pInfo->file_attr & 0x7F))
               Info(slide, 1, ((char *)slide,
-                "\nwarning (%d): could not set file attributes\n",
+                "\nwarning (%d): could not set file attributes (2)\n",
                 (int)GetLastError()));
       }
 
@@ -1365,7 +1363,7 @@ void close_outfile(__G)
       if (uO.D_flag <= 1) {
         if ( hFile == INVALID_HANDLE_VALUE )
             Info(slide, 1, ((char *)slide,
-              "\nCreateFile() error %d when trying set file time\n",
+              "\nCreateFile(2) error %d when trying to set file time\n",
               (int)GetLastError()));
         else {
             if (gotTime) {
@@ -1375,7 +1373,7 @@ void close_outfile(__G)
 
                 if (!SetFileTime(hFile, pCreft, pAccft, pModft))
                     Info(slide, 0, ((char *)slide,
-                      "\nSetFileTime failed: %d\n", (int)GetLastError()));
+                      "\nSetFileTime(2) failed: %d\n", (int)GetLastError()));
             }
             CloseHandle(hFile);
         }
@@ -1593,7 +1591,7 @@ int set_direc_attribs(__G__ d)
     if (uO.D_flag <= 0) {
         if (hFile == INVALID_HANDLE_VALUE) {
             Info(slide, 1, ((char *)slide,
-              "warning: CreateFile() error %d (set file times for %s)\n",
+              "warning: CreateFile(3) error %d (set file times for %s)\n",
               (int)GetLastError(), FnFilter1(d->fn)));
             if (!errval)
                 errval = PK_WARN;
@@ -1608,7 +1606,7 @@ int set_direc_attribs(__G__ d)
 
                 if (!SetFileTime(hFile, pCreft, pAccft, pModft)) {
                     Info(slide, 0, ((char *)slide,
-                      "warning:  SetFileTime() for %s error %d\n",
+                      "warning: SetFileTime(3) for %s error %d\n",
                       FnFilter1(d->fn), (int)GetLastError()));
                     if (!errval)
                         errval = PK_WARN;
@@ -1693,7 +1691,7 @@ int set_direc_attribsw(__G__ dw)
         if (hFile == INVALID_HANDLE_VALUE) {
             char *fn = wchar_to_local_string(dw->fnw, G.unicode_escape_all);
             Info(slide, 1, ((char *)slide,
-              "warning: CreateFile() error %d (set file times for %s)\n",
+              "warning: CreateFile(4) error %d (set file times for %s)\n",
               (int)GetLastError(), FnFilter1(fn)));
             free(fn);
             if (!errval)
@@ -1711,7 +1709,7 @@ int set_direc_attribsw(__G__ dw)
                     char *fn = wchar_to_local_string(dw->fnw,
                                                      G.unicode_escape_all);
                     Info(slide, 0, ((char *)slide,
-                      "warning:  SetFileTime() for %s error %d\n",
+                      "warning: SetFileTime(4) for %s error %d\n",
                       FnFilter1(fn), (int)GetLastError()));
                     free(fn);
                     if (!errval)
@@ -1997,7 +1995,7 @@ char *do_wild(__G__ wildspec)
             G.dirnamelen = G.wildname - wildspec;
             if ((G.dirname = (char *)malloc(G.dirnamelen+1)) == NULL) {
                 Info(slide, 1, ((char *)slide,
-                  "warning:  cannot allocate wildcard buffers\n"));
+                  "warning: cannot allocate wildcard buffers\n"));
                 strncpy(G.matchname, wildspec, FILNAMSIZ);
                 G.matchname[FILNAMSIZ-1] = '\0';
                 return G.matchname; /* but maybe filespec was not a wildcard */
@@ -2263,7 +2261,7 @@ int mapname(__G__ renamed)
     /* Show warning when stripping insecure "parent dir" path components */
     if (killed_ddot && QCOND2) {
         Info(slide, 0, ((char *)slide,
-          "warning:  skipped \"../\" path component(s) in %s\n",
+          "warning: skipped \"../\" path component(s) (1) in %s\n",
           FnFilter1(G.filename)));
         if (!(error & ~MPN_MASK))
             error = (error & MPN_MASK) | PK_WARN;
@@ -2300,7 +2298,7 @@ int mapname(__G__ renamed)
             if(G.pInfo->file_attr & (0x7F & ~FILE_ATTRIBUTE_DIRECTORY)) {
                 if (!SetFileAttributesA(Ansi_Fname, G.pInfo->file_attr & 0x7F))
                     Info(slide, 1, ((char *)slide,
-                      "\nwarning (%d): could not set file attributes for %s\n",
+ "\nwarning (%d): could not set file attributes (3) for %s\n",
                       (int)GetLastError(), FnFilter1(G.filename)));
             }
 
@@ -2313,7 +2311,7 @@ int mapname(__G__ renamed)
             if(G.pInfo->file_attr & (0x7F & ~FILE_ATTRIBUTE_DIRECTORY)) {
                 if (!SetFileAttributesA(Ansi_Fname, G.pInfo->file_attr & 0x7F))
                     Info(slide, 1, ((char *)slide,
-                      "\nwarning (%d): could not set file attributes for %s\n",
+ "\nwarning (%d): could not set file attributes (4) for %s\n",
                       (int)GetLastError(), FnFilter1(G.filename)));
             }
         }
@@ -2357,7 +2355,7 @@ int mapname(__G__ renamed)
     maskDOSdevice(__G__ pathcomp);
 
     if (*pathcomp == '\0') {
-        Info(slide, 1, ((char *)slide, "mapname:  conversion of %s failed\n",
+        Info(slide, 1, ((char *)slide, "mapname(1): conversion of %s failed\n",
           FnFilter1(G.filename)));
         return (error & ~MPN_MASK) | MPN_ERR_SKIP;
     }
@@ -2383,10 +2381,10 @@ int mapname(__G__ renamed)
               FnFilter1(G.filename)));
         if (!SetVolumeLabelA(drive, Ansi_Fname)) {
             Info(slide, 1, ((char *)slide,
-              "mapname:  error setting volume label\n"));
+              "mapname(1): error setting volume label\n"));
             return (error & ~MPN_MASK) | MPN_ERR_SKIP;
         }
-        /* success:  skip the "extraction" quietly */
+        /* success: skip the "extraction" quietly */
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
 #undef Ansi_Fname
     }
@@ -2531,7 +2529,7 @@ int mapnamew(__G__ renamed)
     /* For now use standard path for output messages */
     if (killed_ddot && QCOND2) {
         Info(slide, 0, ((char *)slide,
-          "warning:  skipped \"../\" path component(s) in %s\n",
+          "warning: skipped \"../\" path component(s) (2) in %s\n",
           FnFilter1(G.filename)));
         if (!(error & ~MPN_MASK))
             error = (error & MPN_MASK) | PK_WARN;
@@ -2560,7 +2558,7 @@ int mapnamew(__G__ renamed)
             if(G.pInfo->file_attr & (0x7F & ~FILE_ATTRIBUTE_DIRECTORY)) {
                 if (!SetFileAttributesW(G.unipath_widefilename, G.pInfo->file_attr & 0x7F))
                     Info(slide, 1, ((char *)slide,
-                      "\nwarning (%d): could not set file attributes for %s\n",
+ "\nwarning (%d): could not set file attributes (5) for %s\n",
                       (int)GetLastError(), FnFilter1(G.filename)));
             }
 
@@ -2573,7 +2571,7 @@ int mapnamew(__G__ renamed)
             if(G.pInfo->file_attr & (0x7F & ~FILE_ATTRIBUTE_DIRECTORY)) {
                 if (!SetFileAttributesW(G.unipath_widefilename, G.pInfo->file_attr & 0x7F))
                     Info(slide, 1, ((char *)slide,
-                      "\nwarning (%d): could not set file attributes for %s\n",
+ "\nwarning (%d): could not set file attributes (6) for %s\n",
                       (int)GetLastError(), FnFilter1(G.filename)));
             }
         }
@@ -2595,7 +2593,7 @@ int mapnamew(__G__ renamed)
     maskDOSdevicew(__G__ pathcompw);
 
     if (*pathcompw == '\0') {
-        Info(slide, 1, ((char *)slide, "mapname:  conversion of %s failed\n",
+        Info(slide, 1, ((char *)slide, "mapname(2): conversion of %s failed\n",
           FnFilter1(G.filename)));
         return (error & ~MPN_MASK) | MPN_ERR_SKIP;
     }
@@ -2616,10 +2614,10 @@ int mapnamew(__G__ renamed)
               FnFilter1(G.filename)));
         if (!SetVolumeLabelW(drivew, G.unipath_widefilename)) {
             Info(slide, 1, ((char *)slide,
-              "mapname:  error setting volume label\n"));
+              "mapname(2): error setting volume label\n"));
             return (error & ~MPN_MASK) | MPN_ERR_SKIP;
         }
-        /* success:  skip the "extraction" quietly */
+        /* success: skip the "extraction" quietly */
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
     }
 
@@ -3001,7 +2999,7 @@ int checkdir(__G__ pathcomp, flag)
             }
             if (too_long) {   /* GRR:  should allow FAT extraction w/o EAs */
                 Info(slide, 1, ((char *)slide,
-                  "checkdir error:  path too long: %s\n",
+                  "checkdir(1) error: path too long: %s\n",
                   FnFilter1(G.buildpathHPFS)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
@@ -3010,7 +3008,7 @@ int checkdir(__G__ pathcomp, flag)
             }
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
-                  "checkdir error:  cannot create %s\n\
+                  "checkdir(1) error: cannot create %s\n\
  unable to process %s.\n",
                   FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
@@ -3026,12 +3024,12 @@ int checkdir(__G__ pathcomp, flag)
             if (!G.create_dirs) { /* told not to create (freshening) */
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
-                /* path doesn't exist:  nothing to do */
+                /* path doesn't exist: nothing to do */
                 return MPN_INF_SKIP;
             }
             if (too_long) {   /* GRR:  should allow FAT extraction w/o EAs */
                 Info(slide, 1, ((char *)slide,
-                  "checkdir error:  path too long: %s\n",
+                  "checkdir(2) error: path too long: %s\n",
                   FnFilter1(G.buildpathHPFS)));
                 free(G.buildpathHPFS);
                 free(G.buildpathFAT);
@@ -3040,7 +3038,7 @@ int checkdir(__G__ pathcomp, flag)
             }
             if (MKDIR(G.buildpathFAT, 0777) == -1) { /* create the directory */
                 Info(slide, 1, ((char *)slide,
-                  "checkdir error:  cannot create %s\n\
+                  "checkdir(2) error: cannot create %s\n\
  unable to process %s.\n",
                   FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
                 free(G.buildpathHPFS);
@@ -3051,7 +3049,7 @@ int checkdir(__G__ pathcomp, flag)
             G.created_dir = TRUE;
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  %s exists but is not directory\n\
+              "checkdir(1) error: %s exists but is not directory\n\
  unable to process %s.\n",
               FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
             free(G.buildpathHPFS);
@@ -3061,7 +3059,7 @@ int checkdir(__G__ pathcomp, flag)
         }
         if (too_long) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  path too long: %s\n",
+              "checkdir(3) error: path too long: %s\n",
                FnFilter1(G.buildpathHPFS)));
             free(G.buildpathHPFS);
             free(G.buildpathFAT);
@@ -3118,7 +3116,7 @@ int checkdir(__G__ pathcomp, flag)
         if ((G.endHPFS-G.buildpathHPFS) >= FILNAMSIZ) {
             G.buildpathHPFS[FILNAMSIZ-1] = '\0';
             Info(slide, 1, ((char *)slide,
-              "checkdir warning:  path too long; truncating\n\
+              "checkdir(1) warning: path too long; truncating\n\
     %s\n\
  -> %s\n",
               FnFilter1(G.filename), FnFilter2(G.buildpathHPFS)));
@@ -3192,7 +3190,7 @@ int checkdir(__G__ pathcomp, flag)
                 if (GetFullPathNameA(".", MAX_PATH, tmpN, &tmpP) > MAX_PATH)
                 { /* by definition of MAX_PATH we should never get here */
                     Info(slide, 1, ((char *)slide,
-                      "checkdir warning: current dir path too long\n"));
+                      "checkdir(1) warning: current dir path too long\n"));
                     return MPN_INF_TRUNC;   /* can't get drive letter */
                 }
                 G.nLabelDrive = *tmpN - 'a' + 1;
@@ -3275,7 +3273,7 @@ int checkdir(__G__ pathcomp, flag)
                      * to create more than one level, but really necessary?) */
                     if (MKDIR(tmproot, 0777) == -1) {
                         Info(slide, 1, ((char *)slide,
-                          "checkdir:  cannot create extraction directory: %s\n",
+ "checkdir(1): cannot create extraction directory: %s\n",
                           FnFilter1(tmproot)));
                         free(tmproot);
                         G.rootlen = 0;
@@ -3400,7 +3398,7 @@ int checkdirw(__G__ pathcompw, flag)
             }
             if (too_long) {   /* GRR:  should allow FAT extraction w/o EAs */
                 Info(slide, 1, ((char *)slide,
-                  "checkdir error:  path too long: %s\n",
+                  "checkdir(4) error: path too long: %s\n",
                   FnFilter1(fn)));
                 free(buildpathHPFS);
                 free(buildpathFAT);
@@ -3414,7 +3412,7 @@ int checkdirw(__G__ pathcompw, flag)
                 int i = MKDIRW(G.buildpathFATw, 0777);
                 if (i == -1) { /* create the directory */
                     Info(slide, 1, ((char *)slide,
-                        "checkdir error:  cannot create %s\n\
+                        "checkdir(3) error: cannot create %s\n\
  unable to process %s.\n",
                     FnFilter2(buildpathFAT), FnFilter1(fn)));
                     free(buildpathHPFS);
@@ -3442,7 +3440,7 @@ int checkdirw(__G__ pathcompw, flag)
             }
             if (too_long) {   /* GRR:  should allow FAT extraction w/o EAs */
                 Info(slide, 1, ((char *)slide,
-                  "checkdir error:  path too long: %s\n",
+                  "checkdir(5) error: path too long: %s\n",
                   FnFilter1(buildpathHPFS)));
                 free(buildpathHPFS);
                 free(buildpathFAT);
@@ -3457,7 +3455,7 @@ int checkdirw(__G__ pathcompw, flag)
                 int i = MKDIRW(G.buildpathFATw, 0777);
                 if (i == -1) { /* create the directory */
                     Info(slide, 1, ((char *)slide,
-                        "checkdir error:  cannot create %s\n\
+                        "checkdir(4) error: cannot create %s\n\
  unable to process %s.\n",
                     FnFilter2(buildpathFAT), FnFilter1(fn)));
                     free(buildpathHPFS);
@@ -3472,7 +3470,7 @@ int checkdirw(__G__ pathcompw, flag)
                 }
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  %s exists but is not directory\n\
+              "checkdir(2) error: %s exists but is not directory\n\
  unable to process %s.\n",
             FnFilter2(buildpathFAT), FnFilter1(fn)));
             free(buildpathHPFS);
@@ -3485,7 +3483,7 @@ int checkdirw(__G__ pathcompw, flag)
         }
         if (too_long) {
             Info(slide, 1, ((char *)slide,
-              "checkdir error:  path too long: %s\n",
+              "checkdir(6) error: path too long: %s\n",
             FnFilter1(buildpathHPFS)));
             free(buildpathHPFS);
             free(buildpathFAT);
@@ -3558,7 +3556,7 @@ int checkdirw(__G__ pathcompw, flag)
             G.buildpathHPFSw[FILNAMSIZ-1] = '\0';
             buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
             Info(slide, 1, ((char *)slide,
-              "checkdir warning:  path too long; truncating\n\
+              "checkdir(2) warning: path too long; truncating\n\
     %s\n\
  -> %s\n",
               FnFilter1(fn), FnFilter2(buildpathHPFS)));
@@ -3631,7 +3629,7 @@ int checkdirw(__G__ pathcompw, flag)
                 if (GetFullPathNameW(L".", MAX_PATH, tmpNw, &tmpPw) > MAX_PATH)
                 { /* by definition of MAX_PATH we should never get here */
                     Info(slide, 1, ((char *)slide,
-                      "checkdir warning: current dir path too long\n"));
+                      "checkdir(2) warning: current dir path too long\n"));
                     return MPN_INF_TRUNC;   /* can't get drive letter */
                 }
                 G.nLabelDrive = (char)(*G.buildpathHPFSw - 'a' + 1); /* save for mapname() */
@@ -3721,7 +3719,7 @@ int checkdirw(__G__ pathcompw, flag)
                     if (MKDIRW(tmprootw, 0777) == -1) {
                         char *tmproot = wchar_to_local_string(tmprootw, G.unicode_escape_all);
                         Info(slide, 1, ((char *)slide,
-                          "checkdir:  cannot create extraction directory: %s\n",
+ "checkdir(2): cannot create extraction directory: %s\n",
                           FnFilter1(tmproot)));
                         free(tmproot);
                         free(tmprootw);

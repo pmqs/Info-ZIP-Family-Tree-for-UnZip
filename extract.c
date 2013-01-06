@@ -209,11 +209,11 @@ static ZCONST char Far ExtractMsg[] =
       supposed to require %s bytes%s%s%s\n";
 #endif
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
 static ZCONST char Far BadAesExtFieldMsg[] =
   "%s:  bad AES_WG extra field (mode = %d)\n";
 static ZCONST char Far BadAesMacMsg[] = " bad AES_WG MAC\n";
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
 static ZCONST char Far BadFileCommLength[] = "%s:  bad file comment length\n";
 static ZCONST char Far LocalHdrSig[] = "local header sig";
@@ -293,7 +293,7 @@ static ZCONST char Far ZeroFilesTested[] =
      "\n%s:  stored in VMS format.  Extract anyway? (y/n) ";
 #endif
 
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
    static ZCONST char Far SkipCannotGetPasswd[] =
      "   skipping: %-22s  unable to get password\n";
    static ZCONST char Far SkipIncorrectPasswd[] =
@@ -302,10 +302,10 @@ static ZCONST char Far ZeroFilesTested[] =
      "%lu file%s skipped because of incorrect password.\n";
    static ZCONST char Far MaybeBadPasswd[] =
      "    (may instead be incorrect password)\n";
-#else /* def CRYPT_ANY */
+#else /* def IZ_CRYPT_ANY */
    static ZCONST char Far SkipEncrypted[] =
      "   skipping: %-22s  encrypted (not supported)\n";
-#endif /* def CRYPT_ANY [else] */
+#endif /* def IZ_CRYPT_ANY [else] */
 
 static ZCONST char Far NoErrInCompData[] =
   "No errors detected in compressed data of %s.\n";
@@ -484,7 +484,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 
     G.pInfo = G.info;
 
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
     G.newzip = TRUE;
 #endif
 #ifndef SFX
@@ -999,11 +999,11 @@ int extract_or_test_files(__G)    /* return PK-type error code */
             if (num_skipped > 0L)
                 Info(slide, 0, ((char *)slide, LoadFarString(FilesSkipped),
                   num_skipped, (num_skipped==1L)? "":"s"));
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
             if (num_bad_pwd > 0L)
                 Info(slide, 0, ((char *)slide, LoadFarString(FilesSkipBadPasswd)
                   , num_bad_pwd, (num_bad_pwd==1L)? "":"s"));
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
         }
     }
 
@@ -1016,16 +1016,16 @@ int extract_or_test_files(__G)    /* return PK-type error code */
         else
             error_in_archive = PK_FIND;  /* no files found at all */
     }
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
     else if ((filnum == num_bad_pwd) && error_in_archive <= PK_WARN)
         error_in_archive = IZ_BADPWD;    /* bad passwd => all files skipped */
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
     else if ((num_skipped > 0L) && error_in_archive <= PK_WARN)
         error_in_archive = IZ_UNSUP;     /* was PK_WARN; Jean-loup complained */
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
     else if ((num_bad_pwd > 0L) && !error_in_archive)
         error_in_archive = PK_WARN;
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
 
     return error_in_archive;
 
@@ -1042,7 +1042,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 static int store_info(__G)   /* return 0 if skipping, 1 if OK */
     __GDEF
 {
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
 #  define UNKN_AES (G.crec.compression_method != AESENCRED)
 #else
 #  define UNKN_AES TRUE       /* AES unknown */
@@ -1187,7 +1187,7 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
         return 0;
     }
 
-#ifndef CRYPT_ANY
+#ifndef IZ_CRYPT_ANY
     /* Third, complain about missing encryption support. */
     if (G.pInfo->encrypted) {
         if (!((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2)))
@@ -1195,7 +1195,7 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
               FnFilter1(G.filename)));
         return 0;
     }
-#endif /* ndef CRYPT_ANY */
+#endif /* ndef IZ_CRYPT_ANY */
 
 #ifndef SFX
     /* store a copy of the central header filename for later comparison */
@@ -1272,12 +1272,12 @@ static int extract_or_test_entrylist(__G__ numchunk,
     int cfn;
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
     ush temp_compression_method;
     int temp_stored_size_decr;
 #  define REAL_COMPRESSION_METHOD temp_compression_method
 #  define REAL_STORED_SIZE_DECR temp_stored_size_decr
-#else /* def CRYPT_AES_WG */
+#else /* def IZ_CRYPT_AES_WG */
    /* RAND_HEAD_LEN normally comes from crypt.h, but may be disabled,
     * if CRYPT is not defined.
     */
@@ -1286,7 +1286,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
 #  endif /* ndef RAND_HEAD_LEN */
 #  define REAL_COMPRESSION_METHOD G.lrec.compression_method
 #  define REAL_STORED_SIZE_DECR RAND_HEAD_LEN
-#endif /* def CRYPT_AES_WG) [else] */
+#endif /* def IZ_CRYPT_AES_WG) [else] */
 
 /* possible values for local skip_entry flag: */
 #define SKIP_NO         0       /* do not skip this entry */
@@ -1476,7 +1476,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
         }
 #endif /* !SFX */
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
         /* Analyze any AES encryption extra block before calculating
          * the true uncompressed file size.
          */
@@ -1510,7 +1510,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
             temp_compression_method = G.lrec.compression_method;
             temp_stored_size_decr = RAND_HEAD_LEN;
         }
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
         /* Size consistency checks must come after reading in the local extra
          * field, so that any Zip64 extension local e.f. block has already
@@ -1536,7 +1536,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
             }
         }
 
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
         if (G.pInfo->encrypted &&
             (error = decrypt(__G__ uO.pwdarg)) != PK_COOL) {
             if (error == PK_WARN) {
@@ -1554,7 +1554,7 @@ static int extract_or_test_entrylist(__G__ numchunk,
             }
             continue;   /* go on to next file */
         }
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
 
 #if defined( UNIX) && defined( __APPLE__)
         /* Unless the user objects, or the destination volume does not
@@ -2124,10 +2124,10 @@ static int extract_or_test_entrylistw(__G__ numchunk,
     int error, errcode;
     wchar_t *wslp;      /* Wide slash pointer for pre-mapnamew() processing. */
 
-# ifdef CRYPT_AES_WG
+# ifdef IZ_CRYPT_AES_WG
     ush temp_compression_method;
     int temp_stored_size_decr;
-# endif /* def CRYPT_AES_WG */
+# endif /* def IZ_CRYPT_AES_WG */
 
 /* possible values for local skip_entry flag: */
 # define SKIP_NO         0      /* do not skip this entry */
@@ -2365,7 +2365,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             G.pInfo->cfilname = (char Far *)NULL;
         }
 
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
         /* Analyze any AES encryption extra block before calculating
          * the true uncompressed file size.
          */
@@ -2399,7 +2399,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             temp_compression_method = G.lrec.compression_method;
             temp_stored_size_decr = RAND_HEAD_LEN;
         }
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
 # endif /* !SFX */
         /* Size consistency checks must come after reading in the local extra
@@ -2426,7 +2426,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             }
         }
 
-# ifdef CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
         if (G.pInfo->encrypted &&
             (error = decrypt(__G__ uO.pwdarg)) != PK_COOL) {
             if (error == PK_WARN) {
@@ -2444,7 +2444,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             }
             continue;   /* go on to next file */
         }
-# endif /* def CRYPT_ANY */
+# endif /* def IZ_CRYPT_ANY */
 
         /*
          * just about to extract file:  if extracting to disk, check if
@@ -2810,7 +2810,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
      */
     zusz_t bytes_put_out;
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
     zoff_t g_csize_adj = 0;             /* Temporary adjustment to G.csize. */
     int aes_mac_mismatch;
     ush temp_compression_method;
@@ -2819,7 +2819,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
      */
     uch aes_wg_mac_file[ 10];           /* AES MAC from file. */
     uch aes_wg_mac_calc[ 10];           /* AES MAC calculated. */
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
 /*---------------------------------------------------------------------------
     Initialize variables, buffers, etc.
@@ -2896,7 +2896,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
 
     defer_leftover_input(__G);    /* so NEXTBYTE bounds check will work */
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
     if (G.lrec.compression_method == AESENCRED)
     {
         /* The "compression_method" is AES, so use the real method. */
@@ -2910,7 +2910,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
         temp_compression_method = G.lrec.compression_method;
         aes_mac_mismatch = 0;
     }
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
     switch (REAL_COMPRESSION_METHOD) {
         case STORED:
@@ -3108,7 +3108,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                   "" : (G.pInfo->textfile? txt : bin), uO.cflag? NEWLINE : ""));
             }
 
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
             if (G.lrec.compression_method == AESENCRED)
             {
                 /* Subtract the MAC data size from G.csize, to keep
@@ -3119,7 +3119,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 g_csize_adj = MAC_LENGTH( G.pInfo->cmpr_mode_aes);
                 G.csize -= g_csize_adj;
             }
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
             if ((r = UZbunzip2(__G)) != 0) {
                 if (r < PK_DISK) {
@@ -3153,7 +3153,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                   "" : (G.pInfo->textfile? txt : bin), uO.cflag? NEWLINE : ""));
             }
 
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
             if (G.lrec.compression_method == AESENCRED)
             {
                 /* Subtract the MAC data size from G.csize, to keep
@@ -3164,7 +3164,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 g_csize_adj = MAC_LENGTH( G.pInfo->cmpr_mode_aes);
                 G.csize -= g_csize_adj;
             }
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
             if ((r = UZlzma(__G)) != 0) {
                 if (r < PK_DISK) {
@@ -3198,7 +3198,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                   "" : (G.pInfo->textfile? txt : bin), uO.cflag? NEWLINE : ""));
             }
 
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
             if (G.lrec.compression_method == AESENCRED)
             {
                 /* Subtract the MAC data size from G.csize, to keep
@@ -3209,7 +3209,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 g_csize_adj = MAC_LENGTH( G.pInfo->cmpr_mode_aes);
                 G.csize -= g_csize_adj;
             }
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
             if ((r = UZppmd(__G)) != 0) {
                 if (r < PK_DISK) {
@@ -3243,7 +3243,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
 
     } /* end switch (compression method) */
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
     if (g_csize_adj != 0)
     {
         /* Bump G.csize back up, so that NEXTBYTE doesn't quit
@@ -3271,7 +3271,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
         aes_mac_mismatch = (i != MAC_LENGTH( G.pInfo->cmpr_mode_aes)) ||
          (memcmp( aes_wg_mac_file, aes_wg_mac_calc, i));
     }
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
 /*---------------------------------------------------------------------------
     Close the file and set its date and time (not necessarily in that order),
@@ -3326,11 +3326,11 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
      * Ignore a bad CRC for AES version 2.
      */
     if (((G.crc32val != G.lrec.crc32)
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
      && (G.pInfo->cmpr_vers_aes != 2)) || aes_mac_mismatch
-#else /* def CRYPT_AES_WG */
+#else /* def IZ_CRYPT_AES_WG */
      )
-#endif /* def CRYPT_AES_WG [else] */
+#endif /* def IZ_CRYPT_AES_WG [else] */
     )
     {
         /* if quiet enough, we haven't output the filename yet:  do it */
@@ -3338,7 +3338,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             Info(slide, 0x401, ((char *)slide, "%-22s ",
               FnFilter1(G.filename)));
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
         if (aes_mac_mismatch)
         {
             /* Bad AES Message Authentication Code.
@@ -3348,16 +3348,16 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             Info(slide, 0x401, ((char *)slide, LoadFarString(BadAesMacMsg)));
         }
         else
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
         {
             /* Bad CRC checksum. */
             Info(slide, 0x401, ((char *)slide, LoadFarString(BadCRC),
              G.crc32val, G.lrec.crc32));
         }
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
         if (G.pInfo->encrypted)
             Info(slide, 0x401, ((char *)slide, LoadFarString(MaybeBadPasswd)));
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */
         error = PK_ERR;
     } else if (uO.tflag) {
 #ifndef SFX
@@ -3630,7 +3630,7 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
 
     if ((eb_size < (EB_UCSIZE_P + 4)) ||
         ((eb_ucsize = makelong(eb+(EB_HEADSIZE+EB_UCSIZE_P))) > 0L &&
-         eb_size <= (compr_offset + EB_CMPRHEADLEN)))
+         eb_size <= (long)(compr_offset + EB_CMPRHEADLEN)))
         return IZ_EF_TRUNC;               /* no compressed data! */
 
     if (
@@ -4590,8 +4590,8 @@ __GDEF
         if ((sts = FLUSH( wsize- avail_out)) != 0)
             goto uzlzma_cleanup_exit;
         Trace((stderr, "inside loop:  flushing %ld bytes (ptr diff = %ld)\n",
-          (wsize- avail_out),
-          (next_out- redirSlide)));
+          (unsigned long)(wsize- avail_out),
+          (unsigned long)(next_out- redirSlide)));
 
         /* Decrement bytes-left-to-put-out count. */
         ucsize_lzma -= (wsize- avail_out);
@@ -4778,7 +4778,7 @@ __GDEF
             Trace((stderr,
              "inside loop:  flushing %ld bytes (ptr diff = %ld)\n",
              (unsigned long)(wsize- avail_out),
-             (next_out- redirSlide)));
+             (unsigned long)(next_out- redirSlide)));
         }
 
         if (G.szios.extra)

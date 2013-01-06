@@ -1080,7 +1080,7 @@ void version(__G)
 #endif /* !SFX */
 #endif /* !FUNZIP */
 
-#ifdef CRYPT_ANY
+#ifdef IZ_CRYPT_ANY
 
 char *getp(__G__ m, p, n)
     __GDEF
@@ -1124,4 +1124,4 @@ char *getp(__G__ m, p, n)
 
 } /* end function getp() */
 
-#endif /* def CRYPT_ANY */
+#endif /* def IZ_CRYPT_ANY */

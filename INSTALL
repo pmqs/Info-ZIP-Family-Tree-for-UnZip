@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2012-07-25
+   UnZip version 6.10.  Revised: 2012-12-20
 
 ------------------------------------------------------------------------
 
@@ -284,8 +284,8 @@ enable the corresponding optional features:
 the optional compression and encryption methods enabled, might look like
 the following:
 
-      make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 LZMA=1 \
-       PPMD=1 generic
+      make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 \
+       LZMA=1 PPMD=1 generic
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -368,13 +368,13 @@ and the Traditional (weak) encryption method.  To get an UnZipSFX with
 more capability, use the "make" macro LOCAL_UNZIP to specify the
 appropriate C macros (described below) when building UnZip.  For
 example, to build the same full-featured UnZip as in the earlier
-example build command, but also enabling support in UnZipSFX for AES
+example build command, but also enable support in UnZipSFX for AES
 encryption, and for LZMA and PPMd compression, use a command like the
 following:
 
       make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 \
-       LOCAL_UNZIP='-DAES_WG_SFX -DLZMA_SFX -DPPMD_SFX' LZMA=1 \
-       PPMD=1 generic
+       LOCAL_UNZIP='-DCRYPT_AES_WG_SFX -DLZMA_SFX -DPPMD_SFX' \
+       LZMA=1 PPMD=1 generic
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -806,27 +806,29 @@ COPYRIGHT_CLEAN   (now default)
 USE_SMITH_CODE
    The last chunk of code in UnZip that was blatantly derived from Sam
    Smith's unzip 2.0 (as in, "substantially similar") is in unreduce.c.
-   Since reducing was only used by very early PKZIP beta versions (0.9x),
-   support for it is now omitted by default (COPYRIGHT_CLEAN).  To
-   include unreducing capability, define USE_SMITH_CODE and replace the
-   stub unreduce.c source file by the separately distributed full source
-   code module.  Note that this subjects UnZip to any and all
-   restrictions in Smith's copyright; see the UnZip COPYING.OLD file for
-   details.
+   Because the Reduce compression method was only used by very early
+   PKZIP beta versions (0.9x), support for it is now omitted by default
+   (COPYRIGHT_CLEAN).  To include support for Reduce compression, define
+   the C macro USE_SMITH_CODE, and replace the stub unreduce.c source
+   module by the separately distributed full source code module.  Note
+   that this subjects your UnZip to any and all restrictions in Smith's
+   copyright.  See the UnZip COPYING.OLD file for details.  The source
+   code module unreduce.c is supplied in:
+   ftp://ftp.info-zip.org/pub/infozip/src/unreduce_full.zip
 
-CRYPT_AES_WG   (requires additional external code distribution)
+IZ_CRYPT_AES_WG   (requires additional external code distribution)
    Enable WinZip/Gladman AES strong encryption support.  Currently, this
    support is integrated in the Make procedures of MSDOS 32-bit (DJGPP),
    VMS, Windows, and many Unix systems.  A separately distributed
    IZ_AES_WG source code kit is required.
 
-CRYPT_AES_WG_SFX
+IZ_CRYPT_AES_WG_SFX
    Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
    it's enabled in UnZip).  By default, to reduce the size of the
    UnZipSFX executable, AES_WG support is disabled in UnZipSFX even when
    it's enabled in UnZip itself.
 
-CRYPT_TRAD_SFX
+IZ_CRYPT_TRAD_SFX
    Enable Traditional encryption support in UnZipSFX.  The default
    setting is to disable Traditional encryption in UnZipSFX, to reduce
    its size.  In UnZip, encryption support is enabled by default.  See

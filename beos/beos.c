@@ -1612,14 +1612,12 @@ static CHARSET_MAP dos_charset_map[] = {
     { "lv", "CP775" },
 };
 
-/* Character set names. */
-char ISO_CP[MAX_CP_NAME] = "";
-char OEM_CP[MAX_CP_NAME] = "";
 
-/* Try to guess the default value of OEM_CP based on the current locale.
- * ISO_CP is left alone for now.
+/* Try to guess the default value of G.oem_cp based on the current locale.
+ * G.iso_cp is left alone for now.
  */
-void init_conversion_charsets()
+void init_conversion_charsets( __G)
+ __GDEF
 {
 /*
  *  const char *local_charset;
@@ -1628,7 +1626,7 @@ void init_conversion_charsets()
     char *locale;
     char *loc = NULL;
 
-    /* Make a guess only if OEM_CP not already set. */
+    /* Make a guess only if G.oem_cp not already set. */
 /*
  *  if(*OEM_CP == '\0') {
  *      local_charset = nl_langinfo(CODESET);
@@ -1641,7 +1639,7 @@ void init_conversion_charsets()
  *  }
  */
 
-    if (*OEM_CP != '\0')
+    if (*G.oem_cp != '\0')
         return;
 
     locale = getenv("LC_ALL");
@@ -1669,8 +1667,8 @@ void init_conversion_charsets()
         {
             if (!strcmp(loc, dos_charset_map[i].local_lang))
             {
-              strncpy( OEM_CP, dos_charset_map[i].archive_charset,
-               sizeof(OEM_CP));
+              strncpy( G.oem_cp, dos_charset_map[i].archive_charset,
+               sizeof( G.oem_cp));
               break;
             }
         }
@@ -1678,8 +1676,8 @@ void init_conversion_charsets()
         free( loc);
     }
 
-    if (*OEM_CP == '\0')        /*  set default one   */
-        strncpy(OEM_CP, "CP850", sizeof(OEM_CP));
+    if (*G.oem_cp == '\0')      /* Set Default one. */
+        strncpy( G.oem_cp, "CP850", sizeof( G.oem_cp));
 }
 
 /* Convert a string from one encoding to the current locale using iconv().

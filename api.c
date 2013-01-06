@@ -367,7 +367,8 @@ int UZ_EXP UzpFileTree(char *name, cbList(callBack), char *cpInclude[],
     uO.qflag = 2;
     uO.vflag = 1;
     uO.C_flag = 1;
-    G.wildzipfn = name;
+    G.wildzipfn = (char *)malloc( strlen( name)+ 1);
+    strcpy( G.wildzipfn, name);
     G.process_all_files = TRUE;
     if (cpInclude) {
         char **ptr = cpInclude;
@@ -423,7 +424,8 @@ int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
     G.process_all_files = FALSE;
     G.extract_flag = TRUE;
     uO.qflag = 2;
-    G.wildzipfn = zip;
+    G.wildzipfn = (char *)malloc( strlen( zip)+ 1);
+    strcpy( G.wildzipfn, zip);
 
     G.pfnames = incname;
     incname[0] = file;
@@ -672,7 +674,6 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
 
     uO.qflag = 2;                        /* turn off all messages */
     G.fValidate = TRUE;
-    G.pfnames = (char **)&fnames[0];    /* assign default filename vector */
 
     if (archive == NULL) {      /* something is screwed up:  no filename */
         DESTROYGLOBALS();
@@ -687,8 +688,8 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
        goto exit_retcode;
     }
 
-    G.wildzipfn = (char *)malloc(FILNAMSIZ);
-    strcpy(G.wildzipfn, archive);
+    G.wildzipfn = (char *)malloc( FILNAMSIZ);
+    strcpy( G.wildzipfn, archive);
 #  if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
     _ISO_INTERN(G.wildzipfn);
 #  endif

@@ -75,7 +75,7 @@
 # ifdef _ISO_INTERN
 #  undef _ISO_INTERN
 # endif
-# define _ISO_INTERN( string) charset_to_intern( string, ISO_CP)
+# define _ISO_INTERN( string) charset_to_intern( string, G.iso_cp)
 
 # ifdef _OEM_INTERN
 #  undef _OEM_INTERN
@@ -83,15 +83,7 @@
 # ifndef IZ_OEM2ISO_ARRAY
 #  define IZ_OEM2ISO_ARRAY
 # endif
-# define _OEM_INTERN( string) charset_to_intern( string, OEM_CP)
-
-/* Character set names. */
-extern char ISO_CP[ MAX_CP_NAME];
-extern char OEM_CP[ MAX_CP_NAME];
-
-/* Conversion function prototypes. */
-void charset_to_intern( char *, char *);
-void init_conversion_charsets(void);
+# define _OEM_INTERN( string) charset_to_intern( string, G.oem_cp)
 
 /* Possible "const" type qualifier for arg 2 of iconv(). */
 # ifndef ICONV_ARG2

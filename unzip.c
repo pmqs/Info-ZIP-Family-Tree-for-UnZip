@@ -70,10 +70,10 @@
 #include "crypt.h"
 #include "unzvers.h"
 
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
 # include "aes_wg/aesopt.h"
 # include "aes_wg/iz_aes_wg.h"
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
 #if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
 # include "szip/SzVersion.h"
@@ -175,7 +175,7 @@ static ZCONST char Far NoMemArgsList[] =
     "warning:  -U \"escape all non-ASCII UTF-8 chars\" is not supported\n";
 # endif
 
-# ifdef CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
    static ZCONST char Far MustGivePasswd[] =
      "error:  must give decryption password with -P option\n";
 # endif
@@ -646,7 +646,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
     static ZCONST char Far WildStopAtDir[] =
      "WILD_STOP_AT_DIR     (Wildcard \"*\" doesn't span \"/\" dir delimiter)";
 #  endif
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
     static ZCONST char Far AesWgEncryptionNotice1[] =
      "\nAES Strong Encryption notice:\n";
     static ZCONST char Far AesWgEncryptionNotice2[] =
@@ -655,10 +655,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
         subject to export restrictions in many countries, including the USA.\n";
 
     static ZCONST char Far AesWgDecryption[] =
-"        CRYPT_AES_WG         (AES encryption (WinZip/Gladman), ver %d.%d%s)\n";
+"        IZ_CRYPT_AES_WG      (AES encryption (WinZip/Gladman), ver %d.%d%s)\n";
 #  endif
-#  ifdef CRYPT_ANY
-#   ifdef CRYPT_TRAD
+#  ifdef IZ_CRYPT_ANY
+#   ifdef IZ_CRYPT_TRAD
     static ZCONST char Far TraditionalEncryptionNotice1[] =
      "\nTraditional Zip Encryption notice:\n";
     static ZCONST char Far TraditionalEncryptionNotice2[] =
@@ -670,13 +670,13 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
         including the USA under License Exception TSU of the U.S. Export\n\
         Administration Regulations (section 740.13(e)) of 6 June 2002.\n";
     static ZCONST char Far Decryption[] =
-"        CRYPT_TRAD           (Traditional (weak) encryption, ver %d.%d%s)\n";
+"        IZ_CRYPT_TRAD        (Traditional (weak) encryption, ver %d.%d%s)\n";
     static ZCONST char Far CryptDate[] = CR_VERSION_DATE;
-#   endif /* def CRYPT_TRAD */
+#   endif /* def IZ_CRYPT_TRAD */
 #   ifdef PASSWD_FROM_STDIN
     static ZCONST char Far PasswdStdin[] = "PASSWD_FROM_STDIN";
 #   endif
-#  endif /* def CRYPT_ANY */
+#  endif /* def IZ_CRYPT_ANY */
 #  ifndef __RSXNT__
 #   ifdef __EMX__
     static ZCONST char Far EnvEMX[] = "EMX";
@@ -691,38 +691,38 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 
 # ifndef SFX
 #  ifdef VMS
-/* UnzipUsageLine1[] is also used in vms/cmdline.c:  do not make it static */
+/* UnzipUsageLine1[] is also used in vms/cmdline.c:  Do not make it static. */
     ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  For more details see: unzip -v.\n\n";
 #   ifdef COPYRIGHT_CLEAN
     static ZCONST char Far UnzipUsageLine1v[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by C. Spieler.  Send\n\
-bug reports using http://www.info-zip.org/zip-bug.html; see README for details.\
+UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by <Apply Within>.\n\
+See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
 \n\n";
 #   else
     static ZCONST char Far UnzipUsageLine1v[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
-Send bug reports using //www.info-zip.org/zip-bug.html; see README for details.\
+See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
 \n\n";
 #   endif /* ?COPYRIGHT_CLEAN */
 #  else /* !VMS */
 #   ifdef COPYRIGHT_CLEAN
     static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by C. Spieler.  Send\n\
-bug reports using http://www.info-zip.org/zip-bug.html; see README for details.\
+UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by <Apply Within>\n\
+See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
 \n\n";
 #   else
     static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
-Send bug reports using //www.info-zip.org/zip-bug.html; see README for details.\
+See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
 \n\n";
 #   endif /* ?COPYRIGHT_CLEAN */
 #   define UnzipUsageLine1v       UnzipUsageLine1
 #  endif /* ?VMS */
 
 static ZCONST char Far UnzipUsageLine2v[] = "\
-Latest sources and executables are at ftp://ftp.info-zip.org/pub/infozip/ ;\
-\nsee ftp://ftp.info-zip.org/pub/infozip/UnZip.html for other sites.\
+Current sources and executables: ftp://ftp.info-zip.org/pub/infozip/ \
+\nMore info: http://info-zip.org/UnZip.html\
 \n\n";
 
 #  ifdef MACOS
@@ -972,7 +972,7 @@ int unzip(__G__ argc, argv)
 
 # ifdef ICONV_MAPPING
 #  ifdef UNIX
-    init_conversion_charsets();
+    init_conversion_charsets( __G);
 #  endif
 # endif /* ICONV_MAPPING */
 
@@ -1126,7 +1126,7 @@ int unzip(__G__ argc, argv)
     }
 # endif /* LARGE_FILE_SUPPORT */
 
-# ifdef CRYPT_AES_WG
+# ifdef IZ_CRYPT_AES_WG
     /* Verify the AES compile-time endian decision. */
     {
         union {
@@ -1161,7 +1161,7 @@ int unzip(__G__ argc, argv)
             goto cleanup_and_exit;
         }
     }
-# endif /* def CRYPT_AES_WG */
+# endif /* def IZ_CRYPT_AES_WG */
 
 # ifdef DEBUG
     /* 2004-11-30 SMS.
@@ -1523,12 +1523,38 @@ cleanup_and_exit:
         free(thissigsav);
     }
 # endif
-# if (defined(MALLOC_WORK) && !defined(REENTRANT))
+
+# if 0
+  /* 2012-12-11 SMS.
+   * Disabled call of free_G_buffers() from
+   * process.c:process_zipfiles(), so now DESTROYGLOBALS() should do all
+   * the work (if any).
+   *
+   * On the other hand, the revised/reallocated argc[] is known only
+   * locally, so we should free it.
+   */
+  /* 2012-12-10 SMS.
+   * This code appears to be goofy/redundant.
+   * Normally, process.c:process_zipfiles()
+   * calls process.c:free_G_buffers(), which, "#ifdef MALLOC_WORK",
+   * frees G.area.Slide, just like here.  (With REENTRANT defined,
+   * DESTROYGLOBALS() includes at least one call to free_G_buffers(), so
+   * the "!defined(REENTRANT)" condition makes some sense, but why free
+   * this stuff and not anything else, if not REENTRANT?)
+   */
+# if defined(MALLOC_WORK) && !defined(REENTRANT)
     if (G.area.Slide != (uch *)NULL) {
         free(G.area.Slide);
         G.area.Slide = (uch *)NULL;
     }
-# endif
+# endif /* defined(MALLOC_WORK) && !defined(REENTRANT) */
+# endif /* 0 */
+
+# ifdef REENTRANT
+    free_args( argv);
+# endif /* def REENTRANT */
+
+
 # if (defined(MSDOS) && !defined(SFX) && !defined(WINDLL))
     if (retcode != PK_OK)
         check_for_windows("UnZip");
@@ -1602,13 +1628,19 @@ static int setsignalhandler(__G__ p_savedhandler_chain, signal_type,
 */
 
 /* Most option IDs are set to the shortopt char.  For
-   multichar short options set to arbitrary unused constant. */
+ * multichar short options set to arbitrary unused constant.
+ ***********************************************************************
+ * DANGER: o_mc, o_sc, and o_so are also defined in zipinfo.c,         *
+ *         and MUST MATCH.                                             *
+ ***********************************************************************
+ */
 #define o_hh            0x101
 #define o_ja            0x102
 #define o_LI            0x103
-#define o_sc            0x104
-#define o_si            0x105
-#define o_so            0x106
+#define o_mc            0x104   /* See also zipinfo.c. */
+#define o_sc            0x105   /* See also zipinfo.c. */
+#define o_si            0x106
+#define o_so            0x107   /* See also zipinfo.c. */
 
 
 /* The below is from the old main command line code with a few changes.
@@ -1732,7 +1764,7 @@ static struct option_struct far options[] = {
        'o',  "overwrite files without prompting"},
     {UZO, "p",  "pipe-to-stdout",  o_NO_VALUE,       o_NEGATABLE,
        'p',  "pipe extraction to stdout, no messages"},
-# ifdef CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
     {UZO, "P",  "password",        o_REQUIRED_VALUE, o_NEGATABLE,
        'P',  "password"},
 # endif
@@ -1753,13 +1785,13 @@ static struct option_struct far options[] = {
        'S',  "VMS extract text as Stream_LF"},
 # endif
 #ifndef SFX
-    {UZO, "",   "show-command",    o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
        o_sc, "show processed command line and exit"},
 #if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
     {UZO, "si", "show-pid",        o_NO_VALUE,       o_NEGATABLE,
        o_si, "show process ID"},
 #endif /* #if !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
-    {UZO, "",   "show-options",    o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
 #endif /* ndef SFX */
     {UZO, "t",  "test",            o_NO_VALUE,       o_NEGATABLE,
@@ -1848,6 +1880,8 @@ static struct option_struct far options[] = {
     {ZIO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
        'M',  "output like more"},
 # endif
+    {ZIO, "mc", "member-counts",   o_NO_VALUE,       o_NEGATABLE,
+       o_mc, "show separate dir/file/link member counts"},
 # ifdef ICONV_MAPPING
 #  ifdef UNIX
     {ZIO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
@@ -1857,9 +1891,9 @@ static struct option_struct far options[] = {
     {ZIO, "s",  "short-list",      o_NO_VALUE,       o_NEGATABLE,
        's',  "short list"},
 # ifndef SFX
-    {ZIO, "",   "show-command",    o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
        o_sc, "show processed command line and exit"},
-    {ZIO, "",   "show-options",    o_NO_VALUE,       o_NEGATABLE,
+    {ZIO, "so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
 # endif /* ndef SFX */
     {ZIO, "t",  "totals",          o_NO_VALUE,       o_NEGATABLE,
@@ -1890,7 +1924,15 @@ static struct option_struct far options[] = {
   };
 
 
-
+/* 2012-12-12 SMS.
+ * Free some storage, if it was allocated, and we care.
+ * (Use before a fatal error exit.)
+ */
+#ifdef REENTRANT
+# define FREE_NON_NULL( x) if ((x) != NULL) free( x)
+#else
+# define FREE_NON_NULL( x)
+#endif
 
 
 /**********************/
@@ -1973,11 +2015,22 @@ int uz_opts(__G__ pargc, pargv)
        See the comments for get_option() for the other parameters.
     */
 
+    /* 2012-12-12 SMS.
+     * get_option() may allocate storage for "value".  If exiting early
+     * (typically because of an error condition), then use
+     * "FREE_NON_NULL( value)" to free this storage.  (See comments
+     * above, where FREE_NON_NULL() is defined.)  If saving "value"
+     * in some persistent location, then set "value = NULL" to prevent
+     * this storage from being free()'d.  Otherwise, at the bottom of
+     * the "while" loop, this storage will be free()'d.
+     */
+
     while ((option = get_option(__G__ UZO, &args, &argcnt, &argnum,
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
         if(option == o_BAD_ERR) {
+          FREE_NON_NULL( value);        /* Leaving early.  Free it. */
           return(PK_PARAM);
         }
 
@@ -1988,9 +2041,18 @@ int uz_opts(__G__ pargc, pargv)
                 if (negative) {   /* negative not allowed with -/ swap */
                     Info(slide, 0x401, ((char *)slide,
                       "error:  must give extensions list"));
+                    FREE_NON_NULL( value);      /* Leaving early.  Free it. */
                     return(PK_PARAM);  /* don't extract here by accident */
                 }
+                /* 2012-12-11 SMS.
+                 * Note that this Acorn-RISC-OS-specific variable,
+                 * exts2swap, is getting dynamic memory which will not
+                 * be free()'d.  Most likely, it really should be moved
+                 * into the general globals atructure, and dealt with
+                 * properly, so someone who cares might wish to do that.
+                 */
                 exts2swap = value; /* override Unzip$Exts */
+                value = NULL;           /* In use.  Don't free it. */
                 break;
 # endif
             case ('a'):
@@ -2003,7 +2065,8 @@ int uz_opts(__G__ pargc, pargv)
             case ('A'):    /* extended help for API */
                 APIhelp(__G__ argc, args);
                 *pargc = -1;  /* signal to exit successfully */
-                return 0;
+                FREE_NON_NULL( value);      /* Leaving early.  Free it. */
+                return PK_OK;
 # endif
             case ('b'):
                 if (negative) {
@@ -2061,11 +2124,13 @@ int uz_opts(__G__ pargc, pargv)
                 if (negative) {   /* negative not allowed with -d exdir */
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(MustGiveExdir)));
+                    FREE_NON_NULL( value);      /* Leaving early.  Free it. */
                     return(PK_PARAM);  /* don't extract here by accident */
                 }
                 if (uO.exdir != (char *)NULL) {
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OnlyOneExdir)));
+                    FREE_NON_NULL( value);      /* Leaving early.  Free it. */
                     return(PK_PARAM);    /* GRR:  stupid restriction? */
                 } else {
                     /* first check for "-dexdir", then for "-d exdir" */
@@ -2073,10 +2138,12 @@ int uz_opts(__G__ pargc, pargv)
                     if (uO.exdir == NULL || *uO.exdir == '\0') {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(MustGiveExdir)));
+                        FREE_NON_NULL( value);  /* Leaving early.  Free it. */
                         return(PK_PARAM);  /* don't extract here by accident */
                     }
                     /* else uO.exdir points at extraction dir */
                 }
+                value = NULL;           /* In use.  Don't free it. */
                 break;
 # endif /* !SFX || SFX_EXDIR */
 # if (!defined(NO_TIMESTAMPS))
@@ -2134,14 +2201,13 @@ int uz_opts(__G__ pargc, pargv)
                 }
                 break;
 # endif  /* MACOS */
-# ifdef ICONV_MAPPING
+# if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
 #  ifdef UNIX
             case ('I'): /* -I [UNIX] ISO char set of input entries */
-                strncpy(ISO_CP, value, sizeof(ISO_CP));
-                free(value);
+                strncpy( G.iso_cp, value, sizeof( G.iso_cp));
                 break;
-#  endif
-# endif
+#  endif /* def UNIX */
+# endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
             case ('j'):    /* junk pathnames/directory structure */
                 if (negative)
                 {
@@ -2168,6 +2234,8 @@ int uz_opts(__G__ pargc, pargv)
                             /* Some non-numeric character found. */
                             Info( slide, 0x401, ((char *)slide,
                              LoadFarString( BadJunkDirsValue)));
+                            /* Leaving early.  Free it. */
+                            FREE_NON_NULL( value);
                             return PK_PARAM;
                         }
                         else
@@ -2256,14 +2324,13 @@ int uz_opts(__G__ pargc, pargv)
                 } else
                     ++uO.overwrite_all;
                 break;
-# ifdef ICONV_MAPPING
+# if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
 #  ifdef UNIX
             case ('O'): /* -O [UNIX] OEM char set of input entries */
-                strncpy(OEM_CP, value, sizeof(OEM_CP));
-                free(value);
+                strncpy( G.oem_cp, value, sizeof( G.oem_cp));
                 break;
-#  endif
-# endif
+#  endif /* def UNIX */
+# endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
             case ('p'):    /* pipes:  extract to stdout, no messages */
                 if (negative) {
                     uO.cflag = FALSE;
@@ -2274,34 +2341,38 @@ int uz_opts(__G__ pargc, pargv)
                     uO.qflag += 999;
                 }
                 break;
-# ifdef CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
             /* GRR:  yes, this is highly insecure, but dozens of people
              * have pestered us for this, so here we go... */
             case ('P'):
                 if (negative) {   /* negative not allowed with -P passwd */
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(MustGivePasswd)));
+                    FREE_NON_NULL( value);      /* Leaving early.  Free it. */
                     return(PK_PARAM);  /* don't extract here by accident */
                 }
                 if (uO.pwdarg != (char *)NULL) {
-/*
+#if 0
                     GRR:  eventually support multiple passwords?
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OnlyOnePasswd)));
+                    FREE_NON_NULL( value);      /* Leaving early.  Free it. */
                     return(PK_PARAM);
-*/
+#endif /* 0 */
                 } else {
                     /* first check for "-Ppasswd", then for "-P passwd" */
                     uO.pwdarg = value;
                     if (uO.pwdarg == NULL || *uO.pwdarg == '\0') {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(MustGivePasswd)));
+                        FREE_NON_NULL( value);  /* Leaving early.  Free it. */
                         return(PK_PARAM);
                     }
                     /* else pwdarg points at decryption password */
                 }
+                value = NULL;           /* In use.  Don't free it. */
                 break;
-# endif /* def CRYPT_ANY */
+# endif /* def IZ_CRYPT_ANY */
             case ('q'):    /* quiet:  fewer comments/messages */
                 if (negative) {
                     uO.qflag = MAX(uO.qflag-negative,0);
@@ -2415,6 +2486,7 @@ int uz_opts(__G__ pargc, pargv)
                         ) == NULL) {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(NoMemArgsList)));
+                        FREE_NON_NULL( value);  /* Leaving early.  Free it. */
                         return PK_MEM;
                     }
                     in_xfiles->name = value;
@@ -2427,6 +2499,7 @@ int uz_opts(__G__ pargc, pargv)
                         ) == NULL) {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(NoMemArgsList)));
+                        FREE_NON_NULL( value);  /* Leaving early.  Free it. */
                         return PK_MEM;
                     }
                     next_in_xfiles->next = next_file;
@@ -2435,6 +2508,7 @@ int uz_opts(__G__ pargc, pargv)
                     next_in_xfiles = next_file;
                 }
                 in_xfiles_count++;
+                value = NULL;           /* In use.  Don't free it. */
 
 # if 0
 #  ifdef SFX
@@ -2546,6 +2620,8 @@ int uz_opts(__G__ pargc, pargv)
                             ) == NULL) {
                             Info(slide, 0x401, ((char *)slide,
                               LoadFarString(NoMemArgsList)));
+                            /* Leaving early.  Free it. */
+                            FREE_NON_NULL( value);
                             return PK_MEM;
                         }
                         next_file->name = value;
@@ -2559,6 +2635,8 @@ int uz_opts(__G__ pargc, pargv)
                             ) == NULL) {
                             Info(slide, 0x401, ((char *)slide,
                               LoadFarString(NoMemArgsList)));
+                            /* Leaving early.  Free it. */
+                            FREE_NON_NULL( value);
                             return PK_MEM;
                         }
                         next_in_files->next = next_file;
@@ -2568,12 +2646,17 @@ int uz_opts(__G__ pargc, pargv)
                     }
                     in_files_count++;
                 }
+                value = NULL;           /* In use.  Don't free it. */
                 break;
             default:
                 error = TRUE;
                 break;
 
         } /* end switch */
+
+        if (value != NULL)
+            free( value);               /* Free it now, if it's not in use. */
+
     } /* get_option() */
 
 
@@ -2617,16 +2700,11 @@ int uz_opts(__G__ pargc, pargv)
       G.xfilespecs = in_xfiles_count;
     }
 
-    if (in_files_count || in_xfiles_count) {
-        G.process_all_files = FALSE;
-    } else {
-        G.process_all_files = TRUE;      /* for speed */
-    }
+    /* For speed, set process_all_files flag if no include or exclude list. */
+    G.process_all_files = (in_files_count == 0) && (in_xfiles_count == 0);
 
-
-    /* it's possible the arg count could have been changed by get_option() */
+    /* get_option() could have changed the arg count, so re-evaluate it. */
     argc = arg_count(__G__ args);
-
 
 
 /*---------------------------------------------------------------------------
@@ -3766,41 +3844,41 @@ static void show_version_info(__G)
           LoadFarStringSmall(WildStopAtDir)));
         ++numopts;
 #  endif
-#  ifdef CRYPT_ANY
+#  ifdef IZ_CRYPT_ANY
 #   ifdef PASSWD_FROM_STDIN
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(PasswdStdin)));
         ++numopts;
-#   endif /* def CRYPT_ANY */
-#   ifdef CRYPT_TRAD
+#   endif /* def IZ_CRYPT_ANY */
+#   ifdef IZ_CRYPT_TRAD
         Info(slide, 0, ((char *)slide, LoadFarString(Decryption),
           CR_MAJORVER, CR_MINORVER, CR_BETA_VER));
         ++numopts;
-#   endif /* def CRYPT_TRAD */
-#   ifdef CRYPT_AES_WG
+#   endif /* def IZ_CRYPT_TRAD */
+#   ifdef IZ_CRYPT_AES_WG
         Info(slide, 0, ((char *)slide, LoadFarStringSmall(AesWgDecryption),
           IZ_AES_WG_MAJORVER, IZ_AES_WG_MINORVER, IZ_AES_WG_BETA_VER));
         ++numopts;
-#   endif /* def CRYPT_AES_WG */
-#  endif /* def CRYPT_ANY */
+#   endif /* def IZ_CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_ANY */
         if (numopts == 0)
             Info(slide, 0, ((char *)slide,
               LoadFarString(CompileOptFormat),
               LoadFarStringSmall(None)));
 
-#  ifdef CRYPT_TRAD
+#  ifdef IZ_CRYPT_TRAD
         Info(slide, 0, ((char *)slide,
          LoadFarString(TraditionalEncryptionNotice1)));
         Info(slide, 0, ((char *)slide,
          LoadFarString(TraditionalEncryptionNotice2)));
-#  endif /* def CRYPT_TRAD */
+#  endif /* def IZ_CRYPT_TRAD */
 
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
         Info(slide, 0, ((char *)slide,
          LoadFarString(AesWgEncryptionNotice1)));
         Info(slide, 0, ((char *)slide,
          LoadFarString(AesWgEncryptionNotice2)));
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
         Info(slide, 0, ((char *)slide, LoadFarString(EnvOptions)));
@@ -4040,28 +4118,30 @@ char **copy_args(__G__ args, max_args)
     return NULL;
   }
 
-  /* count args */
-  for (j = 0; args[j] && (max_args == 0 || j < max_args); j++) ;
+  /* Count non-NULL args.  Stop at max_args, if not zero. */
+  for (j = 0; args[ j] && (max_args == 0 || j < max_args); j++);
+  max_args = j;
 
-  if ((new_args = (char **) malloc((j + 1) * sizeof(char *))) == NULL) {
-    oWARN("memory - ca");
+  if ((new_args = (char **) malloc((max_args + 1) * sizeof(char *))) == NULL)
+  {
+    oWARN("memory - ca.1");
     return NULL;
   }
 
-  for (j = 0; args[j] && (max_args == 0 || j < max_args); j++) {
-    if (args[j] == NULL) {
-      /* null argument is end of args */
-      new_args[j] = NULL;
-      break;
-    }
-    if ((new_args[j] = malloc(strlen(args[j]) + 1)) == NULL) {
-      free_args(__G__ new_args);
-      oWARN("memory - ca");
+  /* Transfer (non-NULL) original args[] to new_args[]. */
+  for (j = 0; j < max_args; j++)
+  {
+    if ((new_args[ j] = malloc( strlen( args[ j])+ 1)) == NULL)
+    {
+      free_args( new_args);
+      oWARN("memory - ca.2");
       return NULL;
     }
-    strcpy(new_args[j], args[j]);
+    strcpy( new_args[ j], args[ j]);
   }
-  new_args[j] = NULL;
+
+  /* NULL_terminate new_args[]. */
+  new_args[ max_args] = NULL;
 
   return new_args;
 }
@@ -4085,8 +4165,7 @@ int arg_count(__G__ args)
 
 
 /* free args - free args created with one of these functions */
-int free_args(__G__ args)
-  __GDEF
+int free_args( args)
   char **args;
 {
   int i;
@@ -4099,6 +4178,7 @@ int free_args(__G__ args)
     free(args[i]);
   }
   free(args);
+  args = NULL;          /* 2012-12-11 SMS.  Mark as freed. */
   return i;
 }
 
@@ -4152,7 +4232,7 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
   /* get storage for new args */
   if ((newargs = (char **) malloc((newargcnt + 1) * sizeof(char *))) == NULL)
   {
-    oWARN("memory - ia");
+    oWARN("memory - ia.1");
     return 0;
   }
 
@@ -4167,7 +4247,7 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
   }
   /* copy new arg */
   if ((newarg = (char *) malloc(strlen(arg) + 1)) == NULL) {
-    oWARN("memory - ia");
+    oWARN("memory - ia.2");
     return 0;
   }
   strcpy(newarg, arg);
@@ -4326,7 +4406,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           }
         }
         if ((*value = (char *) malloc(2)) == NULL) {
-          oWARN("memory - gso-1");
+          oWARN("memory - gso.1");
           return o_BAD_ERR;
         }
         (*value)[0] = *(arg + (*optchar) + clen);
@@ -4365,7 +4445,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
       }
       start = arg + (*optchar) + clen;
       if ((*value = (char *) malloc((int)(s - start) + 1)) == NULL) {
-        oWARN("memory - gso-2");
+        oWARN("memory - gso.2");
         return o_BAD_ERR;
       }
       *optchar += (int)(s - start);
@@ -4387,7 +4467,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         if (arg[(*optchar) + clen]) {
           if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
               == NULL) {
-            oWARN("memory - gso-3");
+            oWARN("memory - gso.3");
             return o_BAD_ERR;
           }
           strcpy(*value, arg + (*optchar) + clen);
@@ -4396,7 +4476,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
       } else if (args[argnum + 1] && args[argnum + 1][0] != '-') {
         /* use next arg for value */
         if ((*value = (char *)malloc(strlen(args[argnum + 1]) + 1)) == NULL) {
-          oWARN("memory - gso-4");
+          oWARN("memory - gso.4");
           return o_BAD_ERR;
         }
         /* using next arg as value */
@@ -4415,19 +4495,25 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           have_eq = 1;
         }
         if (arg[(*optchar) + clen]) {
-          /* "-opt[=]value".  Have attached value. */
-          if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
-              == NULL) {
-            oWARN("memory - gso-5");
-            return o_BAD_ERR;
+          /* "-opt{=|X}XXX".  Have more chars.  Attached value? */
+          if (have_eq) {
+            /* "-opt=value".  Have attached value. */
+            if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
+             == NULL) {
+              oERR(ZE_MEM, "gso.5");
+            }
+            strcpy(*value, arg + (*optchar) + clen);
+            *optchar = THIS_ARG_DONE;
           }
-          strcpy(*value, arg + (*optchar) + clen);
-          *optchar = THIS_ARG_DONE;
+            /* else
+             * "-opt{^=}XXX".  Have more chars, but no attached value.
+             * Should be more short options.
+             */
         }
         else if (have_eq && args[argnum + 1] && args[argnum + 1][0] != '-') {
           /* "-opt= value".  Have detached value. */
           if ((*value = (char *)malloc(strlen(args[argnum + 2])+ 1)) == NULL) {
-            oWARN("memory - gso-6");
+            oWARN("memory - gso.6");
             return o_BAD_ERR;
           }
           /* Set value.  Skip value arg. */
@@ -4442,7 +4528,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         if (args[argnum + 2] && args[argnum + 2][0] != '-') {
           /* "-opt = value".  Have detached value. */
           if ((*value = (char *)malloc(strlen(args[argnum + 2])+ 1)) == NULL) {
-            oWARN("memory - gso-7");
+            oWARN("memory - gso.7");
             return o_BAD_ERR;
           }
           /* Set value.  Skip "=" and value args. */
@@ -4456,7 +4542,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         /* "-opt =[XXXX]".  Have detached "=value".  Skip '='. */
         if ((*value = (char *)malloc(strlen(args[argnum + 1]))) == NULL)
         {
-          oWARN("memory - gso-8");
+          oWARN("memory - gso.8");
           return o_BAD_ERR;
         }
         /* Using next arg (less '=') as value. */
@@ -4478,7 +4564,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         }
         if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
             == NULL) {
-          oWARN("memory - gso-9");
+          oWARN("memory - gso.9");
           return o_BAD_ERR;
         }
         strcpy(*value, arg + (*optchar) + clen);
@@ -4488,7 +4574,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         if (args[argnum + 1]) {
           if ((*value = (char *)malloc(strlen(args[argnum + 1]) + 1))
               == NULL) {
-            oWARN("memory - gso-10");
+            oWARN("memory - gso.10");
             return o_BAD_ERR;
           }
           strcpy(*value, args[argnum + 1]);
@@ -4562,7 +4648,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
   }
   /* copy arg so can chop end if value */
   if ((arg = (char *)malloc(strlen(args[argnum]) + 1)) == NULL) {
-    oWARN("memory - glo-1");
+    oWARN("memory - glo-.1");
     return o_BAD_ERR;
   }
   strcpy(arg, args[argnum]);
@@ -4654,7 +4740,6 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
   /* get value */
   if (options[match].value_type == o_OPT_EQ_VALUE) {
     /* Optional value, but "=" required with detached value. */
-    int have_eq = 0;
     if (valuestart == NULL) {
       /* "--opt ="? */
       if (args[ argnum+ 1] != NULL) {
@@ -4685,7 +4770,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       /* A value was specified somehow.  Save it. */
       if ((*value = (char *)malloc(strlen(valuestart) + 1)) == NULL) {
         free(arg);
-        oWARN("memory - glo-2");
+        oWARN("memory - glo.2");
         return o_BAD_ERR;
       }
       strcpy(*value, valuestart);
@@ -4696,7 +4781,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       /* option=value */
       if ((*value = (char *)malloc(strlen(valuestart) + 1)) == NULL) {
         free(arg);
-        oWARN("memory - glo-3");
+        oWARN("memory - glo.3");
         return o_BAD_ERR;
       }
       strcpy(*value, valuestart);
@@ -4710,7 +4795,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       /* option=value */
       if ((*value = (char *)malloc(strlen(valuestart) + 1)) == NULL) {
         free(arg);
-        oWARN("memory - glo-4");
+        oWARN("memory - glo.4");
         return o_BAD_ERR;
       }
       strcpy(*value, valuestart);
@@ -4719,7 +4804,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       if (args[argnum + 1]) {
         if ((*value = (char *)malloc(strlen(args[argnum + 1]) + 1)) == NULL) {
           free(arg);
-          oWARN("memory - glo-5");
+          oWARN("memory - glo.5");
           return o_BAD_ERR;
         }
         /* using next arg as value */
@@ -5048,7 +5133,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
       }
       arg = args[argn];
       if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
-        oWARN("memory - go");
+        oWARN("memory - go.1");
         return o_BAD_ERR;
       }
       strcpy(*value, arg);
@@ -5126,7 +5211,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         /* - and -- are not allowed in value lists unless escaped */
         /* another value in value list */
         if ((*value = (char *)malloc(strlen(args[argn]) + 1)) == NULL) {
-          oWARN("memory - go");
+          oWARN("memory - go.2");
           return o_BAD_ERR;
         }
         strcpy(*value, args[argn]);
@@ -5185,7 +5270,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         break;
       }
       if ((*value = (char *)malloc(strlen(args[argn]) + 1)) == NULL) {
-        oWARN("memory - go");
+        oWARN("memory - go.3");
         return o_BAD_ERR;
       }
       strcpy(*value, args[argn]);
@@ -5212,7 +5297,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         } else {
           /* not permute args so return non-option args when found */
           if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
-            oWARN("memory - go");
+            oWARN("memory - go.4");
             return o_BAD_ERR;
           }
           strcpy(*value, arg);
@@ -5255,7 +5340,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
             } else {
               /* not permute args so return non-option args when found */
               if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
-                oWARN("memory - go");
+                oWARN("memory - go.5");
                 return o_BAD_ERR;
               }
               strcpy(*value, arg);
@@ -5320,7 +5405,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
       } else {
         /* no permute args so return non-option args when found */
         if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
-          oWARN("memory - go");
+          oWARN("memory - go.6");
           return o_BAD_ERR;
         }
         strcpy(*value, arg);

@@ -25,16 +25,16 @@
 #ifndef __crypt_h       /* Don't include more than once. */
 # define __crypt_h
 
-# undef CRYPT_ANY
-# if defined( CRYPT_AES_WG) || defined( CRYPT_TRAD)
-#  define CRYPT_ANY
-# endif /* defined( CRYPT_AES_WG) || defined( CRYPT_TRAD) */
+# undef IZ_CRYPT_ANY
+# if defined( IZ_CRYPT_AES_WG) || defined( IZ_CRYPT_TRAD)
+#  define IZ_CRYPT_ANY
+# endif /* defined( IZ_CRYPT_AES_WG) || defined( IZ_CRYPT_TRAD) */
 
-# ifdef CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
 
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
 #   include "aes_wg/fileenc.h"
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
 #  ifdef CR_BETA
 #   undef CR_BETA       /* This is not a beta release. */
@@ -108,7 +108,7 @@
 /* Encrypted data header and password check buffer sizes.
  * (One buffer accommodates both types.)
  */
-#  ifdef CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
     /* All data from extra field block. */
 #   if (MAX_SALT_LENGTH+ 2 > RAND_HEAD_LEN)
 #    define ENCR_HEAD_LEN (MAX_SALT_LENGTH+ 2)
@@ -117,7 +117,7 @@
 #   if (PWD_VER_LENGTH > RAND_HEAD_LEN)
 #    define ENCR_PW_CHK_LEN PWD_VER_LENGTH
 #   endif
-#  endif /* def CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
 #  ifndef ENCR_HEAD_LEN
 #   define ENCR_HEAD_LEN RAND_HEAD_LEN
@@ -162,7 +162,7 @@ extern int encrypted;
      (encrypted? update_keys(__G__ getc(G.in)^decrypt_byte(__G)) : getc(G.in))
 #  endif /* def FUNZIP */
 
-# else /* def CRYPT_ANY */
+# else /* def IZ_CRYPT_ANY */
 
 /* Dummy version. */
 
@@ -171,5 +171,5 @@ extern int encrypted;
 
 #  define zfwrite(b,s,c) bfwrite(b,s,c,BFWRITE_DATA)
 
-# endif /* def CRYPT_ANY [else] */
+# endif /* def IZ_CRYPT_ANY [else] */
 #endif /* ndef __crypt_h */

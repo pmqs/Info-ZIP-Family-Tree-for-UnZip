@@ -1400,6 +1400,16 @@ regular filename character, the -W option would not work as expected on
 a wildcard file name specification.)
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 <SUBSUBTOPIC>
+/MEMBER_COUNTS (default) (-mc)
+<NEXT>
+/NOMEMBER_COUNTS
+<NEXT>
+Control inclusion of separate member counts for directories, files, and
+(if symlinks are supported) links, after the totals summary at the end
+of the report.  By default, they are included.  Use /NOMEMBER_COUNTS" to
+suppress them.  See also /TOTALS.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+<SUBSUBTOPIC>
 /PAGE (-M)
 <NEXT>
 Pipe all output through an internal pager similar to the Unix more(1)
@@ -1430,6 +1440,8 @@ be put out.
 The total "bytes compressed" reported includes only the actual data, not
 the ZIP archive meta-data, so the size of the archive will always be
 greater than this value.
+
+See also /MEMBER_COUNTS.
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 <SUBTOPIC>
 Detailed_Description

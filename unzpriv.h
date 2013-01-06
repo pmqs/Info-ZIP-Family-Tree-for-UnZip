@@ -89,9 +89,9 @@
 /* Encryption rules.
  *
  * User-specified macros:
- * NO_CRYPT, NO_CRYPT_TRAD, CRYPT_TRAD_SFX, CRYPT_AES_WG, CRYPT_AES_WG_SFX.
+ * CRYPT_AES_WG, CRYPT_AES_WG_SFX, CRYPT_TRAD_SFX, NO_CRYPT, NO_CRYPT_TRAD.
  *
- * Macros used in code: CRYPT_AES_WG, CRYPT_ANY, CRYPT_TRAD.
+ * Macros used in code: IZ_CRYPT_AES_WG, IZ_CRYPT_ANY, IZ_CRYPT_TRAD.
  *
  * By default, in normal UnZip, enable Traditional, disable AES_WG.
  * NO_CRYPT disables all.
@@ -103,30 +103,31 @@
 
 # ifdef NO_CRYPT
    /* Disable all encryption. */
-#  undef CRYPT_AES_WG
-#  undef CRYPT_TRAD
+#  undef IZ_CRYPT_AES_WG
+#  undef IZ_CRYPT_TRAD
 # else /* def NO_CRYPT */
    /* Enable some kind of encryption. */
 #  ifdef NO_CRYPT_TRAD
     /* Disable Traditional encryption. */
-#   undef CRYPT_TRAD
+#   undef IZ_CRYPT_TRAD
 #  else /* def NO_CRYPT_TRAD */
    /* Enable Traditional encryption? */
 #   ifdef SFX
 #    ifdef CRYPT_TRAD_SFX
       /* UnZipSFX, and user requested Traditional encryption in UnZipSFX. */
-#     define CRYPT_TRAD 1
+#     define IZ_CRYPT_TRAD 1
 #    endif /* def CRYPT_TRAD_SFX */
 #   else /* def CRYPT_TRAD_SFX */
      /* Normal UnZip, so default to Traditional encryption. */
-#    define CRYPT_TRAD 1
+#    define IZ_CRYPT_TRAD 1
 #   endif /* def CRYPT_TRAD_SFX [else] */
 #  endif /* def NO_CRYPT_TRAD [else] */
 #  ifdef CRYPT_AES_WG
     /* User requested AES_WG encryption. */
+#   define IZ_CRYPT_AES_WG 1
 #   if defined( SFX) && !defined( CRYPT_AES_WG_SFX)
      /* UnZipSFX, and user did not request AES_WG encryption in UnZipSFX. */
-#    undef CRYPT_AES_WG
+#    undef IZ_CRYPT_AES_WG
 #   endif /* defined( SFX) && !defined( CRYPT_AES_WG_SFX) */
 #  endif /* def CRYPT_AES_WG */
 # endif /* def NO_CRYPT [else] */
@@ -1305,12 +1306,14 @@
 #endif
 
 /* 2008-07-22 SMS.
- * Unfortunately, on VMS, <limits.h> exists, and is included by <stdlib.h>
- * (so it's pretty much unavoidable), and it defines PATH_MAX to a fixed
- * short value (256, correct only for older systems without ODS-5 support),
- * rather than one based on the real RMS NAM[L] situation.  So, we
- * artificially undefine it here, to allow our better-defined _MAX_PATH
- * (see vms/vmscfg.h) to be used.
+ * 2012-12-31 SMS.
+ * Unfortunately, on VMS, <limits.h> exists, and might be included by
+ * <stdlib.h>, even if "vms/vmscfg.h" didn't bring it in (so it's pretty
+ * much unavoidable), and it defines PATH_MAX to a fixed short value
+ * (256, correct only for older systems without ODS-5 support), rather
+ * than one based on the real RMS NAM[L] situation.  So, we artificially
+ * undefine it here, to allow our better-defined _MAX_PATH (see
+ * vms/vmscfg.h) to be used.
  */
 #ifdef VMS
 #  undef PATH_MAX
@@ -2202,32 +2205,41 @@ struct file_list {
 
 #ifdef ZIP64_SUPPORT
 # ifndef Z_UINT8_DEFINED
-#   if (defined(__GNUC__) || defined(__hpux) || defined(__SUNPRO_C))
+#  if defined( __GNUC__) || defined( __hpux) || defined( sgi) /* (Group 1) */
+#   define IZ_USE_LONG_LONG_64 1
+#  else /* (Host-type group 1) */
+#   if defined( __SUNPRO_C) /* (Group 2) */
+#    define IZ_USE_LONG_LONG_64 1
+#   endif /* (Host-type group 2) */
+#  endif /* (Host-type group 1) [else] */
+#  ifdef IZ_USE_LONG_LONG_64
   typedef unsigned long long    z_uint8;
-#   else
+#  else /* def IZ_USE_LONG_LONG_64 */
   typedef unsigned __int64      z_uint8;
-#   endif
-#   define Z_UINT8_DEFINED
-# endif
-#endif
+#  endif /* def IZ_USE_LONG_LONG_64 */
+#  define Z_UINT8_DEFINED
+# endif /* ndef Z_UINT8_DEFINED */
+#endif /* def ZIP64_SUPPORT */
+
 #ifndef Z_UINT4_DEFINED
-# if (defined(MODERN) && !defined(NO_LIMITS_H))
-#  if (defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL))
+# if defined(MODERN) && !defined(NO_LIMITS_H)
+#  if defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL)
      typedef unsigned int       z_uint4;
-#    define Z_UINT4_DEFINED
-#  else
-#  if (defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL))
+#   define Z_UINT4_DEFINED
+#  else /* defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL) */
+#   if defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL)
      typedef unsigned long      z_uint4;
 #    define Z_UINT4_DEFINED
-#  else
-#  if (defined(USHRT_MAX) && (USHRT_MAX == 0xffffffffUL))
+#   else /* defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL) */
+#    if defined(USHRT_MAX) && (USHRT_MAX == 0xffffffffUL)
      typedef unsigned short     z_uint4;
-#    define Z_UINT4_DEFINED
-#  endif
-#  endif
-#  endif
+#     define Z_UINT4_DEFINED
+#    endif /* defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL) [else] */
+#   endif /* defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL) [else] */
+#  endif /* defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL) [else] */
 # endif /* MODERN && !NO_LIMITS_H */
-#endif /* !Z_UINT4_DEFINED */
+#endif /* ndef Z_UINT4_DEFINED */
+
 #ifndef Z_UINT4_DEFINED
   typedef ulg                   z_uint4;
 # define Z_UINT4_DEFINED
@@ -2264,13 +2276,13 @@ struct file_list {
 #define MASK_ZUCN16             ((zucn_t)0xFFFF)
 
 #ifdef NO_UID_GID
-#  ifdef UID_USHORT
+# ifdef UID_USHORT
      typedef unsigned short  uid_t;    /* TI SysV.3 */
      typedef unsigned short  gid_t;
-#  else
+# else
      typedef unsigned int    uid_t;    /* SCO Xenix */
      typedef unsigned int    gid_t;
-#  endif
+# endif
 #endif
 
 #if (defined(GOT_UTIMBUF) || defined(sgi) || defined(ATARI))
@@ -2339,11 +2351,11 @@ typedef struct min_info {
 #ifndef SFX
     char Far *cfilname;      /* central header version of filename */
 #endif
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
        ush cmpr_mthd_aes;
        ush cmpr_vers_aes;
        char cmpr_mode_aes;
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 } min_info;
 
 typedef struct VMStimbuf {
@@ -2569,7 +2581,7 @@ char **copy_args OF((__GPRO__ char **args, int max_args));
 int arg_count OF((__GPRO__ char **args));
 
 /* free_args - Free args created with one of these functions. */
-int free_args OF((__GPRO__ char **args));
+int free_args OF((char **args));
 
 /* insert_arg() - Copy an arg into args. */
 int insert_arg OF((__GPRO__ char ***args, ZCONST char *arg, int insert_at,
@@ -2595,11 +2607,11 @@ int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, long ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
                                      iztimes *z_utim, ulg *z_uidgid));
-#ifdef CRYPT_AES_WG
+#ifdef IZ_CRYPT_AES_WG
 int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
                                      ush *vers, ush *vend,
                                      char *mode, ush *mthd));
-#endif /* def CRYPT_AES_WG */
+#endif /* def IZ_CRYPT_AES_WG */
 
 #if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
    zvoid *getRISCOSexfield       OF((ZCONST uch *ef_buf, unsigned ef_len));
@@ -2868,6 +2880,18 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 #endif
 
 /*---------------------------------------------------------------------------
+    Unix-only functions:
+  ---------------------------------------------------------------------------*/
+
+#ifdef UNIX
+# ifdef ICONV_MAPPING
+   /* ISO/OEM (iconv) character conversion function prototypes. */
+   void charset_to_intern( char *, char *);
+   void init_conversion_charsets OF(( __GPRO));
+# endif /* def ICONV_MAPPING */
+#endif /* def UNIX */
+
+/*---------------------------------------------------------------------------
     VMS-only functions:
   ---------------------------------------------------------------------------*/
 
@@ -2899,7 +2923,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    int   IsWinNT        OF((void));                               /* win32.c */
 #ifdef NTSD_EAS
    void  process_defer_NT     OF((__GPRO));                       /* win32.c */
-   int   test_NTSD      OF((__GPRO__ uch *eb, unsigned eb_size,
+   int   test_NTSD      OF((__GPRO__ uch *eb, long eb_size,
                             uch *eb_ucptr, ulg eb_ucsize));       /* win32.c */
 #  define TEST_NTSD     test_NTSD
 #endif
@@ -3390,7 +3414,6 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 /**********************/
 
    extern ZCONST unsigned near mask_bits[17];
-   extern ZCONST char *fnames[2];
 
 #ifdef EBCDIC
    extern ZCONST uch ebcdic[];

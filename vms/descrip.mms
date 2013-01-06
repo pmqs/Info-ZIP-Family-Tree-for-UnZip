@@ -1,4 +1,4 @@
-#                                               3 October 2012.  SMS.
+#                                               31 December 2012.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Description File.
 #
@@ -13,8 +13,8 @@
 #
 #    AES_WG=1       Enable AES_WG encryption support.  By default, the
 #                   SFX programs are built without AES_WG support.  Add
-#                   "AES_WG_SFX=1" to the LOCAL_UNZIP C macros to enable
-#                   it.  (See LOCAL_UNZIP, below.)
+#                   "CRYPT_AES_WG_SFX=1" to the LOCAL_UNZIP C macros to
+#                   enable it.  (See LOCAL_UNZIP, below.)
 #
 #    CCOPTS=xxx     Compile with CC options xxx.  For example:
 #                   CCOPTS=/ARCH=HOST
@@ -114,6 +114,8 @@
 #    CLEAN_EXE  deletes only the architecture-specific executables.
 #               Handy if all you wish to do is re-link the executables.
 #
+#    CLEAN_OLB  deletes only the architecture-specific object libraries.
+#
 #    CLEAN_TEST deletes all test directories.
 #
 #    HELP       generates HELP library source files (.HLP).
@@ -147,6 +149,19 @@
 #
 #    MMS /DESCRIP = [.VMS] CLEAN
 #    MMS /DESCRIP = [.VMS] /MACRO = (DBG=1, LIST=1)
+#
+#
+#    Note that on a Unix system, LOCAL_UNZIP contains compiler
+#    options, such as "-g" or "-DCRYPT_AES_WG_SFX", but on a VMS
+#    system, LOCAL_UNZIP contains only C macros, such as
+#    "CRYPT_AES_WG_SFX", and CCOPTS is used for any other kinds of
+#    compiler options, such as "/ARCHITECTURE".  Unix compilers accept
+#    multiple "-D" options, but VMS compilers consider only the last
+#    /DEFINE qualifier, so the C macros must be handled differently
+#    from other compiler options on VMS.  Thus, when using the generic
+#    installation instructions as a guide for controlling various
+#    optional features, some adjustment may be needed to adapt them to
+#    a VMS build environment.
 #
 ########################################################################
 
@@ -289,6 +304,12 @@ CLEAN_ALL : CLEAN
 CLEAN_EXE :
 	if (f$search( "[.$(DEST)]*.EXE") .nes. "") then -
          delete [.$(DEST)]*.EXE;*
+
+# CLEAN_OLB target.  Delete the object libraries in [.$(DEST)].
+
+CLEAN_OLB :
+	if (f$search( "[.$(DEST)]*.OLB") .nes. "") then -
+         delete [.$(DEST)]*.OLB;*
 
 # CLEAN_TEST target.  Delete the test directories, [.test_dir_*...].
 

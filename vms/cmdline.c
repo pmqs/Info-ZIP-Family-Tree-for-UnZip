@@ -265,18 +265,19 @@ $DESCRIPTOR(cli_ods2,           "ODS2");                /* -2 */
 $DESCRIPTOR(cli_traverse,       "TRAVERSE_DIRS");       /* -: */
 
 $DESCRIPTOR(cli_zipinfo,        "ZIPINFO");             /* -Z */
-$DESCRIPTOR(cli_header,         "HEADER");              /* -Zh */
-$DESCRIPTOR(cli_long,           "LONG");                /* -Zl */
+$DESCRIPTOR(cli_header,         "HEADER");              /* -Z -h */
+$DESCRIPTOR(cli_long,           "LONG");                /* -Z =l */
 $DESCRIPTOR(cli_medium,         "MEDIUM");              /* -Zm */
-$DESCRIPTOR(cli_one_line,       "ONE_LINE");            /* -Z2 */
-$DESCRIPTOR(cli_short,          "SHORT");               /* -Zs */
-$DESCRIPTOR(cli_decimal_time,   "DECIMAL_TIME");        /* -ZT */
-$DESCRIPTOR(cli_times,          "TIMES");               /* -ZT */
-$DESCRIPTOR(cli_totals,         "TOTALS");              /* -Zt */
-$DESCRIPTOR(cli_noverbose,      "NOVERBOSE");           /* -v-, -Zv- */
-$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v, -Zv */
-$DESCRIPTOR(cli_verbose_normal, "VERBOSE.NORMAL");      /* -v, -Zv */
-$DESCRIPTOR(cli_verbose_more,   "VERBOSE.MORE");        /* -vv, -Zvv */
+$DESCRIPTOR(cli_member_counts,  "MEMBER_COUNTS");       /* -Z -mc */
+$DESCRIPTOR(cli_one_line,       "ONE_LINE");            /* -Z -2 */
+$DESCRIPTOR(cli_short,          "SHORT");               /* -Z -s */
+$DESCRIPTOR(cli_decimal_time,   "DECIMAL_TIME");        /* -Z -T */
+$DESCRIPTOR(cli_times,          "TIMES");               /* -Z -T */
+$DESCRIPTOR(cli_totals,         "TOTALS");              /* -Z -t */
+$DESCRIPTOR(cli_noverbose,      "NOVERBOSE");           /* -v-, -Z -v- */
+$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v, -Z -v */
+$DESCRIPTOR(cli_verbose_normal, "VERBOSE.NORMAL");      /* -v, -Z -v */
+$DESCRIPTOR(cli_verbose_more,   "VERBOSE.MORE");        /* -vv, -Z -vv */
 $DESCRIPTOR(cli_verbose_command, "VERBOSE.COMMAND");    /* (none) */
 
 $DESCRIPTOR(cli_yyz,            "YYZ_UNZIP");
@@ -1517,6 +1518,28 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
+         * Put out member counts, directories/files/links.
+         */
+#define IPT_MC  "-mc"           /* "-mc"   Put out member counts (default). */
+#define IPT_MCN "-mc-"          /* "-mc-"  Omit member counts. */
+
+        status = cli$present( &cli_member_counts);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOMEMBER_COUNTS */
+                opt = IPT_MCN;
+            }
+            else
+            {
+                /* /MEMBER_COUNTS */
+                opt = IPT_MC;
+            }
+            ADD_ARG( opt);
+        }
+
+        /*
          * Put out totals summary.
          * Clear any existing "-t" option with "-t-", then add
          * the desired "t" value.
@@ -1864,20 +1887,30 @@ Usage: MCR %s -\n\
         [/unzip_qualifiers] [member [,...]]\n\
 ", G.zipfn));
 
+/* 2012-12-28 SMS.
+ * See same-date note below.  ("/DIRECTORY=dir, ")
+ */
+#  ifdef SFX_EXDIR
     Info(slide, flag, ((char *)slide, "\
 \n\
 Primary mode SFX qualifiers:\n\
   /COMMENT, /FRESHEN, /LICENSE, /PIPE, /SCREEN, /TEST, /UPDATE\n\
 General SFX qualifiers:\n\
-  /[NO]BINARY[=ALL|AUTO|NONE], %s/DOT_VERSION,\n\
+  /[NO]BINARY[=ALL|AUTO|NONE], /DIRECTORY=dir, /DOT_VERSION,\n\
   /EXCLUDE=(member [,...]), /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT},\n\
-",
-#  ifdef SFX_EXDIR
-"/DIRECTORY=dir, "
-#  else /* def SFX_EXDIR */
-""
-#  endif /* def SFX_EXDIR [else] */
+"
 ));
+#  else /* def SFX_EXDIR */
+    Info(slide, flag, ((char *)slide, "\
+\n\
+Primary mode SFX qualifiers:\n\
+  /COMMENT, /FRESHEN, /LICENSE, /PIPE, /SCREEN, /TEST, /UPDATE\n\
+General SFX qualifiers:\n\
+  /[NO]BINARY[=ALL|AUTO|NONE], /DOT_VERSION,\n\
+  /EXCLUDE=(member [,...]), /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT},\n\
+"
+));
+#  endif /* def SFX_EXDIR [else] */
 
     Info(slide, flag, ((char *)slide,
 #  ifdef WILD_STOP_AT_DIR
@@ -1893,6 +1926,21 @@ General SFX qualifiers:\n\
   /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\
 "));
 
+/* 2012-12-28 SMS.
+ * See same-date note below.
+ */
+#  ifdef MORE
+    Info(slide, flag, ((char *)slide, "\
+  /[NO]PAGE, /PASSWORD=passwd, /QUIET[=SUPER],\n\
+  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERSION\n\
+\n\
+Quote member names if /MATCH=CASE=SENSITIVE (default).  For details, see\n\
+UnZip documentation.  For more options, use an external (full-featured)\n\
+UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
+"
+));
+#  else /* def MORE */
     Info(slide, flag, ((char *)slide, "\
   %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
   /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
@@ -1901,13 +1949,9 @@ General SFX qualifiers:\n\
 Quote member names if /MATCH=CASE=SENSITIVE (default).  For details, see\n\
 UnZip documentation.  For more options, use an external (full-featured)\n\
 UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
-",
-#  ifdef MORE
-"/[NO]PAGE, "
-#  else /* def MORE */
-""
-#  endif /* def MORE [else] */
+"
 ));
+#  endif /* def MORE [else] */
 
 #  ifdef BETA
     Info(slide, flag, ((char *)slide, BetaVersion, "\n", "SFX"));
@@ -2038,17 +2082,26 @@ General qualifiers:\n\
   /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\
 "));
 
+/* 2012-12-28 SMS.
+ * Had attempted to use a "%s" for "/[NO]PAGE, " (or ""), conditional on
+ * MORE, to combine the following into one statement, but DEC C
+ * V4.0-000 was confused by the #ifdef within the argument list for
+ * Info(), which is already a macro (unzpriv.h), causing a (spurious)
+ * %CC-E-BADIFDEF.
+ */
+#  ifdef MORE
         Info(slide, flag, ((char *)slide, "\
-  %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
+  /[NO]PAGE, /PASSWORD=passwd, /QUIET[=SUPER],\n\
   /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
   /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERBOSE, /VERSION\n\
-",
-#  ifdef MORE
-"/[NO]PAGE, "
+"));
 #  else /* def MORE */
-""
+        Info(slide, flag, ((char *)slide, "\
+  /PASSWORD=passwd, /QUIET[=SUPER],\n\
+  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERBOSE, /VERSION\n\
+"));
 #  endif /* def MORE [else] */
-));
 
         Info(slide, flag, ((char *)slide, "\
 Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\

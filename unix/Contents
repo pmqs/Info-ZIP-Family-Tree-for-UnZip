@@ -1,14 +1,16 @@
-Contents of the "unix" subdirectory for UnZip 6.0 and later:
+      Contents of the UnZip 6.10 Source Archive "unix" Directory
+      ----------------------------------------------------------
 
-  Contents      this file
-  Makefile      makefile for UnZip for various architectures and OS's
-  configure     automatic build configuration script
-  unix.c        Unix-specific support routines
-  unxcfg.h      Unix-specific configuration settings
-  zipgrep       script to scan zip archive entries for lines matching a pattern
-  Packaging/    subdirectory containing SysV.4 (e.g., Solaris 2.x) package info
+configure       Shell script to probe system environment, capabilities
+configure.txt   Change notes on "configure"
+Contents        This file
+macosx.h        Mac-OS-X-specific header file
+Makefile        "make" file for various Unix-like systems
+mlz.sh          Shell script to extract all objects from an object library
+README.zOS      Notes for z/OS UNIX environment
+test_unzip.sh   Shell script to run basic UnZip tests
+unix.c          Unix-specific support routines
+unxcfg.h        Unix-specific configuration settings
+zipgrep         Shell script to use egrep on zip archive members
+Packaging/      Solaris (SysV) package info
 
-Type "make" or "make help" to get general compile instructions (beyond
-those in the INSTALL file), or "make list" for a list of makefile targets.
-Note that there are some MS-DOS and cross-compilation targets thrown in
-just to make things more exciting.

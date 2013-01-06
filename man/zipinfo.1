@@ -223,6 +223,17 @@ the actual number of lines on the screen can not be determined, 24 lines
 will be assumed.
 .PP
 .PD 0
+.B \-mc
+.TP
+.PD
+.B \-\-member-counts
+.br
+Control inclusion of separate member counts for directories, files, and
+(if symlinks are supported) links, after the totals summary at the end
+of the report.  By default, they are included.  Use "-mc-" or
+"--member-counts-" to suppress them.  See also /TOTALS.
+.PP
+.PD 0
 .B \-T
 .TP
 .PD
@@ -258,6 +269,8 @@ summary trailer lines will be put out.
 The total "bytes compressed" reported includes only the actual data, not
 the ZIP archive meta-data, so the size of the archive will always be
 greater than this value.
+.IP
+See also -mc.
 .PP
 .PD 0
 .B \-U

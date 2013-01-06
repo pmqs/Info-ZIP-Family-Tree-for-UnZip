@@ -72,6 +72,7 @@
 #  include <unistd.h>
 #endif
 
+#include <limits.h>                     /* UINT_MAX */
 #include <types.h>                      /* GRR:  experimenting... */
 #include <stat.h>
 #include <time.h>                       /* the usual non-BSD time functions */

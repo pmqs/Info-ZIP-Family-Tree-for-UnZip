@@ -1,7 +1,7 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
-   UnZip version 6.10.  Revised: 2012-10-15.
+   UnZip version 6.10.  Revised: 2012-12-31.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -59,6 +59,8 @@ If the UnZip kit is elsewhere, specify its actual location:
 
         SET DEFAULT [.unzip61]          ! The main UnZip source dir.
         UNZIP [-]iz_aes_wg.zip          ! Unpack the IZ_AES_WG kit.
+
+     The IZ_AES_WG code may be too modern for VAX C.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -148,11 +150,11 @@ command-line options used to select a different compiler.
           IZ_BZIP2=SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS])
 
       The %CC-I-UNKNOWNPRAGMA complaints are still emitted, but the link
-      should work.
+      (and the program) should work.
 
    o Other Optional Compression Methods (LZMA, PPMd)
 
-      LZMA and PPMd compression (new in UnZip version 6.1) are not
+      LZMA and PPMd compression (new in UnZip version 6.10) are not
       enabled by default, but the required source code is included in
       the UnZip source kit.  To enable LZMA and/or PPMd compression, add
       the appropriate option to the builder command line.  For example:
@@ -171,7 +173,7 @@ command-line options used to select a different compiler.
          LOCAL_UNZIP == "NO_CRYPT"
          @ [.VMS]BUILD_UNZIP LARGE
       or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, "LOCAL_UNZIP=NO_CRYPT=1")
+         MMS /DESC = [.VMS] /MACRO = (LARGE=1, "LOCAL_UNZIP=NO_CRYPT")
 
       By default, AES encryption is not enabled.  To enable it, first
       download and unpack the separate IZ_AES_WG source kit, as
@@ -250,13 +252,14 @@ target in the MMS/MMK builder, or do the job manually:
    Note: For its self-extracting archive (SFX) tests, the test procedure
 uses SET FILE /ATTRIBUTES to adjust the attributes of the UnZip SFX
 executable to match those of the test archive in the UnZip kit
-(rfm:stmlf).  Thus, these tests will fail on systems where this command
-is not available (that is, on VMS versions before V6.0).  While this
-kind of attribute adjustment is required for the test archive (which was
-created on a non-VMS system), it should not be needed when creating a
-self-extracting archive from an archive which is created on a VMS
-system, where the archive file attributes should be more convenient
-(rfm:fix, mrs=512).
+(rfm:stmlf).  Thus, these tests will fail ("%DCL-W-IVQUAL, unrecognized
+qualifier - check validity, spelling, and placement \ATTRIBUTES\", ...)
+on systems where this command is not available (that is, on VMS versions
+before V6.0).  While this kind of attribute adjustment is required for
+the test archive (which was created on a non-VMS system), it should not
+be needed when creating a self-extracting archive from an archive which
+is created on a VMS system, where the archive file attributes should be
+more convenient (rfm:fix, mrs=512).
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

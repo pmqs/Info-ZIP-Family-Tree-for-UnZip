@@ -371,6 +371,14 @@ Features added (or removed):
    ICONV_MAPPING to the "special compilation options" section of the
    "-v" report.  (unzip.c, zipinfo.c, beos/beocfg.h,  beos/beos.c,
    unix/configure, unix/unix.c, unix/unxcfg.h) [SMS]
+ - Format changes to ZipInfo header and totals report sections.  The
+   totals section now includes separate member counts for directories
+   and files, and, where SYMLINKS is defined, links.  A new option, -mc
+   (--member_counts, /[NO]MEMBER_COUNTS) allows the user to suppress the
+   new directories/files/links counts.  Test archives have new-format
+   ZipInfo reports (without the new member counts, to accomodate systems
+   without symlinks).  (testmake.zip, testmake_ppmd.zip, unix/Makefile,
+   unix/test_unzip.sh, unzip.c, unzip.h, vms/test_unzip.com, zipinfo.c) [SMS]
 
 
 Bugs fixed:
@@ -769,7 +777,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (07 Dec 2012):
+6.10c09 (19 Dec 2012):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -819,8 +827,8 @@ Bugs fixed:
    corruption when inflating to memory.  Adapted another suggestion for
    a better window size calculation.  The old method gave poor results
    for buffer sizes which were not powers of two.  (inflate,c)  [IH, SMS]
- - Fixed numerous problems when building with REENTRANT defined, mostly
-   in the new command-line option code, but also in ppmd_read_byte() and
+ - Fixed many problems when building with REENTRANT defined, mostly in
+   the new command-line option code, but also in ppmd_read_byte() and
    the user-triggered progress message.  Reformed globals access in
    VMS-specific stamp_file().  (extract.c, unzip.c, unzpriv.h,
    zipinfo.c, vms/vms.c) [SMS]
@@ -893,14 +901,14 @@ Bugs fixed:
    tested for validity.  Previously, some VMS-invalid directory
    specifications (such as "." or "..") would generate no error, and
    then be (silently) ignored.
- - Reformed the multi-value C macro CRYPT into simpler CRYPT_ANY and
-   CRYPT_TRAD.  The actual encryption code should now use only
-   CRYPT_AES_WG and CRYPT_TRAD (plus CRYPT_ANY, derived from them).  At
-   build time, users specify more controlled options: CRYPT_AES_WG,
-   CRYPT_AES_WG_SFX, CRYPT_TRAD_SFX, NO_CRYPT, NO_CRYPT_TRAD.  (crypt.c,
-   crypt.h, ebcdic.h, extract.c, fileio.c, funzip.c, gbloffs.c,
-   globals.h, INSTALL, ttyio.c, ttyio.h, unzip.c, amiga/filedate.c,
-   qdos/qdos.c, windll/windll.c) [SMS]
+ - Reformed the multi-value C macro CRYPT into simpler IZ_CRYPT_ANY and
+   IZ_CRYPT_TRAD.  The actual encryption code should now use only
+   IZ_CRYPT_AES_WG and IZ_CRYPT_TRAD (plus IZ_CRYPT_ANY, derived from
+   them).  At build time, users specify more controlled options:
+   CRYPT_AES_WG, CRYPT_AES_WG_SFX, CRYPT_TRAD_SFX, NO_CRYPT,
+   NO_CRYPT_TRAD.  (crypt.c, crypt.h, ebcdic.h, extract.c, fileio.c,
+   funzip.c, gbloffs.c, globals.h, INSTALL, ttyio.c, ttyio.h, unzip.c,
+   unzpriv.h, amiga/filedate.c, qdos/qdos.c, windll/windll.c) [SMS]
  - Changed C macro USE_UNZIP_LIB$INITIALIZE to USE_UNZIP_LIB_INITIALIZE
    for compatibility with Zip, where Sun C objected to the "$" in the
    corresponding code.  (vms/vms.c) [SMS]
@@ -943,11 +951,6 @@ Bugs fixed:
    messages should be sent to stderr, making them visible to the user
    without corrupting the extracted data stream.  (fileio.c, unzpriv.h,
    vms/vms.c) [SMS]
- - Format changes to ZipInfo header and totals report sections.  The
-   totals section now includes separate member counts for directories
-   and files, and, where SYMLINKS is defined, links.  New test archives
-   have new-format ZipInfo reports.  (testmake.zip, testmake_ppmd.zip,
-   zipinfo.c) [SMS]
  - Attempt to support Zip64 in fUnZip.  Changed to skip directory
    members at the beginning of an archive, instead of doing nothing when
    the first archive member was a directory.  Changed some messages and
@@ -962,8 +965,10 @@ Bugs fixed:
  - Changed iconv code to use memset() instead of bzero(), for
    consistency and portability.  Added a missing free().  Added
    ICONV_ARG2 macro to facilitate user addition of a "const" type
-   qualifier to satisfy Sun C.  Copied newer Unix code into BeOS.
-   (beos/beos.c, unix/unix.c) [SMS]
+   qualifier to satisfy Sun C.  Moved loose global storage into the
+   general globals structure.  Copied newer Unix code into BeOS.
+   (beos/beocfg.h, beos/beos.c, globals.h, unix/unix.c, unix/unxcfg.h,
+   unzip.c, unzpriv.h, zipinfo.c) [SMS]
  - -M (/MORE) used bad carriage control on VMS, adding spurious blank
    lines to the output.  Changed the prompt function on VMS to use the
    same output file as the message function (stderr or stdout) to avoid
@@ -999,6 +1004,34 @@ Bugs fixed:
    where Trace() was the only thing in the body of an "if" statement,
    and Clang complained, "if statement has empty body".  (extract.c,
    unzpriv.h) [SMS]
+ - Stopped some memory leaks, mostly related to the new command-line
+   parser.  Removed declarations and use of obsolete global name array,
+   fnames[].  Removed the unused global pointer argument from
+   free_args().  Removed redundant call to free_G_buffers() from
+   process_zipfiles().  Track and free transient-use command-line option
+   value storage.  In free_G_buffers(), added calls to free() for the
+   archive name and for retained command-line option values: extraction
+   directory (-d) and password (-P).  Adjusted API functions to use
+   dynamic storage for the archive name (which may now be free()'d).
+   (api.c, globals.c, process.c, unzip.c, unzpriv.h, zipinfo.c) [SMS]
+ - In Unix builders, accept user-specified CFLAGS_OPT macro to override
+   automatic compiler optimization options setting.  For debugging, for
+   example, one might specify "CFLAGS_OPT='-g -O0' LFLAGS2=-L.".   (A
+   non-null value is required for each.  "-L." should be harmless.)
+   Stopped putting redundant "-L." linker options into "flags".
+   (unix/configure) [SMS]
+ - Added some conditionality for SGI IRIX.
+   https://sourceforge.net/tracker/index.php?func=detail&aid=3596664\
+   &group_id=118012&atid=679786  (unzpriv.h) [SMS]
+ - Disambiguated some Windows-specific error messages.  (win32/win32.c) [SMS]
+ - Minor code tidying (#directive rearangement, type casts) to pacify
+   Microsoft Visual C++ 2010.  (explode.c, extract.c, funzip.c,
+   inflate.c, process.c, zipinfo.c) [SMS]
+ - Added definition of HAVE_LOCALE_H to Windows-specific configuration
+   file.  (win32/w32cfg.h) [SMS]
+ - Changed VMS builders to use explicit (CC) /NOLIST and (LINK) /NOMAP
+   qualifiers by default, to reduce unexpected clutter in batch mode.
+   (vms/build_unzip.com, vms/descrip_src.mms) [SMS]
 
 ==================
 

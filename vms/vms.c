@@ -5706,6 +5706,43 @@ void version(__G)
 # endif /* !SFX */
 
 
+/* 2012-09-05 SMS.
+ * Copied from Zip [.vms]vmszip.c.  Prototype in [.vms]vmscfg.h.)
+ *
+ * 2004-09-25 SMS.
+ * str[n]casecmp() replacement for old C RTL.
+ * Assumes a prehistorically incompetent toupper().
+ */
+#ifndef HAVE_STRCASECMP
+
+int strncasecmp( char *s1, char *s2, size_t n)
+{
+  /* Initialization prepares for n == 0. */
+  char c1 = '\0';
+  char c2 = '\0';
+
+  while (n-- > 0)
+  {
+    /* Set c1 and c2.  Convert lower-case characters to upper-case. */
+    if (islower( c1 = *s1))
+      c1 = toupper( c1);
+
+    if (islower( c2 = *s2))
+      c2 = toupper( c2);
+
+    /* Quit at inequality or NUL. */
+    if ((c1 != c2) || (c1 == '\0'))
+      break;
+
+    s1++;
+    s2++;
+  }
+return ((unsigned int) c1- (unsigned int) c2);
+}
+
+#endif /* ndef HAVE_STRCASECMP */
+
+
 # ifdef ENABLE_USER_PROGRESS
 
 /* 2011-12-05 SMS.
@@ -5877,43 +5914,6 @@ int acc_cb(int *id_arg, struct FAB *fab, struct RAB *rab)
     /* Declare success. */
     return 0;
 }
-
-
-/* 2012-09-05 SMS.
- * Copied from Zip [.vms]vmszip.c.  Prototype in [.vms]vmscfg.h.)
- *
- * 2004-09-25 SMS.
- * str[n]casecmp() replacement for old C RTL.
- * Assumes a prehistorically incompetent toupper().
- */
-#ifndef HAVE_STRCASECMP
-
-int strncasecmp( char *s1, char *s2, size_t n)
-{
-  /* Initialization prepares for n == 0. */
-  char c1 = '\0';
-  char c2 = '\0';
-
-  while (n-- > 0)
-  {
-    /* Set c1 and c2.  Convert lower-case characters to upper-case. */
-    if (islower( c1 = *s1))
-      c1 = toupper( c1);
-
-    if (islower( c2 = *s2))
-      c2 = toupper( c2);
-
-    /* Quit at inequality or NUL. */
-    if ((c1 != c2) || (c1 == '\0'))
-      break;
-
-    s1++;
-    s2++;
-  }
-return ((unsigned int) c1- (unsigned int) c2);
-}
-
-#endif /* ndef HAVE_STRCASECMP */
 
 
 /*

@@ -517,6 +517,7 @@ typedef struct _UzpOpts {
 #endif
     int lflag;          /* -12slmv: listing format (zipinfo) */
     int L_flag;         /* -L: convert filenames from some OSes to lowercase */
+    int member_counts;  /* -mc: show separate dir/file/link member counts */
     int overwrite_none; /* -n: never overwrite files (no prompting) */
 #ifdef AMIGA
     int N_flag;         /* -N: restore comments as AmigaDOS filenotes */

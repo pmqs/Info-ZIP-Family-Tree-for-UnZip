@@ -1077,6 +1077,12 @@
    member selection  patterns  on  most  system  types.   For  systems
    allowing "/" as regular filename character, the -W option would not
    work as expected on a wildcard file name specification.)
+4 /MEMBER_COUNTS (default) (-mc)
+   /NOMEMBER_COUNTS
+   Control inclusion of separate member counts for directories, files,
+   and  (if symlinks are supported) links, after the totals summary at
+   the end of  the  report.   By  default,  they  are  included.   Use
+   /NOMEMBER_COUNTS" to suppress them.  See also /TOTALS.
 4 /PAGE (-M)
    Pipe all output through an  internal  pager  similar  to  the  Unix
    more(1) command.  At the end of a screenful of output, UnZip pauses
@@ -1105,6 +1111,8 @@
    The total "bytes compressed"  reported  includes  only  the  actual
    data,  not  the  ZIP  archive meta-data, so the size of the archive
    will always be greater than this value.
+
+   See also /MEMBER_COUNTS.
 3 Detailed_Description
    ZipInfo has three basic report formats, providing different degrees
    of  detail  in  the information about the members of an archive:  a

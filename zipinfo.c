@@ -472,6 +472,17 @@ static ZCONST char Far *method[NUM_METHODS] = {
 
 #ifndef WINDLL
 
+/* 2012-12-12 SMS.
+ * Free some storage, if it was allocated, and we care.
+ * (Use before a fatal error exit.)
+ */
+# ifdef REENTRANT
+#  define FREE_NON_NULL( x) if ((x) != NULL) free( x)
+# else
+#  define FREE_NON_NULL( x)
+# endif
+
+
 /************************/
 /*  Function zi_opts()  */
 /************************/
@@ -505,13 +516,6 @@ int zi_opts(__G__ pargc, pargv)
     int fna = 0;          /* current first non-opt arg */
     int optnum = 0;       /* index in table */
     int showhelp = 0;     /* for --commandline */
-
-#ifdef ICONV_MAPPING
-# ifdef UNIX
-    extern char OEM_CP[MAX_CP_NAME];
-    extern char ISO_CP[MAX_CP_NAME];
-# endif
-#endif
 
     /* since get_option() returns xfiles and files one at a time, store them in
        linked lists until have them all */
@@ -568,8 +572,9 @@ int zi_opts(__G__ pargc, pargv)
 
 
 /* Copied from unzip.c */
-#define o_sc            0x103
-#define o_so            0x104
+#define o_mc            0x104
+#define o_sc            0x105
+#define o_so            0x107
 
 
     while ((option = get_option( __G__ ZIO, &args, &argcnt, &argnum,
@@ -577,6 +582,7 @@ int zi_opts(__G__ pargc, pargv)
                                 &fna, &optnum, 0)))
     {
         if(option == o_BAD_ERR) {
+          FREE_NON_NULL( value);        /* Leaving early.  Free it. */
           return(PK_PARAM);
         }
 
@@ -611,14 +617,13 @@ int zi_opts(__G__ pargc, pargv)
                             uO.lflag = 0;
                     }
                     break;
-#ifdef ICONV_MAPPING
+#if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
 # ifdef UNIX
                 case ('I'):    /* -I:  map ISO name to internal */
-                    strncpy(ISO_CP, value, sizeof(ISO_CP));
-                    free(value);
+                    strncpy( G.iso_cp, value, sizeof( G.iso_cp));
                     break;
-# endif
-#endif
+# endif /* def UNIX */
+#endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
                 case 'l':      /* longer form of "ls -l" type listing */
                     if (negative)
                         uO.lflag = -2;
@@ -631,6 +636,12 @@ int zi_opts(__G__ pargc, pargv)
                     else
                         uO.lflag = 4;
                     break;
+                case (o_mc):   /* show separate dir/file/link member counts */
+                    if (negative)
+                        uO.member_counts = -1;
+                    else
+                        uO.member_counts = 1;
+                    break;
 #ifdef MORE
                 case 'M':      /* send output through built-in "more" */
                     if (negative)
@@ -639,14 +650,13 @@ int zi_opts(__G__ pargc, pargv)
                         G.M_flag = TRUE;
                     break;
 #endif
-#ifdef ICONV_MAPPING
+# if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
 # ifdef UNIX
                 case ('O'):    /* -O:  map OEM name to internal */
-                    strncpy(OEM_CP, value, sizeof(OEM_CP));
-                    free(value);
+                    strncpy( G.oem_cp, value, sizeof( G.oem_cp));
                     break;
-# endif
-#endif
+# endif /* def UNIX */
+#endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
                 case 's':      /* default:  shorter "ls -l" type listing */
                     if (negative)
                         uO.lflag = -2;
@@ -718,6 +728,7 @@ int zi_opts(__G__ pargc, pargv)
                         next_in_xfiles = next_file;
                     }
                     in_xfiles_count++;
+                    value = NULL;       /* In use.  Don't free it. */
                 case 'z':      /* print zipfile comment */
                     if (negative)
                         uO.zflag = 0;
@@ -760,11 +771,16 @@ int zi_opts(__G__ pargc, pargv)
                         }
                         in_files_count++;
                     }
+                    value = NULL;       /* In use.  Don't free it. */
                     break;
                 default:
                     error = TRUE;
                     break;
         } /* switch */
+
+        if (value != NULL)
+            free( value);               /* Free it now, if it's not in use. */
+
     } /* get_option() */
 
     if (showhelp == -3) {
@@ -810,13 +826,10 @@ int zi_opts(__G__ pargc, pargv)
       G.xfilespecs = in_xfiles_count;
     }
 
-    if (in_files_count || in_xfiles_count) {
-        G.process_all_files = FALSE;
-    } else {
-        G.process_all_files = TRUE;      /* for speed */
-    }
+    /* For speed, set process_all_files flag if no include or exclude list. */
+    G.process_all_files = (in_files_count == 0) && (in_xfiles_count == 0);
 
-    /* it's possible the arg count could have been changed by get_option() */
+    /* get_option() could have changed the arg count, so re-evaluate it. */
     argc = arg_count(__G__ args);
 
     if ((G.wildzipfn == NULL) || error) {
@@ -1192,13 +1205,19 @@ int zipinfo(__G)   /* return PK-type error code */
          FmZofft( tot_csize, NULL, "u"),
          sgn, cfactor/10, cfactor%10));
 
-        Info(slide, 0, ((char *)slide, LoadFarString( ZipfileStats2b),
-         members_dir,
-         (members- members_dir- members_link)
+        if (uO.member_counts >= 0)
+        {
 #ifdef SYMLINKS
-         , members_link
-#endif /* def SYMLINKS */
-         ));
+            Info(slide, 0, ((char *)slide, LoadFarString( ZipfileStats2b),
+             members_dir,
+             (members- members_dir- members_link)
+             , members_link));
+#else /* def SYMLINKS */
+            Info(slide, 0, ((char *)slide, LoadFarString( ZipfileStats2b),
+             members_dir,
+             (members- members_dir- members_link)));
+#endif /* def SYMLINKS [else] */
+        }
     }
 
 /*---------------------------------------------------------------------------

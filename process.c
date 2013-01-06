@@ -553,8 +553,14 @@ int process_zipfiles(__G)    /* return PK-type error code */
     }
 #endif /* !SFX */
 
+    /* 2012-12-11 SMS.
+     * Freeing dynamic storage is now done by globals.h:DESTROYGLOBALS()
+     * (using free_G_buffers()), but only if REENTRANT.
+     */
+#if 0
     /* free allocated memory */
     free_G_buffers(__G);
+#endif /* 0 */
 
     return error_in_archive;
 
@@ -563,6 +569,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
 
 
 
+#ifdef REENTRANT
 
 /*****************************/
 /* Function free_G_buffers() */
@@ -667,8 +674,25 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     }
 #endif
 
+    /* 2012-12-11 SMS.
+     * Free any command-line-related storage.
+     */
+    /* Include and exclude name lists.  (free_args() checks for NULL.) */
+    free_args( G.pfnames);
+    free_args( G.pxnames);
+    /* Extraction root directory (-d/--extract-dir). */
+    if (uO.exdir != NULL)
+        free( uO.exdir);
+    /* Encryption password (-P/--password). */
+    if (uO.pwdarg != NULL)
+        free( uO.pwdarg);
+    /* Archive path name. */
+    if (G.wildzipfn != NULL)
+        free( G.wildzipfn);
+
 } /* end function free_G_buffers() */
 
+#endif /* def REENTRANT */
 
 
 
@@ -2050,7 +2074,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
         if (eb_id == EF_UNIPATH) {
 
           int offset = EB_HEADSIZE;
-          ush ULen = eb_len - 5;
+          ush ULen = (ush)(eb_len - 5);
           ulg chksum = CRCVAL_INITIAL;
 
           /* version */
@@ -2879,7 +2903,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                 TTrace((stderr,"ef_scan_for_izux: found TIME extra field\n"));
                 flags |= (ef_buf[EB_HEADSIZE+EB_UT_FLAGS] & 0x0ff);
                 if ((flags & EB_UT_FL_MTIME)) {
-                    if ((eb_idx+4) <= eb_len) {
+                    if ((long)(eb_idx+4) <= eb_len) {
                         i_time = (long)makelong((EB_HEADSIZE+eb_idx) + ef_buf);
                         eb_idx += 4;
                         TTrace((stderr,"  UT e.f. modification time = %ld\n",
@@ -2939,7 +2963,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                 }
 
                 if (flags & EB_UT_FL_ATIME) {
-                    if ((eb_idx+4) <= eb_len) {
+                    if ((long)(eb_idx+4) <= eb_len) {
                         i_time = (long)makelong((EB_HEADSIZE+eb_idx) + ef_buf);
                         eb_idx += 4;
                         TTrace((stderr,"  UT e.f. access time = %ld\n",
@@ -2976,7 +3000,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                     }
                 }
                 if (flags & EB_UT_FL_CTIME) {
-                    if ((eb_idx+4) <= eb_len) {
+                    if ((long)(eb_idx+4) <= eb_len) {
                         i_time = (long)makelong((EB_HEADSIZE+eb_idx) + ef_buf);
                         TTrace((stderr,"  UT e.f. creation time = %ld\n",
                                 i_time));

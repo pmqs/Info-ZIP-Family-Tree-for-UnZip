@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2012-11-16
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-01-02
 #==============================================================================
 
 #==============================================================================
@@ -152,7 +152,7 @@ help:
 	@echo '"make" macros to enable varions optional features:'
 	@echo '    "AES_WG=1"        Add AES encryption (WinZip/Gladman).'
 	@echo '    "CC=gcc"          Use "gcc" instead of "cc" for C compiler.'
-	@echo '    "ICONV_MAPPING"   Enable ISO/OEM (iconv) conversion.'
+	@echo '    "ICONV"           Enable ISO/OEM (iconv) conversion.'
 	@echo '    "IZ_BZIP2=bz2dir" Add BZIP2 compression from dir bz2dir.'
 	@echo '    "IZ_ZLIB=zdir"    Use ZLIB from dir zdir for deflate.'
 	@echo '    "LIBUNZIP=1"      Create UnZip object library.'
@@ -1270,9 +1270,9 @@ testmake_zip:
          ../unzip ../$(TESTZIP) > /dev/null ; \
          touch testmake.zipinfo ; \
          $(PGM_ZIP) -X $(TESTZIP) notes testmake.zipinfo > /dev/null ; \
-         ../unzip -Z $(TESTZIP) > testmake.zipinfo ; \
+         ../unzip -Z -mc- $(TESTZIP) > testmake.zipinfo ; \
          $(PGM_ZIP) -X $(TESTZIP) notes testmake.zipinfo > /dev/null ; \
-         ../unzip -Z $(TESTZIP) > testmake.zipinfo_new ; \
+         ../unzip -Z -mc- $(TESTZIP) > testmake.zipinfo_new ; \
          mv $(TESTZIP) ../$(TESTZIP) )
 	@if diff testmake/testmake.zipinfo \
           testmake/testmake.zipinfo_new 2> /dev/null ; then \
@@ -1297,10 +1297,10 @@ testmake_ppmd_zip:
          touch testmake.zipinfo ; \
          $(PGM_ZIP) -X -Z ppmd $(TESTZIP_PPMD) notes testmake.zipinfo > \
          /dev/null ; \
-         ../unzip -Z $(TESTZIP_PPMD) > testmake.zipinfo ; \
+         ../unzip -Z -mc- $(TESTZIP_PPMD) > testmake.zipinfo ; \
          $(PGM_ZIP) -X -Z ppmd $(TESTZIP_PPMD) notes testmake.zipinfo > \
          /dev/null ; \
-         ../unzip -Z $(TESTZIP_PPMD) > testmake.zipinfo_new ; \
+         ../unzip -Z -mc- $(TESTZIP_PPMD) > testmake.zipinfo_new ; \
          mv $(TESTZIP_PPMD) ../$(TESTZIP_PPMD) )
 	@if diff testmake/testmake.zipinfo \
           testmake/testmake.zipinfo_new 2> /dev/null ; then \

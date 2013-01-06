@@ -49,11 +49,12 @@
 
   If you make the inclusion of any variables conditional, be sure to only
   check macros that are GUARANTEED to be included in every module.
-  For instance, newzip and pwdarg are needed only if CRYPT_ANY is defined,
-  but this is defined after unzip.h has been read.  If you are not careful,
-  some modules will expect your variable to be part of this struct while
-  others won't.  This will cause BIG problems. (Inexplicable crashes at
-  strange times, car fires, etc.)  When in doubt, always include it!
+  For instance, newzip and pwdarg are needed only if IZ_CRYPT_ANY is
+  defined, but this is defined after unzip.h has been read.  If you are
+  not careful, some modules will expect your variable to be part of this
+  struct while others won't.  This will cause BIG problems. (Inexplicable
+  crashes at strange times, car fires, etc.)  When in doubt, always
+  include it!
 
   Note also that UnZipSFX needs a few variables that UnZip doesn't.  However,
   it also includes some object files from UnZip.  If we were to conditionally
@@ -153,7 +154,7 @@
 #  endif
 # endif
 
-# ifdef CRYPT_AES_WG
+# ifdef IZ_CRYPT_AES_WG
 #  include "aes_wg/fileenc.h"
 # endif
 
@@ -366,7 +367,7 @@ typedef struct Globals {
     int      unicode_mismatch;
 #   ifdef UTF8_MAYBE_NATIVE
     int      native_is_utf8;       /* bool, TRUE => native charset == UTF-8 */
-#   endif
+#   endif /* def UTF8_MAYBE_NATIVE */
 
     int      unipath_version;      /* version of Unicode field */
     ulg      unipath_checksum;     /* Unicode field checksum */
@@ -375,8 +376,13 @@ typedef struct Globals {
     wchar_t  *unipath_widefilename;     /* wide character filename */
     wchar_t  *unipath_jdir_widefilename;    /* Ptr to non-junk path. */
     int      has_win32_wide;       /* true if Win32 W calls work */
-#   endif
-#  endif /* UNICODE_SUPPORT */
+#   endif /* def WIN32_WIDE */
+#   if defined( ICONV_MAPPING) && defined( MAX_CP_NAME)
+    /* ISO/OEM (iconv) character conversion. */
+    char iso_cp[ MAX_CP_NAME];          /* Character set names. */
+    char oem_cp[ MAX_CP_NAME];
+#   endif /* defined( ICONV_MAPPING) && defined( MAX_CP_NAME) */
+#  endif /* def UNICODE_SUPPORT */
 
 #  ifdef CMS_MVS
     char     *tempfn;              /* temp file used; erase on close */
@@ -456,13 +462,13 @@ typedef struct Globals {
 #  endif
 # endif /* !FUNZIP */
 
-# ifdef CRYPT_AES_WG
+# ifdef IZ_CRYPT_AES_WG
     /* 2011-05-24 SMS.
      * AES_WG encryption parameters.
      */
     zoff_t ucsize_aes;          /* AES uncompressed bytes left to decrypt. */
     fcrypt_ctx zcx[ 1];         /* AES context. */
-# endif /* def CRYPT_AES_WG */
+# endif /* def IZ_CRYPT_AES_WG */
 
 /* 7-Zip (LZMA, PPMd) memory allocation function structure. */
 # if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)

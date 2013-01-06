@@ -6,6 +6,9 @@
 #    $2 = program directory (relative).  Default: .
 #    $3 = non-null to skip funzip and SFX tests.
 #
+#    2012-12-16  SMS.  Add "-mc-" to UnZip "-Z" command to suppress
+#                      member counts by dir/file/link, because not all
+#                      systems have links, which changes the report.
 #    2012-06-22  SMS.  MinGW accommodation.  Changed to try
 #                      "unzipsfx.exe" when plain "unzipsfx" is missing.
 #                      Use "unzip -a" to avoid line-ending differences.
@@ -179,7 +182,7 @@ echo '>>> ZipInfo ("unzip -Z") test...'
 if test -f "${member_2}"; then
     (
       cd ..
-      ${prod}/unzip -Z "${test_archive}" > "${tmp_dir}/testmake.unzip-Z"
+      ${prod}/unzip -Z -mc- "${test_archive}" > "${tmp_dir}/testmake.unzip-Z"
     )
     status=$?
 

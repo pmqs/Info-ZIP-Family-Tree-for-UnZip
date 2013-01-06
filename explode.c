@@ -353,7 +353,7 @@ unsigned bdl;                   /* number of distance low bits */
           {
 # else /* def BAD_SLIDE_MEMCPY */
           /* Use memcpy(), if no overlap. */
-          if (labs( (long)w - (long)d) >= e)
+          if (labs( (long)w - (long)d) >= (long)e)
           {
 # endif /* def BAD_SLIDE_MEMCPY [else] */
             memcpy(redirSlide + w, redirSlide + d, e);
@@ -503,7 +503,7 @@ unsigned bdl;           /* number of distance low bits */
           {
 # else /* def BAD_SLIDE_MEMCPY */
           /* Use memcpy(), if no overlap. */
-          if (labs( (long)w - (long)d) >= e)
+          if (labs( (long)w - (long)d) >= (long)e)
           {
 # endif /* def BAD_SLIDE_MEMCPY [else] */
             memcpy(redirSlide + w, redirSlide + d, e);

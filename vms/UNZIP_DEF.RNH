@@ -698,6 +698,18 @@ screen before being viewed.  If the actual number of lines on the screen
 can not be determined, 24 lines will be assumed.
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .indent -2
+3 -mc
+.br;.indent -2
+-mc
+.br;.indent -2
+--member-counts
+.sk
+Control inclusion of separate member counts for directories, files, and
+links, after the totals summary at the end of the report.  By default,
+they are included.  Use "-mc-" or "--member-counts-" to suppress them.
+See also -t.
+.!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.indent -2
 3 -N
 .br;.indent -2
 -N
@@ -1846,6 +1858,8 @@ be put out.
 The total "bytes compressed" reported includes only the actual data, not
 the ZIP archive meta-data, so the size of the archive will always be
 greater than this value.
+.sk
+See also -mc.
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .indent -2
 4 -U

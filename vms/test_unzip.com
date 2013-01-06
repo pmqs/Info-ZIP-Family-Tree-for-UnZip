@@ -3,8 +3,11 @@ $!    Info-ZIP UnZip test procedure.
 $!
 $!    P1 = test archive name.  Default: testmake.zip
 $!    P2 = program directory.  Default: "" (current directory)
-$!    P3 = non-null to skip funzip and SFX tests.
+$!    P3 = non-null to skip SFX tests.
 $!
+$!    2012-12-16  SMS.  Add "-mc-" to UnZip "-Z" command to suppress
+$!                      member counts by dir/file/link, because not all
+$!                      systems have links, which changes the report.
 $!    2012-02-24  SMS.  Added P3 check for PPMd test.
 $!                      Added lrl and mrs attributes to set on SFX EXE.
 $!                      Added exit status tests.
@@ -357,8 +360,10 @@ $ echo ""
 $ if (cli)
 $ then
 $     opt = "/zipinfo"
+$     opt2 = "/nomember_counts"
 $ else
 $     opt = "-Z"
+$     opt2 = "-mc-"
 $ endif
 $ echo ">>> ZipInfo (""unzip ''opt'"") test..."
 $!
@@ -366,17 +371,17 @@ $ if (f$search( member_2) .nes. "")
 $ then
 $!    Arrange for a reliable archive name in the report.
 $     pwd_ct = pwd- "]"+ ".]"
-$     define /user_mode /translation_attributes = (concealed, terminal) -
+$     define /user_mode /translation_attributes = concealed -
        test_dir 'pwd_ct'
 $     define /user_mode sys$output testmake.unzip-Z
 $!
 $     on error then continue
 $     if (cli)
 $     then
-$         unzip_cli /zipinfo test_dir:[000000]'test_archive'
+$         unzip_cli 'opt' 'opt2' test_dir:[000000]'test_archive'
 $         status = $status
 $     else
-$         unzip "-Z" test_dir:[000000]'test_archive'
+$         unzip "''opt'" "''opt2'" test_dir:[000000]'test_archive'
 $         status = $status
 $     endif
 $     on error then goto clean_up

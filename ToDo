@@ -1,3 +1,15 @@
+   Chronic problems:
+
+- Automated testing system.  Should accommodate multiple operating
+  systems (at least Unix, VMS and Windows?), so Perl-based?
+
+- More testing.
+
+- Performance analysis and improvement.
+
+- Internationalized messages.
+
+
 New stuff to be added to the main list (if not already there):
 - Check if -X is implemented on platforms other than Unix and VMS
     (8 Jul 2010 SMS)
@@ -43,6 +55,7 @@ New stuff to be added to the main list (if not already there):
     new --restore-attributes=(protection,owner,acl) option.  (3 Aug
     2010 SMS, EG)
 
+- Shared object (Unix) or shareable image (VMS) for the object library.
 
 ================================
 For UnZip 6.1/who knows:

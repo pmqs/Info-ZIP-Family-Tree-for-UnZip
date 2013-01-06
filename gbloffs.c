@@ -80,14 +80,14 @@ int main(argc, argv)
 #if (defined(DLL) && !defined(NO_SLIDE_REDIR))
     printf(out_format, "_wsize", (ulg)&G._wsize - (ulg)&G);
 #endif /* DLL && !NO_SLIDE_REDIR */
-#ifdef CRYPT_AES_WG
-    (*set_flag)("CRYPT_AES_WG");
+#ifdef IZ_CRYPT_AES_WG
+    (*set_flag)("IZ_CRYPT_AES_WG");
 #endif
-#ifdef CRYPT_ANY
-    (*set_flag)("CRYPT_ANY");
+#ifdef IZ_CRYPT_ANY
+    (*set_flag)("IZ_CRYPT_ANY");
 #endif
-#ifdef CRYPT_TRAD
-    (*set_flag)("CRYPT_TRAD");
+#ifdef IZ_CRYPT_TRAD
+    (*set_flag)("IZ_CRYPT_TRAD");
 #endif
 #ifdef FUNZIP
     (*set_flag)("FUNZIP");

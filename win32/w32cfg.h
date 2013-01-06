@@ -95,6 +95,7 @@
 #endif
 #if (defined(MSC) || defined(__WATCOMC__) || defined(__MINGW32__))
 #  include <sys/utime.h>
+#  define HAVE_LOCALE_H 1       /* 2012-12-18 SMS. */
 #else
 #  include <utime.h>
 #endif

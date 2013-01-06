@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-11-19  SMS.
+$!     Last revised:  2012-12-31  SMS.
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"
@@ -13,8 +13,8 @@ $!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
 $!     - Select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - Select AES_WG encryption support: "AES_WG"
 $!       By default, the SFX programs are built without AES_WG support.
-$!       Add "AES_WG_SFX=1" to the LOCAL_UNZIP C macros to enable it.
-$!       (See LOCAL_UNZIP, below.)
+$!       Add "CRYPT_AES_WG_SFX=1" to the LOCAL_UNZIP C macros to enable
+$!       it.  (See LOCAL_UNZIP, below.)
 $!     - Select BZIP2 support: "USEBZ2"
 $!       This option is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]", and
 $!       runs the DCL build procedure there,
@@ -43,6 +43,8 @@ $!     - Select large-file support: "LARGE"
 $!     - Select compiler listings: "LIST"  Note that the whole argument
 $!       is added to the compiler command, so more elaborate options
 $!       like "LIST/SHOW=ALL" (quoted or space-free) may be specified.
+$!       Default is "/NOLIST", but if the user specifies a LIST option,
+$!       then only the user-specified qualifier(s) will be included.
 $!     - Supply additional compiler options: "CCOPTS=xxx"  Allows the
 $!       user to add compiler command options like /ARCHITECTURE or
 $!       /[NO]OPTIMIZE.  For example, CCOPTS=/ARCH=HOST/OPTI=TUNE=HOST
@@ -52,9 +54,9 @@ $!     - Supply additional linker options: "LINKOPTS=xxx"  Allows the
 $!       user to add linker command options like /DEBUG or /MAP.  For
 $!       example: LINKOPTS=/DEBUG or LINKOPTS=/MAP/CROSS.  These options
 $!       must be quoted or space-free.  Default is
-$!       LINKOPTS=/NOTRACEBACK, but if the user specifies a LINKOPTS
-$!       string, /NOTRACEBACK will not be included unless specified by
-$!       the user.
+$!       LINKOPTS="/NOMAP /NOTRACEBACK", but if the user specifies a
+$!       LINKOPTS string, then only the user-specified qualifier(s) will
+$!       be included.
 $!     - Select installation of CLI interface version of UnZip:
 $!       "VMSCLI" or "CLI"
 $!     - Force installation of UNIX interface version of UnZip
@@ -78,11 +80,25 @@ $!     VMS-specific options include VMSWILD and RETURN_CODES.  See the
 $!     INSTALL file for other options (for example, CHECK_VERSIONS).
 $!
 $!     If you edit this procedure to set LOCAL_UNZIP here, be sure to
-$!     use only one "=", to avoid affecting other procedures.
+$!     use only one "=", to avoid affecting other procedures.    For
+$!     example:
+$!             $ LOCAL_UNZIP = "BZIP2_SFX"
 $!
-$!     Note: This command procedure always generates both the "default"
-$!     UnZip having the UNIX style command interface and the "VMSCLI"
-$!     UnZip having the CLI compatible command interface.  There is no
+$!     Note that on a Unix system, LOCAL_UNZIP contains compiler
+$!     options, such as "-g" or "-DCRYPT_AES_WG_SFX", but on a VMS
+$!     system, LOCAL_UNZIP contains only C macros, such as
+$!     "CRYPT_AES_WG_SFX", and CCOPTS is used for any other kinds of
+$!     compiler options, such as "/ARCHITECTURE".  Unix compilers accept
+$!     multiple "-D" options, but VMS compilers consider only the last
+$!     /DEFINE qualifier, so the C macros must be handled differently
+$!     from other compiler options on VMS.  Thus, when using the generic
+$!     installation instructions as a guide for controlling various
+$!     optional features, some adjustment may be needed to adapt them to
+$!     a VMS build environment.
+$!
+$!     This command procedure always generates both the "default" UnZip
+$!     program with the UNIX style command interface and the "VMSCLI"
+$!     UnZip program with the VMS CLI command interface.  There is no
 $!     need to add "VMSCLI" to the LOCAL_UNZIP symbol.  (The only effect
 $!     of "VMSCLI" now is the selection of the CLI style UnZip
 $!     executable in the foreign command definition.)
@@ -144,7 +160,7 @@ $ CCOPTS = ""
 $ IZ_BZIP2 = ""
 $ BUILD_BZIP2 = 0
 $ IZ_ZLIB = ""
-$ LINKOPTS = "/notraceback"
+$ LINKOPTS = "/nomap /notraceback"
 $ LISTING = " /nolist"
 $ LARGE_FILE = 0
 $ LIBUNZIP = 0
@@ -382,6 +398,7 @@ $ destl = ""
 $ destm = arch
 $ cmpl = "DEC/Compaq/HP C"
 $ opts = ""
+$ vaxc = 0
 $ if (arch .nes. "VAX")
 $ then
 $     HAVE_DECC_VAX = 0
@@ -441,6 +458,7 @@ $                 cc = "cc"
 $             endif
 $             destm = "''destm'V"
 $             cmpl = "VAX C"
+$             vaxc = 1
 $         endif
 $         opts = "''opts' SYS$DISK:[.''destm']VAXCSHR.OPT /OPTIONS,"
 $     endif
@@ -474,9 +492,16 @@ $!
 $ if (PPMD .ne. 0)
 $ then
 $     defs = defs+ ", PPMD_SUPPORT"
-$     if ((arch .eqs. "VAX") .and. (LZMA .eq. 0))
+$     if (arch .eqs. "VAX")
 $     then
-$         defs = defs+ ", _SZ_NO_INT_64"
+$         if (vaxc .ne. 0)
+$         then
+$             defs = defs+ ", NO_SIGNED_CHAR"
+$         endif
+$         if (LZMA .eq. 0)
+$         then
+$             defs = defs+ ", _SZ_NO_INT_64"
+$         endif
 $     endif
 $ endif
 $!

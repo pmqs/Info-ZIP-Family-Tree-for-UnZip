@@ -33,9 +33,7 @@ char end_central_sig[4]   = {0, 0, 0x05, 0x06};
 char end_central64_sig[4] = {0, 0, 0x06, 0x06};
 char end_centloc64_sig[4] = {0, 0, 0x06, 0x07};
 /* extern char extd_local_sig[4] = {0, 0, 0x07, 0x08};  NOT USED YET */
-
-ZCONST char *fnames[2] = {"*", NULL};   /* default filenames vector */
-#endif
+#endif /* ndef FUNZIP */
 
 
 #ifndef REENTRANT
@@ -183,8 +181,6 @@ Uz_Globs *globalsCtor()
 
     uO.lflag=(-1);
     G.wildzipfn = "";
-    G.pfnames = (char **)fnames;
-    G.pxnames = (char **)&fnames[1];
     G.pInfo = G.info;
     G.sol = TRUE;          /* at start of line */
 
