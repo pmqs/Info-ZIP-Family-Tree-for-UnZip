@@ -1048,8 +1048,8 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
                     /* /NAMES = DOWNCASE = SOME */
                     opt = OPT__L;
                 }
+                ADD_ARG( opt);
             }
-            ADD_ARG( opt);
         }
 
         status = cli$present( &cli_names_ods2);

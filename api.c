@@ -31,7 +31,7 @@
     int UzpFileTree(char *name, cbList(callBack), char *cpInclude[],
           char *cpExclude[]);
 
-  You must define `DLL' in order to include the API extensions.
+  You must define DLL in order to include the API extensions.
 
   ---------------------------------------------------------------------------*/
 
@@ -437,7 +437,7 @@ int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
         retstr->strptr = (char *)G.redirect_buffer;
         retstr->strlength = G.redirect_size;
     }
-    return r;                   /* returns `PK_???' error values */
+    return r;                   /* returns PK_??? error values */
 }
 
 # endif /* ndef SFX */

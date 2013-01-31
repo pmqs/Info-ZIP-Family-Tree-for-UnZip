@@ -1,13 +1,13 @@
-   Chronic problems:
+   Chronic deficiencies:
 
 - Automated testing system.  Should accommodate multiple operating
   systems (at least Unix, VMS and Windows?), so Perl-based?
 
-- More testing.
+- Testing.
 
 - Performance analysis and improvement.
 
-- Internationalized messages.
+- Localized messages.
 
 
 New stuff to be added to the main list (if not already there):
@@ -24,6 +24,7 @@ New stuff to be added to the main list (if not already there):
     using unzip?")
 - Add -O option to set the code page.  (12 Jul 2010 EG, from forum thread
     "Info-ZIP Bugs > UnZip Bugs > Unzip 6.0 is missing option -O")
+        Seems to be in 6.10b.
 - Look at extracting files with names larger than local OS limit (maybe
     by adding a truncation option.  (12 Jul 2010 EG, from forum thread
     "Info-ZIP Bugs > UnZip Bugs > unzip archives with very long filenames")    
@@ -33,7 +34,7 @@ New stuff to be added to the main list (if not already there):
         Done in 6.10c09.
 - Fix for funzip.  (12 Jul 2010 EG, from forum thread "Info-ZIP Bugs > UnZip
     Bugs > compilation error: Uz_Globs has no  disk_full")
-        Improved a little in 6.10c09.
+        Fixed in 6.10c09.
 - Add more specifics about editing flags.  Is check needed that all data
     from extra field was read?  (12 Jul 2010 EG, from forum thread "Info-ZIP
     Bugs > UnZip Bugs > Valgrind reports uninitialized reads in unzip")
@@ -65,7 +66,7 @@ For UnZip 6.1/who knows:
      PKZIP, WinZIP, 7-Zip versions
      - LZMA, compression type 14 (most important, because of its efficiency)
      - PPMd, compression type 98 (maybe, less important)
-     - WavPacked, compression type 97 (maybe, less important)
+     - WavPack, compression type 97 (maybe, less important)
 
        LZMA is first-level priority for 6.1, other formats may be taken
        into consideration
@@ -201,6 +202,7 @@ New stuff:
    o check NEXTBYTE for EOF in crypt.c, funzip.c and explode.c, too
 
         whenever
+        Done in crypt.c and funzip.c in 6.10c09.
 
    o add option to force completely non-interactive operation (no queries
      for overwrite/rename, password, etc.); also allow some sort of non-

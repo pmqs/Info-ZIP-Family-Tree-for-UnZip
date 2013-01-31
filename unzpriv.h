@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -2799,8 +2799,8 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    int      finish_REXX_redirect  OF((__GPRO));                 /* rexxapi.c */
 #endif
 #ifdef API_DOC
-   void     APIhelp               OF((__GPRO__ int argc, char **argv));
-#endif                                                          /* apihelp.c */
+   void     APIhelp               OF((__GPRO__ char *fname));   /* apihelp.c */
+#endif
 #endif /* DLL */
 
 /*---------------------------------------------------------------------------

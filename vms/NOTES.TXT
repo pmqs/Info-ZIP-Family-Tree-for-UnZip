@@ -4,7 +4,7 @@
    This document describes some VMS-specific behavior and implementation
 details of the Info-ZIP Zip and UnZip programs.
 
-   Last modified: 2009-11-02.
+   Last modified: 2013-01-11.
 
 
    Command-line Case
@@ -159,27 +159,28 @@ information is invited to contribute it.
    Users who find other parameter sets more beneficial, or who find
 particular problems with this set are welcome to comment.
 
-   In this version, as in previous versions, when UnZip expands a -V
-archive, it allocates the entire extent of a data file before writing
-any of its data.  In some previous versions, this could cause the
-destination disk to be locked for a considerable time (minutes), if
-highwater marking was enabled on that disk.  Now, the FAB SQO
-("sequential access only") flag (or equivalent) is set, which prevents
-this troublesome disk locking.
+   In this version, as in previous versions, when UnZip expands an
+archive with VMS attributes (made using Zip's "-V" or /VMS option), it
+allocates the entire extent of a data file before writing any of its
+data.  In some previous versions, this could cause the destination disk
+to be locked for a considerable time (minutes), if highwater marking was
+enabled on that disk.  Now, the FAB SQO ("sequential access only") flag
+(or equivalent) is set, which prevents this troublesome disk locking.
 
-   In some previous versions, when UnZip expanded a non-V archive, it
-did no pre-allocation, and used the default extension quantity.  This
-could slow file creation significantly for large files.  Now, space for
-extracted files is pre-allocated, and the same SQO ("sequential access
-only") flag is set, as with a -V archive.
+   In some previous versions, when UnZip expanded an archive without VMS
+attributes, it did no pre-allocation, and used the default extension
+quantity.  This could slow file creation significantly for large files.
+Now, space for extracted files is pre-allocated, and the same SQO
+("sequential access only") flag is set, as with an archive with VMS
+attributes.
 
 
-   Changes to the "-V" (/VMS) Option
-   ---------------------------------
+   Changes to Zip's "-V" (/VMS) Option
+   -----------------------------------
 
-   The intent of the "-V" (/VMS) option was to store VMS file attributes
-in a Zip archive, allowing UnZip to extract an exact copy of a file on a
-VMS system, including all its VMS attributes.
+   The intent of Zip's "-V" (/VMS) option was to store VMS file
+attributes in a Zip archive, allowing UnZip to extract an exact copy of
+a file on a VMS system, including all its VMS attributes.
 
    In Zip before version 2.31, using the "-V" (/VMS) option created an
 archive which usually contained data from beyond the EOF (End-of-File)
@@ -196,11 +197,17 @@ extracted properly on a non-VMS system.  On a VMS system, well-formed
 files (that is, those with no valid data beyond EOF) should also be
 restored correctly.
 
-   With the new "-VV" (/VMS = ALL) option, the archive includes all
+   With Zip's new "-VV" (/VMS = ALL) option, the archive includes all
 allocated blocks for the file (including those beyond EOF).  When
 extracted on a VMS system, the original file should be reproduced with
-as much fidelity as possible, but on a non-VMS system, most files will
-be seen as corrupt because of the data from beyond EOF.
+as much fidelity as possible, but on a non-VMS system, files with a
+proper EOF marker will probably be seen as corrupt because of the data
+from beyond EOF.
+
+   Note that if an archive member includes VMS attributes, then UnZip
+will use those attributes when extracting that member.  No special UnZip
+option is needed for this (and none will stop it).  UnZip has a "-V"
+option, but it is not related to these VMS file attributes.
 
 
    Changes to Program Exit Status Values

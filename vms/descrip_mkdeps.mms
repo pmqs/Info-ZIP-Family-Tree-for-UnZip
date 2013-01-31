@@ -1,4 +1,4 @@
-#                                               20 December 2012.  SMS.
+#                                               17 January 2013.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS Dependency Description File.
 #
@@ -351,6 +351,13 @@ ZIPINFO_C.MMSD : ZIPINFO.C ZIPINFO.MMSD
 	@$(MOD_DEP) $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
 # UnZip library modules.
+
+APIHELP_L.MMSD : APIHELP.C
+	$(CC) $(CFLAGS_INCL) $(CDEFS_LIBUNZIP) -
+         $(MMS$SOURCE) -
+         /NOLIST /NOOBJECT /MMS_DEPENDENCIES = -
+         (FILE = $(MMS$TARGET), NOSYSTEM_INCLUDE_FILES)
+	@$(MOD_DEP) $(MMS$TARGET) $(MMS$TARGET_NAME).OBJ $(MMS$TARGET)
 
 API_L.MMSD : API.C API.MMSD
 	$(CC) $(CFLAGS_INCL) $(CDEFS_LIBUNZIP) -

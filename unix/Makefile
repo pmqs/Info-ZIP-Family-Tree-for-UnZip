@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-01-02
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-01-17
 #==============================================================================
 
 #==============================================================================
@@ -438,6 +438,7 @@ O_UNZIP  = unzip.o      \
 
 # object files: UnZip object library.  Modules sensitive to DLL/REENTRANT.
 O_UNZIPL = api_l.o      \
+           apihelp_l.o  \
            crypt_l.o    \
            explode_l.o  \
            extract_l.o  \
@@ -462,7 +463,8 @@ O_UNZIPN = crc32.o      \
 
 # object files: UnZip DLL
 O_DLL    = $(O_UNZIP)   \
-           api.o
+           api.o        \
+           apihelp.o
 
 O_STUB   = unzipstb.o
 
@@ -697,6 +699,9 @@ zipinfo.o:    zipinfo.c   $(H_UNZIP)
 api_l.o:      api.c       $(H_UNZIPL)
 	$(CC) -c $(CF) -DDLL -o $@ api.c
 
+apihelp_l.o:  apihelp.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ apihelp.c
+
 crypt_l.o:    crypt.c     $(H_UNZIPL) crc32.h crypt.h ttyio.h zip.h 
 	$(CC) -c $(CF) -DDLL -o $@ crypt.c
 
@@ -768,6 +773,9 @@ zipinfo_l.o:  zipinfo.c   $(H_UNZIPL)
 # C Compile rule: UnZip DLL
 api.o:        api.c       $(H_UNZIP)
 	$(CC) -c $(CF) -DDLL -o $@ api.c
+
+apihelp.o:    apihelp.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DDLL -o $@ apihelp.c
 
 unzipstb.o:   unzipstb.c  $(H_UNZIP)
 	$(CC) -c $(CF) -o $@ unzipstb.c

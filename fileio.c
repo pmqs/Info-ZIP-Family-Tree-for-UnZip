@@ -1593,7 +1593,7 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
     {
         while (p < endbuf) {
             if (*p == '\n') {
-# if (defined(SCREENWIDTH) && defined(SCREENLWRAP))
+# if defined(SCREENWIDTH) && defined(SCREENLWRAP)
                 islinefeed = TRUE;
             } else if (SCREENLWRAP) {
                 if (*p == '\r') {
@@ -1614,7 +1614,7 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
             if (islinefeed) {
                 islinefeed = FALSE;
                 ((Uz_Globs *)pG)->chars = 0;
-# endif /* (SCREENWIDTH && SCREEN_LWRAP) */
+# endif /* defined(SCREENWIDTH) && defined(SCREENLWRAP) */
                 ++((Uz_Globs *)pG)->numlines;
                 ++((Uz_Globs *)pG)->lines;
                 if (((Uz_Globs *)pG)->lines >= ((Uz_Globs *)pG)->height)
@@ -2732,7 +2732,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
               } else {
                 /* Get the Unicode fields if exist */
                 getUnicodeData(__G__ G.extra_field, length);
-                if (G.unipath_filename && strlen(G.unipath_filename) == 0) {
+                if (G.unipath_filename && (*G.unipath_filenam == '\0')) {
                   /* the standard filename field is UTF-8 */
                   free(G.unipath_filename);
                   G.unipath_filename = G.filename_full;

@@ -1,4 +1,4 @@
-#                                               31 December 2012.  SMS.
+#                                               17 January 2013.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Description File.
 #
@@ -445,6 +445,9 @@ OPT_ID_SFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OPT
 # LIBUNZIP variant sources in [].
 
 [.$(DEST)]API_L.OBJ : API.C
+	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
+
+[.$(DEST)]APIHELP_L.OBJ : APIHELP.C
 	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
 
 [.$(DEST)]CRYPT_L.OBJ : CRYPT.C

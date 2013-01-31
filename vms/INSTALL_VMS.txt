@@ -1,7 +1,7 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
-   UnZip version 6.10.  Revised: 2012-12-31.
+   UnZip version 6.10.  Revised: 2013-01-11.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -268,11 +268,11 @@ more convenient (rfm:fix, mrs=512).
 
    To complete the installation, the executables may be left in place,
 or moved (or copied) to a convenient place.  While other methods (like
-DCL$PATH) exist, most users define symbols to make the UnZip executables
-available as foreign commands.  These symbol definitions may be placed
-in a user's SYS$LOGIN:LOGIN.COM, or in a more central location, like
-SYS$MANAGER:SYLOGIN.COM.  Typical symbol definitions might look like
-these:
+DCL$PATH) exist, it is usual to define symbols to make the UnZip
+executables available as foreign commands.  These symbol definitions may
+be placed in a user's SYS$LOGIN:LOGIN.COM, or in a more central
+location, like SYS$MANAGER:SYLOGIN.COM.  Typical symbol definitions
+might look like these:
 
    UNZIP :== $ dev:[dir]UNZIP.EXE       ! UNIX-like command line.
 or:
@@ -333,10 +333,10 @@ and does not include the "$" prefix.  For example:
       UNZIPSFX == "dev:[dir]UNZIPSFX.EXE"
 
    The user must define "UNZIPSFX" to point to an UNZIPSFX.EXE program
-which is one appropriate for the destination architecture, which may
-differ from the architecture of the system where the self-extracting
-archive is being created.  For example, on an Alpha system, one might
-create a self-extracting archive for use on an IA64 system:
+which is appropriate for the destination architecture, which may differ
+from the architecture of the system where the self-extracting archive is
+being created.  For example, on an Alpha system, one might create a
+self-extracting archive for use on an IA64 system:
 
       ZIP new_archive.zip [...]
       UNZIPSFX == "utility_root:[ia64l]unzipsfx.exe"

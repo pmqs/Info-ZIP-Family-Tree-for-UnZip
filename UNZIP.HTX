@@ -736,6 +736,21 @@ UNZIP
 
   Options_Ordinary
 
+    -mc
+
+      -mc
+      --member-counts
+
+        Control inclusion of separate member counts for directories,  files,
+        and  links,  after  the totals summary at the end of the report.  By
+        default, they are included.  Use  "-mc-"  or  "--member-counts-"  to
+        suppress them.  See also -t.
+
+
+UNZIP
+
+  Options_Ordinary
+
     -N
 
       -N
@@ -1993,6 +2008,8 @@ UNZIP
           The total "bytes compressed" reported includes only the actual data,
           not  the  ZIP  archive  meta-data,  so  the size of the archive will
           always be greater than this value.
+
+          See also -mc.
 
 
 UNZIP

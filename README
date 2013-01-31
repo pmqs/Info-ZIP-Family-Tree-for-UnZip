@@ -1,8 +1,8 @@
                         README -- Info-ZIP UnZip
                         ------------------------
 
-   Program version: 6.10d (BETA)
-   Document date: 2013-01-03
+   Program version: 6.10c (BETA)
+   Document date: 2013-01-28
 
 ------------------------------------------------------------------------
 
@@ -66,8 +66,9 @@ software license (and disclaimers) see:
 
    Source kits include this README file, and various other files,
 including BUGS, COPYING, INSTALL, LICENSE, and ToDo.  Changes are noted
-in "History.*".  Many OS-specific subdirectories include "INSTALL*"
-and/or "README*" supplements.  A "proginfo" subdirectory contains some
+in "History.610".  (For changes in older versions, see other "History.*"
+files.)  Many OS-specific subdirectories include "INSTALL*" and/or
+"README*" supplements.  A "proginfo" subdirectory contains some
 additional (mostly old) documentation of particular interest to
 developers.
 
@@ -136,13 +137,13 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
 
 - Initial support for AppleDouble storage of Finder info and resource
   fork data on Macintosh (Mac OS X) systems.  Intended to be compatible
-  with "ditto".
+  with Apple "ditto".
 
 - Behavior change: Now, by default, date-time information is restored on
   extracted files only, not on created directories.  Use "-D" to restore
   no date-time information.  Use "-D-" to restore date-time information
   on directories as well as files.  (On VMS, this is not a change,
-  except for the new option negation syntax.)
+  except for the new trailing-hyphen option negation syntax.)
 
 - Behavior change: ZipInfo report format changes:
    - Headers and totals summary formats have been changed.  New option:
@@ -251,7 +252,8 @@ information, like:
       Computer type and operating system (and version).
 
       Program version.  (Ideally, a whole "unzip -v" or "zip -v"
-      report.)
+      report, although you might need to edit out any URLs to get it
+      through the bug-report Web form.)
 
       What you did, and what happened when you did it.  Showing actual
       commands with their actual output is usually more helpful than a
@@ -263,7 +265,7 @@ often helpful to base patches on a recent internal-development source
 kit, rather than on a recent full release (or even the latest public
 beta kit, if it's getting old).  Similarly, anyone trying to port these
 programs to a new system type will probably benefit by starting with a
-recent internal-development source kit.  (Ask, and ye are likely to
+recent internal-development source kit.  (Ask, and you are likely to
 receive.)  Any such work should begin with a reading of the (old, but
 still useful) proginfo/ZipPorts file.
 

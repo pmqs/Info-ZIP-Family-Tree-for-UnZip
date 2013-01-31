@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -390,23 +390,18 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 # endif /* !NO_ZIPINFO */
 
 # ifdef BETA
-#  ifdef VMSCLI
-   /* BetaVersion[] is also used in vms/cmdline.c:  do not make it static */
-     ZCONST char Far BetaVersion[] = "%s\
+#  ifndef VMSCLI
+    static              /* Used in vms/cmdline.c, so not static in VMS CLI. */
+#  endif /* ndef VMSCLI */
+    ZCONST char Far BetaVersion[] = "%s\
         THIS IS STILL A BETA VERSION OF UNZIP%s -- DO NOT DISTRIBUTE.\n\n";
-#  else
-     static ZCONST char Far BetaVersion[] = "%s\
-        THIS IS STILL A BETA VERSION OF UNZIP%s -- DO NOT DISTRIBUTE.\n\n";
-#  endif
 # endif
 
 # ifdef SFX
-#  ifdef VMSCLI
-   /* UnzipSFXBanner[] is also used in vms/cmdline.c:  do not make it static */
+#  ifndef VMSCLI
+    static              /* Used in vms/cmdline.c, so not static in VMS CLI. */
+#  endif /* ndef VMSCLI */
     ZCONST char Far UnzipSFXBanner[] =
-#  else
-    static ZCONST char Far UnzipSFXBanner[] =
-#  endif
      "UnZipSFX %d.%d%d%s of %s, by Info-ZIP (http://www.info-zip.org).\n";
 #  ifdef SFX_EXDIR
     static ZCONST char Far UnzipSFXOpts[] =
@@ -690,57 +685,50 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 # ifndef SFX
-#  ifdef VMS
-/* UnzipUsageLine1[] is also used in vms/cmdline.c:  Do not make it static. */
+#  ifdef COPYRIGHT_CLEAN                /* Maintainer, not Smith copyright. */
+#   ifdef VMSCLI
+    /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
     ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  For more details see: unzip -v.\n\n";
-#   ifdef COPYRIGHT_CLEAN
-    static ZCONST char Far UnzipUsageLine1v[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by <Apply Within>.\n\
-See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
-\n\n";
-#   else
-    static ZCONST char Far UnzipUsageLine1v[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
-See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
-\n\n";
-#   endif /* ?COPYRIGHT_CLEAN */
-#  else /* !VMS */
-#   ifdef COPYRIGHT_CLEAN
+UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
+ Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip /license\n";
+#   else /* def VMSCLI */
     static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by <Apply Within>\n\
-See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
-\n\n";
-#   else
+UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
+ Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip --license\n";
+#   endif /* def VMSCLI [else] */
+#  else /* def COPYRIGHT_CLEAN */       /* Smith copyright, not maintainer. */
+#   ifdef VMSCLI
+    /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
+    ZCONST char Far UnzipUsageLine1[] = "\
+UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
+ Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip /license\n";
+#   else /* def VMSCLI */
     static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
-See README for details.  Report bugs at: http://info-zip.org/zip-bug.html\
-\n\n";
-#   endif /* ?COPYRIGHT_CLEAN */
-#   define UnzipUsageLine1v       UnzipUsageLine1
-#  endif /* ?VMS */
+ Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip --license\n";
+#   endif /* def VMSCLI [else] */
+#  endif /* def COPYRIGHT_CLEAN [else] */
+#  define UnzipUsageLine1v       UnzipUsageLine1
 
 static ZCONST char Far UnzipUsageLine2v[] = "\
-Current sources and executables: ftp://ftp.info-zip.org/pub/infozip/ \
-\nMore info: http://info-zip.org/UnZip.html\
-\n\n";
+ See README for details.  More info: http://info-zip.org/UnZip.html\n\n";
 
 #  ifdef MACOS
 static ZCONST char Far UnzipUsageLine2[] = "\
-Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-d exdir]\n \
+Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-d exdir]\n\
  Default action is to extract files in list, to exdir;\n\
   file[.zip] may be a wildcard.  %s\n";
 #  else /* !MACOS */
 #   ifdef VM_CMS
 static ZCONST char Far UnzipUsageLine2[] = "\
-Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d fm]\n \
+Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d fm]\n\
  Default action is to extract files in list, except those in xlist, to disk fm;\
 \n  file[.zip] may be a wildcard.  %s\n";
 #   else /* !VM_CMS */
 static ZCONST char Far UnzipUsageLine2[] = "\
-Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
+Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n\
  Default action is to extract files in list, except those in xlist, to exdir;\n\
-  file[.zip] may be a wildcard.  %s\n";
+ file[.zip] may be a wildcard.  %s\n";
 #   endif /* ?VM_CMS */
 #  endif /* ?MACOS */
 
@@ -835,8 +823,8 @@ lowercase\n %-42s  -V  retain VMS version numbers\n%s";
 #  endif /* ?UNICODE_SUPPORT */
 
 static ZCONST char Far UnzipUsageLine5[] = "\
-See \"unzip -hh\" for more help.  \"unzip --license\" for license.  Examples:\n\
-  unzip data1 -x joe   => extract all files except joe from zipfile data1.zip\n\
+See \"unzip -hh\" for more help.  Examples:\n\
+  unzip data1 -x joe   => extract all files except joe from archive data1.zip\n\
 %s\
   unzip -fo foo %-6s => quietly replace existing %s if archive file newer\n";
 
@@ -1530,7 +1518,7 @@ cleanup_and_exit:
    * process.c:process_zipfiles(), so now DESTROYGLOBALS() should do all
    * the work (if any).
    *
-   * On the other hand, the revised/reallocated argc[] is known only
+   * On the other hand, the revised/reallocated argv[] is known only
    * locally, so we should free it.
    */
   /* 2012-12-10 SMS.
@@ -1619,7 +1607,7 @@ static int setsignalhandler(__G__ p_savedhandler_chain, signal_type,
        option_group - UZO for UnZip option, ZIO for ZipInfo option
        shortopt     - short option name (1 or 2 chars)
        longopt      - long option name
-       value_type   - see zip.h for constants
+       value_type   - see unzpriv.h for constants
        negatable    - option is negatable with trailing -
        ID           - unsigned long int returned for option
        name         - short description of option which is
@@ -1660,7 +1648,7 @@ static struct option_struct far options[] = {
     {UZO, "a",  "ascii",           o_NO_VALUE,       o_NEGATABLE,
        'a',  "text convert (EOL char, ASCII->EBCDIC)"},
 # if (defined(DLL) && defined(API_DOC))
-    {UZO, "A",  "api-help",        o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "A",  "api-help",        o_OPTIONAL_VALUE, o_NOT_NEGATABLE,
        'A',  "extended help for API"},
 # endif
     {UZO, "b",  "binary",          o_NO_VALUE,       o_NEGATABLE,
@@ -1930,8 +1918,10 @@ static struct option_struct far options[] = {
  */
 #ifdef REENTRANT
 # define FREE_NON_NULL( x) if ((x) != NULL) free( x)
+# define UPDATE_PARGV *pargv = args
 #else
 # define FREE_NON_NULL( x)
+# define UPDATE_PARGV
 #endif
 
 
@@ -1982,6 +1972,15 @@ int uz_opts(__G__ pargc, pargv)
     /* make copy of args that can use with insert_arg() used by get_option() */
     args = copy_args(__G__ *pargv, 0);
 
+    /* 2013-01-17 SMS.
+     * Note that before any early exit, we must inform the caller of our
+     * new argv[], because he will want to free() ours, not the
+     * original:
+     *         UPDATE_PARGV;            (*pargv = args;)
+     *         return PK_xxx;
+     * In principle, this could be done here, and by anyone who changes
+     * "args", but that looked like more work.
+     */
 
     /* Initialize lists */
     G.filespecs = 0;
@@ -2031,6 +2030,7 @@ int uz_opts(__G__ pargc, pargv)
     {
         if(option == o_BAD_ERR) {
           FREE_NON_NULL( value);        /* Leaving early.  Free it. */
+          UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return(PK_PARAM);
         }
 
@@ -2042,7 +2042,8 @@ int uz_opts(__G__ pargc, pargv)
                     Info(slide, 0x401, ((char *)slide,
                       "error:  must give extensions list"));
                     FREE_NON_NULL( value);      /* Leaving early.  Free it. */
-                    return(PK_PARAM);  /* don't extract here by accident */
+                    UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
+                    return(PK_PARAM);   /* don't extract here by accident */
                 }
                 /* 2012-12-11 SMS.
                  * Note that this Acorn-RISC-OS-specific variable,
@@ -2063,9 +2064,10 @@ int uz_opts(__G__ pargc, pargv)
                 break;
 # if (defined(DLL) && defined(API_DOC))
             case ('A'):    /* extended help for API */
-                APIhelp(__G__ argc, args);
+                APIhelp(__G__ value);
                 *pargc = -1;  /* signal to exit successfully */
-                FREE_NON_NULL( value);      /* Leaving early.  Free it. */
+                FREE_NON_NULL( value);          /* Leaving early.  Free it. */
+                UPDATE_PARGV;                   /* See note 2013-01-17 SMS. */
                 return PK_OK;
 # endif
             case ('b'):
@@ -2125,13 +2127,15 @@ int uz_opts(__G__ pargc, pargv)
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(MustGiveExdir)));
                     FREE_NON_NULL( value);      /* Leaving early.  Free it. */
-                    return(PK_PARAM);  /* don't extract here by accident */
+                    UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
+                    return(PK_PARAM);   /* don't extract here by accident */
                 }
                 if (uO.exdir != (char *)NULL) {
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OnlyOneExdir)));
                     FREE_NON_NULL( value);      /* Leaving early.  Free it. */
-                    return(PK_PARAM);    /* GRR:  stupid restriction? */
+                    UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
+                    return(PK_PARAM);   /* GRR:  stupid restriction? */
                 } else {
                     /* first check for "-dexdir", then for "-d exdir" */
                     uO.exdir = value;
@@ -2139,6 +2143,7 @@ int uz_opts(__G__ pargc, pargv)
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(MustGiveExdir)));
                         FREE_NON_NULL( value);  /* Leaving early.  Free it. */
+                        UPDATE_PARGV;           /* See note 2013-01-17 SMS. */
                         return(PK_PARAM);  /* don't extract here by accident */
                     }
                     /* else uO.exdir points at extraction dir */
@@ -2236,6 +2241,7 @@ int uz_opts(__G__ pargc, pargv)
                              LoadFarString( BadJunkDirsValue)));
                             /* Leaving early.  Free it. */
                             FREE_NON_NULL( value);
+                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
                             return PK_PARAM;
                         }
                         else
@@ -2349,7 +2355,8 @@ int uz_opts(__G__ pargc, pargv)
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(MustGivePasswd)));
                     FREE_NON_NULL( value);      /* Leaving early.  Free it. */
-                    return(PK_PARAM);  /* don't extract here by accident */
+                    UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
+                    return(PK_PARAM);   /* don't extract here by accident */
                 }
                 if (uO.pwdarg != (char *)NULL) {
 #if 0
@@ -2357,6 +2364,7 @@ int uz_opts(__G__ pargc, pargv)
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OnlyOnePasswd)));
                     FREE_NON_NULL( value);      /* Leaving early.  Free it. */
+                    UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
                     return(PK_PARAM);
 #endif /* 0 */
                 } else {
@@ -2366,6 +2374,7 @@ int uz_opts(__G__ pargc, pargv)
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(MustGivePasswd)));
                         FREE_NON_NULL( value);  /* Leaving early.  Free it. */
+                        UPDATE_PARGV;           /* See note 2013-01-17 SMS. */
                         return(PK_PARAM);
                     }
                     /* else pwdarg points at decryption password */
@@ -2487,6 +2496,7 @@ int uz_opts(__G__ pargc, pargv)
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(NoMemArgsList)));
                         FREE_NON_NULL( value);  /* Leaving early.  Free it. */
+                        UPDATE_PARGV;           /* See note 2013-01-17 SMS. */
                         return PK_MEM;
                     }
                     in_xfiles->name = value;
@@ -2500,6 +2510,7 @@ int uz_opts(__G__ pargc, pargv)
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(NoMemArgsList)));
                         FREE_NON_NULL( value);  /* Leaving early.  Free it. */
+                        UPDATE_PARGV;           /* See note 2013-01-17 SMS. */
                         return PK_MEM;
                     }
                     next_in_xfiles->next = next_file;
@@ -2622,6 +2633,7 @@ int uz_opts(__G__ pargc, pargv)
                               LoadFarString(NoMemArgsList)));
                             /* Leaving early.  Free it. */
                             FREE_NON_NULL( value);
+                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
                             return PK_MEM;
                         }
                         next_file->name = value;
@@ -2637,6 +2649,7 @@ int uz_opts(__G__ pargc, pargv)
                               LoadFarString(NoMemArgsList)));
                             /* Leaving early.  Free it. */
                             FREE_NON_NULL( value);
+                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
                             return PK_MEM;
                         }
                         next_in_files->next = next_file;
@@ -2667,6 +2680,7 @@ int uz_opts(__G__ pargc, pargv)
       if ((G.pfnames = (char **) malloc((in_files_count + 1) * sizeof(char *))
           ) == NULL) {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArgsList)));
+          UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return PK_MEM;
       }
       file_count = 0;
@@ -2686,6 +2700,7 @@ int uz_opts(__G__ pargc, pargv)
       if ((G.pxnames = (char **) malloc((in_xfiles_count + 1) * sizeof(char *))
           ) == NULL) {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArgsList)));
+          UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return PK_MEM;
       }
       file_count = 0;

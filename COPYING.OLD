@@ -1,6 +1,8 @@
 __________________________________________________________________________
 
-  This is the Info-ZIP file COPYING (for UnZip), last updated 17 Jul 2000.
+  This is the Info-ZIP file COPYING.OLD (for UnZip)
+  Last content update: 17 Jul 2000
+  Last edit:           28 Jan 2013
 __________________________________________________________________________
 
    FIRST NOTE:
@@ -8,26 +10,26 @@ __________________________________________________________________________
    contributions to the UnZip project.
    Additionally, it summarises some exceptions to the general BSD-like
    copyright found in LICENSE that covers our generic code and most of
-   the system specific ports.
-   Please read LICENSE first to find out what is allowed to do with
-   Info-ZIP's UnZip code.
+   the system-specific ports.
+   Please read LICENSE first, to find out what is allowed to be done
+   with Info-ZIP's UnZip code.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
    There are currently two explicit copyrights on portions of UnZip
    code (at least, of which Info-ZIP is aware):
    Jim Luther's Mac OS File Manager interface code; and Christopher Evans'
-   MacBinaryIII coding code (for the MacOS port)..  These copyrights
+   MacBinary III coding code (for the MacOS port).  These copyrights
    are discussed in more detail below.
 
    All remaining code is now (starting with UnZip version 5.41) covered
-   by the new Info-ZIP license. For details, please read the acompaning
-   file LICENSE. The terms and conditions in this license supersede the
+   by the new Info-ZIP license.  For details, please read the accompanying
+   file LICENSE.  The terms and conditions in this license supersede the
    copyright conditions of the contributions by Igor Mandrichenko
    (vms/vms.c), Greg Roelofs (zipinfo.c, new version of unshrink.c),
    Mike White (Windows DLL code in "windll/*"), Steve P. Miller (Pocket
    UnZip GUI "wince/*"), and Mark Adler (inflate/explode decompresseion
-   core routines, previously put into the public domain). All these
+   core routines, previously put into the public domain).  All these
    Info-ZIP contributors (or "primary" authors) have permitted us to
    replace their copyright notes by the Info-ZIP License.
 
@@ -43,27 +45,28 @@ __________________________________________________________________________
    responsibility of the user to make his or her peace with Unisys and
    its licensing requirements.  (unshrink.c may be removed from future
    releases altogether.)
+
 __________________________________________________________________________
 
    The original unzip source code has been extensively modified and
-   almost entirely rewritten (changes include random zipfile access
+   almost entirely rewritten.  Changes include random zipfile access
    rather than sequential; replacement of unimplode() with explode();
    replacement of old unshrink() with new (unrelated) unshrink(); re-
    placement of output routines; addition of inflate(), wildcards,
-   filename-mapping, text translation, ...; etc.).  As far as we can
-   tell, only the core code of the unreduce method remained substantially
+   filename-mapping, text translation, ...; etc.  As far as we can
+   tell, only the core code of the Reduce method remained substantially
    similar to Mr. Smith's original source.  As of UnZip 5.42, the complete
    core code is now covered by the Info-ZIP Licence.  Therefore, support
-   for the reduce method has been removed.
-   The drop of the reduce method should only affect some test archives,
-   reducing was never used in any publically distributed Zip program.
-   For pathologic cases where support for reduced archive entries is
-   needed, the unreduce code copyrighted by Samuel H. Smith is available
-   as a separate distribution (the restricted copyright of this code is
-   cited below in the "historical" section).
+   for the Reduce method has been removed.
+   The drop of the Reduce method should only affect some test archives.
+   Reduce was never used in any publicly distributed Zip program.
+   For pathologic cases where support for Reduced archive entries is
+   needed, the Reduce code copyrighted by Samuel H. Smith is available
+   as a separate distribution (unreduce.c).  The restricted copyright of
+   this code is cited below in the "historical" section).
 
-   The following copyright applies to the Mac OS File Manager interface code
-   (macos/source/macstuff.[ch]), distributed with UnZip 5.4 and later:
+   The following copyright applies to the Mac OS File Manager interface
+   code (macos/source/macstuff.[ch]), distributed with UnZip 5.4 and later:
 
      * MoreFiles
      *
@@ -91,7 +94,7 @@ __________________________________________________________________________
      *           changes."
 
    The usage terms of this copyright note are compatible with the
-   Info-ZIP license, they do not add further restrictions.
+   Info-ZIP license; they do not add further restrictions.
 
 
    The following copyright applies to the Mac OS "macbin3" decoding code
@@ -113,7 +116,7 @@ __________________________________________________________________________
 
 --------------------------------------------------------------------------
 
-   The remaining copyright notes have been superseeded by the new
+   The remaining copyright notes have been superseded by the new
    Info-ZIP license, with explicit permission from the respective
    original authors.  They are cited here for historical reasons,
    only:
@@ -139,13 +142,13 @@ __________________________________________________________________________
 
    Despite the fact that our "normal" code has been entirely rewritten
    and by default no longer contains any of Mr. Smith's code, Info-ZIP
-   remains indebted and grateful to him.  We hope he finds our contribu-
-   tions as useful as we have his.
+   remains indebted and grateful to him.  We hope he finds our
+   contributions as useful as we have his.
 
-   Note that the third and fourth stipulations still apply to any com-
-   pany that wishes to incorporate the unreduce code into its products;
-   if you wish to do so, you must contact Mr. Smith directly regarding
-   licensing.
+   Note that the third and fourth stipulations still apply to any
+   company that wishes to incorporate the unreduce code into its
+   products.  If you wish to do so, you must contact Mr. Smith directly
+   regarding licensing.
 
   -----
 

@@ -1,4 +1,4 @@
-#                                               31 December 2012.  SMS.
+#                                               16 January 2013.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Source Description File.
 #
@@ -599,6 +599,7 @@ MODS_OBJS_LIB_UNZIPSFX_CLI = \
 
 MODS_OBJS_LIB_LIBUNZIP_NL = \
  API$(GCC_L)=[.$(DEST)]API_L.OBJ \
+ APIHELP$(GCC_L)=[.$(DEST)]APIHELP_L.OBJ \
  CRYPT$(GCC_L)=[.$(DEST)]CRYPT_L.OBJ \
  EXPLODE$(GCC_L)=[.$(DEST)]EXPLODE_L.OBJ \
  EXTRACT$(GCC_L)=[.$(DEST)]EXTRACT_L.OBJ \

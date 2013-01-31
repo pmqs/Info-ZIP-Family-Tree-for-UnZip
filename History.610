@@ -376,9 +376,10 @@ Features added (or removed):
    and files, and, where SYMLINKS is defined, links.  A new option, -mc
    (--member_counts, /[NO]MEMBER_COUNTS) allows the user to suppress the
    new directories/files/links counts.  Test archives have new-format
-   ZipInfo reports (without the new member counts, to accomodate systems
-   without symlinks).  (testmake.zip, testmake_ppmd.zip, unix/Makefile,
-   unix/test_unzip.sh, unzip.c, unzip.h, vms/test_unzip.com, zipinfo.c) [SMS]
+   ZipInfo reports (without the new member counts, to accommodate
+   systems without symlinks).  (testmake.zip, testmake_ppmd.zip,
+   unix/Makefile, unix/test_unzip.sh, unzip.c, unzip.h,
+   vms/test_unzip.com, zipinfo.c) [SMS]
 
 
 Bugs fixed:
@@ -553,7 +554,7 @@ Bugs fixed:
  - Add size check before calling fcrypt_decrypt().  (fileio.c) [SMS]
  - Add ucsize_aes global for AES uncompressed bytes left do decrypt.
    (globals.h) [SMS]
- - Change AESencr to AES_WG as compression method name. (list.c) [SMS]
+ - Change AESencr to AES_WG as compression method name.  (list.c) [SMS]
  - Formatting updates.  Remove tabs.  (match.c, acorn/acorn.c,
    unix/unix.c, unix/unxcfg.h, vms/cmdline.c) [SMS]
  - Include aes_wg/iz_aes_wg.h.  Change elif to else if.  (unzip.c) [SMS]
@@ -661,7 +662,7 @@ Bugs fixed:
 
 6.10c06 (24 Aug 2011):
  - Change UNZIP_BZ2VERS to UNZIP_BZIP2_VERS to be consistent with other
-   version defines.  Set UnZip (compatible with) version based on inclusion
+   version macros.  Set UnZip (compatible with) version based on inclusion
    of BZIP2 or LZMA support.  (extract.c, unzpriv.h) [SMS]
  - Change %ld in a Trace() to %lld.  (This would be incompatible with
    Win32, which uses %I64d, but not an issue unless Trace() is used.)
@@ -699,8 +700,8 @@ Bugs fixed:
  - Change type of ucsize_lzma to SizeT.  (extract.c) [SMS]
  - CF_BZ now has "-DBZ_NO_STDIO" to build correct bzip2 variation.
    (unix/configure, unix/Makefile) [AD]
- - CF_BZ now contains "-D_FILE_OFFSET_BITS=64 -D_LARGE_FILES" if large files
-   supported.  (unix/configure) [AD]
+ - CF_BZ now contains "-D_FILE_OFFSET_BITS=64 -D_LARGE_FILES" if large
+   files supported.  (unix/configure) [AD]
  - Customize unzip unix/unxcfg.h for time.h et al.  (unix/configure) [AD]
  - Add fix for symlink bug (see
    http://comments.gmane.org/gmane.comp.version-control.git/181165).  From
@@ -725,7 +726,7 @@ Bugs fixed:
  - Comment updates in top section.  Attempts at making the Zip and UnZip
    configure scripts similar.  Formatting updates.  Add "Generating system-
    dependent flags..." message.  Split up parameter list in valid_vars.  Remove
-   -DUNIX from CFLAGS.  Define AR_BZ for BZip2.  Change manuals output dir to
+   -DUNIX from CFLAGS.  Define AR_BZ for bzip2.  Change manuals output dir to
    manout.  Default PORT to empty instead of unix.  Default AES_WG, LZMA,
    IZ_BZIP2, and IZ_ZLIB to empty if not already defined.  Define PORT_SPEC
    for port specification method.  Remove OSDEP_C and OSDEP_S.  Remove MANTAB.
@@ -777,7 +778,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (19 Dec 2012):
+6.10c09 (22 Jan 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -786,13 +787,13 @@ Bugs fixed:
  - Less lame handling of LZMA and PPMd data structures.  More things are
    allocated and/or initialized once per job, rather than once per
    archive member.  (extract.c, globals.h, process.c) [SMS]
- - Remove definition of unused LZMA- and PPMd-related C macro _7ZIP_ST
+ - Removed definition of unused LZMA- and PPMd-related C macro _7ZIP_ST
    from builders.  (unix/configure, vms/build_unzip.com,
    vms/descrip_src.mms) [SMS]
  - Miscellaneous code tidying for user-triggered progress message on
    VMS: Portability to old VAX versions, coping with batch mode, better
    comments and messages.  (vms/vms.c, vms/vmscfg.h) [SMS]
- - Remove lzma/Alloc.c and lzma/Alloc.h (MyAlloc() and MyFree()
+ - Removed lzma/Alloc.c and lzma/Alloc.h (MyAlloc() and MyFree()
    functions).  (extract.c, unix/Makefile, vms/descrip_src.mms) [SMS]
  - Remove (unused) lzma/SzFile.c and lzma/SzFile.h.  (unix/Makefile,
    vms/descrip_src.mms) [SMS]
@@ -881,7 +882,7 @@ Bugs fixed:
  - Changed some declarations to accommodate a type change in zlib
    version 1.2.7.  (globals.h) [SMS]
  - UnZipSFX could fail (SEGV) on systems with backslash ("\") file path
-   separators (DOS, Windows, ...), if a list of member names to be
+   separators (MSDOS, Windows, ...), if a list of member names to be
    extracted was specified on the command line.  (unzip.c) [SMS]
  - Added a #ifndef condition to avoid redefining the C macro
    HAVE_TERMIOS_H on Cygwin.  (unix/unxcfg.h) [SMS]
@@ -910,7 +911,7 @@ Bugs fixed:
    funzip.c, gbloffs.c, globals.h, INSTALL, ttyio.c, ttyio.h, unzip.c,
    unzpriv.h, amiga/filedate.c, qdos/qdos.c, windll/windll.c) [SMS]
  - Changed C macro USE_UNZIP_LIB$INITIALIZE to USE_UNZIP_LIB_INITIALIZE
-   for compatibility with Zip, where Sun C objected to the "$" in the
+   for consistency with Zip, where Sun C objected to the "$" in the
    corresponding code.  (vms/vms.c) [SMS]
  - Changed some assembler-related details, including the test for an
    "_" prefix on global names.  (unix/configure, unix/Makefile) [SMS]
@@ -1011,15 +1012,15 @@ Bugs fixed:
    process_zipfiles().  Track and free transient-use command-line option
    value storage.  In free_G_buffers(), added calls to free() for the
    archive name and for retained command-line option values: extraction
-   directory (-d) and password (-P).  Adjusted API functions to use
+   directory (-d) and password (-P).  Changed API functions to use
    dynamic storage for the archive name (which may now be free()'d).
    (api.c, globals.c, process.c, unzip.c, unzpriv.h, zipinfo.c) [SMS]
  - In Unix builders, accept user-specified CFLAGS_OPT macro to override
    automatic compiler optimization options setting.  For debugging, for
    example, one might specify "CFLAGS_OPT='-g -O0' LFLAGS2=-L.".   (A
-   non-null value is required for each.  "-L." should be harmless.)
-   Stopped putting redundant "-L." linker options into "flags".
-   (unix/configure) [SMS]
+   non-null value is required for each.  "-L." should be harmless for
+   LFLAGS2.)  Stopped putting redundant "-L." linker options into
+   "flags".  (unix/configure) [SMS]
  - Added some conditionality for SGI IRIX.
    https://sourceforge.net/tracker/index.php?func=detail&aid=3596664\
    &group_id=118012&atid=679786  (unzpriv.h) [SMS]
@@ -1032,9 +1033,22 @@ Bugs fixed:
  - Changed VMS builders to use explicit (CC) /NOLIST and (LINK) /NOMAP
    qualifiers by default, to reduce unexpected clutter in batch mode.
    (vms/build_unzip.com, vms/descrip_src.mms) [SMS]
+ - Changed APIhelp() interface to deal with the new command-line parser.
+   Converted tabs to spaces in text.  Removed a BEL code from an error
+   message.  Added text for UzpMainI().  Added NULL termination to
+   example argv[] arrays.  Added apihelp.c to the Unix and VMS builders,
+   primarily for testing.  (It's normally disabled, unless API_DOC is
+   defined.)  (apihelp.c, unzip.c, unzpriv.h, unix/Makefile,
+   vms/descrip.mms, vms/descrip_deps.mms, vms/descrip_mkdeps.mms,
+   vms/descrip_src.mms) [SMS]
+ - Fixed a problem where callable UnZip could try to free() the
+   main-program argv[], instead of our local copy.  (unzip.c)  [SMS]
+ - Removed a Unicode memory leak, and improved some sub-optimal code
+   based on suggestions from Dmitry ??????.  (fileio.c, process.c,
+   win32/win32.c) [D?, SMS]
 
 ==================
 
-These changes occurred in beta versions 6.10a to 6.10.  This list may have
-left out some bugfixes and even some features...void where prohibited, your
-mileage may vary, etc., etc.
+These changes occurred in beta versions 6.10a to 6.10.  This list may
+have left out some bugfixes and even some features...void where
+prohibited, your mileage may vary, etc., etc.

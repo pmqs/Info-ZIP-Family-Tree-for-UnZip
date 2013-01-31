@@ -2702,6 +2702,7 @@ zwchar *local_to_wide_string(local_string)
 
   /* in case wchar_t is not zwchar */
   if ((wide_string = (zwchar *)malloc((wsize + 1) * sizeof(zwchar))) == NULL) {
+    free( wc_string);
     return NULL;
   }
   for (wsize = 0; (wide_string[wsize] = (zwchar)wc_string[wsize]); wsize++) ;

@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2012-12-31  SMS.
+$!     Last revised:  2013-01-17  SMS.
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"
@@ -798,6 +798,7 @@ $!
 $! Compile the callable object library sources, DLL/REENTRANT-sensitive.
 $!
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']API_L.OBJ API.C
+$         cc 'DEF_LIBUNZIP' /object = [.'dest']APIHELP_L.OBJ APIHELP.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']CRYPT_L.OBJ CRYPT.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']EXPLODE_L.OBJ EXPLODE.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']EXTRACT_L.OBJ EXTRACT.C
@@ -940,6 +941,7 @@ $! Modules sensitive to DLL/REENTRANT.
 $!
 $         libr /object /replace 'lib_libunzip' -
            [.'dest']API_L.OBJ, -
+           [.'dest']APIHELP_L.OBJ, -
            [.'dest']CRYPT_L.OBJ, -
            [.'dest']EXPLODE_L.OBJ, -
            [.'dest']EXTRACT_L.OBJ, -

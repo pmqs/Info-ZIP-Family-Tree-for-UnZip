@@ -45,7 +45,7 @@ Bugs (real and/or imagined):
 ---------------------------
 
  - [OS/2 DLL] when trying to use the REXX function UzUnZipToStem to extract a
-    file with `&' in its name, the DLL crashes (but UzUnZipToVar still works)
+    file with "&" in its name, the DLL crashes (but UzUnZipToVar still works)
     [Daniel H, 961215]
  - UnZip has problems with archives bigger than 2GB; it may print "note: didn't
     find end-of-central-dir signature at end of central dir" (harmless) or

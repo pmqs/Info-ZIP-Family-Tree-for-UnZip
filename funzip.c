@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,7 @@
 */
 /* funzip.c -- by Mark Adler */
 
-#define VERSION "4.10 of 31 October 2012"
+#define VERSION "4.10 of 26 January 2013"
 
 
 /* Copyright history:
@@ -95,10 +95,11 @@
     -     14 Jan 01  -               public release with UnZip 5.42
    3.94   20 Feb 01  C. Spieler      added support for Deflate64(tm)
           23 Mar 02  C. Spieler      changed mask_bits[] type to "unsigned"
-   4.10   31 Oct 12  S. Schweda      Zip64 support.  Skip directory
+   4.10   26 Jan 13  S. Schweda      Zip64 support.  Skip directory
                                      members at the beginning of the
                                      archive.  Use symbolic exit status
-                                     codes.
+                                     codes.  Check for EOF from
+                                     NEXTBYTE.
  */
 
 
@@ -549,7 +550,11 @@ char **argv;
       /* prepare the decryption keys for extraction and check the password */
       init_keys(p);
       for (i = 0; i < RAND_HEAD_LEN; i++)
-        e = NEXTBYTE;
+      {
+        /* 2013-01-23 SMS.  Quit reading when data exhausted. */
+        if ((e = NEXTBYTE) == (ush)EOF)
+          break;
+      }
       if (e != (ush)(h[LOCFLG] & EXTFLG ? h[LOCTIM + 1] : h[LOCCRC + 3]))
         err(PK_PARAM, "incorrect password for first entry");
     }
