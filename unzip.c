@@ -843,6 +843,15 @@ int MAIN(argc, argv)   /* return PK-type error code (except under VMS) */
     int r;
 
     CONSTRUCTGLOBALS();
+
+/* Microsoft memory allocation debug.
+ * Enable dump of memory leaks on program exit.
+ */
+# if defined(_MSC_VER) && defined(_DEBUG) && !defined( NO_IZ_DEBUG_ALLOC)
+    _CrtSetDbgFlag( 
+     _CrtSetDbgFlag( _CRTDBG_REPORT_FLAG ) | _CRTDBG_LEAK_CHECK_DF);
+# endif
+
     r = unzip(__G__ argc, argv);
     DESTROYGLOBALS();
     RETURN(r);
@@ -952,6 +961,7 @@ int unzip(__G__ argc, argv)
     G.unipath_filename = NULL;
 
 #  ifdef WIN32_WIDE
+    G.unipath_widefilename = NULL;
     G.has_win32_wide = has_win32_wide();
 #  endif
 
@@ -1826,7 +1836,7 @@ static struct option_struct far options[] = {
     {UZO, "/",  "extensions",      o_REQUIRED_VALUE, o_NEGATABLE,
        '/',  "override Unzip$Exts"},
 # endif
-# ifdef DOS_H68_OS2_W32
+# ifdef VOLFLAG
     {UZO, "$",  "volume-labels",   o_NO_VALUE,       o_NEGATABLE,
        '$',  "extract volume labels"},
 # endif
@@ -2579,7 +2589,7 @@ int uz_opts(__G__ pargc, pargv)
                     uO.ods2_flag = TRUE;
                 break;
 # endif /* VMS */
-# ifdef DOS_H68_OS2_W32
+# ifdef VOLFLAG
             case ('$'):
                 if (negative) {
                     uO.volflag = MAX(uO.volflag-negative,0);

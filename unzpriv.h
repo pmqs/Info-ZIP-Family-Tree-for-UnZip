@@ -1016,6 +1016,19 @@
 #  endif
 #endif
 
+/* 2013-02-02 SMS.
+ * Define I_O_ERROR_QUERY to restore an interactive I/O error query in
+ * fileio.c:disk_error().  OS-specific code may define STDIN_ISATTY if
+ * isatty( fileno( stdin)) is not suitable.  Without I_O_ERROR_QUERY
+ * (now the default condition), fileio.c:disk_error() does not attempt
+ * to query the user.
+ */
+#ifdef I_O_ERROR_QUERY
+# ifndef STDIN_ISATTY
+#  define STDIN_ISATTY isatty( fileno( stdin))
+# endif /* ndef STDIN_ISATTY */
+#endif /* def I_O_ERROR_QUERY */
+
 #if (defined(__16BIT__) || defined(MED_MEM) || defined(SMALL_MEM))
 # define DIR_BLKSIZ  64     /* number of directory entries per block
                              *  (should fit in 4096 bytes, usually) */

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -340,7 +340,19 @@ int list_files(__G)    /* return PK-type error code */
                 G.crec.compression_method == ENHDEFLATED) {
                 methbuf[5] = dtype[(G.crec.general_purpose_bit_flag>>1) & 3];
             } else if (methnum >= NUM_METHODS) {
-                sprintf(&methbuf[4], "%03u", G.crec.compression_method);
+                /* 2013-02-26 SMS.
+                 * http://sourceforge.net/tracker/?func=detail
+                 *  &aid=2861648&group_id=118012&atid=679786
+                 * Unexpectedly large compression methods overflow
+                 * &methbuf[].  Use the old, three-digit decimal format
+                 * for values which fit.  Otherwise, sacrifice the
+                 * colon, and use four-digit hexadecimal.
+                 */
+                if (G.crec.compression_method <= 999) {
+                    sprintf( &methbuf[ 4], "%03u", G.crec.compression_method);
+                } else {
+                    sprintf( &methbuf[ 3], "%04X", G.crec.compression_method);
+                }
             }
 
 #if 0       /* GRR/Euro:  add this? */

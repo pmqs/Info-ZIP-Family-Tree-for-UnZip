@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -2298,10 +2298,10 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             }
         }
 
-        if (G.unipath_filename) {
-            free(G.unipath_filename);
-            G.unipath_filename = NULL;
-        }
+        /* 2013-02-10 SMS.
+         * fileio.c:do_string() will free() and NULL G.unipath_filename,
+         * as needed.  G.unipath_widefilename is handled here.
+         */
 # ifdef WIN32_WIDE
         if (G.unipath_widefilename) {
             free(G.unipath_widefilename);

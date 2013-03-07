@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-01-26
+   UnZip version 6.10.  Revised: 2013-03-07
 
 ------------------------------------------------------------------------
 
@@ -258,6 +258,9 @@ enable the corresponding optional features:
                         target, which was used with UnZip 6.0, and has
                         been removed.)
 
+      ICONV=1           Enable ISO/OEM (iconv) character conversion
+                        (options: -I, -O).
+
       IZ_BZIP2=bz2dir   Enable support for the bzip2 compression method.
                         "bz2dir" specifies the directory where the bzip2
                         code resides.  Use "IZ_BZIP2=bzip2" to have the
@@ -306,7 +309,7 @@ example, you could add something like the following to AUTOEXEC.BAT:
       set LOCAL_UNZIP=-DDOSWILD -DDATE_FORMAT=DF_DMY
 
 For a Bourne-like shell on a Unix(-like) system, you could add something
-like the following to "~/.profile":
+like the following to a shell start-up file (like "~/.profile"):
 
       LOCAL_UNZIP='-DBZIP2_SFX' ; export LOCAL_UNZIP
 

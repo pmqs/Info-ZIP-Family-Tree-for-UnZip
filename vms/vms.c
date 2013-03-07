@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -52,6 +52,10 @@
 # endif
 # include <unixlib.h>
 
+# include <clidef.h>
+# ifndef CLI$M_TRUSTED
+#  define CLI$M_TRUSTED 0       /* Old VMS versions may lack this one. */
+# endif /* ndef CLI$M_TRUSTED */
 # include <dcdef.h>
 # include <dvidef.h>
 # include <ssdef.h>
@@ -67,8 +71,9 @@
 
 /* Workaround for broken header files of older DECC distributions
  * that are incompatible with the /NAMES=AS_IS qualifier. */
-# define lib$getdvi LIB$GETDVI
-# define lib$getsyi LIB$GETSYI
+# define lib$getdvi     LIB$GETDVI
+# define lib$getsyi     LIB$GETSYI
+# define lib$spawn      LIB$SPAWN
 # define lib$sys_getmsg LIB$SYS_GETMSG
 # include <lib$routines.h>
 
@@ -363,7 +368,7 @@ typedef struct
     short itm_cod;
     void *buf;
     int *ret_len;
-} jpi_item_t;
+} xxx_item_t;
 
 /* Durable storage */
 static int rms_defaults_known = 0;
@@ -404,9 +409,9 @@ static int rms_mbf_len;         /* Should come back 1. */
 
 struct
 {
-    jpi_item_t rms_ext_itm;
-    jpi_item_t rms_mbc_itm;
-    jpi_item_t rms_mbf_itm;
+    xxx_item_t rms_ext_itm;
+    xxx_item_t rms_mbc_itm;
+    xxx_item_t rms_mbf_itm;
     int term;
 } jpi_itm_lst =
      { { 2, JPI$_RMS_EXTEND_SIZE, &rms_ext, &rms_ext_len },
@@ -4239,30 +4244,23 @@ int mapattr(__G)
 
 # define PATH_DEFAULT "SYS$DISK:[]"
 
-/* dest_struct_level()
+static char *dest_dev = NULL;
+static int dest_dev_len = -1;
+static char dest_dev_e_name[ NAMX_MAXRSS + 1];
 
-      Returns file system structure level for argument, negative on
-      error.
-*/
 
-int dest_struct_level(char *path)
+/* dest_dev_name()
+ *
+ *    Stores device name of path argument at dest_dev (in
+ *    dest_dev_e_name), with length dest_dev_len.
+ */
+
+int dest_dev_name( char *path)
 {
-    int acp_code;
-
-# ifdef DVI$C_ACP_F11V5
-
-    /* Should know about ODS5 file system.  Do actual check.
-       (This should be non-VAX with __CRTL_VER >= 70200000.)
-    */
-
     int sts;
 
     struct FAB fab;
     struct NAMX_STRUCT nam;
-    char e_name[NAMX_MAXRSS + 1];
-
-    struct dsc$descriptor_s dev_descr =
-     { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0 };
 
     fab = cc$rms_fab;                   /* Initialize FAB. */
     nam = CC_RMS_NAMX;                  /* Initialize NAM[L]. */
@@ -4275,21 +4273,60 @@ int dest_struct_level(char *path)
     FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNA = path;
     FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNS = strlen(path);
 
-    nam.NAMX_ESA = e_name;
-    nam.NAMX_ESS = sizeof(e_name) - 1;
+    nam.NAMX_ESA = dest_dev_e_name;
+    nam.NAMX_ESS = sizeof( dest_dev_e_name)- 1;
 
     nam.NAMX_NOP = NAMX_M_SYNCHK;         /* Syntax-only analysis. */
     sts = sys$parse(&fab);
 
     if ((sts & STS$M_SUCCESS) == STS$K_SUCCESS)
     {
+        /* Save destination device name pointer, length. */
+        dest_dev = nam.NAMX_L_DEV;
+        dest_dev_len = nam.NAMX_B_DEV;
+    }
+    return sts;
+}
+
+
+/* dest_struct_level()
+ *
+ *    Returns file system structure level for argument, negative on
+ *    error.
+ */
+
+int dest_struct_level( char *path)
+{
+    int acp_code = -1;
+
+# ifdef DVI$C_ACP_F11V5
+
+    /* Should know about ODS5 file system.  Do actual check.
+     * (This should be non-VAX with __CRTL_VER >= 70200000.)
+     */
+
+    int sts;
+
+    struct dsc$descriptor_s dev_descr =
+     { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0 };
+
+    /* Get the device name from the path argument, if supplied. 
+     * Otherwise (NULL), use what's already in dest_dev.
+     */
+    if (path != NULL)
+    {
+        /* Set dest_dev and dest_dev_len from the argument. */
+        sts = dest_dev_name( path);
+    }
+    if (dest_dev_len > 0)
+    {
         /* Load resultant device name into device descriptor. */
-        dev_descr.dsc$a_pointer = nam.NAMX_L_DEV;
-        dev_descr.dsc$w_length = nam.NAMX_B_DEV;
+        dev_descr.dsc$a_pointer = dest_dev;
+        dev_descr.dsc$w_length = dest_dev_len;
 
         /* Get filesystem type code.
-           (Text results for this item code have been unreliable.)
-        */
+         *(Text results for this item code have been unreliable.)
+         */
         sts = lib$getdvi(&((int) DVI$_ACPTYPE),
                          0,
                          &dev_descr,
@@ -4302,18 +4339,14 @@ int dest_struct_level(char *path)
             acp_code = -2;
         }
     }
-    else
-    {
-        acp_code = -1;
-    }
 
-# else /* !DVI$C_ACP_F11V5 */
+# else /* def DVI$C_ACP_F11V5 */
 
 /* Too old for ODS5 file system.  Return level 2. */
 
     acp_code = DVI$C_ACP_F11V2;
 
-# endif /* ?DVI$C_ACP_F11V5 */
+# endif /* def DVI$C_ACP_F11V5 [else] */
 
     return acp_code;
 }
@@ -4635,7 +4668,126 @@ int mapname(__G__ renamed)
   ---------------------------------------------------------------------------*/
 
     if (G.pInfo->vollabel)
-        return MPN_VOL_LABEL;   /* can't set disk volume labels on VMS */
+    {
+        /* Volume label. */
+        int dev_all;                            /* Device is allocated. */
+        int sts;                                /* System service status. */
+
+        struct dsc$descriptor_s dev_descr =     /* Device name descriptor. */
+         { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0 };
+
+        error = MPN_VOL_LABEL;                  /* Assume some problem. */
+        if (uO.volflag > 0)
+        {
+            /* Setting volume label.  Get the destination device name,
+             * if not already known (-d).
+             */
+            if (dest_dev_len < 0)
+            {
+                sts = dest_dev_name( PATH_DEFAULT);
+            }
+
+            if (dest_dev_len > 0)
+            {
+                /* Load resultant device name into device name descriptor. */
+                dev_descr.dsc$a_pointer = dest_dev;
+                dev_descr.dsc$w_length = dest_dev_len;
+
+                /* Get interesting device properties (allocated?). */
+                sts = lib$getdvi( &((int)DVI$_ALL), /* Item code. */
+                                  0,                /* Channel. */
+                                  &dev_descr,       /* Device name. */
+                                  &dev_all,         /* Result buffer (int). */
+                                  0,                /* Result string. */
+                                  0);               /* Result string len. */
+
+                if ((sts& STS$M_SEVERITY) == STS$K_SUCCESS)
+                {
+                    if (dev_all == 0)
+                    {
+                        Info( slide, 1, ((char *)slide,
+ "Can not set volume label.  Device not allocated: %.*s\n",
+                         dest_dev_len, dest_dev));
+                        error = MPN_ERR_SKIP;
+                    }
+                    else
+                    {
+                        /* Sadly, the only known way to set a volume
+                         * label is a DCL  command:
+                         * SET VOLUME /LABEL = "xxx"
+                         */
+                        char cmd[ 256];
+                        struct dsc$descriptor_s cmd_descr =
+                         { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, NULL };
+
+                        /* NOCLISYM avoids user redefinition of SET.
+                         * Not NOLOGNAM, in case the user uses logical
+                         * names in file specs.  KEYPAD and CONTROL
+                         * should matter little.  TRUSTED allows use in
+                         * a captive account environment.
+                         */
+                        unsigned int spawn_flags = (CLI$M_NOCLISYM |
+                         CLI$M_NOKEYPAD |
+                         CLI$M_NOCONTROL |
+                         CLI$M_TRUSTED);
+                        unsigned int sts2;
+                        $DESCRIPTOR( nl_descr, "NL:");
+
+                        /* Form the command. */
+                        sprintf( cmd, "SET VOLUME /LABEL = \"%s\" %.*s",
+                         G.filename, dest_dev_len, dest_dev);
+                        cmd_descr.dsc$a_pointer = cmd;
+                        cmd_descr.dsc$w_length = strlen( cmd);
+
+                        /* Execute the command. */
+                        sts = lib$spawn(
+                         &cmd_descr,            /* Command. */
+                         &nl_descr,             /* SYS$INPUT. */
+                         0, /* nl_descr,? */    /* SYS$OUTPUT. */
+                         &spawn_flags,          /* Flags. */
+                         0,                     /* Process name. */
+                         0,                     /* Process ID. */
+                         &sts2,                 /* Command status. */
+                         0,                     /* Event flag. */
+                         0,                     /* AST address. */
+                         0,                     /* AST parameter. */
+                         0,                     /* Prompt string. */
+                         0,                     /* CLI file spec. */
+                         0);                    /* Command table. */
+
+                        if ((sts& STS$M_SEVERITY) == STS$K_SUCCESS)
+                        {
+                            /* Initial success.  Look at IOSB status. */
+                            sts = sts2;
+                        }
+
+                        if ((sts& STS$M_SEVERITY) == STS$K_SUCCESS)
+                        {
+                            /* Success. */
+                            error = MPN_INF_SKIP;
+                            if (QCOND2)
+                            {
+                                Info( slide, 0, ((char *)slide,
+                                 "  labeled %.*s %-22s\n",
+                                 dest_dev_len, dest_dev,
+                                 FnFilter1(G.filename)));
+                            }
+                        }
+                        else
+                        {
+                            /* Failure. */
+                            error = MPN_ERR_SKIP;
+                            Info( slide, 1, ((char *)slide,
+                     "Error setting volume label.  Device: %.*s\n%s\n",
+                             dest_dev_len, dest_dev,
+                             strerror( EVMSERR, sts)));
+                        }
+                    }
+                }
+            }
+        }
+        return error;
+    }
 
     /* can create path as long as not just freshening, or if user told us */
     G.create_dirs = !uO.fflag;
@@ -4910,20 +5062,26 @@ int checkdir(__G__ pathcomp, fcn)
         root_dest = pathbuf;
 
         /* At this point, the true destination is known.  If the user
-           supplied an invalid destination directory, the default
-           directory will be used.  (This may be pointless, but should
-           be safe.)
-        */
+         * supplied an invalid destination directory, the default
+         * directory will be used.  (This may be pointless, but should
+         * be safe.)
+         *
+         * Save the destination device name for use in setting the
+         * volume label or for determining the file system type.
+         */
+         dest_dev = dest_dev_e_name;
+         strncpy( dest_dev, nam.NAMX_L_DEV, nam.NAMX_B_DEV);
+         dest_dev_len = nam.NAMX_B_DEV;
 
         /* If not yet known, determine the destination (root_dest) file
-           system type (ODS2 or ODS5).
-        */
+         * system type, ODS2 or ODS5, real or user-specified (ODS2).
+         */
         if (ods2_names < 0)
         {
             /* If user doesn't force ODS2, set flag according to dest. */
             if (uO.ods2_flag == 0)
             {
-                ods2_names = (dest_struct_level(root_dest) <= DVI$C_ACP_F11V2);
+                ods2_names = (dest_struct_level( NULL) <= DVI$C_ACP_F11V2);
             }
             else
             {

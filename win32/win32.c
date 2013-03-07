@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1421,11 +1421,13 @@ int defer_dir_attribs(__G__ pd)
     }
 #  endif /* NTSD_EAS */
 
-    d_entry = (NTdirattr *)malloc(sizeof(NTdirattr)
 #  ifdef NTSD_EAS
-                                  + ebSDlen
-#  endif
-                                  + strlen(G.filename));
+#   define ASIZE1 sizeof(NTdirattr)+ ebSDlen+ strlen(G.filename)
+#  else /* def NTSD_EAS */
+#   define ASIZE1 sizeof(NTdirattr)+ strlen(G.filename)
+#  endif /* def NTSD_EAS [else] */
+
+    d_entry = (NTdirattr *)malloc(ASIZE1);
     *pd = (direntry *)d_entry;
     if (d_entry == (NTdirattr *)NULL) {
         return PK_MEM;
@@ -1483,12 +1485,15 @@ int defer_dir_attribsw(__G__ pdw)
     }
 #   endif /* NTSD_EAS */
 
-    d_entryw = (NTdirattrw *)malloc(sizeof(NTdirattrw)
 #   ifdef NTSD_EAS
-                                  + ebSDlen
-#   endif
-                                  + (wcslen(G.unipath_widefilename)
-                                     * sizeof(wchar_t)));
+#    define ASIZE2 sizeof(NTdirattrw)+ ebSDlen+ \
+     (wcslen(G.unipath_widefilename)* sizeof(wchar_t))
+#   else /* def NTSD_EAS */
+#    define ASIZE2 sizeof(NTdirattrw)+ \
+     (wcslen(G.unipath_widefilename)* sizeof(wchar_t))
+#   endif /* def NTSD_EAS [else] */
+
+    d_entryw = (NTdirattrw *)malloc(ASIZE2);
     *pdw = (direntryw *)d_entryw;
     if (d_entryw == (NTdirattrw *)NULL) {
         return PK_MEM;
@@ -2364,7 +2369,7 @@ int mapname(__G__ renamed)
     checkdir(__G__ G.filename, GETPATH);
 
     if (G.pInfo->vollabel) {    /* set the volume label now */
-        char drive[4];
+        char drive[4] = "?:\\";
 # ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
         char *ansi_name = (char *)alloca(strlen(G.filename) + 1);
         INTERN_TO_ISO(G.filename, ansi_name);
@@ -2373,9 +2378,8 @@ int mapname(__G__ renamed)
 #       define Ansi_Fname  G.filename
 # endif
 
-        /* Build a drive string, e.g. "b:" */
-        drive[0] = (char)('a' + G.nLabelDrive - 1);
-        strcpy(drive + 1, ":\\");
+        /* Insert the drive letter into the drive string.  E.g. "b:\". */
+        drive[0] = (char)(('a'- 1)+ G.nLabelDrive);
         if (QCOND2)
             Info(slide, 0, ((char *)slide, "labeling %s %-22s\n", drive,
               FnFilter1(G.filename)));
@@ -2602,13 +2606,12 @@ int mapnamew(__G__ renamed)
     checkdirw(__G__ G.unipath_widefilename, GETPATH);
 
     if (G.pInfo->vollabel) {    /* set the volume label now */
-        char drive[4];
-        wchar_t drivew[4];
+        char drive[4] = "?:\\";
+        wchar_t drivew[4] = L"?:\\";
 
-        /* Build a drive string, e.g. "b:" */
-        drive[0] = (char)('a' + G.nLabelDrive - 1);
-        drivew[0] = (wchar_t)('a' + G.nLabelDrive - 1);
-        wcscpy(drivew + 1, L":\\");
+        /* Insert the drive letter into the drive string.  E.g. "b:\". */
+        drive[0] = (char)(('a'- 1)+ G.nLabelDrive);
+        drivew[0] = (wchar_t)(('a'- 1)+ G.nLabelDrive);
         if (QCOND2)
             Info(slide, 0, ((char *)slide, "labeling %s %-22s\n", drive,
               FnFilter1(G.filename)));
@@ -4084,7 +4087,8 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
 #   endif
 
         flags = GetFileAttributesA(Ansi_Path);
-        if (flags != 0xFFFFFFFF && flags & FILE_ATTRIBUTE_DIRECTORY) {
+        if ((flags != INVALID_FILE_ATTRIBUTES) &&
+         (flags & FILE_ATTRIBUTE_DIRECTORY)) {
             Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
                    FnFilter1(path)));
             memset(buf, 0, sizeof(z_stat));
@@ -4176,7 +4180,8 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
         DWORD flags;
 
         flags = GetFileAttributesW(pathw);
-        if (flags != 0xFFFFFFFF && flags & FILE_ATTRIBUTE_DIRECTORY) {
+        if ((flags != INVALID_FILE_ATTRIBUTES) &&
+         (flags & FILE_ATTRIBUTE_DIRECTORY)) {
             char *path = wchar_to_local_string((wchar_t *)pathw, G.unicode_escape_all);
             Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
                    FnFilter1(path)));
@@ -4518,15 +4523,14 @@ int has_win32_wide()
     /* get attributes for this directory */
     r = GetFileAttributesA(".");
 
-    /* r should be 16 = FILE_ATTRIBUTE_DIRECTORY */
-    if (r == FILE_ATTRIBUTE_DIRECTORY) {
+    /* r should include 16 = FILE_ATTRIBUTE_DIRECTORY */
+    if ((r != INVALID_FILE_ATTRIBUTES) && (r & FILE_ATTRIBUTE_DIRECTORY)) {
       /* now see if it works for the wide version */
       r = GetFileAttributesW(L".");
       /* if this fails then we probably don't have wide functions */
-      if (r == 0xFFFFFFFF) {
-        /* error is probably "This function is only valid in Win32 mode." */
-      } else if (r == FILE_ATTRIBUTE_DIRECTORY) {
-        /* worked, so assume we have wide support */
+      /* error is probably "This function is only valid in Win32 mode." */
+      if ((r != INVALID_FILE_ATTRIBUTES) && (r & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* worked, so conclude we have wide support */
         is_win32_wide = TRUE;
       }
     }

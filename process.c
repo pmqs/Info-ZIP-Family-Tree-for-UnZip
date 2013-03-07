@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -105,18 +105,18 @@ static ZCONST char Far CannotAllocateBuffers[] =
         %s%s.zip, and cannot find %s, period.\n";
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find or open %s, %s.zip or %s.\n";
-# else /* !UNIX */
+# else /* def UNIX */
    static ZCONST char Far CannotFindZipfileDirMsg[] =
      "%s:  cannot find zipfile directory in %s,\n\
         %sand cannot find %s, period.\n";
-# ifdef VMS
+#  ifdef VMS
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find %s (%s).\n";
-# else /* !VMS */
+#  else /* def VMS */
    static ZCONST char Far CannotFindEitherZipfile[] =
      "%s:  cannot find either %s or %s.\n";
-# endif /* ?VMS */
-# endif /* ?UNIX */
+#  endif /* def VMS [else] */
+# endif /* def UNIX [else] */
    extern ZCONST char Far Zipnfo[];       /* in unzip.c */
 #ifndef WINDLL
    static ZCONST char Far Unzip[] = "unzip";
@@ -578,33 +578,55 @@ int process_zipfiles(__G)    /* return PK-type error code */
 void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     __GDEF
 {
-#ifndef SFX
+# ifndef SFX
     unsigned i;
-#endif
+# endif
 
-#ifdef SYSTEM_SPECIFIC_DTOR
+# ifdef SYSTEM_SPECIFIC_DTOR
     SYSTEM_SPECIFIC_DTOR(__G);
-#endif
+# endif
 
-#ifdef DEFLATE_SUPPORT
+# ifdef DEFLATE_SUPPORT
     inflate_free(__G);
-#endif
+# endif
 
-#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+# ifdef UNICODE_SUPPORT
+    if (G.filename_full)
+    {
+      free(G.filename_full);
+      G.filename_full = (char *)NULL;
+      G.fnfull_bufsize = 0;
+    }
+
+    if ((G.unipath_filename != NULL) &&
+     (G.unipath_filename != G.filename_full))
+    {
+      free( G.unipath_filename);
+    }
+    G.unipath_filename = (char *)NULL;
+
+#  ifdef WIN32_WIDE
+    if (G.unipath_widefilename)
+    {
+      free( G.unipath_widefilename);
+      G.unipath_widefilename = (wchar_t *)NULL;
+    }
+
     if (G.has_win32_wide)
       checkdirw(__G__ (wchar_t *)NULL, END);
     else
       checkdir(__G__ (char *)NULL, END);
-#else
+#  else /* def WIN32_WIDE */
     checkdir(__G__ (char *)NULL, END);
-#endif
+#  endif /* def WIN32_WIDE [else] */
+# endif /* def UNICODE_SUPPORT */
 
-#ifdef DYNALLOC_CRCTAB
+# ifdef DYNALLOC_CRCTAB
     if (CRC_32_TAB) {
         free_crc_table();
         CRC_32_TAB = NULL;
     }
-#endif
+# endif
 
    if (G.key != (char *)NULL) {
         free(G.key);
@@ -616,13 +638,13 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
         G.extra_field = (uch *)NULL;
    }
 
-#if (!defined(VMS) && !defined(SMALL_MEM))
+# if (!defined(VMS) && !defined(SMALL_MEM))
     /* VMS uses its own buffer scheme for textmode flush() */
     if (G.outbuf2) {
         free(G.outbuf2);   /* malloc'd ONLY if unshrink and -a */
         G.outbuf2 = (uch *)NULL;
     }
-#endif
+# endif
 
     if (G.outbuf)
         free(G.outbuf);
@@ -630,15 +652,7 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
         free(G.inbuf);
     G.inbuf = G.outbuf = (uch *)NULL;
 
-#ifdef UNICODE_SUPPORT
-    if (G.filename_full) {
-        free(G.filename_full);
-        G.filename_full = (char *)NULL;
-        G.fnfull_bufsize = 0;
-    }
-#endif /* UNICODE_SUPPORT */
-
-#ifdef LZMA_SUPPORT
+# ifdef LZMA_SUPPORT
     /* Free any LZMA-related dynamic storage.
      * (Note that LzmaDec_Free() does not check for pointer validity.)
      */
@@ -646,9 +660,9 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     {
         LzmaDec_Free( &G.state_lzma, &G.g_Alloc);
     }
-#endif /* def LZMA_SUPPORT */
+# endif /* def LZMA_SUPPORT */
 
-#ifdef PPMD_SUPPORT
+# ifdef PPMD_SUPPORT
     /* Free any PPMd-related dynamic storage.
      * (Note that Ppmd8_Free() does not check for pointer validity.)
      */
@@ -656,23 +670,23 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     {
         Ppmd8_Free( &G.ppmd8, &G.g_Alloc);
     }
-#endif /* def PPMD_SUPPORT */
+# endif /* def PPMD_SUPPORT */
 
-#ifndef SFX
+# ifndef SFX
     for (i = 0; i < DIR_BLKSIZ; i++) {
         if (G.info[i].cfilname != (char Far *)NULL) {
             zffree(G.info[i].cfilname);
             G.info[i].cfilname = (char Far *)NULL;
         }
     }
-#endif
+# endif
 
-#ifdef MALLOC_WORK
+# ifdef MALLOC_WORK
     if (G.area.Slide) {
         free(G.area.Slide);
         G.area.Slide = (uch *)NULL;
     }
-#endif
+# endif
 
     /* 2012-12-11 SMS.
      * Free any command-line-related storage.
@@ -709,10 +723,10 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
     /* static int no_ecrec = FALSE;  SKM: moved to globals.h */
     int maybe_exe=FALSE;
     int too_weird_to_continue=FALSE;
-#ifdef TIMESTAMP
+# ifdef TIMESTAMP
     time_t uxstamp;
     ulg nmember = 0L;
-#endif
+# endif
 #endif
     int error=0, error_in_archive;
 
@@ -730,7 +744,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
     {
 #ifndef SFX
         if (lastchance && (uO.qflag < 3)) {
-#if defined(UNIX) || defined(QDOS)
+# if defined(UNIX) || defined(QDOS)
             if (G.no_ecrec)
                 Info(slide, 1, ((char *)slide,
                   LoadFarString(CannotFindZipfileDirMsg),
@@ -742,26 +756,26 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
                   LoadFarString(CannotFindEitherZipfile),
                   LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, G.wildzipfn, G.zipfn));
-#else /* !(UNIX || QDOS) */
+# else /* defined(UNIX) || defined(QDOS) */
             if (G.no_ecrec)
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotFindZipfileDirMsg),
                   LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, uO.zipinfo_mode? "  " : "", G.zipfn));
             else
-#ifdef VMS
+#  ifdef VMS
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotFindEitherZipfile),
                   LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn,
                   (*G.zipfn ? G.zipfn : vms_msg_text())));
-#else /* !VMS */
+#  else /* def VMS */
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotFindEitherZipfile),
                   LoadFarStringSmall((uO.zipinfo_mode ? Zipnfo : Unzip)),
                   G.wildzipfn, G.zipfn));
-#endif /* ?VMS */
-#endif /* ?(UNIX || QDOS) */
+#  endif /* def VMS [else] */
+# endif /* defined(UNIX) || defined(QDOS) [else] */
         }
 #endif /* !SFX */
         return error? IZ_DIR : PK_NOZIP;
@@ -769,10 +783,10 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
     G.ziplen = G.statbuf.st_size;
 
 #ifndef SFX
-#if defined(UNIX) || defined(DOS_OS2_W32) || defined(THEOS)
+# if defined(UNIX) || defined(DOS_OS2_W32) || defined(THEOS)
     if (G.statbuf.st_mode & S_IEXEC)   /* no extension on Unix exes:  might */
         maybe_exe = TRUE;               /*  find unzip, not unzip.zip; etc. */
-#endif
+# endif
 #endif /* !SFX */
 
 #ifdef VMS
@@ -896,13 +910,13 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
               (ulg)G.ecrec.num_disk_start_cdir));
             error_in_archive = PK_WARN;
         }
-#ifdef NO_MULTIPART   /* concatenation of multiple parts works in some cases */
+# ifdef NO_MULTIPART  /* concatenation of multiple parts works in some cases */
     } else if (!uO.zipinfo_mode && !error && G.ecrec.number_this_disk != 0) {
         Info(slide, 0x401, ((char *)slide, LoadFarString(NoMultiDiskArcSupport),
           G.zipfn));
         error_in_archive = PK_FIND;
         too_weird_to_continue = TRUE;
-#endif
+# endif
     }
 
     if (!too_weird_to_continue) {  /* (relatively) normal zipfile:  go for it */
@@ -1033,11 +1047,11 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
             else
 #endif
 #ifndef SFX
-#ifdef TIMESTAMP
+# ifdef TIMESTAMP
             if (uO.T_flag)
                 error = get_time_stamp(__G__ &uxstamp, &nmember);
             else
-#endif
+# endif
             if (uO.vflag && !uO.tflag && !uO.cflag)
                 error = list_files(__G);              /* LIST 'EM */
             else
@@ -1804,7 +1818,8 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
     /* do Amigas (AMIGA_) also have volume labels? */
     if (IS_VOLID(G.crec.external_file_attributes) &&
         (G.pInfo->hostnum == FS_FAT_ || G.pInfo->hostnum == FS_HPFS_ ||
-         G.pInfo->hostnum == FS_NTFS_ || G.pInfo->hostnum == ATARI_))
+         G.pInfo->hostnum == FS_NTFS_ || G.pInfo->hostnum == ATARI_ ||
+         G.pInfo->hostnum == VMS_))
     {
         G.pInfo->vollabel = TRUE;
         G.pInfo->lcflag = 0;        /* preserve case of volume labels */
@@ -2045,14 +2060,16 @@ int getUnicodeData(__G__ ef_buf, ef_len)
     This function scans the extra field for Unicode information, ie UTF-8
     path extra fields.
 
+    Caller should first set G.unipath_filename to NULL (after freeing
+    old storage, as needed.)
     On return, G.unipath_filename =
-        NULL, if no Unicode path extra field or error
-        "", if the standard path is UTF-8 (free when done)
-        null-terminated UTF-8 path (free when done)
+        <unchanged> (NULL), if error or no Unicode path extra field
+        "", if the standard path is UTF-8
+        NUL-terminated UTF-8 path from extra field
+    Any non-NULL G.unipath_filename (including "") was malloc()'d here,
+    and the caller is resposible for free()-ing it.
     Return PK_COOL if no error.
   ---------------------------------------------------------------------------*/
-
-    G.unipath_filename = NULL;
 
     if (ef_len == 0 || ef_buf == NULL)
         return PK_COOL;

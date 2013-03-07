@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -157,20 +157,20 @@ static ZCONST char Far CannotOpenZipfile[] =
 #if (!defined(VMS) && !defined(AOS_VS) && !defined(CMS_MVS) && !defined(MACOS))
 #if (!defined(TANDEM))
 #if (defined(ATH_BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32))
-   static ZCONST char Far CannotDeleteOldFile[] =
-     "error:  cannot delete old %s\n        %s\n";
+static ZCONST char Far CannotDeleteOldFile[] =
+ "error:  cannot delete old %s\n        %s\n";
 #ifdef UNIXBACKUP
-   static ZCONST char Far CannotRenameOldFile[] =
-     "error:  cannot rename old %s\n        %s\n";
-   static ZCONST char Far BackupSuffix[] = "~";
+static ZCONST char Far CannotRenameOldFile[] =
+ "error:  cannot rename old %s\n        %s\n";
+static ZCONST char Far BackupSuffix[] = "~";
 #endif
 #endif /* ATH_BEO_THS_UNX || DOS_FLX_NLM_OS2_W32 */
 #ifdef NOVELL_BUG_FAILSAFE
-   static ZCONST char Far NovellBug[] =
-     "error:  %s: stat() says does not exist, but fopen() found anyway\n";
+static ZCONST char Far NovellBug[] =
+ "error:  %s: stat() says does not exist, but fopen() found anyway\n";
 #endif
-   static ZCONST char Far CannotCreateFile[] =
-     "error:  cannot create %s\n        %s\n";
+static ZCONST char Far CannotCreateFile[] =
+ "error:  cannot create %s\n        %s\n";
 #endif /* !TANDEM */
 #endif /* !VMS && !AOS_VS && !CMS_MVS && !MACOS */
 
@@ -178,42 +178,48 @@ static ZCONST char Far ReadError[] = "error:  zipfile read error\n";
 static ZCONST char Far FilenameTooLongTrunc[] =
   "warning:  filename too long--truncating.\n";
 #ifdef UNICODE_SUPPORT
-   static ZCONST char Far UFilenameTooLongTrunc[] =
-     "warning:  Converted unicode filename too long--truncating.\n";
+static ZCONST char Far UFilenameTooLongTrunc[] =
+ "warning:  Converted unicode filename too long--truncating.\n";
 #endif
 static ZCONST char Far ExtraFieldTooLong[] =
-  "warning:  extra field too long (%d).  Ignoring...\n";
+ "warning:  extra field too long (%d).  Ignoring...\n";
 
-#ifdef WINDLL
-   static ZCONST char Far DiskFullQuery[] =
-     "%s:  write error (disk full?).\n";
-#else
-   static ZCONST char Far DiskFullQuery[] =
-     "%s:  write error (disk full?).  Continue? (y/n/^C) ";
-   static ZCONST char Far ZipfileCorrupt[] =
-     "error:  zipfile probably corrupt (%s)\n";
+static ZCONST char Far DiskFullMsg[] =
+ "%s:  write error (disk full?).\n";
+
+#if !defined( WINDLL) && defined( I_O_ERROR_QUERY) && defined( STDIN_ISATTY)
+# define USE_I_O_ERROR_QUERY
+#endif
+#ifdef USE_I_O_ERROR_QUERY
+static ZCONST char Far DiskFullQuery[] =
+ "%s:  write error (disk full?).  Continue? (y/n/^C) ";
+#endif /* def USE_I_O_ERROR_QUERY */
+
+#ifndef WINDLL
+static ZCONST char Far ZipfileCorrupt[] =
+ "error:  zipfile probably corrupt (%s)\n";
 #  ifdef SYMLINKS
-     static ZCONST char Far FileIsSymLink[] =
-       "%s exists and is a symbolic link%s.\n";
+static ZCONST char Far FileIsSymLink[] =
+ "%s exists and is a symbolic link%s.\n";
 #  endif
 #  ifdef MORE
-     static ZCONST char Far MorePrompt[] = "--More--(%lu)";
+static ZCONST char Far MorePrompt[] = "--More--(%lu)";
 #  endif
-   static ZCONST char Far QuitPrompt[] =
-        "--- Press `Q' to quit, or any other key to continue ---";
-   static ZCONST char Far HidePrompt[] = /* (Match max prompt length.) */
-     "\r                                                         \r";
+static ZCONST char Far QuitPrompt[] =
+ "--- Press `Q' to quit, or any other key to continue ---";
+static ZCONST char Far HidePrompt[] = /* (Match max prompt length.) */
+ "\r                                                         \r";
 #  ifdef IZ_CRYPT_ANY
 #    ifdef MACOS
        /* SPC: are names on MacOS REALLY so much longer than elsewhere ??? */
-       static ZCONST char Far PasswPrompt[] = "[%s]\n %s password: ";
+static ZCONST char Far PasswPrompt[] = "[%s]\n %s password: ";
 #    else
-       static ZCONST char Far PasswPrompt[] = "[%s] %s password: ";
+static ZCONST char Far PasswPrompt[] = "[%s] %s password: ";
 #    endif
-     static ZCONST char Far PasswPrompt2[] = "Enter password: ";
-     static ZCONST char Far PasswRetry[] = "password incorrect--reenter: ";
+static ZCONST char Far PasswPrompt2[] = "Enter password: ";
+static ZCONST char Far PasswRetry[] = "password incorrect--reenter: ";
 #  endif /* def IZ_CRYPT_ANY */
-#endif /* !WINDLL */
+#endif /* ndef WINDLL */
 
 
 
@@ -1389,16 +1395,34 @@ static int disk_error(__G)
     __GDEF
 {
     /* OK to use slide[] here because this file is finished regardless */
-    Info(slide, 0x4a1, ((char *)slide, LoadFarString(DiskFullQuery),
-      FnFilter1(G.filename)));
-
-#ifndef WINDLL
-    fgets(G.answerbuf, sizeof(G.answerbuf), stdin);
-    if (*G.answerbuf == 'y')   /* stop writing to this file */
-        G.disk_full = 1;       /*  (outfile bad?), but new OK */
+    /* 2013-02-04 SMS.
+     * By default (I_O_ERROR_QUERY not defined), don't query the user.
+     * If I_O_ERROR_QUERY is defined, then query the user only if stdin
+     * is a terminal.  STDIN_ISATTY is defined in unzpriv.h (unless some
+     * OS-specific sub-header file does it first).
+     */
+    G.disk_full = 2;            /* Default: No.  Exit program. */
+#ifdef USE_I_O_ERROR_QUERY
+    if (STDIN_ISATTY)
+    {
+        Info(slide, 0x4a1, ((char *)slide, LoadFarString(DiskFullQuery),
+         FnFilter1(G.filename)));
+        fgets(G.answerbuf, sizeof(G.answerbuf), stdin);
+        if ((*G.answerbuf == 'y') || (*G.answerbuf == 'y'))
+            /* Stop writing to this file. */
+            G.disk_full = 1;       /*  (outfile bad?), but new OK */
+    }
     else
-#endif
-        G.disk_full = 2;       /* no:  exit program */
+    {
+        /* stdin is not a terminal, so don't ask. */
+        Info(slide, 0x4a1, ((char *)slide, LoadFarString(DiskFullMsg),
+         FnFilter1(G.filename)));
+    }
+#else /* def USE_I_O_ERROR_QUERY */
+    /* Default behavior: Never ask. */
+    Info(slide, 0x4a1, ((char *)slide, LoadFarString(DiskFullMsg),
+     FnFilter1(G.filename)));
+#endif /* def USE_I_O_ERROR_QUERY [else] */
 
     return PK_DISK;
 
@@ -2720,6 +2744,15 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             /* Looks like here is where extra fields are read */
             getZip64Data(__G__ G.extra_field, length);
 #ifdef UNICODE_SUPPORT
+            /* 2013-02-11 SMS.
+             * Free old G.unipath_filename storage, if not already
+             * done (G.unipath_filename == G.filename_full).
+             */
+            if ((G.unipath_filename != NULL) &&
+             (G.unipath_filename != G.filename_full))
+            {
+                free( G.unipath_filename);
+            }
             G.unipath_filename = NULL;
             if (G.UzO.U_flag < 2) {
               /* check if GPB11 (General Purpuse Bit 11) is set indicating
@@ -2732,7 +2765,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
               } else {
                 /* Get the Unicode fields if exist */
                 getUnicodeData(__G__ G.extra_field, length);
-                if (G.unipath_filename && (*G.unipath_filenam == '\0')) {
+                if (G.unipath_filename && (*G.unipath_filename == '\0')) {
                   /* the standard filename field is UTF-8 */
                   free(G.unipath_filename);
                   G.unipath_filename = G.filename_full;
@@ -2777,14 +2810,25 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                   free(fn);
                 }
 # endif /* UNICODE_WCHAR */
-                /*
+# if 0
+                /* 2013-02-10 SMS.
+                 * This disabled code section does not catch all the
+                 * cases.  The new pre-use free() code, above, should.
+                 */
                 if (G.unipath_filename != G.filename_full)
                   free(G.unipath_full);
                 G.unipath_full = NULL;
-                */
+# endif /* 0 */
               }
 # ifdef WIN32_WIDE
-              G.unipath_widefilename = NULL;
+            /* 2013-02-12 SMS.
+             * Free old G.unipath_widefilename storage.
+             */
+              if (G.unipath_widefilename != NULL)
+              {
+                free( G.unipath_widefilename);
+                G.unipath_widefilename = NULL;
+              }
               if (G.has_win32_wide) {
                 if (G.unipath_filename)
                   /* Get wide path from UTF-8 */

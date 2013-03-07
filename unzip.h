@@ -2,7 +2,7 @@
 
   unzip.h (new)
 
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -296,17 +296,26 @@ freely, subject to the above disclaimer and the following restrictions:
  *  header include. They are located here, because for WINDLL the
  *  first system header includes follow just below.)
  */
-#if defined(_MSC_VER) && (_MSC_VER >= 1400)
-#  ifndef _CRT_SECURE_NO_WARNINGS
-#    define _CRT_SECURE_NO_WARNINGS
+#ifdef _MSC_VER
+#  if _MSC_VER >= 1400
+#    ifndef _CRT_SECURE_NO_WARNINGS
+#      define _CRT_SECURE_NO_WARNINGS
+#    endif
+#    ifndef _CRT_NONSTDC_NO_WARNINGS
+#      define _CRT_NONSTDC_NO_WARNINGS
+#    endif
+#    if defined(POCKET_UNZIP) && !defined(_CRT_NON_CONFORMING_SWPRINTFS)
+#      define _CRT_NON_CONFORMING_SWPRINTFS
+#    endif
 #  endif
-#  ifndef _CRT_NONSTDC_NO_WARNINGS
-#    define _CRT_NONSTDC_NO_WARNINGS
+   /* Memory allocation debug.  Map malloc() onto malloc_dbg().
+    * Look for _CrtSetDbgFlag in unzip.c:MAIN().
+    */
+#  if defined(_DEBUG) && !defined( NO_IZ_DEBUG_ALLOC)
+#    define _CRTDBG_MAP_ALLOC
+#    include "crtdbg.h"
 #  endif
-#  if defined(POCKET_UNZIP) && !defined(_CRT_NON_CONFORMING_SWPRINTFS)
-#    define _CRT_NON_CONFORMING_SWPRINTFS
-#  endif
-#endif
+#endif /* def _MSC_VER */
 
 /* NO_UNIXBACKUP overrides UNIXBACKUP */
 #if defined(NO_UNIXBACKUP) && defined(UNIXBACKUP)
@@ -534,6 +543,13 @@ typedef struct _UzpOpts {
     int S_flag;         /* -S: use Stream_LF for text files (-a[a]) */
 #endif
 #if (defined(MSDOS) || defined(__human68k__) || defined(OS2) || defined(WIN32))
+# define VOLFLAG
+#else
+# if defined( VMS)
+#  define VOLFLAG
+# endif
+#endif
+#ifdef VOLFLAG
     int volflag;        /* -$: extract volume labels */
 #endif
     int tflag;          /* -t: test (unzip) or totals line (zipinfo) */

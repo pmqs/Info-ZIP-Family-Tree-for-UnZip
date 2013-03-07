@@ -313,7 +313,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (16 Nov 2012):
+6.10c09 (22 Feb 2013):
  - Add optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -380,7 +380,9 @@ Features added (or removed):
    systems without symlinks).  (testmake.zip, testmake_ppmd.zip,
    unix/Makefile, unix/test_unzip.sh, unzip.c, unzip.h,
    vms/test_unzip.com, zipinfo.c) [SMS]
-
+ - Volume labels can now be set on VMS (options: -$, --volume-label,
+   /VOLUME_LABEL).  The destination device must be allocated, not
+   shared.
 
 Bugs fixed:
 
@@ -778,7 +780,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (22 Jan 2013):
+6.10c09 (02 Mar 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1045,7 +1047,35 @@ Bugs fixed:
    main-program argv[], instead of our local copy.  (unzip.c)  [SMS]
  - Removed a Unicode memory leak, and improved some sub-optimal code
    based on suggestions from Dmitry ??????.  (fileio.c, process.c,
-   win32/win32.c) [D?, SMS]
+   win32/win32.c) [Dmitry, SMS]
+ - On non-VMS systems, an I/O error while extracting a file (disk full,
+   or similar) caused an interactive query ("write error (disk full?). 
+   Continue? (y/n/^C)"), even if there was no interactive user, causing
+   the program to hang.  Now, by default, such an I/O error is fatal.
+   To restore the query, define the C macro I_O_ERROR_QUERY at build
+   time, but the query code now checks stdin using isatty(), and skips
+   the query if stdin is not a terminal.  (fileio.c, unzpriv.h)
+   [Dmitry, SMS]
+ - On Windows, some defective bit-mask tests could cause failure to set
+   directory attributes.  (win32/win32.c) [Dmitry, SMS]
+ - Memory leaks in Unicode name handling.  (extract.c, fileio.c,
+   process.c, unzip.c) [Dmitry, SMS]
+ - On Windows, Unicode-capable code to set a volume label could fail.
+   (win32/win32.c) [Dmitry, SMS]
+ - In "-vl" (/LIST /FULL) reports, an unexpectedly large compression
+   method value (>999) caused a (mostly harmless) buffer overflow, and
+   spoiled the report format.  Now, values less than 1000 are displayed
+   as before, using a three-digit decimal format, "Unk:ddd", but larger
+   values are displayed using a four-digit hexadecimal format,
+   "UnkXXXX".  http://sourceforge.net/tracker/?func=detail&aid=2861648
+   &group_id=118012&atid=679786  (list.c) [SMS]
+ - In ZipInfo reports, an unexpectedly large host version number value
+   (>99) caused a (mostly harmless) buffer overflow, and spoiled the
+   report format.  Now, values less than 100 are displayed as before,
+   using a digit-dot-digit decimal format, "d.d", but larger values are
+   displayed using a two-digit hexadecimal format, "xXX".  Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=267
+   (zipinfo.c) [SMS]
 
 ==================
 
