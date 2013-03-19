@@ -360,7 +360,7 @@ int open_outfile(__G)           /* return 1 if fail */
             flen = strlen(G.filename);
             tlen = flen + blen + 6;    /* includes space for 5 digits */
             if (tlen >= FILNAMSIZ) {   /* in case name is too long, truncate */
-                tname = (char *)malloc(FILNAMSIZ);
+                tname = (char *)izu_malloc(FILNAMSIZ);
                 if (tname == NULL)
                     return 1;                 /* in case we run out of space */
                 tlen = FILNAMSIZ - 1 - blen;
@@ -409,12 +409,12 @@ int open_outfile(__G)           /* return 1 if fail */
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarString(CannotRenameOldFile),
                   FnFilter1(G.filename), strerror(errno)));
-                free(tname);
+                izu_free(tname);
                 return 1;
             }
             Trace((stderr, "open_outfile:  %s now renamed into %s\n",
               FnFilter1(G.filename), FnFilter2(tname)));
-            free(tname);
+            izu_free(tname);
         } else
 #endif /* UNIXBACKUP */
         {
@@ -469,10 +469,10 @@ int open_outfile(__G)           /* return 1 if fail */
     if ((G.outfile = fopen(tfilnam, FOPW)) == (FILE *)NULL) {
         Info(slide, 1, ((char *)slide, LoadFarString(CannotCreateFile),
           tfilnam, strerror(errno)));
-        free(tfilnam);
+        izu_free(tfilnam);
         return 1;
     }
-    free(tfilnam);
+    izu_free(tfilnam);
 #else /* !TOPS20 */
 #ifdef MTS
     if (uO.aflag)
@@ -1364,7 +1364,7 @@ static int is_vms_varlen_txt(__G__ ef_buf, ef_len)
                         vms_rectype = eb_data[VMSFAB_B_RFM] & 15;
                      /* vms_fileorg = eb_data[VMSFAB_B_ORG] >> 4; */
                     }
-                    free(eb_data);
+                    izu_free(eb_data);
                 }
             }
             break;
@@ -1856,7 +1856,7 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
 
     m = getp(__G__ m, pwbuf, size);
     if (prompt != (char *)NULL) {
-        free(prompt);
+        izu_free(prompt);
     }
     if (m == (char *)NULL) {
         r = IZ_PW_ERROR;
@@ -2041,7 +2041,7 @@ time_t dos_to_unix_time(dosdatetime)
     sprintf (temp, "%02d/%02d/%02d %02d:%02d:%02d", mo+1, dy+1, yr, hh, mm, ss);
     time_parse(temp, tmx, (char *)0);
     m_time = time_make(tmx);
-    free(tmx);
+    izu_free(tmx);
 
 #else /* !TOPS20 */
 
@@ -2599,7 +2599,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             if (G.fnfull_bufsize < fnbufsiz)
             {
                 if (G.filename_full)
-                    free(G.filename_full);
+                    izu_free(G.filename_full);
                 G.filename_full = malloc( fnbufsiz);
                 if (G.filename_full == NULL)
                     return PK_MEM;
@@ -2615,7 +2615,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             if (fnbufsiz <= length)
                 fnbufsiz = length + 1;
             if (G.filename_full)
-                free(G.filename_full);
+                izu_free(G.filename_full);
             G.filename_full = malloc(fnbufsiz);
             if (G.filename_full == NULL)
                 return PK_MEM;
@@ -2722,7 +2722,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
          */
         /* Free any previous extra field storage. */
         if (G.extra_field != (uch *)NULL)
-            free(G.extra_field);
+            izu_free(G.extra_field);
 
         /* Return early, if no data are expected. */
         if (length == 0)
@@ -2751,7 +2751,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             if ((G.unipath_filename != NULL) &&
              (G.unipath_filename != G.filename_full))
             {
-                free( G.unipath_filename);
+                izu_free( G.unipath_filename);
             }
             G.unipath_filename = NULL;
             if (G.UzO.U_flag < 2) {
@@ -2767,7 +2767,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 getUnicodeData(__G__ G.extra_field, length);
                 if (G.unipath_filename && (*G.unipath_filename == '\0')) {
                   /* the standard filename field is UTF-8 */
-                  free(G.unipath_filename);
+                  izu_free(G.unipath_filename);
                   G.unipath_filename = G.filename_full;
                 }
               }
@@ -2807,7 +2807,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                   }
                   /* replace filename with converted UTF-8 */
                   strcpy(G.filename, fn);
-                  free(fn);
+                  izu_free(fn);
                 }
 # endif /* UNICODE_WCHAR */
 # if 0
@@ -2816,7 +2816,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                  * cases.  The new pre-use free() code, above, should.
                  */
                 if (G.unipath_filename != G.filename_full)
-                  free(G.unipath_full);
+                  izu_free(G.unipath_full);
                 G.unipath_full = NULL;
 # endif /* 0 */
               }
@@ -2826,7 +2826,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
              */
               if (G.unipath_widefilename != NULL)
               {
-                free( G.unipath_widefilename);
+                izu_free( G.unipath_widefilename);
                 G.unipath_widefilename = NULL;
               }
               if (G.has_win32_wide) {
@@ -2875,7 +2875,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                     tmp_fnote[block_len] = ' ';
         tmp_fnote[AMIGA_FILENOTELEN - 1] = '\0';
         if (G.filenotes[G.filenote_slot])
-            free(G.filenotes[G.filenote_slot]);     /* should not happen */
+            izu_free(G.filenotes[G.filenote_slot]);     /* should not happen */
         G.filenotes[G.filenote_slot] = NULL;
         if (tmp_fnote[0]) {
             if (!(G.filenotes[G.filenote_slot] = malloc(strlen(tmp_fnote)+1)))

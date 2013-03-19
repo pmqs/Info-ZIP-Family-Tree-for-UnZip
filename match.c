@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -141,7 +141,7 @@ int match(string, pattern, ignore_case __WDL)
     match.)  This causes "a*.*" and "a*." to behave as MS-DOS users expect.
   ---------------------------------------------------------------------------*/
 
-    if ((dospattern = (char *)malloc(j+1)) != NULL) {
+    if ((dospattern = (char *)izu_malloc(j+1)) != NULL) {
         strcpy(dospattern, pattern);
         if (!strcmp(dospattern+j-3, "*.*")) {
             dospattern[j-2] = '\0';                    /* nuke the ".*" */
@@ -149,13 +149,13 @@ int match(string, pattern, ignore_case __WDL)
             char *p = MBSCHR(string, '.');
 
             if (p) {   /* found a dot:  match fails */
-                free(dospattern);
+                izu_free(dospattern);
                 return 0;
             }
             dospattern[j-1] = '\0';                    /* nuke the end "." */
         }
         j = recmatch((uch *)dospattern, (uch *)string, ignore_case __WDL);
-        free(dospattern);
+        izu_free(dospattern);
         return j == 1;
     } else
 #endif /* MSDOS && DOSWILD */

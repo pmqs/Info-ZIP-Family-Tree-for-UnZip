@@ -477,7 +477,7 @@ static ZCONST char Far *method[NUM_METHODS] = {
  * (Use before a fatal error exit.)
  */
 # ifdef REENTRANT
-#  define FREE_NON_NULL( x) if ((x) != NULL) free( x)
+#  define FREE_NON_NULL( x) if ((x) != NULL) izu_free( x)
 # else
 #  define FREE_NON_NULL( x)
 # endif
@@ -709,8 +709,10 @@ int zi_opts(__G__ pargc, pargv)
                 case ('x'):     /* Exclude.  Add -x file to linked list. */
                     if (in_xfiles_count == 0) {
                         /* first entry */
-                        if ((in_xfiles = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
-                            Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                        if ((in_xfiles = (struct file_list *) izu_malloc(
+                         sizeof(struct file_list))) == NULL) {
+                            Info(slide, 0x401, ((char *)slide,
+                             LoadFarString(NoMemArguments)));
                             return PK_MEM;
                         }
                         in_xfiles->name = value;
@@ -718,8 +720,10 @@ int zi_opts(__G__ pargc, pargv)
                         next_in_xfiles = in_xfiles;
                     } else {
                         /* add next entry */
-                        if ((next_file = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
-                            Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                        if ((next_file = (struct file_list *) izu_malloc(
+                         sizeof(struct file_list))) == NULL) {
+                            Info(slide, 0x401, ((char *)slide,
+                             LoadFarString(NoMemArguments)));
                             return PK_MEM;
                         }
                         next_in_xfiles->next = next_file;
@@ -750,8 +754,10 @@ int zi_opts(__G__ pargc, pargv)
                         /* add include file to list */
                         if (in_files_count == 0) {
                             /* first entry */
-                            if ((next_file = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
-                                Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                            if ((next_file = (struct file_list *) izu_malloc(
+                             sizeof(struct file_list))) == NULL) {
+                                Info(slide, 0x401, ((char *)slide,
+                                 LoadFarString(NoMemArguments)));
                                 return PK_MEM;
                             }
                             next_file->name = value;
@@ -760,8 +766,10 @@ int zi_opts(__G__ pargc, pargv)
                             next_in_files = next_file;
                         } else {
                             /* add next entry */
-                            if ((next_file = (struct file_list *) malloc(sizeof(struct file_list))) == NULL) {
-                                Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
+                            if ((next_file = (struct file_list *) izu_malloc(
+                             sizeof(struct file_list))) == NULL) {
+                                Info(slide, 0x401, ((char *)slide,
+                                 LoadFarString(NoMemArguments)));
                                 return PK_MEM;
                             }
                             next_in_files->next = next_file;
@@ -779,7 +787,7 @@ int zi_opts(__G__ pargc, pargv)
         } /* switch */
 
         if (value != NULL)
-            free( value);               /* Free it now, if it's not in use. */
+            izu_free( value);           /* Free it now, if it's not in use. */
 
     } /* get_option() */
 
@@ -792,7 +800,8 @@ int zi_opts(__G__ pargc, pargv)
 
     /* convert files list to array */
     if (in_files_count) {
-      if ((G.pfnames = (char **) malloc((in_files_count + 1) * sizeof(char *))) == NULL) {
+      if ((G.pfnames = (char **) izu_malloc(
+       (in_files_count + 1) * sizeof(char *))) == NULL) {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
           return PK_MEM;
       }
@@ -801,7 +810,7 @@ int zi_opts(__G__ pargc, pargv)
           G.pfnames[file_count] = next_file->name;
           in_files = next_file;
           next_file = next_file->next;
-          free(in_files);
+          izu_free(in_files);
           file_count++;
       }
       G.pfnames[file_count] = NULL;
@@ -810,7 +819,8 @@ int zi_opts(__G__ pargc, pargv)
 
     /* convert xfiles list to array */
     if (in_xfiles_count) {
-      if ((G.pxnames = (char **) malloc((in_xfiles_count + 1) * sizeof(char *))) == NULL) {
+      if ((G.pxnames = (char **) izu_malloc(
+       (in_xfiles_count + 1) * sizeof(char *))) == NULL) {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArguments)));
           return PK_MEM;
       }
@@ -819,7 +829,7 @@ int zi_opts(__G__ pargc, pargv)
           G.pxnames[file_count] = next_file->name;
           in_xfiles = next_file;
           next_file = next_file->next;
-          free(in_xfiles);
+          izu_free(in_xfiles);
           file_count++;
       }
       G.pxnames[file_count] = NULL;
@@ -982,12 +992,12 @@ int zipinfo(__G)   /* return PK-type error code */
   ---------------------------------------------------------------------------*/
 
     if (G.filespecs > 0  &&
-        (fn_matched=(int *)malloc(G.filespecs*sizeof(int))) != NULL)
+        (fn_matched=(int *)izu_malloc(G.filespecs*sizeof(int))) != NULL)
         for (j = 0;  j < G.filespecs;  ++j)
             fn_matched[j] = FALSE;
 
     if (G.xfilespecs > 0  &&
-        (xn_matched=(int *)malloc(G.xfilespecs*sizeof(int))) != NULL)
+        (xn_matched=(int *)izu_malloc(G.xfilespecs*sizeof(int))) != NULL)
         for (j = 0;  j < G.xfilespecs;  ++j)
             xn_matched[j] = FALSE;
 
@@ -1096,7 +1106,7 @@ int zipinfo(__G)   /* return PK-type error code */
                                    EXTRA_FIELD)) != 0)
             {
                 if (G.extra_field != NULL) {
-                    free(G.extra_field);
+                    izu_free(G.extra_field);
                     G.extra_field = NULL;
                 }
                 error_in_archive = error;
@@ -1231,7 +1241,7 @@ int zipinfo(__G)   /* return PK-type error code */
                 if (!fn_matched[j])
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(FilenameNotMatched), G.pfnames[j]));
-        free((zvoid *)fn_matched);
+        izu_free((zvoid *)fn_matched);
     }
     if (xn_matched) {
         if (error_in_archive <= PK_WARN)
@@ -1239,7 +1249,7 @@ int zipinfo(__G)   /* return PK-type error code */
                 if (!xn_matched[j])
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(ExclFilenameNotMatched), G.pxnames[j]));
-        free((zvoid *)xn_matched);
+        izu_free((zvoid *)xn_matched);
     }
 
 

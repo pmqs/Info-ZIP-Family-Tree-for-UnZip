@@ -1,4 +1,4 @@
-#                                               17 January 2013.  SMS.
+#                                               18 March 2013.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS Dependency Description File.
 #
@@ -6,8 +6,8 @@
 #    dependencies file.  Unsightly errors result when /EXTENDED_SYNTAX
 #    is not specified.  Typical usage:
 #
-#    $ L_U = "CRYPT_AES_WG_SFX=1, BZIP2_SFX=1, USE_OWN_CRCTAB=1,"+ -
-#       " LZMA_SFX=1, PPMD_SFX=1"
+#    $ L_U = "CRYPT_AES_WG_SFX, BZIP2_SFX, USE_OWN_CRCTAB,"+ -
+#       " LZMA_SFX, PPMD_SFX, API_DOC, MEMDIAG"
 #    $ MMS /EXTEND /DESCRIP = [.VMS]DESCRIP_MKDEPS.MMS /SKIP -
 #       /MACRO = (AES_WG=1, IZ_BZIP2=iz_bzip2, IZ_ZLIB=iz_zlib, -
 #       LZMA=1, PPMD=1, LIBUNZIP=1, "LOCAL_UNZIP=''L_U'")

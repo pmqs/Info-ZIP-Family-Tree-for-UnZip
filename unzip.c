@@ -1518,7 +1518,7 @@ cleanup_and_exit:
 
         signal(thissigsav->sigtype, thissigsav->sighandler);
         oldsighandlers = thissigsav->previous;
-        free(thissigsav);
+        izu_free(thissigsav);
     }
 # endif
 
@@ -1542,7 +1542,7 @@ cleanup_and_exit:
    */
 # if defined(MALLOC_WORK) && !defined(REENTRANT)
     if (G.area.Slide != (uch *)NULL) {
-        free(G.area.Slide);
+        izu_free(G.area.Slide);
         G.area.Slide = (uch *)NULL;
     }
 # endif /* defined(MALLOC_WORK) && !defined(REENTRANT) */
@@ -1579,7 +1579,7 @@ static int setsignalhandler(__G__ p_savedhandler_chain, signal_type,
 {
     savsigs_info *savsig;
 
-    savsig = malloc(sizeof(savsigs_info));
+    savsig = izu_malloc(sizeof(savsigs_info));
     if (savsig == NULL) {
         /* error message and break */
         Info(slide, 0x401, ((char *)slide, LoadFarString(CantSaveSigHandler)));
@@ -1588,7 +1588,7 @@ static int setsignalhandler(__G__ p_savedhandler_chain, signal_type,
     savsig->sigtype = signal_type;
     savsig->sighandler = signal(SIGINT, newhandler);
     if (savsig->sighandler == SIG_ERR) {
-        free(savsig);
+        izu_free(savsig);
     } else {
         savsig->previous = *p_savedhandler_chain;
         *p_savedhandler_chain = savsig;
@@ -1927,7 +1927,7 @@ static struct option_struct far options[] = {
  * (Use before a fatal error exit.)
  */
 #ifdef REENTRANT
-# define FREE_NON_NULL( x) if ((x) != NULL) free( x)
+# define FREE_NON_NULL( x) if ((x) != NULL) izu_free( x)
 # define UPDATE_PARGV *pargv = args
 #else
 # define FREE_NON_NULL( x)
@@ -1984,7 +1984,7 @@ int uz_opts(__G__ pargc, pargv)
 
     /* 2013-01-17 SMS.
      * Note that before any early exit, we must inform the caller of our
-     * new argv[], because he will want to free() ours, not the
+     * new argv[], because he will want to izu_free() ours, not the
      * original:
      *         UPDATE_PARGV;            (*pargv = args;)
      *         return PK_xxx;
@@ -2501,7 +2501,7 @@ int uz_opts(__G__ pargc, pargv)
                 if (in_xfiles_count == 0) {
                     /* first entry */
                     if ((in_xfiles = (struct file_list *)
-                                     malloc(sizeof(struct file_list))
+                                     izu_malloc(sizeof(struct file_list))
                         ) == NULL) {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(NoMemArgsList)));
@@ -2515,7 +2515,7 @@ int uz_opts(__G__ pargc, pargv)
                 } else {
                     /* add next entry */
                     if ((next_file = (struct file_list *)
-                                     malloc(sizeof(struct file_list))
+                                     izu_malloc(sizeof(struct file_list))
                         ) == NULL) {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarString(NoMemArgsList)));
@@ -2637,7 +2637,7 @@ int uz_opts(__G__ pargc, pargv)
                     if (in_files_count == 0) {
                         /* first entry */
                         if ((next_file = (struct file_list *)
-                                         malloc(sizeof(struct file_list))
+                                         izu_malloc(sizeof(struct file_list))
                             ) == NULL) {
                             Info(slide, 0x401, ((char *)slide,
                               LoadFarString(NoMemArgsList)));
@@ -2653,7 +2653,7 @@ int uz_opts(__G__ pargc, pargv)
                     } else {
                         /* add next entry */
                         if ((next_file = (struct file_list *)
-                                         malloc(sizeof(struct file_list))
+                                         izu_malloc(sizeof(struct file_list))
                             ) == NULL) {
                             Info(slide, 0x401, ((char *)slide,
                               LoadFarString(NoMemArgsList)));
@@ -2678,7 +2678,7 @@ int uz_opts(__G__ pargc, pargv)
         } /* end switch */
 
         if (value != NULL)
-            free( value);               /* Free it now, if it's not in use. */
+            izu_free( value);           /* Free it now, if it's not in use. */
 
     } /* get_option() */
 
@@ -2687,7 +2687,8 @@ int uz_opts(__G__ pargc, pargv)
 
     /* convert files list to array */
     if (in_files_count) {
-      if ((G.pfnames = (char **) malloc((in_files_count + 1) * sizeof(char *))
+      if ((G.pfnames = (char **) izu_malloc(
+       (in_files_count + 1) * sizeof(char *))
           ) == NULL) {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArgsList)));
           UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
@@ -2698,7 +2699,7 @@ int uz_opts(__G__ pargc, pargv)
           G.pfnames[file_count] = next_file->name;
           in_files = next_file;
           next_file = next_file->next;
-          free(in_files);
+          izu_free(in_files);
           file_count++;
       }
       G.pfnames[file_count] = NULL;
@@ -2707,7 +2708,8 @@ int uz_opts(__G__ pargc, pargv)
 
     /* convert xfiles list to array */
     if (in_xfiles_count) {
-      if ((G.pxnames = (char **) malloc((in_xfiles_count + 1) * sizeof(char *))
+      if ((G.pxnames = (char **) izu_malloc(
+       (in_xfiles_count + 1) * sizeof(char *))
           ) == NULL) {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArgsList)));
           UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
@@ -2718,7 +2720,7 @@ int uz_opts(__G__ pargc, pargv)
           G.pxnames[file_count] = next_file->name;
           in_xfiles = next_file;
           next_file = next_file->next;
-          free(in_xfiles);
+          izu_free(in_xfiles);
           file_count++;
       }
       G.pxnames[file_count] = NULL;
@@ -4147,7 +4149,8 @@ char **copy_args(__G__ args, max_args)
   for (j = 0; args[ j] && (max_args == 0 || j < max_args); j++);
   max_args = j;
 
-  if ((new_args = (char **) malloc((max_args + 1) * sizeof(char *))) == NULL)
+  if ((new_args = (char **) izu_malloc(
+   (max_args + 1) * sizeof(char *))) == NULL)
   {
     oWARN("memory - ca.1");
     return NULL;
@@ -4156,7 +4159,7 @@ char **copy_args(__G__ args, max_args)
   /* Transfer (non-NULL) original args[] to new_args[]. */
   for (j = 0; j < max_args; j++)
   {
-    if ((new_args[ j] = malloc( strlen( args[ j])+ 1)) == NULL)
+    if ((new_args[ j] = izu_malloc( strlen( args[ j])+ 1)) == NULL)
     {
       free_args( new_args);
       oWARN("memory - ca.2");
@@ -4200,9 +4203,9 @@ int free_args( args)
   }
 
   for (i = 0; args[i]; i++) {
-    free(args[i]);
+    izu_free(args[i]);
   }
-  free(args);
+  izu_free(args);
   args = NULL;          /* 2012-12-11 SMS.  Mark as freed. */
   return i;
 }
@@ -4255,7 +4258,8 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
   newargcnt = argcnt + 1;
 
   /* get storage for new args */
-  if ((newargs = (char **) malloc((newargcnt + 1) * sizeof(char *))) == NULL)
+  if ((newargs = (char **) izu_malloc(
+   (newargcnt + 1) * sizeof(char *))) == NULL)
   {
     oWARN("memory - ia.1");
     return 0;
@@ -4271,7 +4275,7 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
     }
   }
   /* copy new arg */
-  if ((newarg = (char *) malloc(strlen(arg) + 1)) == NULL) {
+  if ((newarg = (char *) izu_malloc(strlen(arg) + 1)) == NULL) {
     oWARN("memory - ia.2");
     return 0;
   }
@@ -4290,7 +4294,7 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
    * on the original argv.
    */
   if (free_args)
-    free(args);
+    izu_free(args);
 
   *pargs = newargs;
 
@@ -4430,7 +4434,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
             return o_BAD_ERR;
           }
         }
-        if ((*value = (char *) malloc(2)) == NULL) {
+        if ((*value = (char *) izu_malloc(2)) == NULL) {
           oWARN("memory - gso.1");
           return o_BAD_ERR;
         }
@@ -4469,7 +4473,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         }
       }
       start = arg + (*optchar) + clen;
-      if ((*value = (char *) malloc((int)(s - start) + 1)) == NULL) {
+      if ((*value = (char *) izu_malloc((int)(s - start) + 1)) == NULL) {
         oWARN("memory - gso.2");
         return o_BAD_ERR;
       }
@@ -4490,8 +4494,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           clen++;
         }
         if (arg[(*optchar) + clen]) {
-          if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
-              == NULL) {
+          if ((*value = (char *)izu_malloc(
+           strlen(arg + (*optchar) + clen) + 1)) == NULL) {
             oWARN("memory - gso.3");
             return o_BAD_ERR;
           }
@@ -4500,7 +4504,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         *optchar = THIS_ARG_DONE;
       } else if (args[argnum + 1] && args[argnum + 1][0] != '-') {
         /* use next arg for value */
-        if ((*value = (char *)malloc(strlen(args[argnum + 1]) + 1)) == NULL) {
+        if ((*value = (char *)izu_malloc(
+         strlen(args[argnum + 1]) + 1)) == NULL) {
           oWARN("memory - gso.4");
           return o_BAD_ERR;
         }
@@ -4523,8 +4528,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           /* "-opt{=|X}XXX".  Have more chars.  Attached value? */
           if (have_eq) {
             /* "-opt=value".  Have attached value. */
-            if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
-             == NULL) {
+            if ((*value = (char *)izu_malloc(
+             strlen(arg + (*optchar) + clen) + 1)) == NULL) {
               oERR(ZE_MEM, "gso.5");
             }
             strcpy(*value, arg + (*optchar) + clen);
@@ -4537,7 +4542,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         }
         else if (have_eq && args[argnum + 1] && args[argnum + 1][0] != '-') {
           /* "-opt= value".  Have detached value. */
-          if ((*value = (char *)malloc(strlen(args[argnum + 2])+ 1)) == NULL) {
+          if ((*value = (char *)izu_malloc(
+           strlen(args[argnum + 2])+ 1)) == NULL) {
             oWARN("memory - gso.6");
             return o_BAD_ERR;
           }
@@ -4552,7 +4558,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         /* "-opt = ".  Loose "=" token.  Look for detached value. */
         if (args[argnum + 2] && args[argnum + 2][0] != '-') {
           /* "-opt = value".  Have detached value. */
-          if ((*value = (char *)malloc(strlen(args[argnum + 2])+ 1)) == NULL) {
+          if ((*value = (char *)izu_malloc(
+           strlen(args[argnum + 2])+ 1)) == NULL) {
             oWARN("memory - gso.7");
             return o_BAD_ERR;
           }
@@ -4565,7 +4572,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         }
       } else if (args[argnum + 1] && args[argnum + 1][0] == '=') {
         /* "-opt =[XXXX]".  Have detached "=value".  Skip '='. */
-        if ((*value = (char *)malloc(strlen(args[argnum + 1]))) == NULL)
+        if ((*value = (char *)izu_malloc(strlen(args[argnum + 1]))) == NULL)
         {
           oWARN("memory - gso.8");
           return o_BAD_ERR;
@@ -4587,7 +4594,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           /* skip = */
           clen++;
         }
-        if ((*value = (char *)malloc(strlen(arg + (*optchar) + clen) + 1))
+        if ((*value = (char *)izu_malloc(strlen(arg + (*optchar) + clen) + 1))
             == NULL) {
           oWARN("memory - gso.9");
           return o_BAD_ERR;
@@ -4597,7 +4604,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
       } else {
         /* use next arg for value */
         if (args[argnum + 1]) {
-          if ((*value = (char *)malloc(strlen(args[argnum + 1]) + 1))
+          if ((*value = (char *)izu_malloc(strlen(args[argnum + 1]) + 1))
               == NULL) {
             oWARN("memory - gso.10");
             return o_BAD_ERR;
@@ -4672,7 +4679,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     return 0;
   }
   /* copy arg so can chop end if value */
-  if ((arg = (char *)malloc(strlen(args[argnum]) + 1)) == NULL) {
+  if ((arg = (char *)izu_malloc(strlen(args[argnum]) + 1)) == NULL) {
     oWARN("memory - glo-.1");
     return o_BAD_ERR;
   }
@@ -4719,7 +4726,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
         if (match > -1) {
           sprintf(optionerrbuf, LoadFarStringSmall(long_op_ambig_err),
                   longopt);
-          free(arg);
+          izu_free(arg);
           if (depth > 0) {
             /* unwind */
             oWARN(optionerrbuf);
@@ -4736,7 +4743,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
 
   if (match == -1) {
     sprintf(optionerrbuf, LoadFarStringSmall(long_op_not_sup_err), longopt);
-    free(arg);
+    izu_free(arg);
     if (depth > 0) {
       oWARN(optionerrbuf);
       return o_ARG_FILE_ERR;
@@ -4752,7 +4759,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
   /* if negated then see if allowed */
   if (*negated && options[match].negatable == o_NOT_NEGATABLE) {
     optionerr(options, optionerrbuf, op_not_neg_err, match, 1);
-    free(arg);
+    izu_free(arg);
     if (depth > 0) {
       /* unwind */
       oWARN(optionerrbuf);
@@ -4793,8 +4800,8 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     }
     if (valuestart) {
       /* A value was specified somehow.  Save it. */
-      if ((*value = (char *)malloc(strlen(valuestart) + 1)) == NULL) {
-        free(arg);
+      if ((*value = (char *)izu_malloc(strlen(valuestart) + 1)) == NULL) {
+        izu_free(arg);
         oWARN("memory - glo.2");
         return o_BAD_ERR;
       }
@@ -4804,8 +4811,8 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     /* optional value in form option=value */
     if (valuestart) {
       /* option=value */
-      if ((*value = (char *)malloc(strlen(valuestart) + 1)) == NULL) {
-        free(arg);
+      if ((*value = (char *)izu_malloc(strlen(valuestart) + 1)) == NULL) {
+        izu_free(arg);
         oWARN("memory - glo.3");
         return o_BAD_ERR;
       }
@@ -4818,8 +4825,8 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     /* handle long option one char and number value as required value */
     if (valuestart) {
       /* option=value */
-      if ((*value = (char *)malloc(strlen(valuestart) + 1)) == NULL) {
-        free(arg);
+      if ((*value = (char *)izu_malloc(strlen(valuestart) + 1)) == NULL) {
+        izu_free(arg);
         oWARN("memory - glo.4");
         return o_BAD_ERR;
       }
@@ -4827,8 +4834,9 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     } else {
       /* use next arg */
       if (args[argnum + 1]) {
-        if ((*value = (char *)malloc(strlen(args[argnum + 1]) + 1)) == NULL) {
-          free(arg);
+        if ((*value = (char *)izu_malloc(
+         strlen(args[argnum + 1]) + 1)) == NULL) {
+          izu_free(arg);
           oWARN("memory - glo.5");
           return o_BAD_ERR;
         }
@@ -4842,7 +4850,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       } else {
         /* no value found */
         optionerr(options, optionerrbuf, op_req_val_err, match, 1);
-        free(arg);
+        izu_free(arg);
         if (depth > 0) {
           /* unwind */
           oWARN(optionerrbuf);
@@ -4858,7 +4866,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     if (valuestart) {
       /* --option=value */
       optionerr(options, optionerrbuf, op_no_allow_val_err, match, 1);
-      free(arg);
+      izu_free(arg);
       if (depth > 0) {
         oWARN(optionerrbuf);
         return o_ARG_FILE_ERR;
@@ -4868,7 +4876,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       }
     }
   }
-  free(arg);
+  izu_free(arg);
 
   *option_num = match;
   return options[match].option_ID;
@@ -5157,7 +5165,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         break;
       }
       arg = args[argn];
-      if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
+      if ((*value = (char *)izu_malloc(strlen(arg) + 1)) == NULL) {
         oWARN("memory - go.1");
         return o_BAD_ERR;
       }
@@ -5235,7 +5243,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
       } else if (arg && arg[0] != '-') {  /* not option */
         /* - and -- are not allowed in value lists unless escaped */
         /* another value in value list */
-        if ((*value = (char *)malloc(strlen(args[argn]) + 1)) == NULL) {
+        if ((*value = (char *)izu_malloc(strlen(args[argn]) + 1)) == NULL) {
           oWARN("memory - go.2");
           return o_BAD_ERR;
         }
@@ -5294,7 +5302,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         option_ID = 0;
         break;
       }
-      if ((*value = (char *)malloc(strlen(args[argn]) + 1)) == NULL) {
+      if ((*value = (char *)izu_malloc(strlen(args[argn]) + 1)) == NULL) {
         oWARN("memory - go.3");
         return o_BAD_ERR;
       }
@@ -5321,7 +5329,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
           argn++;
         } else {
           /* not permute args so return non-option args when found */
-          if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
+          if ((*value = (char *)izu_malloc(strlen(arg) + 1)) == NULL) {
             oWARN("memory - go.4");
             return o_BAD_ERR;
           }
@@ -5364,7 +5372,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
               argn++;
             } else {
               /* not permute args so return non-option args when found */
-              if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
+              if ((*value = (char *)izu_malloc(strlen(arg) + 1)) == NULL) {
                 oWARN("memory - go.5");
                 return o_BAD_ERR;
               }
@@ -5429,7 +5437,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         argn++;
       } else {
         /* no permute args so return non-option args when found */
-        if ((*value = (char *)malloc(strlen(arg) + 1)) == NULL) {
+        if ((*value = (char *)izu_malloc(strlen(arg) + 1)) == NULL) {
           oWARN("memory - go.6");
           return o_BAD_ERR;
         }
@@ -5579,4 +5587,9 @@ int arg;
 }
 
 #endif /* def ENABLE_USER_PROGRESS */
+
+
+#ifdef MEMDIAG
+# include "memdiag.c"
+#endif /* def MEMDIAG */
 

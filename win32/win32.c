@@ -269,11 +269,11 @@ static zDIR *Opendir(n)
 
     /* Start searching for files in directory n */
 
-    if ((d = (zDIR *)malloc(sizeof(zDIR))) == NULL ||
-        (p = malloc(strlen(n) + 5)) == NULL)
+    if ((d = (zDIR *)izu_malloc(sizeof(zDIR))) == NULL ||
+        (p = izu_malloc(strlen(n) + 5)) == NULL)
     {
         if (d != (zDIR *)NULL)
-            free((void *)d);
+            izu_free((void *)d);
         return (zDIR *)NULL;
     }
     INTERN_TO_ISO(n, p);
@@ -286,13 +286,13 @@ static zDIR *Opendir(n)
     strcpy(p+len, "/*");
 
     if (INVALID_HANDLE_VALUE == (d->d_hFindFile = FindFirstFileA(p, &fd))) {
-        free((zvoid *)d);
-        free((zvoid *)p);
+        izu_free((zvoid *)d);
+        izu_free((zvoid *)p);
         return NULL;
     }
     strcpy(d->d_name, fd.cFileName);
 
-    free((zvoid *)p);
+    izu_free((zvoid *)p);
     d->d_first = 1;
     return d;
 
@@ -336,7 +336,7 @@ static void Closedir(d)
     zDIR *d;                    /* directory stream to close */
 {
     FindClose(d->d_hFindFile);
-    free(d);
+    izu_free(d);
 }
 
 #  endif /* !HAVE_WORKING_DIRENT_H */
@@ -390,7 +390,7 @@ static int SetSD(__G__ path, fperms, eb_ptr, eb_len)
 #  endif
 
     /* allocate storage for uncompressed data */
-    security_data = (uch *)malloc((extent)ntsd_ucSize);
+    security_data = (uch *)izu_malloc((extent)ntsd_ucSize);
     if (security_data == (uch *)NULL)
         return PK_MEM4;
 
@@ -406,7 +406,7 @@ static int SetSD(__G__ path, fperms, eb_ptr, eb_len)
         }
     }
 
-    free(security_data);
+    izu_free(security_data);
     return error;
 }
 
@@ -1427,7 +1427,7 @@ int defer_dir_attribs(__G__ pd)
 #   define ASIZE1 sizeof(NTdirattr)+ strlen(G.filename)
 #  endif /* def NTSD_EAS [else] */
 
-    d_entry = (NTdirattr *)malloc(ASIZE1);
+    d_entry = (NTdirattr *)izu_malloc(ASIZE1);
     *pd = (direntry *)d_entry;
     if (d_entry == (NTdirattr *)NULL) {
         return PK_MEM;
@@ -1493,7 +1493,7 @@ int defer_dir_attribsw(__G__ pdw)
      (wcslen(G.unipath_widefilename)* sizeof(wchar_t))
 #   endif /* def NTSD_EAS [else] */
 
-    d_entryw = (NTdirattrw *)malloc(ASIZE2);
+    d_entryw = (NTdirattrw *)izu_malloc(ASIZE2);
     *pdw = (direntryw *)d_entryw;
     if (d_entryw == (NTdirattrw *)NULL) {
         return PK_MEM;
@@ -1668,7 +1668,7 @@ int set_direc_attribsw(__G__ dw)
             char *fn = wchar_to_local_string(dw->fnw, G.unicode_escape_all);
             Info(slide, 1, ((char *)slide, " set attrib: %-22s  ",
               FnFilter1(fn)));
-            free(fn);
+            izu_free(fn);
         }
 
         /* set NTFS SD extra fields */
@@ -1679,7 +1679,7 @@ int set_direc_attribsw(__G__ dw)
                 char *fn = wchar_to_local_string(dw->fnw, G.unicode_escape_all);
                 Info(slide, 1, ((char *)slide, "%-22s  ",
                   FnFilter1(fn)));
-                free(fn);
+                izu_free(fn);
             }
             Info(slide, 1, ((char *)slide, LoadFarString(TruncNTSD),
               NtAtt(dw)->SDlen-(EB_NTSD_L_LEN+EB_CMPRHEADLEN), "\n"));
@@ -1698,7 +1698,7 @@ int set_direc_attribsw(__G__ dw)
             Info(slide, 1, ((char *)slide,
               "warning: CreateFile(4) error %d (set file times for %s)\n",
               (int)GetLastError(), FnFilter1(fn)));
-            free(fn);
+            izu_free(fn);
             if (!errval)
                 errval = PK_WARN;
         } else {
@@ -1716,7 +1716,7 @@ int set_direc_attribsw(__G__ dw)
                     Info(slide, 0, ((char *)slide,
                       "warning: SetFileTime(4) for %s error %d\n",
                       FnFilter1(fn), (int)GetLastError()));
-                    free(fn);
+                    izu_free(fn);
                     if (!errval)
                         errval = PK_WARN;
                 }
@@ -1998,7 +1998,7 @@ char *do_wild(__G__ wildspec)
         } else {
             ++G.wildname;     /* point at character after '/' or ':' */
             G.dirnamelen = G.wildname - wildspec;
-            if ((G.dirname = (char *)malloc(G.dirnamelen+1)) == NULL) {
+            if ((G.dirname = (char *)izu_malloc(G.dirnamelen+1)) == NULL) {
                 Info(slide, 1, ((char *)slide,
                   "warning: cannot allocate wildcard buffers\n"));
                 strncpy(G.matchname, wildspec, FILNAMSIZ);
@@ -2052,7 +2052,7 @@ char *do_wild(__G__ wildspec)
     if (G.wild_dir == NULL) {
         G.notfirstcall = FALSE;    /* reset for new wildspec */
         if (G.have_dirname)
-            free(G.dirname);
+            izu_free(G.dirname);
         return (char *)NULL;
     }
 
@@ -2085,7 +2085,7 @@ char *do_wild(__G__ wildspec)
     G.wild_dir = NULL;
     G.notfirstcall = FALSE;        /* reset for new wildspec */
     if (G.have_dirname)
-        free(G.dirname);
+        izu_free(G.dirname);
     return (char *)NULL;
 
 } /* end function do_wild() */
@@ -2416,14 +2416,13 @@ int mapnamew(__G__ renamed)
  *  MPN_NOMEM       - error (memory allocation failed) -> skip entry
  *  [also MPN_VOL_LABEL, MPN_CREATED_DIR]
  */
-{
+{				    
     wchar_t pathcompw[FILNAMSIZ];   /* path-component buffer */
-    wchar_t *ppw, *cpw=NULL;         /* character pointers */
-    wchar_t *lastsemiw = NULL;      /* pointer to last semi-colon in pathcomp */
+    wchar_t *ppw, *cpw=NULL;        /* character pointers */
+    wchar_t *lastsemiw = NULL;  /* pointer to last semi-colon in pathcomp */
     int killed_ddot = FALSE;    /* is set when skipping "../" pathcomp */
     int error;
     register wchar_t workchw;   /* hold the character being tested */
-
 
 /*---------------------------------------------------------------------------
     Initialize various pointers and counters and stuff.
@@ -2603,6 +2602,23 @@ int mapnamew(__G__ renamed)
     }
 
     checkdirw(__G__ pathcompw, APPEND_NAME);  /* returns 1 if truncated: care? */
+
+    if ((unsigned int)(G.endFATw- G.buildpathFATw) >
+     wcslen( G.unipath_widefilename))
+    {
+      /* 2013-03-18 SMS.
+       * Need more storage for the constructed name.
+       * It might make more sense to allocate FILNAMSIZ* sizeof( wchar_t)
+       * in the first place, but utf8_to_wchar_string() allocates the
+       * exact size of the leaf name.
+       */
+      if ((G.unipath_widefilename = izu_realloc( G.unipath_widefilename,
+       ((G.endFATw- G.buildpathFATw+ 1)* sizeof( wchar_t)))) == NULL)
+      {
+        return MPN_NOMEM;
+      }
+    }
+    /* Get the constructed name. */
     checkdirw(__G__ G.unipath_widefilename, GETPATH);
 
     if (G.pInfo->vollabel) {    /* set the volume label now */
@@ -2995,8 +3011,8 @@ int checkdir(__G__ pathcomp, flag)
          */
         if (access(G.buildpathFAT, 0) != 0) {
             if (!G.create_dirs) { /* told not to create (freshening) */
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 /* path doesn't exist:  nothing to do */
                 return MPN_INF_SKIP;
             }
@@ -3004,8 +3020,8 @@ int checkdir(__G__ pathcomp, flag)
                 Info(slide, 1, ((char *)slide,
                   "checkdir(1) error: path too long: %s\n",
                   FnFilter1(G.buildpathHPFS)));
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 /* no room for filenames:  fatal */
                 return MPN_ERR_TOOLONG;
             }
@@ -3014,8 +3030,8 @@ int checkdir(__G__ pathcomp, flag)
                   "checkdir(1) error: cannot create %s\n\
  unable to process %s.\n",
                   FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 /* path didn't exist, tried to create, failed */
                 return MPN_ERR_SKIP;
             }
@@ -3025,8 +3041,8 @@ int checkdir(__G__ pathcomp, flag)
         if (SSTAT(G.buildpathFAT, &G.statbuf))   /* path doesn't exist */
         {
             if (!G.create_dirs) { /* told not to create (freshening) */
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 /* path doesn't exist: nothing to do */
                 return MPN_INF_SKIP;
             }
@@ -3034,8 +3050,8 @@ int checkdir(__G__ pathcomp, flag)
                 Info(slide, 1, ((char *)slide,
                   "checkdir(2) error: path too long: %s\n",
                   FnFilter1(G.buildpathHPFS)));
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 /* no room for filenames:  fatal */
                 return MPN_ERR_TOOLONG;
             }
@@ -3044,8 +3060,8 @@ int checkdir(__G__ pathcomp, flag)
                   "checkdir(2) error: cannot create %s\n\
  unable to process %s.\n",
                   FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 /* path didn't exist, tried to create, failed */
                 return MPN_ERR_SKIP;
             }
@@ -3055,8 +3071,8 @@ int checkdir(__G__ pathcomp, flag)
               "checkdir(1) error: %s exists but is not directory\n\
  unable to process %s.\n",
               FnFilter2(G.buildpathFAT), FnFilter1(G.filename)));
-            free(G.buildpathHPFS);
-            free(G.buildpathFAT);
+            izu_free(G.buildpathHPFS);
+            izu_free(G.buildpathFAT);
             /* path existed but wasn't dir */
             return MPN_ERR_SKIP;
         }
@@ -3064,8 +3080,8 @@ int checkdir(__G__ pathcomp, flag)
             Info(slide, 1, ((char *)slide,
               "checkdir(3) error: path too long: %s\n",
                FnFilter1(G.buildpathHPFS)));
-            free(G.buildpathHPFS);
-            free(G.buildpathFAT);
+            izu_free(G.buildpathHPFS);
+            izu_free(G.buildpathFAT);
             /* no room for filenames:  fatal */
             return MPN_ERR_TOOLONG;
         }
@@ -3087,11 +3103,11 @@ int checkdir(__G__ pathcomp, flag)
     if (FUNCTION == GETPATH) {
         Trace((stderr, "getting and freeing FAT path [%s]\n",
           FnFilter1(G.buildpathFAT)));
+        strcpy(pathcomp, G.buildpathFAT);
+        izu_free(G.buildpathFAT);
         Trace((stderr, "freeing HPFS path [%s]\n",
           FnFilter1(G.buildpathHPFS)));
-        strcpy(pathcomp, G.buildpathFAT);
-        free(G.buildpathFAT);
-        free(G.buildpathHPFS);
+        izu_free(G.buildpathHPFS);
         G.buildpathHPFS = G.buildpathFAT = G.endHPFS = G.endFAT = NULL;
         return MPN_OK;
     }
@@ -3164,21 +3180,21 @@ int checkdir(__G__ pathcomp, flag)
     if (FUNCTION == INIT) {
         Trace((stderr, "initializing buildpathHPFS and buildpathFAT to "));
 # ifdef ACORN_FTYPE_NFS
-        if ((G.buildpathHPFS = (char *)malloc(G.fnlen+G.rootlen+
+        if ((G.buildpathHPFS = (char *)izu_malloc(G.fnlen+G.rootlen+
                                               (uO.acorn_nfs_ext ? 5 : 1)))
 # else
-        if ((G.buildpathHPFS = (char *)malloc(G.fnlen+G.rootlen+1))
+        if ((G.buildpathHPFS = (char *)izu_malloc(G.fnlen+G.rootlen+1))
 # endif
             == NULL)
             return MPN_NOMEM;
 # ifdef ACORN_FTYPE_NFS
-        if ((G.buildpathFAT = (char *)malloc(G.fnlen+G.rootlen+
+        if ((G.buildpathFAT = (char *)izu_malloc(G.fnlen+G.rootlen+
                                              (uO.acorn_nfs_ext ? 5 : 1)))
 # else
-        if ((G.buildpathFAT = (char *)malloc(G.fnlen+G.rootlen+1))
+        if ((G.buildpathFAT = (char *)izu_malloc(G.fnlen+G.rootlen+1))
 # endif
             == NULL) {
-            free(G.buildpathHPFS);
+            izu_free(G.buildpathHPFS);
             return MPN_NOMEM;
         }
         if (G.pInfo->vollabel) { /* use root or renamed path, but don't store */
@@ -3202,8 +3218,8 @@ int checkdir(__G__ pathcomp, flag)
             G.nLabelDrive = *G.buildpathHPFS - 'a' + 1; /* save for mapname() */
             if (uO.volflag == 0 || *G.buildpathHPFS < 'a' /* no labels/bogus? */
                 || (uO.volflag == 1 && !isfloppy(G.nLabelDrive))) { /* !fixed */
-                free(G.buildpathHPFS);
-                free(G.buildpathFAT);
+                izu_free(G.buildpathHPFS);
+                izu_free(G.buildpathFAT);
                 return MPN_VOL_LABEL;  /* skipping with message */
             }
             *G.buildpathHPFS = '\0';
@@ -3248,7 +3264,7 @@ int checkdir(__G__ pathcomp, flag)
             int had_trailing_pathsep=FALSE, has_drive=FALSE, add_dot=FALSE;
             char *tmproot;
 
-            if ((tmproot = (char *)malloc(G.rootlen+3)) == (char *)NULL) {
+            if ((tmproot = (char *)izu_malloc(G.rootlen+3)) == (char *)NULL) {
                 G.rootlen = 0;
                 return MPN_NOMEM;
             }
@@ -3267,7 +3283,7 @@ int checkdir(__G__ pathcomp, flag)
                 {
                     /* path does not exist */
                     if (!G.create_dirs /* || iswild(tmproot) */ ) {
-                        free(tmproot);
+                        izu_free(tmproot);
                         G.rootlen = 0;
                         /* treat as stored file */
                         return MPN_INF_SKIP;
@@ -3278,7 +3294,7 @@ int checkdir(__G__ pathcomp, flag)
                         Info(slide, 1, ((char *)slide,
  "checkdir(1): cannot create extraction directory: %s\n",
                           FnFilter1(tmproot)));
-                        free(tmproot);
+                        izu_free(tmproot);
                         G.rootlen = 0;
                         /* path didn't exist, tried to create, failed: */
                         /* file exists, or need 2+ subdir levels */
@@ -3290,8 +3306,9 @@ int checkdir(__G__ pathcomp, flag)
                 tmproot[G.rootlen++] = '.';
             tmproot[G.rootlen++] = '/';
             tmproot[G.rootlen] = '\0';
-            if ((G.rootpath = (char *)realloc(tmproot, G.rootlen+1)) == NULL) {
-                free(tmproot);
+            if ((G.rootpath = (char *)izu_realloc(
+             tmproot, G.rootlen+1)) == NULL) {
+                izu_free(tmproot);
                 G.rootlen = 0;
                 return MPN_NOMEM;
             }
@@ -3308,7 +3325,7 @@ int checkdir(__G__ pathcomp, flag)
     if (FUNCTION == END) {
         Trace((stderr, "freeing rootpath\n"));
         if (G.rootlen > 0) {
-            free(G.rootpath);
+            izu_free(G.rootpath);
             G.rootlen = 0;
         }
         return MPN_OK;
@@ -3346,8 +3363,8 @@ int checkdirw(__G__ pathcompw, flag)
  /* static char *endHPFS;       */   /* corresponding pointers to end of */
  /* static char *endFAT;        */   /*  buildpath ('\0') */
 
-#   define FN_MASK   7
-#   define FUNCTION  (flag & FN_MASK)
+#  define FN_MASK   7
+#  define FUNCTION  (flag & FN_MASK)
 
 
 
@@ -3391,11 +3408,11 @@ int checkdirw(__G__ pathcompw, flag)
          */
         if (_waccess(G.buildpathFATw, 0) != 0) {
             if (!G.create_dirs) { /* told not to create (freshening) */
-                free(buildpathHPFS);
-                free(buildpathFAT);
-                free(fn);
-                free(G.buildpathHPFSw);
-                free(G.buildpathFATw);
+                izu_free(buildpathHPFS);
+                izu_free(buildpathFAT);
+                izu_free(fn);
+                izu_free(G.buildpathHPFSw);
+                izu_free(G.buildpathFATw);
                 /* path doesn't exist:  nothing to do */
                 return MPN_INF_SKIP;
             }
@@ -3403,11 +3420,11 @@ int checkdirw(__G__ pathcompw, flag)
                 Info(slide, 1, ((char *)slide,
                   "checkdir(4) error: path too long: %s\n",
                   FnFilter1(fn)));
-                free(buildpathHPFS);
-                free(buildpathFAT);
-                free(fn);
-                free(G.buildpathHPFSw);
-                free(G.buildpathFATw);
+                izu_free(buildpathHPFS);
+                izu_free(buildpathFAT);
+                izu_free(fn);
+                izu_free(G.buildpathHPFSw);
+                izu_free(G.buildpathFATw);
                 /* no room for filenames:  fatal */
                 return MPN_ERR_TOOLONG;
             }
@@ -3418,11 +3435,11 @@ int checkdirw(__G__ pathcompw, flag)
                         "checkdir(3) error: cannot create %s\n\
  unable to process %s.\n",
                     FnFilter2(buildpathFAT), FnFilter1(fn)));
-                    free(buildpathHPFS);
-                    free(buildpathFAT);
-                    free(fn);
-                    free(G.buildpathHPFSw);
-                    free(G.buildpathFATw);
+                    izu_free(buildpathHPFS);
+                    izu_free(buildpathFAT);
+                    izu_free(fn);
+                    izu_free(G.buildpathHPFSw);
+                    izu_free(G.buildpathFATw);
                     /* path didn't exist, tried to create, failed */
                     return MPN_ERR_SKIP;
                 }
@@ -3433,11 +3450,11 @@ int checkdirw(__G__ pathcompw, flag)
         if (SSTATW(G.buildpathFATw, &G.statbuf))   /* path doesn't exist */
         {
             if (!G.create_dirs) { /* told not to create (freshening) */
-                free(buildpathHPFS);
-                free(buildpathFAT);
-                free(fn);
-                free(G.buildpathHPFSw);
-                free(G.buildpathFATw);
+                izu_free(buildpathHPFS);
+                izu_free(buildpathFAT);
+                izu_free(fn);
+                izu_free(G.buildpathHPFSw);
+                izu_free(G.buildpathFATw);
                 /* path doesn't exist:  nothing to do */
                 return MPN_INF_SKIP;
             }
@@ -3445,11 +3462,11 @@ int checkdirw(__G__ pathcompw, flag)
                 Info(slide, 1, ((char *)slide,
                   "checkdir(5) error: path too long: %s\n",
                   FnFilter1(buildpathHPFS)));
-                free(buildpathHPFS);
-                free(buildpathFAT);
-                free(fn);
-                free(G.buildpathHPFSw);
-                free(G.buildpathFATw);
+                izu_free(buildpathHPFS);
+                izu_free(buildpathFAT);
+                izu_free(fn);
+                izu_free(G.buildpathHPFSw);
+                izu_free(G.buildpathFATw);
                 /* no room for filenames:  fatal */
                 return MPN_ERR_TOOLONG;
             }
@@ -3461,11 +3478,11 @@ int checkdirw(__G__ pathcompw, flag)
                         "checkdir(4) error: cannot create %s\n\
  unable to process %s.\n",
                     FnFilter2(buildpathFAT), FnFilter1(fn)));
-                    free(buildpathHPFS);
-                    free(buildpathFAT);
-                    free(fn);
-                    free(G.buildpathHPFSw);
-                    free(G.buildpathFATw);
+                    izu_free(buildpathHPFS);
+                    izu_free(buildpathFAT);
+                    izu_free(fn);
+                    izu_free(G.buildpathHPFSw);
+                    izu_free(G.buildpathFATw);
                     /* path didn't exist, tried to create, failed */
                     return MPN_ERR_SKIP;
                 }
@@ -3476,11 +3493,11 @@ int checkdirw(__G__ pathcompw, flag)
               "checkdir(2) error: %s exists but is not directory\n\
  unable to process %s.\n",
             FnFilter2(buildpathFAT), FnFilter1(fn)));
-            free(buildpathHPFS);
-            free(buildpathFAT);
-            free(fn);
-            free(G.buildpathHPFSw);
-            free(G.buildpathFATw);
+            izu_free(buildpathHPFS);
+            izu_free(buildpathFAT);
+            izu_free(fn);
+            izu_free(G.buildpathHPFSw);
+            izu_free(G.buildpathFATw);
             /* path existed but wasn't dir */
             return MPN_ERR_SKIP;
         }
@@ -3488,11 +3505,11 @@ int checkdirw(__G__ pathcompw, flag)
             Info(slide, 1, ((char *)slide,
               "checkdir(6) error: path too long: %s\n",
             FnFilter1(buildpathHPFS)));
-            free(buildpathHPFS);
-            free(buildpathFAT);
-            free(fn);
-            free(G.buildpathHPFSw);
-            free(G.buildpathFATw);
+            izu_free(buildpathHPFS);
+            izu_free(buildpathFAT);
+            izu_free(fn);
+            izu_free(G.buildpathHPFSw);
+            izu_free(G.buildpathFATw);
             /* no room for filenames:  fatal */
             return MPN_ERR_TOOLONG;
         }
@@ -3501,11 +3518,11 @@ int checkdirw(__G__ pathcompw, flag)
         *G.endHPFSw = *G.endFATw = '\0';
         Trace((stderr, "buildpathHPFS now = [%s]\nbuildpathFAT now =  [%s]\n",
           FnFilter1(buildpathHPFS), FnFilter2(buildpathFAT)));
-        free(buildpathHPFS);
-        free(buildpathFAT);
-        free(fn);
-        //free(G.buildpathHPFSw);
-        //free(G.buildpathFATw);
+        izu_free(buildpathHPFS);
+        izu_free(buildpathFAT);
+        izu_free(fn);
+        //izu_free(G.buildpathHPFSw);
+        //izu_free(G.buildpathFATw);
         return MPN_OK;
 
     } /* end if (FUNCTION == APPEND_DIR) */
@@ -3517,17 +3534,21 @@ int checkdirw(__G__ pathcompw, flag)
   ---------------------------------------------------------------------------*/
 
     if (FUNCTION == GETPATH) {
+#  ifdef Tracing
         char *buildpathFAT = wchar_to_local_string(G.buildpathFATw, G.unicode_escape_all);
         char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
         Trace((stderr, "getting and freeing FAT path [%s]\n",
           FnFilter1(buildpathFAT)));
+        izu_free(buildpathFAT);
+#  endif /* def Tracing */
+        wcscpy(pathcompw, G.buildpathFATw);
+        izu_free(G.buildpathFATw);
+#  ifdef Tracing
         Trace((stderr, "freeing HPFS path [%s]\n",
           FnFilter1(buildpathHPFS)));
-        wcscpy(pathcompw, G.buildpathFATw);
-        free(buildpathFAT);
-        free(buildpathHPFS);
-        free(G.buildpathFATw);
-        free(G.buildpathHPFSw);
+        izu_free(buildpathHPFS);
+#  endif /* def Tracing */
+        izu_free(G.buildpathHPFSw);
         G.buildpathHPFSw = G.buildpathFATw = G.endHPFSw = G.endFATw = NULL;
         return MPN_OK;
     }
@@ -3540,10 +3561,12 @@ int checkdirw(__G__ pathcompw, flag)
     if (FUNCTION == APPEND_NAME) {
         wchar_t *pw = pathcompw;
         int error = MPN_OK;
-        char *pathcomp = wchar_to_local_string(pathcompw, G.unicode_escape_all);
         char *fn = wchar_to_local_string(G.unipath_widefilename, G.unicode_escape_all);
-
+#  ifdef Tracing
+        char *pathcomp = wchar_to_local_string(pathcompw, G.unicode_escape_all);
         Trace((stderr, "appending filename [%s]\n", FnFilter1(pathcomp)));
+        izu_free( pathcomp);
+#  endif /* def Tracing */
         /* The buildpathHPFS buffer has been allocated large enough to
          * hold the complete combined name, so there is no need to check
          * for OS filename size limit overflow within the copy loop.
@@ -3563,7 +3586,8 @@ int checkdirw(__G__ pathcompw, flag)
     %s\n\
  -> %s\n",
               FnFilter1(fn), FnFilter2(buildpathHPFS)));
-            free(buildpathHPFS);
+            izu_free(buildpathHPFS);
+            izu_free( fn);
             error = MPN_INF_TRUNC;  /* filename truncated */
         }
 
@@ -3589,16 +3613,17 @@ int checkdirw(__G__ pathcompw, flag)
          */
         if ((G.endFATw-G.buildpathFATw) >= FILNAMSIZ)
             G.buildpathFATw[FILNAMSIZ-1] = '\0';
+#  ifdef Tracing
         {
           char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
           char *buildpathFAT = wchar_to_local_string(G.buildpathFATw,G.unicode_escape_all);
           Trace((stderr, "buildpathHPFS: %s\nbuildpathFAT:  %s\n",
             FnFilter1(buildpathHPFS), FnFilter2(buildpathFAT)));
-          free(buildpathHPFS);
-          free(buildpathFAT);
+          izu_free(buildpathHPFS);
+          izu_free(buildpathFAT);
         }
-        free(fn);
-        free(pathcomp);
+#  endif /* def Tracing */
+        izu_free(fn);
 
         return error;  /* could check for existence, prompt for new name... */
 
@@ -3612,12 +3637,12 @@ int checkdirw(__G__ pathcompw, flag)
 
     if (FUNCTION == INIT) {
         Trace((stderr, "initializing buildpathHPFSw and buildpathFATw to "));
-        if ((G.buildpathHPFSw = (wchar_t *)malloc((G.fnlen+G.rootlen+1) * sizeof(wchar_t)))
-            == NULL)
+        if ((G.buildpathHPFSw = (wchar_t *)izu_malloc(
+         (G.fnlen+G.rootlen+1) * sizeof(wchar_t))) == NULL)
             return MPN_NOMEM;
-        if ((G.buildpathFATw = (wchar_t *)malloc((G.fnlen+G.rootlen+1) * sizeof(wchar_t)))
-            == NULL) {
-            free(G.buildpathHPFSw);
+        if ((G.buildpathFATw = (wchar_t *)izu_malloc(
+         (G.fnlen+G.rootlen+1) * sizeof(wchar_t))) == NULL) {
+            izu_free(G.buildpathHPFSw);
             return MPN_NOMEM;
         }
         if (G.pInfo->vollabel) { /* use root or renamed path, but don't store */
@@ -3640,8 +3665,8 @@ int checkdirw(__G__ pathcompw, flag)
             }
             if (uO.volflag == 0 || *G.buildpathHPFSw < 'a' /* no labels/bogus? */
                 || (uO.volflag == 1 && !isfloppy(G.nLabelDrive))) { /* !fixed */
-                free(G.buildpathHPFSw);
-                free(G.buildpathFATw);
+                izu_free(G.buildpathHPFSw);
+                izu_free(G.buildpathFATw);
                 return MPN_VOL_LABEL;  /* skipping with message */
             }
             *G.buildpathHPFSw = '\0';
@@ -3657,11 +3682,13 @@ int checkdirw(__G__ pathcompw, flag)
             ++G.endFATw;
             ++G.endHPFSw;
         }
+#  ifdef Tracing
         {
           char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
           Trace((stderr, "[%s]\n", FnFilter1(buildpathHPFS)));
-          free(buildpathHPFS);
+          izu_free(buildpathHPFS);
         }
+#  endif /* def Tracing */
 
         return MPN_OK;
     }
@@ -3679,10 +3706,12 @@ int checkdirw(__G__ pathcompw, flag)
 
 #  if (!defined(SFX) || defined(SFX_EXDIR))
     if (FUNCTION == ROOT) {
+#   ifdef Tracing
         char *pathcomp = wchar_to_local_string(pathcompw, G.unicode_escape_all);
         Trace((stderr, "initializing root path to [%s]\n",
           FnFilter1(pathcomp)));
-        free(pathcomp);
+        izu_free(pathcomp);
+#   endif /* def Tracing */
         if (pathcompw == NULL) {
             G.rootlen = 0;
             return MPN_OK;
@@ -3693,7 +3722,8 @@ int checkdirw(__G__ pathcompw, flag)
             int had_trailing_pathsep=FALSE, has_drive=FALSE, add_dot=FALSE;
             wchar_t *tmprootw;
 
-            if ((tmprootw = (wchar_t *)malloc((G.rootlen+3) * sizeof(wchar_t))) == (wchar_t *)NULL) {
+            if ((tmprootw = (wchar_t *)izu_malloc(
+             (G.rootlen+3) * sizeof(wchar_t))) == (wchar_t *)NULL) {
                 G.rootlen = 0;
                 return MPN_NOMEM;
             }
@@ -3712,7 +3742,7 @@ int checkdirw(__G__ pathcompw, flag)
                 {
                     /* path does not exist */
                     if (!G.create_dirs /* || iswild(tmproot) */ ) {
-                        free(tmprootw);
+                        izu_free(tmprootw);
                         G.rootlen = 0;
                         /* treat as stored file */
                         return MPN_INF_SKIP;
@@ -3724,12 +3754,15 @@ int checkdirw(__G__ pathcompw, flag)
                         Info(slide, 1, ((char *)slide,
  "checkdir(2): cannot create extraction directory: %s\n",
                           FnFilter1(tmproot)));
-                        free(tmproot);
-                        free(tmprootw);
+                        izu_free(tmproot);
+                        izu_free(tmprootw);
                         G.rootlen = 0;
                         /* path didn't exist, tried to create, failed: */
                         /* file exists, or need 2+ subdir levels */
-                        free(pathcomp);
+                        /* 2013-03-12 SMS.
+                         * izu_free(pathcomp);
+                         * Should be "izu_free(pathcompw);"???
+                         */
                         return MPN_ERR_SKIP;
                     }
                 }
@@ -3738,16 +3771,19 @@ int checkdirw(__G__ pathcompw, flag)
                 tmprootw[G.rootlen++] = '.';
             tmprootw[G.rootlen++] = '/';
             tmprootw[G.rootlen] = '\0';
-            if ((G.rootpathw = (wchar_t *)realloc(tmprootw, (G.rootlen+1) * sizeof(wchar_t))) == NULL) {
-                free(tmprootw);
+            if ((G.rootpathw = (wchar_t *)izu_realloc(
+             tmprootw, (G.rootlen+1) * sizeof(wchar_t))) == NULL) {
+                izu_free(tmprootw);
                 G.rootlen = 0;
                 return MPN_NOMEM;
             }
+#   ifdef Tracing
             {
               char *rootpath = wchar_to_local_string(G.rootpathw, G.unicode_escape_all);
               Trace((stderr, "rootpath now = [%s]\n", FnFilter1(rootpath)));
-              free(rootpath);
+              izu_free(rootpath);
             }
+#   endif /* def Tracing */
         }
         return MPN_OK;
     }
@@ -3760,7 +3796,7 @@ int checkdirw(__G__ pathcompw, flag)
     if (FUNCTION == END) {
         Trace((stderr, "freeing rootpath\n"));
         if (G.rootlen > 0) {
-            free(G.rootpathw);
+            izu_free(G.rootpathw);
             G.rootlen = 0;
         }
         return MPN_OK;
@@ -4170,7 +4206,7 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
                 }
             }
         }
-        free(path);
+        izu_free(path);
 
         return 0;
     }
@@ -4182,10 +4218,14 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
         flags = GetFileAttributesW(pathw);
         if ((flags != INVALID_FILE_ATTRIBUTES) &&
          (flags & FILE_ATTRIBUTE_DIRECTORY)) {
+#    ifdef Tracing
             char *path = wchar_to_local_string((wchar_t *)pathw, G.unicode_escape_all);
             Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
-                   FnFilter1(path)));
-            free(path);
+            
+
+       FnFilter1(path)));
+            izu_free(path);
+#    endif /* def Tracing */
             memset(buf, 0, sizeof(z_stat));
             buf->st_atime = buf->st_ctime = buf->st_mtime =
               dos_to_unix_time(DOSTIME_MINIMUM);        /* 1-1-80 */
@@ -4351,7 +4391,7 @@ char *wide_to_local_string(wide_string, escape_all)
   if (max_bytes < MB_CUR_MAX)
     max_bytes = MB_CUR_MAX;
 
-  if ((buffer = (char *)malloc(wsize * max_bytes + 1)) == NULL) {
+  if ((buffer = (char *)izu_malloc(wsize * max_bytes + 1)) == NULL) {
     return NULL;
   }
 
@@ -4391,7 +4431,7 @@ char *wide_to_local_string(wide_string, escape_all)
         /* use escape for wide character */
         char *escape_string = wide_to_escape_string(wide_string[i]);
         strcat(buffer, escape_string);
-        free(escape_string);
+        izu_free(escape_string);
       }
     } else if (bytes_char > 0) {
       /* multi-byte char */
@@ -4401,11 +4441,12 @@ char *wide_to_local_string(wide_string, escape_all)
       /* use escape for wide character */
       char *escape_string = wide_to_escape_string(wide_string[i]);
       strcat(buffer, escape_string);
-      free(escape_string);
+      izu_free(escape_string);
     }
   }
-  if ((local_string = (char *)realloc(buffer, strlen(buffer) + 1)) == NULL) {
-    free(buffer);
+  if ((local_string = (char *)izu_realloc(
+   buffer, strlen(buffer) + 1)) == NULL) {
+    izu_free(buffer);
     return NULL;
   }
 
@@ -4431,14 +4472,13 @@ wchar_t *local_to_wchar_string(local_string)
                 -1,                /* string length (-1 = NULL terminated) */
                 NULL,              /* buffer */
                 0 );               /* buffer length (0 = return length) */
+
     if (ulenw == 0) {
       /* failed */
       return NULL;
     }
-    ulenw++;
-    /* get length in bytes */
-    ulen = sizeof(wchar_t) * (ulenw + 1);
-    if ((qw = (wchar_t *)malloc(ulen + 1)) == NULL) {
+    /* Allocate bytes for returned wide char count (which includes NUL). */
+    if ((qw = (wchar_t *)izu_malloc( ulenw* sizeof(wchar_t))) == NULL) {
       return NULL;
     }
     /* convert multibyte to wide */
@@ -4451,7 +4491,7 @@ wchar_t *local_to_wchar_string(local_string)
                ulenw);            /* buffer length (0 = return length) */
     if (ulen == 0) {
       /* failed */
-      free(qw);
+      izu_free(qw);
       return NULL;
     }
 
@@ -4477,14 +4517,13 @@ wchar_t *utf8_to_wchar_string(utf8_string)
                 -1,                /* string length (-1 = NULL terminated) */
                 NULL,              /* buffer */
                 0 );               /* buffer length (0 = return length) */
+
     if (ulenw == 0) {
       /* failed */
       return NULL;
     }
-    ulenw++;
-    /* get length in bytes */
-    ulen = sizeof(wchar_t) * (ulenw + 1);
-    if ((qw = (wchar_t *)malloc(ulen + 1)) == NULL) {
+    /* Allocate bytes for returned wide char count (which includes NUL). */
+    if ((qw = (wchar_t *)izu_malloc( ulenw* sizeof(wchar_t))) == NULL) {
       return NULL;
     }
     /* convert multibyte to wide */
@@ -4497,7 +4536,7 @@ wchar_t *utf8_to_wchar_string(utf8_string)
                ulenw);            /* buffer length (0 = return length) */
     if (ulen == 0) {
       /* failed */
-      free(qw);
+      izu_free(qw);
       return NULL;
     }
 

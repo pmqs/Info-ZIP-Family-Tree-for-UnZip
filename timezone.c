@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -494,9 +494,9 @@ void tzset()
         real_timezone_is_set = TRUE;
         if (TZstring) {
             if (old_TZstring)
-                old_TZstring = realloc(old_TZstring, strlen(TZstring) + 1);
+                old_TZstring = izu_realloc(old_TZstring, strlen(TZstring) + 1);
             else
-                old_TZstring = malloc(strlen(TZstring) + 1);
+                old_TZstring = izu_malloc(strlen(TZstring) + 1);
             if (old_TZstring)
                 strcpy(old_TZstring, TZstring);
         }
@@ -505,7 +505,7 @@ void tzset()
         daylight = 0;   /* from local system time                 */
         real_timezone_is_set = FALSE;
         if (old_TZstring) {
-            free(old_TZstring);
+            izu_free(old_TZstring);
             old_TZstring = NULL;
         }
     }

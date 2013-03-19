@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1779,7 +1779,7 @@ int huft_build(__G__ b, n, s, d, e, t, m)
         l[h] = j;               /* set table size in stack */
 
         /* allocate and link in new table */
-        if ((q = (struct huft *)malloc((z + 1)*sizeof(struct huft))) ==
+        if ((q = (struct huft *)izu_malloc((z + 1)*sizeof(struct huft))) ==
             (struct huft *)NULL)
         {
           if (h)
@@ -1861,7 +1861,7 @@ struct huft *t;         /* table to free */
   while (p != (struct huft *)NULL)
   {
     q = (--p)->v.t;
-    free((zvoid *)p);
+    izu_free((zvoid *)p);
     p = q;
   }
   return 0;

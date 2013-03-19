@@ -796,6 +796,16 @@
 #endif /* def NEED_STRERROR */
 
 
+#ifdef MEMDIAG
+    void izu_free( void *ptr);
+    void *izu_malloc( size_t siz);
+    void *izu_realloc( void *ptr, size_t siz);
+    void izu_md_check( void);
+#else /* def MEMDIAG */
+# define izu_free free
+# define izu_malloc malloc
+# define izu_realloc realloc
+#endif /* def MEMDIAG [else] */
 
 
 /*************/

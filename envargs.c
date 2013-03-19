@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -69,7 +69,7 @@ int envargs(Pargc, Pargv, envstr, envstr2)
     if (envptr == (char *)NULL || *envptr == '\0')
         return PK_OK;
 
-    bufptr = malloc(1 + strlen(envptr));
+    bufptr = izu_malloc(1 + strlen(envptr));
     if (bufptr == (char *)NULL)
         return PK_MEM;
 #if ((defined(WIN32) || defined(WINDLL)) && !defined(_WIN32_WCE))
@@ -92,9 +92,9 @@ int envargs(Pargc, Pargv, envstr, envstr2)
     /* count the args so we can allocate room for them */
     argc = count_args(bufptr);
     /* allocate a vector large enough for all args */
-    argv = (char **)malloc((argc + *Pargc + 1) * sizeof(char *));
+    argv = (char **)izu_malloc((argc + *Pargc + 1) * sizeof(char *));
     if (argv == (char **)NULL) {
-        free(bufptr);
+        izu_free(bufptr);
         return PK_MEM;
     }
     argvect = argv;
@@ -300,7 +300,7 @@ void mksargs(argcp, argvp)
         return;     /* no environment arguments */
 
     /* set up new argument list */
-    newargv = (char **) malloc(sizeof(char **) * (newargc+1));
+    newargv = (char **) izu_malloc(sizeof(char **) * (newargc+1));
     if (newargv == NULL)
         return;     /* malloc failed */
 

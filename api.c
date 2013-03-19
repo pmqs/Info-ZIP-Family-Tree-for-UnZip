@@ -249,7 +249,7 @@ int UZ_EXP UzpMainI( int argc, char *argv[], UzpCB *init)
 void UZ_EXP UzpFreeMemBuffer(UzpBuffer *retstr)
 {
     if (retstr != NULL && retstr->strptr != NULL) {
-        free(retstr->strptr);
+        izu_free(retstr->strptr);
         retstr->strptr = NULL;
         retstr->strlength = 0;
     }
@@ -304,15 +304,15 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
 
     CONSTRUCTGLOBALS();
 #    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
-    intern_zip = (char *)malloc(strlen(zip)+1);
+    intern_zip = (char *)izu_malloc(strlen(zip)+1);
     if (intern_zip == NULL) {
        DESTROYGLOBALS();
        return PK_MEM;
     }
-    intern_file = (char *)malloc(strlen(file)+1);
+    intern_file = (char *)izu_malloc(strlen(file)+1);
     if (intern_file == NULL) {
        DESTROYGLOBALS();
-       free(intern_zip);
+       izu_free(intern_zip);
        return PK_MEM;
     }
     ISO_TO_INTERN(zip, intern_zip);
@@ -340,11 +340,11 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
 #    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
 #     undef file
 #     undef zip
-    free(intern_file);
-    free(intern_zip);
+    izu_free(intern_file);
+    izu_free(intern_zip);
 #    endif
     if (!r && retstr->strlength) {
-       free(retstr->strptr);
+       izu_free(retstr->strptr);
        retstr->strptr = NULL;
     }
     return r;
@@ -367,7 +367,7 @@ int UZ_EXP UzpFileTree(char *name, cbList(callBack), char *cpInclude[],
     uO.qflag = 2;
     uO.vflag = 1;
     uO.C_flag = 1;
-    G.wildzipfn = (char *)malloc( strlen( name)+ 1);
+    G.wildzipfn = (char *)izu_malloc( strlen( name)+ 1);
     strcpy( G.wildzipfn, name);
     G.process_all_files = TRUE;
     if (cpInclude) {
@@ -424,7 +424,7 @@ int unzipToMemory(__GPRO__ char *zip, char *file, UzpBuffer *retstr)
     G.process_all_files = FALSE;
     G.extract_flag = TRUE;
     uO.qflag = 2;
-    G.wildzipfn = (char *)malloc( strlen( zip)+ 1);
+    G.wildzipfn = (char *)izu_malloc( strlen( zip)+ 1);
     strcpy( G.wildzipfn, zip);
 
     G.pfnames = incname;
@@ -494,7 +494,7 @@ int redirect_outfile(__G)
     G.redirect_pointer = G.redirect_buffer;
 # else /* def OS2 */
     G.redirect_pointer =
-      G.redirect_buffer = malloc((extent)(G.redirect_size+1));
+      G.redirect_buffer = izu_malloc((extent)(G.redirect_size+1));
 # endif /* def OS2 [else] */
     if (!G.redirect_buffer)
         return FALSE;
@@ -534,7 +534,7 @@ int close_redirect(__G)
         *G.redirect_pointer = '\0';
         G.redirect_size = (ulg)(G.redirect_pointer - G.redirect_buffer);
         if ((G.redirect_buffer =
-             realloc(G.redirect_buffer, G.redirect_size + 1)) == NULL) {
+             izu_realloc(G.redirect_buffer, G.redirect_size + 1)) == NULL) {
             G.redirect_size = 0;
             return EOF;
         }
@@ -600,7 +600,7 @@ int UZ_EXP UzpGrep(char *archive, char *file, char *pattern, int cmd,
                     (retstr.strptr[i] != 0x09))
                 {
                     /* OK, we now think we have a binary file of some sort */
-                    free(retstr.strptr);
+                    izu_free(retstr.strptr);
                     return FALSE;
                 }
             }
@@ -610,11 +610,11 @@ int UZ_EXP UzpGrep(char *archive, char *file, char *pattern, int cmd,
     patternLen = strlen(pattern);
 
     if (retstr.strlength < patternLen) {
-        free(retstr.strptr);
+        izu_free(retstr.strptr);
         return FALSE;
     }
 
-    sz = malloc(patternLen + 3); /* add two in case doing whole words only */
+    sz = izu_malloc(patternLen + 3); /* +2 in case doing whole words only */
     if (cmd > 1) {
         strcpy(sz, " ");
         strcat(sz, pattern);
@@ -647,8 +647,8 @@ int UZ_EXP UzpGrep(char *archive, char *file, char *pattern, int cmd,
         }
     }
 
-    free(sz);
-    free(retstr.strptr);
+    izu_free(sz);
+    izu_free(retstr.strptr);
 
     return retcode;
 }
@@ -688,7 +688,7 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
        goto exit_retcode;
     }
 
-    G.wildzipfn = (char *)malloc( FILNAMSIZ);
+    G.wildzipfn = (char *)izu_malloc( FILNAMSIZ);
     strcpy( G.wildzipfn, archive);
 #  if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
     _ISO_INTERN(G.wildzipfn);
@@ -704,7 +704,7 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
 #  ifdef WINDLL
         Wiz_NoPrinting(FALSE);
 #  endif
-        free(G.wildzipfn);
+        izu_free(G.wildzipfn);
         DESTROYGLOBALS();
         retcode = PK_BADERR;
         goto exit_retcode;
@@ -712,7 +712,7 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
 
     retcode = process_zipfiles(__G);
 
-    free(G.wildzipfn);
+    izu_free(G.wildzipfn);
 #  ifdef WINDLL
     Wiz_NoPrinting(FALSE);
 #  endif

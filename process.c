@@ -247,8 +247,8 @@ int process_zipfiles(__G)    /* return PK-type error code */
     strings.
   ---------------------------------------------------------------------------*/
 
-    G.inbuf = (uch *)malloc(INBUFSIZ + 4);    /* 4 extra for hold[] (below) */
-    G.outbuf = (uch *)malloc(OUTBUFSIZ + 1);  /* 1 extra for string term. */
+    G.inbuf = (uch *)izu_malloc(INBUFSIZ + 4);    /* +4 for hold[] (below) */
+    G.outbuf = (uch *)izu_malloc(OUTBUFSIZ + 1);  /* +1 for string term. */
 
     if ((G.inbuf == (uch *)NULL) || (G.outbuf == (uch *)NULL)) {
         Info(slide, 0x401, ((char *)slide,
@@ -347,12 +347,12 @@ int process_zipfiles(__G)    /* return PK-type error code */
         int len=strlen(G.argv0);
 
         /* append .exe if appropriate; also .sfx? */
-        if ( (G.zipfn = (char *)malloc(len+sizeof(EXE_EXTENSION))) !=
+        if ( (G.zipfn = (char *)izu_malloc(len+sizeof(EXE_EXTENSION))) !=
              (char *)NULL ) {
             strcpy(G.zipfn, G.argv0);
             strcpy(G.zipfn+len, EXE_EXTENSION);
             error = do_seekable(__G__ 0);
-            free(G.zipfn);
+            izu_free(G.zipfn);
             G.zipfn = G.argv0;  /* for "cannot find myself" message only */
         }
 #endif /* EXE_EXTENSION */
@@ -593,7 +593,7 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
 # ifdef UNICODE_SUPPORT
     if (G.filename_full)
     {
-      free(G.filename_full);
+      izu_free(G.filename_full);
       G.filename_full = (char *)NULL;
       G.fnfull_bufsize = 0;
     }
@@ -601,14 +601,14 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     if ((G.unipath_filename != NULL) &&
      (G.unipath_filename != G.filename_full))
     {
-      free( G.unipath_filename);
+      izu_free( G.unipath_filename);
     }
     G.unipath_filename = (char *)NULL;
 
 #  ifdef WIN32_WIDE
     if (G.unipath_widefilename)
     {
-      free( G.unipath_widefilename);
+      izu_free( G.unipath_widefilename);
       G.unipath_widefilename = (wchar_t *)NULL;
     }
 
@@ -629,27 +629,27 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
 # endif
 
    if (G.key != (char *)NULL) {
-        free(G.key);
+        izu_free(G.key);
         G.key = (char *)NULL;
    }
 
    if (G.extra_field != (uch *)NULL) {
-        free(G.extra_field);
+        izu_free(G.extra_field);
         G.extra_field = (uch *)NULL;
    }
 
 # if (!defined(VMS) && !defined(SMALL_MEM))
     /* VMS uses its own buffer scheme for textmode flush() */
     if (G.outbuf2) {
-        free(G.outbuf2);   /* malloc'd ONLY if unshrink and -a */
+        izu_free(G.outbuf2);   /* malloc'd ONLY if unshrink and -a */
         G.outbuf2 = (uch *)NULL;
     }
 # endif
 
     if (G.outbuf)
-        free(G.outbuf);
+        izu_free(G.outbuf);
     if (G.inbuf)
-        free(G.inbuf);
+        izu_free(G.inbuf);
     G.inbuf = G.outbuf = (uch *)NULL;
 
 # ifdef LZMA_SUPPORT
@@ -683,7 +683,7 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
 
 # ifdef MALLOC_WORK
     if (G.area.Slide) {
-        free(G.area.Slide);
+        izu_free(G.area.Slide);
         G.area.Slide = (uch *)NULL;
     }
 # endif
@@ -696,13 +696,13 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     free_args( G.pxnames);
     /* Extraction root directory (-d/--extract-dir). */
     if (uO.exdir != NULL)
-        free( uO.exdir);
+        izu_free( uO.exdir);
     /* Encryption password (-P/--password). */
     if (uO.pwdarg != NULL)
-        free( uO.pwdarg);
+        izu_free( uO.pwdarg);
     /* Archive path name. */
     if (G.wildzipfn != NULL)
-        free( G.wildzipfn);
+        izu_free( G.wildzipfn);
 
 } /* end function free_G_buffers() */
 
@@ -2131,7 +2131,7 @@ int getUnicodeData(__G__ ef_buf, ef_len)
           }
 
           /* UTF-8 Path */
-          if ((G.unipath_filename = malloc(ULen + 1)) == NULL) {
+          if ((G.unipath_filename = izu_malloc(ULen + 1)) == NULL) {
             return PK_ERR;
           }
           if (ULen == 0) {
@@ -2477,7 +2477,7 @@ char *wide_to_escape_string(wide_char)
     sprintf(d, "%02x", b[i]);
     strcat(e, d);
   }
-  if ((r = malloc(strlen(e) + 1)) == NULL) {
+  if ((r = izu_malloc(strlen(e) + 1)) == NULL) {
     return NULL;
   }
   strcpy(r, e);
@@ -2555,7 +2555,7 @@ char *wide_to_local_string(wide_string, escape_all)
   if (max_bytes < MAX_ESCAPE_BYTES)
     max_bytes = MAX_ESCAPE_BYTES;
 
-  if ((buffer = (char *)malloc(wsize * max_bytes + 1)) == NULL) {
+  if ((buffer = (char *)izu_malloc(wsize * max_bytes + 1)) == NULL) {
     return NULL;
   }
 
@@ -2585,7 +2585,7 @@ char *wide_to_local_string(wide_string, escape_all)
         /* use escape for wide character */
         char *escape_string = wide_to_escape_string(wide_string[i]);
         strcat(buffer, escape_string);
-        free(escape_string);
+        izu_free(escape_string);
       }
     } else if (b > 0) {
       /* multi-byte char */
@@ -2595,13 +2595,13 @@ char *wide_to_local_string(wide_string, escape_all)
         /* use escape for wide character */
         char *escape_string = wide_to_escape_string(wide_string[i]);
         strcat(buffer, escape_string);
-        free(escape_string);
+        izu_free(escape_string);
     }
   }
-  if ((local_string = (char *)malloc(strlen(buffer) + 1)) != NULL) {
+  if ((local_string = (char *)izu_malloc(strlen(buffer) + 1)) != NULL) {
     strcpy(local_string, buffer);
   }
-  free(buffer);
+  izu_free(buffer);
 
   return local_string;
 }
@@ -2618,7 +2618,8 @@ char *local_to_display_string(local_string)
      CharToOem description.
      For all other ports, just make a copy of local_string.
   */
-  if ((display_string = (char *)malloc(strlen(local_string) + 1)) == NULL) {
+  if ((display_string = (char *)izu_malloc(
+   strlen(local_string) + 1)) == NULL) {
     return NULL;
   }
 
@@ -2628,11 +2629,11 @@ char *local_to_display_string(local_string)
   {
     char *ebc;
 
-    if ((ebc = malloc(strlen(display_string) + 1)) ==  NULL) {
+    if ((ebc = izu_malloc(strlen(display_string) + 1)) ==  NULL) {
       return NULL;
     }
     strtoebc(ebc, display_string);
-    free(display_string);
+    izu_free(display_string);
     display_string = ebc;
   }
 #endif
@@ -2648,7 +2649,7 @@ char *utf8_to_local_string(utf8_string, escape_all)
 {
   zwchar *wide = utf8_to_wide_string(utf8_string);
   char *loc = wide_to_local_string(wide, escape_all);
-  free(wide);
+  izu_free(wide);
   return loc;
 }
 
@@ -2661,7 +2662,7 @@ wchar_t *wide_to_wchar_string(wide_string)
 
   for (zwlen = 0; wide_string[zwlen]; zwlen++) ;
 
-  if ((wstring = malloc((zwlen + 1) * sizeof(wchar_t))) == NULL) {
+  if ((wstring = izu_malloc((zwlen + 1) * sizeof(wchar_t))) == NULL) {
     return NULL;
   }
 
@@ -2682,7 +2683,7 @@ zwchar *wchar_to_wide_string(wchar_string)
 
   for (wlen = 0; wchar_string[wlen]; wlen++) ;
 
-  if ((zwstring = malloc((wlen + 1) * sizeof(zwchar))) == NULL) {
+  if ((zwstring = izu_malloc((wlen + 1) * sizeof(zwchar))) == NULL) {
     return NULL;
   }
 
@@ -2711,20 +2712,22 @@ zwchar *local_to_wide_string(local_string)
   }
 
   /* convert it */
-  if ((wc_string = (wchar_t *)malloc((wsize + 1) * sizeof(wchar_t))) == NULL) {
+  if ((wc_string = (wchar_t *)izu_malloc(
+   (wsize + 1) * sizeof(wchar_t))) == NULL) {
     return NULL;
   }
   wsize = mbstowcs(wc_string, local_string, strlen(local_string) + 1);
   wc_string[wsize] = (wchar_t) 0;
 
   /* in case wchar_t is not zwchar */
-  if ((wide_string = (zwchar *)malloc((wsize + 1) * sizeof(zwchar))) == NULL) {
-    free( wc_string);
+  if ((wide_string = (zwchar *)izu_malloc(
+   (wsize + 1) * sizeof(zwchar))) == NULL) {
+    izu_free( wc_string);
     return NULL;
   }
   for (wsize = 0; (wide_string[wsize] = (zwchar)wc_string[wsize]); wsize++) ;
   wide_string[wsize] = (zwchar) 0;
-  free(wc_string);
+  izu_free(wc_string);
 
   return wide_string;
 }
@@ -2742,7 +2745,7 @@ char *wide_to_utf8_string(wide_string)
   mbcount = ucs4_string_to_utf8(wide_string, NULL, 0);
   if (mbcount == -1)
     return NULL;
-  if ((utf8_string = (char *) malloc(mbcount + 1)) == NULL) {
+  if ((utf8_string = (char *) izu_malloc(mbcount + 1)) == NULL) {
     return NULL;
   }
   mbcount = ucs4_string_to_utf8(wide_string, utf8_string, mbcount + 1);
@@ -2761,7 +2764,7 @@ zwchar *wchar_to_wide_string(wchar_string)
 
   wchar_len = wcslen(wchar_string);
 
-  if ((wide_string = malloc((wchar_len + 1) * sizeof(zwchar))) == NULL) {
+  if ((wide_string = izu_malloc((wchar_len + 1) * sizeof(zwchar))) == NULL) {
     return NULL;
   }
   for (i = 0; i <= wchar_len; i++) {
@@ -2783,7 +2786,7 @@ char *wchar_to_local_string(wchar_string, escape_all)
   zwchar *wide_string = wchar_to_wide_string(wchar_string);
   char *local_string = wide_to_local_string(wide_string, escape_all);
 
-  free(wide_string);
+  izu_free(wide_string);
 
   return local_string;
 }
@@ -2801,7 +2804,7 @@ zwchar *utf8_to_wide_string(utf8_string)
   wcount = utf8_to_ucs4_string(utf8_string, NULL, 0);
   if (wcount == -1)
     return NULL;
-  if ((wide_string = (zwchar *) malloc((wcount + 1) * sizeof(zwchar)))
+  if ((wide_string = (zwchar *) izu_malloc((wcount + 1) * sizeof(zwchar)))
       == NULL) {
     return NULL;
   }

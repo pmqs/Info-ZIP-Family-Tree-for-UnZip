@@ -432,7 +432,7 @@ char **argv;
       if (ef_len > 0)
       {
         /* Allocate storage for the extra field, and read it. */
-        ef_buf = malloc( ef_len);
+        ef_buf = izu_malloc( ef_len);
         if (ef_buf == NULL)
           err(PK_MEM, "out of memory");
 
@@ -476,7 +476,7 @@ char **argv;
           ef_len -= (eb_len + EB_HEADSIZE);
         }
         /* Free the extra field storage. */
-        free( ef_buf);
+        izu_free( ef_buf);
       }
 
       /* If this member is a directory, then skip to the next one. */
@@ -540,7 +540,7 @@ char **argv;
       ush i, e;
 
       if (p == (char *)NULL) {
-        if ((p = (char *)malloc(IZ_PWLEN+1)) == (char *)NULL)
+        if ((p = (char *)izu_malloc(IZ_PWLEN+1)) == (char *)NULL)
           err(PK_MEM3, "out of memory");
         else if ((p = getp("Enter password: ", p, IZ_PWLEN+1)) == (char *)NULL)
           err(IZ_PW_ERROR, "no tty to prompt for password");
@@ -575,7 +575,7 @@ char **argv;
 
 #ifdef USE_ZLIB
     /* need to allocate and prepare input buffer */
-    if ((G.inbuf = (uch *)malloc(INBUFSIZ)) == (uch *)NULL)
+    if ((G.inbuf = (uch *)izu_malloc(INBUFSIZ)) == (uch *)NULL)
        err(PK_MEM3, "out of memory");
 #endif /* USE_ZLIB */
     if ((r = UZinflate(__G__ (method == ENHDEFLATED))) != 0) {

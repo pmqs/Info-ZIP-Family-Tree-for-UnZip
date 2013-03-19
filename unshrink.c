@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2008 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -129,7 +129,7 @@ int unshrink(__G)
     /* non-memory-limited machines:  allocate second (large) buffer for
      * textmode conversion in flush(), but only if needed */
     if (G.pInfo->textmode && !G.outbuf2 &&
-        (G.outbuf2 = (uch *)malloc(TRANSBUFSIZ)) == (uch *)NULL)
+        (G.outbuf2 = (uch *)izu_malloc(TRANSBUFSIZ)) == (uch *)NULL)
         return PK_MEM3;
 #endif
 #endif /* !VMS */

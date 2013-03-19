@@ -1076,6 +1076,17 @@ Bugs fixed:
    displayed using a two-digit hexadecimal format, "xXX".  Forum topic:
    http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=267
    (zipinfo.c) [SMS]
+ - Added some crude, optional, dynamic memory tracing diagnostic
+   capability for use by developers.  (api.c, crypt.c, envargs.c,
+   extract.c, fileio.c, funzip.c, globals.c, inflate.c, match.c,
+   memdiag.c, process.c, timezone.c, unshrink.c, unzip.c, unzpriv.h,
+   win32/win32.c) [SMS]
+ - On Windows, with Unicode support, a buffer overrun in pathname
+   storage could cause a variety of problems, including spurious error
+   messages and program failure.  That problem should be solved.  Some
+   buffers were allocated with a few bytes more than necessary.  Some
+   code which was needed only for developer diagnostic tracing was being
+   compiled and executed always.  (win32/win32.c) [SMS]
 
 ==================
 

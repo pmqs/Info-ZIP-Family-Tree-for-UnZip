@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2007 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -80,7 +80,7 @@ static void registerGlobalPointer(__G)
     if (scan == THREADID_ENTRIES) {
         ZCONST char *tooMany = LoadFarString(TooManyThreads);
         Info(slide, 0x421, ((char *)slide, tooMany, THREADID_ENTRIES));
-        free(pG);
+        izu_free(pG);
         EXIT(PK_MEM);   /* essentially memory error before we've started */
     }
 
@@ -120,7 +120,7 @@ void deregisterGlobalPointer(__G)
 
     threadIdTable [scan] = 0;
     lastScan = scan;
-    free(threadPtrTable[scan]);
+    izu_free(threadPtrTable[scan]);
 }
 
 
@@ -157,7 +157,7 @@ Uz_Globs *getGlobalPointer()
 Uz_Globs *globalsCtor()
 {
 #ifdef REENTRANT
-    Uz_Globs *pG = (Uz_Globs *)malloc(sizeof(Uz_Globs));
+    Uz_Globs *pG = (Uz_Globs *)izu_malloc(sizeof(Uz_Globs));
 
     if (!pG)
         return (Uz_Globs *)NULL;
