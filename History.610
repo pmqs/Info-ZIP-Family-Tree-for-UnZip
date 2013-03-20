@@ -780,7 +780,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (02 Mar 2013):
+6.10c09 (19 Mar 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1049,7 +1049,7 @@ Bugs fixed:
    based on suggestions from Dmitry ??????.  (fileio.c, process.c,
    win32/win32.c) [Dmitry, SMS]
  - On non-VMS systems, an I/O error while extracting a file (disk full,
-   or similar) caused an interactive query ("write error (disk full?). 
+   or similar) caused an interactive query ("write error (disk full?).
    Continue? (y/n/^C)"), even if there was no interactive user, causing
    the program to hang.  Now, by default, such an I/O error is fatal.
    To restore the query, define the C macro I_O_ERROR_QUERY at build
@@ -1086,7 +1086,11 @@ Bugs fixed:
    messages and program failure.  That problem should be solved.  Some
    buffers were allocated with a few bytes more than necessary.  Some
    code which was needed only for developer diagnostic tracing was being
-   compiled and executed always.  (win32/win32.c) [SMS]
+   compiled and executed always.  A reform making the global array
+   unipath_widefilename fixed instead of dynamic can be reversed by
+   defining the C macro DYNAMIC_WIDE_NAME.  (extract.c, fileio.c,
+   globals.h, memdiag.c, process.c, unzip.c, win32/w32cfg.h,
+   win32/win32.c) [SMS]
 
 ==================
 

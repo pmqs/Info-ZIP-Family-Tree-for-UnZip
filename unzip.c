@@ -961,7 +961,12 @@ int unzip(__G__ argc, argv)
     G.unipath_filename = NULL;
 
 #  ifdef WIN32_WIDE
+#   ifdef DYNAMIC_WIDE_NAME
     G.unipath_widefilename = NULL;
+#   else /* def DYNAMIC_WIDE_NAME */
+    *G.unipath_widefilename = L'\0';
+#   endif /* def DYNAMIC_WIDE_NAME [else] */
+
     G.has_win32_wide = has_win32_wide();
 #  endif
 

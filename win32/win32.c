@@ -2603,6 +2603,7 @@ int mapnamew(__G__ renamed)
 
     checkdirw(__G__ pathcompw, APPEND_NAME);  /* returns 1 if truncated: care? */
 
+#  ifdef DYNAMIC_WIDE_NAME
     if ((unsigned int)(G.endFATw- G.buildpathFATw) >
      wcslen( G.unipath_widefilename))
     {
@@ -2618,6 +2619,7 @@ int mapnamew(__G__ renamed)
         return MPN_NOMEM;
       }
     }
+#  endif /* def DYNAMIC_WIDE_NAME */
     /* Get the constructed name. */
     checkdirw(__G__ G.unipath_widefilename, GETPATH);
 
@@ -3530,7 +3532,7 @@ int checkdirw(__G__ pathcompw, flag)
 /*---------------------------------------------------------------------------
     GETPATH:  copy full FAT path to the string pointed at by pathcomp (want
     filename to reflect name used on disk, not EAs; if full path is HPFS,
-    buildpathFAT and buildpathHPFS will be identical).  Also free both paths.
+    buildpathFAT and buildpathHPFS will be identical).  Free both local paths.
   ---------------------------------------------------------------------------*/
 
     if (FUNCTION == GETPATH) {
@@ -4499,6 +4501,7 @@ wchar_t *local_to_wchar_string(local_string)
 }
 
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+#  ifdef DYNAMIC_WIDE_NAME
 wchar_t *utf8_to_wchar_string(utf8_string)
   char *utf8_string;       /* path to get utf-8 name for */
 {
@@ -4509,39 +4512,71 @@ wchar_t *utf8_to_wchar_string(utf8_string)
   if (utf8_string == NULL)
     return NULL;
 
-    /* get length */
-    ulenw = MultiByteToWideChar(
-                CP_UTF8,           /* UTF-8 code page */
-                0,                 /* flags for character-type options */
-                utf8_string,       /* string to convert */
-                -1,                /* string length (-1 = NULL terminated) */
-                NULL,              /* buffer */
-                0 );               /* buffer length (0 = return length) */
+  /* get length */
+  ulenw = MultiByteToWideChar(
+                CP_UTF8,        /* UTF-8 code page */
+                0,              /* flags for character-type options */
+                utf8_string,    /* string to convert */
+                -1,             /* string length (-1 = NULL terminated) */
+                NULL,           /* buffer */
+                0);             /* buffer length (0 = return length) */
 
-    if (ulenw == 0) {
-      /* failed */
-      return NULL;
-    }
-    /* Allocate bytes for returned wide char count (which includes NUL). */
-    if ((qw = (wchar_t *)izu_malloc( ulenw* sizeof(wchar_t))) == NULL) {
-      return NULL;
-    }
-    /* convert multibyte to wide */
-    ulen = MultiByteToWideChar(
-               CP_UTF8,           /* UTF-8 code page */
-               0,                 /* flags for character-type options */
-               utf8_string,       /* string to convert */
-               -1,                /* string length (-1 = NULL terminated) */
-               qw,                /* buffer */
-               ulenw);            /* buffer length (0 = return length) */
-    if (ulen == 0) {
-      /* failed */
-      izu_free(qw);
-      return NULL;
-    }
+  if (ulenw == 0) {
+    /* failed */
+    return NULL;
+  }
+
+  /* Allocate bytes for returned wide char count (which includes NUL). */
+  if ((qw = (wchar_t *)izu_malloc( ulenw* sizeof(wchar_t))) == NULL) {
+    return NULL;
+  }
+
+  /* convert multibyte to wide */
+  ulen = MultiByteToWideChar(
+                CP_UTF8,        /* UTF-8 code page */
+                0,              /* flags for character-type options */
+                utf8_string,    /* string to convert */
+                -1,             /* string length (-1 = NULL terminated) */
+                qw,             /* buffer */
+                ulenw);         /* buffer length (0 = return length) */
+
+  if (ulen == 0) {
+    /* failed */
+    izu_free(qw);
+    return NULL;
+  }
 
   return qw;
 }
+#  else /* def DYNAMIC_WIDE_NAME */
+void utf8_to_wchar_string( resultw, utf8_string)
+  wchar_t *resultw;        /* User's result buffer. */
+  char *utf8_string;       /* path to get utf-8 name for */
+{
+  int       ulen;
+
+  *resultw = L'\0';             /* Default to failure (null result). */
+
+  if (utf8_string == NULL)
+    return;
+
+  /* Convert multibyte to wide. */
+  ulen = MultiByteToWideChar(
+                CP_UTF8,        /* UTF-8 code page. */
+                0,              /* Flags for character-type options. */
+                utf8_string,    /* String to convert. */
+                -1,             /* String length (-1 = NULL terminated). */
+                resultw,        /* User's buffer. */
+                FILNAMSIZ);     /* Buffer length (chars, incl. NUL). */
+
+  if (ulen == 0) {
+    /* failed */
+    *resultw = L'\0';           /* Unnecessessary? */
+  }
+
+  return;
+}
+#  endif /* def DYNAMIC_WIDE_NAME [else] */
 
 int has_win32_wide()
 {

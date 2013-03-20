@@ -2821,6 +2821,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 # endif /* 0 */
               }
 # ifdef WIN32_WIDE
+#  ifdef DYNAMIC_WIDE_NAME
             /* 2013-02-12 SMS.
              * Free old G.unipath_widefilename storage.
              */
@@ -2829,12 +2830,23 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 izu_free( G.unipath_widefilename);
                 G.unipath_widefilename = NULL;
               }
+#  else /* def DYNAMIC_WIDE_NAME */
+              *G.unipath_widefilename = L'\0';
+#  endif /* def DYNAMIC_WIDE_NAME [else] */
               if (G.has_win32_wide) {
                 if (G.unipath_filename)
+#  ifdef DYNAMIC_WIDE_NAME
                   /* Get wide path from UTF-8 */
                   G.unipath_widefilename = utf8_to_wchar_string(G.unipath_filename);
                 else
                   G.unipath_widefilename = utf8_to_wchar_string(G.filename);
+#  else /* def DYNAMIC_WIDE_NAME */
+                  /* Get wide path from UTF-8 */
+                  utf8_to_wchar_string( G.unipath_widefilename,
+                   G.unipath_filename);
+                else
+                  utf8_to_wchar_string( G.unipath_widefilename, G.filename);
+#  endif /* def DYNAMIC_WIDE_NAME [else] */
 
                 if (G.pInfo->lcflag)      /* replace with lowercase filename */
                     wcslwr(G.unipath_widefilename);

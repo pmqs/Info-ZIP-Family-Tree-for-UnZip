@@ -2298,15 +2298,19 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             }
         }
 
+# ifdef WIN32_WIDE
+#  ifdef DYNAMIC_WIDE_NAME
         /* 2013-02-10 SMS.
          * fileio.c:do_string() will free() and NULL G.unipath_filename,
          * as needed.  G.unipath_widefilename is handled here.
          */
-# ifdef WIN32_WIDE
         if (G.unipath_widefilename) {
             izu_free(G.unipath_widefilename);
             G.unipath_widefilename = NULL;
         }
+#  else /* def DYNAMIC_WIDE_NAME */
+        *G.unipath_widefilename = L'\0';
+#  endif /* def DYNAMIC_WIDE_NAME [else] */
 # endif
         if ((error =
              do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != 0)
@@ -2321,6 +2325,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             }
         }
 # ifdef WIN32_WIDE
+#  ifdef DYNAMIC_WIDE_NAME
         if (G.unipath_widefilename == NULL) {
             if (G.unipath_filename) {
                 /* Get wide path from UTF-8 */
@@ -2332,6 +2337,21 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             if (G.pInfo->lcflag) {      /* replace with lowercase filename */
                 wcslwr(G.unipath_widefilename);
             }
+        }
+#  else /* def DYNAMIC_WIDE_NAME */
+        if (*G.unipath_widefilename == L'\0') {
+            if (G.unipath_filename) {
+                /* Get wide path from UTF-8 */
+                utf8_to_wchar_string( G.unipath_widefilename,
+                 G.unipath_filename);
+            }
+            else {
+                utf8_to_wchar_string( G.unipath_widefilename, G.filename);
+            }
+            if (G.pInfo->lcflag) {      /* replace with lowercase filename */
+                wcslwr(G.unipath_widefilename);
+            }
+#  endif /* def DYNAMIC_WIDE_NAME [else] */
 #  if 0
             if (G.pInfo->vollabel && length > 8 && G.unipath_widefilename[8] == '.') {
                 wchar_t *p = G.unipath_widefilename+8;

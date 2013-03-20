@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -373,7 +373,11 @@ typedef struct Globals {
     ulg      unipath_checksum;     /* Unicode field checksum */
     char     *unipath_filename;    /* UTF-8 path */
 #   ifdef WIN32_WIDE
-    wchar_t  *unipath_widefilename;     /* wide character filename */
+#    ifdef DYNAMIC_WIDE_NAME
+    wchar_t  *unipath_widefilename;             /* wide character filename */
+#    else /* def DYNAMIC_WIDE_NAME */
+    wchar_t  unipath_widefilename[FILNAMSIZ];   /* wide character filename */
+#    endif /* def DYNAMIC_WIDE_NAME [else] */
     wchar_t  *unipath_jdir_widefilename;    /* Ptr to non-junk path. */
     int      has_win32_wide;       /* true if Win32 W calls work */
 #   endif /* def WIN32_WIDE */

@@ -307,7 +307,11 @@
 #define STR_TO_ISO
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+# ifdef DYNAMIC_WIDE_NAME
    wchar_t *utf8_to_wchar_string OF((char *));
+# else /* def DYNAMIC_WIDE_NAME */
+   void utf8_to_wchar_string OF((wchar_t *, char *));
+# endif /* def DYNAMIC_WIDE_NAME [else] */
    wchar_t *local_to_wchar_string OF((char *));
    int has_win32_wide();
 #endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */

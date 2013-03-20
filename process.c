@@ -606,11 +606,15 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     G.unipath_filename = (char *)NULL;
 
 #  ifdef WIN32_WIDE
+#   ifdef DYNAMIC_WIDE_NAME
     if (G.unipath_widefilename)
     {
       izu_free( G.unipath_widefilename);
       G.unipath_widefilename = (wchar_t *)NULL;
     }
+#   else /* def DYNAMIC_WIDE_NAME */
+    *G.unipath_widefilename = L'\0';
+#   endif /* def DYNAMIC_WIDE_NAME [else] */
 
     if (G.has_win32_wide)
       checkdirw(__G__ (wchar_t *)NULL, END);
