@@ -382,6 +382,7 @@
 #  include <fcntl.h>          /* O_BINARY for open() w/o CR/LF translation */
 
 #  ifdef OS2                  /* defined for all OS/2 compilers */
+#    define SYMLINKS
 #    include "os2/os2cfg.h"
 #  else
 #    ifdef FLEXOS
