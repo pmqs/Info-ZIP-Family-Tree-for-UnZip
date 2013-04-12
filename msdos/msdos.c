@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -666,8 +666,9 @@ int mapname(__G__ renamed)
 
     *pp = '\0';                   /* done with pathcomp:  terminate it */
 
-    /* if not saving them, remove VMS version numbers (appended ";###") */
-    if (!uO.V_flag && lastsemi) {
+    /* If not saving them, remove a VMS version number (ending: ";###"). */
+    if (lastsemi &&
+     ((uO.V_flag < 0) || ((uO.V_flag == 0) && (G.pInfo->hostnum == VMS_)))) {
 #ifndef MAYBE_PLAIN_FAT
         pp = lastsemi + 1;
 #else
@@ -817,7 +818,7 @@ static void map2fat(pathcomp, last_dot)
         char *plu = strrchr(pathcomp, '_');   /* pointer to last underscore */
 
         if ((plu != (char *)NULL) &&    /* found underscore: convert to dot? */
-            (MIN(plu - pathcomp, 8) + MIN(pEnd - plu - 1, 3) > 8)) {
+            (IZ_MIN(plu - pathcomp, 8) + IZ_MIN(pEnd - plu - 1, 3) > 8)) {
             last_dot = plu;       /* be lazy:  drop through to next if-block */
         } else if ((pEnd - pathcomp) > 8)
             /* no underscore; or converting underscore to dot would save less

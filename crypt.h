@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -7,7 +7,7 @@
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 /*
-  crypt.h (full version) by Info-ZIP.   Last revised:  [see CR_VERSION_DATE]
+  crypt.h (full version) by Info-ZIP.   Last revised: [see CR_VERSION_DATE]
 
   The main (Traditional) encryption/decryption source code for Info-Zip
   software was originally written in Europe.  To the best of our knowledge,
@@ -47,11 +47,11 @@
 #  define CR_MAJORVER        3
 #  define CR_MINORVER        0
 #  ifdef CR_BETA
-#   define CR_BETA_VER      "h BETA"
-#   define CR_VERSION_DATE  "25 Nov 2012"       /* Last real code change. */
+#   define CR_BETA_VER      "j BETA"
+#   define CR_VERSION_DATE  "21 Mar 2013"       /* Last real code change. */
 #  else
 #   define CR_BETA_VER      ""
-#   define CR_VERSION_DATE  "25 Nov 2012"       /* Last public release date. */
+#   define CR_VERSION_DATE  "01 Apr 2013"       /* Last public release date. */
 #   define CR_RELEASE
 #  endif
 

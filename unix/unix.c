@@ -682,8 +682,9 @@ int mapname(__G__ renamed)
 
     *pp = '\0';                   /* done with pathcomp:  terminate it */
 
-    /* if not saving them, remove VMS version numbers (appended ";###") */
-    if (!uO.V_flag && lastsemi) {
+    /* If not saving them, remove a VMS version number (ending: ";###"). */
+    if (lastsemi &&
+     ((uO.V_flag < 0) || ((uO.V_flag == 0) && (G.pInfo->hostnum == VMS_)))) {
         pp = lastsemi + 1;
         if (*pp != '\0') {        /* At least one digit is required. */
             while (isdigit((uch)(*pp)))

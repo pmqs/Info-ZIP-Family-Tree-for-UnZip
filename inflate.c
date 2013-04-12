@@ -363,7 +363,12 @@
 /* Check for incompatible combinations of zlib and Deflate64 support. */
 # if defined(DEFLATE64_SUPPORT)
 #  if !USE_ZLIB_INFLATCB
-#   error Deflate64 is incompatible with traditional (pre-1.2.x) zlib interface!
+ /* This line is indented to hide the #error directive from pure traditional
+  * K&R C preprocessors.  These do not recognize the #error directive, but
+  * they also recognize only lines that start with a '#' in column 1 as
+  * preprocessor directives.
+  */
+ #  error Deflate64 is incompatible with traditional (pre-1.2.x) zlib interface!
 #  else
    /* The Deflate64 callback function in the framework of zlib 1.2.x requires
       the inclusion of the unsupported infback9 header file:

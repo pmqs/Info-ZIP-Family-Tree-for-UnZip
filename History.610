@@ -780,7 +780,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (19 Mar 2013):
+6.10c09 (12 Apr 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1091,6 +1091,35 @@ Bugs fixed:
    defining the C macro DYNAMIC_WIDE_NAME.  (extract.c, fileio.c,
    globals.h, memdiag.c, process.c, unzip.c, win32/w32cfg.h,
    win32/win32.c) [SMS]
+ - Changed behavior involving files which appear to have VMS version
+   numbers (names ending with ";ddd", where "ddd" is a decimal number),
+   and option "-V" (--keep-versions, /[NO]VERSION).  Previously, UnZip
+   would, by default, strip these apparent VMS version numbers when
+   extracting files, and the "-V" option was required to prevent this,
+   even when the file was not archived on a VMS system.  Thus, a Unix
+   file named "fred;123" would normally be extracted as "fred", unless
+   "-V" was specified to prevent this damage.  Now, on non-VMS systems,
+   UnZip should strip apparent VMS version numbers only from files which
+   were archived on a VMS system.  Specify "-V" explicitly to keep
+   version numbers even on VMS-archived files.  Specify "-V-" explicitly
+   to strip apparent VMS version numbers from all files regadless of
+   where they were archived (the old default behavior).  Behavior on VMS
+   systems is unchanged.  (acorn/acorn.c, amiga/amiga.c, aosvs/aosvs.c,
+   atari/atari.c, atheos/atheos.c, beos/beos.c, extract.c,
+   flexos/flexos.c, human68k/human68k.c, macos/source/macos.c,
+   man/unzip.1, msdos/msdos.c, netware/netware.c, os2/os2.c, qdos/qdos.c,
+   tandem/tanunz.c, unix/unix.c, unzip.c, vms/unzip_cli.help,
+   vms/UNZIP_DEF.RNH, vms/vms.c, win32/win32.c) [SMS]
+ - Bad white space in Unix builder caused problems in UID/GID size
+   determination tests with old (K&R) compilers (SunOS 4.1.4 bundled,
+   for example).  (unix/configure) [SMS]
+ - Bad white space caused build problems with old (K&R) compilers (SunOS
+   4.1.4 bundled, for example).  (inflate.c) [SMS]
+ - SunOS 4.1.4 bundled C compiler needed help with labs().  (fileio.c,
+   funzip.c, unix/configure, unzpriv.h) [SMS]
+ - Changed AES_WG endian-determination code not to look for
+   <sys/isa_defs.h> on __sun systems with __sparc defined, because it's
+   missing on SunOS 4.1.4.  (aes_wg/brg_endian.h) [SMS]
 
 ==================
 

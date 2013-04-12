@@ -2326,8 +2326,9 @@ int mapname(__G__ renamed)
 
     *pp = '\0';                   /* done with pathcomp:  terminate it */
 
-    /* if not saving them, remove VMS version numbers (appended "###") */
-    if (!uO.V_flag && lastsemi) {
+    /* If not saving them, remove a VMS version number (ending: ";###"). */
+    if (lastsemi &&
+     ((uO.V_flag < 0) || ((uO.V_flag == 0) && (G.pInfo->hostnum == VMS_)))) {
         pp = lastsemi + 1;        /* semi-colon was kept:  expect #'s after */
         if (*pp != '\0') {        /* At least one digit is required. */
             while (isdigit((uch)(*pp)))
@@ -2807,7 +2808,7 @@ static void map2fat(pathcomp, pEndFAT)
         char *plu = MBSRCHR(pBegin, '_');   /* pointer to last underscore */
 
         if ((plu != NULL) &&      /* found underscore: convert to dot? */
-            (MIN(plu - pBegin, 8) + MIN(pEnd - plu - 1, 3) > 8)) {
+            (IZ_MIN(plu - pBegin, 8) + IZ_MIN(pEnd - plu - 1, 3) > 8)) {
             last_dot = plu;       /* be lazy:  drop through to next if-blk */
         } else if ((pEnd - *pEndFAT) > 8) {
             /* no underscore; or converting underscore to dot would save less
@@ -2907,7 +2908,7 @@ static void map2fatw(pathcompw, pEndFATw)
         wchar_t *pluw = wcschr(pBeginw, '_');   /* pointer to last underscore */
 
         if ((pluw != NULL) &&      /* found underscore: convert to dot? */
-            (MIN(pluw - pBeginw, 8) + MIN(pEndw - pluw - 1, 3) > 8)) {
+            (IZ_MIN(pluw - pBeginw, 8) + IZ_MIN(pEndw - pluw - 1, 3) > 8)) {
             last_dotw = pluw;       /* be lazy:  drop through to next if-blk */
         } else if ((pEndw - *pEndFATw) > 8) {
             /* no underscore; or converting underscore to dot would save less

@@ -669,7 +669,7 @@ unsigned readbuf(__G__ buf, size)   /* return number of bytes read into buf */
             G.cur_zipfile_bufstart += INBUFSIZ;
             G.inptr = G.inbuf;
         }
-        count = MIN(size, (unsigned)G.incnt);
+        count = IZ_MIN(size, (unsigned)G.incnt);
         memcpy(buf, G.inptr, count);
         buf += count;
         G.inptr += count;
@@ -2450,7 +2450,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 char *eol;
                 length -= 10;
                 block_len = readbuf(__G__ G.autorun_command,
-                                    MIN(length, sizeof(G.autorun_command)-1));
+                             IZ_MIN(length, sizeof(G.autorun_command)-1));
                 if (block_len == 0)
                     return PK_EOF;
                 comment_bytes_left -= block_len;
@@ -2500,7 +2500,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             register uch *q = G.outbuf;
 
             if ((block_len = readbuf(__G__ (char *)G.outbuf,
-                   MIN((unsigned)OUTBUFSIZ, comment_bytes_left))) == 0)
+                   IZ_MIN((unsigned)OUTBUFSIZ, comment_bytes_left))) == 0)
                 return PK_EOF;
             comment_bytes_left -= block_len;
 
@@ -2872,7 +2872,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
     case FILENOTE:
         if ((block_len = readbuf(__G__ tmp_fnote, (unsigned)
-                                 MIN(length, 2 * AMIGA_FILENOTELEN - 1))) == 0)
+                          IZ_MIN(length, 2 * AMIGA_FILENOTELEN - 1))) == 0)
             return PK_EOF;
         if ((length -= block_len) > 0)  /* treat remainder as in case SKIP: */
             seek_zipf(__G__ G.cur_zipfile_bufstart - G.extra_bytes
@@ -3156,6 +3156,26 @@ zvoid *memcpy(dst, src, len)
 }
 
 #endif /* ZMEM */
+
+
+
+
+#ifdef NEED_LABS
+
+/*******************/
+/* Function labs() */
+/*******************/
+
+long int labs( l)
+ long l;
+{
+    if (l >= 0)
+        return l;
+    else
+        return -l;
+}
+
+#endif /* def NEED_LABS */
 
 
 

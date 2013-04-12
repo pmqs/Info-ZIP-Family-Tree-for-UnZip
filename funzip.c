@@ -8,7 +8,7 @@
 */
 /* funzip.c -- by Mark Adler */
 
-#define VERSION "4.10 of 26 January 2013"
+#define VERSION "4.10 of 12 April 2013"
 
 
 /* Copyright history:
@@ -100,6 +100,7 @@
                                      archive.  Use symbolic exit status
                                      codes.  Check for EOF from
                                      NEXTBYTE.
+          12 Apr 13                  Added labs().
  */
 
 
@@ -433,7 +434,7 @@ char **argv;
       {
         /* Allocate storage for the extra field, and read it. */
         ef_buf = izu_malloc( ef_len);
-        if (ef_buf == NULL)
+        if (ef_buf == (uch *)NULL)
           err(PK_MEM, "out of memory");
 
         /* Read the extra field data. */
@@ -677,3 +678,22 @@ char **argv;
   DESTROYGLOBALS();
   RETURN (0);
 }
+
+
+#ifdef NEED_LABS
+
+/*******************/
+/* Function labs() */
+/*******************/
+
+long int labs( l)
+ long l;
+{
+    if (l >= 0)
+        return l;
+    else
+        return -l;
+}
+
+#endif /* def NEED_LABS */
+

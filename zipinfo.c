@@ -687,7 +687,7 @@ int zi_opts(__G__ pargc, pargv)
 #ifdef UNICODE_SUPPORT
                 case ('U'):    /* escape UTF-8, or disable UTF-8 support */
                     if (negative)
-                        uO.U_flag = MAX(uO.U_flag - 1, 0);
+                        uO.U_flag = IZ_MAX(uO.U_flag - 1, 0);
                     else
                         uO.U_flag++;
                     break;
@@ -1368,7 +1368,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
 
     hostnum = (unsigned)(G.pInfo->hostnum);
     hostver = (unsigned)(G.pInfo->hostver);
-    extnum = (unsigned)MIN(G.crec.version_needed_to_extract[1], NUM_HOSTS);
+    extnum = (unsigned)IZ_MIN(G.crec.version_needed_to_extract[1], NUM_HOSTS);
     extver = (unsigned)G.crec.version_needed_to_extract[0];
     methid = (unsigned)G.crec.compression_method;
     methnum = find_compr_idx(G.crec.compression_method);
@@ -2310,7 +2310,7 @@ static int zi_short(__G)   /* return PK-type error code */
     hostnum = (unsigned)(G.pInfo->hostnum);
     hostver = (unsigned)(G.pInfo->hostver);
 /*
-    extnum = (unsigned)MIN(G.crec.version_needed_to_extract[1], NUM_HOSTS);
+    extnum = (unsigned)IZ_MIN(G.crec.version_needed_to_extract[1], NUM_HOSTS);
     extver = (unsigned)G.crec.version_needed_to_extract[0];
  */
 

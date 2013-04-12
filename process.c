@@ -695,9 +695,11 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     /* 2012-12-11 SMS.
      * Free any command-line-related storage.
      */
+# ifndef WINDLL
     /* Include and exclude name lists.  (free_args() checks for NULL.) */
     free_args( G.pfnames);
     free_args( G.pxnames);
+# endif /* ndef WINDLL */
     /* Extraction root directory (-d/--extract-dir). */
     if (uO.exdir != NULL)
         izu_free( uO.exdir);
@@ -854,7 +856,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
 #ifndef NO_ZIPINFO
                                         uO.zipinfo_mode ? G.ziplen :
 #endif
-                                        MIN(G.ziplen, 66000L)))
+                                        IZ_MIN(G.ziplen, 66000L)))
          > PK_WARN )
     {
         CLOSE_INFILE();
@@ -1787,8 +1789,8 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
         return error;
 
     G.pInfo->hostver = G.crec.version_made_by[0];
-    G.pInfo->hostnum = MIN(G.crec.version_made_by[1], NUM_HOSTS);
-/*  extnum = MIN(crec.version_needed_to_extract[1], NUM_HOSTS); */
+    G.pInfo->hostnum = IZ_MIN(G.crec.version_made_by[1], NUM_HOSTS);
+/*  extnum = IZ_MIN(crec.version_needed_to_extract[1], NUM_HOSTS); */
 
     G.pInfo->lcflag = 0;
     if (uO.L_flag == 1)       /* name conversion for monocase systems */

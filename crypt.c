@@ -30,10 +30,10 @@
  */
 
 /*
-  crypt.c now includes part of the AES encryption implementation (in
+  crypt.c now includes part of the AES_WG encryption implementation (in
   IZ_CRYPT_AES_WG blocks).  This code is provided under the Info-ZIP
-  license, though it calls the Gladman AES code which needs to be added
-  to the aes directory.
+  license.  If this code enabled, it uses the Gladman AES code (or
+  equivalent), which is distributed separately.
  */
 
 #define ZCRYPT_INTERNAL         /* Ensure <windows.h>, where applicable. */
@@ -716,13 +716,13 @@ int zipcloak(z, passwd)
     tempzn += (4 + LOCHEAD) + localz->nam + localz->ext + localz->siz;
 
     /* Free local header */
-    if (localz->ext) izu_free(localz->extra);
-    if (localz->nam) izu_free(localz->iname);
-    if (localz->nam) izu_free(localz->name);
+    if (localz->ext) izc_free(localz->extra);
+    if (localz->nam) izc_free(localz->iname);
+    if (localz->nam) izc_free(localz->name);
 #   ifdef UNICODE_SUPPORT
-    if (localz->uname) izu_free(localz->uname);
+    if (localz->uname) izc_free(localz->uname);
 #   endif
-    izu_free(localz);
+    izc_free(localz);
 
     return ZE_OK;
 }
@@ -909,7 +909,7 @@ int zipbare(z, passwd)
                     /* Whole extra field is now gone.  free() below will
                      * see localz->ext == 0, and skip it, so do it here.
                      */
-                    izu_free( localz->extra);
+                    izc_free( localz->extra);
                 }
             }
         }
@@ -989,13 +989,13 @@ int zipbare(z, passwd)
     tempzn += (4 + LOCHEAD) + localz->nam + localz->ext + localz->siz;
 
     /* Free local header */
-    if (localz->ext) izu_free(localz->extra);
-    if (localz->nam) izu_free(localz->iname);
-    if (localz->nam) izu_free(localz->name);
+    if (localz->ext) izc_free(localz->extra);
+    if (localz->nam) izc_free(localz->iname);
+    if (localz->nam) izc_free(localz->name);
 #   ifdef UNICODE_SUPPORT
-    if (localz->uname) izu_free(localz->uname);
+    if (localz->uname) izc_free(localz->uname);
 #   endif
-    izu_free(localz);
+    izc_free(localz);
 
     return ZE_OK;
 }
@@ -1076,14 +1076,14 @@ int decrypt(__G__ passwrd)
         GLOBAL(newzip) = FALSE;
         if (passwrd != (char *)NULL) { /* user gave password on command line */
             if (!GLOBAL(key)) {
-                if ((GLOBAL(key) = (char *)izu_malloc(strlen(passwrd)+1)) ==
+                if ((GLOBAL(key) = (char *)izc_malloc(strlen(passwrd)+1)) ==
                     (char *)NULL)
                     return PK_MEM2;
                 strcpy(GLOBAL(key), passwrd);
                 GLOBAL(nopwd) = TRUE;  /* inhibit password prompting! */
             }
         } else if (GLOBAL(key)) { /* get rid of previous zipfile's key */
-            izu_free(GLOBAL(key));
+            izc_free(GLOBAL(key));
             GLOBAL(key) = (char *)NULL;
         }
     }
@@ -1094,7 +1094,7 @@ int decrypt(__G__ passwrd)
             return PK_COOL;   /* existing password OK (else prompt for new) */
         else if (GLOBAL(nopwd))
             return PK_WARN;   /* user indicated no more prompting */
-    } else if ((GLOBAL(key) = (char *)izu_malloc(IZ_PWLEN+1)) == (char *)NULL)
+    } else if ((GLOBAL(key) = (char *)izc_malloc(IZ_PWLEN+1)) == (char *)NULL)
         return PK_MEM2;
 
     /* try a few keys */
@@ -1140,7 +1140,7 @@ local int testp(__G__ hd_len, h)
 
 #  ifdef STR_TO_CP1
     /* allocate buffer for translated password */
-    if ((key_translated = izu_malloc(strlen(GLOBAL(key)) + 1)) == (char *)NULL)
+    if ((key_translated = izc_malloc(strlen(GLOBAL(key)) + 1)) == (char *)NULL)
         return -1;
     /* first try, test password translated "standard" charset */
     r = testkey(__G__ hd_len, h, STR_TO_CP1(key_translated, GLOBAL(key)));
@@ -1153,7 +1153,7 @@ local int testp(__G__ hd_len, h)
     if (r != 0) {
 #   ifndef STR_TO_CP1
         /* now prepare for second (and maybe third) test with translated pwd */
-        if ((key_translated = izu_malloc(strlen(GLOBAL(key)) + 1)) ==
+        if ((key_translated = izc_malloc(strlen(GLOBAL(key)) + 1)) ==
          (char *)NULL)
             return -1;
 #   endif
@@ -1165,13 +1165,13 @@ local int testp(__G__ hd_len, h)
             r = testkey(__G__ hd_len, h, STR_TO_CP3(key_translated, GLOBAL(key)));
 #   endif
 #   ifndef STR_TO_CP1
-        izu_free(key_translated);
+        izc_free(key_translated);
 #   endif
     }
 #  endif /* STR_TO_CP2 */
 
 #  ifdef STR_TO_CP1
-    izu_free(key_translated);
+    izc_free(key_translated);
     if (r != 0) {
         /* last resort, test password as supplied on the extractor's host */
         r = testkey(__G__ hd_len, h, GLOBAL(key));

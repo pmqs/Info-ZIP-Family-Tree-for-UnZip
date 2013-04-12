@@ -1931,7 +1931,7 @@ startover:
              * conflicts with an existing file, making this query
              * redundant.  (Implicit "y" response here.)
              */
-            if (query && uO.V_flag) {
+            if (query && (uO.V_flag > 0)) {
                 /* Not discarding file versions.  Look for one. */
                 int cndx = strlen(G.filename) - 1;
 
@@ -3834,7 +3834,7 @@ uch *extract_izvms_block(__G__ ebdata, size, retlen, init, needlen)
     if (retlen)
         *retlen = usiz;
 
-    if ((ucdata = (uch *)izu_malloc(MAX(needlen, usiz))) == NULL)
+    if ((ucdata = (uch *)izu_malloc(IZ_MAX(needlen, usiz))) == NULL)
         return NULL;
 
     if (init && (usiz < needlen))

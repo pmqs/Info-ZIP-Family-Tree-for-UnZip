@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-01-17
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-04-05
 #==============================================================================
 
 #==============================================================================
@@ -26,13 +26,13 @@
 # The "generic" target invokes the "unix/configure" script to test the compile
 # and other parts of the environment to see what's supported.  The results are
 # used to adjust the build procedure and to enable or disable some program
-# features.  unix/configure builds a ./flags file with appropriate values for
-# a number of make variables, which is used by this Makefile when performing
+# features.  unix/configure builds a "flags" file with appropriate values for
+# a number of "make" variables, which is used by this Makefile when performing
 # the actual builds.  A separate flags file for building BZIP2 may also be
 # created.  This Makefile recursively invokes this Makefile to perform the
 # actual builds.
 #
-# While oriented towards building unix (and unix work-alike) ports of UnZip,
+# While oriented towards building Unix (and Unix work-alike) ports of UnZip,
 # this file and/or unix/configure are also used by other ports of UnZip.  See
 # below.
 #
@@ -90,8 +90,8 @@
 #
 # UnZip Ports:
 #
-# This Makefile and/or unix/configure script support a number of non-unix
-# UnZip ports, where the UnZip program build is under unix (or a unix
+# This Makefile and/or the unix/configure script support a number of non-Unix
+# UnZip ports, where the UnZip program build is under Unix (or a Unix
 # work-alike), but the UnZip program execution may be on another system or
 # execution environment.  The unix/configure script will be invoked from
 # either unix/Makefile, or from a Makefile located in another port directory.
@@ -152,7 +152,7 @@ help:
 	@echo '"make" macros to enable varions optional features:'
 	@echo '    "AES_WG=1"        Add AES encryption (WinZip/Gladman).'
 	@echo '    "CC=gcc"          Use "gcc" instead of "cc" for C compiler.'
-	@echo '    "ICONV"           Enable ISO/OEM (iconv) conversion.'
+	@echo '    "ICONV=1"         Enable ISO/OEM (iconv) conversion.'
 	@echo '    "IZ_BZIP2=bz2dir" Add BZIP2 compression from dir bz2dir.'
 	@echo '    "IZ_ZLIB=zdir"    Use ZLIB from dir zdir for deflate.'
 	@echo '    "LIBUNZIP=1"      Create UnZip object library.'
@@ -167,18 +167,20 @@ help:
 	@echo '   make -f unix/Makefile generic CC=gcc AES_WG=1'
 	@echo '    - make UnZip programs using gcc, with AES_WG encryption.'
 	@echo ''
-	@echo 'Note that many of these option "make" macros direct the'
+	@echo 'Note that many of these optional "make" macros direct the'
 	@echo '"unix/configure" script, and so may work only with the'
 	@echo '"generic" target.'
 	@echo ''
 	@echo 'First try "make -f unix/Makefile generic" (to use "cc")'
 	@echo '(or "make -f unix/Makefile generic CC=gcc" (to use "gcc")),'
-	@echo 'as "generic" should autodetect and set the proper flags.'
+	@echo 'as "generic" should automatically set the proper flags.'
 	@echo ''
-	@echo 'Use the flags target to rebuild the system-specific flags used'
-	@echo 'by Makefile.  However, you probably want to run clean first.'
-	@echo 'As the generic targets automatically run flags, you should'
-	@echo 'not need to run flags directly.'
+	@echo 'Use the "clean" target to delete any product files before'
+	@echo 'using one of the other "make" targets.  The generic targets'
+	@echo 'use the unix/configure script to generate an intermediate'
+	@echo '"flags" file which is used by unix/Makefile.  For debugging'
+	@echo 'purposes, the "flags" target can be used to generate the'
+	@echo '"flags" file only.'
 	@echo ''
 	@echo 'To make the manuals use "make -f unix/Makefile generic_man" to'
 	@echo 'autodetect and use the proper flags.'
@@ -212,7 +214,7 @@ help:
 	@echo '  "generic3" target may work better.'
 	@echo ''
 	@echo '  One of these actions should produce working UnZip programs on'
-	@echo '  most UNIX(-like) systems.  If you know a bit more about the'
+	@echo '  most Unix(-like) systems.  If you know a bit more about the'
 	@echo '  system on which you work, then you might try "make -f'
 	@echo '  unix/Makefile list" for a list of the system-specific targets'
 	@echo '  supported herein.  (Many of them do exactly the same thing,'
@@ -1249,7 +1251,7 @@ test_ppmd:
 #
 # These targets are intended for use by UnZip developers, not by normal
 # users.  The method used relies on an existing testmake.zip file to
-# provide "notes", which historically has non-UNIX line endings.
+# provide "notes", which historically has non-Unix line endings.
 #
 # Note that this is typically an iterative process, because the test
 # archive includes an "unzip -Z" report on itself, which often results
@@ -1538,7 +1540,9 @@ cyber_sgi: unix_make
          CFLAGS="$(CFLAGS) -I/usr/include/bsd -DNO_LCHOWN -DNO_LCHMOD" \
          LF="-lbsd $(LF)" SL="-lbsd $(SL)"
 
-# The Cygwin environment on a Win32 system, treated as an UNIX emulator.
+# The "generic" target should work with Cygwin on Windows.  The
+# following instructons are old, and probably obsolete...
+# The Cygwin environment on a Win32 system, treated as a Unix emulator.
 # This port does not offer full access to the Windows file system.
 # Info-ZIP recommends using "win32/Makefile.gcc" instead.
 cygwin: unix_make
@@ -1600,6 +1604,8 @@ isc_gcc: unix_make
 isi: unix_make
 	$(MAKE) unzips CF="$(CF) -DDECLARE_ERRNO -DNO_LCHOWN -DNO_LCHMOD"
 
+# The "generic" target should work with GNU/Linux.  The following
+# instructons are old, and probably obsolete...
 # Linux on 386 platform, using the assembler replacement for crc32.c. (-O4 and
 # -fno-strength-reduce have virtually no effect beyond -O3.  Add "-m486
 # -malign-functions=2 -malign-jumps=2 -malign-loops=2" for Pentium [Pro]

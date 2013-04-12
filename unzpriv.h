@@ -791,21 +791,28 @@
    typedef unsigned int extent;
 #endif /* ?MODERN */
 
+#ifdef NEED_LABS
+   long int labs();
+#endif /* def NEED_LABS */
+
 #ifdef NEED_STRERROR
    char *strerror();
 #endif /* def NEED_STRERROR */
 
 
 #ifdef MEMDIAG
-    void izu_free( void *ptr);
-    void *izu_malloc( size_t siz);
-    void *izu_realloc( void *ptr, size_t siz);
-    void izu_md_check( void);
+void izu_free( void *ptr);
+void *izu_malloc( size_t siz);
+void *izu_realloc( void *ptr, size_t siz);
+void izu_md_check( void);
 #else /* def MEMDIAG */
 # define izu_free free
 # define izu_malloc malloc
 # define izu_realloc realloc
 #endif /* def MEMDIAG [else] */
+#define izc_free izu_free
+#define izc_malloc izu_malloc
+#define izc_realloc izu_realloc
 
 
 /*************/
@@ -1830,9 +1837,13 @@ struct file_list {
 #define FZOFFT_LEN 24           /* Number of characters/chamber. */
 
 
-/* User-triggered (Ctrl/T, SIGUSR1) progress.
+/* User-triggered (Ctrl/T, SIGUSR1) progress.  (Expects localtime_r().)
  * ("include <signal.h>" must follow large-file decision.)
  */
+#if defined( NO_LOCALTIME_R) && !defined( NO_USER_PROGRESS)
+# define NO_USER_PROGRESS
+#endif
+
 #ifndef NO_USER_PROGRESS
 # ifndef VMS
 #  include <signal.h>
@@ -3056,12 +3067,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 /*  Macros  */
 /************/
 
-#ifndef MAX
-#  define MAX(a,b)   ((a) > (b) ? (a) : (b))
-#endif
-#ifndef MIN
-#  define MIN(a,b)   ((a) < (b) ? (a) : (b))
-#endif
+#define IZ_MAX( a, b) ((a) > (b) ? (a) : (b))
 #define IZ_MIN( a, b) ((a) < (b) ? (a) : (b))
 
 #ifdef DEBUG

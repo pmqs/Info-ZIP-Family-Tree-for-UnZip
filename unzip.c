@@ -2073,7 +2073,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif
             case ('a'):
                 if (negative) {
-                    uO.aflag = MAX(uO.aflag-negative,0);
+                    uO.aflag = IZ_MAX(uO.aflag-negative,0);
                 } else
                     ++uO.aflag;
                 break;
@@ -2089,7 +2089,7 @@ int uz_opts(__G__ pargc, pargv)
                 if (negative) {
 # if (defined(TANDEM) || defined(VMS))
                     /* AS negative IS ALWAYS 1, IS THIS RIGHT? */
-                    uO.bflag = MAX(uO.bflag-negative,0);
+                    uO.bflag = IZ_MAX(uO.bflag-negative,0);
 # endif
                     /* do nothing:  "-b" is default */
                 } else {
@@ -2169,7 +2169,7 @@ int uz_opts(__G__ pargc, pargv)
 # if (!defined(NO_TIMESTAMPS))
             case ('D'):    /* -D: Skip restoring dir (or any) timestamp. */
                 if (negative) {
-                    uO.D_flag = MAX(uO.D_flag-negative,0);
+                    uO.D_flag = IZ_MAX(uO.D_flag-negative,0);
                     negative = 0;
                 } else
                     uO.D_flag++;
@@ -2295,7 +2295,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifndef SFX
             case ('l'):
                 if (negative) {
-                    uO.vflag = MAX(uO.vflag-negative,0);
+                    uO.vflag = IZ_MAX(uO.vflag-negative,0);
                     negative = 0;
                 } else
                     ++uO.vflag;
@@ -2304,7 +2304,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifndef CMS_MVS
             case ('L'):    /* convert (some) filenames to lowercase */
                 if (negative) {
-                    uO.L_flag = MAX(uO.L_flag-1,0);
+                    uO.L_flag = IZ_MAX(uO.L_flag-1,0);
                 } else
                     ++uO.L_flag;
                 break;
@@ -2340,7 +2340,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* AMIGA */
             case ('o'):    /* OK to overwrite files without prompting */
                 if (negative) {
-                    uO.overwrite_all = MAX(uO.overwrite_all-negative,0);
+                    uO.overwrite_all = IZ_MAX(uO.overwrite_all-negative,0);
                     negative = 0;
                 } else
                     ++uO.overwrite_all;
@@ -2355,7 +2355,7 @@ int uz_opts(__G__ pargc, pargv)
             case ('p'):    /* pipes:  extract to stdout, no messages */
                 if (negative) {
                     uO.cflag = FALSE;
-                    uO.qflag = MAX(uO.qflag-999,0);
+                    uO.qflag = IZ_MAX(uO.qflag-999,0);
                     negative = 0;
                 } else {
                     uO.cflag = TRUE;
@@ -2399,7 +2399,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* def IZ_CRYPT_ANY */
             case ('q'):    /* quiet:  fewer comments/messages */
                 if (negative) {
-                    uO.qflag = MAX(uO.qflag-negative,0);
+                    uO.qflag = IZ_MAX(uO.qflag-negative,0);
                     negative = 0;
                 } else
                     ++uO.qflag;
@@ -2470,7 +2470,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifdef UNICODE_SUPPORT
             case ('U'):    /* escape UTF-8, or disable UTF-8 support */
                 if (negative)
-                    uO.U_flag = MAX(uO.U_flag - 1, 0);
+                    uO.U_flag = IZ_MAX(uO.U_flag - 1, 0);
                 else
                     uO.U_flag++;
                 break;
@@ -2478,7 +2478,7 @@ int uz_opts(__G__ pargc, pargv)
 # if !defined( SFX) || defined( DIAG_SFX)
             case ('v'):    /* verbose */
                 if (negative) {
-                    uO.vflag = MAX(uO.vflag-negative,0);
+                    uO.vflag = IZ_MAX(uO.vflag-negative,0);
                     negative = 0;
                 } else if (uO.vflag)
                     ++uO.vflag;
@@ -2489,9 +2489,9 @@ int uz_opts(__G__ pargc, pargv)
 # ifndef CMS_MVS
             case ('V'):    /* Version (retain VMS/DEC-20 file versions) */
                 if (negative)
-                    uO.V_flag = FALSE;
+                    uO.V_flag = IZ_MAX( (uO.V_flag- 1), -1);
                 else
-                    uO.V_flag = TRUE;
+                    uO.V_flag = IZ_MIN( (uO.V_flag+ 1), 1);
                 break;
 # endif /* !CMS_MVS */
 # ifdef WILD_STOP_AT_DIR
@@ -2559,7 +2559,7 @@ int uz_opts(__G__ pargc, pargv)
 # if (defined(RESTORE_UIDGID) || defined(RESTORE_ACL))
             case ('X'):   /* restore owner/protection info (need privs?) */
                 if (negative) {
-                    uO.X_flag = MAX(uO.X_flag-negative, -1);
+                    uO.X_flag = IZ_MAX(uO.X_flag-negative, -1);
                     negative = 0;
                 } else
                     ++uO.X_flag;
@@ -2575,7 +2575,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* VMS */
             case ('z'):    /* display only the archive comment */
                 if (negative) {
-                    uO.zflag = MAX(uO.zflag-negative,0);
+                    uO.zflag = IZ_MAX(uO.zflag-negative,0);
                     negative = 0;
                 } else
                     ++uO.zflag;
@@ -2597,7 +2597,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifdef VOLFLAG
             case ('$'):
                 if (negative) {
-                    uO.volflag = MAX(uO.volflag-negative,0);
+                    uO.volflag = IZ_MAX(uO.volflag-negative,0);
                     negative = 0;
                 } else
                     ++uO.volflag;
@@ -2606,7 +2606,7 @@ int uz_opts(__G__ pargc, pargv)
 # if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
             case (':'):    /* allow "parent dir" path components */
                 if (negative) {
-                    uO.ddotflag = MAX(uO.ddotflag-negative,0);
+                    uO.ddotflag = IZ_MAX(uO.ddotflag-negative,0);
                     negative = 0;
                 } else
                     ++uO.ddotflag;
@@ -2615,7 +2615,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifdef UNIX
             case ('^'):    /* allow control chars in filenames */
                 if (negative) {
-                    uO.cflxflag = MAX(uO.cflxflag-negative,0);
+                    uO.cflxflag = IZ_MAX(uO.cflxflag-negative,0);
                     negative = 0;
                 } else
                     ++uO.cflxflag;

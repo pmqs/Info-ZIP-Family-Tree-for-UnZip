@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   13 Dec 2012
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   12 Apr 2013
 #==============================================================================
 
 #==============================================================================
@@ -1684,10 +1684,10 @@ status=$?
 # - Now we set the 64-bit file environment and check the size of off_t.
 echo 'Check for Large File Support'
 cat > conftest.c << _EOF_
-# define _LARGEFILE_SOURCE       /* Some OSes need this for fseeko().     */
-# define _LARGEFILE64_SOURCE
-# define _FILE_OFFSET_BITS 64    /* Select default interface as 64 bit.   */
-# define _LARGE_FILES            /* Some OSes need this for 64-bit off_t. */
+#define _LARGEFILE_SOURCE       /* Some OSes need this for fseeko().     */
+#define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64    /* Select default interface as 64 bit.   */
+#define _LARGE_FILES            /* Some OSes need this for 64-bit off_t. */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -1738,10 +1738,10 @@ fi
 
 echo 'Check size of UIDs and GIDs'
 cat > conftest.c << _EOF_
-# define _LARGEFILE_SOURCE       /* Some OSes need this for fseeko       */
-# define _LARGEFILE64_SOURCE
-# define _FILE_OFFSET_BITS 64    /* Select default interface as 64 bit   */
-# define _LARGE_FILES            /* Some OSes need this for 64-bit off_t */
+#define _LARGEFILE_SOURCE       /* Some OSes need this for fseeko       */
+#define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64    /* Select default interface as 64 bit   */
+#define _LARGE_FILES            /* Some OSes need this for 64-bit off_t */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -1750,14 +1750,14 @@ int main( )
 {
   struct stat s;
 
- #if !defined(__MVS__) && !defined(__VM__)
+#if !defined(__MVS__) && !defined(__VM__)
   /*
    2011/09/02 [AD] Comment out: Problem reported to IBM
                    - Over-optimized trivial program fails during printf()
    */
   printf("  s.st_uid is %u bytes\n", sizeof(s.st_uid));
   printf("  s.st_gid is %u bytes\n", sizeof(s.st_gid));
- #endif
+#endif
 
   /* See if have 16-bit UID. */
   if (sizeof(s.st_uid) != 2) {
@@ -1892,13 +1892,13 @@ if [ $status -eq 0 ]; then
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef HAVE_CTYPE_H
-#  include <ctype.h>
+# include <ctype.h>
 #endif
 #ifdef HAVE_WCHAR_H
-#  include <wchar.h>
+# include <wchar.h>
 #endif
 #ifdef HAVE_WCTYPE_H
-#  include <wctype.h>
+# include <wctype.h>
 #endif
 int main()
 {
@@ -1927,13 +1927,13 @@ _EOF_
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef HAVE_CTYPE_H
-#  include <ctype.h>
+# include <ctype.h>
 #endif
 #ifdef HAVE_WCHAR_H
-#  include <wchar.h>
+# include <wchar.h>
 #endif
 #ifdef HAVE_WCTYPE_H
-#  include <wctype.h>
+# include <wctype.h>
 #endif
 int main()
 {
@@ -2073,7 +2073,7 @@ status=$?
 
 # Check for missing functions.
 # - add NO_'function_name' to flags if missing.
-FUNCS='chmod chown fchmod fchown lchown mktemp mktime mkstemp'
+FUNCS='chmod chown fchmod fchown lchown localtime_r mktemp mktime mkstemp'
 FUNCS="${FUNCS} nl_langinfo rename rmdir strchr strrchr"
 #echo "Check for missing functions"
 for func in $FUNCS
@@ -2150,6 +2150,16 @@ _EOF_
 $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNEED_STRERROR"
+
+# Check for labs().
+echo 'Check for labs'
+cat > conftest.c << _EOF_
+#include <stdlib.h>
+int main() { labs( 0); return 0; }
+_EOF_
+$CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
+status=$?
+[ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNEED_LABS"
 
 # Check for directory libraries.
 echo 'Check for directory libraries'
@@ -2256,16 +2266,16 @@ cat > conftest.c << _EOF_
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef HAVE_CTYPE_H
-#  include <ctype.h>
+# include <ctype.h>
 #endif
 #ifdef HAVE_WCHAR_H
-#  include <wchar.h>
+# include <wchar.h>
 #endif
 #ifdef HAVE_WCTYPE_H
-#  include <wctype.h>
+# include <wctype.h>
 #endif
 #ifdef HAVE_MBSTRING_H
-#  include <mbstring.h>
+# include <mbstring.h>
 #endif
 int main()
 {
@@ -2292,7 +2302,7 @@ else
     cat > conftest.c << _EOF_
 #include <stdlib.h>
 #ifdef HAVE_MBSTR_H
-#  include <mbstr.h>
+# include <mbstr.h>
 #endif
 int main()
 {

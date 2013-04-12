@@ -352,8 +352,20 @@ LPDCL lpDCL;
         return FALSE;
 
     uO.qflag = lpDCL->fQuiet;  /* Quiet flag */
+
+    /* 2013-03-22 SMS.
+     * What should these be with the new command-line parser (and no
+     * fname[] array)?  process.c:free_G_buffers() would be willing to
+     * use unzip.c:free_args() on these at clean-up time, but that's in
+     * the UnZip main program, not the DLL. 
+     */
+#if 0
     G.pfnames = (char **)&fnames[0];    /* assign default file name vector */
     G.pxnames = (char **)&fnames[1];
+#else /* 0 */
+    G.pfnames = NULL;                   /* Default file name list vector. */
+    G.pxnames = NULL;                   /*         -x exclude_list. */
+#endif /* 0 [else] */
 
     /* 2012-07-14 SMS.
      * Not using extended "-j" capability, which needs more than a bit,

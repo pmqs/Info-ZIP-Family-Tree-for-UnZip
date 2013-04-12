@@ -1315,7 +1315,7 @@ static int create_qio_output(__GPRO)
 
 #  if 0
         pka_fnam.dsc$w_length = nam.NAMX_B_NAME + nam.NAMX_B_TYPE;
-        if ( uO.V_flag /* keep versions */ )
+        if ((uO.V_flag > 0) /* keep versions */ )
             pka_fnam.dsc$w_length += nam.NAMX_B_VER;
 #  endif /* 0 */
 
@@ -4456,7 +4456,7 @@ static void adj_file_name_ods2(__GPRO__ char *dest, char *src)
     }
     else
     {   /* Some kind of valid version. */
-        if (!uO.V_flag)                 /* Not -V, so cut off version. */
+        if (uO.V_flag <= 0)             /* Not -V, so cut off version. */
         {
             *versionp = '\0';
         }
@@ -4532,7 +4532,7 @@ static void adj_file_name_ods5(__GPRO__ char *dest, char *src)
     }
     else
     {   /* Some kind of valid version. */
-        if (!uO.V_flag)                 /* Not -V, so cut off version. */
+        if (uO.V_flag <= 0)             /* Not -V, so cut off version. */
         {
             *versionp = '\0';
         }
