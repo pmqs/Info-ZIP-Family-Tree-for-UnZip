@@ -1,7 +1,7 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
-   UnZip version 6.10.  Revised: 2013-01-11.
+   UnZip version 6.10.  Revised: 2013-05-14.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -26,6 +26,11 @@ If the UnZip kit is elsewhere, specify its actual location:
 
       UNZIP dn_ld_dev:[dn_ld_dir]unzip61.zip
 
+   On old VMS versions (before VMS V6.0), it may be helpful to specify
+"-b" (/BINARY) when unpacking the source kit.  For details, see
+"Testing", below.  For example:
+
+      UNZIP -b unzip61.zip              ! Unpack the UnZip source kit.
 
    Some optional UnZip features may require additional source kits.
 
@@ -250,16 +255,22 @@ target in the MMS/MMK builder, or do the job manually:
       DELETE TEST_DIR_*.DIR;*
 
    Note: For its self-extracting archive (SFX) tests, the test procedure
-uses SET FILE /ATTRIBUTES to adjust the attributes of the UnZip SFX
-executable to match those of the test archive in the UnZip kit
-(rfm:stmlf).  Thus, these tests will fail ("%DCL-W-IVQUAL, unrecognized
-qualifier - check validity, spelling, and placement \ATTRIBUTES\", ...)
-on systems where this command is not available (that is, on VMS versions
-before V6.0).  While this kind of attribute adjustment is required for
-the test archive (which was created on a non-VMS system), it should not
-be needed when creating a self-extracting archive from an archive which
-is created on a VMS system, where the archive file attributes should be
-more convenient (rfm:fix, mrs=512).
+may try to use SET FILE /ATTRIBUTES to adjust the attributes of the
+UnZip SFX executable to match those of the test archive in the UnZip
+kit, which, by default, has rfm:stmlf.  Thus, these tests may fail
+("%DCL-W-IVQUAL, unrecognized qualifier - check validity, spelling, and
+placement \ATTRIBUTES\", ...) on systems where this command is not
+available (that is, on VMS versions before V6.0).  While this kind of
+attribute adjustment may be required for the test archive (which was
+created on a non-VMS system), it should not be needed when creating a
+self-extracting archive from an archive which is created on a VMS
+system, where the archive file attributes should be more convenient
+(rfm:fix, mrs=512).
+
+   Alternatively, the source archive (or just the test archives:
+"testmake*.zip") could be extracted from the source kit using the "-b"
+(/BINARY) UnZip option, which should give the test archives the desired
+attributes.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

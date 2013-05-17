@@ -313,7 +313,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (22 Feb 2013):
+6.10c09 (13 May 2013):
  - Add optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -383,6 +383,33 @@ Features added (or removed):
  - Volume labels can now be set on VMS (options: -$, --volume-label,
    /VOLUME_LABEL).  The destination device must be allocated, not
    shared.
+ - Added option -k/--keep-permissions on AtheOS, BeOS, Unix, and VMS, to
+   control how archived permissions or protections are determined on
+   extracted files and directories.  The default behavior has changed
+   from previous UnZip versions.  Now, by default, on AtheOS, BeOS, and
+   Unix, the current umask value is applied (to the normal
+   user/group/other permissions).  On VMS, the current default
+   protection is applied to the UIC-based (SOGW) protections.  With -k,
+   the archived permissions are restored without regard to the Unix umask
+   or VMS default protection.  (This was the default behavior in previous
+   UnZip versions.)  With -k-, the archived permissions are ignored, so
+   only the Unix umask or VMS default protection is effective.  (As
+   before, on VMS, directories are always created without any Delete
+   access.)  Added new VMS CLI options /RESTORE = PROTECTION =
+   [LIMITED|ORIGINAL] for -k.  Define the C macro NO_KFLAG to disable
+   the -k option, and restore the old behavior (or something like it).
+   (atheos/athcfg.h, atheos/atheos.c, beos/beocfg.h, beos/beos.c,
+   man/unzip.1, unix/unix.c, unix/unxcfg.h, unzip.c, unzip.h, unzpriv.h,
+   vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help, vms/UNZIP_DEF.RNH,
+   vms/vms.c) [SMS]
+ - Added options -ka/--keep-acl (/RESTORE = ACL) on VMS, to control
+   restoration of ACL.  Added VMS CLI option /RESTORE = OWNER (-X) to
+   control restoration of owner/UIC.  With -k/--keep-permission
+   (/RESTORE = PROTECTION), these options allow independent control over
+   the restoration of ACL, protection, and owner/UIC.  (man/unzip.1,
+   unzip.c, unzip.h, vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help,
+   vms/vms.c) [SMS]
+
 
 Bugs fixed:
 
@@ -780,7 +807,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (12 Apr 2013):
+6.10c09 (14 May 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1120,6 +1147,10 @@ Bugs fixed:
  - Changed AES_WG endian-determination code not to look for
    <sys/isa_defs.h> on __sun systems with __sparc defined, because it's
    missing on SunOS 4.1.4.  (aes_wg/brg_endian.h) [SMS]
+ - Changed the VMS DCL test script to give SFX tests some chance of
+   working on VMS versions before V6.0, where SET FILE /ATTRIBUTES is
+   not available.  Added an explanation to the VMS-specific installation
+   instructions.  (vms/INSTALL_VMS.txt, vms/test_unzip.com) [SMS]
 
 ==================
 

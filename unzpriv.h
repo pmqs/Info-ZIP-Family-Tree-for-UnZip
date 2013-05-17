@@ -2934,6 +2934,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 /* int    open_outfile        OF((__GPRO));           * (see fileio.c) vms.c */
 /* int    flush               OF((__GPRO__ uch *rawbuf, unsigned size,
                                   int final_flag));   * (see fileio.c) vms.c */
+   int    get_rms_fileprot    OF((void));                           /* vms.c */
    char  *vms_msg_text        OF((void));                           /* vms.c */
 # ifdef RETURN_CODES
    void   return_VMS          OF((__GPRO__ int zip_error));         /* vms.c */
@@ -2945,7 +2946,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    int    VMSCLI_usage        OF((__GPRO__ int error));         /* cmdline.c */
 # endif /* def VMSCLI */
 # ifdef ENABLE_USER_PROGRESS
-   int establish_ctrl_t       OF((void ctrl_t_ast()));              /* vms.c */
+   int    establish_ctrl_t    OF((void ctrl_t_ast()));              /* vms.c */
 # endif /* def ENABLE_USER_PROGRESS */
 #endif /* def VMS */
 

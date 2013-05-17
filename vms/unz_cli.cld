@@ -70,9 +70,15 @@ Define	Verb		UNZIP
 	DisAllow	(neg RESTORE.DATE) and RESTORE.DATE.ALL
 	DisAllow	(neg RESTORE.DATE) and RESTORE.DATE.FILES
 	DisAllow	(neg RESTORE) and RESTORE.ACL
+	DisAllow	(neg RESTORE) and RESTORE.OWNER
 	DisAllow	(neg RESTORE) and RESTORE.PROTECTION
 	DisAllow	(neg RESTORE) and (neg RESTORE.ACL)
+	DisAllow	(neg RESTORE) and (neg RESTORE.OWNER)
 	DisAllow	(neg RESTORE) and (neg RESTORE.PROTECTION)
+	DisAllow	(neg RESTORE.PROTECTION) and RESTORE.PROTECTION.LIMITED
+	DisAllow	(neg RESTORE.PROTECTION) and RESTORE.PROTECTION.ORIGINAL
+	DisAllow	RESTORE.PROTECTION.LIMITED and
+			 RESTORE.PROTECTION.ORIGINAL
 	DisAllow	TEXT.ALL and TEXT.AUTO
 	DisAllow	TEXT.AUTO and TEXT.NONE
 	DisAllow	TEXT.NONE and TEXT.ALL
@@ -124,11 +130,16 @@ Define	Type		RESTORE_KEYWORDS
 	Keyword		DATE, VALUE(REQUIRED, TYPE=RESTOREDATE_KEYS),
 			 Negatable
 	Keyword		ACL, Negatable
-	Keyword		PROTECTION, DEFAULT, Negatable
+	Keyword		OWNER, Negatable
+	Keyword		PROTECTION, VALUE(TYPE=RESTOREPROT_KEYS), Negatable
 
 Define	Type		RESTOREDATE_KEYS
 	Keyword		FILES, DEFAULT
 	Keyword		ALL
+
+Define	Type		RESTOREPROT_KEYS
+	Keyword		LIMITED, DEFAULT, NonNegatable
+	Keyword		ORIGINAL, NonNegatable
 
 Define	Type		QUIET_MODIFIER
 	Keyword		SUPER

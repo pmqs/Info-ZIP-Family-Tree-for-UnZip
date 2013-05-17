@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -14,6 +14,7 @@
 
   Contains:  readdir()
              do_wild()           <-- generic enough to put in fileio.c?
+             filtattr()
              mapattr()
              mapname()
              checkdir()
@@ -113,8 +114,6 @@ typedef struct {
 
 /* static int created_dir;      */      /* used in mapname(), checkdir() */
 /* static int renamed_fullpath; */      /* ditto */
-
-static unsigned filtattr OF((__GPRO__ unsigned perms));
 
 
 /*****************************/
@@ -333,20 +332,28 @@ char *do_wild(__G__ wildspec)
 /************************/
 /*  Function filtattr() */
 /************************/
-/* This is used to clear or keep the SUID and SGID bits on file permissions.
- * It's possible that a file in an archive could have one of these bits set
- * and, unknown to the person unzipping, could allow others to execute the
- * file as the user or group.  The new option -K bypasses this check.
+/* For safety/security, clear SUID and SGID permission bits, unless -K
+ * was specified to allow their preservation.
+ * For safety/security (and consistency with the default behavior of
+ * "tar"), apply umask to archive permissions, unless -k was specified
+ * to preserve the archive permissions (always subject to -K, above).
  */
 
 static unsigned filtattr(__G__ perms)
     __GDEF
     unsigned perms;
 {
-    /* keep setuid/setgid/tacky perms? */
+    /* Keep setuid/setgid/tacky perms? */
     if (!uO.K_flag)
         perms &= ~(S_ISUID | S_ISGID | S_ISVTX);
 
+#ifdef KFLAG
+    /* Apply umask to archive permissions? */
+    if (uO.kflag == 0)
+        perms &= ~G.umask_val;
+#endif /* def KFLAG */
+
+    /* Mask off any non-permission bits, and return the result. */
     return (0xffff & perms);
 } /* end function filtattr() */
 
@@ -488,9 +495,10 @@ int mapattr(__G)
             break;
     } /* end switch (host-OS-created-by) */
 
-    /* for originating systems with no concept of "group," "other," "system": */
-    umask( (int)(tmp=umask(0)) );    /* apply mask to expanded r/w(/x) perms */
-    G.pInfo->file_attr &= ~tmp;
+    /* For originating systems with no concept of "group", "other",
+     * "system", apply mask to expanded r/w(/x) permissions.
+     */
+    G.pInfo->file_attr &= ~G.umask_val;
 
     return 0;
 
@@ -648,7 +656,9 @@ int mapname(__G__ renamed)
                   FnFilter1(G.filename)));
             }
 #ifndef NO_CHMOD
-            if (uO.X_flag >= 0)
+# ifdef KFLAG
+            if (uO.kflag >= 0)
+# endif
             {
                 /* Filter out security-relevant attributes bits. */
                 G.pInfo->file_attr = filtattr(__G__ G.pInfo->file_attr);
@@ -1266,7 +1276,9 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     {
 #  endif /* defined( UNIX) && defined( __APPLE__) */
 
-    if (uO.X_flag >= 0)
+#  ifdef KFLAG
+    if (uO.kflag >= 0)
+#  endif
     {
         if (fchmod(fileno(G.outfile), filtattr(__G__ G.pInfo->file_attr)))
             perror("fchmod (file attributes) error");
@@ -1316,7 +1328,9 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
   ---------------------------------------------------------------------------*/
 
 #  ifndef NO_CHMOD
-    if (uO.X_flag >= 0)
+#   ifdef KFLAG
+    if (uO.kflag >= 0)
+#   endif
     {
         if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
             perror("chmod (file attributes) error");
@@ -1356,7 +1370,9 @@ int set_symlnk_attribs(__G__ slnk_entry)
       }
 # endif /* ndef NO_LCHOWN */
 # ifndef NO_LCHMOD
-      if (uO.X_flag >= 0)
+#  ifdef KFLAG
+      if (uO.kflag >= 0)
+#  endif
       {
           TTrace((stderr,
             "set_symlnk_attribs:  restoring Unix attributes for\n        %s\n",
@@ -1442,7 +1458,9 @@ int set_direc_attribs(__G__ d)
     /* Do chmod() last, to avoid trying to change some attribute on a
      * read-only file.
      */
-    if (uO.X_flag >= 0)
+# ifdef KFLAG
+    if (uO.kflag >= 0)
+# endif
     {
         if (chmod(d->fn, UxAtt(d)->perms)) {
             Info(slide, 0x201, ((char *)slide, DirlistChmodFailed,

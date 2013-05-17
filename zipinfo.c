@@ -572,9 +572,9 @@ int zi_opts(__G__ pargc, pargv)
 
 
 /* Copied from unzip.c */
-#define o_mc            0x104
-#define o_sc            0x105
-#define o_so            0x107
+#define o_mc            0x105
+#define o_sc            0x106
+#define o_so            0x108
 
 
     while ((option = get_option( __G__ ZIO, &args, &argcnt, &argnum,

@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2013-01-28
+   Document date: 2013-04-23
 
 ------------------------------------------------------------------------
 
@@ -115,8 +115,8 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
 - Full Unicode support for Windows
 
 - New -I and -O options for ISO and OEM character set conversion,
-  respectively, using iconv.  See unix/Makefile for details on enabling
-  iconv support.  [Should be in INSTALL?]
+  respectively, using iconv.  See INSTALL (or unix/Makefile) for details
+  on enabling iconv support.
 
 - New command-line parser (like the one used by Zip).  Functional
   changes include:
@@ -143,7 +143,7 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
   extracted files only, not on created directories.  Use "-D" to restore
   no date-time information.  Use "-D-" to restore date-time information
   on directories as well as files.  (On VMS, this is not a change,
-  except for the new trailing-hyphen option negation syntax.)
+  except for the new trailing-hyphen syntax for option negation.)
 
 - Behavior change: ZipInfo report format changes:
    - Headers and totals summary formats have been changed.  New option:
@@ -163,7 +163,7 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
    - More consistent with Zip.
    - Use "CC=gcc" to specify GCC.  "make" targets "*_gcc" are gone.
    - Windows MinGW support.
-   - Minor changes for BAE Systems STOP OS.
+   - Minor changes to accommodate BAE Systems STOP OS.
 
 - -j/--junk-dirs option now accepts an optional value, the number of
   directory levels to discard.  As before, plain "-j" discards all
@@ -210,9 +210,9 @@ so on.  Plain Zip archives work if some kind of compatible unzipping
 program is easily available on the target system.  If the target system
 provides a way to make self-extracting archives, in which both the
 executables and text files can be stored together, then that's often a
-good way.  (UnZipSFX is normally suitable, for example.)  If a bare
-UnZip executable is supplied, then a separate Zip archive containing the
-remaining text and binary files should also be supplied.
+good way.  (Info-ZIP UnZipSFX is normally suitable, for example.)  If a
+bare UnZip executable is supplied, then a separate Zip archive
+containing the remaining text and binary files should also be supplied.
 
 ------------------------------------------------------------------------
 

@@ -276,7 +276,11 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #   endif /* ?OS2 || ?WIN32 */
 #  else /* !DOS_FLX_OS2_W32 */
 #   ifdef VMS
-   static ZCONST char Far local2[] = " -X  restore owner/ACL protection info";
+#    ifdef KFLAG
+   static ZCONST char Far local2[] = " -X | -k | -ka  restore UIC | prot | ACL";
+#    else /* def KFLAG */
+   static ZCONST char Far local2[] = " -X | -ka  restore UIC | ACL";
+#    endif /* def KFLAG [else] */
 #    ifdef MORE
    static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
@@ -292,7 +296,11 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #    endif
 #   else /* !VMS */
 #    ifdef ATH_BEO_UNX
+#    ifdef KFLAG
+   static ZCONST char Far local2[] = " -X | -k  restore UID/GID | permissions";
+#    else /* def KFLAG */
    static ZCONST char Far local2[] = " -X  restore UID/GID info";
+#    endif /* def KFLAG [else] */
 #     ifdef __APPLE__
 #      ifdef MORE
    static ZCONST char Far local3[] = "\
@@ -1088,6 +1096,17 @@ int unzip(__G__ argc, argv)
 # endif
 
 /*---------------------------------------------------------------------------
+    VMS initialization code.
+  ---------------------------------------------------------------------------*/
+
+# ifdef VMS
+    /* Get the RMS default protections for mapattr() and VMS-specific
+     * file and directory protection-setting.
+     */
+    get_rms_fileprot();
+# endif
+
+/*---------------------------------------------------------------------------
     Sanity checks.  Commentary by Otis B. Driftwood and Fiorello:
 
     D:  It's all right.  That's in every contract.  That's what they
@@ -1508,6 +1527,13 @@ int unzip(__G__ argc, argv)
     G.exdir_attr_ok = vol_attr_ok( (uO.exdir == NULL) ? "." : uO.exdir);
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
+#ifdef KFLAG
+    /* Get Unix umask value.  (Already have VMS default protection value.) */
+# if defined( __ATHEOS__) || defined( __BEOS__) || defined( UNIX)
+    umask( G.umask_val = umask( 0));
+# endif
+#endif /* def KFLAG */
+
 
 /*---------------------------------------------------------------------------
     Okey dokey, we have everything we need to get started.  Let's roll.
@@ -1639,12 +1665,12 @@ static int setsignalhandler(__G__ p_savedhandler_chain, signal_type,
  */
 #define o_hh            0x101
 #define o_ja            0x102
-#define o_LI            0x103
-#define o_mc            0x104   /* See also zipinfo.c. */
-#define o_sc            0x105   /* See also zipinfo.c. */
-#define o_si            0x106
-#define o_so            0x107   /* See also zipinfo.c. */
-
+#define o_ka            0x103   /* Restore (VMS) ACL. */
+#define o_LI            0x104   
+#define o_mc            0x105   /* See also zipinfo.c. */
+#define o_sc            0x106   /* See also zipinfo.c. */
+#define o_si            0x107
+#define o_so            0x108   /* See also zipinfo.c. */
 
 /* The below is from the old main command line code with a few changes.
    Note that UnZip and ZipInfo filter out their own options based on the
@@ -1725,13 +1751,21 @@ static struct option_struct far options[] = {
        'j',  "junk directories, extract names only"},
 # ifdef J_FLAG
     {UZO, "J",  "junk-attrs",      o_NO_VALUE,       o_NEGATABLE,
-       'J',  "Junk AtheOS, BeOS or MacOS file attrs"},
+       'J',  "Junk AtheOS, BeOS, or MacOS file attrs"},
 # endif
     {UZO, "",   "jar",             o_NO_VALUE,       o_NEGATABLE,
        o_ja, "Treat archive(s) as Java JAR (UTF-8)"},
 # ifdef ATH_BEO_UNX
     {UZO, "K",  "keep-s-attrs",    o_NO_VALUE,       o_NEGATABLE,
        'K',  "retain SUID/SGID/Tacky attrs"},
+# endif
+# ifdef KFLAG
+    {UZO, "k",  "keep-permissions", o_NO_VALUE,      o_NEGATABLE,
+       'k',  "retain permissions"},
+# endif
+# ifdef VMS
+    {UZO, "ka", "keep-acl",        o_NO_VALUE,       o_NEGATABLE,
+       o_ka, "restore (VMS) ACL"},
 # endif
 # ifndef SFX
     {UZO, "l",  "list",            o_NO_VALUE,       o_NEGATABLE,
@@ -2276,6 +2310,13 @@ int uz_opts(__G__ pargc, pargv)
                     }
                     break;
 # endif /* def J_FLAG */
+            case (o_ja):        /* --java-cafe. */
+                if (negative) {
+                    --uO.java_cafe;
+                    negative = 0;
+                } else
+                    ++uO.java_cafe;
+                break;
 # ifdef ATH_BEO_UNX
             case ('K'):
                 if (negative) {
@@ -2285,13 +2326,24 @@ int uz_opts(__G__ pargc, pargv)
                 }
                 break;
 # endif /* ATH_BEO_UNX */
-            case (o_ja):
+# ifdef KFLAG
+            case ('k'):
                 if (negative) {
-                    --uO.java_cafe;
-                    negative = 0;
-                } else
-                    ++uO.java_cafe;
+                    uO.kflag = IZ_MAX( -1, (uO.kflag- 1));
+                } else {
+                    uO.kflag = IZ_MIN( 1, (uO.kflag+ 1));
+                }
                 break;
+# endif /* def KFLAG */
+# ifdef VMS
+            case (o_ka):
+                if (negative) {
+                    uO.ka_flag = FALSE;
+                } else {
+                    uO.ka_flag = TRUE;
+                }
+                break;
+# endif /* def VMS */
 # ifndef SFX
             case ('l'):
                 if (negative) {
@@ -2557,7 +2609,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif
                 break;
 # if (defined(RESTORE_UIDGID) || defined(RESTORE_ACL))
-            case ('X'):   /* restore owner/protection info (need privs?) */
+            case ('X'):   /* restore owner/group (more?) info (need privs?) */
                 if (negative) {
                     uO.X_flag = IZ_MAX(uO.X_flag-negative, -1);
                     negative = 0;
@@ -3267,10 +3319,10 @@ static void help_extended(__G)
   "unzip modifiers:",
   "  -a   Convert text files to local OS format.  Convert line ends, EOF",
   "         marker, and from or to EBCDIC character set as needed.",
-  "  -b   Treat all files as binary.  [Tandem] Force filecode 180 ('C').",
-  "         [VMS] Autoconvert binary files.  -bb forces convert of all files.",
   "  -B   [UNIXBACKUP compile option enabled] Save a backup copy of each",
   "         overwritten file in foo~ or foo~99999 format.",
+  "  -b   Treat all files as binary.  [Tandem] Force filecode 180 ('C').",
+  "         [VMS] Autoconvert binary files.  -bb forces convert of all files.",
   "  -C   Use case-insensitive matching.",
   "",
   "  -D   Skip restoration of timestamps on all files and directories.",
@@ -3281,32 +3333,41 @@ static void help_extended(__G)
   "         restore.",
   "  -F   [Acorn] Suppress removal of NFS filetype extension.  [Non-Acorn if",
   "         ACORN_FTYPE_NFS] Translate filetype and append to name.",
+#  ifdef ICONV_MAPPING
+  "  -I   [Unix] ISO code page to use.",
+#  endif
   "  -i   [MacOS] Ignore filenames in MacOS extra field.  Instead, use name in",
   "         standard header.",
-#  ifdef ICONV_MAPPING
-  "  -I   [UNIX] ISO code page to use.",
-#  endif
-  "  -j[=N] Junk paths.  Strip all (or top N) directories from extracted files.",
   "  -J   [BeOS] Junk file attributes.  [MacOS] Ignore MacOS specific info.",
+  "  -j[=N] Junk paths.  Strip all (or top N) directories from extracted files.",
   "  --jar Treat archive(s) as Java JAR (UTF-8 names).",
   "  -K   [AtheOS, BeOS, Unix] Restore SUID/SGID/Tacky file attributes.",
+#ifdef KFLAG
+  "  -k   [AtheOS, BeOS, Unix, VMS] Ignore umask (VMS: default protection)",
+  "         when restoring permissions/protections.",
+  "  -k-    Ignore archive permissions/protections.  Use umask (VMS: dflt prot).",
+  "         Default: Apply umask (VMS: dflt prot) to archive perms/prots.",
+#endif /* def KFLAG */
+#ifdef VMS
+  "  -ka  [VMS] Restore (VMS) ACL.",
+#endif /* def VMS */
   "  -L   Convert to lowercase any names from uppercase only file system.",
   "  -LL  Convert all files to lowercase.",
   "  -M   Pipe all output through internal pager similar to Unix more(1).",
-  "  -n   Never overwrite existing files.  Skip extracting that file, no prompt.",
   "  -N   [Amiga] Extract file comments as Amiga filenotes.",
-  "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
-  "         care.",
+  "  -n   Never overwrite existing files.  Skip extracting that file, no prompt.",
 #  ifdef ICONV_MAPPING
   "  -O   [UNIX] OEM code page to use.  Now, if ICONV_MAPPING compile option",
   "         is used, and -O is not used, UnZip tries to automatically set OEM",
   "         code page based on current environment language setting.",
 #  endif
+  "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
+  "         care.",
   "  -P p Use password p to decrypt files.  THIS IS INSECURE!  Some OS show",
   "         command line to other users.",
   "  -q   Perform operations quietly.  The more q (as in -qq) the quieter.",
-  "  -s   Convert spaces in filenames to underscores.",
   "  -S   [VMS] Convert text files (-a, -aa) into Stream_LF format.",
+  "  -s   Convert spaces in filenames to underscores.",
   "  -U   [UNICODE enabled] Show non-local characters as #Uxxxx or #Lxxxxxx ASCII",
   "         text escapes where x is hex digit.  [Old] -U used to leave names",
   "         uppercase if created on MS-DOS, VMS, etc.  See -L.",
@@ -3316,10 +3377,9 @@ static void help_extended(__G)
   "  -W   [Only if WILD_STOP_AT_DIR] Modify pattern matching so ? and * do not",
   "         match directory separator /, but ** does.  Allows matching at specific",
   "         directory levels.",
-  "  -X   [VMS, Unix, OS/2, NT, Tandem] Restore UICs and ACL entries under VMS,",
-  "         or UIDs/GIDs under Unix, or ACLs under certain network-enabled",
-  "         versions of OS/2, or security ACLs under Windows NT.  Can require",
-  "         user privileges.",
+  "  -X   [Unix, VMS, OS/2, NT, Tandem] Restore UID/GID on Unix, UIC on VMS,",
+  "         ACL on certain network-enabled versions of OS/2, or security ACL",
+  "         on Windows NT.  Can require user privileges.",
   "  -XX  [NT] Extract NT security ACLs after trying to enable additional",
   "         system privileges.",
   "  -Y   [VMS] Treat archived name endings of .nnn as VMS version numbers.",

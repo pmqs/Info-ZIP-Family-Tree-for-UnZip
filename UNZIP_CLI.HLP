@@ -453,17 +453,22 @@
    that may be stored in the archive,  and  possibly  a  summary  when
    finished  with  each  archive.  The /QUIET[=SUPER] options suppress
    the printing of some or all of these messages.
-3 /RESTORE (-D, -X)
+3 /RESTORE (-D, -k, -ka, -X)
    /RESTORE[=(keyword, ...)]
 
    Selects restoration  options  for  some  meta-data.   The  optional
    keywords are:
 
-       ACL           Restore file protection, owner, and ACL settings.
-                     (-XX)
-       PROTECTION    Restore file protection settings.  (Default.)
-       NOPROTECTION  Do not restore file owner and ACL protection
-                     settings.  (-X-)
+       ACL           Restore file ACL settings.  (-ka)
+       OWNER         Restore file owner/UIC settings.  (-X)
+       PROTECTION = LIMITED   Restore file UIC-based (SOGW) protection
+                              settings, respecting the current default
+                              protection.  (Default.)
+       PROTECTION = ORIGINAL  Restore file UIC-based (SOGW) protection
+                              settings, ignoring the current default
+                              protection.  (-k)
+       NOPROTECTION  Do not restore file UIC-based (SOGW) protection settings.
+                     The current default protection is used.  (-k-)
        NODATE        Do not restore any timestamps.
        DATE=ALL      Restore timestamps for all extracted entries,
                      files and directories.

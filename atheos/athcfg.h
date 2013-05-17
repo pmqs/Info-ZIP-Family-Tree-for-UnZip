@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2004 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -52,14 +52,22 @@
 #endif
 #define RESTORE_UIDGID
 
-/* Static variables that we have to add to Uz_Globs: */
+/* Static variables that we have to add to Uz_Globs. */
+
+#ifdef KFLAG
+# define UMASK_VAL mode_t umask_val;
+#else /* def KFLAG */
+# define UMASK_VAL
+#endif /* def KFLAG [else] */
+
 #define SYSTEM_SPECIFIC_GLOBALS \
     int created_dir, renamed_fullpath;\
     char *rootpath, *buildpath, *end;\
     ZCONST char *wildname;\
     char *dirname, matchname[FILNAMSIZ];\
     int rootlen, have_dirname, dirnamelen, notfirstcall;\
-    zvoid *wild_dir;
+    zvoid *wild_dir;\
+    UMASK_VAL
 
 /* created_dir, and renamed_fullpath are used by both mapname() and    */
 /*    checkdir().                                                      */

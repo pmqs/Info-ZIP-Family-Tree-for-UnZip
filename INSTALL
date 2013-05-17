@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-03-07
+   UnZip version 6.10.  Revised: 2013-04-23
 
 ------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ UnZip follows these steps:
       1. Unpack the UnZip source kit.  (Some optional features, such as
       optional compression or encryption methods, may require additional
       source kits.  Obtain and unpack any additional source kits, if
-      needed.
+      needed.)
 
       2. Build.  That is, compile and link the programs.  A C compiler
       and a "make" program are usually required.  Other standard utility
@@ -95,11 +95,11 @@ example:
 Alternatively, programs like "flip" or "unix2dos" (or Unix utilities
 like "sed" or "tr") can also be used to convert text file line endings.
 
-   Some system-specific text files in an UnZip kit, such as Visual
-Studio files, may be archived with CR+LF line endings, and these files
-should work on the appropriate systems whether or not "unzip -a" is used
-to extract them.  (Unix users could use "unzip -a" to make it easier to
-examine these files on their systems.)
+   Some system-specific text files in an UnZip source kit, such as
+Microsoft Windows Visual Studio files, may be archived with CR+LF line
+endings, and these files should work on the appropriate systems whether
+or not "unzip -a" is used to extract them.  (Unix users could use "unzip
+-a" to make it easier to examine these files on their systems.)
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -160,9 +160,9 @@ object library, or they can build a proper bzip2 object library, if they
 find bzip2 source files in the "bzip2" subdirectory of the main UnZip
 directory.  To have the UnZip builders do the work, let's assume that
 you have downloaded a bzip2 kit, like, say, "bzip2-1.0.6.tar.gz", and
-put it in the same directory as the UnZip kit.  To unpack that kit, and
-put its contents where the UnZip builders expect them, use commands like
-the following:
+put it in the same directory as the UnZip source kit.  To unpack that
+kit, and put its contents where the UnZip builders expect them, use
+commands like the following:
 
       cd unzip61                        # (If not already there.)
       gzip -dc ../bzip2-1.0.6.tar.gz | tar xf -
@@ -182,7 +182,7 @@ with bzip2 compression support.
    -------------------------
 
    All the source files needed to enable support for the LZMA and PPMd
-compression methods are included in the UnZip kit.
+compression methods are included in the UnZip source kit.
 
 ------------------------------------------------------------------------
 
@@ -287,7 +287,7 @@ enable the corresponding optional features:
 the optional compression and encryption methods enabled, might look like
 the following:
 
-      make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 \
+      make -f unix/Makefile CC=gcc AES_WG=1 ICONV=1 IZ_BZIP2=bzip2 \
        LZMA=1 PPMD=1 generic
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -375,7 +375,7 @@ example build command, but also enable support in UnZipSFX for AES
 encryption, and for LZMA and PPMd compression, use a command like the
 following:
 
-      make -f unix/Makefile CC=gcc AES_WG=1 IZ_BZIP2=bzip2 \
+      make -f unix/Makefile CC=gcc AES_WG=1 ICONV=1 IZ_BZIP2=bzip2 \
        LOCAL_UNZIP='-DCRYPT_AES_WG_SFX -DLZMA_SFX -DPPMD_SFX' \
        LZMA=1 PPMD=1 generic
 
@@ -979,7 +979,7 @@ UNIXBACKUP   (default on OS/2, Unix, Windows)
    On target ports where UNIXBACKUP is enabled by default, the negated
    option, NO_UNIXBACKUP, may be used to disable this feature.
 
-VMS_TEXT_CONV   (everywhere except VMS)
+VMS_TEXT_CONV   (default everywhere except VMS)
 NO_VMS_TEXT_CONV
    VMS_TEXT_CONV enables conversion of some VMS-specific text file
    formats, and is defined by default in UnZip (but not in UnZipSFX).

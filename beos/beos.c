@@ -14,6 +14,7 @@
   (based on unix/unix.c)
 
   Contains:  do_wild()           <-- generic enough to put in fileio.c?
+             filtattr()
              mapattr()
              mapname()
              checkdir()
@@ -52,7 +53,6 @@
 #include <support/ByteOrder.h>
 #include <storage/Mime.h>
 
-static unsigned filtattr OF((__GPRO__ unsigned perms));
 static uch *scanBeOSexfield  OF((const uch *ef_ptr, unsigned ef_len));
 static int  set_file_attrs( const char *, const unsigned char *, const off_t );
 static void setBeOSexfield   OF((const char *path, uch *extra_field));
@@ -240,7 +240,6 @@ char *do_wild(__G__ wildspec)
 
 
 
-
 #ifndef S_ISUID
 # define S_ISUID        0004000 /* set user id on execution */
 #endif
@@ -254,24 +253,30 @@ char *do_wild(__G__ wildspec)
 /************************/
 /*  Function filtattr() */
 /************************/
-/* This is used to clear or keep the SUID and SGID bits on file permissions.
- * It's possible that a file in an archive could have one of these bits set
- * and, unknown to the person unzipping, could allow others to execute the
- * file as the user or group.  The new option -K bypasses this check.
+/* For safety/security, clear SUID and SGID permission bits, unless -K
+ * was specified to allow their preservation.
+ * For safety/security (and consistency with the default behavior of
+ * "tar"), apply umask to archive permissions, unless -k was specified
+ * to preserve the archive permissions (always subject to -K, above).
  */
 
 static unsigned filtattr(__G__ perms)
     __GDEF
     unsigned perms;
 {
-    /* keep setuid/setgid/tacky perms? */
+    /* Keep setuid/setgid/tacky perms? */
     if (!uO.K_flag)
         perms &= ~(S_ISUID | S_ISGID | S_ISVTX);
 
+#ifdef KFLAG
+    /* Apply umask to archive permissions? */
+    if (uO.kflag == 0)
+        perms &= ~G.umask_val;
+#endif /* def KFLAG */
+
+    /* Mask off any non-permission bits, and return the result. */
     return (0xffff & perms);
 } /* end function filtattr() */
-
-
 
 
 
@@ -411,9 +416,10 @@ int mapattr(__G)
             break;
     } /* end switch (host-OS-created-by) */
 
-    /* for originating systems with no concept of "group," "other," "system": */
-    umask( (int)(tmp=umask(0)) );    /* apply mask to expanded r/w(/x) perms */
-    G.pInfo->file_attr &= ~tmp;
+    /* For originating systems with no concept of "group", "other",
+     * "system", apply mask to expanded r/w(/x) permissions.
+     */
+    G.pInfo->file_attr &= ~G.umask_val;
 
     return 0;
 
@@ -553,9 +559,14 @@ int mapname(__G__ renamed)
             }
 
 #ifndef NO_CHMOD
-            /* set approx. dir perms (make sure can still read/write in dir) */
-            if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr) | 0700))
-                perror("chmod (directory attributes) error");
+# ifdef KFLAG
+            if (uO.kflag >= 0)
+# endif
+            {
+                /* set approx. dir perms (make sure can still read/write in dir) */
+                if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr) | 0700))
+                    perror("chmod (directory attributes) error");
+            }
 #endif
 
             /* set dir time (note trailing '/') */
@@ -1076,8 +1087,13 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
   ---------------------------------------------------------------------------*/
 
 #ifndef NO_CHMOD
-    if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
-        perror("chmod (file attributes) error");
+# ifdef KFLAG
+    if (uO.kflag >= 0)
+# endif
+    {
+        if (chmod(G.filename, filtattr(__G__ G.pInfo->file_attr)))
+            perror("chmod (file attributes) error");
+    }
 #endif
 
     /* if -X option was specified and we have UID/GID info, restore it */
@@ -1191,11 +1207,16 @@ int set_direc_attribs(__G__ d)
         }
     }
 #ifndef NO_CHMOD
-    if (chmod(d->fn, filtattr(__G__ UxAtt(d)->perms))) {
-        Info(slide, 0x201, ((char *)slide, DirlistChmodFailed,
-          FnFilter1(d->fn), strerror(errno)));
-        if (!errval)
-            errval = PK_WARN;
+# ifdef KFLAG
+    if (uO.kflag >= 0)
+# endif
+    {
+        if (chmod(d->fn, filtattr(__G__ UxAtt(d)->perms))) {
+            Info(slide, 0x201, ((char *)slide, DirlistChmodFailed,
+              FnFilter1(d->fn), strerror(errno)));
+            if (!errval)
+                errval = PK_WARN;
+        }
     }
 #endif /* !NO_CHMOD */
     return errval;

@@ -460,7 +460,12 @@ $             copy 'unzipsfx_cli' sys$disk:[]unzipsfx.exe
 $         else
 $             copy 'unzipsfx' sys$disk:[]unzipsfx.exe
 $         endif
-$         set file /attributes = (rfm:stmlf, mrs:0, lrl:32767) unzipsfx.exe
+$         rfm_exe = f$file_attributes( "unzipsfx.exe", "rfm")
+$         rfm_arc = f$file_attributes( "[-]''test_archive'", "rfm")
+$         if ((rfm_arc .eqs. "STMLF") .and. (rfm_exe .nes. rfm_arc))
+$         then
+$             set file /attributes = (rfm:stmlf, mrs:0, lrl:32767) unzipsfx.exe
+$         endif
 $         copy unzipsfx.exe, [-]'test_archive' []test_sfx.exe
 $         set protection = o:re test_sfx.exe
 $!

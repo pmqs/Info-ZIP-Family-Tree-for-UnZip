@@ -524,6 +524,21 @@ typedef struct _UzpOpts {
 #if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
     int K_flag;         /* -K: keep setuid/setgid/tacky permissions */
 #endif
+#if !defined( NO_KFLAG) && !defined( KFLAG)
+# if defined( __ATHEOS__) || defined( __BEOS__) || defined( UNIX)
+#  define KFLAG
+# else
+#  if defined( VMS)
+#   define KFLAG
+#  endif
+# endif
+#endif /* !defined( NO_KFLAG) && !defined( KFLAG) */
+#ifdef KFLAG
+    int kflag;          /* -k: owner+group restoration control. */
+#endif
+#ifdef VMS
+    int ka_flag;        /* -ka: VMS ACL restoration control. */
+#endif
     int lflag;          /* -12slmv: listing format (zipinfo) */
     int L_flag;         /* -L: convert filenames from some OSes to lowercase */
     int member_counts;  /* -mc: show separate dir/file/link member counts */

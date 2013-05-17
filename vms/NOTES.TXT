@@ -1,10 +1,10 @@
-      VMS Notes for Info-ZIP Zip 3.0 and UnZip 6.0
+      VMS Notes for Info-ZIP Zip 3.x and UnZip 6.x
       ============================================
 
    This document describes some VMS-specific behavior and implementation
 details of the Info-ZIP Zip and UnZip programs.
 
-   Last modified: 2013-01-11.
+   Last modified: 2013-04-18.
 
 
    Command-line Case
@@ -26,7 +26,7 @@ leads to some additional information on these features.
    File Name Case (ODS5)
    ---------------------
 
-   In general, Zip 3.0 and UnZip 6.0 should handle file name case (and
+   In general, Zip 3.x and UnZip 6.x should handle file name case (and
 extended file names) in reasonable ways on ODS5 disks.
 
    Zip offers a variety of "-C" (/PRESERVE_CASE) options to control how
@@ -100,6 +100,29 @@ or, using the command procedure to build Zip:
    The Zip or UnZip "-v" (/VERBOSE) report should include
 SYMLINK_SUPPORT (Zip) or SYMLINKS (UnZip) in its list of "special
 compilation options" if the program was built with symlink support.
+
+   A problem has been observed on VMS Alpha V8.3 and IA64 V8.3-1H1 when
+Zip tries to follow a symlink with a space in its link text while
+preserving VMS file attributes.  For example (Alpha V8.3), with this
+symlink: abc.slnk;1 -> Symlink text (where the file "Symlink^_text."
+exists):
+
+ALP $ type abc.slnk                     ! This works, but Zip may fail:
+Symlink file line 1
+Symlink file line 2
+
+ALP $ zip -V fail.zip abc.slnk          ! With "-V", without "-y".
+  adding: abc.slnk
+
+ vms_open(): $qiow access sts = %x00000910.
+      zip warning: could not open for reading: abc.slnk
+                   no such file
+
+zip warning: Not all files were readable
+  files/entries read:  0 (0 bytes)  skipped:  1 (0 bytes)
+zip warning: zip file empty
+
+   VMS V8.4 (Alpha or IA64) seems to solve this problem.
 
 
    File I/O Performance

@@ -252,9 +252,12 @@ $DESCRIPTOR(cli_timestamp,      "TIMESTAMP");           /* -T */
 $DESCRIPTOR(cli_uppercase,      "UPPERCASE");           /* -U */
 $DESCRIPTOR(cli_update,         "UPDATE");              /* -u */
 $DESCRIPTOR(cli_version,        "VERSION");             /* -V */
-$DESCRIPTOR(cli_restore,        "RESTORE");             /* -X */
-$DESCRIPTOR(cli_restore_acl,    "RESTORE.ACL");         /* -X */
-$DESCRIPTOR(cli_restore_prot,   "RESTORE.PROTECTION");  /* -X- */
+$DESCRIPTOR(cli_restore,        "RESTORE");             /* -k, -ka, -X */
+$DESCRIPTOR(cli_restore_acl,    "RESTORE.ACL");         /* -ka */
+$DESCRIPTOR(cli_restore_own,    "RESTORE.OWNER");       /* -X- */
+$DESCRIPTOR(cli_restore_prot,   "RESTORE.PROTECTION");  /* -k, -k- */
+$DESCRIPTOR(cli_restore_prot_lim, "RESTORE.PROTECTION.LIMITED"); /* -kk -k */
+$DESCRIPTOR(cli_restore_prot_orig, "RESTORE.PROTECTION.ORIGINAL"); /* -k */
 $DESCRIPTOR(cli_restore_date,   "RESTORE.DATE");        /* -DD */
 $DESCRIPTOR(cli_restore_date_all, "RESTORE.DATE.ALL");  /* -D- */
 $DESCRIPTOR(cli_restore_date_files, "RESTORE.DATE.FILES"); /* -D */
@@ -873,6 +876,65 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
+         * Restore protection info.
+         * Clear any existing "-k" option with "-k-k-k", then add
+         * the desired "k" value.
+         */
+#define OPT_K   "-k-k-k"        /* ""    Restore (limited) perms (dflt). */
+#define OPT_KK  "-k-k-kk"       /* "-k"  Restore archive permissions. */
+#define OPT_KN  "-k-k-"         /* "-k-" Restore no permissions. */
+
+        opt = NULL;
+        status = cli$present( &cli_restore_prot);
+        if (status == CLI$_NEGATED)
+        {
+            /* /RESTORE = NOPROTECTION */
+            opt = OPT_KN;
+        }
+        else
+        {
+            status = cli$present( &cli_restore_prot_lim);
+            if (status & 1)
+            {
+                /* /RESTORE = PROTECTION = LIMITED */
+                opt = OPT_K;
+            }
+            status = cli$present( &cli_restore_prot_orig);
+            if (status & 1)
+            {
+                /* /RESTORE = PROTECTION = ORIGINAL */
+                opt = OPT_KK;
+            }
+        }
+        if (opt != NULL)
+        {
+            ADD_ARG( opt);
+        }
+
+        /*
+         * Restore ACL.
+         */
+#define OPT_KA  "-ka"           /* "-ka" Restore ACL. */
+#define OPT_KAN "-ka-"          /* "-ka-"  Restore no ACL. */
+
+        opt = NULL;
+        status = cli$present( &cli_restore_acl);
+        if (status & 1)
+        {
+            /* /RESTORE = ACL */
+            opt = OPT_KA;
+        }
+        else if (status == CLI$_NEGATED)
+        {
+            /* /RESTORE = NOACL */
+            opt = OPT_KAN;
+        }
+        if (opt != NULL)
+        {
+            ADD_ARG( opt);
+        }
+
+        /*
          * List archive contents (/BRIEF (default) or /FULL).
          * Clear any existing "-l" option with "-l-", then add
          * the desired "l" value.
@@ -1309,34 +1371,22 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
-         * Restore protection/owner+ACL info.
-         * Clear any existing "-X" option with "-X-X-X", then add
-         * the desired "X" value.
+         * Restore owner (UIC) info.
          */
-#define OPT__X   "-X-X-X"       /* ""    Restore prot (not own+ACL). (dflt). */
-#define OPT__XX  "-X-X-XX"      /* "-X"  Restore prot, own+ACL. */
-#define OPT__XN  "-X-X-X-"      /* "-X-" Restore no prot, no own+ACL. */
+#define OPT__X   "-X"           /* "-X"  Restore owner (UIC). */
+#define OPT__XN  "-X-"          /* "-X-" Restore no owner (UIC). */
 
         opt = NULL;
-        status = cli$present( &cli_restore_acl);
+        status = cli$present( &cli_restore_own);
         if (status & 1)
         {
-            /* /RESTORE = ACL */
-            opt = OPT__XX;
+            /* /RESTORE = OWNER*/
+            opt = OPT__X;
         }
-        else
+        else if (status == CLI$_NEGATED)
         {
-            status = cli$present( &cli_restore_prot);
-            if (status == CLI$_NEGATED)
-            {
-                /* /RESTORE = NOPROTECTION */
-                opt = OPT__XN;
-            }
-            else if (status & 1)
-            {
-                /* /RESTORE = PROTECTION */
-                opt = OPT__X;
-            }
+            /* /RESTORE = NOOWNER*/
+            opt = OPT__XN;
         }
         if (opt != NULL)
         {
