@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-04 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -28,14 +28,19 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 #ifdef WINDLL
-#  ifdef POCKET_UNZIP
-#    include "wince/intrface.h"
-#  else
-#    include "windll/windll.h"
-#  endif
+# ifdef POCKET_UNZIP
+#  include "wince/intrface.h"
+# else
+#  include "windll/windll.h"
+# endif
 #endif
 
 #ifdef BZIP2_SUPPORT
+
+/* Ask the MS VS linker to search for the bzip2 library. */
+# ifdef WIN32
+#  pragma comment( lib, "libbz2")
+# endif
 
 /**********************************/
 /*  Function bz_internal_error()  */

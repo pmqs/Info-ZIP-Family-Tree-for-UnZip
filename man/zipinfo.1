@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -395,8 +395,8 @@ Field 4 (UncoSize) shows the original, uncompressed file size.
 Field 5 (At) shows some archive member attributes, as detailed in the
 tables below.  The first character indicates whether a file was binary
 or text, and whether it was encrypted.  The second character indicates
-the presence of a data descriptor and/or an extra field in the member
-data.
+the presence of a data descriptor (sometimes called an "extended
+header") and/or an extra field in the member data.
 .EX
 
               |   File Type     Extra Field |
@@ -462,7 +462,7 @@ format) or one of the non-default Unix format optiond (\fB\-l\fP,
 \fB\-m\fP).
 .IP
 For \fIZipInfo\fP ("\fCunzip -Z\fR"), the environment variable name is
-ZIPINFO, except on VMS, where it's ZIPINFO_OPTS.  For compatibility with
+ZIPINFO, except on VMS, where it's ZIPINFO_OPTS.  For similarity with
 \fIZip\fP, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined, then
 \fIZipInfo\fP will use ZIPINFOOPT the same way.
 .IP

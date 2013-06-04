@@ -5,7 +5,8 @@ $!    P1 = test archive name.  Default: testmake.zip
 $!    P2 = program directory.  Default: "" (current directory)
 $!    P3 = non-null to skip SFX tests.
 $!
-$!    2012-12-16  SMS.  Add "-mc-" to UnZip "-Z" command to suppress
+$!    2013-06-03  SMS.  Added exit status value.
+$!    2012-12-16  SMS.  Added "-mc-" to UnZip "-Z" command to suppress
 $!                      member counts by dir/file/link, because not all
 $!                      systems have links, which changes the report.
 $!    2012-02-24  SMS.  Added P3 check for PPMd test.
@@ -21,6 +22,7 @@ $ endif
 $!
 $ pass = 0
 $ fail = 0
+$ exit_status = %x100002A4      ! SS$_BUGCHECK (message suppressed).
 $ echo = "write sys$output"
 $!
 $! Clean environment.
@@ -103,7 +105,7 @@ $ then
 $     close unzip_z_out
 $ endif
 $ set default 'pwd'
-$ exit
+$ exit 'exit_status'
 $!
 $ post_handler:
 $!
@@ -182,6 +184,8 @@ $ echo ">>> Test Results:   Pass: ''pass', Fail: ''fail'"
 $ if ((pass .ne. pass_expected) .or. (fail .ne. fail_expected))
 $ then
 $     echo ">>> ###   Expected: Pass: ''pass_expected', Fail: ''fail_expected'"
+$ else
+$     exit_status = 1           ! SS$_NORMAL
 $ endif
 $ echo ""
 $!

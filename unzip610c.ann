@@ -1,12 +1,12 @@
 UnZip 6.10c
 
-Announcement for UnZip Beta 6.10c, >>25 January 2013.  This is a beta
-release and considerable additional work is planned before UnZip 6.10 is
-released.  See the file History.610 for development details of what's in
-this beta.
+Announcement for UnZip Beta 6.10c, >>23 May 2013.  This is a beta
+release.  Changes may be made before UnZip 6.10 is released.  See the
+file History.610 for development details of changes in this beta
+release.
 
-As always, send in your feature suggestions and bug reports as they may
-influence development of UnZip 6.10.
+Complaints and suggestions regarding this beta release can help to
+improve the next full release.
 
 Quick list of major changes in UnZip 6.10c:
 
@@ -16,6 +16,16 @@ Quick list of major changes in UnZip 6.10c:
 - Extended -j/--junk-dirs option accepts an optional value, the number
   of directory levels to discard.
 - New --jar option may help with poorly formed Java "jar" archives.
+- New -k/--keep-permissions option controls how permissions are restored
+  on Unix and VMS systems.  The default behavior has changed, to apply
+  Unix umask or VMS default protection to the archive permissions.  With
+  -k, the archive permissions are restored, ignoring the Unix umask or
+  VMS default protection (the old default behavior).  With -k-, the
+  archive permissions are ignored, and the Unix umask or VMS default
+  protection determines the permissions.
+- New -ka/--keep-acl option controls ACL restoration on VMS.  Now
+  -X/--restore-owner controls restoration of only ownership (UIC),
+  independent of ACLs.
 - -s/--space-to-uscore should now work on most system types.
 - Revised documentation ("man", VMS help, ...).
 - fUnZip should support Zip64 (large-file) format extensions, and it
@@ -25,7 +35,8 @@ Quick list of major changes in UnZip 6.10c:
   help GNU grep users.
 - Optional support on Unix and VMS for an UnZip object library,
   providing a callable UnZip interface for a user-written program.
-- New USE_ICONV_MAPPING macro is now ICONV_MAPPING.
+- New macro ICONV_MAPPING replaces the recently added macro
+  USE_ICONV_MAPPING.
 - Revised Unix builders now use "CC=gcc" with target "generic", instead
   of old target "generic_gcc".  See INSTALL for details on this and
   other changes and options.
@@ -40,10 +51,17 @@ Quick list of major changes in UnZip 6.10c:
   /NAMES=[NO]SPACES (-s) controls conversion of " " to "_" on ODS5
   destination.  New /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT} option
   replaces old, deprecated /[NO]OVERWRITE.  New /[NO]DECIMAL_TIME
-  replaces old, deprecated /[NO]TIMES.
+  replaces old, deprecated /[NO]TIMES.  New /RESTORE = ACL
+  (-ka/--keep-acl) option controls whether ACLs are restored.  New
+  /RESTORE = OWNER (-X/--restore-owner) option controls whether UICs are
+  restored.  New /RESTORE = [NO]PROTECTION = {LIMITED|ORIGINAL}
+  (-k/--keep-permissions) option controls whether/how permissions are
+  restored.  With LIMITED (the default), the default protection is
+  applied to the archive permissions.  With ORIGINAL, the default
+  protection is ignored, and the archive permissions are used.  (This is
+  the old default behavior.)  With NOPROTECTION, archive permissions are
+  ignored, and the default protection is used.
 
 As always, see the UnZip manual page, the extended help in UnZip
 ("unzip -hh"), and any relevant OS-specific documentation for details on
-what UnZip has and how to use all features.
-
-Enjoy!
+UnZip features, limitations, and usage.

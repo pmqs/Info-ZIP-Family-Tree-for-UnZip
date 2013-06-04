@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   12 Apr 2013
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   24 May 2013
 #==============================================================================
 
 #==============================================================================
@@ -296,17 +296,17 @@ SIZER_V=''                                 # Tru64 system/kernel info
 #==============================================================================
 echo "Check build root directory: (${PROD})"
 if [ -d "${PROD}" ]; then
-  echo "-- build root directory OK"
+  echo "-- Build root directory OK."
 elif [ -f "${PROD}" ]; then
-  echo "^^ directory name exists as an ordinary file.  Unable to build"
+  echo "^^ Directory name exists as an ordinary file.  Unable to build."
   exit 1
 else
-  echo "-- Creating build root directory"
+  echo "-- Creating build root directory."
   ${MKDIR} ${PROD}
   status=$?
   if [ $status -ne 0 ]; then
     echo ''
-    echo "^^ directory creation failed (${status})"
+    echo "^^ Directory creation failed (${status})."
     exit $status
   fi
 fi
@@ -317,17 +317,17 @@ fi
 #==============================================================================
 echo "Check build directory for manuals: (${PROD_MAN})"
 if [ -d "${PROD_MAN}" ]; then
-  echo "-- build manuals directory is OK"
+  echo "-- Build manuals directory is OK."
 elif [ -f "${PROD_MAN}" ]; then
-  echo "^^ directory name exists as an ordinary file.  Unable to build"
+  echo "^^ Directory name exists as an ordinary file.  Unable to build."
   exit 1
 else
-  echo "-- Creating build manuals directory"
+  echo "-- Creating build manuals directory."
   ${MKDIR} ${PROD_MAN}
   status=$?
   if [ $status -ne 0 ]; then
     echo ''
-    echo "^^ directory creation failed (${status})"
+    echo "^^ Directory creation failed (${status})."
     exit $status
   fi
 fi
@@ -347,7 +347,7 @@ fi
 #==============================================================================
 # Query the system information.
 #==============================================================================
-echo "Query for system identification"
+echo "Query for system identification..."
 UNAME_S=` uname -s 2>/dev/null `
 case "${UNAME_S}" in
    'OS/390' )
@@ -383,7 +383,7 @@ echo "  OS name: ${UNAME_S}"
 #==============================================================================
 # Validate basic compiler and linker operation.
 #==============================================================================
-echo "Check C compiler+linker operation"
+echo "Check C compiler+linker operation..."
 cat > conftest.c << _EOF_
 #include <stdio.h>
 int main()
@@ -423,7 +423,7 @@ fi
 # successful compilation of UnZip, as well as the options for standard code
 # optimization.
 
-echo 'Check C compiler type (optimization and listing options)'
+echo 'Check C compiler type (optimization and listing options)...'
 
 if [ -z "${CFLAGS_OPT}" ]; then
   # Sun C?
@@ -1040,11 +1040,11 @@ fi
 # B) Finalize specific customizations for target port.
 #------------------------------------------------------------------------------
 if [ "${PORT}" = "unix" ]; then
-  echo "Standard Unix target"
+  echo "Standard Unix target."
   CFLAGS="${CFLAGS} -DUNIX"
   CFLAGS_BZ="${CFLAGS_BZ} -DUNIX"
 else
-  echo "Set build configuration for target \"${PORT}\" port"
+  echo "Set build configuration for target \"${PORT}\" port."
   case "${PORT}" in
      unix )
         # UNIX values set in defaults, customized based on tests.
@@ -1132,7 +1132,7 @@ fi
 #------------------------------------------------------------------------------
 # C) Determine C preprocessor type.
 #------------------------------------------------------------------------------
-echo 'Check C preprocessor type'
+echo 'Check C preprocessor type...'
 case "${UNAME_S}" in
    'z/OS'|'z/VM')
       # z/OS UNIX, z/VM UNIX requires wrapper script for CPP tests.
@@ -1174,7 +1174,7 @@ case "${UNAME_S}" in
    *  )
       # Other UNIX systems.
       # FIX_ME: Need to customize for ports.
-      echo 'Check if we can (and want to) use assembly code for CRC'
+      echo 'Check if we can (and want to) use assembly code for CRC...'
       asm_crc=0
       # CRC.  Fail intentionally, if NO_ASM or NO_ASM_CRC is defined.
       cat > conftest.S << _EOF_
@@ -1193,7 +1193,7 @@ _EOF_
           $AS -c _crc_i386.s > /dev/null 2> /dev/null
           status=$?
           if [ $status -eq 0 -a -f _crc_i386.o ]; then
-            echo '-- Using assembly code for CRC'
+            echo '-- Using assembly code for CRC.'
             asm_crc=1
             CFLAGS_TST="${CFLAGS_TST} -DASM_CRC"
             OSDEP_OS="${OSDEP_OS} ${PROD}/crc_gcc.o"
@@ -1203,7 +1203,7 @@ _EOF_
       # If using assembler for anything, then check the C compiler for a
       # "_" prefix on global names.
       if [ $asm_crc -ne 0 ]; then
-        echo 'Check if C compiler adds "_" prefix to global names'
+        echo 'Check if C compiler adds "_" prefix to global names...'
         echo "int foo() { return 0;}" > conftest.c
         $CC -c conftest.c >/dev/null 2>/dev/null
         nm conftest.o | grep foo >/dev/null 2>/dev/null
@@ -1225,9 +1225,9 @@ lprod=0
 #------------------------------------------------------------------------------
 # AES (WinZip/Gladman) encryption.  (User must request: "AES_WG=1".)
 if [ -n "${AES_WG}" ]; then
-  echo "Check AES_WG (AES WinZip/Gladman) encryption support"
+  echo "Check AES_WG (AES WinZip/Gladman) encryption support..."
   if [ -d "aes_wg" ]; then
-    echo "  Check for AES_WG header file in aes_wg directory"
+    echo "  Check for AES_WG header file in aes_wg/ directory..."
     if [ -f "aes_wg/aes.h" ]; then
       cat > conftest.c << _EOF_
 int main()
@@ -1249,22 +1249,22 @@ _EOF_
           LFLAGS1="${LFLAGS1} -L${PROD}"
         fi
         LFLAGS2="${LFLAGS2} -laes"
-        echo "-- Including AES_WG encryption support"
-        echo "-- Building libaes.a in ${PROD}"
+        echo "-- Including AES_WG encryption support."
+        echo "-- Building libaes.a in ${PROD}."
       else
-        echo "^^ AES_WG test build failed. Check aes_wg directory"
-        echo "^^ Unable to include AES_WG encryption support"
+        echo "^^ AES_WG test build failed. Check aes_wg/ directory."
+        echo "^^ Unable to include AES_WG encryption support."
       fi
     else
-      echo "^^ AES_WG source code not found in aes_wg directory"
-      echo "^^ Unable to include AES_WG encryption support"
+      echo "^^ AES_WG source code not found in aes_wg/ directory."
+      echo "^^ Unable to include AES_WG encryption support."
     fi
   else
-    echo "^^ Directory aes_wg not found"
-    echo "^^ Unable to include AES_WG encryption support"
+    echo "^^ Directory aes_wg not found."
+    echo "^^ Unable to include AES_WG encryption support."
   fi
 else
-  echo "No AES WG encryption"
+  echo "No AES WG encryption."
 fi
 
 #------------------------------------------------------------------------------
@@ -1272,9 +1272,9 @@ fi
 #------------------------------------------------------------------------------
 # LZMA compression.  (User must request: "LZMA=1".)
 if [ -n "${LZMA}" ]; then
-  echo "Check LZMA compression support"
+  echo "Check LZMA compression support..."
   if [ -d "szip" ]; then
-    echo "  Check for LZMA header file in szip/"
+    echo "  Check for LZMA header file in szip/ directory..."
     if [ -f "szip/LzmaDec.h" ]; then
       cat > conftest.c << _EOF_
 #include "szip/LzmaDec.h"
@@ -1297,22 +1297,22 @@ _EOF_
           LFLAGS1="${LFLAGS1} -L${PROD}"
         fi
         LFLAGS2="${LFLAGS2} -llzma"
-        echo "-- Including LZMA compression support"
-        echo "-- Building liblzma.a in ${PROD}"
+        echo "-- Including LZMA compression support."
+        echo "-- Building liblzma.a in ${PROD}."
       else
-        echo "^^ LZMA test build failed. Check szip directory"
-        echo "^^ Unable to include LZMA compression support"
+        echo "^^ LZMA test build failed. Check szip/ directory."
+        echo "^^ Unable to include LZMA compression support."
       fi
     else
-      echo "^^ LZMA source code not found in szip directory"
-      echo "^^ Unable to include LZMA compression support"
+      echo "^^ LZMA source code not found in szip/ directory."
+      echo "^^ Unable to include LZMA compression support."
     fi
   else
-    echo "^^ Directory szip not found"
-    echo "^^ Unable to include LZMA compression support"
+    echo "^^ Directory szip/ not found."
+    echo "^^ Unable to include LZMA compression support."
   fi
 else
-  echo "No LZMA compression"
+  echo "No LZMA compression."
 fi
 
 #------------------------------------------------------------------------------
@@ -1320,9 +1320,9 @@ fi
 #------------------------------------------------------------------------------
 # PPMd compression.  (User must request: "PPMD=1".)
 if [ -n "${PPMD}" ]; then
-  echo "Check PPMd compression support"
+  echo "Check PPMd compression support..."
   if [ -d "szip" ]; then
-    echo "  Check for PPMd header file in szip/"
+    echo "  Check for PPMd header file in szip/ directory..."
     if [ -f "szip/Ppmd.h" ]; then
       cat > conftest.c << _EOF_
 #include "szip/Ppmd.h"
@@ -1345,22 +1345,22 @@ _EOF_
           LFLAGS1="${LFLAGS1} -L${PROD}"
         fi
         LFLAGS2="${LFLAGS2} -lppmd"
-        echo "-- Including PPMd compression support"
-        echo "-- Building libppmd.a in ${PROD}"
+        echo "-- Including PPMd compression support."
+        echo "-- Building libppmd.a in ${PROD}."
       else
-        echo "^^ PPMd test build failed. Check szip directory"
-        echo "^^ Unable to include PPMd compression support"
+        echo "^^ PPMd test build failed.  Check szip/ directory."
+        echo "^^ Unable to include PPMd compression support."
       fi
     else
-      echo "^^ PPMd source code not found in szip directory"
-      echo "^^ Unable to include PPMd compression support"
+      echo "^^ PPMd source code not found in szip/ directory."
+      echo "^^ Unable to include PPMd compression support."
     fi
   else
-    echo "^^ Directory szip not found"
-    echo "^^ Unable to include PPMd compression support"
+    echo "^^ Directory szip/ not found."
+    echo "^^ Unable to include PPMd compression support."
   fi
 else
-  echo "No PPMd compression"
+  echo "No PPMd compression."
 fi
 
 #------------------------------------------------------------------------------
@@ -1368,13 +1368,13 @@ fi
 #------------------------------------------------------------------------------
 # BZIP2 compression.  (User must request: "IZ_BZIP2=bzip2_dir".)
 if [ -n "${IZ_BZIP2}" ]; then
-  echo "Check BZIP2 compression support"
+  echo "Check BZIP2 compression support..."
   if [ -d "${IZ_BZIP2}" ]; then
-    echo "  Check for BZIP2 header file in IZ_BZIP2 (${IZ_BZIP2})"
+    echo "  Check for BZIP2 header file in IZ_BZIP2 (${IZ_BZIP2})..."
     if [ -f "${IZ_BZIP2}/bzlib.h" ]; then
       if [ "${IZ_BZIP2}" = "bzip2" ]; then
-        echo "  BZIP2 files found within UnZip tree"
-        echo "  Check for BZIP2 compiled library in IZ_BZIP2 (${IZ_BZIP2})"
+        echo "  BZIP2 files found within UnZip tree."
+        echo "  Check for BZIP2 compiled library in IZ_BZIP2 (${IZ_BZIP2})..."
         if [ -f "${IZ_BZIP2}/libbz2.a" ]; then
 #
 #         A bzip2 library built with BZ_NO_STDIO should have an
@@ -1384,43 +1384,43 @@ if [ -n "${IZ_BZIP2}" ]; then
           nm ${IZ_BZIP2}/libbz2.a | grep bz_internal_error >/dev/null
           status=$?
           if [ $status -eq 0 ]; then
-            echo "    Found BZIP2 BZ_NO_STDIO library, ${IZ_BZIP2}/libbz2.a"
+            echo "    Found BZIP2 BZ_NO_STDIO library: ${IZ_BZIP2}/libbz2.a"
             LIB_BZ="${IZ_BZIP2}/libbz2.a"
             CFLAGS_TST="${CFLAGS_TST} -I${IZ_BZIP2} -DBZIP2_SUPPORT"
             LFLAGS1="${LFLAGS1} -L${IZ_BZIP2}"
             LFLAGS2="${LFLAGS2} -lbz2"
-            echo "-- Including BZIP2 compression support"
-            echo "-- Using libbz2.a in IZ_BZIP2 (${IZ_BZIP2})"
+            echo "-- Including BZIP2 compression support."
+            echo "-- Using libbz2.a in IZ_BZIP2 (${IZ_BZIP2})."
           else
             echo "    -----------------------------------------------------"
             echo "    Found BZIP2 library, ${IZ_BZIP2}/libbz2.a, but the"
-            echo "      library was not compiled with BZ_NO_STDIO"
+            echo "      library was not compiled with BZ_NO_STDIO."
             echo "    ERROR: This (default) variant of bzip2 library is NOT"
             echo "      supported with UnZip because of its incompatible"
-            echo "      error handling!"
+            echo "      error handling."
             echo "      Please see the UnZip installation instructions in"
             echo "      the INSTALL text file."
             echo "    -----------------------------------------------------"
-            echo "  ^^ Incompatibe BZIP2 support within the UnZip tree"
-            echo "^^ Unable to include BZIP2 compression support"
+            echo "  ^^ Incompatible BZIP2 library within the UnZip tree."
+            echo "^^ Unable to include BZIP2 compression support."
           fi
         else
-          echo "  Check for BZIP2 Makefile in I_BZIP2 (${IZ_BZIP2})"
+          echo "  Check for BZIP2 Makefile in I_BZIP2 (${IZ_BZIP2})..."
           if [ -f "${IZ_BZIP2}/Makefile" ]; then
             LIB_BZ="${IZ_BZIP2}/libbz2.a"
             CFLAGS_TST="${CFLAGS_TST} -I${IZ_BZIP2} -DBZIP2_SUPPORT"
             LFLAGS1="${LFLAGS1} -L${IZ_BZIP2}"
             LFLAGS2="${LFLAGS2} -lbz2"
-            echo "-- Including BZIP2 compression support"
-            echo "-- Building libbz2.a in ${IZ_BZIP2}"
+            echo "-- Including BZIP2 compression support."
+            echo "-- Building libbz2.a in ${IZ_BZIP2}."
           else
-            echo "  ^^ Incomplete BZIP2 support within the UnZip tree"
-            echo "^^ Unable to include BZIP2 compression support"
+            echo "  ^^ Incomplete BZIP2 support within the UnZip tree."
+            echo "^^ Unable to include BZIP2 compression support."
           fi
         fi
       else
-        echo "  BZIP2 support is outside the UnZip tree"
-        echo "  Check for BZIP2 compiled library in IZ_BZIP2 (${IZ_BZIP2})"
+        echo "  BZIP2 support is outside the UnZip tree."
+        echo "  Check for BZIP2 compiled library in IZ_BZIP2 (${IZ_BZIP2})."
         if [ -f "${IZ_BZIP2}/libbz2.a" ]; then
 #
 #         A bzip2 library built with BZ_NO_STDIO should have an
@@ -1430,35 +1430,35 @@ if [ -n "${IZ_BZIP2}" ]; then
           nm ${IZ_BZIP2}/libbz2.a | grep bz_internal_error >/dev/null
           status=$?
           if [ $status -eq 0 ]; then
-            echo "    Found BZIP2 BZ_NO_STDIO library, ${IZ_BZIP2}/libbz2.a"
+            echo "    Found BZIP2 BZ_NO_STDIO library: ${IZ_BZIP2}/libbz2.a"
             LIB_BZ="${IZ_BZIP2}/libbz2.a"
             CFLAGS_TST="${CFLAGS_TST} -I${IZ_BZIP2} -DBZIP2_SUPPORT"
             LFLAGS1="${LFLAGS1} -L${IZ_BZIP2}"
             LFLAGS2="${LFLAGS2} -lbz2"
-            echo "-- Including BZIP2 compression support"
-            echo "-- Using libbz2.a in IZ_BZIP2 (${IZ_BZIP2})"
+            echo "-- Including BZIP2 compression support."
+            echo "-- Using libbz2.a in IZ_BZIP2 (${IZ_BZIP2})."
           else
             echo "    -----------------------------------------------------"
             echo "    Found BZIP2 library, ${IZ_BZIP2}/libbz2.a, but the"
-            echo "      library was not compiled with BZ_NO_STDIO"
+            echo "      library was not compiled with BZ_NO_STDIO."
             echo "    ERROR: This (default) variant of bzip2 library is NOT"
             echo "      supported with UnZip because of its incompatible"
-            echo "      error handling!"
+            echo "      error handling."
             echo "      Please see the UnZip installation instructions in"
             echo "      the INSTALL text file."
             echo "    -----------------------------------------------------"
-            echo "  ^^ Incompatibe BZIP2 support outside the UnZip tree"
-            echo "^^ Unable to include BZIP2 compression support"
+            echo "  ^^ Incompatible BZIP2 library outside the UnZip tree."
+            echo "^^ Unable to include BZIP2 compression support."
           fi
         else
-          echo "  ^^ ${IZ_BZIP2}/libbz2.a not found (IZ_BZIP2 != \"bzip2\"),"
-          echo "  ^^ Incomplete BZIP2 support outside the UnZip tree"
-          echo "^^ Unable to include BZIP2 compression support"
+          echo "  ^^ ${IZ_BZIP2}/libbz2.a not found (IZ_BZIP2 != \"bzip2\")."
+          echo "  ^^ Incomplete BZIP2 support outside the UnZip tree."
+          echo "^^ Unable to include BZIP2 compression support."
         fi
       fi
     else
-      echo "  -- ${IZ_BZIP2}/bzlib.h not found"
-      echo "  Check if OS already has BZIP2 library installed"
+      echo "  -- ${IZ_BZIP2}/bzlib.h not found."
+      echo "  Check if OS already has BZIP2 library available..."
       cat > conftest.c << _EOF_
 #include "bzlib.h"
 int main()
@@ -1471,21 +1471,21 @@ _EOF_
       $CC_TST $CFLAGS -o conftest conftest.c -lbz2 >/dev/null 2>/dev/null
       status=$?
       if [ $status -eq 0 ]; then
-        echo "  -- OS supports BZIP2 - linking in bzip2"
+        echo "  -- OS supports BZIP2 - linking in bzip2."
         CFLAGS_TST="${CFLAGS_TST} -DBZIP2_SUPPORT"
         LFLAGS2="${LFLAGS2} -lbz2"
-        echo "-- Including OS BZIP2 compression support"
+        echo "-- Including OS BZIP2 compression support."
       else
-        echo "  ^^ Neither bzlib.h nor libbz2.a was found"
-        echo "^^ Unable to include BZIP2 compression support"
+        echo "  ^^ Neither bzlib.h nor libbz2.a was found."
+        echo "^^ Unable to include BZIP2 compression support."
       fi
     fi
   else
-    echo "^^ Directory ${IZ_BZIP2} not found"
-    echo "^^ Unable to include BZIP2 compression support"
+    echo "^^ Directory ${IZ_BZIP2} not found."
+    echo "^^ Unable to include BZIP2 compression support."
   fi
 else
-  echo "No BZIP2 compression"
+  echo "No BZIP2 compression."
 fi
 
 #------------------------------------------------------------------------------
@@ -1493,54 +1493,54 @@ fi
 #------------------------------------------------------------------------------
 # ZLIB compression.  (User must request: "IZ_ZLIB=zlib_dir".)
 if [ -n "${IZ_ZLIB}" ]; then
-  echo "Check ZLIB deflate compression support"
+  echo "Check ZLIB deflate compression support..."
   if [ -d "${IZ_ZLIB}" ]; then
-    echo "  Check for ZLIB header file in IZ_ZLIB (${IZ_ZLIB})"
+    echo "  Check for ZLIB header file in IZ_ZLIB (${IZ_ZLIB})."
     if [ -f "${IZ_ZLIB}/zlib.h" ]; then
       if [ "${IZ_ZLIB}" = "zlib" ]; then
-        echo "  ZLIB found within the UnZip tree"
+        echo "  ZLIB found within the UnZip tree."
         echo "  Check for zlib compiled library in IZ_ZLIB (${IZ_ZLIB})"
         if [ -f "${IZ_ZLIB}/libz.a" ]; then
             LIB_Z="${IZ_ZLIB}/libz.a"
             CFLAGS_TST="${CFLAGS_TST} -I${IZ_ZLIB} -DUSE_ZLIB"
             LFLAGS1="${LFLAGS1} -L${IZ_ZLIB}"
             LFLAGS2="${LFLAGS2} -lz"
-          echo "-- Including ZLIB deflate compression support"
-          echo "-- Using libz.a in IZ_ZLIB (${IZ_ZLIB})"
+          echo "-- Including ZLIB deflate compression support."
+          echo "-- Using libz.a in IZ_ZLIB (${IZ_ZLIB})."
         else
-          echo "  Check for ZLIB Makefile in IZ_ZLIB (${IZ_ZLIB})"
+          echo "  Check for ZLIB Makefile in IZ_ZLIB (${IZ_ZLIB})..."
           if [ -f "${IZ_ZLIB}/Makefile" ]; then
             LIB_Z="${IZ_ZLIB}/libz.a"
             CFLAGS_TST="${CFLAGS_TST} -I${IZ_ZLIB} -DUSE_ZLIB"
             LFLAGS1="${LFLAGS1} -L${IZ_ZLIB}"
             LFLAGS2="${LFLAGS2} -lz"
-            echo "-- Including ZLIB deflate compression support"
-            echo "-- Building libz.a in ${IZ_ZLIB}"
+            echo "-- Including ZLIB deflate compression support."
+            echo "-- Building libz.a in ${IZ_ZLIB}."
           else
-            echo "  ^^ Incomplete ZLIB support within the UnZip tree"
-            echo "^^ Unable to include ZLIB compression support"
+            echo "  ^^ Incomplete ZLIB support within the UnZip tree."
+            echo "^^ Unable to include ZLIB compression support."
           fi
         fi
       else
-        echo "  ZLIB support is outside the UnZip tree"
-        echo "  Check for ZLIB compiled library in IZ_ZLIB (${IZ_ZLIB})"
+        echo "  ZLIB support is outside the UnZip tree."
+        echo "  Check for ZLIB compiled library in IZ_ZLIB (${IZ_ZLIB})..."
         if [ -f "${IZ_ZLIB}/libz.a" ]; then
-          echo "    Found ZLIB library, ${IZ_ZLIB}/libz.a"
+          echo "    Found ZLIB library: ${IZ_ZLIB}/libz.a"
           LIB_Z="${IZ_ZLIB}/libz.a"
           CFLAGS_TST="${CFLAGS_TST} -I${IZ_ZLIB} -DUSE_ZLIB"
           LFLAGS1="${LFLAGS1} -L${IZ_ZLIB}"
           LFLAGS2="${LFLAGS2} -lz"
-          echo "-- Including ZLIB deflate compression support"
-          echo "-- Using libz.a in IZ_ZLIB (${IZ_ZLIB})"
+          echo "-- Including ZLIB deflate compression support."
+          echo "-- Using libz.a in IZ_ZLIB (${IZ_ZLIB})."
         else
-          echo "  ^^ ${IZ_ZLIB}/libz.a not found (IZ_ZLIB != \"zlib\"),"
-          echo "  ^^ Incomplete ZLIB support outside the UnZip tree"
-          echo "^^ Unable to include ZLIB compression support"
+          echo "  ^^ ${IZ_ZLIB}/libz.a not found (IZ_ZLIB != \"zlib\")."
+          echo "  ^^ Incomplete ZLIB support outside the UnZip tree."
+          echo "^^ Unable to include ZLIB compression support."
         fi
       fi
     else
       echo "  -- ${IZ_ZLIB}/zlib.h not found"
-      echo "  Check if OS already has ZLIB library installed"
+      echo "  Check if OS already has ZLIB library available..."
       cat > conftest.c << _EOF_
 #include "zlib.h"
 int main()
@@ -1553,21 +1553,21 @@ _EOF_
       $CC_TST $CFLAGS -o conftest conftest.c -lz >/dev/null 2>/dev/null
       status=$?
       if [ $status -eq 0 ]; then
-        echo "  -- OS supports ZLIB - linking in zlib"
+        echo "  -- OS supports ZLIB - linking in zlib."
         CFLAGS_TST="${CFLAGS_TST} -DUSE_ZLIB"
         LFLAGS2="${LFLAGS2} -lz"
-        echo "-- Including OS ZLIB compression support"
+        echo "-- Including OS ZLIB compression support."
       else
-        echo "  ^^ Neither zlib.h nor libz.a was found"
-        echo "^^ Unable to include ZLIB compression support"
+        echo "  ^^ Neither zlib.h nor libz.a was found."
+        echo "^^ Unable to include ZLIB compression support."
       fi
     fi
   else
-    echo "^^ Directory ${IZ_ZLIB} not found"
-    echo "^^ Unable to include ZLIB compression support"
+    echo "^^ Directory ${IZ_ZLIB} not found."
+    echo "^^ Unable to include ZLIB compression support."
   fi
 else
-  echo "ZLIB not used"
+  echo "ZLIB not used."
 fi
 
 #------------------------------------------------------------------------------
@@ -1616,7 +1616,7 @@ fi
 
 
 # Disable ANSI function prototypes where not supported.
-echo 'Check for prototypes'
+echo 'Check for prototypes...'
 echo "int main(int argc, char *argv[]) { return 0; }" > conftest.c
 $CC_TST $CFLAGS -c conftest.c >/dev/null 2>/dev/null
 status=$?
@@ -1625,7 +1625,7 @@ status=$?
 # Check if compiler supports "const" keyword.
 # - Handles mips cc and non ANSI compilers.
 # - Does it need more?
-echo 'Check the handling of const'
+echo 'Check the handling of const...'
 cat > conftest.c << _EOF_
 typedef int charset[2];
 int main()
@@ -1640,7 +1640,7 @@ status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNO_CONST"
 
 # Check for size_t type.
-echo 'Check for size_t'
+echo 'Check for size_t...'
 cat > conftest.c << _EOF_
 #include <sys/types.h>
 int main()
@@ -1654,7 +1654,7 @@ status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNO_SIZE_T"
 
 # Check for off_t type.
-echo 'Check for off_t'
+echo 'Check for off_t...'
 cat > conftest.c << _EOF_
 #include <sys/types.h>
 int main()
@@ -1668,7 +1668,7 @@ status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNO_OFF_T"
 
 # Check for signed char type.
-echo 'Check for signed char type'
+echo 'Check for signed char type...'
 cat > conftest.c << _EOF_
 int main()
 {
@@ -1682,7 +1682,7 @@ status=$?
 
 # Check for Large File Support (required for ZIP64).
 # - Now we set the 64-bit file environment and check the size of off_t.
-echo 'Check for Large File Support'
+echo 'Check for Large File Support...'
 cat > conftest.c << _EOF_
 #define _LARGEFILE_SOURCE       /* Some OSes need this for fseeko().     */
 #define _LARGEFILE64_SOURCE
@@ -1714,20 +1714,20 @@ _EOF_
 $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 if [ $status -ne 0 ]; then
-  echo '-- no Large File Support'
+  echo '-- No Large File Support.'
 else
   ./conftest
   status=$?
   if [ $status -eq 1 ]; then
-    echo '-- no Large File Support - no 64-bit off_t'
+    echo '-- No Large File Support - no 64-bit off_t.'
   elif [ $status -eq 2 ]; then
-    echo '-- no Large File Support - no 64-bit stat'
+    echo '-- No Large File Support - no 64-bit stat.'
   elif [ $status -eq 3 ]; then
-    echo '-- yes we have Large File Support!'
+    echo '-- Yes, we have Large File Support.'
     CFLAGS_TST="${CFLAGS_TST} -DLARGE_FILE_SUPPORT"
     CFLAGS_TST_BZ="${CFLAGS_TST_BZ} -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES"
   else
-    echo "-- no Large File Support - conftest returned $status"
+    echo "-- No Large File Support - conftest returned $status."
   fi
 fi
 
@@ -1736,7 +1736,7 @@ fi
 # tests if this OS uses 16-bit UIDs/GIDs and so if the old 16-bit storage
 # should also be used for backward compatibility.)
 
-echo 'Check size of UIDs and GIDs'
+echo 'Check size of UIDs and GIDs...'
 cat > conftest.c << _EOF_
 #define _LARGEFILE_SOURCE       /* Some OSes need this for fseeko       */
 #define _LARGEFILE64_SOURCE
@@ -1781,15 +1781,15 @@ else
   ./conftest
   status=$?
   if [ $status -eq 1 ]; then
-    echo '-- UID not 2 bytes - enabling "ux" UID/GID support'
+    echo '-- UID not 2 bytes - enabling "ux" UID/GID support.'
     CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
   elif [ $status -eq 2 ]; then
-    echo '-- GID not 2 bytes - enabling "ux" UID/GID support'
+    echo '-- GID not 2 bytes - enabling "ux" UID/GID support.'
     CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
   elif [ $status -eq 3 ]; then
-    echo '-- 16-bit UIDs and GIDs - keeping old 16-bit UID/GID support'
+    echo '-- 16-bit UIDs and GIDs - keeping old 16-bit UID/GID support.'
   else
-    errmes="-- test failed - conftest returned $status"
+    errmes="-- Test failed - conftest returned $status."
     errmes="${errmes} - enabling "ux" UID/GID support"
     echo "${errmes}"
     CFLAGS_TST="${CFLAGS_TST} -DIZ_HAVE_UXUIDGID"
@@ -1797,7 +1797,7 @@ else
 fi
 
 # Check for time_t structure.
-echo 'Check for time_t'
+echo 'Check for time_t...'
 cat > conftest.c << _EOF_
 #include <sys/types.h>
 #include <time.h>
@@ -1812,30 +1812,30 @@ status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNO_TIME_T"
 
 # Check for utime.h header.
-echo 'Check for utime.h'
+echo 'Check for utime.h...'
 echo "#include <utime.h>" > conftest.c
 $CPP_TST conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -eq 0 ] && CFLAGS_TST="${CFLAGS_TST} -DHAVE_UTIME_H"
 
 # Check for sys/timeb.h header.
-echo 'Check for sys/timeb.h'
+echo 'Check for sys/timeb.h...'
 echo "#include <sys/timeb.h>" > conftest.c
 $CPP_TST conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -eq 0 ] && CFLAGS_TST="${CFLAGS_TST} -DHAVE_SYS_TIMEB_H"
 
 # Check for sys/time.h header and gettimeofday() function.
-echo 'Check for sys/time.h and gettimeofday() needed for entry timing'
-echo '  Check for sys/time.h'
+echo 'Check for sys/time.h and gettimeofday() needed for entry timing...'
+echo '  Check for sys/time.h...'
 echo "#include <sys/time.h>" > conftest.c
 $CPP_TST conftest.c >/dev/null 2>/dev/null
 status=$?
 if [ $status -ne 0 ]; then
-  echo "-- No sys/time.h - usec timing using gettimeofday() not supported"
+  echo "-- No sys/time.h - usec timing using gettimeofday() not supported."
 else
   CFLAGS_TST="${CFLAGS_TST} -DHAVE_SYS_TIME_H"
-  echo '  Check for gettimeofday()'
+  echo '  Check for gettimeofday()...'
   cat > conftest.c << _EOF_
 #include "stdio.h"
 #include <sys/time.h>
@@ -1852,9 +1852,9 @@ _EOF_
   $CC_TST -o conftest conftest.c >/dev/null 2>/dev/null
   status=$?
   if [ $status -ne 0 ]; then
-    echo "^^ returned $status - usec timing using gettimeofday() not supported"
+    echo "^^ Returned $status - usec timing using gettimeofday() not supported."
   else
-    echo '-- enabling usec timing using gettimeofday()'
+    echo '-- Enabling usec timing using gettimeofday().'
     CFLAGS_TST="${CFLAGS_TST} -DENABLE_ENTRY_TIMING"
   fi
 fi
@@ -1864,7 +1864,7 @@ fi
 INCLS='ctype.h wctype.h langinfo.h locale.h'
 for inc in $INCLS
 do
-  echo "Check for $inc"
+  echo "Check for ${inc}..."
   echo "#include <$inc>" > conftest.c
   $CPP_TST conftest.c >/dev/null 2>/dev/null
   status=$?
@@ -1875,7 +1875,7 @@ done
 # This all needs some work.  See note at the top of unzpriv.h.
 
 # Check for wchar.h header.
-echo 'Check for wchar.h'
+echo 'Check for wchar.h...'
 echo "#include <wchar.h>" > conftest.c
 $CPP_TST conftest.c >/dev/null 2>/dev/null
 status=$?
@@ -1887,7 +1887,7 @@ if [ $status -eq 0 ]; then
   FUNCS='towupper towlower iswprint'
   for func in $FUNCS
   do
-    echo "Check for wide char $func"
+    echo "Check for wide char ${func}..."
     cat > conftest.c << _EOF_
 #include <stdlib.h>
 #include <stdio.h>
@@ -1922,7 +1922,7 @@ _EOF_
 
   # Check for wide char for Unicode support.
   iconv_ok=0
-  echo 'Check for wide char Unicode support'
+  echo 'Check for wide char Unicode support...'
   cat > conftest.c << _EOF_
 #include <stdlib.h>
 #include <stdio.h>
@@ -1967,27 +1967,27 @@ _EOF_
   $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
   status=$?
   if [ $status -ne 0 ]; then
-    echo '^^ no Unicode (wchar_t) support'
+    echo '^^ No Unicode (wchar_t) support.'
   else
     ./conftest
     status=$?
     if [ $status -eq 0 ]; then
-      echo '-- no Unicode wchar_t support - wchar_t allocation error'
+      echo '-- No Unicode wchar_t support - wchar_t allocation error.'
     elif [ $status -eq 1 ]; then
-      errmes="^^ no Unicode support"
-      echo "${errmes} - wchar_t encoding unspecified, may not be UCS"
+      errmes="^^ No Unicode support"
+      echo "${errmes} - wchar_t encoding unspecified, may not be UCS."
     elif [ $status -eq 2 ]; then
-      echo '-- have wchar_t with known UCS encoding - enabling Unicode support'
+      echo '-- Have wchar_t with known UCS encoding - enabling Unicode support.'
       CFLAGS_TST="${CFLAGS_TST} -DUNICODE_SUPPORT -DUNICODE_WCHAR"
       iconv_ok=1
     else
-      echo "^^ no Unicode (wchar_t) support - conftest returned $status"
+      echo "^^ No Unicode (wchar_t) support - conftest returned $status."
     fi
   fi
 fi
 
 # Check for setlocale() support.
-echo "Check for setlocale support (needed for UNICODE Native check)"
+echo "Check for setlocale() support (needed for UNICODE Native check)..."
 cat > conftest.c << _EOF_
 #include <locale.h>
 int main()
@@ -1999,11 +1999,11 @@ _EOF_
 $CC_TST $CFLAGS -c conftest.c >/dev/null 2>/dev/null
 status=$?
 if [ $status -eq 0 ]; then
-  echo '  have setlocale, can check for charset type'
-  echo '-- enabling UTF8-native support!'
+  echo '  Have setlocale, can check for charset type.'
+  echo '-- Enabling UTF8-native support.'
   CFLAGS_TST="${CFLAGS_TST} -DUNICODE_SUPPORT -DUTF8_MAYBE_NATIVE"
 else
-  echo '^^ no Unicode (UTF-8 native) support'
+  echo '^^ No Unicode (UTF-8 native) support.'
   CFLAGS_TST="${CFLAGS_TST} -DNO_SETLOCALE"
 fi
 
@@ -2013,7 +2013,7 @@ if [ -n "${ICONV}" ]; then
   if [ $iconv_ok -eq 0 ]; then
     echo "^^ No wide Unicode support, so no ISO/OEM (iconv) conversion support."
   else
-    echo "Check ISO/OEM (iconv) conversion support"
+    echo "Check ISO/OEM (iconv) conversion support..."
     cat > conftest.c << _EOF_
 #include <iconv.h>
 int main()
@@ -2043,20 +2043,20 @@ _EOF_
     fi
     if [ $status -eq 0 ]; then
       CFLAGS_TST="${CFLAGS_TST} -DICONV_MAPPING"
-      echo "-- Including ISO/OEM (iconv) conversion support"
+      echo "-- Including ISO/OEM (iconv) conversion support."
     else
-      echo "^^ Unable to include ISO/OEM (iconv) conversion support"
+      echo "^^ Unable to include ISO/OEM (iconv) conversion support."
     fi
   fi
 else
-  echo "No ISO/OEM (iconv) conversion support"
+  echo "No ISO/OEM (iconv) conversion support."
 fi
 
 
 # Check for gcc no-builtin flag.
 # - gnu C supports -fno-builtin since version 2
 # - from configure 2.4i (Onno) 2004-12-05
-echo 'Check for gcc no-builtin flag'
+echo 'Check for gcc no-builtin flag...'
 cat > conftest.c << _EOF_
 int main()
 {
@@ -2075,10 +2075,10 @@ status=$?
 # - add NO_'function_name' to flags if missing.
 FUNCS='chmod chown fchmod fchown lchown localtime_r mktemp mktime mkstemp'
 FUNCS="${FUNCS} nl_langinfo rename rmdir strchr strrchr"
-#echo "Check for missing functions"
+#echo "Check for missing functions..."
 for func in $FUNCS
 do
-  echo "Check for $func"
+  echo "Check for ${func}()..."
   echo "int main(){ $func(); return 0; }" > conftest.c
   $CC_TST $CFLAGS $BIF_TST -o conftest conftest.c >/dev/null 2>/dev/null
   status=$?
@@ -2089,7 +2089,7 @@ done
 # Check (very seriously) for a working lchmod().
 # On GNU/Linux (Clang, GCC) look for a # compile-time warning like
 # "lchmod is not implemented and will always fail".
-echo 'Check for lchmod'
+echo 'Check for lchmod()...'
 temp_file="/tmp/unzip_test_$$"
 temp_link="link_$$"
 ( echo '#include <unistd.h>' ; \
@@ -2111,14 +2111,14 @@ fi
 rm -f "${temp_file}" conftest.err
 
 # Check for memset().
-echo 'Check for memset'
+echo 'Check for memset()...'
 echo "int main(){ char k; memset(&k,0,0); return 0; }" > conftest.c
 $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DZMEM"
 
 # Check for memmove().
-echo 'Check for memmove'
+echo 'Check for memmove()...'
 cat > conftest.c << _EOF_
 #include <string.h>
 int main() { int a; int b = 0; memmove( &a, &b, sizeof( a)); return a; }
@@ -2128,7 +2128,7 @@ status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNEED_MEMMOVE"
 
 # Check for errno declaration.
-echo 'Check for errno declaration'
+echo 'Check for errno declaration...'
 cat > conftest.c << _EOF_
 #include <errno.h>
 main()
@@ -2141,18 +2141,8 @@ $CC_TST $CFLAGS -c conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNO_ERRNO"
 
-# Check for strerror().
-echo 'Check for strerror'
-cat > conftest.c << _EOF_
-#include <string.h>
-int main() { strerror( 0); return 0; }
-_EOF_
-$CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
-status=$?
-[ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNEED_STRERROR"
-
 # Check for labs().
-echo 'Check for labs'
+echo 'Check for labs()...'
 cat > conftest.c << _EOF_
 #include <stdlib.h>
 int main() { labs( 0); return 0; }
@@ -2161,8 +2151,18 @@ $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 [ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNEED_LABS"
 
+# Check for strerror().
+echo 'Check for strerror()...'
+cat > conftest.c << _EOF_
+#include <string.h>
+int main() { strerror( 0); return 0; }
+_EOF_
+$CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
+status=$?
+[ $status -ne 0 ] && CFLAGS_TST="${CFLAGS_TST} -DNEED_STRERROR"
+
 # Check for directory libraries.
-echo 'Check for directory libraries'
+echo 'Check for directory libraries...'
 cat > conftest.c << _EOF_
 int main() { return closedir(opendir(".")); }
 _EOF_
@@ -2186,7 +2186,7 @@ fi
 
 # Check for readlink().
 # - Dynix/ptx 1.3 needed this.
-echo 'Check for readlink'
+echo 'Check for readlink()...'
 echo "int main(){ return readlink(); }" > conftest.c
 $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
@@ -2197,7 +2197,7 @@ if [ $status -ne 0 ]; then
 fi
 
 # Check for directory header.
-echo 'Check for directory header file'
+echo 'Check for directory header file...'
 OPT=""
 INCLS='dirent.h sys/ndir.h ndir.h sys/dir.h'
 for inc in $INCLS
@@ -2211,7 +2211,7 @@ done
 CFLAGS_TST="${CFLAGS_TST} ${OPT}"
 
 # Check for sys/param.h.
-echo 'Check for sys/param.h'
+echo 'Check for sys/param.h...'
 echo "#include <sys/param.h>" > conftest.c
 $CPP_TST conftest.c >/dev/null 2>/dev/null
 status=$?
@@ -2221,7 +2221,7 @@ status=$?
 # - If not found, define NO_HEADER symbol.
 # FIX_ME: Remove langinfo.h after all NO_LANGINFO uses removed.
 # FIX_ME: Move some of these (langinfo.h + ?) to HAVE_.
-echo 'Check for nonexistent header files'
+echo 'Check for nonexistent header files...'
 INCLS='stdlib.h stddef.h stdint.h unistd.h fcntl.h string.h langinfo.h'
 for inc in $INCLS
 do
@@ -2233,7 +2233,7 @@ do
 done
 
 # Check for terminal I/O header file.
-echo 'Check for term I/O header file'
+echo 'Check for terminal I/O header file...'
 OPT=""
 INCLS='termios.h termio.h sgtty.h'
 for inc in $INCLS
@@ -2247,7 +2247,7 @@ done
 CFLAGS_TST="${CFLAGS_TST} ${OPT}"
 
 # Check for MBCS header files.
-echo 'Check for MBCS header files'
+echo 'Check for MBCS header files...'
 OPT=""
 INCLS='mbstr.h mbstring.h mbctype.h'
 for inc in $INCLS
@@ -2261,7 +2261,7 @@ done
 CFLAGS_TST="${CFLAGS_TST} ${OPT}"
 
 # Check for MBCS support.
-echo 'Check for MBCS (multi-byte character) support'
+echo 'Check for MBCS (multi-byte character) support...'
 cat > conftest.c << _EOF_
 #include <stdlib.h>
 #include <stdio.h>
@@ -2287,10 +2287,10 @@ _EOF_
 $CC_TST ${CFLAGS} -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 if [ $status -ne 0 ]; then
-  echo "^^ no MBCS support"
+  echo "^^ No MBCS support."
   CFLAGS_TST="${CFLAGS_TST} -DNO_MBCS"
 else
-  echo "-- have MBCS support"
+  echo "-- Have MBCS support."
   CFLAGS_TST="${CFLAGS_TST} -D_MBCS"
 
   # Realistic check for working MBCS library functions.
@@ -2298,7 +2298,7 @@ else
   FUNCS='mbschr mbsrchr'
   for func in $FUNCS
   do
-    echo "Check for MBCS $func"
+    echo "Check for MBCS ${func}()..."
     cat > conftest.c << _EOF_
 #include <stdlib.h>
 #ifdef HAVE_MBSTR_H
@@ -2326,7 +2326,7 @@ _EOF_
 fi
 
 # Needed for AIX (and others ?) when mmap is used.
-echo 'Check for valloc'
+echo 'Check for valloc()...'
 cat > conftest.c << _EOF_
 main()
 {
@@ -2345,7 +2345,7 @@ status=$?
 #------------------------------------------------------------------------------
 
 # Check for OS-specific flags.
-echo 'Check for OS-specific flags'
+echo 'Check for OS-specific flags...'
 if [ -f /usr/bin/hostinfo ]; then
   if /usr/bin/hostinfo | grep NeXT >/dev/null; then
     CFLAGS_TST="${CFLAGS_TST} -posix"
@@ -2368,7 +2368,7 @@ else
   echo "int main() { return 0;}" > conftest.c
   case "${UNAME_S}" in
      OSF1|ULTRIX)
-        echo 'Check for -Olimit option'
+        echo 'Check for -Olimit option...'
         $CC_TST ${CFLAGS} -Olimit 1000 -o conftest conftest.c \
           >/dev/null 2>/dev/null
         status=$?
@@ -2383,17 +2383,17 @@ fi
 #------------------------------------------------------------------------------
 
 # Check for /usr/local/bin.
-echo 'Check for /usr/local/bin'
+echo 'Check for /usr/local/bin...'
 [ -d /usr/local/bin ] && BINDIR='/usr/local/bin'
 
 # Check for /usr/local/man.
-echo 'Check for /usr/local/man'
+echo 'Check for /usr/local/man...'
 [ -d /usr/man/manl ]       && MANDIR='/usr/man/manl'
 [ -d /usr/local/man/manl ] && MANDIR='/usr/local/man/manl'
 [ -d /usr/local/man/man1 ] && MANDIR='/usr/local/man/man1'; MANEXT='.1'
 
 # Check for symbolic links.
-echo 'Check for symbolic links'
+echo 'Check for symbolic links...'
 ln -s /dev/null null >/dev/null 2>/dev/null || LN=ln
 
 
@@ -2436,7 +2436,7 @@ fi
 
 # Check validity of -Wno-format-security (for modern GCC).
 CF_TEST='-Wno-format-security'
-echo "Check ${CF_TEST}"
+echo "Check ${CF_TEST}..."
 cat > conftest.c << _EOF_
 int main() { return 0; }
 _EOF_
@@ -2446,7 +2446,7 @@ status=$?
 
 # Check validity of -Wno-format-nonliteral (for Clang).
 CF_TEST='-Wno-format-nonliteral'
-echo "Check ${CF_TEST}"
+echo "Check ${CF_TEST}..."
 cat > conftest.c << _EOF_
 int main() { return 0; }
 _EOF_

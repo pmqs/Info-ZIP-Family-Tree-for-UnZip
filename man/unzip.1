@@ -21,9 +21,9 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "13 May 2013 (v6.10)" "Info-ZIP"
+.TH UNZIP 1L "21 May 2013 (v6.10)" "Info-ZIP"
 .SH NAME
-unzip \- extract, list, or test  compressed files in a ZIP archive
+unzip \- extract, list, or test compressed files in a ZIP archive.
 .PP
 .SH SYNOPSIS
 .B unzip
@@ -586,6 +586,14 @@ Primary Mode.  Display complete usage instructions.  For details, see
 Primary Mode options.
 .PP
 .PD 0
+.B \-I char_set
+.TP
+.PD
+.B \-\-iso\-char\-set char_set
+.br
+[Unix] Select ISO character set \fIchar_set\fP.
+.PP
+.PD 0
 .B \-i
 .TP
 .PD
@@ -873,11 +881,11 @@ text files.  See also \fB\-a\fP and \fB\-b\fP.
 .PD
 .B \-\-space\-to\-uscore
 .br
-[OS/2, NT, MS-DOS] Convert spaces in filenames to underscores.  Because
-all these operating systems allow spaces in filenames, \fIUnZip\fP
-normally extracts filenames with spaces intact (for example,
-"\fCEA\ DATA.\ SF\fR").  Working with such file names can be awkward,
-however, so \fB\-s\fP can be used to replace spaces with underscores.
+Convert spaces in filenames to underscores.  Normally, on a system which
+allows spaces in filenames, \fIUnZip\fP extracts filenames with spaces
+intact (for example, "\fCEA\ DATA.\ SF\fR").  Working with such file
+names can be awkward, however, so \fB\-s\fP can be used to replace
+spaces with underscores.
 .PP
 .PD 0
 .B \-sc
@@ -1041,23 +1049,23 @@ a wildcard file name specification.
 .B \-X
 .TP
 .PD
-.B \-\-restore\-info
+.B \-\-restore\-owner
 .br
-[VMS, Unix, OS/2, NT, Tandem] Restore owner/protection info (UICs and
-ACL entries on VMS, or user and group info (UID/GID) on Unix, or
-access control lists (ACLs) on certain network-enabled versions of
-OS/2 (Warp Server with IBM LAN Server/Requester 3.0 to 5.0; Warp Connect
-with IBM Peer 1.0), or security ACLs on Windows NT.)  In most cases
-this will require special system privileges, and doubling the option
-(\fB\-XX\fP) on NT instructs \fIUnZip\fP to use privileges for
-extraction; but on Unix, for example, a user who belongs to several
-groups can restore files owned by any of those groups, so long as the
-user IDs match the user's own. Note that ordinary file attributes are
-always restored.  This option applies only to optional, extra ownership
-info available on some operating systems. (NT's access control lists do
-not appear to be especially compatible with OS/2's, so no attempt is
-made at cross-platform portability of access privileges.  It is not
-clear under which conditions this would ever be useful anyway.)
+[NT, OS/2, Unix, VMS, Tandem] Restore owner info (user and group info
+(UID/GID) on Unix, UIC on VMS, or access control lists (ACLs) on certain
+network-enabled versions of OS/2 (Warp Server with IBM LAN
+Server/Requester 3.0 to 5.0; Warp Connect with IBM Peer 1.0), or
+security ACLs on Windows NT.)  In most cases this will require special
+system privileges, and doubling the option (\fB\-XX\fP) on NT instructs
+\fIUnZip\fP to use privileges for extraction; but on Unix, for example,
+a user who belongs to several groups can restore files owned by any of
+those groups, so long as the user IDs match the user's own. Note that
+ordinary file attributes are always restored.  This option applies only
+to optional, extra ownership info available on some operating systems.
+(NT's access control lists do not appear to be especially compatible
+with OS/2's, so no attempt is made at cross-platform portability of
+access privileges.  It is not clear under which conditions this would
+ever be useful anyway.)
 .PP
 .PD 0
 .BR "\-x member" " ..."
@@ -1067,12 +1075,12 @@ clear under which conditions this would ever be useful anyway.)
 .br
 An optional list of archive members to be excluded from
 processing.  Because wildcard characters normally match "/" directory
-separators (for exceptions see the option \fB\-W\fP), this option may be
-used to exclude any files that are in subdirectories.  For example,
+separators (for exceptions, see the option \fB\-W\fP), this option may
+be used to exclude any files that are in subdirectories.  For example,
 "\fCunzip\ foo\ *.[ch]\ \-x\ */*\fR" would extract all C source files
-(*.c, *.h) in the main directory, but none in any
-subdirectories.  Without the \fB\-x\fP option, all C source files in all
-directories within the archive would be extracted.
+(*.c, *.h) in the main directory, but none in any subdirectories. 
+Without the \fB\-x\fP option, all C source files in all directories
+within the archive would be extracted.
 .IP
 When the program sees \fB\-x\fP (\fB\-\-exclude\fP) on a command line,
 it stops scanning for options, and treats every succeeding item as an
@@ -1209,11 +1217,11 @@ file names), \fB\-C\fP (use case-insensitive name matching), \fB\-q\fP
 .IP
 For \fIUnZip\fP, the environment variable name is UNZIP, except on VMS,
 where it's UNZIP_OPTS (to avoid conflict with a foreign-command DCL
-symbol, UNZIP).  For compatibility with \fIZip\fP, if UNZIP (UNZIP_OPTS
+symbol, UNZIP).  For similarity with \fIZip\fP, if UNZIP (UNZIP_OPTS
 on VMS) is not defined, then \fIUnZip\fP will use UNZIPOPT the same way.
 .IP
 For \fIZipInfo\fP ("\fCunzip -Z\fR"), the environment variable name is
-ZIPINFO, except on VMS, where it's ZIPINFO_OPTS.  For compatibility with
+ZIPINFO, except on VMS, where it's ZIPINFO_OPTS.  For similarity with
 \fIZip\fP, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined, then
 \fIZipInfo\fP will use ZIPINFOOPT the same way.
 .IP

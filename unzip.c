@@ -1699,14 +1699,14 @@ static struct option_struct far options[] = {
        'B',  "back up existing files"},
 # endif
 # ifdef CMS_MVS
-    {UZO, "B",  "CMS-MVS-binary",  o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "B",  "cms-mvs-binary",  o_NO_VALUE,       o_NEGATABLE,
        'b',  "CMS/MVS binary"},
 # endif
     {UZO, "c",  "to-stdout",       o_NO_VALUE,       o_NEGATABLE,
        'c',  "output to stdout"},
 # ifdef CMS_MVS
     /* for CMS_MVS map to lower case */
-    {UZO, "C",  "CMS-MVS-lower",   o_NO_VALUE,       o_NEGATABLE,
+    {UZO, "C",  "cms-mvs-lower",   o_NO_VALUE,       o_NEGATABLE,
        'C',  "CMS/MVS lower case"},
 # else /* ifdef CMS_MVS */
     {UZO, "C",  "ignore-case",     o_NO_VALUE,       o_NEGATABLE,
@@ -1743,7 +1743,7 @@ static struct option_struct far options[] = {
 # endif
 #ifdef ICONV_MAPPING
 # ifdef UNIX
-    {UZO, "I",  "ISO-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+    {UZO, "I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'I',  "ISO char set to use"},
 # endif
 #endif
@@ -1824,10 +1824,10 @@ static struct option_struct far options[] = {
 #ifndef SFX
     {UZO, "sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
        o_sc, "show processed command line and exit"},
-#if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
+# if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
     {UZO, "si", "show-pid",        o_NO_VALUE,       o_NEGATABLE,
        o_si, "show process ID"},
-#endif /* #if !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
+# endif /* #if !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
     {UZO, "so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
 #endif /* ndef SFX */
@@ -1858,8 +1858,8 @@ static struct option_struct far options[] = {
     {UZO, "x",  "exclude",         o_VALUE_LIST,     o_NOT_NEGATABLE,
        'x',  "exclude this list of files"},
 # if (defined(RESTORE_UIDGID) || defined(RESTORE_ACL))
-    {UZO, "X",  "restore-info",    o_NO_VALUE,       o_NEGATABLE,
-       'X',  "restore owner/prot or UID/GID or ACLs"},
+    {UZO, "X",  "restore-owner",   o_NO_VALUE,       o_NEGATABLE,
+       'X',  "restore owner/group (UID/GID, UIC, ...)"},
 # endif
 # ifdef VMS
     {UZO, "Y",  "dot-version",     o_NO_VALUE,       o_NEGATABLE,

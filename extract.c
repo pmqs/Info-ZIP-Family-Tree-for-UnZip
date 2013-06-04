@@ -2384,8 +2384,9 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             zffree(G.pInfo->cfilname);
             G.pInfo->cfilname = (char Far *)NULL;
         }
+# endif /* !SFX */
 
-#  ifdef IZ_CRYPT_AES_WG
+# ifdef IZ_CRYPT_AES_WG
         /* Analyze any AES encryption extra block before calculating
          * the true uncompressed file size.
          */
@@ -2419,9 +2420,8 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             temp_compression_method = G.lrec.compression_method;
             temp_stored_size_decr = RAND_HEAD_LEN;
         }
-#  endif /* def IZ_CRYPT_AES_WG */
+# endif /* def IZ_CRYPT_AES_WG */
 
-# endif /* !SFX */
         /* Size consistency checks must come after reading in the local extra
          * field, so that any Zip64 extension local e.f. block has already
          * been processed.

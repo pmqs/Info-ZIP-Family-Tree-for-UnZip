@@ -6,7 +6,8 @@
 #    $2 = program directory (relative).  Default: .
 #    $3 = non-null to skip funzip and SFX tests.
 #
-#    2012-12-16  SMS.  Add "-mc-" to UnZip "-Z" command to suppress
+#    2013-06-03  SMS.  Added exit status value.
+#    2012-12-16  SMS.  Added "-mc-" to UnZip "-Z" command to suppress
 #                      member counts by dir/file/link, because not all
 #                      systems have links, which changes the report.
 #    2012-06-22  SMS.  MinGW accommodation.  Changed to try
@@ -298,8 +299,11 @@ fi
 
 echo ''
 echo ">>> Test Results:   Pass: ${pass}, Fail: ${fail}"
+exit_status=0
 if test $pass -ne $pass_expected -o $fail -ne $fail_expected ; then
     echo ">>> ###   Expected: Pass: ${pass_expected}, Fail: ${fail_expected}"
+    exit_status=1
 fi
 echo ''
 
+exit ${exit_status}
