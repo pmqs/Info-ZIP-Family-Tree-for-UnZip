@@ -1,40 +1,65 @@
-Contents of the "win32" sub-archive for UnZip 6.0 and later:
+      Contents of the UnZip 6.10 Source Archive "win32" Directory
+      -----------------------------------------------------------
 
-  Contents      this file
-  Makefile      makefile for UnZip using MS Visual C++
-  Makefile.bc   makefile for UnZip using Borland C++
-  Makefile.dj   makefile for UnZip using djgpp v2.x with rsxntdj 1.31
-  Makefile.emx  makefile for UnZip using emx+gcc 0.9c with RSXNT 1.4 (+)
-  Makefile.gcc  makefile for UnZip using native Win32 gcc ports (Cygwin, MinGW)
-  Makefile.lcc  makefile for UnZip using free LCC-Win32 compiler
-  Makefile.wat  makefile for UnZip using Watcom C/C++
-  crc_i386.asm  32-bit Intel-assembler version of CRC routine
-  crc_i386.c    ditto, for MS[V]C with no MASM only
-  crc_lcc.asm   ditto, adapted for LCC-Win32 assembler syntax
-  nt.c          WinNT-specific support routines (ACLs/security descriptors)
-  nt.h          WinNT-specific support header
-  rsxntwin.h    supplement header for RSXNT, fills holes in their <windows.h>
-  w32cfg.h      Win32-specific configuration, included by unzpriv.h
-  win32.c       Win32-specific support routines
-  win32i64.c
-  winapp.rc     resource file for regular console-mode UnZip application
-  vc6/          directory containing Visual C++ 6.0 project files
-    funzip.dsp    MSVC++ 6.0 project file for fUnZip command-line tool
-    unzip.dsp     MSVC++ 6.0 project file for UnZip command-line main program
-    unzipsfx.dsp  MSVC++ 6.0 project file for UnZipSFX console mode stub
-    unzipbz2.dsp  MSVC++ 6.0 project file for UnZip with bzip2 support
-    bz2lib.dsp    MSVC++ 6.0 project file for bz2lib (de)compression library
-    unzip.dsw     MSVC++ 6.0 workspace file for all UnZip command line tools
-  vc8/          directory containing Visual C++ 2005 (8.0) project files
-    funzip.vcproj   MSVC++ 8.0 project file for fUnZip command-line tool
-    unzip.vcproj    MSVC++ 8.0 project file for UnZip command-line main program
-    unzipsfx.vcproj MSVC++ 8.0 project file for UnZipSFX console mode stub
-    unzipbz2.vcproj MSVC++ 8.0 project file for UnZip with bzip2 support
-    bz2lib.vcproj   MSVC++ 8.0 project file for bz2lib (de)compression library
-    unzip.sln       MSVC++ 8.0 workspace file for all UnZip command line tools
+Contents            This file
+crc_i386.asm        32-bit Intel-assembler version of CRC routine
+crc_i386.c          crc_i386.asm, adapted for MSVC with no MASM only
+crc_lcc.asm         crc_i386.asm, adapted for LCC-Win32 assembler syntax
+Makefile            "make" file for UnZip using MS Visual C++
+Makefile.bc         "make" file for UnZip using Borland C++
+Makefile.dj         "make" file for UnZip using djgpp v2.x with rsxntdj 1.31
+Makefile.emx        "make" file for UnZip using emx+gcc 0.9c with RSXNT 1.4 (+)
+Makefile.gcc        "make" file for UnZip using Win32 gcc ports (Cygwin, MinGW)
+Makefile.lcc        "make" file for UnZip using free LCC-Win32 compiler
+Makefile.wat        "make" file for UnZip using Watcom C/C++
+nt.c                WinNT-specific support routines (ACLs/security descriptors)
+nt.h                WinNT-specific support header
+rsxntwin.h          Supplement for RSXNT (and its deficient <windows.h>)
+w32cfg.h            Win32-specific configuration, included by unzpriv.h
+win32.c             Win32-specific support routines
+win32i64.c          Win32-specific large-file support routines
+winapp.rc           Resource file for regular console-mode UnZip application
 
-crc_i386.c has been tested with MSVC and can be selected through the MSVC
-makefile.  It is provided for those who may have MSVC but no assembler.
-Note that some C compilers on Pentium-class machines have been reported
-to emit faster code from the plain C sources (crc32.c) than the assembler
-routines provide.  This has not been tested lately, however.
+vc6\                Directory for Visual C++ 6.0 project files
+  funzip.dsp          Project file for fUnZip command-line tool
+  unzip.dsp           Project file for UnZip command-line main program
+  unzipsfx.dsp        Project file for UnZipSFX console mode stub
+  unzipbz2.dsp        Project file for UnZip with bzip2 support
+  bz2lib.dsp          Project file for bz2lib bzip2 compression library
+  unzip.dsw           Workspace file for all UnZip command-line tools
+
+vc8\                Directory for Visual C++ 2005 (8.0) project files
+  funzip.vcproj       Project file for fUnZip command-line tool
+  unzip.vcproj        Project file for UnZip command-line main program
+  unzipsfx.vcproj     Project file for UnZipSFX console mode stub
+  unzipbz2.vcproj     Project file for UnZip with bzip2 support
+  bz2lib.vcproj       Project file for bz2lib bzip2 compression library
+  unzip.sln           Solution file for all UnZip command-line tools
+
+vc10\               Directory for Visual C++ 2010 (10.0) project files
+  unzip.sln           Solution file for all UnZip command-line tools
+  funzip\             Directory for FUnZip project files
+    funzip.vcxproj
+    funzip.vcxproj.filters
+  libbz2\             Directory for bzip2 library project files
+    libbz2.vcxproj
+    libbz2.vcxproj.filters
+  unzip\              Directory for UnZip project files
+    unzip.vcxproj
+    unzip.vcxproj.filters
+  unzipsfx\           Directory for UnZipSFX project files
+    unzipsfx.vcxproj
+    unzipsfx.vcxproj.filters
+
+   crc_i386.c has been tested with MSVC and can be selected through the
+MSVC makefile.  It is provided for those who may have MSVC but no
+assembler. Note that some C compilers on Pentium-class machines have
+been reported to emit faster code from the plain C sources (crc32.c)
+than the assembler routines provide.  This has not been tested lately,
+however.
+
+   Many of the "make" files and other builders here are now obsolete. 
+They may not have been updated for UnZip 6.10, and may not support its
+new optional features.  The Unix builders should support the Cygwin and
+MinGW environments.  The "vc10\" builders for Visual C++ 2010 should
+work.  See INSTALL for more information.

@@ -1973,7 +1973,7 @@ General SFX qualifiers:\n\
 %s\n",
 #  endif /* def WILD_STOP_AT_DIR [else] */
 "\
-  /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\
+  /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\n\
 "));
 
 /* 2012-12-28 SMS.
@@ -1982,8 +1982,9 @@ General SFX qualifiers:\n\
 #  ifdef MORE
     Info(slide, flag, ((char *)slide, "\
   /[NO]PAGE, /PASSWORD=passwd, /QUIET[=SUPER],\n\
-  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
-  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERSION\n\
+  /RESTORE=([NO]ACL, [NO]DATE=[ALL|FILES], [NO]OWNER,\n\
+   [NO]PROTECTION=[LIMITED|ORIGINAL]),\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /[NO]TRAVERSE_DIRS, /VERSION\n\
 \n\
 Quote member names if /MATCH=CASE=SENSITIVE (default).  For details, see\n\
 UnZip documentation.  For more options, use an external (full-featured)\n\
@@ -1993,8 +1994,9 @@ UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
 #  else /* def MORE */
     Info(slide, flag, ((char *)slide, "\
   %s/PASSWORD=passwd, /QUIET[=SUPER],\n\
-  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
-  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERSION\n\
+  /RESTORE=([NO]ACL, [NO]DATE=[ALL|FILES], [NO]OWNER,\n\
+   [NO]PROTECTION=[LIMITED|ORIGINAL]),\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /[NO]TRAVERSE_DIRS, /VERSION\n\
 \n\
 Quote member names if /MATCH=CASE=SENSITIVE (default).  For details, see\n\
 UnZip documentation.  For more options, use an external (full-featured)\n\
@@ -2129,7 +2131,7 @@ General qualifiers:\n\
 %s",
 #  endif /* def WILD_STOP_AT_DIR [else] */
  "\
-  /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\
+  /[NO]JUNK_DIRS[=level], /NAMES=[[NO]DOWNCASE]|[[NO]ODS2]|[NO]SPACES],\n\
 "));
 
 /* 2012-12-28 SMS.
@@ -2142,14 +2144,16 @@ General qualifiers:\n\
 #  ifdef MORE
         Info(slide, flag, ((char *)slide, "\
   /[NO]PAGE, /PASSWORD=passwd, /QUIET[=SUPER],\n\
-  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
-  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERBOSE, /VERSION\n\
+  /RESTORE=([NO]ACL, [NO]DATE=[ALL|FILES], [NO]OWNER,\n\
+   [NO]PROTECTION=[LIMITED|ORIGINAL]),\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /[NO]TRAVERSE_DIRS, /VERBOSE, /VERSION\n\
 "));
 #  else /* def MORE */
         Info(slide, flag, ((char *)slide, "\
   /PASSWORD=passwd, /QUIET[=SUPER],\n\
-  /RESTORE=([ACL|[NO]PROTECTION], [NO]DATE={ALL|FILES}]), /[NO]TRAVERSE_DIRS\n\
-  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /VERBOSE, /VERSION\n\
+  /RESTORE=([NO]ACL, [NO]DATE=[ALL|FILES], [NO]OWNER,\n\
+   [NO]PROTECTION=[LIMITED|ORIGINAL]),\n\
+  /[NO]TEXT[=([ALL|AUTO|NONE], STMLF)], /[NO]TRAVERSE_DIRS, /VERBOSE, /VERSION\n\
 "));
 #  endif /* def MORE [else] */
 

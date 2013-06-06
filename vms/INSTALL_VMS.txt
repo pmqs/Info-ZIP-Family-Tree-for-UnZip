@@ -1,7 +1,7 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
-   UnZip version 6.10.  Revised: 2013-05-14.
+   UnZip version 6.10.  Revised: 2013-06-06.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -27,8 +27,8 @@ If the UnZip kit is elsewhere, specify its actual location:
       UNZIP dn_ld_dev:[dn_ld_dir]unzip61.zip
 
    On old VMS versions (before VMS V6.0), it may be helpful to specify
-"-b" (/BINARY) when unpacking the source kit.  For details, see
-"Testing", below.  For example:
+"-b" (/BINARY) when unpacking the source kit.  For details, see "Test",
+below.  For example:
 
       UNZIP -b unzip61.zip              ! Unpack the UnZip source kit.
 
@@ -69,8 +69,8 @@ If the UnZip kit is elsewhere, specify its actual location:
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      Building
-      --------
+      Build
+      -----
 
    On VMS, two build methods are provided: a DCL command procedure, and
 description files for MMS or MMK.  Both methods must be run from the
@@ -219,8 +219,8 @@ Building the help files is detailed below.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      Testing
-      -------
+      Test
+      ----
 
    A set of basic UnZip tests can be run using the builders:
 
@@ -274,8 +274,8 @@ attributes.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      Installation
-      ------------
+      Install
+      -------
 
    To complete the installation, the executables may be left in place,
 or moved (or copied) to a convenient place.  While other methods (like

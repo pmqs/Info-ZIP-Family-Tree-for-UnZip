@@ -1,7 +1,7 @@
       Contents of the UnZip 6.10 Source Archive
       -----------------------------------------
 
-(Subdirectories contain their own Contents listings.)
+(Subdirectories may contain their own Contents listings.)
 
    General Documentation
 BUGS            Known bugs, problems, and (possible) future features
@@ -101,8 +101,8 @@ windll/         Windows 3.x/9x/NT DLLs
 zos/            z/OS
 zvm/            VM/CMS and MVS
 
-   Optional/Foreign Source Code 
+   Optional/Foreign Source Code (which may contain their own Contents files)
 aes_wg/         AES_WG encryption
 bzip2/          bzip2 compression
 szip/           LZMA and PPMd compression
-
+wrap/           Wrappers for optional source modules

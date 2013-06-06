@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2013-04-23
+   Document date: 2013-06-06
 
 ------------------------------------------------------------------------
 
@@ -145,6 +145,19 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
   on directories as well as files.  (On VMS, this is not a change,
   except for the new trailing-hyphen syntax for option negation.)
 
+- Behavior change: Now, by default, permission/protection information is
+  restored on Unix(-like) and VMS systems, but limited by the user's
+  Unix umask or VMS default protection.  Use -k/--keep-permissions
+  (/RESTORE = PROTECTION = ORIGINAL) to ignore the umask or default
+  protection, and get the old default behavior.  Use -k- (/RESTORE =
+  NOPROTECTION) to ignore the archived permissions, leaving only the
+  umask or default protection.
+
+- Behavior change: Now, on Unix(-like) and VMS systems,
+  -X/--restore-owner controls only restoration of Unix UID/GID or VMS
+  UIC.  On VMS, -ka/--keep-acl (/RESTORE = ACL) controls restoration of
+  ACLs.
+
 - Behavior change: ZipInfo report format changes:
    - Headers and totals summary formats have been changed.  New option:
      -mc/--member_counts.
@@ -178,8 +191,9 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
      /[NO]DECIMAL_TIME.
    - /JUNK_DIRS (-j) now has an optional (integer) value.
    - New qualifiers/values: /JAR (--jar), /LICENSE (--license),
-     /VERBOSE = COMMAND (-sc).  Optional: /MATCH = [NO]WILD_MATCH_SLASH
-     (-W).
+     /RESTORE = ACL (-ka), /RESTORE = [NO]PROTECTION =
+     [LIMITED|ORIGINAL] (-k), /RESTORE = OWNER (-X), /VERBOSE = COMMAND
+     (-sc).  Optional: /MATCH = [NO]WILD_MATCH_SLASH (-W).
 
 ------------------------------------------------------------------------
 

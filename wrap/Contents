@@ -1,0 +1,19 @@
+      Contents of the UnZip 6.10 Source Archive "wrap" Directory
+      ----------------------------------------------------------
+
+aescrypt.c          Wrapper for "aes_wg/aescrypt.c"
+aeskey.c            Wrapper for "aes_wg/aeskey.c"
+aestab.c            Wrapper for "aes_wg/aestab.c"
+Contents            This file
+crc_i386.c          Wrapper for "win32/crc_i386.c"
+fileenc.c           Wrapper for "aes_wg/fileenc.c"
+hmac.c              Wrapper for "aes_wg/hmac.c"
+LzFind.c            Wrapper for "szip/LzFind.c"
+LzmaDec.c           Wrapper for "szip/LzmaDec.c"
+LzmaEnc.c           Wrapper for "szip/LzmaEnc.c" [?]
+Ppmd8.c             Wrapper for "szip/Ppmd8.c"
+Ppmd8Dec.c          Wrapper for "szip/Ppmd8Dec.c"
+Ppmd8Enc.c          Wrapper for "szip/Ppmd8Enc.c" [?]
+prng.c              Wrapper for "aes_wg/prng.c"
+pwd2key.c           Wrapper for "aes_wg/pwd2key.c"
+sha1.c              Wrapper for "aes_wg/sha1.c"

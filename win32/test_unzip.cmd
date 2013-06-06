@@ -4,11 +4,11 @@ rem #    %1 = test archive name.  Default: testmake.zip
 rem #    %2 = program directory (relative).  Default: .
 rem #    %3 = non-null to skip funzip and SFX tests.
 rem #
-rem #    2013-06-03  SMS.  New.  Adapted from unix/test_unzip.sh
+rem #    2013-06-06  SMS.  New.  Adapted from unix/test_unzip.sh
 rem #
 rem # Typical usage:
 rem #    win32\test_unzip.cmd testmake.zip win32\vc10\Debug
-rem #    win32\test_unzip.cmd testmake_ppmd.zip win32\vc10\Debug x
+rem #    win32\test_unzip.cmd testmake_ppmd.zip win32\vc10\Debug NOFUNSFX
 
 @echo off
 

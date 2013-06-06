@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-06-01
+   UnZip version 6.10.  Revised: 2013-06-06
 
 ------------------------------------------------------------------------
 
@@ -20,8 +20,9 @@ UnZip follows these steps:
       "mkdir", "rm", "sed", and so on.)
 
       3. Test.  The Unix and VMS builders include a very basic test
-      procedure.  Careful users should test any programs like these
-      using their own data and procedures before relying on them.
+      procedure.  A Windows command script is also available.  Careful
+      users should test any programs like these using their own data and
+      procedures before relying on them.
 
       4, Install.  That is, move the executables and associated files to
       their destination directories.
@@ -680,6 +681,18 @@ using the "make" target "test_ppmd".    For example:
 See "Known PPMd Compression Problems", below, for an explanation of why
 running the PPMd test is important.
 
+   On VMS, see [.vms]INSTALL_VMS.txt.
+
+   On Windows, when the Unix builders are not used (Visual Studio
+builds, for example), a Windows command script is provided,
+"win32\test_unzip.cmd".  Typical usage:
+
+     win32\test_unzip.cmd testmake.zip win32\vc10\Debug
+     win32\test_unzip.cmd testmake_ppmd.zip win32\vc10\Debug NOFUNSFX
+
+Note that some tests may fail if this script is not run from the
+top-level UnZip kit directory (where the paths shown above make sense).
+
    These test sets are simple, not exhaustive.  Before relying on UnZip,
 more realistic tests should be run in the user's own environment,
 ideally, working with the user's own data.  This is especially true when
@@ -952,11 +965,6 @@ NO_MULT_VOLUME   (default)
    support in the master source tree.  This feature will become a
    default option in the future 6.1 release of UnZip (with any luck).
 
-NO_ASM
-NO_ASM_CRC
-   Used by unix/configure ("make generic") to disable automatic
-   selection of assembly code for CRC calculations.
-
 NO_CRYPT
    Disable all encryption support in all programs.
 
@@ -1055,9 +1063,14 @@ WILD_STOP_AT_DIR   (incompatible with WINDLL!)
    Multi-System
    ------------
 
-ASM_CRC   (Amiga/Aztec C; many x86 systems:  DOS, OS/2, Windows, Unix)
-   Use an assembler routine to calculate the CRC checksums.  (Faster
-   than the C code?)
+ASM_CRC
+NO_ASM
+NO_ASM_CRC   (Amiga/Aztec C; many x86 systems: DOS, OS/2, Windows, Unix)
+   Used by unix/configure ("make generic") and other builders to
+   control the use of assembly code for CRC calculations.  We have not
+   recently tested the x86 assembly code to see if it's actually faster
+   than the corresponding C code on modern hardware using modern
+   compilers.  Reports are welcome.
 
 ASM_INFLATECODES   (Amiga/Aztec C only, for now)
    Use an assembler version of inflate_codes() for speed.
