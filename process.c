@@ -1840,8 +1840,7 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
 #ifdef UNICODE_SUPPORT
     /* remember the state of GPB11 (General Purpose Bit 11) which indicates
        that the standard path and comment are UTF-8. */
-    G.pInfo->GPFIsUTF8
-        = (G.crec.general_purpose_bit_flag & UTF8_BIT) == UTF8_BIT;
+    G.pInfo->GPFIsUTF8 = (G.crec.general_purpose_bit_flag & UTF8_BIT) != 0;
 #endif
 
 #ifdef SYMLINKS

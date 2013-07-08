@@ -147,6 +147,14 @@ OPTIONS (Ordinary)
               being  viewed.   If the actual number of lines on the screen can
               not be determined, 24 lines will be assumed.
 
+       -mc
+       --member-counts
+              Control inclusion of separate  member  counts  for  directories,
+              files,  and  (if symlinks are supported) links, after the totals
+              summary at  the  end  of  the  report.   By  default,  they  are
+              included.   Use  "-mc-"  or "--member-counts-" to suppress them.
+              See also /TOTALS.
+
        -T
        --decimal-time
               Show the file date-times in  a  sortable,  all-numeric,  "YYYYM-
@@ -172,6 +180,8 @@ OPTIONS (Ordinary)
               The  total  "bytes compressed" reported includes only the actual
               data, not the ZIP archive meta-data, so the size of the  archive
               will always be greater than this value.
+
+              See also -mc.
 
        -U
        --unicode
@@ -275,8 +285,8 @@ DETAILED DESCRIPTION
        Field  5  (At) shows some archive member attributes, as detailed in the
        tables below.  The first character indicates whether a file was  binary
        or  text, and whether it was encrypted.  The second character indicates
-       the presence of a data descriptor and/or an extra field in  the  member
-       data.
+       the presence of  a  data  descriptor  (sometimes  called  an  "extended
+       header") and/or an extra field in the member data.
 
                      |   File Type     Extra Field |
          First char  | binary  text      yes   no  |  Second char
@@ -335,7 +345,7 @@ ENVIRONMENT OPTIONS
        one of the non-default Unix format optiond (-l, -m).
 
               For ZipInfo ("unzip -Z"), the environment variable name is  ZIP-
-              INFO, except on VMS, where it's ZIPINFO_OPTS.  For compatibility
+              INFO,  except  on  VMS, where it's ZIPINFO_OPTS.  For similarity
               with Zip, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined,  then
               ZipInfo will use ZIPINFOOPT the same way.
 

@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2013-01-17  SMS.
+$!     Last revised:  2013-07-04  SMS.
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"
@@ -100,7 +100,7 @@ $!     This command procedure always generates both the "default" UnZip
 $!     program with the UNIX style command interface and the "VMSCLI"
 $!     UnZip program with the VMS CLI command interface.  There is no
 $!     need to add "VMSCLI" to the LOCAL_UNZIP symbol.  (The only effect
-$!     of "VMSCLI" now is the selection of the CLI style UnZip
+$!     of "VMSCLI" now is the selection of the VMS CLI style UnZip
 $!     executable in the foreign command definition.)
 $!
 $!

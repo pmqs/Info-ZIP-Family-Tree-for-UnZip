@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -48,7 +48,6 @@
 #  define __G__               (Uz_Globs *)pG,
 #endif
 
-HANDLE hwildZipFN;
 HANDLE hInst;               /* current instance */
 HANDLE hDCL;
 int fNoPrinting = 0;
@@ -439,17 +438,24 @@ LPDCL lpDCL;
        }
 
 /* G.wildzipfn needs to be initialized so that do_wild does not wind
-   up clearing out the zip file name when it returns in process.c
-*/
+ * up clearing out the zip file name when it returns in process.c
+ *
+ * 2013-06-28 SMS.
+ * Removed locally allocated global hwildZipFN, in favor of using only
+ * (per-thread) G.wildzipfn, to solve a reentrancy problem reported
+ * (2011-09-15) by Alexandr Miloslavskiy.  Accordingly, uses of
+ * GlobalLock() and GlobalUnlock() have been removed.
+ * (Is the GlobalAlloc() and GlobalFree() stuff used for 16-bit Windows
+ * compatibility?)
+ */
     if (strlen(lpDCL->lpszZipFN) >= FILNAMSIZ)
        /* length of supplied archive name exceed the system's filename limit */
        return FALSE;
 
-    hwildZipFN = GlobalAlloc(GPTR, FILNAMSIZ);
-    if (hwildZipFN == (HGLOBAL) NULL)
+    G.wildzipfn = GlobalAlloc(GPTR, FILNAMSIZ);
+    if (G.wildzipfn == NULL)
        return FALSE;
 
-    G.wildzipfn = GlobalLock(hwildZipFN);
     lstrcpy(G.wildzipfn, lpDCL->lpszZipFN);
     _ISO_INTERN(G.wildzipfn);
 
@@ -459,11 +465,8 @@ LPDCL lpDCL;
 static void FreeDllMem(__GPRO)
 {
     if (G.wildzipfn) {
-        GlobalUnlock(hwildZipFN);
-        G.wildzipfn = NULL;
+        G.wildzipfn = GlobalFree(G.wildzipfn);
     }
-    if (hwildZipFN)
-        hwildZipFN = GlobalFree(hwildZipFN);
 
 #ifndef CRTL_CP_IS_ISO
     if (uO.exdir != NULL) {

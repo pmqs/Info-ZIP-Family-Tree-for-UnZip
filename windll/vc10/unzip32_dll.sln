@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unz32dll", "unzip32_dll\unzip32_dll.vcxproj", "{24CEFBE3-3307-4F78-88CB-A625631CC333}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "uzexampl", "uzexampl\uzexampl.vcxproj", "{BE884407-2908-4690-846D-60031B5D17FA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{24CEFBE3-3307-4F78-88CB-A625631CC333}.Debug|Win32.ActiveCfg = Debug|Win32
+		{24CEFBE3-3307-4F78-88CB-A625631CC333}.Debug|Win32.Build.0 = Debug|Win32
+		{24CEFBE3-3307-4F78-88CB-A625631CC333}.Release|Win32.ActiveCfg = Release|Win32
+		{24CEFBE3-3307-4F78-88CB-A625631CC333}.Release|Win32.Build.0 = Release|Win32
+		{BE884407-2908-4690-846D-60031B5D17FA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BE884407-2908-4690-846D-60031B5D17FA}.Debug|Win32.Build.0 = Debug|Win32
+		{BE884407-2908-4690-846D-60031B5D17FA}.Release|Win32.ActiveCfg = Release|Win32
+		{BE884407-2908-4690-846D-60031B5D17FA}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -672,18 +672,23 @@ UNZIP
 
   Qualifiers_Ordinary
 
-    /RESTORE (-D, -X)
+    /RESTORE (-D, -k, -ka, -X)
 
          /RESTORE[=(keyword, ...)]
 
          Selects restoration  options  for  some  meta-data.   The  optional
          keywords are:
 
-             ACL           Restore file protection, owner, and ACL settings.
-                           (-XX)
-             PROTECTION    Restore file protection settings.  (Default.)
-             NOPROTECTION  Do not restore file owner and ACL protection
-                           settings.  (-X-)
+             ACL           Restore file ACL settings.  (-ka)
+             OWNER         Restore file owner/UIC settings.  (-X)
+             PROTECTION = LIMITED   Restore file UIC-based (SOGW) protection
+                                    settings, respecting the current default
+                                    protection.  (Default.)
+             PROTECTION = ORIGINAL  Restore file UIC-based (SOGW) protection
+                                    settings, ignoring the current default
+                                    protection.  (-k)
+             NOPROTECTION  Do not restore file UIC-based (SOGW) protection settings.
+                           The current default protection is used.  (-k-)
              NODATE        Do not restore any timestamps.
              DATE=ALL      Restore timestamps for all extracted entries,
                            files and directories.
@@ -851,12 +856,14 @@ UNZIP
          version  numbers  may  be  truncated or stripped regardless of this
          option.)
 
-         [Non-VMS] Note that currently, on a non-VMS system, a file  with  a
-         name like "fred;123" will, by default, be extracted as "fred", even
-         if the file did not originate on a VMS system (so that  ";123"  was
-         probably  not  really  a  VMS  version  number).  Many people would
-         consider this a bug, and the default behavior  on  non-VMS  systems
-         may be changed in the future.
+         [Non-VMS] Note that before UnZip version 6.10, on a non-VMS system,
+         a  file with a name like "fred;123" would, by default, be extracted
+         as "fred", even if the file did not originate on a VMS  system  (so
+         that  ";123"  was  probably  not  really  a  VMS  version  number).
+         Beginning with UnZip version 6.10, the default behavior is to strip
+         VMS  version  numbers  only from files which were archived on a VMS
+         system.  To restore the old behavior, and always strip apparent VMS
+         version numbers, explicitly negate the option:  "-V-".
 
 
 UNZIP

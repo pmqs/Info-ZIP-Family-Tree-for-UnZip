@@ -61,7 +61,7 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 #ifdef DLL
-#  include <api.h>
+#  include "api.h"
 #endif /* def DLL */
 #ifdef WINDLL
 #  ifdef POCKET_UNZIP

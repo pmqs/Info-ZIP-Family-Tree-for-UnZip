@@ -755,7 +755,10 @@ int      vms_status              OF((int err));                 /* vms.c */
 void     decc_init               OF((void));                    /* vms.c */
 #endif
 
-#define UTF8_BIT (1<<11)
+/* General purpose flag: UTF-8 member path and comment. */
+#ifndef UTF8_BIT                /* Avoid conflict with Zip:zip.h. */
+# define UTF8_BIT (1<<11)
+#endif /* ndef UTF8_BIT */
 
 #ifdef __cplusplus
 }

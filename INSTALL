@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-06-06
+   UnZip version 6.10.  Revised: 2013-06-10
 
 ------------------------------------------------------------------------
 
@@ -1068,9 +1068,12 @@ NO_ASM
 NO_ASM_CRC   (Amiga/Aztec C; many x86 systems: DOS, OS/2, Windows, Unix)
    Used by unix/configure ("make generic") and other builders to
    control the use of assembly code for CRC calculations.  We have not
-   recently tested the x86 assembly code to see if it's actually faster
-   than the corresponding C code on modern hardware using modern
-   compilers.  Reports are welcome.
+   recently done extensive testing to compare the speed of the x86
+   assembly code with the speed of the corresponding C code on modern
+   hardware using modern compilers.  At least one test (VS 2010, Windows
+   XP(32), Xeon 5160) was about 5% faster with ASM_CRC.  Reports are
+   welcome on this and any other performance-related tuning of build
+   procedures, and so on.
 
 ASM_INFLATECODES   (Amiga/Aztec C only, for now)
    Use an assembler version of inflate_codes() for speed.

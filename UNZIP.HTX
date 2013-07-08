@@ -673,6 +673,44 @@ UNZIP
 
   Options_Ordinary
 
+    -k
+
+      --keep-permissions
+
+        [AtheOS, BeOS,  Unix,  VMS]  Control  how  archived  permissions  or
+        protections are restored on extracted files and directories.
+
+        By default, archived permissions are restored with some limitations.
+        On  AtheOS,  BeOS,  and Unix, the current umask value is applied (to
+        the normal  user/group/other  permissions).   On  VMS,  the  current
+        default protection is applied to the UIC-based (SOGW) protections.
+
+        With -k, the archived permissions are restored without regard to the
+        Unix  umask  or  VMS  default  protection.   (This  was  the default
+        behavior in UnZip versions before 6.10.)
+
+        With -k-, the archived permissions are ignored,  so  only  the  Unix
+        umask  or VMS default protection is effective.  (On VMS, directories
+        are always created without any Delete access.)
+
+        On AtheOS, BeOS, and Unix, the SUID/SGID/Tacky permission  bits  are
+        controlled  by  the  -K/--keep-s-attrs  option,  regardless  of  the
+        -k/--keep-permissions setting.
+
+
+UNZIP
+
+  Options_Ordinary
+
+    -ka
+
+      --keep-acl [VMS] Restore ACLs on extracted files and directories.
+
+
+UNZIP
+
+  Options_Ordinary
+
     -L
 
       -L
@@ -1058,12 +1096,14 @@ UNZIP
         version  numbers  may  be  truncated  or stripped regardless of this
         option.)
 
-        [Non-VMS] Note that currently, on a non-VMS system, a  file  with  a
-        name  like "fred;123" will, by default, be extracted as "fred", even
-        if the file did not originate on a VMS system (so  that  ";123"  was
-        probably  not  really  a  VMS  version  number).   Many people would
-        consider this a bug, and the default behavior on non-VMS systems may
-        be changed in the future.
+        [Non-VMS] Note that before UnZip version 6.10, on a non-VMS  system,
+        a  file  with a name like "fred;123" would, by default, be extracted
+        as "fred", even if the file did not originate on a  VMS  system  (so
+        that   ";123"  was  probably  not  really  a  VMS  version  number).
+        Beginning with UnZip version 6.10, the default behavior is to  strip
+        VMS  version  numbers  only  from files which were archived on a VMS
+        system.  To restore the old behavior, and always strip apparent  VMS
+        version numbers, explicitly negate the option:  "-V-".
 
 
 UNZIP

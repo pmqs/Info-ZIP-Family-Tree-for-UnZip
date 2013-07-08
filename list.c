@@ -209,7 +209,7 @@ int list_files(__G)    /* return PK-type error code */
                 return error;
         }
         if (G.extra_field != (uch *)NULL) {
-            free(G.extra_field);
+            izu_free(G.extra_field);
             G.extra_field = (uch *)NULL;
         }
         if ((error = do_string(__G__ G.crec.extra_field_length, EXTRA_FIELD))
@@ -618,7 +618,7 @@ int get_time_stamp(__G__ last_modtime, nmember)  /* return PK-type error code */
                 return error;
         }
         if (G.extra_field != (uch *)NULL) {
-            free(G.extra_field);
+            izu_free(G.extra_field);
             G.extra_field = (uch *)NULL;
         }
         if ((error = do_string(__G__ G.crec.extra_field_length, EXTRA_FIELD))

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -315,6 +315,26 @@
    wchar_t *local_to_wchar_string OF((char *));
    int has_win32_wide();
 #endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+
+/* 2013-07-08 SMS.
+ * Some anti-virus programs may temporarily lock a newly created
+ * file, causing transient failures of CreateFile[AW]() when
+ * setting date-time (win32/win32.c:close_outfile()).
+ * We try up to IZ_CREATEFILE_TRY_COUNT times, at intervals of
+ * IZ_CREATEFILE_TRY_TIME_MS (millisecond).  To disable the
+ * retries, define IZ_CREATEFILE_TRY_COUNT as zero. (win32/w32cfg.h).
+ * http://sourceforge.net/p/infozip/bugs/44/
+ * http://support.microsoft.com/kb/316609
+ */
+#ifndef IZ_CREATEFILE_TRY_COUNT
+# define IZ_CREATEFILE_TRY_COUNT 8
+#endif
+#ifndef IZ_CREATEFILE_TRY_TIME_MS
+# define IZ_CREATEFILE_TRY_TIME_MS 125
+#endif
+#if defined( IZ_CREATEFILE_TRY_COUNT) && (IZ_CREATEFILE_TRY_COUNT > 1)
+# define RETRY_CREATEFILE 1
+#endif
 
 /* Static variables that we have to add to Uz_Globs: */
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)

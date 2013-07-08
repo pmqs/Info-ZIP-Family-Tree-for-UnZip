@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2010 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -203,10 +203,33 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
 #endif
 {
     HANDLE hFile;
+/* 2013-07-08 SMS.  See note below. */
+#ifdef RETRY_CREATEFILE
+    int cf_tries;
+#endif
 
     *dwRemotePrivileges = 0;
 
     /* see if we have the SeRestorePrivilege */
+
+    /* 2013-07-08 SMS.
+     * Some anti-virus programs may temporarily lock a newly created
+     * file, causing transient failures of CreateFile[AW]() when
+     * setting date-time (win32/win32.c:close_outfile()).  (We assume
+     * that the code here is similarly vulnerable.)
+     * We try up to IZ_CREATEFILE_TRY_COUNT times, at intervals of
+     * IZ_CREATEFILE_TRY_TIME_MS (millisecond).  To disable the
+     * retries, define IZ_CREATEFILE_TRY_COUNT as zero.  (win32/w32cfg.h).
+     * http://sourceforge.net/p/infozip/bugs/44/
+     * http://support.microsoft.com/kb/316609
+     *
+     * Perhaps the count or time interval should depend on the file
+     * size?
+     */
+#ifdef RETRY_CREATEFILE
+    for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
+    {
+#endif /* def RETRY_CREATEFILE */
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     hFile = CreateFileW(
@@ -221,6 +244,16 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
         FILE_FLAG_BACKUP_SEMANTICS,
         NULL
         );
+
+#ifdef RETRY_CREATEFILE
+        if (hFile == INVALID_HANDLE_VALUE)
+        {
+            if (GetLastError() != ERROR_SHARING_VIOLATION)
+                break;   /* Not a sharing error.  Get out now.  Otherwise: */
+            Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+        }
+    }
+#endif /* def RETRY_CREATEFILE */
 
     if(hFile != INVALID_HANDLE_VALUE) {
         /* no remote way to determine SeRestorePrivilege -- just try a
@@ -249,6 +282,12 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
         /* see if we have the SeSecurityPrivilege */
         /* note we don't need this if we have SeRestorePrivilege */
 
+/* 2013-07-08 SMS.  See note above. */
+#ifdef RETRY_CREATEFILE
+        for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
+        {
+#endif /* def RETRY_CREATEFILE */
+
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
         hFile = CreateFileW(
 #else
@@ -262,6 +301,16 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
             0,
             NULL
             );
+
+#ifdef RETRY_CREATEFILE
+            if (hFile == INVALID_HANDLE_VALUE)
+            {
+                if (GetLastError() != ERROR_SHARING_VIOLATION)
+                    break;   /* Not a sharing error.  Get out now.  Otherwise: */
+                Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+            }
+        }
+#endif /* def RETRY_CREATEFILE */
 
         if(hFile != INVALID_HANDLE_VALUE) {
             CloseHandle(hFile);
@@ -476,6 +525,11 @@ BOOL SecuritySet(char *resource, PVOLUMECAPS VolumeCaps, uch *securitydata)
     BOOL bSaclPrivilege = FALSE;
     BOOL bSuccess;
 
+/* 2013-07-08 SMS.  See note above. */
+#ifdef RETRY_CREATEFILE
+    int cf_tries;
+#endif
+
     if(!bInitialized) if(!Initialize()) return FALSE;
 
     /* defer directory processing */
@@ -541,6 +595,12 @@ BOOL SecuritySet(char *resource, PVOLUMECAPS VolumeCaps, uch *securitydata)
     if(bRestorePrivilege)
         dwFlags |= FILE_FLAG_BACKUP_SEMANTICS;
 
+/* 2013-07-08 SMS.  See note above. */
+#ifdef RETRY_CREATEFILE
+    for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
+    {
+#endif /* def RETRY_CREATEFILE */
+
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     hFile = CreateFileW(
 #else
@@ -554,6 +614,16 @@ BOOL SecuritySet(char *resource, PVOLUMECAPS VolumeCaps, uch *securitydata)
         dwFlags,
         NULL
         );
+
+#ifdef RETRY_CREATEFILE
+        if (hFile == INVALID_HANDLE_VALUE)
+        {
+            if (GetLastError() != ERROR_SHARING_VIOLATION)
+                break;   /* Not a sharing error.  Get out now.  Otherwise: */
+            Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+        }
+    }
+#endif /* def RETRY_CREATEFILE */
 
     if(hFile == INVALID_HANDLE_VALUE)
         return FALSE;

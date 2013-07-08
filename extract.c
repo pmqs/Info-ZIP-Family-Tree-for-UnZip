@@ -2266,7 +2266,7 @@ static int extract_or_test_entrylistw(__G__ numchunk,
             continue;   /* can still try next one */
         }
 # if (!defined(SFX) && defined(UNICODE_SUPPORT))
-        if (((G.lrec.general_purpose_bit_flag & UTF8_BIT) == UTF8_BIT)
+        if (((G.lrec.general_purpose_bit_flag & UTF8_BIT) != 0)
             != (G.pInfo->GPFIsUTF8 != 0)) {
             if (QCOND2) {
 #  ifdef SMALL_MEM

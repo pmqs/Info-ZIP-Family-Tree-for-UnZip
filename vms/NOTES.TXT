@@ -4,7 +4,7 @@
    This document describes some VMS-specific behavior and implementation
 details of the Info-ZIP Zip and UnZip programs.
 
-   Last modified: 2013-04-18.
+   Last modified: 2013-07-03.
 
 
    Command-line Case
@@ -27,31 +27,31 @@ leads to some additional information on these features.
    ---------------------
 
    In general, Zip 3.x and UnZip 6.x should handle file name case (and
-extended file names) in reasonable ways on ODS5 disks.
+extended file names) in reasonable ways on ODS5 volumes.
 
    Zip offers a variety of "-C" (/PRESERVE_CASE) options to control how
 case is handled when adding files to an archive.  The default settings
 ("-C2-", /PRESERVE_CASE = NOODS2, down-case ODS2 file names; "-C5",
 /PRESERVE_CASE = ODS5, preserve case of ODS5 file names) should be
-consistent with previous Zip versions for files on ODS2 disks, and
-reasonable for files on ODS5 disks.
+consistent with previous Zip versions for files on ODS2 volumes, and
+reasonable for files on ODS5 volumes.
 
    UnZip should preserve case when it extracts to an ODS5 destination
-disk (unless "-2" (/ODS2) is specified).  (Note that previous UnZip
+volume (unless "-2" (/ODS2) is specified).  (Note that previous UnZip
 versions, including version 5.52, did not properly preserve case for
 directories, which were always up-cased.)
 
    The Zip and UnZip builders should work properly on ODS2 and ODS5
-disks, with old (pre-ODS5) and new (case-conscious) versions of MMS (or
-MMK).  All testing was done with SET PROCESS /CASE_LOOKUP = BLIND.
+volumes, with old (pre-ODS5) and new (case-conscious) versions of MMS
+(or MMK).  All testing was done with SET PROCESS /CASE_LOOKUP = BLIND.
 Various problems may be expected with /CASE_LOOKUP = SENSITIVE.
 
    For consistency, the builders should always create product files
 (.OBJ, .EXE, .HLB, and so on) with upper-case names, whether the build
-is done on an ODS2 or ODS5 disk.  Note, however, that in a world with
-both ODS2 and ODS5 disks, and old and new Zip and UnZip versions, it's
+is done on an ODS2 or ODS5 volume.  Note, however, that in a world with
+both ODS2 and ODS5 volumes, and old and new Zip and UnZip versions, it's
 possible to encounter lower-case product file names.  For example, a VMS
-binary kit could be created on an ODS2 disk, and a Zip archive created
+binary kit could be created on an ODS2 volume, and a Zip archive created
 from that (using Zip 2.x, or Zip 3.x with default settings).  Such a Zip
 archive would contain down-cased names for those product files, and
 those lower-case names would then normally be preserved when UnZip was
@@ -64,7 +64,7 @@ every version of VMS, MMS (or MMK), Zip, and UnZip, on every file
 system.
 
    It might help matters if _all_ VMS binary kits were produced on ODS5
-disks, and packaged using (case-preserving) Zip version 3.x, but this
+volumes, and packaged using (case-preserving) Zip version 3.x, but this
 would certainly be different from the way things have been done before,
 and maintaining control over this process is essentially impossible.
 
@@ -72,17 +72,18 @@ and maintaining control over this process is essentially impossible.
    Symbolic Links (ODS5)
    ---------------------
 
-   VMS V8.3 offers support for symbolic links (symlinks) on ODS5 disks.
-In previous Zip and UnZip versions, the generic code for symlinks was
-disabled, and there was no VMS-specific code for symlinks.  Now, by
-default, Zip and UnZip attempt to support symlinks wherever the C
-headers and C run-time library include the functions needed for symlink
-support.  This means non-VAX systems with __CRTL_VER >= 70301000, so
-this includes VMS V7.3-1 and up, and thus symlink-capable Zip and UnZip
-programs may be built on systems which do not themselves offer symlink
-support.  (Various run-time failures may be expected if symlinks are
-encountered on pre-V8.3 systems, either in a file system or in a Zip
-archive.)
+   VMS V8.3 offers support for symbolic links (symlinks) on ODS5
+volumes.  In previous Zip and UnZip versions, the generic code for
+symlinks was disabled, and there was no VMS-specific code for symlinks. 
+Now, by default, Zip and UnZip attempt to support symlinks wherever the
+C headers and C run-time library include the functions needed for
+symlink support.  This means non-VAX systems with __CRTL_VER >=
+70301000, so this includes VMS V7.3-1 and up, and thus symlink-capable
+Zip and UnZip programs may be built on systems which do not themselves
+offer symlink support.  (Various run-time failures may be expected if
+symlinks are encountered on pre-V8.3 systems, either in a file system or
+in a Zip archive.  Due to bugs in VMS, some symlink-related features may
+not always work on pre-V8.4 systems.)
 
    Symlink support can be disabled at build-time, if desired, by
 defining the C macro NO_SYMLINKS.  (See comments in the builder
@@ -185,10 +186,11 @@ particular problems with this set are welcome to comment.
    In this version, as in previous versions, when UnZip expands an
 archive with VMS attributes (made using Zip's "-V" or /VMS option), it
 allocates the entire extent of a data file before writing any of its
-data.  In some previous versions, this could cause the destination disk
-to be locked for a considerable time (minutes), if highwater marking was
-enabled on that disk.  Now, the FAB SQO ("sequential access only") flag
-(or equivalent) is set, which prevents this troublesome disk locking.
+data.  In some previous versions, this could cause the destination
+volume to be locked for a considerable time (minutes), if highwater
+marking was enabled on that volume.  Now, the FAB SQO ("sequential
+access only") flag (or equivalent) is set, which prevents this
+troublesome volume locking.
 
    In some previous versions, when UnZip expanded an archive without VMS
 attributes, it did no pre-allocation, and used the default extension
@@ -288,6 +290,10 @@ appropriate.)  This will maintain compatibility with older program
 versions, but will make the programs incompatible with the new error
 message files.
 
+
+   Program Exit Status Values in the GNV Environment
+   -------------------------------------------------
+
    Beginning with Zip version 3.1 and UnZip version 6.1, on VMS V7.0 and
 newer (__CRTL_VER >= 70000000), Zip and UnZip can also exit with simple,
 UNIX-like status codes when used in a GNV "bash" shell environment.
@@ -295,6 +301,48 @@ This is done if the environment variable "SHELL" is set (and its value
 is not "DCL").  This feature may be disabled at build time by defining
 the C macro "NO_POSIX_EXIT".  (See comments in the builder regarding
 LOCAL_UNZIP or LOCAL_ZIP, as appropriate.)
+
+   Note that the "SHELL" variable is set when the Zip or UnZip program
+is run by the GNV "bash" shell in its usual UNIX-like way, not when it's
+run using either an explicit "dcl" command or the DCL fallback scheme
+(which is used when "bash" can't find a program in its usual way).  For
+example:
+
+   DCL:
+
+alp $ mcr utility_root:[source.zip.unzip610c08a_l.alphal]unzip -t fred.zip
+unzip:  cannot find fred.zip (ALP$DKC0:[SMS]fred.zip;).
+alp $ write sys$output $status
+%X17A28092              ["%IZ_UNZIP-E-NOZIP, Zipfile not found"]
+
+   bash:
+
+alp$ /utility_root/source/zip/unzip610c08a_l/alphal/unzip -t fred.zip
+unzip:  cannot find fred.zip (ALP$DKC0:[SMS]fred.zip;).
+alp$ echo $?
+9                       [9 = PK_NOZIP.  See "unzip.h".]
+
+   bash (using DCL fallback):
+
+alp$ type unzipx
+type: unzipx: not found
+alp$ dcl show symbol unzipx
+  UNZIPX == "$ utility_root:[source.zip.unzip610c08a_l.alphal]unzip.exe"
+alp$ unzipx -t fred.zip
+unzip:  cannot find fred.zip (ALP$DKC0:[SMS]fred.zip;).
+alp$ echo $?
+2                       [Generic bash+DCL failure code.]
+
+   The DCL fallback feature in "bash" can be disabled by defining an
+environment variable, so:
+
+alp$ export GNV_DISABLE_DCL_FALLBACK=1
+alp$ unzipx -t fred.zip
+BASH.EXE: unzipx: command not found
+
+   The raw status codes are defined in "unzip.h" (UnZip) and "ziperr.h"
+(Zip), and should be listed in each program's Unix "man" and VMS HELP
+documentation.
 
 
    VMS File Attribute Schemes

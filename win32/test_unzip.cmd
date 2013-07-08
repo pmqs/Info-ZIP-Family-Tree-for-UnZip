@@ -1,16 +1,16 @@
-rem #    UnZip test script (Windows batch).
+@echo off
+
+rem #    UnZip test script (Windows command).
 rem #
 rem #    %1 = test archive name.  Default: testmake.zip
 rem #    %2 = program directory (relative).  Default: .
 rem #    %3 = non-null to skip funzip and SFX tests.
 rem #
-rem #    2013-06-06  SMS.  New.  Adapted from unix/test_unzip.sh
+rem #    2013-06-12  SMS.  New.  Adapted from unix/test_unzip.sh
 rem #
 rem # Typical usage:
 rem #    win32\test_unzip.cmd testmake.zip win32\vc10\Debug
 rem #    win32\test_unzip.cmd testmake_ppmd.zip win32\vc10\Debug NOFUNSFX
-
-@echo off
 
 setlocal enabledelayedexpansion
 
@@ -58,7 +58,7 @@ if "%3" == "" (
 for %%p in (%program_list%) do (
     set prog=%%p
     set prog_pth=!prod!\%%p.exe
-    if exist !prog! (
+    if exist !prog_pth! (
         echo ^>^>^> Found executable: !prog!
     ) else (
         echo ^>^>^> CAN'T FIND EXECUTABLE: !prog_pth!

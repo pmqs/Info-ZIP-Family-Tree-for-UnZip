@@ -28,7 +28,7 @@ zipinfo.txt     ZipInfo manual page, human-readable format
 UNZIP.HTX       UnZip VMS Help output (Unix-style command-line)  [?]
 UNZIP_CLI.HTX   UnZip VMS Help output (VMS-style command-line)  [?]
 
-   User Program Documentation ("man") Source
+   User Program Documentation ("man") Source Directory
 man/            nroff "man" sources for the main user documentation
 
    Miscellaneous
@@ -101,7 +101,8 @@ windll/         Windows 3.x/9x/NT DLLs
 zos/            z/OS
 zvm/            VM/CMS and MVS
 
-   Optional/Foreign Source Code (which may contain their own Contents files)
+   Optional/Foreign Source Code Directories (which may contain their own
+   Contents files)
 aes_wg/         AES_WG encryption
 bzip2/          bzip2 compression
 szip/           LZMA and PPMd compression

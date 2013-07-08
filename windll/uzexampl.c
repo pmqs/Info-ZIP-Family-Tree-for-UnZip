@@ -115,9 +115,9 @@ if (argc < 2)   /* We must have an archive to unzip */
    else
       {
       progname = argv[0];
-      if (progname == NULL || *progname == '\0') progname = "example";
+      if (progname == NULL || *progname == '\0') progname = "uzexampl";
       }
-   printf("usage: %s <zipfile> [entry1 [entry2 [...]]] [-x xentry1 [...]]",
+   printf("usage: %s <zipfile> [entry1 [entry2 [...]]] [-x xentry1 [...]]\n",
           progname);
    return 0;
    }
@@ -361,7 +361,7 @@ lpDCL->lpszExtractDir = NULL;   /* the directory to extract to.
    If no more arguments are given, we extract ALL files.
 
    In summary, the example program should be run like:
-   example <archive.name> [files to include] [-x files to exclude]
+   uzexampl <archive.name> [files to include] [-x files to exclude]
    ("<...> denotes mandatory arguments, "[...]" optional arguments)
  */
 x_opt = NULL;

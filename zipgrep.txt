@@ -10,8 +10,8 @@ SYNOPSIS
 DESCRIPTION
        zipgrep will search files within a ZIP archive for lines  matching  the
        given  string  or  pattern.   zipgrep  is  a  shell script and requires
-       egrep(1) and unzip(1L) to function.  Its output is identical to that of
-       egrep(1).
+       egrep(1) and unzip(1L) (and basename(1), grep(1), od(1), and sed(1)) to
+       function.  Its output is generally similar to that of egrep(1).
 
 ARGUMENTS
        pattern
@@ -19,16 +19,18 @@ ARGUMENTS
               string or regular expression accepted by egrep(1) may  be
               used.   file[.zip]  Path  of  the ZIP archive.  (Wildcard
               expressions for the ZIP archive name are not  supported.)
-              If  the literal filename is not found, the suffix .zip is
-              appended.  Note that self-extracting ZIP files  are  sup-
-              ported,  as  with any other ZIP archive; just specify the
-              .exe suffix (if any) explicitly.
+              If  the  specified filename is not found, then UnZip (not
+              the zipgrep script itself) appends the suffix .zip to the
+              name,  and  tries  again.   Note that self-extracting ZIP
+              files are supported, as with any other ZIP archive;  just
+              specify the .exe (or any other) suffix explicitly.
 
        [file(s)]
               An optional list of archive members to be processed, sep-
-              arated  by spaces.  If no member files are specified, all
-              members of the ZIP archive are searched.  Regular expres-
-              sions (wildcards) may be used to match multiple members:
+              arated by spaces.  If no member files are specified, then
+              all  members  of  the  ZIP archive are searched.  Regular
+              expressions (wildcards) may be  used  to  match  multiple
+              members:
 
               *      matches a sequence of 0 or more characters
 
@@ -43,19 +45,19 @@ ARGUMENTS
                      anything except the characters inside the brackets
                      is considered a match).
 
-              (Be sure to quote any character that might  otherwise  be
-              interpreted or modified by the operating system.)
+              Be sure to quote any character(s) that might otherwise be
+              interpreted or modified by the operating system or shell.
 
        [-x xfile(s)]
               An  optional  list of archive members to be excluded from
-              processing.  Since wildcard  characters  match  directory
-              separators  (`/'), this option may be used to exclude any
-              files that are in subdirectories.  For example, ``zipgrep
-              grumpy  foo  *.[ch]  -x */*'' would search for the string
-              ``grumpy'' in all C source files in the main directory of
-              the  ``foo''  archive,  but  none  in any subdirectories.
-              Without the -x option, all C source files in all directo-
-              ries within the zipfile would be searched.
+              processing.  Because wildcard characters match  directory
+              separators  ("/"), this option may be used to exclude any
+              files that are in subdirectories.  For example,  "zipgrep
+              grumpy  foo  *.[ch]  -x  */*" would search for the string
+              "grumpy" in all C source files in the main  directory  of
+              the  "foo[.zip]" archive, but none in any subdirectories.
+              Without the -x option, all C source files (in all  direc-
+              tories) within the archive would be searched.
 
 OPTIONS
        All  options  prior  to  the  ZIP archive filename are passed to
@@ -66,10 +68,14 @@ SEE ALSO
        info(1L), zipnote(1L), zipsplit(1L)
 
 URL
-       The   Info-ZIP   home  page  is  currently  at  http://www.info-
-       zip.org/pub/infozip/ or ftp://ftp.info-zip.org/pub/infozip/ .
+       The Info-ZIP main Web page is:
+              http://www.info-zip.org/
+
+       FTP access is available, too:
+              ftp://ftp.info-zip.org/pub/infozip/
 
 AUTHORS
-       zipgrep was written by Jean-loup Gailly.
+       zipgrep  was written by Jean-loup Gailly and others in the Info-
+       ZIP group.
 
-Info-ZIP                         20 April 2009                     ZIPGREP(1L)
+Info-ZIP                        25 January 2013                    ZIPGREP(1L)

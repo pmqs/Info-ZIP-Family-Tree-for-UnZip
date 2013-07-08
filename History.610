@@ -315,7 +315,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (03 Jun 2013):
+6.10c09 (26 Jun 2013):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -419,14 +419,13 @@ Features added (or removed):
    remove "x_" prefix.  The "unzip" project is used whether or not bzip2
    compression support is desired.  There is now no separate "unzipbz2"
    project for UnZip with bzip2 support.  The "unzip" and "unzipsfx"
-   projects have been marked as dependent on the "libbz2" project, which
-   can't be built without installing a bzip2 source kit (in the "bzip2\"
-   subdirectory), but, so long as the C macro BZIP2_SUPPORT is not
-   defined, the "unzip" build should succeed (with some error/warning
-   messages about the failing "libbz2" project), even if the bzip2 source
-   kit is missing.  In the "Debug" configuration, DIAG_SFX is defined,
-   which enables the "-v" report in the UnZipSFX executable.  (ubz2err.c,
-   win32/vc10/unzip.sln, win32/vc10/funzip/funzip.vcxproj,
+   projects have been marked as dependent on the "libbz2" project.  If a
+   bzip2 source kit has not been installed in the "bzip2/" subdirectory,
+   then the "libbz2" project build will fail, but the "unzip" project
+   build should still succeed, so long as the C macro BZIP2_SUPPORT is
+   not defined.  In the "Debug" configuration, DIAG_SFX is defined,
+   which enables the "-v" report in the UnZipSFX executable. 
+   (ubz2err.c, win32/vc10/unzip.sln, win32/vc10/funzip/funzip.vcxproj,
    win32/vc10/funzip/funzip.vcxproj.filters,
    win32/vc10/libbz2/libbz2.vcxproj,
    win32/vc10/libbz2/libbz2.vcxproj.filters,
@@ -839,7 +838,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (03 Jun 2013):
+6.10c09 (08 Jul 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1193,7 +1192,26 @@ Bugs fixed:
    automatically.  Added code to set appropriate exit status values in
    the Unix and VMS test scripts.  (unix/test_unzip.sh,
    vms/test_unzip.com, win32/test_unzip.cmd) [SMS]
-
+ - Changed VMS exit status code to SS$_NORMAL for success instead of a
+   facility-specific code (%x17A28001).  This agrees with most VMS
+   utilities, and with UnZip versions before 6.10a02.  Define C macro
+   OK_USE_FAC to use the facility code in all cases.  (vms/vms.c) [SMS]
+ - Removed Windows DLL global archive name storage (hwildZipFN) to fix a
+   reentrancy problem reported by Alexandr Miloslavskiy.  (This change
+   is not well tested.  Additional DLL wisdom is welcome.)
+   (windll/windll.c) [SMS]
+ - On Windows, conflicts with anti-virus programs could cause avoidable
+   errors, "CreateFile() error 32 when trying set file time".  ("32" is
+   ERROR_SHARING_VIOLATION.)  A similar problem when setting NT Security
+   Descriptor data (-X) has not been reported, but seems similarly
+   likely.  Now, when CreateFile[AW]() fails for this reason, it is
+   retried according to C macros IZ_CREATEFILE_xxx, defined in
+   win32/w32cfg.h.  Currently, a fixed time limit is used, which may be
+   inadequate for large files.  Users who still experience the problem
+   are encouraged to report the circumstances.
+   http://sourceforge.net/p/infozip/bugs/44/
+   (win32/nt.c, win32/w32cfg.h, win32/win32.c) [awaterson, SMS]
+   
 ==================
 
 These changes occurred in beta versions 6.10a to 6.10.  This list may

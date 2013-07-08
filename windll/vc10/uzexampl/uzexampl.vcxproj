@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B55AC1E0-01E0-4BDC-9E68-BB8C450A79D7}</ProjectGuid>
+    <ProjectGuid>{BE884407-2908-4690-846D-60031B5D17FA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>unzip</RootNamespace>
+    <RootNamespace>uzexampl</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -39,13 +39,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\bzip2;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\..\bzip2;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -54,11 +50,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
      
-<PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+<PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -69,7 +66,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -79,73 +76,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\aes_wg\aes.h" />
-    <ClInclude Include="..\..\..\aes_wg\aesopt.h" />
-    <ClInclude Include="..\..\..\aes_wg\brg_endian.h" />
+    <ClCompile Include="..\..\uzexampl.c" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\..\aes_wg\fileenc.h" />
-    <ClInclude Include="..\..\..\aes_wg\hmac.h" />
-    <ClInclude Include="..\..\..\aes_wg\iz_aes_wg.h" />
-    <ClInclude Include="..\..\..\aes_wg\prng.h" />
-    <ClInclude Include="..\..\..\aes_wg\pwd2key.h" />
-    <ClInclude Include="..\..\..\aes_wg\sha1.h" />
     <ClInclude Include="..\..\..\bzip2\bzlib.h" />
-    <ClInclude Include="..\..\..\consts.h" />
-    <ClInclude Include="..\..\..\crc32.h" />
-    <ClInclude Include="..\..\..\crypt.h" />
-    <ClInclude Include="..\..\..\ebcdic.h" />
     <ClInclude Include="..\..\..\globals.h" />
-    <ClInclude Include="..\..\..\inflate.h" />
-    <ClInclude Include="..\..\..\szip\CpuArch.h" />
-    <ClInclude Include="..\..\..\szip\LzFind.h" />
-    <ClInclude Include="..\..\..\szip\LzHash.h" />
     <ClInclude Include="..\..\..\szip\LzmaDec.h" />
-    <ClInclude Include="..\..\..\szip\Ppmd.h" />
     <ClInclude Include="..\..\..\szip\Ppmd8.h" />
-    <ClInclude Include="..\..\..\szip\SzVersion.h" />
     <ClInclude Include="..\..\..\szip\Types.h" />
-    <ClInclude Include="..\..\..\ttyio.h" />
     <ClInclude Include="..\..\..\unzip.h" />
     <ClInclude Include="..\..\..\unzpriv.h" />
     <ClInclude Include="..\..\..\unzvers.h" />
-    <ClInclude Include="..\..\..\zip.h" />
-    <ClInclude Include="..\..\nt.h" />
-    <ClInclude Include="..\..\rsxntwin.h" />
-    <ClInclude Include="..\..\w32cfg.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\crc32.c" />
-    <ClCompile Include="..\..\..\crypt.c" />
-    <ClCompile Include="..\..\..\envargs.c" />
-    <ClCompile Include="..\..\..\explode.c" />
-    <ClCompile Include="..\..\..\extract.c" />
-    <ClCompile Include="..\..\..\fileio.c" />
-    <ClCompile Include="..\..\..\globals.c" />
-    <ClCompile Include="..\..\..\inflate.c" />
-    <ClCompile Include="..\..\..\list.c" />
-    <ClCompile Include="..\..\..\match.c" />
-    <ClCompile Include="..\..\..\process.c" />
-    <ClCompile Include="..\..\..\ttyio.c" />
-    <ClCompile Include="..\..\..\ubz2err.c" />
-    <ClCompile Include="..\..\..\unreduce.c" />
-    <ClCompile Include="..\..\..\unshrink.c" />
-    <ClCompile Include="..\..\..\unzip.c" />
-    <ClCompile Include="..\..\..\wrap\aescrypt.c" />
-    <ClCompile Include="..\..\..\wrap\aeskey.c" />
-    <ClCompile Include="..\..\..\wrap\aestab.c" />
-    <ClCompile Include="..\..\..\wrap\crc_i386.c" />
-    <ClCompile Include="..\..\..\wrap\fileenc.c" />
-    <ClCompile Include="..\..\..\wrap\hmac.c" />
-    <ClCompile Include="..\..\..\wrap\LzFind.c" />
-    <ClCompile Include="..\..\..\wrap\LzmaDec.c" />
-    <ClCompile Include="..\..\..\wrap\Ppmd8.c" />
-    <ClCompile Include="..\..\..\wrap\Ppmd8Dec.c" />
-    <ClCompile Include="..\..\..\wrap\prng.c" />
-    <ClCompile Include="..\..\..\wrap\pwd2key.c" />
-    <ClCompile Include="..\..\..\wrap\sha1.c" />
-    <ClCompile Include="..\..\..\zipinfo.c" />
-    <ClCompile Include="..\..\nt.c" />
-    <ClCompile Include="..\..\win32.c" />
-    <ClCompile Include="..\..\win32i64.c" />
+    <ClInclude Include="..\..\..\win32\w32cfg.h" />
+    <ClInclude Include="..\..\decs.h" />
+    <ClInclude Include="..\..\structs.h" />
+    <ClInclude Include="..\..\uzexampl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

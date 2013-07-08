@@ -1187,6 +1187,11 @@ void close_outfile(__G)
     unsigned ebSDlen;
 # endif
 
+/* 2013-07-08 SMS.  See note below. */
+# ifdef RETRY_CREATEFILE
+    int cf_tries;
+# endif
+
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     if (!G.has_win32_wide) {
 # endif
@@ -1225,8 +1230,38 @@ void close_outfile(__G)
       /* open a handle to the file before processing extra fields;
          we do this in case new security on file prevents us from updating
          time stamps */
-      hFile = CreateFileA(Ansi_Fname, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
-           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+      /* 2013-07-08 SMS.
+       * Some anti-virus programs may temporarily lock a newly created
+       * file, causing transient failures of CreateFile[AW]() when
+       * setting date-time (win32/win32.c:close_outfile()).
+       * We try up to IZ_CREATEFILE_TRY_COUNT times, at intervals of
+       * IZ_CREATEFILE_TRY_TIME_MS (millisecond).  To disable the
+       * retries, define IZ_CREATEFILE_TRY_COUNT as zero.  (win32/w32cfg.h).
+       * http://sourceforge.net/p/infozip/bugs/44/
+       * http://support.microsoft.com/kb/316609
+       *
+       * Perhaps the count or time interval should depend on the file
+       * size?
+       */
+#ifdef RETRY_CREATEFILE
+      for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
+      {
+#endif /* def RETRY_CREATEFILE */
+
+         hFile = CreateFileA( Ansi_Fname,
+          GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+#ifdef RETRY_CREATEFILE
+         if (hFile == INVALID_HANDLE_VALUE)
+         {
+            if (GetLastError() != ERROR_SHARING_VIOLATION)
+               break;   /* Not a sharing error.  Get out now.  Otherwise: */
+            Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+         }
+      }
+#endif /* def RETRY_CREATEFILE */
 
       /* sfield@microsoft.com: set attributes before time in case we decide to
          support other filetime members later.  This also allows us to apply
@@ -1321,9 +1356,26 @@ void close_outfile(__G)
       /* open a handle to the file before processing extra fields;
          we do this in case new security on file prevents us from updating
          time stamps */
-      hFile = CreateFileW(G.unipath_widefilename,
-           GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
-           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+      /* 2013-07-08 SMS.  See note above. */
+#ifdef RETRY_CREATEFILE
+      for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
+      {
+#endif /* def RETRY_CREATEFILE */
+
+         hFile = CreateFileW(G.unipath_widefilename,
+          GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+#ifdef RETRY_CREATEFILE
+         if (hFile == INVALID_HANDLE_VALUE)
+         {
+            if (GetLastError() != ERROR_SHARING_VIOLATION)
+               break;   /* Not a sharing error.  Get out now.  Otherwise: */
+            Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+         }
+      }
+#endif /* def RETRY_CREATEFILE */
 
       /* sfield@microsoft.com: set attributes before time in case we decide to
          support other filetime members later.  This also allows us to apply
@@ -1746,6 +1798,12 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
     HANDLE hFile;      /* File handle defined in NT    */
     int errstat = 0;   /* return status: 0 == "OK", -1 == "Failure" */
     int fs_uses_loctime = FStampIsLocTime(__G__ fname);
+
+/* 2013-07-08 SMS.  See note above. */
+# ifdef RETRY_CREATEFILE
+    int cf_tries;
+# endif
+
 # ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
     char *ansi_name = (char *)alloca(strlen(fname) + 1);
 
@@ -1756,8 +1814,26 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
 #  endif
 
     /* open a handle to the file to prepare setting the mod-time stamp */
-    hFile = CreateFileA(Ansi_Fname, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+
+#ifdef RETRY_CREATEFILE
+    for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
+    {
+#endif /* def RETRY_CREATEFILE */
+
+        hFile = CreateFileA( Ansi_Fname,
+         GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+#ifdef RETRY_CREATEFILE
+        if (hFile == INVALID_HANDLE_VALUE)
+        {
+            if (GetLastError() != ERROR_SHARING_VIOLATION)
+                break;   /* Not a sharing error.  Get out now.  Otherwise: */
+            Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+        }
+    }
+#endif /* def RETRY_CREATEFILE */
+
     if ( hFile == INVALID_HANDLE_VALUE ) {
         errstat = -1;
     } else {

@@ -1,6 +1,6 @@
 UnZip 6.10c
 
-Announcement for UnZip Beta 6.10c, >>23 May 2013.  This is a beta
+Announcement for UnZip Beta 6.10c, >>12 Jun 2013.  This is a beta
 release.  Changes may be made before UnZip 6.10 is released.  See the
 file History.610 for development details of changes in this beta
 release.
@@ -10,8 +10,11 @@ improve the next full release.
 
 Quick list of major changes in UnZip 6.10c:
 
-- Optional support for AES encryption compatible with WinZip version
-  (compression method 99).  See INSTALL.
+- New command-line parser (like that in Zip 3.0) allows long ("--xxx")
+  and two-character short ("-yy") options.  Options are now negated by a
+  trailing hyphen.  See extended help and manual for details.
+- Optional support for WinZip-compatible AES encryption (compression
+  method 99).  See INSTALL.
 - Optional support for LZMA and PPMd compression.  See INSTALL.
 - Extended -j/--junk-dirs option accepts an optional value, the number
   of directory levels to discard.
@@ -35,7 +38,7 @@ Quick list of major changes in UnZip 6.10c:
   help GNU grep users.
 - Optional support on Unix and VMS for an UnZip object library,
   providing a callable UnZip interface for a user-written program.
-- New macro ICONV_MAPPING replaces the recently added macro
+- New C macro ICONV_MAPPING replaces the recently added
   USE_ICONV_MAPPING.
 - Revised Unix builders now use "CC=gcc" with target "generic", instead
   of old target "generic_gcc".  See INSTALL for details on this and
@@ -44,7 +47,7 @@ Quick list of major changes in UnZip 6.10c:
   is back, but deprecated, replaced by /MATCH=CASE={BLIND|SENSITIVE}.
   When built with WILD_STOP_AT_DIR defined, /MATCH=[NO]WILD_MATCH_SLASH
   (-W) controls how wildcards match "/" separators in archive member
-  names.  /JUNK_DIRS now accepts an optional value, the number of
+  names.  /JUNK_DIRS (-j) now accepts an optional value, the number of
   directory levels to discard.  New /LICENSE (--license) option.  New
   /NAMES=[NO]DOWNCASE replaces old, deprecated /[NO]LOWERCASE and
   /[NO]UPPERCASE.  New /NAMES=ODS2 replaces old, deprecated /ODS2.  New
