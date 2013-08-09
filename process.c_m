@@ -710,15 +710,6 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     if (G.wildzipfn != NULL)
         izu_free( G.wildzipfn);
 
-#if defined( UNIX) && defined( __APPLE__)
-    /* AppleDouble header buffer.  (G.apl_dbl_hdr_alloc > 0?) */
-    if (G.apl_dbl_hdr != NULL)
-    {
-        izu_free( G.apl_dbl_hdr);
-        G.apl_dbl_hdr_alloc = 0;
-    }
-#endif /* defined( UNIX) && defined( __APPLE__) */
-
 } /* end function free_G_buffers() */
 
 #endif /* def REENTRANT */

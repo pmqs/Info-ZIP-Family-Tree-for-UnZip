@@ -315,7 +315,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (26 Jun 2013):
+6.10c09 (08 Aug 2013):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -411,6 +411,16 @@ Features added (or removed):
    the restoration of ACL, protection, and owner/UIC.  (man/unzip.1,
    unzip.c, unzip.h, vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help,
    vms/vms.c) [SMS]
+ - Added options on Mac OS X to provide better control over which
+   Mac-specific file attributes are set on extracted files.  All extended
+   attributes: -Je/--junk-extattr, Finder info: -Jf/--junk-finder,
+   Quarantine ("com.apple.quarantine"): -Jq/--junk-qtn, Resource fork:
+   -Jr/--junk-rsrc, .  Note that the Quarantine attribute is one of the
+   extended attributes, so specifying -Je inhibits setting the
+   Quarantine attribute, along with all other extended attributes.  The
+   extended attribute features are available on Mac OS X 10.4 and later.
+   (The "xattr" command can be used to remove selected attributes after
+   extraction.)  (fileio.c, unzip.c, unzip.h, unzpriv.h) [SMS]
  - Experimental new builders for Microsoft Visual Studio (Visual C++)
    2010.  Optional feature selection for each program (project) is done
    entirely using <project> Properties > Configuration Properties >
@@ -436,6 +446,15 @@ Features added (or removed):
    wrap/aeskey.c, wrap/aestab.c, wrap/crc_i386.c, wrap/fileenc.c,
    wrap/hmac.c, wrap/LzFind.c, wrap/LzmaDec.c, wrap/Ppmd8.c,
    wrap/Ppmd8Dec.c, wrap/prng.c, wrap/pwd2key.c, wrap/sha1.c) [SMS]
+ - Command-line syntax errors should now trigger a Usage explanation,
+   like the brief help (-h, /HELP) report.  When triggered by an error,
+   this report now includes a listing of any options environment
+   variables (UNZIP, UNZIPOPT, UNZIP_OPTS, ...) which are defined (and
+   might be causing trouble in non-obvious ways).  The -v (/VERBOSE)
+   report still shows all the options environment variables, whether or
+   not they're defined.  If enough users object to the (bulky?) Usage
+   report, we may be persuaded to provide a way to disable it.
+   (unzip.c, unzpriv.h, vms/cmdline.c) [SMS]
 
 
 Bugs fixed:
@@ -838,7 +857,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (08 Jul 2013):
+6.10c09 (06 Aug 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1211,6 +1230,16 @@ Bugs fixed:
    are encouraged to report the circumstances.
    http://sourceforge.net/p/infozip/bugs/44/
    (win32/nt.c, win32/w32cfg.h, win32/win32.c) [awaterson, SMS]
+ - On Mac OS X, extended attributes (such as "com.apple.quarantine")
+   were erroneously treated as more resource-fork data, so the
+   extracted file did not get the proper attributes, and its resource
+   fork was corrupted.  These attributes should now be set correctly.
+   Define the C macro NO_APPLE_XATTR at build time to disable the code
+   to set extended attributes.  (fileio.c, globals.h, process.c,
+   unix/configure, unix/macosx.h) [SMS]
+ - Moved definitions of multi-character option ID codes from individual
+   main program modules to a common header file.  (unzip.c, unzpriv.h,
+   zipinfo.c) [SMS]
    
 ==================
 

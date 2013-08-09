@@ -1,7 +1,7 @@
 /*
-  macosx.h - UnZip 6
+  macosx.h - UnZip 6.1
 
-  Copyright (c) 2008-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 2008-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2007-Mar-4 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -10,59 +10,67 @@
 */
 
 #ifndef __MACOSX_H
-#  define __MACOSX_H
+# define __MACOSX_H
 
-#  if defined( UNIX) && defined( __APPLE__)
+# if defined( UNIX) && defined( __APPLE__)
 
-#    include <sys/attr.h>
-#    include <sys/vnode.h>
+#  include <sys/attr.h>
+#  include <sys/vnode.h>
+#  ifdef APPLE_XATTR
+#   include <sys/xattr.h>
+#  endif /* def APPLE_XATTR */
 
-#    define APL_DBL_PFX "._"
-#    define APL_DBL_PFX_SQR "__MACOSX/"
+#  define APL_DBL_PFX "._"
+#  define APL_DBL_PFX_SQR "__MACOSX/"
 
-     /* Select modern ("/..namedfork/rsrc") or old ("/rsrc") suffix
-      * for resource fork access.
-      */
-#    ifndef APPLE_NFRSRC
-#     if defined( __ppc__) || defined( __ppc64__)
-#      define APPLE_NFRSRC 0
-#     else /* defined( __ppc__) || defined( __ppc64__) */
-#      define APPLE_NFRSRC 1
-#     endif /* defined( __ppc__) || defined( __ppc64__) [else] */
-#    endif /* ndef APPLE_NFRSRC */
-#    if APPLE_NFRSRC
-#      define APL_DBL_SUFX "/..namedfork/rsrc"
-#    else /* APPLE_NFRSRC */
-#      define APL_DBL_SUFX "/rsrc"
-#    endif /* APPLE_NFRSRC [else] */
+   /* Select modern ("/..namedfork/rsrc") or old ("/rsrc") suffix
+    * for resource fork access.
+    */
+#  ifndef APPLE_NFRSRC
+#   if defined( __ppc__) || defined( __ppc64__)
+#    define APPLE_NFRSRC 0
+#   else /* defined( __ppc__) || defined( __ppc64__) */
+#    define APPLE_NFRSRC 1
+#   endif /* defined( __ppc__) || defined( __ppc64__) [else] */
+#  endif /* ndef APPLE_NFRSRC */
+#  if APPLE_NFRSRC
+#   define APL_DBL_SUFX "/..namedfork/rsrc"
+#  else /* APPLE_NFRSRC */
+#   define APL_DBL_SUFX "/rsrc"
+#  endif /* APPLE_NFRSRC [else] */
 
-#    define APL_DBL_HDR_SIZE           82
-#    define APL_DBL_HDR_RSRC_FORK_SIZE 46
-#    define APL_DBL_HDR_FNDR_INFO_OFFS 50
-#    define APL_DBL_OFS_MAGIC           0
-#    define APL_DBL_OFS_VERSION         4
-#    define APL_DBL_OFS_FILLER          8
-#    define APL_DBL_OFS_ENT_CNT        24
-#    define APL_DBL_OFS_ENT_DSCR       28
+#  define APL_DBL_OFS_MAGIC             0
+#  define APL_DBL_OFS_VERSION           4
+#  define APL_DBL_OFS_FILLER            8
+#  define APL_DBL_OFS_ENT_CNT          24
+#  define APL_DBL_OFS_ENT_DSCR         28
+#  define APL_DBL_OFS_ENT_DSCR_OFS1    42
+#  define APL_DBL_OFS_FNDR_INFO        50
+#  define APL_DBL_SIZE_FNDR_INFO       32
+#  define APL_DBL_SIZE_HDR              \
+    (APL_DBL_OFS_FNDR_INFO+ APL_DBL_SIZE_FNDR_INFO)
+#  define APL_DBL_OFS_ATTR             (APL_DBL_SIZE_HDR+ 2)  /* 2-byte pad. */
 
-#    define APL_FNDR_INFO_SIZE         32
+   /* Macros to convert big-endian byte (unsigned char) array segments
+    * to 16- or 32-bit entities.
+    * Note that the larger entities must be naturally aligned in the
+    * byte array for the simple type casts to work (on PowerPC).  This
+    * should be true for the AppleDouble data where we use these macros.
+    */
+#  if defined( __ppc__) || defined( __ppc64__)
+    /* Big-endian to Big-endian. */
+#   define BIGC_TO_HOST16( i16) (*((unsigned short *)(i16)))
+#   define BIGC_TO_HOST32( i32) (*((unsigned int *)(i32)))
+#  else /* defined( __ppc__) || defined( __ppc64__) */
+    /* Little-endian to Big-endian. */
+#   define BIGC_TO_HOST16( i16) \
+     (((unsigned short)*(i16)<< 8)+ (unsigned short)*(i16+ 1))
+#   define BIGC_TO_HOST32( i32) \
+     (((unsigned int)*(i32)<< 24) + ((unsigned int)*(i32+ 1)<< 16) +\
+     ((unsigned int)*(i32+ 2)<< 8)+ ((unsigned int)*(i32+ 3)))
+#  endif /* defined( __ppc__) || defined( __ppc64__) [else] */
 
-#    pragma pack(4)             /* 32-bit alignment, regardless. */
-
-/* Finder info attribute buffer structure for setattrlist(). */
-typedef struct {
-  char          fndr_info[ APL_FNDR_INFO_SIZE];
-} attr_bufr_fndr_t;
-
-/* Resource fork attribute buffer structure for getattrlist(). */
-typedef struct {
-  unsigned int  ret_length;
-  off_t         size;
-} attr_bufr_rsrc_t;
-
-#    pragma options align=reset
-
-#  endif /* defined( unix) && defined( __APPLE__) */
+# endif /* defined( unix) && defined( __APPLE__) */
 
 #endif /* ndef __MACOSX_H */
 

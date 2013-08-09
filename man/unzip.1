@@ -21,7 +21,7 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "21 May 2013 (v6.10)" "Info-ZIP"
+.TH UNZIP 1L "06 Aug 2013 (v6.10)" "Info-ZIP"
 .SH NAME
 unzip \- extract, list, or test compressed files in a ZIP archive.
 .PP
@@ -612,8 +612,61 @@ part of the member's header is used.
 [BeOS] Junk file attributes.  The file's BeOS file attributes are not
 restored, only the file's data.
 .IP
-[MacOS] Ignore MacOS extra fields.  All Macintosh-specific info is
-skipped.  AppleDouble files are restored as separate files.
+[MacOS\ (pre-OS-X)] Ignore Mac OS extra fields.
+.IP
+[Mac OS X] Do no special Mac-specific processing of AppleDouble
+archive members.  An AppleDouble archive member is restored as a
+separate "._name" file, as it would be on a non-Mac file system.
+.IP
+.EX
+Note that "\fB\-J\fP" is \fInot\fP equivalent to
+"\fB\-Je\ \-Jf\ \-Jr\fP".  With "\fB\-J\fP", an AppleDouble archive
+member is restored as a separate "._name" file, as it would be on a
+non-Mac file system.  With "\fB\-Je\ \-Jf\ \-Jr\fP", all the data in an
+AppleDouble archive member are ignored, so the data fork file is
+restored with no extended attributes (\fB\-Je\fP), no Finder info
+(\fB\-Jf\fP), and no resource fork (\fB\-Jr\fP); no "._name" file is
+created.
+.EE
+ .PP
+.PD 0
+.B \-Je
+.TP
+.PD
+.B \-\-junk\-extattr
+.br
+[Mac OS X] Ignore all Mac OS extended attributes.  Extended attribute
+processing is available on Mac OS X 10.4 and later.  See also \fB\-J\fP,
+\fB\-Jf\fP, \fB\-Jq\fP, and \fB\-Jr\fP.
+.PP
+.PD 0
+.B \-Jf
+.TP
+.PD
+.B \-\-junk\-finder
+.br
+[Mac OS X] Ignore Mac OS Finder info.  See also \fB\-J\fP, \fB\-Je\fP,
+\fB\-Jq\fP, and \fB\-Jr\fP.
+.PP
+.PD 0
+.B \-Jq
+.TP
+.PD
+.B \-\-junk\-qtn
+.br
+[Mac OS X] Ignore Mac OS X Quarantine ("com.apple.quarantine") extended
+attribute.  Use "\fB\-Je\fP", to ignore this and all other extended
+attributes.  Extended attribute processing is available on Mac OS X 10.4
+and later.  See also \fB\-J\fP, \fB\-Je\fP, \fB\-Jf\fP, and \fB\-Jr\fP.
+.PP
+.PD 0
+.B \-Jr
+.TP
+.PD
+.B \-\-junk\-rsrc
+.br
+[Mac OS X] Ignore Mac OS Resource fork.  See also \fB\-J\fP, \fB\-Je\fP,
+\fB\-Jf\fP, and \fB\-Jq\fP.
 .PP
 .PD 0
 .B \-j[=depth]

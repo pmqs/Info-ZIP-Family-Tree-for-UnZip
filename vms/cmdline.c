@@ -2175,7 +2175,10 @@ Examples (see unzip.txt or \"HELP UNZIP\" for more info):\n\
     } /* end if (zipinfo_mode) */
 
     if (error)
+    {
+        show_env( __G__ 1);
         return PK_PARAM;
+    }
     else
         return PK_COOL;     /* just wanted usage screen: no error */
 

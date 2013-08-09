@@ -570,13 +570,6 @@ int zi_opts(__G__ pargc, pargv)
            negated - option was negated with trailing -
     */
 
-
-/* Copied from unzip.c */
-#define o_mc            0x105
-#define o_sc            0x106
-#define o_so            0x108
-
-
     while ((option = get_option( __G__ ZIO, &args, &argcnt, &argnum,
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))

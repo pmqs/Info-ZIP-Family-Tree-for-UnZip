@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   24 May 2013
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo          Last update:   05 Aug 2013
 #==============================================================================
 
 #==============================================================================
@@ -716,6 +716,24 @@ _EOF_
       if [ $status -eq 0 ]; then
         CFLAGS_OPT='-O3'
         OSDEP_H="${OSDEP_H} unix/macosx.h"
+
+        # Have (and user wants) extended attribute support?  (OS X >= 10.4?)
+        cat > conftest.c << _EOF_
+#include <sys/xattr.h>
+int main()
+{
+#if defined( NO_APPLE_XATTR) || !defined( XATTR_NOFOLLOW)
+   bad code
+#endif
+   return 0;
+}
+_EOF_
+        $CC $CFLAGS -c conftest.c >/dev/null 2>/dev/null
+        status=$?
+        if [ $status -eq 0 ]; then
+          CC_TST="${CC_TST} -DAPPLE_XATTR"
+          CFLAGS_TST="${CFLAGS_TST} -DAPPLE_XATTR"
+        fi
 
         # "ld64: warning: option -s is obsolete and being ignored"
         if [ "${LFLAGS2}" = '-s' ]; then

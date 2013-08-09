@@ -1591,6 +1591,24 @@ void izu_md_check( void);
                                                              return (user never sees) */
 #define o_BAD_ERR             ((unsigned long) 0xFFFD)    /* bad error */
 
+/* Most option IDs are set to the shortopt char.  For multichar short
+ * options, ID is set to an arbitrary unused constant (defined below).
+ */
+#define o_hh    0x101
+/* Mac-OS-X-specific: */
+#define o_Je    0x102   /* -Je: Ignore (all) extended attributes. */
+#define o_Jf    0x103   /* -Jf: Ignore Finder info. */
+#define o_Jq    0x104   /* -Jq: Ignore quarantine ("com.apple.quarantine") */
+#define o_Jr    0x105   /* -Jr: Ignore Resource fork. */
+/* End Mac-OS-X-specific. */
+#define o_ja    0x106   /* --jar. */
+#define o_ka    0x107   /* -ka: Restore (VMS) ACL. */
+#define o_LI    0x108
+#define o_mc    0x109   /* See also zipinfo.c. */
+#define o_sc    0x10a   /* See also zipinfo.c. */
+#define o_si    0x10b
+#define o_so    0x10c   /* See also zipinfo.c. */
+
 /* options array is set in unzip.c */
 struct option_struct {
   int option_group;         /* either UZO for UnZip or ZIO for ZipInfo syntax */
@@ -2620,6 +2638,11 @@ int free_args OF((char **args));
 /* insert_arg() - Copy an arg into args. */
 int insert_arg OF((__GPRO__ char ***args, ZCONST char *arg, int insert_at,
                    int free_args));
+
+/* show_env() = Display option environment variables. */
+#ifdef VMSCLI
+void show_env OF(( __GPRO__ int non_null_only));
+#endif /* def VMSCLI */
 
 /*---------------------------------------------------------------------------
     Functions in process.c (main driver routines):

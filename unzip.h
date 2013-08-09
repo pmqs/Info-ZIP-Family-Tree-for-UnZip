@@ -520,6 +520,12 @@ typedef struct _UzpOpts {
 #ifdef J_FLAG
     int J_flag;         /* -J: ignore AtheOS/BeOS/MacOS e. f. info (unzip) */
 #endif
+# if defined( UNIX) && defined( __APPLE__)
+    int Je_flag;        /* -Je: Ignore (all) extended attributes. */
+    int Jf_flag;        /* -Jf: Ignore Finder info. */
+    int Jq_flag;        /* -Jq: Ignore quarantine ("com.apple.quarantine") */
+    int Jr_flag;        /* -Jr: Ignore Resource fork. */
+# endif /* defined( UNIX) && defined( __APPLE__) */
     int java_cafe;      /* Java CAFE extra block assumed/detected. */
 #if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
     int K_flag;         /* -K: keep setuid/setgid/tacky permissions */

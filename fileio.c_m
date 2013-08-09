@@ -61,32 +61,32 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 #ifdef DLL
-# include "api.h"
+#  include "api.h"
 #endif /* def DLL */
 #ifdef WINDLL
-# ifdef POCKET_UNZIP
-#  include "wince/intrface.h"
-# else
-#  include "windll/windll.h"
-# endif
-# include <setjmp.h>
+#  ifdef POCKET_UNZIP
+#    include "wince/intrface.h"
+#  else
+#    include "windll/windll.h"
+#  endif
+#  include <setjmp.h>
 #endif
 #include "crc32.h"
 #include "crypt.h"
 #include "ttyio.h"
 
 #if defined( UNIX) && defined( __APPLE__)
-# include "unix/macosx.h"
+#  include "unix/macosx.h"
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
 /* setup of codepage conversion for decryption passwords */
 #ifdef IZ_CRYPT_ANY
-# if (defined(CRYP_USES_ISO2OEM) && !defined(IZ_ISO2OEM_ARRAY))
-#  define IZ_ISO2OEM_ARRAY            /* pull in iso2oem[] table */
-# endif
-# if (defined(CRYP_USES_OEM2ISO) && !defined(IZ_OEM2ISO_ARRAY))
-#  define IZ_OEM2ISO_ARRAY            /* pull in oem2iso[] table */
-# endif
+#  if (defined(CRYP_USES_ISO2OEM) && !defined(IZ_ISO2OEM_ARRAY))
+#    define IZ_ISO2OEM_ARRAY            /* pull in iso2oem[] table */
+#  endif
+#  if (defined(CRYP_USES_OEM2ISO) && !defined(IZ_OEM2ISO_ARRAY))
+#    define IZ_OEM2ISO_ARRAY            /* pull in oem2iso[] table */
+#  endif
 #endif /* def IZ_CRYPT_ANY */
 #include "ebcdic.h"   /* definition/initialization of ebcdic[] */
 
@@ -99,16 +99,16 @@
    buffers are that big).
 */
 #ifdef WINDLL
-# define WriteError(buf,len,strm) \
+#  define WriteError(buf,len,strm) \
    (win_fprintf(pG, strm, (extent)len, (char far *)buf) != (int)(len))
 #else /* !WINDLL */
-# ifdef USE_FWRITE
-#  define WriteError(buf,len,strm) \
-    ((extent)fwrite((char *)(buf),1,(extent)(len),strm) != (extent)(len))
-# else
-#  define WriteError(buf,len,strm) \
-    ((extent)write(fileno(strm),(char *)(buf),(extent)(len)) != (extent)(len))
-# endif
+#  ifdef USE_FWRITE
+#    define WriteError(buf,len,strm) \
+     ((extent)fwrite((char *)(buf),1,(extent)(len),strm) != (extent)(len))
+#  else
+#    define WriteError(buf,len,strm) \
+     ((extent)write(fileno(strm),(char *)(buf),(extent)(len)) != (extent)(len))
+#  endif
 #endif /* ?WINDLL */
 
 /*
@@ -132,10 +132,10 @@
    out a record (only) when it sees a newline.
 */
 #ifdef VMS
-# define WriteTxtErr(buf,len,strm) \
+#  define WriteTxtErr(buf,len,strm) \
    ((extent)fprintf(strm, "%.*s", len, buf) != (extent)(len))
 #else
-# define WriteTxtErr(buf,len,strm)  WriteError(buf,len,strm)
+#  define WriteTxtErr(buf,len,strm)  WriteError(buf,len,strm)
 #endif
 
 #if (defined(DEFLATE64_SUPPORT) && defined(__16BIT__))
@@ -198,39 +198,28 @@ static ZCONST char Far DiskFullQuery[] =
 #ifndef WINDLL
 static ZCONST char Far ZipfileCorrupt[] =
  "error:  zipfile probably corrupt (%s)\n";
-# ifdef SYMLINKS
+#  ifdef SYMLINKS
 static ZCONST char Far FileIsSymLink[] =
  "%s exists and is a symbolic link%s.\n";
-# endif
-# ifdef MORE
+#  endif
+#  ifdef MORE
 static ZCONST char Far MorePrompt[] = "--More--(%lu)";
-# endif
+#  endif
 static ZCONST char Far QuitPrompt[] =
  "--- Press `Q' to quit, or any other key to continue ---";
 static ZCONST char Far HidePrompt[] = /* (Match max prompt length.) */
  "\r                                                         \r";
-# ifdef IZ_CRYPT_ANY
-#  ifdef MACOS
+#  ifdef IZ_CRYPT_ANY
+#    ifdef MACOS
        /* SPC: are names on MacOS REALLY so much longer than elsewhere ??? */
 static ZCONST char Far PasswPrompt[] = "[%s]\n %s password: ";
-#  else
+#    else
 static ZCONST char Far PasswPrompt[] = "[%s] %s password: ";
-#  endif
+#    endif
 static ZCONST char Far PasswPrompt2[] = "Enter password: ";
 static ZCONST char Far PasswRetry[] = "password incorrect--reenter: ";
-# endif /* def IZ_CRYPT_ANY */
+#  endif /* def IZ_CRYPT_ANY */
 #endif /* ndef WINDLL */
-
-#if defined( UNIX) && defined( __APPLE__)
-static ZCONST char MemAllocFailed[] =
- "error:  cannot allocate AplDbl attrib memory (loc: %d, bytes: %d).\n";
-static ZCONST char SetattrlistFailed[] =
- "\nsetattrlist(fndr) failure (errno = %d): %s";
-# ifdef APPLE_XATTR
-static ZCONST char SetxattrFailed[] =
- "\nsetxattr() failure (errno = %d): %s";
-# endif /* def APPLE_XATTR */
-#endif /* defined( UNIX) && defined( __APPLE__) */
 
 
 
@@ -307,36 +296,13 @@ int open_outfile(__G)           /* return 1 if fail */
 #if defined( UNIX) && defined( __APPLE__)
     if (G.apple_double)
     {
-        /* Allocate AppleDouble header buffer, if needed. */
-        if (G.apl_dbl_hdr_alloc < APL_DBL_SIZE_HDR)
-        {
-            G.apl_dbl_hdr = izu_realloc( G.apl_dbl_hdr, APL_DBL_SIZE_HDR);
-            if (G.apl_dbl_hdr == NULL)
-            {
-                Info(slide, 1, ((char *)slide, MemAllocFailed,
-                 1, APL_DBL_SIZE_HDR));
-                return 1;
-            }
-            G.apl_dbl_hdr_alloc = APL_DBL_SIZE_HDR;
-        }
-
         /* Set flags and byte counts for the AppleDouble header. */
-        G.apl_dbl_hdr_len = 0;                  /* Bytes in header. */
-        G.apl_dbl_hdr_bytes = APL_DBL_SIZE_HDR; /* Header bytes sought. */
-
-        /* 2013-08-05 SMS.
-         * It might be more efficient not to append a "/rsrc" suffix
-         * here, and then use fsetxattr( fileno( G.outfile), ...)
-         * instead of setxattr( G.filename, ...) to set the extended
-         * attributes below.  (And then do something different for the
-         * resource fork.)  Note that XATTR_NOFOLLOW is not used with
-         * fsetxattr().
-         */
-
+        G.apl_dbl_hdr_len = 0;
+        G.apl_dbl_hdr_bytes = APL_DBL_HDR_SIZE;
         /* Append "/rsrc" suffix to the AppleDouble file name. */
         strcat( G.ad_filename, APL_DBL_SUFX);
 
-        /* (Re-aim pointer instead of copying?) */
+        /* Re-aim pointer instead of copying? */
         strcpy( G.filename, G.ad_filename);
     }
     else
@@ -362,9 +328,9 @@ int open_outfile(__G)           /* return 1 if fail */
 
 /* AppleDouble resource fork is expected to exist, so evade the test. */
 #if defined( UNIX) && defined( __APPLE__)
-# define TEST_EXIST (G.apple_double == 0)
+#  define TEST_EXIST (G.apple_double == 0)
 #else /* defined( UNIX) && defined( __APPLE__) */
-# define TEST_EXIST 1
+#  define TEST_EXIST 1
 #endif /* defined( UNIX) && defined( __APPLE__) [else] */
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
@@ -756,7 +722,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 #ifdef IZ_CRYPT_ANY
     if (G.pInfo->encrypted)
     {
-# ifdef IZ_CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
         if (G.lrec.compression_method == AESENCRED)
         {
             int n;
@@ -766,9 +732,9 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
             G.ucsize_aes -= n;
         }
         else
-# endif /* def IZ_CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
         {
-# ifdef IZ_CRYPT_TRAD
+#  ifdef IZ_CRYPT_TRAD
             uch *p;
             int n;
 
@@ -778,7 +744,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
          */
             for (n = G.incnt, p = G.inptr;  n--;  p++)
                 zdecode(*p);
-# endif /* def IZ_CRYPT_TRAD */
+#  endif /* def IZ_CRYPT_TRAD */
         }
     }
 #endif /* def IZ_CRYPT_ANY */
@@ -811,7 +777,7 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
 #ifdef IZ_CRYPT_ANY
     if (G.pInfo->encrypted)
     {
-# ifdef IZ_CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
         if (G.lrec.compression_method == AESENCRED)
         {
             int n;
@@ -821,15 +787,15 @@ int fillinbuf(__G) /* like readbyte() except returns number of bytes in inbuf */
             G.ucsize_aes -= n;
         }
         else
-# endif /* def IZ_CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
         {
-# ifdef IZ_CRYPT_TRAD
+#  ifdef IZ_CRYPT_TRAD
             uch *p;
             int n;
 
             for (n = G.incnt, p = G.inptr;  n--;  p++)
                 zdecode(*p);
-# endif /* def IZ_CRYPT_TRAD */
+#  endif /* def IZ_CRYPT_TRAD */
         }
     }
 #endif /* def IZ_CRYPT_ANY */
@@ -988,8 +954,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
     necessarily checked for overflow.
   ---------------------------------------------------------------------------*/
 
-    if (!G.pInfo->textmode)
-    {   /* write raw binary data */
+    if (!G.pInfo->textmode) {   /* write raw binary data */
         /* GRR:  note that for standard MS-DOS compilers, size argument to
          * fwrite() can never be more than 65534, so WriteError macro will
          * have to be rewritten if size can ever be that large.  For now,
@@ -1001,246 +966,78 @@ static int partflush(__G__ rawbuf, size, unshrink)
          */
 #ifdef DLL
         if (G.redirect_data) {
-# ifdef NO_SLIDE_REDIR
+#ifdef NO_SLIDE_REDIR
             if (writeToMemory(__G__ rawbuf, (extent)size)) return PK_ERR;
-# else
+#else
             writeToMemory(__G__ rawbuf, (extent)size);
-# endif
+#endif
         } else
 #endif
 
 #if defined( UNIX) && defined( __APPLE__)
-        /* If expecting AppleDouble header bytes, process them.
-         * Note that any extended attributes are analyzed, whether or
-         * not setxattr() is available to apply them, so that we can
-         * correctly locate the resource fork data which follow them.
-         */
+        /* If expecting AppleDouble header bytes, process them. */
         if (G.apl_dbl_hdr_bytes > 0)
         {
             if (size < G.apl_dbl_hdr_bytes)
             {
                 /* Fewer bytes than needed to complete the AppleDouble
-                 * header.  Move available data to the AppleDouble
+                 * header.  (Unlikely?)  Move them to the AppleDouble
                  * header buffer, adjust the byte counts, and resume
                  * extraction.
                  */
                 memcpy( &G.apl_dbl_hdr[ G.apl_dbl_hdr_len], rawbuf, size);
-                G.apl_dbl_hdr_len += size;      /* Bytes in header. */
-                G.apl_dbl_hdr_bytes -= size;    /* Hdr bytes still sought. */
-                size = 0;                       /* Bytes left in rawbuf. */
+                size = 0;
+                G.apl_dbl_hdr_bytes -= size;
             }
             else
             {
-                /* Enough bytes to complete the AppleDouble header
-                 * (short and/or extended).  Move expected data to the
-                 * AppleDouble header buffer, and adjust the byte counts
-                 * and pointer.  If (only) the first part (through
-                 * Finder info) is complete, then get the offset for the
-                 * resource fork, and adjust the expected header length
-                 * accordingly, to include the attributes.
+                /* Enough bytes to complete the AppleDouble header.  Move
+                 * them to the AppleDouble header buffer, adjust the byte
+                 * counts, and set the Finder info attributes (for the
+                 * plain-name) file.
                  */
-                int res_frk_offs;
+                char btrbslash; /* Saved character had better be a slash. */
+                int sts;
+                struct attrlist attr_list_fndr;
 
                 memcpy( &G.apl_dbl_hdr[ G.apl_dbl_hdr_len], rawbuf,
                  G.apl_dbl_hdr_bytes);
-                G.apl_dbl_hdr_len += G.apl_dbl_hdr_bytes;   /* Bytes in hdr. */
-                size -= G.apl_dbl_hdr_bytes;    /* Bytes left in rawbuf. */
-                rawbuf += G.apl_dbl_hdr_bytes;  /* Pointer to remaining data. */
-                G.apl_dbl_hdr_bytes = 0;        /* Hdr bytes still sought. */
+                size -= G.apl_dbl_hdr_bytes;
+                G.apl_dbl_hdr_bytes = 0;
 
-                if (G.apl_dbl_hdr_len == APL_DBL_SIZE_HDR)
+                /* Truncate name at "/rsrc" for setattrlist(). */
+                btrbslash =
+                 G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)];
+                G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)] = '\0';
+
+                /* Clear attribute list structure. */
+                memset( &attr_list_fndr, 0, sizeof( attr_list_fndr));
+                /* Set attribute list bits for Finder info. */
+                attr_list_fndr.bitmapcount = ATTR_BIT_MAP_COUNT;
+                attr_list_fndr.commonattr = ATTR_CMN_FNDRINFO;
+
+                /* Set Finder info for main file. */
+                sts = setattrlist( G.filename,          /* Path. */
+                                   &attr_list_fndr,     /* Attrib list. */
+                                   &G.apl_dbl_hdr[ APL_DBL_HDR_FNDR_INFO_OFFS],
+                                                        /* Src buffer. */
+                                   APL_FNDR_INFO_SIZE,  /* Src buffer size. */
+                                   0);                  /* Options. */
+
+                if (sts != 0)
                 {
-                    /* Have complete basic header.  Get resource fork offset. */
-                    res_frk_offs = BIGC_TO_HOST32(
-                     &G.apl_dbl_hdr[ APL_DBL_OFS_ENT_DSCR_OFS1]);
-
-                    if (res_frk_offs > APL_DBL_SIZE_HDR)
-                    {
-                        /* Have attributes.  Revise remaining header
-                         * size accordingly.
-                         */
-                        G.apl_dbl_hdr_bytes =
-                         res_frk_offs- APL_DBL_SIZE_HDR;
-
-                        /* Allocate more AplDbl header storage, if needed. */
-                        if (G.apl_dbl_hdr_alloc < res_frk_offs)
-                        {
-                            G.apl_dbl_hdr = izu_realloc( G.apl_dbl_hdr,
-                             res_frk_offs);
-                            if (G.apl_dbl_hdr == NULL)
-                            {
-                                Info(slide, 1, ((char *)slide, MemAllocFailed,
-                                 2, res_frk_offs));
-                                return 1;
-                            }
-                            G.apl_dbl_hdr_alloc = res_frk_offs;
-                        }
-
-                        if (size < G.apl_dbl_hdr_bytes)
-                        {
-                            /* Fewer bytes than needed to complete the
-                             * AppleDouble header.  Move available data
-                             * to the AppleDouble header buffer, adjust
-                             * the byte counts, and resume extraction.
-                             */
-                            memcpy( &G.apl_dbl_hdr[ G.apl_dbl_hdr_len],
-                             rawbuf, size);
-                            G.apl_dbl_hdr_len += size;  /* Bytes in header. */
-                            G.apl_dbl_hdr_bytes -= size;/* Hdr byts stl sght. */
-                            size = 0;                   /* Bs left in rawbuf. */
-                        }
-                        else
-                        {
-                            /* Enough bytes to complete the AppleDouble
-                             * header (extended).  Move remaining data
-                             * to the AppleDouble header buffer, and
-                             * adjust the byte counts and pointer.
-                             */
-                            memcpy( &G.apl_dbl_hdr[ G.apl_dbl_hdr_len],
-                             rawbuf, G.apl_dbl_hdr_bytes);
-                            G.apl_dbl_hdr_len = res_frk_offs; /* Byts in hdr. */
-                            size -= G.apl_dbl_hdr_bytes;/* Bs left in rawbuf. */
-                            rawbuf += G.apl_dbl_hdr_bytes;  /* Ptr to r data. */
-                            G.apl_dbl_hdr_bytes = 0;    /* Hdr byts stl sght. */
-                        }
-                    }
+                    Info(slide, 0x12, ((char *)slide,
+                     "\nsetattrlist(fndr) failure: %s", G.filename));
                 }
 
-                if (G.apl_dbl_hdr_bytes == 0)
-                {
-                    /* Set the Finder info and other attributes (for the
-                     * plain-name) file.
-                     */
-                    char btrbslash; /* Saved character had better be a slash. */
-                    int sts;
-                    struct attrlist attr_list_fndr;
+                /* Restore name suffix ("/rsrc"). */
+                G.filename[ strlen( G.filename)] = btrbslash;
+             }
 
-                    /* Truncate name at "/rsrc" for setattrlist(). */
-                    btrbslash =
-                     G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)];
-                    G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)] =
-                     '\0';
-
-                    /* Clear attribute list structure. */
-                    memset( &attr_list_fndr, 0, sizeof( attr_list_fndr));
-                    /* Set attribute list bits for Finder info. */
-                    attr_list_fndr.bitmapcount = ATTR_BIT_MAP_COUNT;
-                    attr_list_fndr.commonattr = ATTR_CMN_FNDRINFO;
-
-                    if (!uO.Jf_flag)
-                    {
-                        /* Set Finder info for main file. */
-                        sts = setattrlist(
-                         G.filename,                /* Path. */
-                         &attr_list_fndr,           /* Attrib list. */
-                         &G.apl_dbl_hdr[ APL_DBL_OFS_FNDR_INFO], /* Src bufr. */
-                         APL_DBL_SIZE_FNDR_INFO,    /* Src buffer size. */
-                         0);                        /* Options. */
-	
-                        if (sts != 0)
-                        {
-                            Info(slide, 0x12, ((char *)slide,
-                             SetattrlistFailed, errno, G.filename));
-                        }
-                    }
-
-# ifdef APPLE_XATTR
-                    if ((!uO.Je_flag) &&
-                     (G.apl_dbl_hdr_len > APL_DBL_OFS_ATTR))
-                    {
-                        /* int attr_offs;               (Unused.) */
-                        int attr_count;
-                        int attr_ndx;
-                        char *attr_ptr;
-                        int attr_size;
-                        int ndx;
-                        /* unsigned short flags;        (Unused.) */
-                        int val_offs;
-                        int val_size;
-
-/* AppleDouble extended attribute data layout:
- *
- *  A+  Size  Description
- *   0    4   Attribute magic ("ATTR").
- *   4    4   FileID (for debug).
- *   8    4   Total size (pre-resource-fork).
- *  12    4   Attribute value first offset.
- *  16    4   Attribute value total size.
- *  20   12   Reserved.
- *  32    2   Flags.
- *  34    2   Attribute count.
- *  36    4   Value offset [0].  (Align:4.)                     -+
- *  40    4   Value size [0].                                    |
- *  44    2   Flags.                                             |
- *  46    1   Attribute name size [0].                           |
- *  47  var   Attribute name [0]  var = size + pad to align:4.   |
- *            Next offset = (name_offset+ size+ 3)& 0xfffffffc. -+
- *  O1    4   Value offset [1].
- *  O1+4  4   Value size [1].
- *  O1+8  2   Flags.
- *  O1+10 1   Attribute name size [1].
- *  O1+11 1   Attribute name  [1].
- * [...]
- */
-                        ndx = APL_DBL_OFS_ATTR+ 12;
-                        /* attr_offs = BIGC_TO_HOST32( &G.apl_dbl_hdr[ ndx]); */
-                        ndx += 22;
-                        attr_count = BIGC_TO_HOST16( &G.apl_dbl_hdr[ ndx]);
-                        ndx += 2;
-
-                        /* Loop through and set the extended attributes. */
-                        for (attr_ndx = 0; attr_ndx < attr_count; attr_ndx++)
-                        {
-                            val_offs = BIGC_TO_HOST32( &G.apl_dbl_hdr[ ndx]);
-                            ndx += 4;
-                            val_size = BIGC_TO_HOST32( &G.apl_dbl_hdr[ ndx]);
-                            ndx += 4;
-                            /* flags = BIGC_TO_HOST16( &G.apl_dbl_hdr[ ndx]); */
-                            ndx += 2;
-                            attr_size = G.apl_dbl_hdr[ ndx];
-                            ndx += 1;
-                            attr_ptr = (char *)(&(G.apl_dbl_hdr[ ndx]));
-
-                            /* 2013-07-05 SMS.
-                             * Add more code here to inhibit setting
-                             * selected extended attributes.
-                             */
-#  define XATTR_QTR "com.apple.quarantine"
-
-                            if ((!uO.Jq_flag) ||
-                             (strcmp( attr_ptr, XATTR_QTR) != 0))
-                            {
-                                sts = setxattr(
-                                 G.filename,            /* Real file name. */
-                                 attr_ptr,              /* Attr name. */
-                                 &(G.apl_dbl_hdr[ val_offs]),   /* Attr val. */
-                                 val_size,              /* Attr value size. */
-                                 0,                     /* Position. */
-                                 XATTR_NOFOLLOW);       /* Options. */
-
-                                if (sts != 0)
-                                {
-                                    Info(slide, 0x12, ((char *)slide,
-                                     SetxattrFailed, errno, G.filename));
-                                }
-                            }
-
-                            /* Advance index to the next align:4 value. */
-                            ndx = (ndx+ attr_size+ 3)& 0xfffffffc;
-                        }
-                    } 
-# endif /* def APPLE_XATTR */
-
-                    /* Restore name suffix ("/rsrc"). */
-                    G.filename[ strlen( G.filename)] = btrbslash;
-                 }
-            }
-
-            /* Quit now if there are no resource fork data, or if the
-             * user inhibited the resource fork.
-             */
-            if ((size == 0L) || uO.Jr_flag)
+            if (size == 0L)     /* No resource fork left to write. */
                 return PK_OK;
+
+            rawbuf += APL_DBL_HDR_SIZE;
         }
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
@@ -2860,8 +2657,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
 #endif /* ?UNICODE_SUPPORT */
 
-        flag = (option==DS_FN_L) ? G.lrec.general_purpose_bit_flag :
-         G.crec.general_purpose_bit_flag;
+        flag = (option==DS_FN_L)?G.lrec.general_purpose_bit_flag:G.crec.general_purpose_bit_flag;
         /* skip ISO/OEM translation if stored name is UTF-8 */
         /* 2012-05-20 SMS.
          * Added check for Java "CAFE" extra block, to avoid mistaking
