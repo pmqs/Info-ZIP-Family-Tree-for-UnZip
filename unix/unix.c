@@ -2360,7 +2360,96 @@ void charset_to_intern(char *string, char *from_charset)
 
 #if defined( UNIX) && defined( __APPLE__)
 
-/* Determine if the volume where "path" resides supports getattrlist()
+/* revert_apl_dbl_path().
+ *
+ * Remove an AppleDouble sequester path prefix, APL_DBL_PFX_SQR
+ * ("__MACOSX/"), from a possible AppleDouble path name, "path",
+ * overwriting the original "path".
+ * If "ad_name" is non-NULL, and an AppleDouble name prefix, APL_DBL_PFX
+ * ("._"), is detected, then also remove the name prefix from the name,
+ * and store that result at "ad_name".  ("ad_name" may overlap "path".)
+ * Return value: 0: Not an AppleDouble path.
+ *               1: AppleDouble path detected/modified.
+ */
+int revert_apl_dbl_path( char *path, char *ad_name)
+{
+    int apple_double;
+    char *post_sqr_pfx;
+    char *rslash;               /* Right-most slash. */
+
+    apple_double = 0;
+
+    /* Detect, and prepare to ignore, an AppleDouble sequester path
+     * prefix, APL_DBL_PFX_SQR ("__MACOSX/").
+     * We could add a warning if we see the path prefix here,
+     * but not the name prefix ("._") below.  (Does anyone _not_ use the
+     * "._" prefix in a sequestered AppleDouble archive?)
+     */
+    if (strncmp( path, APL_DBL_PFX_SQR, (sizeof( APL_DBL_PFX_SQR)- 1)) == 0)
+    {
+        post_sqr_pfx = path+ sizeof( APL_DBL_PFX_SQR)- 1;
+
+        /* Skip any sequestration directory, including "__MACOSX/",
+         * itself.  The (non-directory) files will all be placed into
+         * the real directories, not the sequestration directories.
+         */
+        if (post_sqr_pfx[ strlen( post_sqr_pfx)- 1] == '/')
+        {
+            /* Skip this sequestration directory. */
+            return -1;
+        }
+        else
+        {
+            /* Replace the sequestered path with the
+             * unsequestered path.
+             */
+            memmove( path, post_sqr_pfx, (strlen( post_sqr_pfx)+ 1));
+        }
+    }
+
+    /* Detect/remove "._" prefix.  Set AppleDouble flag if present. */
+    rslash = strrchr( path, '/');
+    if (rslash == NULL)
+    {
+        /* "._name"? */
+        if (strncmp( path, APL_DBL_PFX, (sizeof( APL_DBL_PFX)- 1)) == 0)
+        {
+            apple_double = 1;           /* Found the name prefix. */
+            if (ad_name != NULL)
+            {
+                /* Store path (name) without "._" name prefix. */
+                memmove( ad_name, (path+ sizeof( APL_DBL_PFX)- 1),
+                 (strlen( path+ sizeof( APL_DBL_PFX)- 1)+ 1));
+            }
+        }
+    }
+    else
+    {
+        /*     v--- rslash (before).
+         * "dir/._name"?
+         *      ^--- rslash (after).
+         */
+        if (strncmp( (++rslash), APL_DBL_PFX, (sizeof( APL_DBL_PFX)- 1)) == 0)
+        {
+            apple_double = 1;           /* Found the name prefix. */
+            if (ad_name != NULL)
+            {
+                /* Store path without "._" name prefix. */
+                memmove( ad_name, path, (rslash- path));
+                memmove( ad_name+ (rslash- path),
+                 (rslash+ sizeof( APL_DBL_PFX)- 1),
+                 (strlen( rslash+ sizeof( APL_DBL_PFX)- 1)+ 1));
+            }
+        }
+    }
+    return apple_double;
+}
+
+
+
+/* vol_attr_ok().
+ *
+ * Determine if the volume where "path" resides supports getattrlist()
  * and setattrlist(), that is, if we can do the special AppleDouble
  * file processing using setattrlist().  Otherwise, we should pretend
  * that "-J" is in effect, to bypass the special AppleDouble processing,

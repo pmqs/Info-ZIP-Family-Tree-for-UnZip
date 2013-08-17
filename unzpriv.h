@@ -3000,6 +3000,7 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
   ---------------------------------------------------------------------------*/
 
 #if defined( UNIX) && defined( __APPLE__)
+    int revert_apl_dbl_path( char *path, char *ad_name);
     int vol_attr_ok( const char *path);
 #endif /* defined( UNIX) && defined( __APPLE__) */
 

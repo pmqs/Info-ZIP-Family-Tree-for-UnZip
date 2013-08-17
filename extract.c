@@ -1564,71 +1564,22 @@ static int extract_or_test_entrylist(__G__ numchunk,
         G.apple_double = 0;
         if ((!uO.J_flag) && G.exdir_attr_ok)
         {
-            char *post_sgr_pfx;
-            char *rslash;
+            int sts;
 
-            *G.ad_filename = '\0';
+            /* Excise the "._" name prefix from the AppleDouble file name. */
+            sts = revert_apl_dbl_path( G.filename, G.ad_filename);
 
-            /* Detect, and prepare to ignore, an "__MACOSX/" prefix,
-             * used in a "sequestered" AppleDouble archive.
-             * We could add a warning if we see "__MACOSX/" here,
-             * but not "._" below.  (Does anyone _not_ use the "._"
-             * prefix in a sequestered AppleDouble archive?)
-             */
-            if (strncmp( G.filename,
-             APL_DBL_PFX_SQR, strlen( APL_DBL_PFX_SQR)) == 0)
-            {
-                post_sgr_pfx = G.filename+ strlen( APL_DBL_PFX_SQR);
+            if (sts < 0)                /* Skip a sequestration directory. */
+              continue;
 
-                /* Skip any sequestration directory, including "__MACOSX/",
-                 * itself.  The files will all be placed into the real
-                 * directories, not the sequestration directories.
-                 */
-                if (post_sgr_pfx[ strlen( post_sgr_pfx)- 1] == '/')
-                {
-                    /* Skip this sequestration directory. */
-                    continue;
-                }
-                else
-                {
-                    /* Replace the sequestered file name with the
-                     * unsequestered file name.
-                     */
-                    memmove( G.filename,
-                     post_sgr_pfx, (strlen( post_sgr_pfx)+ 1));
-                }
-            }
-
-            /* Excise "._" prefix (and set flag), if present. */
-            rslash = strrchr( G.filename, '/');
-            if (rslash == NULL)
-            {
-                /* "._name"? */
-                if (strncmp( G.filename, APL_DBL_PFX,
-                 strlen( APL_DBL_PFX)) == 0)
-                {
-                    G.apple_double = 1;
-                    strcpy( G.ad_filename, (G.filename+ strlen( APL_DBL_PFX)));
-                }
-            }
-            else
-            {
-                /*     v--- rslash (before).
-                 * "dir/._name"?
-                 *      ^--- rslash (after).
-                 */
-                if (strncmp( (++rslash), APL_DBL_PFX,
-                 strlen( APL_DBL_PFX)) == 0)
-                {
-                    G.apple_double = 1;
-                    strncpy( G.ad_filename, G.filename, (rslash- G.filename));
-                    strcpy( (G.ad_filename+ (rslash- G.filename)),
-                     (rslash+ strlen( APL_DBL_PFX)));
-                }
-            }
+            G.apple_double = sts;       /* Set the AppleDouble flag. */
 
             if (G.apple_double)
             {
+                /* 2013-08-16 SMS.
+                 * This test might make more sense after mapname()
+                 * changes everything.
+                 */
                 /* Check that the file name will not be too long when the
                  * "/rsrc" (APL_DBL_SUFX) string is appended (fileio.c:
                  * open_outfile()).  (strlen() ignores its NUL, sizeof()

@@ -857,7 +857,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (06 Aug 2013):
+6.10c09 (16 Aug 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1240,6 +1240,12 @@ Bugs fixed:
  - Moved definitions of multi-character option ID codes from individual
    main program modules to a common header file.  (unzip.c, unzpriv.h,
    zipinfo.c) [SMS]
+ - On Mac OS X, with "-d exdir", AppleDouble "._" file names were
+   mishandled, causing Finder info and resource fork data to be lost.
+   Some Mac-specific name handling code has been moved from the general
+   extract.c:extract_or_test_entrylist() to a new OS-specific function,
+   unix/unix.c:revert_apl_dbl_path().  (extract.c, fileio.c, unzpriv.h,
+   unix/unix.c) [SMS]
    
 ==================
 

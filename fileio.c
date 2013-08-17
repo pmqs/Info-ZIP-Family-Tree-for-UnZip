@@ -329,15 +329,16 @@ int open_outfile(__G)           /* return 1 if fail */
          * here, and then use fsetxattr( fileno( G.outfile), ...)
          * instead of setxattr( G.filename, ...) to set the extended
          * attributes below.  (And then do something different for the
-         * resource fork.)  Note that XATTR_NOFOLLOW is not used with
-         * fsetxattr().
+         * resource fork.)  Or append the "/rsrc" suffix later, after
+         * setting the attributes.  Note that XATTR_NOFOLLOW is not used
+         * with fsetxattr().
          */
-
+        /* Excise the "._" name prefix from the post-mapname()
+         * AppleDouble file name.
+         */
+        revert_apl_dbl_path( G.filename, G.filename);
         /* Append "/rsrc" suffix to the AppleDouble file name. */
-        strcat( G.ad_filename, APL_DBL_SUFX);
-
-        /* (Re-aim pointer instead of copying?) */
-        strcpy( G.filename, G.ad_filename);
+        strcat( G.filename, APL_DBL_SUFX);
     }
     else
     {
