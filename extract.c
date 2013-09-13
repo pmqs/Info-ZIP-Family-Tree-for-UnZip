@@ -37,12 +37,15 @@
 #define __EXTRACT_C     /* identifies this source module */
 #define UNZIP_INTERNAL
 #include "unzip.h"
+#if defined( UNIX) && defined( __APPLE__)
+# include "unix/macosx.h"
+#endif /* defined( UNIX) && defined( __APPLE__) */
 #ifdef WINDLL
-#  ifdef POCKET_UNZIP
-#    include "wince/intrface.h"
-#  else
-#    include "windll/windll.h"
-#  endif
+# ifdef POCKET_UNZIP
+#  include "wince/intrface.h"
+# else
+#  include "windll/windll.h"
+# endif
 #endif
 #include "crc32.h"
 #include "crypt.h"

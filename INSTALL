@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-06-10
+   UnZip version 6.10.  Revised: 2013-09-03
 
 ------------------------------------------------------------------------
 
@@ -532,18 +532,16 @@ Windows (XP, Vista, 7, and so on)
    and BZIP2_SFX.  To enable AES_WG encryption, define both CRYPT_AES_WG
    and CRYPT_AES_WG_SFX, and so on.
 
-   Builders for the Windows DLL have not been updated.  Contributions
-   are welcome.
-
-   Currently, Microsoft Visual Studio 2010 (Visual C++ 10.0) is the only
-   supported version.  Newer VS versions may work, but have not been
-   tested.  Builder files for older VS versions have not been removed
-   from the kit, and may work in limited ways, but they have not been
-   updated to handle the latest optional features (optional compression
-   and encryption methods, and so on).  The Unix-like Windows
-   environments, Cygwin and MinGW, use the Unix builders, not the VS
-   builders.  Other, non-Microsoft compilers (like Borland or Watcom)
-   have not been tested.  Obsolete information for older VS versions and
+   Currently, Microsoft Visual Studio 2010 and 2012 (Visual C++ v10.0
+   and v11.0) are the only tested versions.  Newer Visual Studio
+   versions may work, but have not been tested.  Builder files for older
+   Visual Studio versions have not been removed from the kit, and may
+   work in limited ways, but they have not been updated to handle the
+   latest optional features (optional compression and encryption
+   methods, and so on).  The Unix-like Windows environments, Cygwin and
+   MinGW, use the Unix builders, not the Visual Studio builders.  Other,
+   non-Microsoft compilers (like Borland or Watcom) have not been
+   tested.  Obsolete information for older Visual Studio versions and
    other compilers follows:
 
    For creating Windows executables, the Microsoft Visual C++ compiler

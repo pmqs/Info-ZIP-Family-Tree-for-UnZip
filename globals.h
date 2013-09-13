@@ -185,10 +185,6 @@ typedef struct
 } CByteInToLook;
 # endif /* def PPMD_SUPPORT */
 
-# if defined( UNIX) && defined( __APPLE__)
-#  include "unix/macosx.h"
-# endif /* defined( UNIX) && defined( __APPLE__) */
-
 
 /*************/
 /*  Globals  */

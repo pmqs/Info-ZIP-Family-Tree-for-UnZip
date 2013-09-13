@@ -1,4 +1,6 @@
-UnZip, version 6.10, -- ----- 2010
+UnZip, version 6.10c, ?? ??? 2013
+
+These changes occurred in beta versions 6.10a through 6.10c.
 
 Features added (or removed):
 
@@ -315,7 +317,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (08 Aug 2013):
+6.10c09 (28 Aug 2013):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -412,11 +414,12 @@ Features added (or removed):
    unzip.c, unzip.h, vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help,
    vms/vms.c) [SMS]
  - Added options on Mac OS X to provide better control over which
-   Mac-specific file attributes are set on extracted files.  All extended
-   attributes: -Je/--junk-extattr, Finder info: -Jf/--junk-finder,
-   Quarantine ("com.apple.quarantine"): -Jq/--junk-qtn, Resource fork:
-   -Jr/--junk-rsrc, .  Note that the Quarantine attribute is one of the
-   extended attributes, so specifying -Je inhibits setting the
+   Mac-specific file attributes are _not_ restored on extracted files:
+   All extended attributes, -Je/--junk-extattr; Finder info,
+   -Jf/--junk-finder; Quarantine ("com.apple.quarantine"),
+   -Jq/--junk-qtn; Resource fork, -Jr/--junk-rsrc.  (By default, all
+   are restored.)  Note that the Quarantine attribute is one of the
+   extended attributes, so specifying -Je inhibits restoring the
    Quarantine attribute, along with all other extended attributes.  The
    extended attribute features are available on Mac OS X 10.4 and later.
    (The "xattr" command can be used to remove selected attributes after
@@ -857,7 +860,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (16 Aug 2013):
+6.10c09 (02 Sep 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -879,7 +882,7 @@ Bugs fixed:
  - Bad hard-coded string length in message function could put a spurious
    NUL character into messages.  (Typically invisible on screen, but
    ugly in redirected output.)  (fileio.c) [SMS]
- - "make clean" missed some spots.  (unix/Makefile) [SMS]
+ - On Unix, "make clean" missed some spots.  (unix/Makefile) [SMS]
  - A user-specified CFLAGS value for UNIX(-like) builds no longer needs
    to include "-I.".  (unix/configure) [SMS]
  - Some GCC versions would emit many "warning: format string is not a
@@ -943,7 +946,7 @@ Bugs fixed:
    possible.  (Info-ZIP Zip uses "-" as the name for an archive member
    created from standard input, but the .ZIP standard allows a null name
    for this case.)  Now, UnZip extracts a null-name archive member as
-   "-" (C macro NULL_NAME_REPL).  On VMS, an error message was added,
+   "-" (C macro: NULL_NAME_REPL).  On VMS, an error message was added,
    similar to the one on UNIX, and on UNIX, the message was clarified.
    (fileio.c, unzpriv.h, unix/unix.c, vms/vms.c) [SMS]
  - "unzip -t" silently detected an unexpected end-of-file condition when
@@ -1244,11 +1247,9 @@ Bugs fixed:
    mishandled, causing Finder info and resource fork data to be lost.
    Some Mac-specific name handling code has been moved from the general
    extract.c:extract_or_test_entrylist() to a new OS-specific function,
-   unix/unix.c:revert_apl_dbl_path().  (extract.c, fileio.c, unzpriv.h,
-   unix/unix.c) [SMS]
-   
-==================
+   unix/unix.c:revert_apl_dbl_path().  (extract.c, fileio.c, globals.h,
+   unzpriv.h, unix/unix.c) [SMS]
+ - On Mac OS X, setting non-data-fork attributes/data on a file could
+   give it a new modification time, even if the user requested that its
+   archived modification time be restored.  (unix/unix.c) [SMS]
 
-These changes occurred in beta versions 6.10a to 6.10.  This list may
-have left out some bugfixes and even some features...void where
-prohibited, your mileage may vary, etc., etc.

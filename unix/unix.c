@@ -43,9 +43,11 @@
 #  define DIRENT
 # endif
 #endif
+
 #if defined(_AIX) || defined(__mpexl)
 # define DIRENT
 #endif
+
 #ifdef COHERENT
 # if defined(_I386) || (defined(__COHERENT__) && (__COHERENT__ >= 0x420))
 #  define DIRENT
@@ -81,6 +83,7 @@
 # include <sys/attr.h>
 # include <sys/mount.h>
 # include <sys/vnode.h>
+# include "macosx.h"
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
 #ifdef SET_DIR_ATTRIB
@@ -1292,31 +1295,51 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
     fclose(G.outfile);
 # endif /* !defined( NO_FCHOWN) && !defined( NO_FCHMOD) */
 
-# if defined( UNIX) && defined( __APPLE__)
-    /* 2009-04-19 SMS.
-     * Skip utime() for an AppleDouble file.  (Doing the normal file
-     * is enough, and utime() will fail on a "/rsrc" pseudo-file.)
-     */
-    if (!G.apple_double)
+    /* Skip restoring time stamps on user's request. */
+    if (uO.D_flag <= 1)
     {
+# if defined( UNIX) && defined( __APPLE__)
+        /* 2013-09-02 SMS.
+         * Attribute setting may have disturbed the times on the
+         * original file, so re-do utime() for an AppleDouble file,
+         * using the normal file name.
+         */
+        {
+            char btrbslash; /* Saved character had better be a slash. */
+
+            if (G.apple_double)
+            {
+                /* Truncate name at "/rsrc" for utime(). */
+                btrbslash =
+                 G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)];
+                G.filename[ strlen( G.filename)- strlen( APL_DBL_SUFX)] = '\0';
+            }
 # endif /* defined( UNIX) && defined( __APPLE__) */
 
-    /* skip restoring time stamps on user's request */
-    if (uO.D_flag <= 1) {
         /* set the file's access and modification times */
-        if (utime(G.filename, &(zt.t2))) {
+        if (utime(G.filename, &(zt.t2)))
+        {
             if (uO.qflag)
+            {
                 Info(slide, 0x201, ((char *)slide, CannotSetItemTimestamps,
                   FnFilter1(G.filename), strerror(errno)));
+            }
             else
+            {
                 Info(slide, 0x201, ((char *)slide, CannotSetTimestamps,
                   strerror(errno)));
+            }
         }
-    }
 
 # if defined( UNIX) && defined( __APPLE__)
-    }
+            if (G.apple_double)
+            {
+                /* Restore name suffix ("/rsrc"), in case anyone still cares. */
+                G.filename[ strlen( G.filename)] = btrbslash;
+            }
+        }
 # endif /* defined( UNIX) && defined( __APPLE__) */
+    }
 
 # if defined( NO_FCHOWN) || defined( NO_FCHMOD)
   /* We lack fchown() or fchmod(), so the file has been closed.  We may
