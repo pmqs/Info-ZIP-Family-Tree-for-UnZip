@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2013-06-06
+   Document date: 2013-10-22
 
 ------------------------------------------------------------------------
 
@@ -175,6 +175,10 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
   Highlights:
    - More consistent with Zip.
    - Use "CC=gcc" to specify GCC.  "make" targets "*_gcc" are gone.
+   - Use "PROD=subdir" to put product files (objects, executables, ...)
+     into a subdirectory, rather than ".".  In case of PROD-related
+     build problems, older, pre-PROD builders are available as
+     unix/configure_old and unix/Makefile_old.
    - Windows MinGW support.
    - Minor changes to accommodate BAE Systems STOP OS.
 

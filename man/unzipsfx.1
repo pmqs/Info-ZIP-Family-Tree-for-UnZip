@@ -8,7 +8,11 @@
 .\" unzipsfx.1 by Greg Roelofs
 .\"
 .\" =========================================================================
-.\" define .EX/.EE (for multiline user-command examples; normal Courier font)
+.TH UNZIPSFX 1L "06 Nov 2013 (v6.10)" "Info-ZIP"
+.\" =========================================================================
+.\"
+.\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
+.\" Must follow ".TH"; otherwise macros get redefined.
 .de EX
 .in +4n
 .nf
@@ -20,7 +24,6 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIPSFX 1L "21 May 2013 (v6.10)" "Info-ZIP"
 .SH NAME
 unzipsfx \- self-extraction (SFX) program.  Append a ZIP archive to it
 to make a self-extracting archive bundle.
@@ -531,7 +534,7 @@ will be assumed.
 .br
 When extracting, never overwrite existing files.  If a file already
 exists, then skip the extraction of that file without asking.  See also
--o (--overwrite).
+\fB\-o\fP (\fB\-\-overwrite\fP).
 .IP
 By default, \fIUnZipSFX\fP queries the user before extracting any file that
 already exists.  The user may choose to overwrite only the current file,
@@ -562,7 +565,8 @@ query choice is offered: to overwrite the existing file.
 When extracting, always overwrite existing files without
 prompting.  This is a \fIdangerous\fP option, so use it with care.  (It
 is often used with \fB\-f\fP, however, and is the only way to overwrite
-directory EAs on OS/2.)  See also -n (--never-overwrite).
+directory EAs on OS/2.)  See also \fB\-n\fP
+(\fB\-\-never\-overwrite\fP).
 .IP
 By default, \fIUnZipSFX\fP queries the user before extracting any file that
 already exists.
@@ -577,8 +581,8 @@ existing file, to skip extraction, or to rename the current file.  In
 the case where an archive member name includes a version number, and -V
 ("retain VMS file version numbers") is in effect, then an additional
 query choice is offered: to overwrite the existing file.  In this case,
--o selects the "new version" choice, and -oo (or "-o -o") selects the
-"overwrite" choice.
+\fB\-o\fP selects the "new version" choice, and \fB\-oo\fP (or:
+\fB\-o\ \-o\fP) selects the "overwrite" choice.
 .PP
 .PD 0
 .B \-P password
@@ -599,7 +603,7 @@ command line in an automated script can be even less secure,  Whenever
 possible, use the non-echoing, interactive prompt to enter
 passwords.  Where security is truly important, use a strong encryption
 method, such as AES, instead of the relatively weak encryption provided
-by Traditional ZIP encryption. Or, use an external encryption program,
+by Traditional ZIP encryption.  Or, use an external encryption program,
 such as GnuPG, before archiving the file.  (Note that \fIZip\fP will
 probably not be able to do significant compression on a file which has
 already been encrypted.)
@@ -766,8 +770,8 @@ as regular character in native operating system filenames.
 [non-VMS] Currently, \fIUnZipSFX\fP uses the same pattern matching rules
 for both wildcard archive file name specifications and archive member
 selection patterns on most system types.  For systems allowing "/" as
-regular filename character, the \-W option would not work as expected on
-a wildcard file name specification.
+regular filename character, the \fB\-W\fP option would not work as
+expected on a wildcard file name specification.
 .PP
 .PD 0
 .B \-X
@@ -783,7 +787,7 @@ security ACLs on Windows NT.)  In most cases this will require special
 system privileges, and doubling the option (\fB\-XX\fP) on NT instructs
 \fIUnZipSFX\fP to use privileges for extraction; but on Unix, for example,
 a user who belongs to several groups can restore files owned by any of
-those groups, so long as the user IDs match the user's own. Note that
+those groups, so long as the user IDs match the user's own.  Note that
 ordinary file attributes are always restored.  This option applies only
 to optional, extra ownership info available on some operating systems.
 (NT's access control lists do not appear to be especially compatible
@@ -1120,13 +1124,13 @@ is invoked (and "." must be on the user's PATH), or else some explicit
 .EX
 # example_sfx -t        # Fails if "." is not on PATH.
 bash: example_sfx: command not found
-# ./example_sfx -t      # Works.
+# \&./example_sfx -t      # Works.
 .EE
 or:
 .EX
 mkdir sandbox
 cd sandbox
-../example_sfx
+\&.\&./example_sfx
 .EE
 .PP
 If a user runs a self-extracting archive which is found in a directory

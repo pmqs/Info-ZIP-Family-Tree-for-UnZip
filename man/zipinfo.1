@@ -8,7 +8,10 @@
 .\" zipinfo.1 by Greg Roelofs and others.
 .\"
 .\" =========================================================================
-.\" define .EX/.EE (for multiline user-command examples; normal Courier font)
+.TH ZIPINFO 1L "06 Nov 2013 (v3.1)" "Info-ZIP"
+.\" =========================================================================
+.\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
+.\" Must follow ".TH"; otherwise macros get redefined.
 .de EX
 .in +4n
 .nf
@@ -31,7 +34,6 @@
 .in +4n
 ..
 .\" =========================================================================
-.TH ZIPINFO 1L "16 August 2012 (v3.1)" "Info-ZIP"
 .SH NAME
 zipinfo \- show detailed information about a ZIP archive
 .PD
@@ -100,10 +102,22 @@ its actual name ending (if any), whatever that may be.
 .TP
 .IR member " ..."
 An optional list of archive members to be processed, separated by
-spaces.  Wildcard patterns (like those used for an archive file name,
-described above) may be used to match multiple members.  Again, be sure
-to quote expressions that would otherwise be expanded or modified by the
-operating system or shell.
+spaces.  If no member list is specified, then all archive members are
+processed.  Wildcard patterns (like those used for an archive file name
+on Unix, described above) may be used to match multiple members.  Again,
+be sure to quote expressions that would otherwise be expanded or
+modified by the operating system or shell.
+.IP
+On Mac OS X systems, file attributes, a resource fork, and similar data
+may be stored in a separate AppleDouble archive member which has a "._"
+name prefix.  In some cases, UnZip automatically handles these
+AppleDouble archive members when a normal member pattern is specified,
+but with ZipInfo, the user must specify patterns which explicitly
+include any desired AppleDouble archive members.
+.IP
+On VMS systems, the wildcard rules used for archive members are the same
+as on Unix systems.  VMS wildcard rules are used only for archive file
+specifications, not for archive member patterns.
 .\" =========================================================================
 .SH OPTIONS (Primary Format)
 .PP
@@ -230,8 +244,8 @@ will be assumed.
 .br
 Control inclusion of separate member counts for directories, files, and
 (if symlinks are supported) links, after the totals summary at the end
-of the report.  By default, they are included.  Use "-mc-" or
-"--member-counts-" to suppress them.  See also /TOTALS.
+of the report.  By default, they are included.  Use \fB\-mc\-\fP or
+\-\-member\-counts\- to suppress them.  See also /TOTALS.
 .PP
 .PD 0
 .B \-T
@@ -367,7 +381,7 @@ listing (\fB\-l\fP, \fB\-m\fP, \fB\-s\fP), and a very detailed analysis
 (\fB\-v\fP).  Some of the information, such as file sizes, is easy to
 interpret.  Some of the information involves fairly obscure details of
 ZIP archive structure.  ZIP archive structure is documented in the
-PKWARE Inc. APPNOTE.TXT:
+PKWARE Inc.\& APPNOTE.TXT:
 \fChttp://www.pkware.com/documents/casestudies/APPNOTE.TXT\fR
 .PP
 The table below shows some typical \fB\-l\fP report entries:

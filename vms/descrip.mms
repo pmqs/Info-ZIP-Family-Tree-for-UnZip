@@ -1,4 +1,4 @@
-#                                               17 January 2013.  SMS.
+#                                               13 October 2013.  SMS.
 #
 #    UnZip 6.1 for VMS - MMS (or MMK) Description File.
 #
@@ -118,9 +118,13 @@
 #
 #    CLEAN_TEST deletes all test directories.
 #
+#    DASHV      generates an "unzip -v" report.
+#
 #    HELP       generates HELP library source files (.HLP).
 #
 #    HELP_TEXT  generates HELP output text files (.HTX).
+#
+#    SLASHV     generates an "unzip_cli /verbose" report.
 #
 #    TEST       runs a brief test.
 #
@@ -325,6 +329,11 @@ CLEAN_TEST :
 	if (f$search( "test_dir_*.dir;*") .nes. "") then -
 	 delete test_dir_*.dir;*
 
+# DASHV target.  Generate an "unzip -v" report.
+
+DASHV :
+	mcr [.$(DEST)]unzip -v
+
 # HELP target.  Generate the HELP library source files.
 
 HELP : $(UNZIP_HELP)
@@ -334,6 +343,11 @@ HELP : $(UNZIP_HELP)
 
 HELP_TEXT : $(UNZIP_HELP_TEXT)
 	@ write sys$output "Done."
+
+# SLASHV target.  Generate an "unzip_cli /verbose" report.
+
+SLASHV :
+	mcr [.$(DEST)]unzip_cli /verbose
 
 # TEST target.  Runs a test procedure.
 

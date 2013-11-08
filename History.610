@@ -317,7 +317,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (28 Aug 2013):
+6.10c09 (07 Nov 2013):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -402,6 +402,7 @@ Features added (or removed):
    access.)  Added new VMS CLI options /RESTORE = PROTECTION =
    [LIMITED|ORIGINAL] for -k.  Define the C macro NO_KFLAG to disable
    the -k option, and restore the old behavior (or something like it).
+   Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=100
    (atheos/athcfg.h, atheos/atheos.c, beos/beocfg.h, beos/beos.c,
    man/unzip.1, unix/unix.c, unix/unxcfg.h, unzip.c, unzip.h, unzpriv.h,
    vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help, vms/UNZIP_DEF.RNH,
@@ -437,7 +438,7 @@ Features added (or removed):
    then the "libbz2" project build will fail, but the "unzip" project
    build should still succeed, so long as the C macro BZIP2_SUPPORT is
    not defined.  In the "Debug" configuration, DIAG_SFX is defined,
-   which enables the "-v" report in the UnZipSFX executable. 
+   which enables the "-v" report in the UnZipSFX executable.
    (ubz2err.c, win32/vc10/unzip.sln, win32/vc10/funzip/funzip.vcxproj,
    win32/vc10/funzip/funzip.vcxproj.filters,
    win32/vc10/libbz2/libbz2.vcxproj,
@@ -790,18 +791,21 @@ Bugs fixed:
 
 6.10c08 (22 Nov 2011):
  - Add (wchar_t *) casts to wstring malloc().  (extract.c) [SMS]
- - Remove wchar.h include.  Add parentheses around wide_string[] assignment
-   in for loop to quiet complaint by a particular compiler.  [SMS, AD]
- - Add note regarding possible morphing of unzpriv.h to something more like
-   tailor.h.  (Could happen.)  Copy over UNICODE_SUPPORT comment from Zip
-   detailing the current plan for unifying Unicode code to just three
-   possibiities:  UNICODE_WIDE, UNICODE_ICONV, and UNICODE_NATIVE.  Change
-   "#define BSD" to "#define BSD 1".  Copy over DBCS Japanese support comment.
-   Always include stdlib.h if UNICODE_SUPPORT defined.  Copy over wchar and
-   langinfo support headers from Zip.  Add MBCS comment noting possible use of
-   replacement functions when available.  Copy over in comments some Zip MBCS
-   code.  (unzpriv.h, unix/unxcfg.h) [AD]
- - Include unistd.h where available, mainly for SunOS.  (lzma/szfile.h) [SMS]
+ - Remove wchar.h include.  Add parentheses around wide_string[]
+   assignment in for loop to quiet complaint by a particular compiler.
+   [SMS, AD]
+ - Add note regarding possible morphing of unzpriv.h to something more
+   like tailor.h.  (Could happen.)  Copy over UNICODE_SUPPORT comment
+   from Zip detailing the current plan for unifying Unicode code to just
+   three possibiities:  UNICODE_WIDE, UNICODE_ICONV, and UNICODE_NATIVE.
+   Change "#define BSD" to "#define BSD 1".  Copy over DBCS Japanese
+   support comment. Always include stdlib.h if UNICODE_SUPPORT defined.
+   Copy over wchar and langinfo support headers from Zip.  Add MBCS
+   comment noting possible use of replacement functions when available.
+   Copy over in comments some Zip MBCS code.  (unzpriv.h, unix/unxcfg.h)
+   [AD]
+ - Include unistd.h where available, mainly for SunOS.  (lzma/szfile.h)
+   [SMS]
  - Comment updates in top section.  Attempts at making the Zip and UnZip
    configure scripts similar.  Formatting updates.  Add message:
    "Generating system-dependent flags...".  Split up parameter list in
@@ -860,7 +864,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (02 Sep 2013):
+6.10c09 (09 Nov 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -926,7 +930,8 @@ Bugs fixed:
    four) GNU long-form options for egrep, and fixed some lame error
    handling (when the "unzip -Z1" command failed, for example).  Added
    "\" escapes for globbing characters ("*", "?", and "[") in archive
-   member names.  Many limitations and problems remain.  (unix/zipgrep) [SMS]
+   member names.  Many limitations and problems remain.  (unix/zipgrep)
+   [SMS]
  - Renamed "lzma" directory to "szip".  (Contents, INSTALL, extract.c,
    globals.h, unzip.c, unix/configure, unix/Makefile, vms/build_unzip.com,
    vms/descrip_deps.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
@@ -958,9 +963,10 @@ Bugs fixed:
    A Java "CAFE" extra block is now detected, and inhibits this
    inappropriate name conversion.  A new "--jar" option lets the user
    force this behavior when an archive lacks a "CAFE" extra block.
-   https://sourceforge.net/tracker/index.php?func=detail&aid=3526936\
-   &group_id=118012&atid=679787  (extract.c, fileio.c, unzip.c, unzip.h) [SMS]
- - Added Java "CAFE" extra field type to ZipInfo reports.  (zipinfo.c) [SMS]
+   http://sourceforge.net/p/infozip/support-requests/10/  (extract.c,
+   fileio.c, unzip.c, unzip.h) [SMS]
+ - Added Java "CAFE" extra field type to ZipInfo reports.  (zipinfo.c)
+   [SMS]
  - Changed some declarations to accommodate a type change in zlib
    version 1.2.7.  (globals.h) [SMS]
  - UnZipSFX could fail (SEGV) on systems with backslash ("\") file path
@@ -1041,7 +1047,7 @@ Bugs fixed:
  - With UNICODE_SUPPORT, UnZip could fail (SIGBUS, SIGSEGV,
    %SYSTEM-F-ACCVIO, ...) when processing a non-Unicode name which
    contained character codes above 127.  More thought/work may be needed
-   here.  (extract.c) [SMS]
+   here.  http://sourceforge.net/p/infozip/bugs/40/  (extract.c) [SMS]
  - Changed the DLL and object-library forms of the UnZip main entry
    point function not to look for "zipinfo" in argv[0].  To get ZipInfo
    mode, specify "-Z" in argv[1].  (unzip.c) [SMS]
@@ -1075,7 +1081,8 @@ Bugs fixed:
    faster, but using memmove() is not, so that's the default scheme, but
    we're open to evidence reports.  (explode.c, inflate.c) [SMS]
  - Changed LLVM Clang compiler version identification to cope with v1.x,
-   where __clang_major__ and friends were not defined.  (unix/unix.c) [SMS]
+   where __clang_major__ and friends were not defined.  (unix/unix.c)
+   [SMS]
  - Made the configuration test for lchmod() stricter, to detect a "not
    implemented" compiler warning message (Clang and GCC on GNU/Linux).
    (unix/configure) [SMS]
@@ -1106,9 +1113,9 @@ Bugs fixed:
    LFLAGS2.)  Stopped putting redundant "-L." linker options into
    "flags".  (unix/configure) [SMS]
  - Added some conditionality for SGI IRIX.
-   https://sourceforge.net/tracker/index.php?func=detail&aid=3596664\
-   &group_id=118012&atid=679786  (unzpriv.h) [SMS]
- - Disambiguated some Windows-specific error messages.  (win32/win32.c) [SMS]
+   http://sourceforge.net/p/infozip/bugs/41/  (unzpriv.h) [SMS]
+ - Disambiguated some Windows-specific error messages.  (win32/win32.c)
+   [SMS]
  - Minor code tidying (#directive rearangement, type casts) to pacify
    Microsoft Visual C++ 2010.  (explode.c, extract.c, funzip.c,
    inflate.c, process.c, zipinfo.c) [SMS]
@@ -1125,8 +1132,9 @@ Bugs fixed:
    defined.)  (apihelp.c, unzip.c, unzpriv.h, unix/Makefile,
    vms/descrip.mms, vms/descrip_deps.mms, vms/descrip_mkdeps.mms,
    vms/descrip_src.mms) [SMS]
- - Fixed a problem where callable UnZip could try to free() the
-   main-program argv[], instead of our local copy.  (unzip.c)  [SMS]
+ - Fixed a problem where callable UnZip (or any build with the C macro
+   REENTRANT defined) could try to free() the main-program argv[],
+   instead of our local copy.  (unzip.c, zipinfo.c) [SMS]
  - Removed a Unicode memory leak, and improved some sub-optimal code
    based on suggestions from Dmitry ??????.  (fileio.c, process.c,
    win32/win32.c) [Dmitry, SMS]
@@ -1149,8 +1157,7 @@ Bugs fixed:
    spoiled the report format.  Now, values less than 1000 are displayed
    as before, using a three-digit decimal format, "Unk:ddd", but larger
    values are displayed using a four-digit hexadecimal format,
-   "UnkXXXX".  http://sourceforge.net/tracker/?func=detail&aid=2861648
-   &group_id=118012&atid=679786  (list.c) [SMS]
+   "UnkXXXX".  http://sourceforge.net/p/infozip/bugs/27/  (list.c) [SMS]
  - In ZipInfo reports, an unexpectedly large host version number value
    (>99) caused a (mostly harmless) buffer overflow, and spoiled the
    report format.  Now, values less than 100 are displayed as before,
@@ -1231,8 +1238,8 @@ Bugs fixed:
    win32/w32cfg.h.  Currently, a fixed time limit is used, which may be
    inadequate for large files.  Users who still experience the problem
    are encouraged to report the circumstances.
-   http://sourceforge.net/p/infozip/bugs/44/
-   (win32/nt.c, win32/w32cfg.h, win32/win32.c) [awaterson, SMS]
+   http://sourceforge.net/p/infozip/bugs/44/  (win32/nt.c,
+   win32/w32cfg.h, win32/win32.c) [awaterson, SMS]
  - On Mac OS X, extended attributes (such as "com.apple.quarantine")
    were erroneously treated as more resource-fork data, so the
    extracted file did not get the proper attributes, and its resource
@@ -1249,7 +1256,33 @@ Bugs fixed:
    extract.c:extract_or_test_entrylist() to a new OS-specific function,
    unix/unix.c:revert_apl_dbl_path().  (extract.c, fileio.c, globals.h,
    unzpriv.h, unix/unix.c) [SMS]
+ - On Mac OS X, when archive member patterns were specified explicitly,
+   including with a -x/--exclude option, AppleDouble "._" file names
+   were mishandled, causing Finder info and resource fork data to be
+   lost, or otherwise mishandled.  This happened because a normal name
+   and the corresponding "._" name might not match the same patterns, so
+   one of the two parts might be processed while the other was not.
+   Now, when Mac attributes are being restored (no -J/--junk-attrs
+   option, and the destination volume supports attributes), an
+   AppleDouble "._" archive member should be processed if the
+   corresponding normal archive member is.  (extract.c) [SMS]
  - On Mac OS X, setting non-data-fork attributes/data on a file could
    give it a new modification time, even if the user requested that its
    archived modification time be restored.  (unix/unix.c) [SMS]
-
+ - On Mac OS X, with an Intel CPU, UnZip tried to access a resource fork
+   using the old "/rsrc" suffix instead of the newer "/..namedfork/rsrc"
+   suffix, and this failed.  After some recent code restructuring,
+   unzip.c was not including unix/macosx.h as needed, so the C macro
+   APPLE_NFRSRC was not being defined properly.  An undefined
+   APPLE_NFRSRC should have been detected, but was not.
+ - The Unix and VMS builders now support "PROD=subdir", allowing the
+   user to specify a destination subdirectory for product files (object
+   files, object libraries, executables, and so on), instead of getting
+   everything in the main, top-level directory on Unix, or the
+   automatically chosen subdirectory on VMS.  This feature is intended
+   to make it easier to use one source tree for multiple different build
+   configurations (different compilers, options, hardware architectures,
+   and so on).  For details, see INSTALL and [.vms]INSTALL_VMS.txt (and
+   the builder files themselves).  (INSTALL, unix/configure,
+   unix/Makefile, unix/mlz.sh, vms/build_unzip.com, vms/descrip.mms,
+   vms/INSTALL_VMS.txt) [SMS]

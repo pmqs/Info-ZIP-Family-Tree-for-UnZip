@@ -65,6 +65,10 @@
 #include "crypt.h"
 #include "unzvers.h"
 
+#if defined( UNIX) && defined( __APPLE__)
+# include "unix/macosx.h"
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
 #ifdef IZ_CRYPT_AES_WG
 # include "aes_wg/aesopt.h"
 # include "aes_wg/iz_aes_wg.h"
@@ -440,6 +444,9 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  endif
 
 #  if defined( UNIX) && defined( __APPLE__)
+#   ifndef APPLE_NFRSRC
+     Bad code: error APPLE_NFRSRC not defined.
+#   endif
 #   if defined( __ppc__) || defined( __ppc64__)
 #    if APPLE_NFRSRC
 #     define APPLE_NFRSRC_MSG
@@ -453,6 +460,10 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
      "APPLE_NFRSRC         (NOT!  \"/rsrc\" suffix for resource fork)";
 #    endif /* ! APPLE_NFRSRC */
 #   endif /* defined( __ppc__) || defined( __ppc64__) [else] */
+#   ifdef APPLE_XATTR
+    static ZCONST char Far AppleXATTR[] =
+     "APPLE_XATTR          (Apple extended attributes supported)";
+#   endif /* def APPLE_XATTR */
 #  endif /* defined( UNIX) && defined( __APPLE__) */
 
 #  ifdef ASM_CRC
@@ -490,7 +501,7 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  endif
 #  ifdef ICONV_MAPPING
     static ZCONST char Far Iconv[] =
-     "ICONV_MAPPING        (ISO/OEM (iconv) conversion supported)";
+     "ICONV_MAPPING        (ISO/OEM (iconv, -I/-O) conversion supported)";
 #  endif
 #  ifdef IZ_HAVE_UXUIDGID
     static ZCONST char Far ux_Uid_Gid[] =
@@ -2769,8 +2780,7 @@ int uz_opts(__G__ pargc, pargv)
 
         } /* end switch */
 
-        if (value != NULL)
-            izu_free( value);           /* Free it now, if it's not in use. */
+        FREE_NON_NULL( value);          /* Free it now, if it's not in use. */
 
     } /* get_option() */
 
@@ -3843,6 +3853,11 @@ static void show_version_info(__G)
           LoadFarStringSmall(AsmCRC)));
         ++numopts;
 #  endif
+#  ifdef APPLE_XATTR
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(AppleXATTR)));
+        ++numopts;
+#  endif /* def APPLE_XATTR */
 #  ifdef ASM_INFLATECODES
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(AsmInflateCodes)));

@@ -1,4 +1,3 @@
-
 .\"  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
@@ -9,7 +8,11 @@
 .\" unzip.1 by Greg Roelofs, Fulvio Marino, Jim van Zandt and others.
 .\"
 .\" =========================================================================
-.\" define .EX/.EE (for multiline user-command examples; normal Courier font)
+.TH UNZIP 1L "07 Nov 2013 (v6.10)" "Info-ZIP"
+.\" =========================================================================
+.\"
+.\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
+.\" Must follow ".TH"; otherwise macros get redefined.
 .de EX
 .in +4n
 .nf
@@ -21,7 +24,6 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH UNZIP 1L "06 Aug 2013 (v6.10)" "Info-ZIP"
 .SH NAME
 unzip \- extract, list, or test compressed files in a ZIP archive.
 .PP
@@ -75,7 +77,7 @@ unzip \-\-show\-options
 .EE
 This report will not include any options which are available only on
 other system types, or options which must be enabled at build-time but
-were not enabled in the particular UnZip program being used.
+were not enabled in the particular \fIUnZip\fP program being used.
 .PP
 [VMS] On VMS, alternate program editions with VMS-style command-line
 interfaces are also available.  For details, see the VMS-specific
@@ -136,9 +138,22 @@ on Unix, described above) may be used to match multiple members.  Again,
 be sure to quote expressions that would otherwise be expanded or
 modified by the operating system or shell.
 .IP
-Note that on VMS systems, the wildcard rules used for archive members
-are the same as on Unix systems.  VMS wildcard rules are used only for
-archive file specifications, not for archive member patterns.
+On Mac OS X systems, file attributes, a resource fork, and similar data
+may be stored in a separate AppleDouble archive member which has a "._"
+name prefix.  When restoring files with such attributes (no
+\fB\-J\fP/\fB\-\-junk-attrs\fP option, and the destination file system
+supports such attributes), if the user specifies only the main archive
+member, then \fIUnZip\fP should automatically handle the corresponding
+AppleDouble archive member.  If \fB\-J\fP/\fB\-\-junk-attrs\fP is
+specified, or the destination file system does not support such file
+attributes (so that an AppleDouble archive member will be stored as a
+separate file), then AppleDouble archive members are not handled
+automatically, and the user must specify patterns which explicitly
+include any desired AppleDouble archive members.
+.IP
+On VMS systems, the wildcard rules used for archive members are the same
+as on Unix systems.  VMS wildcard rules are used only for archive file
+specifications, not for archive member patterns.
 .\" =========================================================================
 .SH OPTIONS
 .PP
@@ -158,7 +173,7 @@ options are interpreted as \fIZipInfo\fP options.  See the \fBzipinfo\fP
 manual page for a description of those options.
 .\" --------------------------------------------------------------------
 .SH OPTIONS (Primary Mode)
-Options in this group (\fB\-c \-f \-h \-l \-p \-t \-T \-u \-v \-z\fP)
+Options in this group (\fB\-c \-f \-h \-l \-p \-T \-t \-u \-v \-z\fP)
 specify the primary mode of operation of \fIUnZip\fP.  Only one of these
 primary mode options may be specified.
 .PP
@@ -184,13 +199,13 @@ files that already exist on disk and that are newer than the disk
 copies.  By default \fIUnZip\fP queries before overwriting, but the
 \fB\-o\fP option may be used to suppress the queries.  Note that on
 many operating systems, the TZ (timezone) environment variable must be
-set correctly in order for \fB\-f\fP and \fB\-u\fP to work
-properly.  (On Unix the variable is usually set automatically.)  The
-reasons for this are somewhat subtle but have to do with the differences
-between DOS-format file times (always local time) and Unix-format times
-(always UTC) and the necessity to compare the two.  A typical TZ value
-is "PST8PDT" (US Pacific time with automatic adjustment for Daylight
-Saving Time).
+set correctly in order for \fB\-f\fP/\fB\-\-freshen\fP and
+\fB\-u\fP/\fB\-\-update\fP to work properly.  (On Unix the variable is
+usually set automatically.)  The reasons for this are somewhat subtle
+but have to do with the differences between DOS-format file times
+(always local time) and Unix-format times (always UTC) and the necessity
+to compare the two.  A typical TZ value is "PST8PDT" (US Pacific time
+with automatic adjustment for Daylight Saving Time).
 .PP
 .PD 0
 .B \-h
@@ -223,7 +238,7 @@ summary is included at the end of the report, showing total size and
 count for all the members in the report.  Specifying a member list
 limits the report to those members.
 .IP
-Adding \fB\-v\fP (\fB\-\-verbose\fP) to an "unzip -l" command line adds
+Adding \fB\-v\fP (\fB\-\-verbose\fP) to an "unzip \-l" command line adds
 the following items to the report: compression method, compressed size
 ("Size"), compression ratio, and 32-bit CRC.
 .IP
@@ -424,8 +439,8 @@ and replaced by the new backup version without notice.
 .B \-\-binary
 .br
 [Tandem, VMS] Selects the file record format used when extracting binary
-files.  -b may conflict or interact with -a in different ways on
-different system types.  -b is ignored on systems other than Tandem and
+files.  \-b may conflict or interact with \-a in different ways on
+different system types.  \-b is ignored on systems other than Tandem and
 VMS.
 .IP
 \fIZip\fP (or a similar archiving program) identifies files as "binary"
@@ -496,9 +511,9 @@ works only on systems that support setting timestamps for directories
 (currently ATheOS, BeOS, MacOS, OS/2, Unix, VMS, Win32).  On  other
 systems, \fB\-D\-\fP has no effect.
 .IP
-[Non-VMS] Timestamp restoration behavior changed between UnZip versions
-6.00 and 6.10.  The following table shows the effects of various
-\fB\-D\fP options for both versions.
+[Non-VMS] Timestamp restoration behavior changed between \fIUnZip\fP
+versions 6.00 and 6.10.  The following table shows the effects of
+various \fB\-D\fP options for both versions.
 .IP
 .EX
        UnZip version      |
@@ -723,7 +738,7 @@ protection is applied to the UIC-based (SOGW) protections.
 .IP
 With \-k, the archived permissions are restored without regard to the
 Unix umask or VMS default protection.  (This was the default behavior in
-UnZip versions before 6.10.)
+\fIUnZip\fP versions before 6.10.)
 .IP
 With \-k\-, the archived permissions are ignored, so only the Unix umask
 or VMS default protection is effective.  (On VMS, directories are always
@@ -760,7 +775,7 @@ case-preserving file system such as OS/2 HPFS or a case-sensitive one
 such as on Unix.  By default \fIUnZip\fP lists and extracts such
 filenames exactly as they're stored (excepting truncation, conversion of
 unsupported characters, an so on).  With \fB\-L\fP, the names of all
-files from certain systems will be converted to lowercase. With
+files from certain systems will be converted to lowercase.  With
 \fB\-LL\fP, all file names will be down-cased, regardless of the
 originating file system.
 .PP
@@ -810,7 +825,7 @@ Amiga port of \fIZip\fP, which stores filenotes as comments.
 .br
 When extracting, never overwrite existing files.  If a file already
 exists, then skip the extraction of that file without asking.  See also
--o (--overwrite).
+\-o (\-\-overwrite).
 .IP
 By default, \fIUnZip\fP queries the user before extracting any file that
 already exists.  The user may choose to overwrite only the current file,
@@ -820,7 +835,7 @@ new name for the extracted file).
 .IP
 [VMS] On VMS, the usual query choices are to create a new version of an
 existing file, to skip extraction, or to rename the current file.  In
-the case where an archive member name includes a version number, and -V
+the case where an archive member name includes a version number, and \-V
 ("retain VMS file version numbers") is in effect, then an additional
 query choice is offered: to overwrite the existing file.
 .PP
@@ -841,7 +856,7 @@ query choice is offered: to overwrite the existing file.
 When extracting, always overwrite existing files without
 prompting.  This is a \fIdangerous\fP option, so use it with care.  (It
 is often used with \fB\-f\fP, however, and is the only way to overwrite
-directory EAs on OS/2.)  See also -n (--never-overwrite).
+directory EAs on OS/2.)  See also \-n (\-\-never-overwrite).
 .IP
 By default, \fIUnZip\fP queries the user before extracting any file that
 already exists.
@@ -853,10 +868,10 @@ skip extraction of all existing files, or rename the current file
 .IP
 [VMS] On VMS, the usual query choices are to create a new version of an
 existing file, to skip extraction, or to rename the current file.  In
-the case where an archive member name includes a version number, and -V
+the case where an archive member name includes a version number, and \-V
 ("retain VMS file version numbers") is in effect, then an additional
 query choice is offered: to overwrite the existing file.  In this case,
--o selects the "new version" choice, and -oo (or "-o -o") selects the
+\-o selects the "new version" choice, and \-oo (or "\-o \-o") selects the
 "overwrite" choice.
 .PP
 .PD 0
@@ -959,7 +974,7 @@ use in program development, not for normal use.
 .br
 [Non-VMS] Show the \fIUnZip\fP program's process ID (pid) before
 performing any other work.  This value can then be used in a
-"kill -USR1 pid" command to trigger a user-triggered progress report.
+"kill \-USR1 pid" command to trigger a user-triggered progress report.
 .PP
 .PD 0
 .B \-so
@@ -1032,14 +1047,14 @@ are stripped, but this option allows them to be retained.  (On file
 systems that limit filenames to particularly short lengths, the version
 numbers may be truncated or stripped regardless of this option.)
 .IP
-[Non-VMS] Note that before UnZip version 6.10, on a non-VMS system, a
-file with a name like "\fCfred;123\fR" would, by default, be extracted
-as "\fCfred\fR", even if the file did not originate on a VMS system (so
-that "\fC;123\fR" was probably not really a VMS version number). 
-Beginning with UnZip version 6.10, the default behavior is to strip VMS
-version numbers only from files which were archived on a VMS system.  To
-restore the old behavior, and always strip apparent VMS version numbers,
-explicitly negate the option: \fB\-V\-\fP.
+[Non-VMS] Note that before \fIUnZip\fP version 6.10, on a non-VMS
+system, a file with a name like "\fCfred;123\fR" would, by default, be
+extracted as "\fCfred\fR", even if the file did not originate on a VMS
+system (so that "\fC;123\fR" was probably not really a VMS version
+number).  Beginning with UnZip version 6.10, the default behavior is to
+strip VMS version numbers only from files which were archived on a VMS
+system.  To restore the old behavior, and always strip apparent VMS
+version numbers, explicitly negate the option: \fB\-V\-\fP.
 .IP
 [VMS] Note that on VMS, \fB\-V\fP affects \fIonly\fP version numbers,
 and is \fInot\fP needed to restore VMS file attributes.  \fBZip\fP's
@@ -1112,7 +1127,7 @@ security ACLs on Windows NT.)  In most cases this will require special
 system privileges, and doubling the option (\fB\-XX\fP) on NT instructs
 \fIUnZip\fP to use privileges for extraction; but on Unix, for example,
 a user who belongs to several groups can restore files owned by any of
-those groups, so long as the user IDs match the user's own. Note that
+those groups, so long as the user IDs match the user's own.  Note that
 ordinary file attributes are always restored.  This option applies only
 to optional, extra ownership info available on some operating systems.
 (NT's access control lists do not appear to be especially compatible
@@ -1380,7 +1395,7 @@ If the first password fails the header check on some file, \fIUnZip\fP
 will prompt for another password, and so on until all files are
 extracted.  If a password is not known, entering a null password (that
 is, just a carriage return or "Enter") is taken as a signal to skip all
-further prompting. Only unencrypted files in the archive(s) will
+further prompting.  Only unencrypted files in the archive(s) will
 thereafter be extracted.  (The situation is actually a little more
 complicated.  Some old versions of \fIZip\fP and \fIZipCloak\fP allowed
 null passwords, so \fIUnZip\fP checks each encrypted file to see if the
@@ -1391,7 +1406,7 @@ Archives encrypted with 8-bit-character passwords (for example,
 passwords with accented European characters) may not be portable across
 systems or to other archivers.  This problem stems from the use of
 multiple encoding methods for such characters, including Latin-1 (ISO
-8859-1) and OEM code page 850. DOS \fIPKZIP\fP 2.04g uses the OEM code
+8859-1) and OEM code page 850.  DOS \fIPKZIP\fP 2.04g uses the OEM code
 page; Windows \fIPKZIP\fP 2.50 uses Latin-1 (and is therefore
 incompatible with DOS \fIPKZIP\fP); Info-ZIP uses the OEM code page on
 DOS, OS/2 and Win3.x ports but ISO coding (Latin-1 etc.) everywhere
@@ -1437,7 +1452,7 @@ To test \fIall\fP ".zip" archives in the current directory, printing
 only the summaries:
 .PP
 .EX
-unzip \-t -q "*.zip"
+unzip \-t \-q "*.zip"
 .EE
 .PP
 Here, the wildcard archive name was quoted to keep a Unix shell from
@@ -1599,7 +1614,7 @@ Multi-part archives are not yet supported, except in conjunction with
 \fIZip\fP.  (All parts must be concatenated together in order, and then
 "\fCzip\ \-F\fR" (for Zip 2.x) or "\fCzip\ \-FF\fR" (for Zip 3.x) must be
 performed on the concatenated archive in order to "fix" it.  Also,
-\fIzip 3.0\fP and later can combine multi-part (split) archives into a
+\fIzip\fP version 3.0 and later can combine multi-part (split) archives into a
 combined single-file archive using
 "\fCzip\ \-s\-\ inarchive\ \-O\ outarchive\fR".  See the \fIzip\fP
 manual page for more information.)  This may be corrected in the next
@@ -1614,10 +1629,10 @@ with accented European characters) may not be portable across systems
 and/or other archivers.  See also \fBENCRYPTION/DECRYPTION\fP.
 .PP
 \fIUnZip\fP's \fB\-M\fP ("\-\-more") option tries to take into account
-automatic wrapping of long lines. However, the code may fail to detect
-the correct wrapping locations. First, TAB characters (and similar
+automatic wrapping of long lines.  However, the code may fail to detect
+the correct wrapping locations.  First, TAB characters (and similar
 control sequences) are not taken into account, they are handled as
-ordinary printable characters. Second, depending on the actual system
+ordinary printable characters.  Second, depending on the actual system
 type, \fIUnZip\fP may not detect the true terminal/emulator geometry,
 but instead may rely on "commonly used" default dimensions.  The correct
 handling of tabs would require the implementation of a query for the
@@ -1660,31 +1675,31 @@ FTP access is available, too:
 .PP
 .\" =========================================================================
 .SH AUTHORS
-The primary Info-ZIP authors (current semi-active members of the Zip-Bugs
-workgroup) are:  Ed Gordon (Zip, general maintenance, shared code, Zip64,
-Win32, Unix, Unicode); Christian Spieler (UnZip maintenance coordination,
-VMS, MS-DOS, Win32, shared code, general Zip and UnZip integration and
-optimization); Onno van der Linden (Zip); Mike White (Win32, Windows GUI,
-Windows DLLs); Kai Uwe Rommel (OS/2, Win32); Steven M. Schweda (VMS, Unix,
-support of new features); Paul Kienitz (Amiga, Win32, Unicode); Chris
-Herborth (BeOS, QNX, Atari); Jonathan Hudson (SMS/QDOS); Sergio Monesi
-(Acorn RISC OS); Harald Denker (Atari, MVS); John Bush (Solaris, Amiga);
-Hunter Goatley (VMS, Info-ZIP Site maintenance); Steve Salisbury (Win32);
-Steve Miller (Windows CE GUI), Johnny Lee (MS-DOS, Win32, Zip64); and Dave
-Smith (Tandem NSK).
+The primary Info-ZIP authors (current semi-active members of the
+Zip-Bugs workgroup) are:  Ed Gordon (Zip, general maintenance, shared
+code, Zip64, Win32, Unix, Unicode); Christian Spieler (\fIUnZip\fP
+maintenance coordination, VMS, MS-DOS, Win32, shared code, general Zip
+and \fIUnZip\fP integration and optimization); Onno van der Linden
+(Zip); Mike White (Win32, Windows GUI, Windows DLLs); Kai Uwe Rommel
+(OS/2, Win32); Steven M. Schweda (VMS, Unix, support of new features);
+Paul Kienitz (Amiga, Win32, Unicode); Chris Herborth (BeOS, QNX, Atari);
+Jonathan Hudson (SMS/QDOS); Sergio Monesi (Acorn RISC OS); Harald Denker
+(Atari, MVS); John Bush (Solaris, Amiga); Hunter Goatley (VMS, Info-ZIP
+Site maintenance); Steve Salisbury (Win32); Steve Miller (Windows CE
+GUI), Johnny Lee (MS-DOS, Win32, Zip64); and Dave Smith (Tandem NSK).
 .PP
 The following people are former members of the Info-ZIP development
 group, and provided major contributions to key parts of the current code:
-Greg "Cave Newt" Roelofs (UnZip, unshrink decompression);
+Greg "Cave Newt" Roelofs (\fIUnZip\fP, unshrink decompression);
 Jean-loup Gailly (deflate compression);
-Mark Adler (inflate decompression, fUnZip).
+Mark Adler (inflate decompression, \fIfUnZip\fP).
 .PP
 The author of the original unzip code upon which Info-ZIP's was based
 is Samuel H. Smith; Carl Mascott did the first Unix port; and David P.
 Kirschbaum organized and led Info-ZIP in its early days with Keith Petersen
 hosting the original mailing list at WSMR-SimTel20.  The full list of
-contributors to UnZip has grown quite large; please refer to the
-proginfo/CONTRIBS file in the UnZip source distribution for a relatively
-complete version.
+contributors to \fIUnZip\fP has grown quite large; please refer to the
+proginfo/CONTRIBS file in the \fIUnZip\fP source distribution for a
+relatively complete version.
 .PP
 .\" =========================================================================

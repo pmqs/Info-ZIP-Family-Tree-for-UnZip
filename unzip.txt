@@ -1,4 +1,3 @@
-
 UNZIP(1L)                                                            UNZIP(1L)
 
 NAME
@@ -29,15 +28,15 @@ DESCRIPTION
        long option.
 
        To display the basic built-in help, use the command:
-       unzip -h
+           unzip -h
        To display the extended built-in help, use the command:
-       unzip -hh
+           unzip -hh
        The built-in help may be more current than this manual page, especially
        between full product releases.
 
        To  list  all available options for a particular UnZip program, use the
        command:
-       unzip --show-options
+           unzip --show-options
        This report will not include any options which are  available  only  on
        other  system types, or options which must be enabled at build-time but
        were not enabled in the particular UnZip program being used.
@@ -102,10 +101,24 @@ ARGUMENTS
               that would otherwise be expanded or modified  by  the  operating
               system or shell.
 
-              Note  that  on  VMS systems, the wildcard rules used for archive
-              members are the same as on Unix systems.  VMS wildcard rules are
-              used  only for archive file specifications, not for archive mem-
-              ber patterns.
+              On Mac OS X systems, file attributes, a resource fork, and simi-
+              lar data may be stored in a separate AppleDouble archive  member
+              which  has  a  "._" name prefix.  When restoring files with such
+              attributes (no -J/--junk-attrs option, and the destination  file
+              system supports such attributes), if the user specifies only the
+              main archive member, then UnZip should automatically handle  the
+              corresponding AppleDouble archive member.  If -J/--junk-attrs is
+              specified, or the destination file system does not support  such
+              file  attributes  (so that an AppleDouble archive member will be
+              stored as a separate file), then AppleDouble archive members are
+              not  handled  automatically,  and the user must specify patterns
+              which explicitly include any desired  AppleDouble  archive  mem-
+              bers.
+
+              On  VMS systems, the wildcard rules used for archive members are
+              the same as on Unix systems.  VMS wildcard rules are  used  only
+              for  archive  file  specifications,  not for archive member pat-
+              terns.
 
 OPTIONS
        UnZip's usage summary ("unzip -h") is kept short to try to  accommodate
@@ -121,7 +134,7 @@ OPTIONS (ZipInfo Mode)
               a description of those options.
 
 OPTIONS (Primary Mode)
-       Options  in this group (-c -f -h -l -p -t -T -u -v -z) specify the pri-
+       Options  in this group (-c -f -h -l -p -T -t -u -v -z) specify the pri-
        mary mode of operation of  UnZip.   Only  one  of  these  primary  mode
        options may be specified.
 
@@ -140,17 +153,18 @@ OPTIONS (Primary Mode)
               the  disk  copies.  By default UnZip queries before overwriting,
               but the -o option may be used to  suppress  the  queries.   Note
               that  on  many  operating systems, the TZ (timezone) environment
-              variable must be set correctly in order for -f and  -u  to  work
-              properly.   (On Unix the variable is usually set automatically.)
-              The reasons for this are somewhat subtle but have to do with the
-              differences  between  DOS-format  file times (always local time)
-              and Unix-format times (always UTC) and the necessity to  compare
-              the  two.  A typical TZ value is "PST8PDT" (US Pacific time with
-              automatic adjustment for Daylight Saving Time).
+              variable must be set correctly in  order  for  -f/--freshen  and
+              -u/--update  to work properly.  (On Unix the variable is usually
+              set automatically.)  The reasons for this  are  somewhat  subtle
+              but  have  to  do  with  the differences between DOS-format file
+              times (always local time) and Unix-format times (always UTC) and
+              the  necessity  to  compare  the  two.   A  typical  TZ value is
+              "PST8PDT" (US Pacific time with automatic  adjustment  for  Day-
+              light Saving Time).
 
        -h
        --help
-              Primary Mode.  Display brief (roughly 24 lines)  usage  instruc-
+              Primary  Mode.   Display brief (roughly 24 lines) usage instruc-
               tions.  See also -hh.
 
        -hh
@@ -162,36 +176,36 @@ OPTIONS (Primary Mode)
        --list
               Primary Mode.  List archive members.  By default, a brief format
               is used, which includes the following items: member name, uncom-
-              pressed file size ("Length"), and modification date-time of  the
+              pressed  file size ("Length"), and modification date-time of the
               member.  A summary is included at the end of the report, showing
-              total size and count for all the members in the report.   Speci-
+              total  size and count for all the members in the report.  Speci-
               fying a member list limits the report to those members.
 
-              Adding  -v  (--verbose)  to  an "unzip -l" command line adds the
-              following items to the report:  compression  method,  compressed
+              Adding -v (--verbose) to an "unzip -l"  command  line  adds  the
+              following  items  to  the report: compression method, compressed
               size ("Size"), compression ratio, and 32-bit CRC.
 
-              In  contrast  to some other programs, UnZip does not include the
-              12-byte encryption header in the compressed size  values  for  a
-              Traditionally  encrypted member.  Therefore, compressed size and
+              In contrast to some other programs, UnZip does not  include  the
+              12-byte  encryption  header  in the compressed size values for a
+              Traditionally encrypted member.  Therefore, compressed size  and
               compression  ratio  figures  are  independent  of  the  member's
-              encryption  status and show the correct compression performance.
-              (The complete size of the encrypted compressed data  stream  for
+              encryption status and show the correct compression  performance.
+              (The  complete  size of the encrypted compressed data stream for
               archive members is reported by the more verbose ZipInfo reports.
               See the separate zipinfo manual page.)
 
               If UnZip was built with OS2_EAS enabled, then the -l report also
-              includes  the sizes of stored OS/2 extended attributes (EAs) and
+              includes the sizes of stored OS/2 extended attributes (EAs)  and
               OS/2 access control lists (ACLs).  In addition, the archive com-
               ment and individual member comments (if any) are displayed.
 
               If a file was archived from a single-case file system (for exam-
-              ple, the old MS-DOS FAT file  system)  and  the  -L  option  was
-              given,  the filename is converted to lowercase and is shown pre-
+              ple,  the  old  MS-DOS  FAT  file  system) and the -L option was
+              given, the filename is converted to lowercase and is shown  pre-
               fixed with a caret (^).
 
-              Note: If only -v (--verbose) is specified with an archive  name,
-              then  UnZip  acts  as  if "-l -v" were specified, and a detailed
+              Note:  If only -v (--verbose) is specified with an archive name,
+              then UnZip acts as if "-l -v" were  specified,  and  a  detailed
               listing is generated.
 
        --license
@@ -199,52 +213,52 @@ OPTIONS (Primary Mode)
 
        -p
        --pipe-to-stdout
-              Primary Mode.  Extract files to stdout (pipe).  Only the  actual
-              file  data for the members are sent to stdout (no file names, or
+              Primary  Mode.  Extract files to stdout (pipe).  Only the actual
+              file data for the members are sent to stdout (no file names,  or
               other information, as would be displayed with -c), and the files
-              are  always  extracted in binary format, just as they are stored
+              are always extracted in binary format, just as they  are  stored
               (no line-ending or ASCII-EBCDIC conversions).
 
        -T
        --timestamp-new
-              Primary Mode.  Set the timestamp on the archive(s)  to  that  of
-              the  newest  file  in  each  one.  This corresponds to Zip's -go
-              option, except that it can be used  on  wildcard  archives  (for
+              Primary  Mode.   Set  the timestamp on the archive(s) to that of
+              the newest file in each one.   This  corresponds  to  Zip's  -go
+              option,  except  that  it  can be used on wildcard archives (for
               example, "unzip -T '*.zip'") and is much faster.
 
        -t
        --test
-              Primary  Mode.   Test  archive members.  Testing means that each
+              Primary Mode.  Test archive members.  Testing  means  that  each
               archive member is extracted in memory (expanding and decrypting,
-              as  needed),  but  not  written  to  a  file.  The resulting CRC
+              as needed), but not  written  to  a  file.   The  resulting  CRC
               (cyclic redundancy check, an enhanced checksum) of the extracted
               data is then compared with the original file's stored CRC value,
               and an error message is emitted if a CRC mismatch is detected.
 
-              Adding -v to -t adds some diagnostic information to  the  report
+              Adding  -v  to -t adds some diagnostic information to the report
               for archive members with LZMA or PPMd compression.
 
        -u
        --update
-              Primary  mode.   Update  existing  files  and create new ones if
-              needed.  This mode performs the same  function  as  the  Freshen
-              (-f)  mode,  extracting  (with  query) files that are newer than
-              those with the same name on disk, but  it  also  extracts  those
-              files  that  do  not  already exist on disk.  See -f, above, for
+              Primary mode.  Update existing files  and  create  new  ones  if
+              needed.   This  mode  performs  the same function as the Freshen
+              (-f) mode, extracting (with query) files  that  are  newer  than
+              those  with  the  same  name on disk, but it also extracts those
+              files that do not already exist on disk.   See  -f,  above,  for
               information on setting the timezone properly.
 
        -v
        --verbose
-              Primary mode (when alone) or option.  When  used  as  a  primary
+              Primary  mode  (when  alone)  or option.  When used as a primary
               mode (alone), and no archive is specified, an "unzip -v" command
-              generates a report showing the program version,  build  options,
+              generates  a  report showing the program version, build options,
               and relevant envrironment variables.
 
-              When  used with some other primary mode option, -v can make out-
+              When used with some other primary mode option, -v can make  out-
               put more verbose.
 
-              If no other primary mode is specified, and an archive is  speci-
-              fied,  then  UnZip  acts  as  if  "-l  -v" were specified, and a
+              If  no other primary mode is specified, and an archive is speci-
+              fied, then UnZip acts as  if  "-l  -v"  were  specified,  and  a
               detailed listing is generated.  See -l.
 
        -z
@@ -254,116 +268,116 @@ OPTIONS (Primary Mode)
 OPTIONS (Ordinary)
        -2
        --force-ods2
-              [VMS] Convert extracted file  names  to  ODS2-compatible  names,
-              even  on  an  ODS5  file system.  By default, if the destination
-              file system is ODS5, case is preserved, and extended  file  name
+              [VMS]  Convert  extracted  file  names to ODS2-compatible names,
+              even on an ODS5 file system.  By  default,  if  the  destination
+              file  system  is ODS5, case is preserved, and extended file name
               characters are caret-escaped as needed, while if the destination
-              file system is ODS2, ODS2-invalid  characters  are  replaced  by
+              file  system  is  ODS2,  ODS2-invalid characters are replaced by
               underscores.
 
        -A
        --api-help
-              [OS/2,  Unix  DLL] Print extended help for the DLL's application
+              [OS/2, Unix DLL] Print extended help for the  DLL's  application
               programming interface (API).
 
        -a
        --ascii
               Convert text files.  Ordinarily, all files are extracted exactly
-              as  they  are stored, byte-for-byte.  With -a, line endings in a
-              text file are adjusted to the local  standard  as  the  file  is
+              as they are stored, byte-for-byte.  With -a, line endings  in  a
+              text  file  are  adjusted  to  the local standard as the file is
               extracted.  When appropriate, ASCII<-->EBCDIC conversion is also
               done.
 
               Zip  (or  a  similar  archiving  program)  identifies  files  as
               "binary" or "text" when they are archived.  (A short-format Zip-
-              Info report denotes a binary file with a "b", and  a  text  file
+              Info  report  denotes  a binary file with a "b", and a text file
               with a "t".)  Zip's identification of text files may not be per-
-              fect, so UnZip prints "[binary]" or "[text]" as a  visual  check
-              for  each  file  it extracts with -a.  The -aa option forces all
+              fect,  so  UnZip prints "[binary]" or "[text]" as a visual check
+              for each file it extracts with -a.  The -aa  option  forces  all
               files to be extracted (and converted) as text, regardless of the
               supposed file type.
-
-              [VMS]  On VMS, for archives with VMS attribute information (made
-              with "zip -V" or "ZIP /VMS"),  files  are  always  created  with
-              their   original  record  formats.   For  archives  without  VMS
-              attribute information (not made with  "zip -V"  or  "ZIP /VMS"),
-              all  files  are  normally  created with Stream_LF record format.
-              With -a, text files are normally  created  with  variable-length
-              record format, but adding -S gives them Stream_LF record format.
-              With -aa, all files are treated as text files.  See also -b  and
-              -S.
-
-       -B
-       --backup
-              [when  built with UNIXBACKUP enabled] Save a backup copy of each
-              overwritten file.  The backup file gets the name of  the  target
-              file with a tilde and optionally a unique sequence number (up to
-              5 digits) appended.  The sequence number  is  appended  whenever
-              another  file  with the original name plus tilde already exists.
-              When used together with the "overwrite all" option, -o, numbered
-              backup  files are never created.  In this case, all backup files
-              are named as the original  file  with  an  appended  tilde,  and
-              existing  backup files are deleted without notice.  This feature
-              works similarly to the default  behavior  of  emacs(1)  in  many
-              locations.
-
-              Example: the old copy of "foo" is renamed to "foo~".
-
-              Warning:  Users should be aware that the -B option does not pre-
-              vent loss of existing data under all circumstances.   For  exam-
-              ple, when UnZip is run in overwrite-all mode, an existing "foo~"
-              file is deleted before UnZip attempts to rename "foo" to "foo~".
-              When this rename attempt fails (because of a file lock, insuffi-
-              cient privileges, or any other reason), the extraction of "foo~"
-              gets cancelled, but the old backup file is already lost.  A sim-
-              ilar scenario takes place when the  sequence  number  range  for
-              numbered backup files gets exhausted (99999, or 65535 for 16-bit
-              systems).  In this  case,  the  backup  file  with  the  maximum
-              sequence  number  is deleted and replaced by the new backup ver-
-              sion without notice.
-
-       -b
-       --binary
-              [Tandem, VMS] Selects the file record format used when  extract-
-              ing  binary  files.  -b may conflict or interact with -a in dif-
-              ferent ways on different system types.  -b is ignored on systems
-              other than Tandem and VMS.
-
-              Zip  (or  a  similar  archiving  program)  identifies  files  as
-              "binary" or "text" when they are archived.  (A short-format Zip-
-              Info  report  denotes  a binary file with a "b", and a text file
-              with a "t".)
-
-              [Tandem] Force the creation files with filecode type  180  ('C')
-              when extracting archive members marked as "text". (On Tandem, -a
-              is enabled by default, see above).
 
               [VMS] On VMS, for archives with VMS attribute information  (made
               with  "zip -V"  or  "ZIP /VMS"),  files  are always created with
               their  original  record  formats.   For  archives  without   VMS
               attribute  information  (not  made with "zip -V" or "ZIP /VMS"),
-              files are normally created with Stream_LF record  format.   With
-              -b,  binary files are created with fixed-length, 512-byte record
-              format.  With -bb, all files are treated as binary files.   When
-              extracting  to  standard output (-c or -p option in effect), the
-              default conversion of text record  delimiters  is  disabled  for
+              all files are normally created  with  Stream_LF  record  format.
+              With  -a,  text  files are normally created with variable-length
+              record format, but adding -S gives them Stream_LF record format.
+              With  -aa, all files are treated as text files.  See also -b and
+              -S.
+
+       -B
+       --backup
+              [when built with UNIXBACKUP enabled] Save a backup copy of  each
+              overwritten  file.   The backup file gets the name of the target
+              file with a tilde and optionally a unique sequence number (up to
+              5  digits)  appended.   The sequence number is appended whenever
+              another file with the original name plus tilde  already  exists.
+              When used together with the "overwrite all" option, -o, numbered
+              backup files are never created.  In this case, all backup  files
+              are  named  as  the  original  file  with an appended tilde, and
+              existing backup files are deleted without notice.  This  feature
+              works  similarly  to  the  default  behavior of emacs(1) in many
+              locations.
+
+              Example: the old copy of "foo" is renamed to "foo~".
+
+              Warning: Users should be aware that the -B option does not  pre-
+              vent  loss  of existing data under all circumstances.  For exam-
+              ple, when UnZip is run in overwrite-all mode, an existing "foo~"
+              file is deleted before UnZip attempts to rename "foo" to "foo~".
+              When this rename attempt fails (because of a file lock, insuffi-
+              cient privileges, or any other reason), the extraction of "foo~"
+              gets cancelled, but the old backup file is already lost.  A sim-
+              ilar  scenario  takes  place  when the sequence number range for
+              numbered backup files gets exhausted (99999, or 65535 for 16-bit
+              systems).   In  this  case,  the  backup  file  with the maximum
+              sequence number is deleted and replaced by the new  backup  ver-
+              sion without notice.
+
+       -b
+       --binary
+              [Tandem,  VMS] Selects the file record format used when extract-
+              ing binary files.  -b may conflict or interact with -a  in  dif-
+              ferent ways on different system types.  -b is ignored on systems
+              other than Tandem and VMS.
+
+              Zip  (or  a  similar  archiving  program)  identifies  files  as
+              "binary" or "text" when they are archived.  (A short-format Zip-
+              Info report denotes a binary file with a "b", and  a  text  file
+              with a "t".)
+
+              [Tandem]  Force  the creation files with filecode type 180 ('C')
+              when extracting archive members marked as "text". (On Tandem, -a
+              is enabled by default, see above).
+
+              [VMS]  On VMS, for archives with VMS attribute information (made
+              with "zip -V" or "ZIP /VMS"),  files  are  always  created  with
+              their   original  record  formats.   For  archives  without  VMS
+              attribute information (not made with  "zip -V"  or  "ZIP /VMS"),
+              files  are  normally created with Stream_LF record format.  With
+              -b, binary files are created with fixed-length, 512-byte  record
+              format.   With -bb, all files are treated as binary files.  When
+              extracting to standard output (-c or -p option in  effect),  the
+              default  conversion  of  text  record delimiters is disabled for
               binary files (with -b), or for all files (with -bb).
 
        -C
        --ignore-case    ([CMS, MVS] --CMS-MVS-lower)
-              Use  case-insensitive name matching for names in the member list
-              and the  -x  excluded-member  list  on  the  command  line.   By
+              Use case-insensitive name matching for names in the member  list
+              and  the  -x  excluded-member  list  on  the  command  line.  By
               default, case-sensitive matching is done.  For example, specify-
               ing "makefile" on the command line will match only "makefile" in
               the archive, not "Makefile" or "MAKEFILE".  On many systems, the
-              local file system is case-insensitive, so case-insensitive  name
+              local  file system is case-insensitive, so case-insensitive name
               matching would be more natural.  With -C, "makefile" would match
               "makefile", "Makefile", or "MAKEFILE".
 
-              -C does not affect the search for the ZIP archive  file(s),  nor
+              -C  does  not affect the search for the ZIP archive file(s), nor
               the matching of archive members to existing files on the extrac-
-              tion path.  So, on a  case-sensitive  file  system,  UnZip  will
-              never  try  to  overwrite  a file "FOO" when extracting a member
+              tion  path.   So,  on  a  case-sensitive file system, UnZip will
+              never try to overwrite a file "FOO"  when  extracting  a  member
               named "foo"!
 
        -c
@@ -373,62 +387,62 @@ OPTIONS (Ordinary)
 
        -D
        --dir-timestamps
-              Control  timestamps  on  extracted  files  and  directories.  By
-              default, UnZip restores timestamps for extracted files, but  not
-              for  directories  it  creates.  Specifying -D tells UnZip not to
-              restore any timestamps.  Specifying -D- tells UnZip  to  restore
-              timestamps  for  directories  as well as other items.  -D- works
-              only on systems that support setting timestamps for  directories
-              (currently  ATheOS,  BeOS,  MacOS,  OS/2, Unix, VMS, Win32).  On
+              Control timestamps  on  extracted  files  and  directories.   By
+              default,  UnZip restores timestamps for extracted files, but not
+              for directories it creates.  Specifying -D tells  UnZip  not  to
+              restore  any  timestamps.  Specifying -D- tells UnZip to restore
+              timestamps for directories as well as other  items.   -D-  works
+              only  on systems that support setting timestamps for directories
+              (currently ATheOS, BeOS, MacOS, OS/2,  Unix,  VMS,  Win32).   On
               other systems, -D- has no effect.
 
-              [Non-VMS] Timestamp restoration behavior changed  between  UnZip
-              versions  6.00  and 6.10.  The following table shows the effects
+              [Non-VMS]  Timestamp  restoration behavior changed between UnZip
+              versions 6.00 and 6.10.  The following table shows  the  effects
               of various -D options for both versions.
 
-                     UnZip version      |
-                    6.00    |   6.10    | Restore timestamps on:
-                 -----------+-----------+------------------------
-                     -DD    |    -D     | Nothing.
-                     -D     | (default) | Files, not directories.
-                  (default) |    -D-    | Files and directories.
+                         UnZip version      |
+                        6.00    |   6.10    | Restore timestamps on:
+                     -----------+-----------+------------------------
+                         -DD    |    -D     | Nothing.
+                         -D     | (default) | Files, not directories.
+                      (default) |    -D-    | Files and directories.
 
-              [VMS] The old behavior on VMS was the same as the  new  behavior
+              [VMS]  The  old behavior on VMS was the same as the new behavior
               on all systems.  (The old negated --D option is now -D-, because
               of changes to the command-line parser.)
 
        -d dest_dir
        --extract-dir dest_dir
-              Specifies a  destination  directory  for  extracted  files.   By
+              Specifies  a  destination  directory  for  extracted  files.  By
               default, files are extracted (and subdirectories created) in the
-              current directory.  With -d dest_dir, extraction  is  done  into
+              current  directory.   With  -d dest_dir, extraction is done into
               the specified directory, instead.
 
-              The  option  and directory may be concatenated without any white
-              space between them, but this may cause normal shell behavior  to
-              be  suppressed.  For example, "-d ~" (tilde) is expanded by Unix
-              shells into the name of the user's home directory, but "-d~"  is
+              The option and directory may be concatenated without  any  white
+              space  between them, but this may cause normal shell behavior to
+              be suppressed.  For example, "-d ~" (tilde) is expanded by  Unix
+              shells  into the name of the user's home directory, but "-d~" is
               treated as a literal "~" subdirectory of the current directory.
 
-              [VMS]  On VMS, only a VMS-style device:[directory] specification
+              [VMS] On VMS, only a VMS-style device:[directory]  specification
               is permitted.
 
        -E
        --mac-efs
-              [MacOS (pre-OS-X)] Display contents of MacOS extra field  during
+              [MacOS (pre-OS-X)]  Display contents of MacOS extra field during
               restore operation.
 
        -F
        --keep-nfs
-              [Acorn]  Suppress  removal of NFS filetype extension from stored
+              [Acorn] Suppress removal of NFS filetype extension  from  stored
               filenames.
 
-              [non-Acorn systems supporting long filenames with embedded  com-
-              mas,  and  only if compiled with ACORN_FTYPE_NFS defined] Trans-
-              late filetype information from ACORN RISC OS extra field  blocks
-              into  a NFS filetype extension and append it to the names of the
-              extracted files.  (When the stored filename appears  already  to
-              have  an  appended NFS filetype extension, it is replaced by the
+              [non-Acorn  systems supporting long filenames with embedded com-
+              mas, and only if compiled with ACORN_FTYPE_NFS  defined]  Trans-
+              late  filetype information from ACORN RISC OS extra field blocks
+              into a NFS filetype extension and append it to the names of  the
+              extracted  files.   (When the stored filename appears already to
+              have an appended NFS filetype extension, it is replaced  by  the
               info from the extra field.)
 
        -f
@@ -438,12 +452,12 @@ OPTIONS (Ordinary)
 
        -h
        --help
-              Primary  Mode.   Display brief (roughly 24 lines) usage instruc-
+              Primary Mode.  Display brief (roughly 24 lines)  usage  instruc-
               tions.  For details, see Primary Mode options.
 
        -hh
        --long-help
-              Primary  Mode.   Display  complete  usage   instructions.    For
+              Primary   Mode.    Display  complete  usage  instructions.   For
               details, see Primary Mode options.
 
        -I char_set
@@ -452,57 +466,91 @@ OPTIONS (Ordinary)
 
        -i
        --no-mac-ef-names
-              [MacOS (pre-OS-X)]   Ignore  filenames  stored  in  MacOS  extra
-              fields.  Instead, the most compatible  filename  stored  in  the
+              [MacOS (pre-OS-X)]  Ignore  filenames  stored  in  MacOS   extra
+              fields.   Instead,  the  most  compatible filename stored in the
               generic part of the member's header is used.
 
        -J
        --junk-attrs
-              [BeOS]  Junk  file  attributes.  The file's BeOS file attributes
+              [BeOS] Junk file attributes.  The file's  BeOS  file  attributes
               are not restored, only the file's data.
 
-              [MacOS] Ignore MacOS extra fields.  All Macintosh-specific  info
-              is skipped.  AppleDouble files are restored as separate files.
+              [MacOS (pre-OS-X)] Ignore Mac OS extra fields.
+
+              [Mac  OS X] Do no special Mac-specific processing of AppleDouble
+              archive members.  An AppleDouble archive member is restored as a
+              separate "._name" file, as it would be on a non-Mac file system.
+
+                  Note that "-J" is not equivalent to
+                  "-Je -Jf -Jr".  With "-J", an AppleDouble archive
+                  member is restored as a separate "._name" file, as it would be on a
+                  non-Mac file system.  With "-Je -Jf -Jr", all the data in an
+                  AppleDouble archive member are ignored, so the data fork file is
+                  restored with no extended attributes (-Je), no Finder info
+                  (-Jf), and no resource fork (-Jr); no "._name" file is
+                  created.
+               .PP -Je
+       --junk-extattr
+              [Mac  OS  X]  Ignore  all  Mac OS extended attributes.  Extended
+              attribute processing is available on Mac OS X  10.4  and  later.
+              See also -J, -Jf, -Jq, and -Jr.
+
+       -Jf
+       --junk-finder
+              [Mac  OS  X]  Ignore Mac OS Finder info.  See also -J, -Je, -Jq,
+              and -Jr.
+
+       -Jq
+       --junk-qtn
+              [Mac OS X] Ignore Mac OS X  Quarantine  ("com.apple.quarantine")
+              extended  attribute.   Use  "-Je",  to ignore this and all other
+              extended attributes.  Extended attribute processing is available
+              on Mac OS X 10.4 and later.  See also -J, -Je, -Jf, and -Jr.
+
+       -Jr
+       --junk-rsrc
+              [Mac  OS X] Ignore Mac OS Resource fork.  See also -J, -Je, -Jf,
+              and -Jq.
 
        -j[=depth]
        --junk-dirs[=depth]
-              Junk  directories  on  extracted  files.  With -j, all directory
-              information is stripped from an  archive  member  name,  so  all
-              files  are  extracted into the destination directory.  (See also
+              Junk directories on extracted files.   With  -j,  all  directory
+              information  is  stripped  from  an  archive member name, so all
+              files are extracted into the destination directory.   (See  also
               -d.)
 
               If a depth (=depth, where depth is a positive integer) is speci-
               fied, then that number of directory levels will be stripped from
-              an archive member name.  For example,  an  archive  member  like
-              "a/b/c/d/ee.txt"     would     normally    be    extracted    as
-              "a/b/c/d/ee.txt".  With -j, it would be extracted  as  "ee.txt".
-              With  -j=2, the first two directory levels would be stripped, so
+              an  archive  member  name.   For example, an archive member like
+              "a/b/c/d/ee.txt"    would    normally    be     extracted     as
+              "a/b/c/d/ee.txt".   With  -j, it would be extracted as "ee.txt".
+              With -j=2, the first two directory levels would be stripped,  so
               it would be extracted as "c/d/ee.txt".
 
        --jar
        Treat archive(s) as Java JAR.  Over-simplification in Java JAR archives
-       can  cause UnZip to transform UTF-8 file names according to inappropri-
-       ate (MS-DOS) rules, yielding corrupt names on  extracted  files  (typi-
-       cally  those with character codes 128-255).  Archives containing a Java
-       "CAFE" extra field should be detected automatically, and  handled  cor-
-       rectly,  but not all JAR archives include that extra field.  Specifying
+       can cause UnZip to transform UTF-8 file names according to  inappropri-
+       ate  (MS-DOS)  rules,  yielding corrupt names on extracted files (typi-
+       cally those with character codes 128-255).  Archives containing a  Java
+       "CAFE"  extra  field should be detected automatically, and handled cor-
+       rectly, but not all JAR archives include that extra field.   Specifying
        --jar tells UnZip to expect UTF-8 file names, regardless of whether the
        archive contains a "CAFE" extra field.
        -K
        --keep-s-attrs
               [AtheOS, BeOS, Unix] Retain SUID/SGID/Tacky permission bits.  By
-              default, these permission bits are cleared,  for  security  rea-
+              default,  these  permission  bits are cleared, for security rea-
               sons.
 
        -k
        --keep-permissions
-              [AtheOS,  BeOS,  Unix,  VMS] Control how archived permissions or
+              [AtheOS, BeOS, Unix, VMS] Control how  archived  permissions  or
               protections are restored on extracted files and directories.
 
-              By default, archived permissions are restored with some  limita-
-              tions.   On  AtheOS,  BeOS, and Unix, the current umask value is
-              applied (to the normal user/group/other permissions).   On  VMS,
-              the  current  default  protection  is  applied  to the UIC-based
+              By  default, archived permissions are restored with some limita-
+              tions.  On AtheOS, BeOS, and Unix, the current  umask  value  is
+              applied  (to  the normal user/group/other permissions).  On VMS,
+              the current default  protection  is  applied  to  the  UIC-based
               (SOGW) protections.
 
               With -k, the archived permissions are restored without regard to
@@ -513,8 +561,8 @@ OPTIONS (Ordinary)
               umask or VMS default protection is effective.  (On VMS, directo-
               ries are always created without any Delete access.)
 
-              On AtheOS, BeOS, and Unix, the SUID/SGID/Tacky  permission  bits
-              are  controlled  by  the -K/--keep-s-attrs option, regardless of
+              On  AtheOS,  BeOS, and Unix, the SUID/SGID/Tacky permission bits
+              are controlled by the -K/--keep-s-attrs  option,  regardless  of
               the -k/--keep-permissions setting.
 
        -ka
@@ -523,67 +571,67 @@ OPTIONS (Ordinary)
 
        -L
        --lowercase-names
-              Convert to lowercase any filename originating on  an  uppercase-
+              Convert  to  lowercase any filename originating on an uppercase-
               only operating system or file system.  (This was UnZip's default
-              behavior in versions before 5.11.  The current default  behavior
-              is  the  same as the old behavior with the -U option.  -U is now
+              behavior  in versions before 5.11.  The current default behavior
+              is the same as the old behavior with the -U option.  -U  is  now
               used for another purpose.)
 
-              Depending on the archiver, files archived from single-case  file
-              systems  (old  MS-DOS FAT, VMS ODS2, and so on) may be stored as
-              all-uppercase names; this  can  be  ugly  or  inconvenient  when
+              Depending  on the archiver, files archived from single-case file
+              systems (old MS-DOS FAT, VMS ODS2, and so on) may be  stored  as
+              all-uppercase  names;  this  can  be  ugly  or inconvenient when
               extracting to a case-preserving file system such as OS/2 HPFS or
-              a case-sensitive one such as on Unix.  By  default  UnZip  lists
+              a  case-sensitive  one  such as on Unix.  By default UnZip lists
               and extracts such filenames exactly as they're stored (excepting
-              truncation, conversion of unsupported  characters,  an  so  on).
-              With  -L,  the  names  of all files from certain systems will be
-              converted to lowercase. With -LL, all file names will  be  down-
+              truncation,  conversion  of  unsupported  characters, an so on).
+              With -L, the names of all files from  certain  systems  will  be
+              converted  to lowercase.  With -LL, all file names will be down-
               cased, regardless of the originating file system.
 
        -l
        --list
-              Primary  Mode.   List archive members.  For details, see Primary
+              Primary Mode.  List archive members.  For details,  see  Primary
               Mode options.
 
        -M    ([CMS,MVS] Or: -m)
        --more
-              Pipe all output through an internal pager similar  to  the  Unix
-              more(1)  command.   At  the  end of a screenful of output, UnZip
-              pauses with a "--More--"  prompt;  the  next  screenful  may  be
+              Pipe  all  output  through an internal pager similar to the Unix
+              more(1) command.  At the end of a  screenful  of  output,  UnZip
+              pauses  with  a  "--More--"  prompt;  the  next screenful may be
               viewed by pressing the Enter/Return key or the space bar.  UnZip
-              can be terminated by pressing the "Q" key and, on some  systems,
+              can  be terminated by pressing the "Q" key and, on some systems,
               the Enter/Return key.  Unlike Unix more(1), there is no forward-
-              searching or editing capability.  Also, UnZip doesn't notice  if
+              searching  or editing capability.  Also, UnZip doesn't notice if
               long lines wrap at the edge of the screen, effectively resulting
-              in the printing of two or more lines  and  the  likelihood  that
-              some  text  will  scroll  off the top of the screen before being
-              viewed.  If the actual number of lines on the screen can not  be
+              in  the  printing  of  two or more lines and the likelihood that
+              some text will scroll off the top of  the  screen  before  being
+              viewed.   If the actual number of lines on the screen can not be
               determined, 24 lines will be assumed.
 
        -N
        --comment-to-note
               [Amiga] Extract member comments as Amiga filenotes.  Member com-
-              ments are created with the -c option of  Zip,  or  with  the  -N
-              option  of the Amiga port of Zip, which stores filenotes as com-
+              ments  are  created  with  the  -c option of Zip, or with the -N
+              option of the Amiga port of Zip, which stores filenotes as  com-
               ments.
 
        -n
        --never-overwrite
-              When extracting, never overwrite  existing  files.   If  a  file
-              already  exists,  then  skip the extraction of that file without
+              When  extracting,  never  overwrite  existing  files.  If a file
+              already exists, then skip the extraction of  that  file  without
               asking.  See also -o (--overwrite).
 
-              By default, UnZip queries the user before  extracting  any  file
-              that  already exists.  The user may choose to overwrite only the
-              current file, overwrite all files, skip extraction of  the  cur-
-              rent  file, skip extraction of all existing files, or rename the
+              By  default,  UnZip  queries the user before extracting any file
+              that already exists.  The user may choose to overwrite only  the
+              current  file,  overwrite all files, skip extraction of the cur-
+              rent file, skip extraction of all existing files, or rename  the
               current file (choose a new name for the extracted file).
 
-              [VMS] On VMS, the usual query choices are to create a  new  ver-
-              sion  of  an existing file, to skip extraction, or to rename the
+              [VMS]  On  VMS, the usual query choices are to create a new ver-
+              sion of an existing file, to skip extraction, or to  rename  the
               current file.  In the case where an archive member name includes
-              a  version number, and -V ("retain VMS file version numbers") is
-              in effect, then an additional query choice is offered: to  over-
+              a version number, and -V ("retain VMS file version numbers")  is
+              in  effect, then an additional query choice is offered: to over-
               write the existing file.
 
        -O char_set
@@ -593,43 +641,43 @@ OPTIONS (Ordinary)
        -o
        --overwrite
               When extracting, always overwrite existing files without prompt-
-              ing.  This is a dangerous option, so use it with care.   (It  is
-              often  used  with  -f, however, and is the only way to overwrite
+              ing.   This  is a dangerous option, so use it with care.  (It is
+              often used with -f, however, and is the only  way  to  overwrite
               directory EAs on OS/2.)  See also -n (--never-overwrite).
 
-              By default, UnZip queries the user before  extracting  any  file
+              By  default,  UnZip  queries the user before extracting any file
               that already exists.
 
-              [Non-VMS]  On  non-VMS systems, the user may choose to overwrite
-              only the current file, overwrite all files, skip  extraction  of
-              the  current  file,  skip  extraction  of all existing files, or
-              rename the current file (choose a new  name  for  the  extracted
+              [Non-VMS] On non-VMS systems, the user may choose  to  overwrite
+              only  the  current file, overwrite all files, skip extraction of
+              the current file, skip extraction  of  all  existing  files,  or
+              rename  the  current  file  (choose a new name for the extracted
               file).
 
-              [VMS]  On  VMS, the usual query choices are to create a new ver-
-              sion of an existing file, to skip extraction, or to  rename  the
+              [VMS] On VMS, the usual query choices are to create a  new  ver-
+              sion  of  an existing file, to skip extraction, or to rename the
               current file.  In the case where an archive member name includes
-              a version number, and -V ("retain VMS file version numbers")  is
-              in  effect, then an additional query choice is offered: to over-
+              a  version number, and -V ("retain VMS file version numbers") is
+              in effect, then an additional query choice is offered: to  over-
               write the existing file.  In this case, -o selects the "new ver-
-              sion"  choice,  and  -oo  (or  "-o  -o") selects the "overwrite"
+              sion" choice, and -oo  (or  "-o  -o")  selects  the  "overwrite"
               choice.
 
        -P password
        --password password
-              Use password to decrypt  encrypted  archive  members  (if  any).
-              THIS  IS  INSECURE!   Many  multi-user operating systems provide
-              ways for any user to see the current command line of  any  other
-              user.   Even  on stand-alone systems, there is always the threat
+              Use  password  to  decrypt  encrypted  archive members (if any).
+              THIS IS INSECURE!  Many  multi-user  operating  systems  provide
+              ways  for  any user to see the current command line of any other
+              user.  Even on stand-alone systems, there is always  the  threat
               of over-the-shoulder peeking.  Storing the plaintext password as
-              part  of  a command line in an automated script can be even less
-              secure,  Whenever possible,  use  the  non-echoing,  interactive
-              prompt  to  enter passwords.  Where security is truly important,
+              part of a command line in an automated script can be  even  less
+              secure,   Whenever  possible,  use  the non-echoing, interactive
+              prompt to enter passwords.  Where security is  truly  important,
               use a strong encryption method, such as AES, instead of the rel-
-              atively  weak encryption provided by Traditional ZIP encryption.
-              Or, use an external encryption program, such  as  GnuPG,  before
+              atively weak encryption provided by Traditional ZIP  encryption.
+              Or,  use  an  external encryption program, such as GnuPG, before
               archiving the file.  (Note that Zip will probably not be able to
-              do significant compression on a  file  which  has  already  been
+              do  significant  compression  on  a  file which has already been
               encrypted.)
 
        -p
@@ -639,11 +687,11 @@ OPTIONS (Ordinary)
 
        -q
        --quiet
-              Perform operations  quietly.   (-qq:  even  more  quietly).   By
-              default,  UnZip prints the names of the files it's extracting or
-              testing, the extraction methods, any member or archive  comments
-              that  may  be stored in the archive, and possibly a summary when
-              finished with each archive.   The  -q[q]  options  suppress  the
+              Perform  operations  quietly.   (-qq:  even  more  quietly).  By
+              default, UnZip prints the names of the files it's extracting  or
+              testing,  the extraction methods, any member or archive comments
+              that may be stored in the archive, and possibly a  summary  when
+              finished  with  each  archive.   The  -q[q] options suppress the
               printing of some or all of these messages.
 
        -r
@@ -653,103 +701,103 @@ OPTIONS (Ordinary)
        -S
        --streamlf
               [VMS] Use Stream_LF record format when converting extracted text
-              files (-a, -aa), instead of  the  text-file  default,  variable-
+              files  (-a,  -aa),  instead  of the text-file default, variable-
               length record format.
 
-              [VMS]  On VMS, for archives with VMS attribute information (made
-              with "zip -V" or "ZIP /VMS"),  files  are  always  created  with
-              their   original  record  formats.   For  archives  without  VMS
-              attribute information (not made with  "zip -V"  or  "ZIP /VMS"),
-              all  files  are  normally  created with Stream_LF record format.
-              With -a, text files are normally  created  with  variable-length
+              [VMS] On VMS, for archives with VMS attribute information  (made
+              with  "zip -V"  or  "ZIP /VMS"),  files  are always created with
+              their  original  record  formats.   For  archives  without   VMS
+              attribute  information  (not  made with "zip -V" or "ZIP /VMS"),
+              all files are normally created  with  Stream_LF  record  format.
+              With  -a,  text  files are normally created with variable-length
               record format, but adding -S gives them Stream_LF record format.
-              With -aa, all files are treated as text files.  See also -a  and
+              With  -aa, all files are treated as text files.  See also -a and
               -b.
 
        -s
        --space-to-uscore
               Convert spaces in filenames to underscores.  Normally, on a sys-
-              tem which allows spaces in filenames, UnZip  extracts  filenames
-              with  spaces  intact (for example, "EA DATA. SF").  Working with
-              such file names can be awkward, however, so -s can  be  used  to
+              tem  which  allows spaces in filenames, UnZip extracts filenames
+              with spaces intact (for example, "EA DATA. SF").   Working  with
+              such  file  names  can be awkward, however, so -s can be used to
               replace spaces with underscores.
 
        -sc
        --show-command
               Show processed command line (options, arguments), and then exit.
 
-              Strictly  speaking  this  is  a  primary-mode  option,  but it's
+              Strictly speaking  this  is  a  primary-mode  option,  but  it's
               intended for use in program development, not for normal use.
 
        -si
        --show-pid
-              [Non-VMS] Show the UnZip program's process ID (pid) before  per-
-              forming  any other work.  This value can then be used in a "kill
+              [Non-VMS]  Show the UnZip program's process ID (pid) before per-
+              forming any other work.  This value can then be used in a  "kill
               -USR1 pid" command to trigger a user-triggered progress report.
 
        -so
        --show-options
               Display all valid program options, then exit.
 
-              Strictly speaking  this  is  a  primary-mode  option,  but  it's
+              Strictly  speaking  this  is  a  primary-mode  option,  but it's
               intended for use in program development, not for normal use.
 
        -T
        --timestamp-new
-              Primary  Mode.   Set  the timestamp on the archive(s) to that of
-              the newest file in each one.   For  details,  see  Primary  Mode
+              Primary Mode.  Set the timestamp on the archive(s)  to  that  of
+              the  newest  file  in  each  one.  For details, see Primary Mode
               options.
 
        -t
        --test
-              Primary  Mode.   Test archive members.  For details, see Primary
+              Primary Mode.  Test archive members.  For details,  see  Primary
               Mode options.
 
        -U
        --unicode
-              [UNICODE_SUPPORT] Control UTF-8 handling.  When  UNICODE_SUPPORT
+              [UNICODE_SUPPORT]  Control UTF-8 handling.  When UNICODE_SUPPORT
               is available, -U forces UnZip to escape all non-ASCII characters
               from UTF-8 coded filenames as "#Uxxxx' (for UCS-2 characters, or
-              "#Lxxxxxx"  for  Unicode  codepoints  needing  3  octets).  This
-              option is provided mainly for debugging,  when  the  fairly  new
+              "#Lxxxxxx" for  Unicode  codepoints  needing  3  octets).   This
+              option  is  provided  mainly  for debugging, when the fairly new
               UTF-8 support is suspected of mangling extracted filenames.
 
-              -UU  disables  the  recognition of UTF-8 encoded filenames.  The
-              handling of filename codings within  UnZip  falls  back  to  the
+              -UU disables the recognition of UTF-8  encoded  filenames.   The
+              handling  of  filename  codings  within  UnZip falls back to the
               behavior of pre-Unicode versions.
 
-              [old,  obsolete  usage]  Leave filenames uppercase if created on
+              [old, obsolete usage] Leave filenames uppercase  if  created  on
               MS-DOS, VMS, and so on.  See -L.
 
        -u
        --update
-              Primary mode.  Update existing files  and  create  new  ones  if
+              Primary  mode.   Update  existing  files  and create new ones if
               needed.  For details, see Primary Mode options.
 
        -V
        --keep-versions
               [Non-CMS-MVS] Retain VMS file version numbers.  VMS files can be
-              stored with a version  number,  in  the  format  "file.type;##",
-              where  "##"  is a positive decimal number.  By default VMS ";##"
-              version numbers are stripped, but this option allows them to  be
+              stored  with  a  version  number,  in the format "file.type;##",
+              where "##" is a positive decimal number.  By default  VMS  ";##"
+              version  numbers are stripped, but this option allows them to be
               retained.  (On file systems that limit filenames to particularly
-              short lengths, the version numbers may be truncated or  stripped
+              short  lengths, the version numbers may be truncated or stripped
               regardless of this option.)
 
               [Non-VMS] Note that before UnZip version 6.10, on a non-VMS sys-
-              tem, a file with a name like "fred;123" would,  by  default,  be
+              tem,  a  file  with a name like "fred;123" would, by default, be
               extracted as "fred", even if the file did not originate on a VMS
-              system (so that ";123" was probably not  really  a  VMS  version
-              number).   Beginning with UnZip version 6.10, the default behav-
-              ior is to strip VMS version numbers only from files  which  were
-              archived  on  a  VMS  system.   To restore the old behavior, and
+              system  (so  that  ";123"  was probably not really a VMS version
+              number).  Beginning with UnZip version 6.10, the default  behav-
+              ior  is  to strip VMS version numbers only from files which were
+              archived on a VMS system.  To  restore  the  old  behavior,  and
               always strip apparent VMS version numbers, explicitly negate the
               option: -V-.
 
-              [VMS]  Note that on VMS, -V affects only version numbers, and is
-              not needed to restore VMS  file  attributes.   Zip's  -V  (/VMS)
-              option  is  required  to store VMS attributes in an archive.  If
-              that was done when an  archive  was  created,  then  UnZip  will
+              [VMS] Note that on VMS, -V affects only version numbers, and  is
+              not  needed  to  restore  VMS  file attributes.  Zip's -V (/VMS)
+              option is required to store VMS attributes in  an  archive.   If
+              that  was  done  when  an  archive  was created, then UnZip will
               always restore those attributes when a file is extracted.
 
        -v
@@ -757,184 +805,184 @@ OPTIONS (Ordinary)
               When used with some primary mode option, -v can make output more
               verbose.  See also Primary Mode options, and -l in particular.
 
-              Note: If only -v (--verbose) is specified with an archive  name,
-              then  UnZip  acts  as  if "-l -v" were specified, and a detailed
+              Note:  If only -v (--verbose) is specified with an archive name,
+              then UnZip acts as if "-l -v" were  specified,  and  a  detailed
               listing is generated.
 
        -W
        --wild-no-span
-              [WILD_STOP_AT_DIR] (Valid when the program was built with the  C
+              [WILD_STOP_AT_DIR]  (Valid when the program was built with the C
               macro WILD_STOP_AT_DIR defined.)  By default, the wildcard char-
               acters "?"  (single-character wildcard) and "*" (multi-character
               wildcard) match any character in a member path/name.  "-W" modi-
-              fies the pattern-matching behavior for archive members  so  that
-              both  "?"   (single-character wildcard) and "*" (multi-character
-              wildcard) do not match the directory  separator  character  "/".
+              fies  the  pattern-matching behavior for archive members so that
+              both "?"  (single-character wildcard) and  "*"  (multi-character
+              wildcard)  do  not  match the directory separator character "/".
               (The two-character sequence "**" acts as a multi-character wild-
-              card that includes the directory separator in its matched  char-
+              card  that includes the directory separator in its matched char-
               acters.)  For example, with "-W":
 
-           "*.c"   matches "foo.c" but not "mydir/foo.c"
-           "**.c"  matches both "foo.c" and "mydir/foo.c"
-           "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
-           "??*/*" matches "ab/foo" and "abc/foo"
-                   but not "a/foo" or "a/b/foo"
+               "*.c"   matches "foo.c" but not "mydir/foo.c"
+               "**.c"  matches both "foo.c" and "mydir/foo.c"
+               "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
+               "??*/*" matches "ab/foo" and "abc/foo"
+                       but not "a/foo" or "a/b/foo"
 
-              This  modified  behavior  is  equivalent to the pattern matching
+              This modified behavior is equivalent  to  the  pattern  matching
               style used by the shells of some of UnZip's supported target OSs
-              (one  example  is Acorn RISC OS).  This option may not be avail-
+              (one example is Acorn RISC OS).  This option may not  be  avail-
               able on systems where the Zip archive's internal directory sepa-
-              rator  character  "/"  is allowed as regular character in native
+              rator character "/" is allowed as regular  character  in  native
               operating system filenames.
 
-              [non-VMS] Currently, UnZip uses the same pattern matching  rules
-              for  both  wildcard archive file name specifications and archive
-              member selection patterns on most  system  types.   For  systems
-              allowing  "/" as regular filename character, the -W option would
+              [non-VMS]  Currently, UnZip uses the same pattern matching rules
+              for both wildcard archive file name specifications  and  archive
+              member  selection  patterns  on  most system types.  For systems
+              allowing "/" as regular filename character, the -W option  would
               not work as expected on a wildcard file name specification.
 
        -X
        --restore-owner
               [NT, OS/2, Unix, VMS, Tandem] Restore owner info (user and group
-              info  (UID/GID)  on  Unix,  UIC  on VMS, or access control lists
-              (ACLs) on certain network-enabled versions of OS/2 (Warp  Server
-              with  IBM LAN Server/Requester 3.0 to 5.0; Warp Connect with IBM
-              Peer 1.0), or security ACLs on Windows NT.)  In most cases  this
-              will  require special system privileges, and doubling the option
-              (-XX) on NT instructs UnZip to use  privileges  for  extraction;
-              but  on  Unix, for example, a user who belongs to several groups
-              can restore files owned by any of those groups, so long  as  the
-              user   IDs  match  the  user's  own.  Note  that  ordinary  file
-              attributes are always restored.  This  option  applies  only  to
-              optional,  extra ownership info available on some operating sys-
+              info (UID/GID) on Unix, UIC on  VMS,  or  access  control  lists
+              (ACLs)  on certain network-enabled versions of OS/2 (Warp Server
+              with IBM LAN Server/Requester 3.0 to 5.0; Warp Connect with  IBM
+              Peer  1.0), or security ACLs on Windows NT.)  In most cases this
+              will require special system privileges, and doubling the  option
+              (-XX)  on  NT  instructs UnZip to use privileges for extraction;
+              but on Unix, for example, a user who belongs to  several  groups
+              can  restore  files owned by any of those groups, so long as the
+              user  IDs  match  the  user's  own.   Note  that  ordinary  file
+              attributes  are  always  restored.   This option applies only to
+              optional, extra ownership info available on some operating  sys-
               tems.  (NT's access control lists do not appear to be especially
-              compatible  with OS/2's, so no attempt is made at cross-platform
-              portability of access privileges.  It is not clear  under  which
+              compatible with OS/2's, so no attempt is made at  cross-platform
+              portability  of  access privileges.  It is not clear under which
               conditions this would ever be useful anyway.)
 
        -x member ...
        --exclude member ...
               An optional list of archive members to be excluded from process-
-              ing.  Because wildcard characters normally match  "/"  directory
-              separators  (for exceptions, see the option -W), this option may
-              be used to exclude any files that are  in  subdirectories.   For
-              example,  "unzip foo *.[ch] -x */*"  would  extract all C source
-              files (*.c, *.h) in the main directory, but none in  any  subdi-
-              rectories.   Without  the  -x  option, all C source files in all
+              ing.   Because  wildcard characters normally match "/" directory
+              separators (for exceptions, see the option -W), this option  may
+              be  used  to  exclude any files that are in subdirectories.  For
+              example, "unzip foo *.[ch] -x */*" would extract  all  C  source
+              files  (*.c,  *.h) in the main directory, but none in any subdi-
+              rectories.  Without the -x option, all C  source  files  in  all
               directories within the archive would be extracted.
 
               When the program sees -x (--exclude) on a command line, it stops
               scanning for options, and treats every succeeding item as an ar-
-              chive member name.  To avoid confusion between member names  and
+              chive  member name.  To avoid confusion between member names and
               command options, it's simplest to specify -x (--exclude) and its
               member list as the last items on a command line.  Alternatively,
-              the  special  name  "@" can be used to terminate the member list
-              (and cause the program to resume scanning  for  options).   That
+              the special name "@" can be used to terminate  the  member  list
+              (and  cause  the  program to resume scanning for options).  That
               is, the following two commands are equivalent:
-                    unzip fred.zip -b -x file1 file2 file3
-                    unzip fred.zip -x file1 file2 file3 @ -b
+                        unzip fred.zip -b -x file1 file2 file3
+                        unzip fred.zip -x file1 file2 file3 @ -b
 
        -Y
        --dot-version
-              [VMS]  Treat  archive member name endings of ".nnn" (where "nnn"
-              is a decimal  number)  as  if  they  were  VMS  version  numbers
-              (";nnn").   (The  default  is to treat them as file types.)  For
+              [VMS] Treat archive member name endings of ".nnn"  (where  "nnn"
+              is  a  decimal  number)  as  if  they  were  VMS version numbers
+              (";nnn").  (The default is to treat them as  file  types.)   For
               example:
-                   "a.b.3" -> "a.b;3"
+                       "a.b.3" -> "a.b;3"
 
        -Z
        --zipinfo-mode
-              ZipInfo mode.  If the first option on the command  line  is  -Z,
-              then  the  program  runs in ZipInfo mode.  Remaining options are
+              ZipInfo  mode.   If  the first option on the command line is -Z,
+              then the program runs in ZipInfo mode.   Remaining  options  are
               interpreted as ZipInfo options.  See the zipinfo manual page for
               a description of those options.
 
        -z
        --zipfile-comment
-              Primary  mode.   Display only the archive comment.  For details,
+              Primary mode.  Display only the archive comment.   For  details,
               see Primary Mode options.
 
        -$
        --volume-labels
-              [MS-DOS, NT, OS/2, VMS] Restore the volume label if the  extrac-
-              tion  medium  is  removable (for example, a diskette).  Doubling
-              the option (-$$) allows fixed media (hard disks) to  be  labeled
+              [MS-DOS,  NT, OS/2, VMS] Restore the volume label if the extrac-
+              tion medium is removable (for example,  a  diskette).   Doubling
+              the  option  (-$$) allows fixed media (hard disks) to be labeled
               as well.  By default, volume labels are ignored.
               [VMS] On VMS, a volume must be allocated, not shared, for a vol-
               ume label to be set.
 
        -/
        --extensions
-              [Acorn] Overrides the extension list supplied by  the  Unzip$Ext
-              environment  variable.   During  extraction, filename extensions
-              that match one of the items in this extension list  are  swapped
+              [Acorn]  Overrides  the extension list supplied by the Unzip$Ext
+              environment variable.  During  extraction,  filename  extensions
+              that  match  one of the items in this extension list are swapped
               in front of the base name of the extracted file.
 
        -:
        --do-double-dots
               [all but Acorn, VM/CMS, MVS, Tandem] Allows UnZip to extract ar-
-              chive members into locations outside of the  current  extraction
+              chive  members  into locations outside of the current extraction
               destination directory (and its subdirectories).
 
-              For  security reasons, UnZip normally removes "parent directory"
-              path components ("../") from the path names of  archive  members
-              as  they  are  extracted.   This safety feature (new for version
+              For security reasons, UnZip normally removes "parent  directory"
+              path  components  ("../") from the path names of archive members
+              as they are extracted.  This safety  feature  (new  for  version
               5.50) prevents UnZip from accidentally writing files to directo-
-              ries  outside  the  current  destination directory tree.  The -:
-              option sets UnZip back to its previous, more  liberal  behavior,
+              ries outside the current destination  directory  tree.   The  -:
+              option  sets  UnZip back to its previous, more liberal behavior,
               allowing exact extraction of archives that use "../" path compo-
-              nents to create multiple directory trees at or above  the  level
+              nents  to  create multiple directory trees at or above the level
               of the destination directory.
 
-              This  option  does  not  enable  writing  explicitly to the root
-              directory ("/").  To achieve this, it is necessary  to  set  the
-              extraction  target  folder  to  "/"  (by  using  an  option like
-              "-d /").  However, when the -: option is specified, it is  still
-              possible  implicitly  to  write  to the root directory if member
+              This option does not  enable  writing  explicitly  to  the  root
+              directory  ("/").   To  achieve this, it is necessary to set the
+              extraction target  folder  to  "/"  (by  using  an  option  like
+              "-d /").   However, when the -: option is specified, it is still
+              possible implicitly to write to the  root  directory  if  member
               paths specifying enough "../" path components.
 
               Use this option with extreme caution.
 
        -^
        --control-in-name
-              [Unix] Allow control characters in file names of  extracted  ZIP
-              archive  members.   On Unix, a file name may contain any (8-bit)
-              character code with the two exceptions  of  "/"  (the  directory
-              delimiter)  and  NUL (0x00, the C string-termination character),
-              unless the specific file system  has  more  restrictive  conven-
-              tions.   Generally,  this allows embedding ASCII control charac-
-              ters or escape sequences in file names.  However,  this  feature
-              allows  the  use of malicious file names which can cause various
-              kinds of bad trouble when displayed on a user's  terminal/emula-
-              tor.   (Even a file name with unprintable but otherwise harmless
+              [Unix]  Allow  control characters in file names of extracted ZIP
+              archive members.  On Unix, a file name may contain  any  (8-bit)
+              character  code  with  the  two exceptions of "/" (the directory
+              delimiter) and NUL (0x00, the C  string-termination  character),
+              unless  the  specific  file  system has more restrictive conven-
+              tions.  Generally, this allows embedding ASCII  control  charac-
+              ters  or  escape sequences in file names.  However, this feature
+              allows the use of malicious file names which can  cause  various
+              kinds  of bad trouble when displayed on a user's terminal/emula-
+              tor.  (Even a file name with unprintable but otherwise  harmless
               characters can cause problems for users.)
 
-              For these reasons, by  default,  UnZip  applies  a  filter  that
-              removes   potentially  dangerous  control  characters  from  the
-              extracted file names.  The -^ option overrides  this  filter  in
-              the  rare  case that embedded filename dangerous control charac-
+              For  these  reasons,  by  default,  UnZip  applies a filter that
+              removes  potentially  dangerous  control  characters  from   the
+              extracted  file  names.   The -^ option overrides this filter in
+              the rare case that embedded filename dangerous  control  charac-
               ters are to be intentionally restored.
 
 ENVIRONMENT OPTIONS
-       UnZip's default  behavior  may  be  modified  by  placing  command-line
-       options  in an environment variable.  This can be done with any option,
-       but it is probably most  useful  options  like  -a  (auto-convert  text
-       files),  -L  (downcase  file names from systems with all uppercase file
+       UnZip's  default  behavior  may  be  modified  by  placing command-line
+       options in an environment variable.  This can be done with any  option,
+       but  it  is  probably  most  useful  options like -a (auto-convert text
+       files), -L (downcase file names from systems with  all  uppercase  file
        names), -C (use case-insensitive name matching), -q (quiet), -o (always
        overwrite), or -n (never overwrite).
 
-              For  UnZip,  the  environment  variable name is UNZIP, except on
-              VMS, where it's UNZIP_OPTS (to avoid conflict  with  a  foreign-
-              command  DCL  symbol, UNZIP).  For similarity with Zip, if UNZIP
+              For UnZip, the environment variable name  is  UNZIP,  except  on
+              VMS,  where  it's  UNZIP_OPTS (to avoid conflict with a foreign-
+              command DCL symbol, UNZIP).  For similarity with Zip,  if  UNZIP
               (UNZIP_OPTS on VMS) is not defined, then UnZip will use UNZIPOPT
               the same way.
 
-              For  ZipInfo ("unzip -Z"), the environment variable name is ZIP-
-              INFO, except on VMS, where it's  ZIPINFO_OPTS.   For  similarity
-              with  Zip, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined, then
+              For ZipInfo ("unzip -Z"), the environment variable name is  ZIP-
+              INFO,  except  on  VMS, where it's ZIPINFO_OPTS.  For similarity
+              with Zip, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined,  then
               ZipInfo will use ZIPINFOOPT the same way.
 
-              For example, to make UnZip act  as  quietly  as  possible,  only
+              For  example,  to  make  UnZip  act as quietly as possible, only
               reporting errors, one could use commands like the following:
 
          Unix Bourne (or similar) shell:
@@ -950,58 +998,58 @@ ENVIRONMENT OPTIONS
               define UNZIP_OPTS "-q -q"       ! Logical name, or
               UNZIP_OPTS = "-q -q"            ! DCL symbol.  (Either works.)
 
-              Environment  options  are treated the same as any other command-
+              Environment options are treated the same as any  other  command-
               line options, except that they are effectively the first options
               on the command line.  To override an environment option, one may
-              use an explicit option to cancel or override it.   For  example,
+              use  an  explicit option to cancel or override it.  For example,
               to override one of the "quiet" flags in the example above, use a
               command like:
-              unzip -q- [other options] archive.zip
+                  unzip -q- [other options] archive.zip
 
-              The leading hyphen is  the  normal  option  character,  and  the
-              trailing  one  negates the option, canceling one level of quiet-
-              ness.  To  cancel  multiple  "quiet"  flags,  use  multiple  -q-
+              The  leading  hyphen  is  the  normal  option character, and the
+              trailing one negates the option, canceling one level  of  quiet-
+              ness.   To  cancel  multiple  "quiet"  flags,  use  multiple -q-
               options:
 
-       unzip -t -q- -q- archive
-       unzip -q- -q- -t archive
+           unzip -t -q- -q- archive
+           unzip -q- -q- -t archive
 
-              Note  that multiple one-character options like "-q" and "-q" can
-              be combined into a single "-qq", but it's generally  clearer  to
-              keep  each instance of each option separate.  Similarly, negated
-              one-character options can be  combined,  as  with  "-q-q-",  but
+              Note that multiple one-character options like "-q" and "-q"  can
+              be  combined  into a single "-qq", but it's generally clearer to
+              keep each instance of each option separate.  Similarly,  negated
+              one-character  options  can  be  combined,  as with "-q-q-", but
               "-q- -q-" is generally clearer.
 
               The examples show short (one-character) options, but long ("--")
               options are also allowed.
 
-       The timezone variable (TZ) should be set according to the  local  time-
-       zone  in  order  for  the Freshen (-f) and Update (-u) modes to operate
-       correctly.  For details, see -f.  This variable may also  be  necessary
+       The  timezone  variable (TZ) should be set according to the local time-
+       zone in order for the Freshen (-f) and Update  (-u)  modes  to  operate
+       correctly.   For  details, see -f.  This variable may also be necessary
        to get timestamps of extracted files to be set correctly.
 
-              On  Windows  systems, UnZip gets the timezone configuration from
+              On Windows systems, UnZip gets the timezone  configuration  from
               the registry, assuming it is correctly set in the Control Panel.
               The TZ variable is ignored on these systems.
 
 ENCRYPTION/DECRYPTION
-       Zip  and UnZip have long supported a relatively weak encryption method,
-       which we call Traditional ZIP encryption.  The source code  for  Tradi-
-       tional  encryption is included in the source kits, and support for Tra-
-       ditional encryption is  enabled  by  default.   (Build-time  C  macros:
+       Zip and UnZip have long supported a relatively weak encryption  method,
+       which  we  call Traditional ZIP encryption.  The source code for Tradi-
+       tional encryption is included in the source kits, and support for  Tra-
+       ditional  encryption  is  enabled  by  default.   (Build-time C macros:
        IZ_CRYPT_TRAD, NO_CRYPT.)
 
-       Beginning  with  UnZip version 6.10 and Zip version 3.1, these programs
-       also offer a stronger, Advanced Encryption  Standard  (AES)  encryption
-       method,  which  we  call  AES WinZip/Gladman (AES_WG) encryption.  (The
-       encryption code was supplied by Brian Gladman, and the  archive  format
-       is  intended  to  be  compatible  with that used by the WinZip program.
-       WinZip is a registered trademark of  WinZip  International  LLC.)   The
+       Beginning with UnZip version 6.10 and Zip version 3.1,  these  programs
+       also  offer  a  stronger, Advanced Encryption Standard (AES) encryption
+       method, which we call AES  WinZip/Gladman  (AES_WG)  encryption.   (The
+       encryption  code  was supplied by Brian Gladman, and the archive format
+       is intended to be compatible with that  used  by  the  WinZip  program.
+       WinZip  is  a  registered  trademark of WinZip International LLC.)  The
        source code for AES_WG encryption is distributed in a separate kit (for
-       export control reasons), and support  for  AES_WG  encryption  must  be
-       enabled    explicitly    at   build   time.    (Build-time   C   macro:
-       IZ_CRYPT_AES_WG.)  See the INSTALL file in the source kit  for  details
-       on  how  to  enable  AES_WG  encryption  (or how to disable Traditional
+       export  control  reasons),  and  support  for AES_WG encryption must be
+       enabled   explicitly   at   build   time.    (Build-time    C    macro:
+       IZ_CRYPT_AES_WG.)   See  the INSTALL file in the source kit for details
+       on how to enable AES_WG  encryption  (or  how  to  disable  Traditional
        encryption).
 
        For details on the WinZip AES scheme, see:
@@ -1011,49 +1059,49 @@ ENCRYPTION/DECRYPTION
               ftp://ftp.info-zip.org/pub/infozip/crypt/
               ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
 
-       Normally, encryption passwords are supplied by the  user  interactively
-       when  requested  by the program.  See the -P option for a (less secure)
+       Normally,  encryption  passwords are supplied by the user interactively
+       when requested by the program.  See the -P option for a  (less  secure)
        method of specifying a password on the command line.
 
-       With Traditional  encryption,  when  decrypting,  a  password  will  be
+       With  Traditional  encryption,  when  decrypting,  a  password  will be
        checked against header data, and used if it appears to be correct.  The
-       correct password will always check out against  the  header  data,  but
-       there  is  a  1-in-256  chance that an incorrect password will as well.
+       correct  password  will  always  check out against the header data, but
+       there is a 1-in-256 chance that an incorrect  password  will  as  well.
        (This is a security feature of the PKWARE archive format; it helps pre-
        vent brute-force attacks that might otherwise gain a large speed advan-
-       tage by testing only the header.)  In the case that an incorrect  pass-
+       tage  by testing only the header.)  In the case that an incorrect pass-
        word is given but it passes the header test anyway, either an incorrect
-       CRC will be generated for the extracted data or else  UnZip  will  fail
+       CRC  will  be  generated for the extracted data or else UnZip will fail
        during the extraction because the "decrypted" bytes do not constitute a
        valid compressed data stream.
 
-       If the first password fails the header check on some file,  UnZip  will
-       prompt  for  another password, and so on until all files are extracted.
-       If a password is not known, entering a null password (that is,  just  a
-       carriage  return  or  "Enter") is taken as a signal to skip all further
-       prompting. Only unencrypted files in the archive(s) will thereafter  be
+       If  the  first password fails the header check on some file, UnZip will
+       prompt for another password, and so on until all files  are  extracted.
+       If  a  password is not known, entering a null password (that is, just a
+       carriage return or "Enter") is taken as a signal to  skip  all  further
+       prompting.  Only unencrypted files in the archive(s) will thereafter be
        extracted.  (The situation is actually a little more complicated.  Some
-       old versions of Zip and  ZipCloak  allowed  null  passwords,  so  UnZip
+       old  versions  of  Zip  and  ZipCloak  allowed null passwords, so UnZip
        checks each encrypted file to see if the null password works.  This may
        result in "false positives" and extraction errors, as noted above.)
 
-       Archives encrypted with 8-bit-character passwords (for  example,  pass-
-       words  with  accented  European  characters) may not be portable across
+       Archives  encrypted  with 8-bit-character passwords (for example, pass-
+       words with accented European characters) may  not  be  portable  across
        systems or to other archivers.  This problem stems from the use of mul-
-       tiple  encoding  methods  for  such  characters, including Latin-1 (ISO
-       8859-1) and OEM code page 850. DOS PKZIP 2.04g uses the OEM code  page;
+       tiple encoding methods for  such  characters,  including  Latin-1  (ISO
+       8859-1) and OEM code page 850.  DOS PKZIP 2.04g uses the OEM code page;
        Windows PKZIP 2.50 uses Latin-1 (and is therefore incompatible with DOS
-       PKZIP); Info-ZIP uses the OEM code page on DOS, OS/2 and  Win3.x  ports
-       but  ISO  coding  (Latin-1 etc.) everywhere else; and Nico Mak's WinZip
-       6.x does not allow 8-bit-character passwords at  all.   UnZip  5.3  (or
+       PKZIP);  Info-ZIP  uses the OEM code page on DOS, OS/2 and Win3.x ports
+       but ISO coding (Latin-1 etc.) everywhere else; and  Nico  Mak's  WinZip
+       6.x  does  not  allow  8-bit-character passwords at all.  UnZip 5.3 (or
        newer) attempts to use the default character set first (e.g., Latin-1),
-       followed by the alternate one (e.g., OEM code page) to test  passwords.
-       On  EBCDIC  systems,  if  both  of  these fail, EBCDIC encoding will be
-       tested as a last resort.  (EBCDIC is not tested on non-EBCDIC  systems,
-       because  there  are no known archivers that encrypt using EBCDIC encod-
-       ing.)  ISO character encodings other than Latin-1  are  not  supported.
-       The  new addition of (partial) Unicode (UTF-8) support in UnZip 6.0 has
-       not yet been adapted to the encryption password handling in UnZip.   On
+       followed  by the alternate one (e.g., OEM code page) to test passwords.
+       On EBCDIC systems, if both of  these  fail,  EBCDIC  encoding  will  be
+       tested  as a last resort.  (EBCDIC is not tested on non-EBCDIC systems,
+       because there are no known archivers that encrypt using  EBCDIC  encod-
+       ing.)   ISO  character  encodings other than Latin-1 are not supported.
+       The new addition of (partial) Unicode (UTF-8) support in UnZip 6.0  has
+       not  yet been adapted to the encryption password handling in UnZip.  On
        systems that use UTF-8 as native character encoding, UnZip simply tries
        decryption  with  the  native  UTF-8  encoded  password;  the  built-in
        attempts to check the password in translated encoding have not yet been
@@ -1064,93 +1112,93 @@ EXAMPLES
        current directory and subdirectories below it, creating any subdirecto-
        ries as necessary:
 
-       unzip letters
+           unzip letters
 
        To extract all members of letters.zip into the current directory only:
 
-       unzip -j letters
+           unzip -j letters
 
        To test letters.zip, printing only a summary message indicating whether
        the archive is OK or not:
 
-       unzip -t -q letters
+           unzip -t -q letters
 
        To test all ".zip" archives in the current directory, printing only the
        summaries:
 
-       unzip -t -q "*.zip"
+           unzip -t -q "*.zip"
 
-       Here, the wildcard archive name was quoted to keep a  Unix  shell  from
+       Here,  the  wildcard  archive name was quoted to keep a Unix shell from
        expanding ("globbing") it.  (This would not be necessary on VMS.)
 
-       The  following  command extracts to standard output all members of let-
-       ters.zip whose names end in .tex, auto-converting to the local  end-of-
+       The following command extracts to standard output all members  of  let-
+       ters.zip  whose names end in .tex, auto-converting to the local end-of-
        line convention, and piping the output into more(1) (again, quoting the
        wildcard member name pattern):
 
-       unzip -c -a letters '*.tex' | more
+           unzip -c -a letters '*.tex' | more
 
        To extract the binary file paper1.dvi to standard output and pipe it to
        a printing program:
 
-       unzip -p articles paper1.dvi | dvips
+           unzip -p articles paper1.dvi | dvips
 
-       To  extract  from  source.zip all Fortran and C source files (*.f, *.c,
-       *.h) and Makefile into the /tmp directory  (again,  quoting  the  wild-
+       To extract from source.zip all Fortran and C source  files  (*.f,  *.c,
+       *.h)  and  Makefile  into  the /tmp directory (again, quoting the wild-
        card):
 
-       unzip source.zip "*.[fch]" Makefile -d /tmp
+           unzip source.zip "*.[fch]" Makefile -d /tmp
 
-       To  extract  all  FORTRAN  and  C source files, regardless of case (for
+       To extract all FORTRAN and C source  files,  regardless  of  case  (for
        example, both *.c and *.C, and any makefile, Makefile, MAKEFILE or sim-
        ilar):
 
-       unzip -C source.zip "*.[fch]" makefile -d /tmp
+           unzip -C source.zip "*.[fch]" makefile -d /tmp
 
        To extract any such files but convert any uppercase MS-DOS or VMS names
-       to lowercase and convert the line-endings of all of the  files  to  the
-       local  standard  (without  respect  to  any  files that might be marked
+       to  lowercase  and  convert the line-endings of all of the files to the
+       local standard (without respect to  any  files  that  might  be  marked
        "binary"):
 
-       unzip -aa -C -L source.zip "*.[fch]" makefile -d /tmp
+           unzip -aa -C -L source.zip "*.[fch]" makefile -d /tmp
 
        The following command extracts only newer versions of the files already
-       in  the  current  directory,  without  querying.   (Note: Be careful of
+       in the current directory,  without  querying.   (Note:  Be  careful  of
        extracting in one timezone an archive created in another.  ZIP archives
        created by Zip versions before 2.1 contain no timezone information, and
        a "newer" file from an eastern timezone may, in fact, be older):
 
-       unzip -f -o sources
+           unzip -f -o sources
 
        To extract newer versions of the files already in the current directory
-       and  to  create  any  files  not already there (same caveat as previous
+       and to create any files not already  there  (same  caveat  as  previous
        example):
 
-       unzip -u -o sources
+           unzip -u -o sources
 
-       To display a configuration report showing the program version,  the  OS
-       and  compiler  used to build it, a list of optional features enabled at
+       To  display  a configuration report showing the program version, the OS
+       and compiler used to build it, a list of optional features  enabled  at
        build time, and the values of all the relevant environment variables:
 
-       unzip -v
+           unzip -v
 
-       In the last five examples, assume that UNZIP or UNZIP_OPTS  is  set  to
+       In  the  last  five examples, assume that UNZIP or UNZIP_OPTS is set to
        -q.  To do a (singly) quiet listing:
 
-       unzip -l file.zip
+           unzip -l file.zip
 
        To do a doubly quiet listing:
 
-       unzip -l -q file.zip
+           unzip -l -q file.zip
 
-       (Note  that  the  ".zip" is generally not necessary.)  To do a standard
+       (Note that the ".zip" is generally not necessary.)  To  do  a  standard
        listing:
 
-       unzip -l -q- file.zip
+           unzip -l -q- file.zip
        or:
-       unzip -lq- file.zip
+           unzip -lq- file.zip
        or:
-       unzip -q-l file.zip
+           unzip -q-l file.zip
 
 EXIT STATUS
        The exit status (or error level) approximates the exit codes defined by
@@ -1158,21 +1206,21 @@ EXIT STATUS
 
               0      Normal.  No errors or warnings detected.
 
-              1      One  or  more  warnings  were encountered, but processing
+              1      One or more warnings  were  encountered,  but  processing
                      completed successfully.  This includes archives where one
-                     or  more  (but  not all) files were skipped because of an
-                     unsupported compression or encryption method,  or  a  bad
+                     or more (but not all) files were skipped  because  of  an
+                     unsupported  compression  or  encryption method, or a bad
                      encryption password.
 
-              2      Error  in  the archive format.  Processing may or may not
+              2      Error in the archive format.  Processing may or  may  not
                      have completed successfully.
 
-              3      Severe error in the archive format.  Processing  probably
+              3      Severe  error in the archive format.  Processing probably
                      failed immediately.
 
               4      Memory allocation failed in program initialization.
 
-              5      Memory  allocation  or  terminal I/O failed in encryption
+              5      Memory allocation or terminal I/O  failed  in  encryption
                      password processing.
 
               6      Memory allocation failed while decompressing to disk.
@@ -1193,60 +1241,60 @@ EXIT STATUS
 
               80     User interrupt (Ctrl/C or similar).
 
-              81     No files were processed, because of unsupported  compres-
+              81     No  files were processed, because of unsupported compres-
                      sion or encryption methods.
 
-              82     No  files were processed, because of bad encryption pass-
+              82     No files were processed, because of bad encryption  pass-
                      word(s).
 
-              83     Large-file archive could not be processed by this  small-
+              83     Large-file  archive could not be processed by this small-
                      file program.
 
-       [VMS]  On VMS, the standard Unix exit status values are translated into
-       valid VMS status codes.  For details, see the file  [.vms]NOTES.TXT  in
+       [VMS] On VMS, the standard Unix exit status values are translated  into
+       valid  VMS  status codes.  For details, see the file [.vms]NOTES.TXT in
        the source kit.
 
 BUGS
-       Multi-part  archives  are not yet supported, except in conjunction with
-       Zip.  (All parts must be  concatenated  together  in  order,  and  then
-       "zip -F"  (for Zip 2.x) or "zip -FF" (for Zip 3.x) must be performed on
-       the concatenated archive in order to "fix" it.  Also, zip 3.0 and later
-       can combine multi-part (split) archives into a combined single-file ar-
-       chive using "zip -s- inarchive -O outarchive".  See the zip manual page
-       for  more  information.)   This  may  be  corrected  in  the next major
-       release.
+       Multi-part archives are not yet supported, except in  conjunction  with
+       Zip.   (All  parts  must  be  concatenated  together in order, and then
+       "zip -F" (for Zip 2.x) or "zip -FF" (for Zip 3.x) must be performed  on
+       the  concatenated  archive in order to "fix" it.  Also, zip version 3.0
+       and later can combine multi-part (split) archives into a combined  sin-
+       gle-file  archive using "zip -s- inarchive -O outarchive".  See the zip
+       manual page for more information.)  This may be corrected in  the  next
+       major release.
 
-       Archives read from standard input are not yet  supported,  except  with
+       Archives  read  from  standard input are not yet supported, except with
        fUnZip  (and  then  only  the  first  member  of  the  archive  can  be
        extracted).
 
-       Archives encrypted with 8-bit-character passwords  (such  as  passwords
-       with  accented  European characters) may not be portable across systems
+       Archives  encrypted  with  8-bit-character passwords (such as passwords
+       with accented European characters) may not be portable  across  systems
        and/or other archivers.  See also ENCRYPTION/DECRYPTION.
 
        UnZip's -M ("--more") option tries to take into account automatic wrap-
-       ping  of  long  lines. However, the code may fail to detect the correct
-       wrapping  locations.  First,  TAB  characters  (and   similar   control
-       sequences)  are  not  taken  into account, they are handled as ordinary
-       printable characters. Second, depending  on  the  actual  system  type,
-       UnZip  may  not detect the true terminal/emulator geometry, but instead
-       may rely on "commonly used" default dimensions.  The  correct  handling
-       of  tabs would require the implementation of a query for the actual tab
+       ping of long lines.  However, the code may fail to detect  the  correct
+       wrapping   locations.   First,  TAB  characters  (and  similar  control
+       sequences) are not taken into account, they  are  handled  as  ordinary
+       printable  characters.   Second,  depending  on the actual system type,
+       UnZip may not detect the true terminal/emulator geometry,  but  instead
+       may  rely  on "commonly used" default dimensions.  The correct handling
+       of tabs would require the implementation of a query for the actual  tab
        setup on the output terminal/emulator.
 
-       [Unix] Unix special files such as FIFO  buffers  (named  pipes),  block
+       [Unix]  Unix  special  files  such as FIFO buffers (named pipes), block
        devices and character devices are not restored even if they are somehow
-       represented in the archive, nor are hard-linked files relinked.   Basi-
-       cally,  the only file types restored by UnZip are regular files, direc-
+       represented  in the archive, nor are hard-linked files relinked.  Basi-
+       cally, the only file types restored by UnZip are regular files,  direc-
        tories, and symbolic (soft) links.
 
        [OS/2] Extended attributes for existing directories are only updated if
-       the  -o ("overwrite all") option is given.  This is a limitation of the
+       the -o ("overwrite all") option is given.  This is a limitation of  the
        operating system; because directories only have a creation time associ-
-       ated  with  them,  UnZip  has  no  way  to determine whether the stored
+       ated with them, UnZip has  no  way  to  determine  whether  the  stored
        attributes are newer or older than those on disk.  In practice this may
-       mean  a  two-pass  approach is required:  first unpack the archive nor-
-       mally (with or without freshening/updating existing files), then  over-
+       mean a two-pass approach is required:  first unpack  the  archive  nor-
+       mally  (with or without freshening/updating existing files), then over-
        write just the directory entries (for example, "unzip -o foo */").
 
 SEE ALSO
@@ -1255,37 +1303,37 @@ SEE ALSO
 
 URL
        The Info-ZIP main Web page is:
-              http://www.info-zip.org/
+                  http://www.info-zip.org/
 
        FTP access is available, too:
-              ftp://ftp.info-zip.org/pub/infozip/
+                  ftp://ftp.info-zip.org/pub/infozip/
 
 AUTHORS
-       The  primary  Info-ZIP authors (current semi-active members of the Zip-
+       The primary Info-ZIP authors (current semi-active members of  the  Zip-
        Bugs workgroup) are:  Ed Gordon (Zip, general maintenance, shared code,
-       Zip64,  Win32,  Unix,  Unicode);  Christian  Spieler (UnZip maintenance
-       coordination, VMS, MS-DOS, Win32, shared code, general  Zip  and  UnZip
-       integration  and  optimization);  Onno van der Linden (Zip); Mike White
-       (Win32, Windows GUI, Windows  DLLs);  Kai  Uwe  Rommel  (OS/2,  Win32);
-       Steven  M.  Schweda  (VMS, Unix, support of new features); Paul Kienitz
-       (Amiga, Win32, Unicode); Chris Herborth (BeOS,  QNX,  Atari);  Jonathan
+       Zip64, Win32, Unix,  Unicode);  Christian  Spieler  (UnZip  maintenance
+       coordination,  VMS,  MS-DOS,  Win32, shared code, general Zip and UnZip
+       integration and optimization); Onno van der Linden  (Zip);  Mike  White
+       (Win32,  Windows  GUI,  Windows  DLLs);  Kai  Uwe Rommel (OS/2, Win32);
+       Steven M. Schweda (VMS, Unix, support of new  features);  Paul  Kienitz
+       (Amiga,  Win32,  Unicode);  Chris Herborth (BeOS, QNX, Atari); Jonathan
        Hudson (SMS/QDOS); Sergio Monesi (Acorn RISC OS); Harald Denker (Atari,
-       MVS); John Bush (Solaris, Amiga); Hunter Goatley  (VMS,  Info-ZIP  Site
-       maintenance);  Steve  Salisbury (Win32); Steve Miller (Windows CE GUI),
+       MVS);  John  Bush  (Solaris, Amiga); Hunter Goatley (VMS, Info-ZIP Site
+       maintenance); Steve Salisbury (Win32); Steve Miller (Windows  CE  GUI),
        Johnny Lee (MS-DOS, Win32, Zip64); and Dave Smith (Tandem NSK).
 
-       The following people are former members  of  the  Info-ZIP  development
-       group,  and  provided  major  contributions to key parts of the current
-       code: Greg "Cave Newt" Roelofs (UnZip, unshrink  decompression);  Jean-
-       loup  Gailly  (deflate compression); Mark Adler (inflate decompression,
+       The  following  people  are  former members of the Info-ZIP development
+       group, and provided major contributions to key  parts  of  the  current
+       code:  Greg  "Cave Newt" Roelofs (UnZip, unshrink decompression); Jean-
+       loup Gailly (deflate compression); Mark Adler  (inflate  decompression,
        fUnZip).
 
-       The author of the original unzip code upon which Info-ZIP's  was  based
-       is  Samuel H. Smith; Carl Mascott did the first Unix port; and David P.
-       Kirschbaum organized and led Info-ZIP in  its  early  days  with  Keith
-       Petersen  hosting the original mailing list at WSMR-SimTel20.  The full
-       list of contributors to UnZip has grown quite large;  please  refer  to
+       The  author  of the original unzip code upon which Info-ZIP's was based
+       is Samuel H. Smith; Carl Mascott did the first Unix port; and David  P.
+       Kirschbaum  organized  and  led  Info-ZIP  in its early days with Keith
+       Petersen hosting the original mailing list at WSMR-SimTel20.  The  full
+       list  of  contributors  to UnZip has grown quite large; please refer to
        the proginfo/CONTRIBS file in the UnZip source distribution for a rela-
        tively complete version.
 
-Info-ZIP                      21 May 2013 (v6.10)                    UNZIP(1L)
+Info-ZIP                      07 Nov 2013 (v6.10)                    UNZIP(1L)

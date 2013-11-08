@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2013-07-04  SMS.
+$!     Last revised:  2013-10-13  SMS.
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"
@@ -67,6 +67,7 @@ $!       product files (.EXE, .OBJ,.OLB, and so on): "PROD=subdir", to
 $!       use "[.subdir]".  The default is a name automatically generated
 $!       using rules defined below.
 $!     - Run basic UnZip tests: "TEST", "TEST_PPMD"
+$!     - Show version/feature reports: "DASHV", "SLASHV"
 $!     - Create help output text files: "HELP_TEXT"
 $!
 $!     To specify additional options, define the symbol LOCAL_UNZIP
@@ -157,6 +158,7 @@ $ lib_unzipsfxcli_name = "UNZSFXCLI.OLB"
 $!
 $ AES_WG = ""
 $ CCOPTS = ""
+$ DASHV = 0
 $ IZ_BZIP2 = ""
 $ BUILD_BZIP2 = 0
 $ IZ_ZLIB = ""
@@ -175,6 +177,7 @@ $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
 $ PPMD = 0
 $ PROD = ""
+$ SLASHV = 0
 $ TEST = 0
 $ TEST_PPMD = 0
 $!
@@ -197,6 +200,12 @@ $     then
 $         opts = f$edit( curr_arg, "COLLAPSE")
 $         eq = f$locate( "=", opts)
 $         CCOPTS = f$extract( (eq+ 1), 1000, opts)
+$         goto argloop_end
+$     endif
+$!
+$     if (f$extract( 0, 5, curr_arg) .eqs. "DASHV")
+$     then
+$         DASHV = 1
 $         goto argloop_end
 $     endif
 $!
@@ -299,6 +308,12 @@ $     then
 $         opts = f$edit( curr_arg, "COLLAPSE")
 $         eq = f$locate( "=", opts)
 $         PROD = f$extract( (eq+ 1), 1000, opts)
+$         goto argloop_end
+$     endif
+$!
+$     if (f$extract( 0, 6, curr_arg) .eqs. "SLASHV")
+$     then
+$         SLASHV = 1
 $         goto argloop_end
 $     endif
 $!
@@ -527,6 +542,22 @@ $ lib_unzipcli = "SYS$DISK:[.''dest']''lib_unzipcli_name'"
 $ lib_unzipsfx = "SYS$DISK:[.''dest']''lib_unzipsfx_name'"
 $ lib_unzipsfxcli = "SYS$DISK:[.''dest']''lib_unzipsfxcli_name'"
 $ libunzip_opt = "[.''dest']LIB_IZUNZIP.OPT"
+$!
+$! If DASHV was requested, then run "unzip -v" (and exit).
+$!
+$ if (dashv)
+$ then
+$     mcr [.'dest']unzip -v
+$     goto error
+$ endif
+$!
+$! If SLASHV was requested, then run "unzip_cli /verbose" (and exit).
+$!
+$ if (slashv)
+$ then
+$     mcr [.'dest']unzip_cli /verbose
+$     goto error
+$ endif
 $!
 $! If TEST was requested, then run the basic tests (and exit).
 $!

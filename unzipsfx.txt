@@ -261,12 +261,12 @@ OPTIONS (Ordinary)
               versions 6.00 and 6.10.  The following table shows  the  effects
               of various -D options for both versions.
 
-                     UnZip version      |
-                    6.00    |   6.10    | Restore timestamps on:
-                 -----------+-----------+------------------------
-                     -DD    |    -D     | Nothing.
-                     -D     | (default) | Files, not directories.
-                  (default) |    -D-    | Files and directories.
+                         UnZip version      |
+                        6.00    |   6.10    | Restore timestamps on:
+                     -----------+-----------+------------------------
+                         -DD    |    -D     | Nothing.
+                         -D     | (default) | Files, not directories.
+                      (default) |    -D-    | Files and directories.
 
               [VMS]  The  old behavior on VMS was the same as the new behavior
               on all systems.  (The old negated --D option is now -D-, because
@@ -449,7 +449,7 @@ OPTIONS (Ordinary)
               a  version number, and -V ("retain VMS file version numbers") is
               in effect, then an additional query choice is offered: to  over-
               write the existing file.  In this case, -o selects the "new ver-
-              sion" choice, and -oo  (or  "-o  -o")  selects  the  "overwrite"
+              sion" choice,  and  -oo  (or:  -o -o)  selects  the  "overwrite"
               choice.
 
        -P password
@@ -579,11 +579,11 @@ OPTIONS (Ordinary)
               card  that includes the directory separator in its matched char-
               acters.)  For example, with "-W":
 
-           "*.c" matches "foo.c" but not "mydir/foo.c"
-           "**.c" matches both "foo.c" and "mydir/foo.c"
-           "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
-           "??*/*" matches "ab/foo" and "abc/foo"
-                   but not "a/foo" or "a/b/foo"
+               "*.c" matches "foo.c" but not "mydir/foo.c"
+               "**.c" matches both "foo.c" and "mydir/foo.c"
+               "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
+               "??*/*" matches "ab/foo" and "abc/foo"
+                       but not "a/foo" or "a/b/foo"
 
               This modified behavior is equivalent  to  the  pattern  matching
               style  used by the shells of some of UnZipSFX's supported target
@@ -610,7 +610,7 @@ OPTIONS (Ordinary)
               (-XX) on NT instructs UnZipSFX to use privileges for extraction;
               but  on  Unix, for example, a user who belongs to several groups
               can restore files owned by any of those groups, so long  as  the
-              user   IDs  match  the  user's  own.  Note  that  ordinary  file
+              user  IDs  match  the  user's  own.   Note  that  ordinary  file
               attributes are always restored.  This  option  applies  only  to
               optional,  extra ownership info available on some operating sys-
               tems.  (NT's access control lists do not appear to be especially
@@ -638,8 +638,8 @@ OPTIONS (Ordinary)
               member list (and  cause  the  program  to  resume  scanning  for
               options).   That is, for example, the following two commands are
               equivalent:
-                    example_sfx -b -x file1 file2 file3
-                    example_sfx -x file1 file2 file3 @ -b
+                        example_sfx -b -x file1 file2 file3
+                        example_sfx -x file1 file2 file3 @ -b
 
        -Y
        --dot-version
@@ -647,7 +647,7 @@ OPTIONS (Ordinary)
               is  a  decimal  number)  as  if  they  were  VMS version numbers
               (";nnn").  (The default is to treat them as  file  types.)   For
               example:
-                   "a.b.3" -> "a.b;3"
+                       "a.b.3" -> "a.b;3"
 
        -z
        --zipfile-comment
@@ -731,7 +731,7 @@ AUTORUN COMMAND
        mand autorun" feature is enabled.  The command to be run is  placed  at
        the beginning of the Zip archive comment, using the following format:
 
-       $AUTORUN$>command-to-be-run
+           $AUTORUN$>command-to-be-run
 
        When UnZipSFX recognizes the token "$AUTORUN$>" at the beginning of the
        ZIP archive comment, the remainder of the first  line  of  the  comment
@@ -752,9 +752,9 @@ EXAMPLES
        the resulting SFX archive, and change the permissions on  the  new  SFX
        archive's to allow execution by everyone:
 
-       cat /usr/local/bin/unzipsfx example.zip > example_sfx
-       zip -A example_sfx
-       chmod 755 example_sfx
+           cat /usr/local/bin/unzipsfx example.zip > example_sfx
+           zip -A example_sfx
+           chmod 755 example_sfx
 
        We   assume   that   the   desired  UnZipSFX  executable  is  found  at
        "/usr/local/bin/unzipsfx", but any path to the  desired  UnZipSFX  exe-
@@ -764,16 +764,16 @@ EXAMPLES
        SFX archive.  (Note the use of the /b (binary) option in the COPY  com-
        mand.):
 
-       copy /b unzipsfx.exe+example.zip example_sfx.exe
-       zip -A example_sfx.exe
+           copy /b unzipsfx.exe+example.zip example_sfx.exe
+           zip -A example_sfx.exe
 
        If  the  desired  UnZipSFX  executable is not in the current directory,
        then an appropriate path should be specified for it.
 
        On VMS the basic commands look like these:
 
-       copy unzipsfx.exe, example.zip example_sfx.exe
-       zip -A example_sfx.exe
+           copy unzipsfx.exe, example.zip example_sfx.exe
+           zip -A example_sfx.exe
 
        If the desired UnZipSFX executable is not in the current default direc-
        tory,  then  an  appropriate path should be specified for it.  (The VMS
@@ -783,23 +783,23 @@ EXAMPLES
        UnZip  source kit: [.vms]makesfx.com.  It uses a DCL symbol to find the
        UnZipSFX executable.  Comments in the script explain its usage.
 
-       @ makesfx.com example.zip example_sfx.exe
+           @ makesfx.com example.zip example_sfx.exe
 
        As usual on VMS, if a program like an UnZipSFX bundle is to be executed
        without  options  or  arguments, then the RUN command may be used.  For
        example:
-       run example_sfx.exe
+           run example_sfx.exe
 
        More work is needed when options or arguments are desired.   For  exam-
        ple:
-       mcr sys$disk:[]example_sfx.exe -t -x fred.txt
+           mcr sys$disk:[]example_sfx.exe -t -x fred.txt
        Or, define a foreign-command DCL symbol, and use that:
-       example_sfx = "$ ''f$environment( "default")'example_sfx.exe"
-       example_sfx -t -x fred.txt
+           example_sfx = "$ ''f$environment( "default")'example_sfx.exe"
+           example_sfx -t -x fred.txt
 
        On AmigaDOS:
 
-       MakeSFX example example.zip UnZipSFX
+           MakeSFX example example.zip UnZipSFX
 
        (MakeSFX  is included with the UnZip source distribution and with Amiga
        binary distributions.  "zip -A" doesn't work on  Amiga  self-extracting
@@ -807,39 +807,39 @@ EXAMPLES
 
        To test (or list) the newly created self-extracting archive, use -t:
 
-       example_sfx -t
+           example_sfx -t
 
        To test "example_sfx" quietly, printing only a summary message indicat-
        ing whether the archive is OK or not, use -tqq:
 
-       example_sfx -tqq
+           example_sfx -tqq
 
        To extract the complete contents into the current directory, recreating
        all files and subdirectories as necessary:
 
-       example_sfx
+           example_sfx
 
        To extract all *.txt files:
 
-       example_sfx *.txt
+           example_sfx *.txt
 
        On Unix, quote the "*":
 
-       example_sfx '*.txt'
+           example_sfx '*.txt'
 
        To extract everything except the *.txt files:
 
-       example_sfx -x *.txt
+           example_sfx -x *.txt
        or:
-       example_sfx -x '*.txt'
+           example_sfx -x '*.txt'
 
        To extract only the README file to standard output (the screen):
 
-       example_sfx -c README
+           example_sfx -c README
 
        To print only the archive comment:
 
-       example_sfx -z
+           example_sfx -z
 
 LIMITATIONS
        The  principal and fundamental limitation of UnZipSFX is that it is not
@@ -869,12 +869,13 @@ LIMITATIONS
        invoked  (and  "."  must  be on the user's PATH), or else some explicit
        (absolute or relative) path must be specified.  For example:
 
-       # example_sfx -t        # Fails if "." is not on PATH.
-       bash: example_sfx: command not found
-       # ./example_sfx -t      # Works.
+           # example_sfx -t        # Fails if "." is not on PATH.
+           bash: example_sfx: command not found
+           # ./example_sfx -t      # Works.
        or:
-       mkdir sandbox
-       cd sandbox
+           mkdir sandbox
+           cd sandbox
+           ../example_sfx
 
        If a user runs a self-extracting archive which is found in a  directory
        on  the  PATH  other than the current one ("."), then UnZipSFX may fail
@@ -912,14 +913,14 @@ SEE ALSO
 
 URL
        The Info-ZIP main Web page is:
-              http://www.info-zip.org/
+                  http://www.info-zip.org/
 
        FTP access is available, too:
-              ftp://ftp.info-zip.org/pub/infozip/
+                  ftp://ftp.info-zip.org/pub/infozip/
 
 AUTHORS
        Greg  Roelofs was responsible for the basic modifications to UnZip nec-
        essary to create UnZipSFX.  See unzip(1L) for the current list of Info-
        ZIP authors.
 
-Info-ZIP                      21 May 2013 (v6.10)                 UNZIPSFX(1L)
+Info-ZIP                      06 Nov 2013 (v6.10)                 UNZIPSFX(1L)

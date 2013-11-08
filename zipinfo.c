@@ -478,8 +478,10 @@ static ZCONST char Far *method[NUM_METHODS] = {
  */
 # ifdef REENTRANT
 #  define FREE_NON_NULL( x) if ((x) != NULL) izu_free( x)
+#  define UPDATE_PARGV *pargv = args
 # else
 #  define FREE_NON_NULL( x)
+#  define UPDATE_PARGV
 # endif
 
 
@@ -538,6 +540,15 @@ int zi_opts(__G__ pargc, pargv)
     /* make copy of args that can use with insert_arg() used by get_option() */
     args = copy_args( __G__ *pargv, 0);
 
+    /* 2013-01-17 SMS.
+     * Note that before any early exit, we must inform the caller of our
+     * new argv[], because he will want to izu_free() ours, not the
+     * original:
+     *         UPDATE_PARGV;            (*pargv = args;)
+     *         return PK_xxx;
+     * In principle, this could be done here, and by anyone who changes
+     * "args", but that looked like more work.
+     */
 
     /* Initialize lists */
     G.filespecs = 0;
@@ -570,12 +581,23 @@ int zi_opts(__G__ pargc, pargv)
            negated - option was negated with trailing -
     */
 
+    /* 2012-12-12 SMS.
+     * get_option() may allocate storage for "value".  If exiting early
+     * (typically because of an error condition), then use
+     * "FREE_NON_NULL( value)" to free this storage.  (See comments
+     * above, where FREE_NON_NULL() is defined.)  If saving "value"
+     * in some persistent location, then set "value = NULL" to prevent
+     * this storage from being free()'d.  Otherwise, at the bottom of
+     * the "while" loop, this storage will be free()'d.
+     */
+
     while ((option = get_option( __G__ ZIO, &args, &argcnt, &argnum,
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
         if(option == o_BAD_ERR) {
           FREE_NON_NULL( value);        /* Leaving early.  Free it. */
+          UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return(PK_PARAM);
         }
 
@@ -706,6 +728,9 @@ int zi_opts(__G__ pargc, pargv)
                          sizeof(struct file_list))) == NULL) {
                             Info(slide, 0x401, ((char *)slide,
                              LoadFarString(NoMemArguments)));
+                            /* Leaving early.  Free it. */
+                            FREE_NON_NULL( value);
+                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
                             return PK_MEM;
                         }
                         in_xfiles->name = value;
@@ -717,6 +742,9 @@ int zi_opts(__G__ pargc, pargv)
                          sizeof(struct file_list))) == NULL) {
                             Info(slide, 0x401, ((char *)slide,
                              LoadFarString(NoMemArguments)));
+                            /* Leaving early.  Free it. */
+                            FREE_NON_NULL( value);
+                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
                             return PK_MEM;
                         }
                         next_in_xfiles->next = next_file;
@@ -751,6 +779,9 @@ int zi_opts(__G__ pargc, pargv)
                              sizeof(struct file_list))) == NULL) {
                                 Info(slide, 0x401, ((char *)slide,
                                  LoadFarString(NoMemArguments)));
+                                /* Leaving early.  Free it. */
+                                FREE_NON_NULL( value);
+                                UPDATE_PARGV;   /* See note 2013-01-17 SMS. */
                                 return PK_MEM;
                             }
                             next_file->name = value;
@@ -763,6 +794,9 @@ int zi_opts(__G__ pargc, pargv)
                              sizeof(struct file_list))) == NULL) {
                                 Info(slide, 0x401, ((char *)slide,
                                  LoadFarString(NoMemArguments)));
+                                /* Leaving early.  Free it. */
+                                FREE_NON_NULL( value);
+                                UPDATE_PARGV;   /* See note 2013-01-17 SMS. */
                                 return PK_MEM;
                             }
                             next_in_files->next = next_file;
@@ -779,8 +813,7 @@ int zi_opts(__G__ pargc, pargv)
                     break;
         } /* switch */
 
-        if (value != NULL)
-            izu_free( value);           /* Free it now, if it's not in use. */
+        FREE_NON_NULL( value);          /* Free it now, if it's not in use. */
 
     } /* get_option() */
 

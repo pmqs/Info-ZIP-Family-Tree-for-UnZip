@@ -60,104 +60,119 @@ ARGUMENTS
 
        member ...
               An optional list of archive members to be  processed,  separated
-              by  spaces.   Wildcard  patterns (like those used for an archive
-              file name, described above) may be used to match  multiple  mem-
-              bers.   Again, be sure to quote expressions that would otherwise
-              be expanded or modified by the operating system or shell.
+              by  spaces.   If  no  member list is specified, then all archive
+              members are processed.  Wildcard patterns (like those  used  for
+              an  archive  file  name on Unix, described above) may be used to
+              match multiple members.  Again, be  sure  to  quote  expressions
+              that  would  otherwise  be expanded or modified by the operating
+              system or shell.
+
+              On Mac OS X systems, file attributes, a resource fork, and simi-
+              lar  data may be stored in a separate AppleDouble archive member
+              which has a "._" name prefix.  In some  cases,  UnZip  automati-
+              cally  handles  these  AppleDouble archive members when a normal
+              member pattern is specified, but with  ZipInfo,  the  user  must
+              specify  patterns which explicitly include any desired AppleDou-
+              ble archive members.
+
+              On VMS systems, the wildcard rules used for archive members  are
+              the  same  as on Unix systems.  VMS wildcard rules are used only
+              for archive file specifications, not  for  archive  member  pat-
+              terns.
 
 OPTIONS (Primary Format)
        -1
        --names-only
-              Primary Format.  Show member names only,  one  per  line.   This
-              option  excludes  all  others,  and  the report does not include
+              Primary  Format.   Show  member  names only, one per line.  This
+              option excludes all others, and  the  report  does  not  include
               headers, trailers, or archive comments.  This format may be use-
               ful with Unix shell (or other) scripts.
 
        -2
        --names-mostly
-              Primary  Format.   Show member names only, one per line (as with
-              "-1"), but allow headers (-h), trailers (-t), and  archive  com-
+              Primary Format.  Show member names only, one per line  (as  with
+              "-1"),  but  allow headers (-h), trailers (-t), and archive com-
               ments (-z), if requested explicitly.
 
        -s
        --short-list
-              Primary  Format.  Show member info in short Unix "ls -l" format.
+              Primary Format.  Show member info in short Unix "ls -l"  format.
               This is the default behavior, unless -h or -t is specified.
 
        -m
        --medium-list
-              Primary Format.  Show member info in medium-length Unix  "ls -l"
+              Primary  Format.  Show member info in medium-length Unix "ls -l"
               format.  Like the -s format, except that the compression factor,
               expressed as a percentage, is also included.
 
        -l
        --long-list
-              Primary Format.  Show member info in long Unix  "ls -l"  format.
-              Like  the  -m format, except that the compressed size (in bytes)
+              Primary  Format.   Show member info in long Unix "ls -l" format.
+              Like the -m format, except that the compressed size  (in  bytes)
               is printed instead of the compression ratio.
 
        -v
        --verbose
-              Primary Format.  Show very detailed member info in a  multi-line
+              Primary  Format.  Show very detailed member info in a multi-line
               format.
 
-              The  verbose  report  is  mostly  self-explanatory,  but it does
-              assume some familiarity with the ZIP archive  format.   It  also
-              includes  the archive comment, if any.  Extra fields in the cen-
-              tral directory  are  broken  dowm  into  subfields,  with  brief
-              descriptions  of  recognized  subfields (or abbreviated dumps of
+              The verbose report  is  mostly  self-explanatory,  but  it  does
+              assume  some  familiarity  with the ZIP archive format.  It also
+              includes the archive comment, if any.  Extra fields in the  cen-
+              tral  directory  are  broken  dowm  into  subfields,  with brief
+              descriptions of recognized subfields (or  abbreviated  dumps  of
               unrecognized subfields).
 
 OPTIONS (Ordinary)
        -C
        --ignore-case    ([CMS, MVS] --CMS-MVS-lower)
-              Use case-insensitive name matching for names in the member  list
-              and  the  -x  excluded-member  list  on  the  command  line.  By
+              Use  case-insensitive name matching for names in the member list
+              and the  -x  excluded-member  list  on  the  command  line.   By
               default, case-sensitive matching is done.  For example, specify-
               ing "makefile" on the command line will match only "makefile" in
               the archive, not "Makefile" or "MAKEFILE".  On many systems, the
-              local  file system is case-insensitive, so case-insensitive name
+              local file system is case-insensitive, so case-insensitive  name
               matching would be more natural.  With -C, "makefile" would match
               "makefile", "Makefile", or "MAKEFILE".
 
        -h
        --header
-              Include  a  header  in the report, showing the archive name, the
-              archive size (in bytes), and the number of members  in  the  ar-
+              Include a header in the report, showing the  archive  name,  the
+              archive  size  (in  bytes), and the number of members in the ar-
               chive.
 
-              For  the Unix-format reports (options -l, -m, -s), the header is
+              For the Unix-format reports (options -l, -m, -s), the header  is
               included by default, if no archive members are specified.  If -h
-              is  specified  alone,  that  is,  without one of the Unix-format
-              options, and without a member list, then only the  header  lines
+              is specified alone, that is,  without  one  of  the  Unix-format
+              options,  and  without a member list, then only the header lines
               will be put out.
 
        -M    ([CMS,MVS] Or: -m)
        --more
-              Pipe  all  output  through an internal pager similar to the Unix
-              more(1) command.  At the end of a screenful of  output,  Zipinfo
-              pauses  with  a  "--More--"  prompt;  the  next screenful may be
-              viewed by pressing the Enter (Return)  key  or  the  space  bar.
-              ZipInfo  can  be terminated by pressing the "q" key, or, on some
+              Pipe all output through an internal pager similar  to  the  Unix
+              more(1)  command.   At the end of a screenful of output, Zipinfo
+              pauses with a "--More--"  prompt;  the  next  screenful  may  be
+              viewed  by  pressing  the  Enter  (Return) key or the space bar.
+              ZipInfo can be terminated by pressing the "q" key, or,  on  some
               systems, the Enter/Return key.  Unlike Unix more(1), there is no
-              forward-searching  or editing capability.  Also, ZipInfo doesn't
+              forward-searching or editing capability.  Also, ZipInfo  doesn't
               notice if long lines wrap at the edge of the screen, effectively
-              resulting  in  the printing of two or more lines and the likeli-
+              resulting in the printing of two or more lines and  the  likeli-
               hood that some text will scroll off the top of the screen before
-              being  viewed.   If the actual number of lines on the screen can
+              being viewed.  If the actual number of lines on the  screen  can
               not be determined, 24 lines will be assumed.
 
        -mc
        --member-counts
-              Control inclusion of separate  member  counts  for  directories,
-              files,  and  (if symlinks are supported) links, after the totals
-              summary at  the  end  of  the  report.   By  default,  they  are
-              included.   Use  "-mc-"  or "--member-counts-" to suppress them.
-              See also /TOTALS.
+              Control  inclusion  of  separate  member counts for directories,
+              files, and (if symlinks are supported) links, after  the  totals
+              summary  at  the  end  of  the  report.   By  default,  they are
+              included.  Use -mc- or --member-counts- to suppress  them.   See
+              also /TOTALS.
 
        -T
        --decimal-time
-              Show the file date-times in  a  sortable,  all-numeric,  "YYYYM-
+              Show  the  file  date-times  in a sortable, all-numeric, "YYYYM-
               MDD.hhmmss" format.  The default date format is an alpha-numeric
               "YY-Mmm-DD hh:mm".  For example ("-s", "-s -T"):
 
@@ -166,100 +181,100 @@ OPTIONS (Ordinary)
 
        -t
        --totals
-              Include a totals summary at the end of the report,  showing  the
-              number  of  members in the report, the sum of their uncompressed
-              sizes, the sum of their compressed sizes,  and  the  compression
+              Include  a  totals summary at the end of the report, showing the
+              number of members in the report, the sum of  their  uncompressed
+              sizes,  the  sum  of their compressed sizes, and the compression
               factor as a percentage.
 
-              For  the  Unix-format  reports  (options -l, -m, -s), the totals
+              For the Unix-format reports (options -l,  -m,  -s),  the  totals
               summary is included by default, if no archive members are speci-
-              fied.   If  -t  is  specified alone, that is, without one of the
-              Unix-format options, and without a member list,  then  only  the
+              fied.  If -t is specified alone, that is,  without  one  of  the
+              Unix-format  options,  and  without a member list, then only the
               totals summary trailer lines will be put out.
 
-              The  total  "bytes compressed" reported includes only the actual
-              data, not the ZIP archive meta-data, so the size of the  archive
+              The total "bytes compressed" reported includes only  the  actual
+              data,  not the ZIP archive meta-data, so the size of the archive
               will always be greater than this value.
 
               See also -mc.
 
        -U
        --unicode
-              [UNICODE_SUPPORT]  Control UTF-8 handling.  When UNICODE_SUPPORT
-              is available, -U forces ZipInfo to escape all non-ASCII  charac-
-              ters  from  UTF-8 coded filenames as "#Uxxxx" (for UCS-2 charac-
-              ters, or "#Lxxxxxx" for Unicode codepoints  needing  3  octets).
-              This  option  is  mainly provided for debugging purpose when the
-              fairly new UTF-8 support  is  suspected  of  damaging  extracted
+              [UNICODE_SUPPORT] Control UTF-8 handling.  When  UNICODE_SUPPORT
+              is  available, -U forces ZipInfo to escape all non-ASCII charac-
+              ters from UTF-8 coded filenames as "#Uxxxx" (for  UCS-2  charac-
+              ters,  or  "#Lxxxxxx"  for Unicode codepoints needing 3 octets).
+              This option is mainly provided for debugging  purpose  when  the
+              fairly  new  UTF-8  support  is  suspected of damaging extracted
               filenames.
 
-              -UU  disables  the  recognition of UTF-8 encoded filenames.  The
-              handling of filename codings within ZipInfo falls  back  to  the
+              -UU disables the recognition of UTF-8  encoded  filenames.   The
+              handling  of  filename  codings within ZipInfo falls back to the
               behavior of pre-Unicode versions.
 
        -W
        --wild-no-span
               [WILD_STOP_AT_DIR]  (Valid  when  the  program  was  built  with
               WILD_STOP_AT_DIR enabled.)  Modify the pattern-matching behavior
-              so  that  both  "?"  (single-character wildcard) and "*" (multi-
+              so that both "?" (single-character  wildcard)  and  "*"  (multi-
               character wildcard) do not match the directory separator charac-
               ter "/".  (The two-character sequence "**" acts as a multi-char-
-              acter wildcard that includes  the  directory  separator  in  its
+              acter  wildcard  that  includes  the  directory separator in its
               matched characters.)  For example, with "-W":
 
-           "*.c" matches "foo.c" but not "mydir/foo.c"
-           "**.c" matches both "foo.c" and "mydir/foo.c"
-           "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
-           "??*/*" matches "ab/foo" and "abc/foo"
-                   but not "a/foo" or "a/b/foo"
+               "*.c" matches "foo.c" but not "mydir/foo.c"
+               "**.c" matches both "foo.c" and "mydir/foo.c"
+               "*/*.c" matches "bar/foo.c" but not "baz/bar/foo.c"
+               "??*/*" matches "ab/foo" and "abc/foo"
+                       but not "a/foo" or "a/b/foo"
 
-              This  modified  behavior  is  equivalent to the pattern matching
+              This modified behavior is equivalent  to  the  pattern  matching
               style used by the shells of some of UnZip's supported target OSs
-              (one  example  is Acorn RISC OS).  This option may not be avail-
+              (one example is Acorn RISC OS).  This option may not  be  avail-
               able on systems where the Zip archive's internal directory sepa-
-              rator  character  "/"  is allowed as regular character in native
+              rator character "/" is allowed as regular  character  in  native
               operating system filenames. (Currently, UnZip uses the same pat-
               tern matching rules for both wildcard archive file name specifi-
-              cations and archive member selection  patterns  on  most  system
-              types.   For systems allowing "/" as regular filename character,
+              cations  and  archive  member  selection patterns on most system
+              types.  For systems allowing "/" as regular filename  character,
               the -W option would not work as expected on a wildcard file name
               specification.)
 
        -x member ...
        --exclude member ...
               An optional list of archive members to be excluded from process-
-              ing.  Because wildcard characters normally match  "/"  directory
-              separators  (for  exceptions see the option -W), this option may
-              be used to exclude any files that are  in  subdirectories.   For
+              ing.   Because  wildcard characters normally match "/" directory
+              separators (for exceptions see the option -W), this  option  may
+              be  used  to  exclude any files that are in subdirectories.  For
               example,  "zipinfo foo *.[ch] -x */*"  would  report  on  all  C
-              source files (*,c, *.h) in the main directory, but none  in  any
-              subdirectories.   Without  the  -x option, all C source files in
-              all directories within the archive  would  be  included  in  the
+              source  files  (*,c, *.h) in the main directory, but none in any
+              subdirectories.  Without the -x option, all C  source  files  in
+              all  directories  within  the  archive  would be included in the
               report.
 
               When the program sees -x (--exclude) on a command line, it stops
               scanning for options, and treats every succeeding item as an ar-
-              chive  member name.  To avoid confusion between member names and
+              chive member name.  To avoid confusion between member names  and
               command options, it's simplest to specify -x (--exclude) and its
               member list as the last items on a command line.  Alternatively,
-              the special name "@" can be used to terminate  the  member  list
-              (and  cause  the  program to resume scanning for options).  That
+              the  special  name  "@" can be used to terminate the member list
+              (and cause the program to resume scanning  for  options).   That
               is, the following two commands are equivalent:
-                    zipinfo fred.zip -2 -t -x file1 file2 file3
-                    zipinfo fred.zip -x file1 file2 file3 @ -2 -t
+                        zipinfo fred.zip -2 -t -x file1 file2 file3
+                        zipinfo fred.zip -x file1 file2 file3 @ -2 -t
 
        -z
        --zipfile-comment
               Include the archive comments (if any) in the report.
 
 DETAILED DESCRIPTION
-       ZipInfo has three basic report formats, providing different degrees  of
-       detail  in  the  information  about the members of an archive: a simple
-       list of names (-1, -2), a Unix ls-style listing (-l,  -m,  -s),  and  a
-       very  detailed  analysis  (-v).   Some of the information, such as file
-       sizes, is easy to interpret.  Some of the information  involves  fairly
-       obscure  details  of  ZIP  archive structure.  ZIP archive structure is
-       documented in the PKWARE Inc. APPNOTE.TXT:  http://www.pkware.com/docu-
+       ZipInfo  has three basic report formats, providing different degrees of
+       detail in the information about the members of  an  archive:  a  simple
+       list  of  names  (-1,  -2), a Unix ls-style listing (-l, -m, -s), and a
+       very detailed analysis (-v).  Some of the  information,  such  as  file
+       sizes,  is  easy to interpret.  Some of the information involves fairly
+       obscure details of ZIP archive structure.   ZIP  archive  structure  is
+       documented  in the PKWARE Inc. APPNOTE.TXT: http://www.pkware.com/docu-
        ments/casestudies/APPNOTE.TXT
 
        The table below shows some typical -l report entries:
@@ -270,8 +285,8 @@ DETAILED DESCRIPTION
    -rwxr-x---  3.1 unx      709 Tx      311 aesw 11-Aug-21 22:20 endian.c
    RWED,RE,    3.1 vms     6656 bx     2295 defN 07-Aug-15 14:12 itrc/TST.EXE;8
 
-       Field  1  (Perm/Prot)  shows the file permission/protection attributes,
-       formatted according to the original operating  system  or  file  system
+       Field 1 (Perm/Prot) shows the  file  permission/protection  attributes,
+       formatted  according  to  the  original operating system or file system
        where the archive was created.
 
        Field 2 (Zver) shows the (approximate) version of the Zip program which
@@ -282,33 +297,33 @@ DETAILED DESCRIPTION
 
        Field 4 (UncoSize) shows the original, uncompressed file size.
 
-       Field  5  (At) shows some archive member attributes, as detailed in the
-       tables below.  The first character indicates whether a file was  binary
-       or  text, and whether it was encrypted.  The second character indicates
-       the presence of  a  data  descriptor  (sometimes  called  an  "extended
+       Field 5 (At) shows some archive member attributes, as detailed  in  the
+       tables  below.  The first character indicates whether a file was binary
+       or text, and whether it was encrypted.  The second character  indicates
+       the  presence  of  a  data  descriptor  (sometimes  called an "extended
        header") and/or an extra field in the member data.
 
-                     |   File Type     Extra Field |
-         First char  | binary  text      yes   no  |  Second char
-       --------------+-------+-----    ------+-----+--------------------
-       Encrypted  no |   b      t         x     -  | no  Data Descriptor
-                 yes |   B      T         X     l  | yes
+                         |   File Type     Extra Field |
+             First char  | binary  text      yes   no  |  Second char
+           --------------+-------+-----    ------+-----+--------------------
+           Encrypted  no |   b      t         x     -  | no  Data Descriptor
+                     yes |   B      T         X     l  | yes
 
-              A  Data Descriptor holds CRC and size data at an alternate place
-              in the archive (after processed member data instead of  before),
-              and  is  normally  used when the archiving program can't seek in
-              the output archive data/file.  An Extra Field can  hold  a  wide
-              variety  of data, including 64-bit file sizes, many kinds of OS-
+              A Data Descriptor holds CRC and size data at an alternate  place
+              in  the archive (after processed member data instead of before),
+              and is normally used when the archiving program  can't  seek  in
+              the  output  archive  data/file.  An Extra Field can hold a wide
+              variety of data, including 64-bit file sizes, many kinds of  OS-
               specific attribute data, UTC times, and so on.
 
        Field 6 (CompSize) shows the compressed file size.  With -m, this field
        shows the compression fraction as a percentage.  With -s (the default),
-       this field is omitted.  This compressed size value (unlike the  one  in
-       an  "unzip -l"  report) includes all the overhead resulting from Tradi-
+       this  field  is omitted.  This compressed size value (unlike the one in
+       an "unzip -l" report) includes all the overhead resulting  from  Tradi-
        tional encryption.
 
-       Field 7 (Cmth) shows the compression method  used.   Note  that  AES_WG
-       encryption  is  treated  as  a compression method here.  Not all of the
+       Field  7  (Cmth)  shows  the compression method used.  Note that AES_WG
+       encryption is treated as a compression method here.   Not  all  of  the
        methods shown in the table below are supported.  (Some are obsolete.)
 
     Num Abbr  Name, description
@@ -333,24 +348,24 @@ DETAILED DESCRIPTION
     98  ppmd  PPMd version I, Rev 1
     99  aesw  AES_WG encryption
 
-       Fields 8 and 9 (ModDate, Mtime) show the  file  modification  date-time
+       Fields  8  and  9 (ModDate, Mtime) show the file modification date-time
        (MS-DOS format, local time).
 
        Field 10 (Name) shows the file path/name.
 
 ENVIRONMENT OPTIONS
-       ZipInfo's  default  behavior  may  be  modified by placing command-line
-       options in an environment variable.  This can be done with any  option,
+       ZipInfo's default behavior may  be  modified  by  placing  command-line
+       options  in an environment variable.  This can be done with any option,
        but it is probably most useful options like -T (decimal time format) or
        one of the non-default Unix format optiond (-l, -m).
 
-              For ZipInfo ("unzip -Z"), the environment variable name is  ZIP-
-              INFO,  except  on  VMS, where it's ZIPINFO_OPTS.  For similarity
-              with Zip, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined,  then
+              For  ZipInfo ("unzip -Z"), the environment variable name is ZIP-
+              INFO, except on VMS, where it's  ZIPINFO_OPTS.   For  similarity
+              with  Zip, if ZIPINFO (ZIPINFO_OPTS on VMS) is not defined, then
               ZipInfo will use ZIPINFOOPT the same way.
 
-              For  example,  to  make  the default format the long Unix format
-              instead of the short Unix format, one could  use  commands  like
+              For example, to make the default format  the  long  Unix  format
+              instead  of  the  short Unix format, one could use commands like
               the following:
 
          Unix Bourne (or similar) shell:
@@ -366,11 +381,11 @@ ENVIRONMENT OPTIONS
               define ZIPINFO_OPTS "-l"        ! Logical name, or
               ZIPINFO_OPTS = "-l"             ! DCL symbol.  (Either works.)
 
-              Environment  options  are treated the same as any other command-
+              Environment options are treated the same as any  other  command-
               line options, except that they are effectively the first options
               on the command line.  To override an environment option, one may
-              use an explicit option to cancel or override it.   For  example,
-              to  disable  the  totals  trailer line by default, one could use
+              use  an  explicit option to cancel or override it.  For example,
+              to disable the totals trailer line by  default,  one  could  use
               commands like the following:
 
          Unix Bourne (or similar) shell:
@@ -389,84 +404,84 @@ ENVIRONMENT OPTIONS
               The examples show short (one-character) options, but long ("--")
               options are also allowed.
 
-       The  timezone  variable (TZ) should be set according to the local time-
-       zone in order for the Freshen (-f) and Update  (-u)  modes  to  operate
-       correctly.   For  details, see -f.  This variable may also be necessary
+       The timezone variable (TZ) should be set according to the  local  time-
+       zone  in  order  for  the Freshen (-f) and Update (-u) modes to operate
+       correctly.  For details, see -f.  This variable may also  be  necessary
        to get timestamps of extracted files to be set correctly.
 
-              On Windows systems, UnZip gets the timezone  configuration  from
+              On  Windows  systems, UnZip gets the timezone configuration from
               the registry, assuming it is correctly set in the Control Panel.
               The TZ variable is ignored on these systems.
 
 EXAMPLES
-       To get a basic, short-format listing of the complete contents of a  ZIP
+       To  get a basic, short-format listing of the complete contents of a ZIP
        archive zip31c.zip, with both header and totals lines, use only the ar-
        chive name as an argument to zipinfo:
 
-       zipinfo zip31c.zip
-       zipinfo zip31c
+           zipinfo zip31c.zip
+           zipinfo zip31c
 
        To produce a basic, long-format listing (not verbose), including header
        and totals lines, use -l:
 
-       zipinfo -l zip31c.zip
+           zipinfo -l zip31c.zip
 
-       To  list the complete contents of the archive without header and totals
+       To list the complete contents of the archive without header and  totals
        lines, either negate the -h and -t options or else specify the contents
        explicitly:
 
-       zipinfo -h- -t- zip31c.zip
-       zipinfo zip31c.zip "*"
+           zipinfo -h- -t- zip31c.zip
+           zipinfo zip31c.zip "*"
 
-       (Here,  the wildcard "*" is quoted to prevent a Unix shell from expand-
+       (Here, the wildcard "*" is quoted to prevent a Unix shell from  expand-
        ing (globbing) it.)
 
        To list information on a single archive member, in medium format, spec-
        ify the member name explicitly:
 
-       zipinfo -m unzip60.zip "*/unshrink.c"
+           zipinfo -m unzip60.zip "*/unshrink.c"
 
-       When  any  member name is specified, the header and totals trailer are,
-       by default, not included in the report, but  explicitly  specifying  -h
+       When any member name is specified, the header and totals  trailer  are,
+       by  default,  not  included in the report, but explicitly specifying -h
        and/or -t will restore them.  For example:
 
-       zipinfo -m -t unzip610b.zip "*.[ch]" "*/Make*"
+           zipinfo -m -t unzip610b.zip "*.[ch]" "*/Make*"
 
-       On  a  Unix  system, one could use the -T option along with an external
+       On a Unix system, one could use the -T option along  with  an  external
        sorting program (and another filter like head or tail) to get a listing
        of the least or most recently modified files in the archive:
 
-       zipinfo -l -T -h- -t- zip31c.zip | sort -k 8 | head -12
-       zipinfo -l -T -h- -t- zip31c.zip | sort -r -k 8 | head -12
+           zipinfo -l -T -h- -t- zip31c.zip | sort -k 8 | head -12
+           zipinfo -l -T -h- -t- zip31c.zip | sort -r -k 8 | head -12
 
-       The  sort  option  -k 8 tells it to sort on field 8, which is the date-
-       time field in a long- or medium-format (-l, -m) ZipInfo  report.   (Use
-       -k 7  for  the  short (-s) format.)  The -r option reverses the default
+       The sort option -k 8 tells it to sort on field 8, which  is  the  date-
+       time  field  in a long- or medium-format (-l, -m) ZipInfo report.  (Use
+       -k 7 for the short (-s) format.)  The -r option  reverses  the  default
        smallest-to-largest sort order.
 
 BUGS
        As with UnZip, ZipInfo's -M ("more") option is overly simplistic in its
-       handling  of  screen  output.   As  noted above, it fails to detect the
-       wrapping of long lines and may thereby cause lines at the  top  of  the
+       handling of screen output.  As noted above,  it  fails  to  detect  the
+       wrapping  of  long  lines and may thereby cause lines at the top of the
        screen to be scrolled off before being read.  ZipInfo should detect and
-       treat each occurrence of line-wrap  as  one  additional  line  printed.
-       This  requires  knowledge  of the screen's width as well as its height.
+       treat  each  occurrence  of  line-wrap  as one additional line printed.
+       This requires knowledge of the screen's width as well  as  its  height.
        In addition, ZipInfo should detect the true screen geometry on all sys-
        tems.
 
-       The  interactions among the various listing format, header, and trailer
-       options (-h, -l, -m, -s, -t) are unnecessarily complex  and  should  be
+       The interactions among the various listing format, header, and  trailer
+       options  (-h,  -l,  -m, -s, -t) are unnecessarily complex and should be
        simplified, despite the potential disruption to current users.
 
 SEE ALSO
-       funzip(1L),   unzip(1L),   unzipsfx(1L),  zip(1L),  zipcloak(1L),  zip-
+       funzip(1L),  unzip(1L),  unzipsfx(1L),  zip(1L),   zipcloak(1L),   zip-
        note(1L), zipsplit(1L)
 
 URL
        The Info-ZIP main Web page is:
-              http://www.info-zip.org/
+                  http://www.info-zip.org/
 
        FTP access is available, too:
-              ftp://ftp.info-zip.org/pub/infozip/
+                  ftp://ftp.info-zip.org/pub/infozip/
 
-Info-ZIP                     16 August 2012 (v3.1)                 ZIPINFO(1L)
+Info-ZIP                      06 Nov 2013 (v3.1)                   ZIPINFO(1L)

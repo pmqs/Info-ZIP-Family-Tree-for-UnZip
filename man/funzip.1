@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,11 @@
 .\" funzip.1 by Greg Roelofs and others.
 .\"
 .\" =========================================================================
-.\" define .EX/.EE (for multiline user-command examples; normal Courier font)
+.TH FUNZIP 1L "06 Nov 2013 (v4.10)" "Info-ZIP"
+.\" =========================================================================
+.\"
+.\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
+.\" Must follow ".TH"; otherwise macros get redefined.
 .de EX
 .in +4n
 .nf
@@ -20,7 +24,6 @@
 .in -4n
 ..
 .\" =========================================================================
-.TH FUNZIP 1L "1 November 2012 (v4.10)" "Info-ZIP"
 .SH NAME
 funzip \- filter for extracting from a ZIP archive in a pipe
 .PD
@@ -33,7 +36,7 @@ Optional password to be used if ZIP archive is encrypted.  Encryption
 support can be disabled at build time.  See DESCRIPTION for more
 details.
 .IP [\fIarchive[.zip|.gz]\fP]
-Optional input archive file specification. See DESCRIPTION for details.
+Optional input archive file specification.  See DESCRIPTION for details.
 .PD
 .\" =========================================================================
 .SH DESCRIPTION
@@ -57,7 +60,7 @@ password is not echoed on the console.
 .PP
 Given the limitation on single-member extraction, \fIfUnZip\fP is most
 useful in conjunction with a secondary archiver program such as
-\fItar\fP(1). The following section includes an example illustrating
+\fItar\fP(1).  The following section includes an example illustrating
 this usage in the case of disk backups to tape.
 .PD
 .\" =========================================================================

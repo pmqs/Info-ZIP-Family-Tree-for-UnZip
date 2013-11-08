@@ -518,19 +518,28 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     no_endsig_found = FALSE;
 #endif
     reached_end = FALSE;
-    while (!reached_end) {
+    while (!reached_end)
+    {
+#if defined( UNIX) && defined( __APPLE__)
+        int apl_dbl;
+        int do_this_file_prev = 0;
+        int seeking_apl_dbl = 0;
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
         j = 0;
+
 #ifdef AMIGA
         memzero(G.filenotes, DIR_BLKSIZ * sizeof(char *));
 #endif
-
         /*
          * Loop through files in central directory, storing offsets, file
          * attributes, case-conversion and text-conversion flags until block
          * size is reached.
          */
+        while ((j < DIR_BLKSIZ))
+        {
+            int do_this_file;
 
-        while ((j < DIR_BLKSIZ)) {
             G.pInfo = &G.info[j];
 
             if (readbuf(__G__ G.sig, 4) == 0) {
@@ -679,44 +688,88 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     break;
                 }
             }
-            if (G.process_all_files) {
-                if (store_info(__G))
-                    ++j;  /* file is OK; info[] stored; continue with next */
-                else
-                    ++num_skipped;
-            } else {
-                int   do_this_file;
 
+            /* Decide whether to process this archive member. */
+            do_this_file = -1;                  /* Undetermined. */
+#if defined( UNIX) && defined( __APPLE__)
+            apl_dbl = 0;                        /* Not (yet) AppleDouble. */
+#endif /* defined( UNIX) && defined( __APPLE__) */
+
+            if (G.process_all_files)
+            {
+                do_this_file = 1;
+            }
+#if defined( UNIX) && defined( __APPLE__)
+            /* Do AppleDouble file, if its antecedent was done. */
+            else if (seeking_apl_dbl)
+            {
+                apl_dbl = revert_apl_dbl_path( G.filename, NULL);
+                if (apl_dbl)
+                {
+                    do_this_file = do_this_file_prev;
+                }
+            }
+            if (do_this_file < 0)       /* Continue, if still undetermined. */
+#else /* defined( UNIX) && defined( __APPLE__) */
+            else
+#endif /* defined( UNIX) && defined( __APPLE__) [else] */
+            {
+                /* Determine if this entry matches an "include" pattern. */
                 if (G.filespecs == 0)
-                    do_this_file = TRUE;
-                else {  /* check if this entry matches an `include' argument */
-                    do_this_file = FALSE;
+                {
+                    /* No "include" patterns. */
+                    do_this_file = 1;
+                }
+                else
+                {
                     for (i = 0; i < G.filespecs; i++)
-                        if (match(G.filename, G.pfnames[i], uO.C_flag WISEP)) {
-                            do_this_file = TRUE;  /* ^-- ignore case or not? */
+                    {
+                        if (match(G.filename, G.pfnames[i], uO.C_flag WISEP))
+                        {
+                            do_this_file = 1;  /* ^-- ignore case or not? */
                             if (fn_matched)
                                 fn_matched[i] = TRUE;
                             break;       /* found match, so stop looping */
                         }
+                    }
                 }
-                if (do_this_file) {  /* check if this is an excluded file */
+                if (do_this_file > 0)
+                {
+                    /* Determine if this entry matches an "exclude" pattern. */
                     for (i = 0; i < G.xfilespecs; i++)
-                        if (match(G.filename, G.pxnames[i], uO.C_flag WISEP)) {
-                            do_this_file = FALSE; /* ^-- ignore case or not? */
+                    {
+                        if (match(G.filename, G.pxnames[i], uO.C_flag WISEP))
+                        {
+                            do_this_file = 0; /* ^-- ignore case or not? */
                             if (xn_matched)
                                 xn_matched[i] = TRUE;
                             break;
                         }
+                    }
                 }
-                if (do_this_file) {
-                    if (store_info(__G))
-                        ++j;            /* file is OK */
-                    else
-                        ++num_skipped;  /* unsupp. compression or encryption */
-                }
-            } /* end if (process_all_files) */
+            } /* end if (G.process_all_files) */
 
             members_processed++;
+            if (do_this_file > 0)
+            {
+                if (store_info(__G))
+                    ++j;            /* file is OK */
+                else
+                    ++num_skipped;  /* unsupp. compression or encryption */
+            }
+
+#if defined( UNIX) && defined( __APPLE__)
+            /* Save do_this_file, for possible use with the next (AD?) file. */
+            do_this_file_prev = do_this_file;
+            if ((!uO.J_flag) && G.exdir_attr_ok)
+                /* Integrated AppleDouble processing.  Look for an
+                 * AppleDouble next, iff this one was normal.
+                 */
+                seeking_apl_dbl = !apl_dbl;
+            else
+                /* No special AppleDouble processing. */
+                seeking_apl_dbl = 0;
+#endif /* defined( UNIX) && defined( __APPLE__) */
 
         } /* end while-loop (adding files to current block) */
 

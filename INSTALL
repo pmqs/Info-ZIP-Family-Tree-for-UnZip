@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-09-03
+   UnZip version 6.10.  Revised: 2013-10-22
 
 ------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ user-selected options.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-   For Mac OS X, follow the Unix procedures.
+   For Macintosh Mac OS X, follow the Unix procedures.
 
    For VMS instructions, see [.vms]INSTALL_VMS.txt.
 
@@ -270,7 +270,10 @@ enable the corresponding optional features:
                         code resides.  Use "IZ_BZIP2=bzip2" to have the
                         UnZip builders build the required bzip2 object
                         library from source files in the "bzip2"
-                        subdirectory.
+                        subdirectory.  "IZ_BZIP2=bzip2" should also work
+                        if the operating system includes bzip2 support,
+                        even if a bzip2 source kit is not found in the
+                        "bzip2" subdirectory.
 
       IZ_ZLIB=zdir      Use zlib for the Deflate compression method,
                         instead of UnZip's internal Deflate code.
@@ -286,6 +289,22 @@ enable the corresponding optional features:
 
       PPMD=1            Enable support for the PPMd compression method.
 
+      PROD=subdir       Use "subdir" as the destination directory for
+                        product files (object files, object libraries,
+                        executables, and so on).  By default, product
+                        files are placed in the main directory (".").
+                        With PROD=subdir, they are placed in the
+                        specified subdirectory.  This allows different
+                        product configurations (different compilers,
+                        options, hardware architectures, and so on) to
+                        be built in a single source tree.
+                        Note: PROD has no effect on any automatically
+                        built bzip2 object library, so it's generally
+                        safer to use a pre-built bzip2 object library in
+                        an external directory when using PROD,
+                        especially when using one source tree for
+                        different hardware architectures.
+
 
    For example, a build command using "gcc" as the C compiler, with all
 the optional compression and encryption methods enabled, might look like
@@ -293,6 +312,19 @@ the following:
 
       make -f unix/Makefile CC=gcc AES_WG=1 ICONV=1 IZ_BZIP2=bzip2 \
        LZMA=1 PPMD=1 generic
+
+   The following commands would build UnZip in the "cc" subdirectory
+using "cc" as the compiler, and again, in the "gcc" subdirectory using
+"gcc" as the compiler.  In both cases, bzip2 files in "../iz_bzip2"
+are used.  See "Building with Bzip2 Compression", below.  ("CC=cc" is
+the default, so specifying it explicitly is normally not needed, but
+doing so is harmless and clear.)
+
+      make -f unix/Makefile CC=cc PROD=cc AES_WG=1 ICONV=1 \
+       IZ_BZIP2=../iz_bzip2 LZMA=1 PPMD=1 generic
+
+      make -f unix/Makefile CC=gcc PROD=gcc AES_WG=1 ICONV=1 \
+       IZ_BZIP2=../iz_bzip2 LZMA=1 PPMD=1 generic
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -474,8 +506,9 @@ without some expected features enabled.
    ---------------------------------------------------
 
 Macintosh (Mac OS X)
-   On Mac OS X, use the Unix build procedure, described above.  See
-   below for old infomation on pre-Mac-OS-X Macintosh.
+   On Mac OS X, use the Unix build procedure, described above.  When
+using Xcode, the optional command-line tools must be installed.  For
+pre-Mac-OS-X Macintosh, see below for old infomation.
 
 MS-DOS
    See the msdos\Contents file for notes regarding which makefile(s) to
@@ -666,8 +699,13 @@ TOPS-20
       Test
       ----
 
-   On Unix(-like) systems, after a successful build, a very basic set of
-tests can be run using the "make" target "test".  For example:
+   On Unix(-like) systems, after a successful build, an "unzip -v"
+report can be generated using the "make" target "dashv".  For example:
+
+      make -f unix/Makefile dashv
+
+   A very basic set of tests can be run using the "make" target "test". 
+For example:
 
       make -f unix/Makefile test
 

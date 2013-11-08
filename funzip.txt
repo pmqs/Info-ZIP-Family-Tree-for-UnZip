@@ -13,7 +13,7 @@ ARGUMENTS
               TION for more details.
 
        [archive[.zip|.gz]]
-              Optional  input  archive file specification. See DESCRIPTION for
+              Optional  input archive file specification.  See DESCRIPTION for
               details.
 
 DESCRIPTION
@@ -36,7 +36,7 @@ DESCRIPTION
        is not echoed on the console.
 
        Given the limitation on single-member extraction, fUnZip is most useful
-       in  conjunction  with  a secondary archiver program such as tar(1). The
+       in  conjunction  with a secondary archiver program such as tar(1).  The
        following section includes an example illustrating this  usage  in  the
        case of disk backups to tape.
 
@@ -44,18 +44,18 @@ EXAMPLES
        Use  fUnZip  to extract the first (non-directory) member of the archive
        "test.zip", and to pipe it into more(1):
 
-       funzip test.zip | more
+           funzip test.zip | more
 
        Use fUnZip to test the first (non-directory) member of "test.zip" (with
        any error messages sent to standard error (stderr)):
 
-       funzip test.zip > /dev/null
+           funzip test.zip > /dev/null
 
        Use Zip and fUnZip in place of compress(1) and zcat(1) (or gzip(1L) and
        gzcat(1L)) for tape backups:
 
-       tar cf - . | zip -7 | dd of=/dev/nrst0 obs=8k
-       dd if=/dev/nrst0 ibs=8k | funzip | tar xf -
+           tar cf - . | zip -7 | dd of=/dev/nrst0 obs=8k
+           dd if=/dev/nrst0 ibs=8k | funzip | tar xf -
 
        (where, for example, nrst0 is a SCSI tape drive).
 
@@ -84,12 +84,12 @@ SEE ALSO
 
 URL
        The Info-ZIP main Web page is:
-              http://www.info-zip.org/
+                  http://www.info-zip.org/
 
        FTP access is available, too:
-              ftp://ftp.info-zip.org/pub/infozip/
+                  ftp://ftp.info-zip.org/pub/infozip/
 
 AUTHOR
        Mark Adler (Info-ZIP)
 
-Info-ZIP                    1 November 2012 (v4.10)                 FUNZIP(1L)
+Info-ZIP                      06 Nov 2013 (v4.10)                   FUNZIP(1L)

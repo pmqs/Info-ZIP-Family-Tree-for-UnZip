@@ -1,7 +1,7 @@
             UnZip Installation Supplement for VMS (OpenVMS)
             -----------------------------------------------
 
-   UnZip version 6.10.  Revised: 2013-06-06.
+   UnZip version 6.10.  Revised: 2013-10-13.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -221,6 +221,15 @@ Building the help files is detailed below.
 
       Test
       ----
+
+   After a successful build, an "unzip -v" or "UNZIP_CLI /VERBOSE"
+report can be generated using the builders:
+
+      @ [.VMS]BUILD_UNZIP LARGE DASHV
+      @ [.VMS]BUILD_UNZIP LARGE SLASHV
+   or:
+      MMS /DESC = [.VMS] /MACRO = (LARGE=1) DASHV
+      MMS /DESC = [.VMS] /MACRO = (LARGE=1) SLASHV
 
    A set of basic UnZip tests can be run using the builders:
 
