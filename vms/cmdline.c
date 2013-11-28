@@ -855,7 +855,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 
         /*
          * Process archive as Java JAR.
-         */			
+         */
 #define OPT_JAR  "--jar"        /* "--jar"   Process as Java JAR. */
 #define OPT_JARN "--jar-"       /* "--jar-"  Process normally. */
 

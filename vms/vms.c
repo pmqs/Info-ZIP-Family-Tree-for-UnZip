@@ -6045,7 +6045,7 @@ int establish_ctrl_t( void ctrl_t_ast())
     }
 
 #define FUN_AST_ENA (IO$_SETMODE| IO$M_OUTBAND)
-					
+
     status = sys$qiow( 0,               /* Event flag. */
                        term_chan,       /* Channel. */
                        FUN_AST_ENA,     /* Function code. */

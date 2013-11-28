@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE.txt, version 2000-Apr-09 or later
   for terms of use.  If this file is missing, the Info-ZIP license
@@ -24,13 +24,13 @@
 
 
 #define IZ_AES_WG_MAJORVER      1
-#define IZ_AES_WG_MINORVER      0
+#define IZ_AES_WG_MINORVER      3
 #ifdef IZ_AES_WG_BETA
 #  define IZ_AES_WG_BETA_VER     "a BETA"
-#  define IZ_AES_WG_VERSION_DATE "29 Jun 2011"  /* Last real code change. */
+#  define IZ_AES_WG_VERSION_DATE "12 Apr 2013"  /* Last real code change. */
 #else
 #  define IZ_AES_WG_BETA_VER     ""
-#  define IZ_AES_WG_VERSION_DATE "07 Jul 2011"  /* Last public release date. */
+#  define IZ_AES_WG_VERSION_DATE "18 Nov 2013"  /* Last public release date. */
 #  define IZ_AES_WG_RELEASE
 #endif
 

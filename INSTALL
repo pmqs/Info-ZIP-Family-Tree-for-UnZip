@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-10-22
+   UnZip version 6.10.  Revised: 2013-11-11
 
 ------------------------------------------------------------------------
 
@@ -36,7 +36,8 @@ user-selected options.
 
    For VMS instructions, see [.vms]INSTALL_VMS.txt.
 
-   For Windows, using Cygwin or MinGW, follow the Unix procedures.
+   For Windows, using Cygwin or MinGW, follow the Unix procedures.  (For
+   Windows using native tools, see the Windows section below.)
 
    +-------------------------------------------------------------------+
    | Many system types have a system-specific directory ("unix/",      |
@@ -546,7 +547,7 @@ VM/CMS
    README.CMS file for more details.
 
 Windows (XP, Vista, 7, and so on)
-   Solution and project files for Microsoft Visual Studio 2010 are
+   UnZip solution and project files for Microsoft Visual Studio 2010 are
    supplied in the win32\vc10\ subdirectory.  Optional features, such as
    optional compression and encryption methods, are controlled by
    Preprocessor Definitions (C macros).  Some popular macros are
@@ -564,6 +565,16 @@ Windows (XP, Vista, 7, and so on)
    to enable bzip2 compression in UnZipSFX, define both BZIP2_SUPPORT
    and BZIP2_SFX.  To enable AES_WG encryption, define both CRYPT_AES_WG
    and CRYPT_AES_WG_SFX, and so on.
+
+   Similarly, UnZip DLL solution and project files for Microsoft Visual
+   Studio 2010 are supplied in the windll\vc10\ subdirectory.  As with
+   UnZip itself, optional features are controlled by Preprocessor
+   Definitions (C macros).  Also similarly, the solution file,
+   unzip32_dll.sln, includes the "libbz2" project as as a prerequisite
+   for the "unz32dll" and "uzexampl" projects, and if there is no bzip2
+   source kit in the bzip2\ directory, then the "libbz2" project build
+   will fail, but the other project builds should still work (so long as
+   the BZIP2_SUPPORT macro is not defined).
 
    Currently, Microsoft Visual Studio 2010 and 2012 (Visual C++ v10.0
    and v11.0) are the only tested versions.  Newer Visual Studio
@@ -704,7 +715,7 @@ report can be generated using the "make" target "dashv".  For example:
 
       make -f unix/Makefile dashv
 
-   A very basic set of tests can be run using the "make" target "test". 
+   A very basic set of tests can be run using the "make" target "test".
 For example:
 
       make -f unix/Makefile test

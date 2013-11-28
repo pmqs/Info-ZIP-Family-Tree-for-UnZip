@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-11-01
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-11-27
 #==============================================================================
 
 #==============================================================================
@@ -50,18 +50,19 @@
 # Optional features include (see INSTALL for installation instructions):
 #
 # AES encryption - If you want AES encryption (WinZip/Gladman) support
-#   included, unzip the AES source archive (iz_aes_wg10.zip, or whatever is
-#   the latest version, available on the Info-ZIP ftp site) to create the
-#   local ./aes_wg subdirectory, and set the "make" macro AES_WG to 1.
-#   See the files README_AES_WG.txt and INSTALL for more information.
+#   included, unzip the AES_WG source kit (iz_aes_wg13.zip, or whatever
+#   is the latest version, available on the Info-ZIP server) to populate
+#   the local ./aes_wg subdirectory, and set the "make" macro AES_WG to
+#   1.   See the files INSTALL and aes_wg/README_AES_WG.txt for more
+#   information.
 #
-# LZMA compression - If you want LZMA compression support included, set the
-#   "make" macro LZMA to 1.  See the files README_LZMA.txt and INSTALL for
-#   more information.
+# LZMA compression - If you want LZMA compression support included, set
+#   the "make" macro LZMA to 1.  See the files INSTALL and
+#   szip/README_LZMA.txt and INSTALL for more information.
 #
-# PPMd compression - If you want PPMd compression support included, set the
-#   "make" macro PPMD to 1.  See the files README_LZMA.txt and INSTALL for
-#   more information.
+# PPMd compression - If you want PPMd compression support included, set
+#   the "make" macro PPMD to 1.  See the files INSTALL and
+#   szip/README_LZMA.txt and INSTALL for more information.
 #
 # Bzip2 compression - If you want bzip2 compression support included, there
 #   are three options:
@@ -77,7 +78,7 @@
 #     Set the "make" macro IZ_BZIP2 to bzip2.  However, use one of the above
 #     options first, if possible, to avoid an issue with error handling that
 #     may not be corrected in the system library.
-#   See the files README_BZIP2.txt and INSTALL for more information.
+#   See the files INSTALL and bzip2/README_BZIP2.txt for more information.
 #
 # Zlib deflation - If you want to use zlib for decompressing instead of
 #   UnZip's built-in code, there are two options:
@@ -118,7 +119,8 @@
 GENERIC_TARGETS1  = generic  generic_man  generic_docs  generic_pkg  flags
 GENERIC_TARGETS2  = generic1 generic2 generic3 generic_bz2 generic_zlib
 GENERIC_TARGETS3  = generic_shlib
-MAKE_ACTIONS  = clean  clean_bzip2  clean_exe  clean_docs
+
+MISC_TARGETS = clean  clean_bzip2  clean_docs  clean_exe  dashv
 
 SYS_TARGETS01  = 386i 3Bx 7300 7300_gcc amdahl amdahl_eft apollo aviion
 SYS_TARGETS02  = bsd bsdi bsdi_noasm bull coherent convex cray cray_opt
@@ -143,9 +145,9 @@ help:
 	@echo "  $(GENERIC_TARGETS2)"
 	@echo "  $(GENERIC_TARGETS3)"
 	@echo ''
-	@echo 'Additional "make" actions include:'
+	@echo 'Additional "make" targets include:'
 	@echo ''
-	@echo "  $(MAKE_ACTIONS)"
+	@echo "  $(MISC_TARGETS)"
 	@echo ''
 	@echo 'For a list including specific targets for older systems:'
 	@echo '   make -f unix/Makefile list'
@@ -191,6 +193,9 @@ help:
 	@echo 'files, like unzip.txt, that should already be in the UnZip root'
 	@echo 'directory.  To recreate these files, clear out the originals'
 	@echo 'using the clean_docs target, then use the generic_docs target.'
+	@echo ''
+	@echo 'After UnZip has been built, use dashv to get an "unzip -v"'
+	@echo 'report from the created executable.'
 	@echo ''
 	@echo 'See the files INSTALL, unzip.txt, and unix/Makefile for more'
 	@echo 'information.'
@@ -238,9 +243,6 @@ list:
 	@echo "  $(GENERIC_TARGETS2)"
 	@echo "  $(GENERIC_TARGETS3)"
 	@echo ''
-	@echo 'Make actions:'
-	@echo "  $(MAKE_ACTIONS)"
-	@echo ''
 	@echo 'Specific targets:'
 	@echo "  $(SYS_TARGETS01)"
 	@echo "  $(SYS_TARGETS02)"
@@ -252,6 +254,9 @@ list:
 	@echo "  $(SYS_TARGETS08)"
 	@echo "  $(SYS_TARGETS09)"
 	@echo "  $(SYS_TARGETS10)"
+	@echo ''
+	@echo 'Miscellaneous targets:'
+	@echo "  $(MISC_TARGETS)"
 	@echo ''
 	@echo 'Use one of the generic targets if possible, as the specific'
 	@echo 'targets tend to be woefully out of date.'

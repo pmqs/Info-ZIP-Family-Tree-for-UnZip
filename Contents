@@ -57,7 +57,6 @@ globals.c       Global structure/variable support with reentrancy
 globals.h       Header file for globals.c; global structure G
 inflate.c       Deflate compression (method 8)
 inflate.h       Header file for inflate.c
-izunzip_example.c  Example main program for callable UnZip (Unix, VMS)
 list.c          UnZip (not ZipInfo) listing
 match.c         Pattern-matching for filename wildcards
 process.c       Multiple archives, memory management, extra field
@@ -105,5 +104,6 @@ zvm/            VM/CMS and MVS
    Contents files)
 aes_wg/         AES_WG encryption
 bzip2/          bzip2 compression
+libiz/          Information (example program) for the UnZip object library
 szip/           LZMA and PPMd compression
 wrap/           Wrappers for optional source modules

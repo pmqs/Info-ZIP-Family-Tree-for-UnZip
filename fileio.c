@@ -1137,7 +1137,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
                          &G.apl_dbl_hdr[ APL_DBL_OFS_FNDR_INFO], /* Src bufr. */
                          APL_DBL_SIZE_FNDR_INFO,    /* Src buffer size. */
                          0);                        /* Options. */
-	
+
                         if (sts != 0)
                         {
                             Info(slide, 0x12, ((char *)slide,

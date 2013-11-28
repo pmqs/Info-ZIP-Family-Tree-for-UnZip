@@ -317,7 +317,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (07 Nov 2013):
+6.10c09 (26 Nov 2013):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -336,8 +336,8 @@ Features added (or removed):
    systems.  Specify LIBUNZIP at build time to create libizunzip.a
    (Unix) or LIBIZUNZIP.OLB and LIBIZUNZIP.OPT (VMS), which may be
    linked with a user-supplied program.  Comments in an example main
-   program source module, izunzip_example.c, explain some usage details.
-   (izunzip_example.c, unix/configure, unix/Makefile,
+   program source module, libiz/izunzip_example.c, explain some usage
+   details.  (libiz/izunzip_example.c, unix/configure, unix/Makefile,
    vms/build_unzip.com, vms/descrip.mms, vms/descrip_deps.mms,
    vms/descrip_mkdeps.mms, vms/descrip_src.mms) [SMS]
  - Initial attempt to support Windows MinGW environment with UNIX
@@ -864,7 +864,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (09 Nov 2013):
+6.10c09 (11 Nov 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1286,3 +1286,8 @@ Bugs fixed:
    the builder files themselves).  (INSTALL, unix/configure,
    unix/Makefile, unix/mlz.sh, vms/build_unzip.com, vms/descrip.mms,
    vms/INSTALL_VMS.txt) [SMS]
+ - Windows DLL builders failed to deal with (optional) bzip2
+   compression.  Now, a scheme like that used for UnZip proper is used
+   for the DLL.  (windll/vc10/unzip32_dll.sln,
+   windll/vc10/libbz2/libbz2.vcxproj,
+   windll/vc10/libbz2/libbz2.vcxproj.filters) [SMS]

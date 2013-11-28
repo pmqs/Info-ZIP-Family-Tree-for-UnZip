@@ -55,7 +55,10 @@ the future.
 
       Use of "brg_endian.h" for endian determination.
 
-      Changing "brg_endian.h" to work with GNU C on non-Linux systems.
+      Changing "brg_endian.h" to work with GNU C on non-Linux systems,
+      and on SunOS 4.x systems.
+
+      #include <limits.h> instead of "limits.h" in aes.h.
 
 Comments in the code identify the changes.  (Look for "Info-ZIP".)  The
 original files are preserved in an "original_files" subdirectory, for
@@ -113,10 +116,11 @@ legally allowed to download and use this encryption software.
 
    Note that many of the servers that distribute Info-ZIP software are
 situated in the United States.  See the latest version of file
-USexport.msg for information regarding export from the US.  Downloads of
-Info-ZIP encryption software are subject to the limitations noted.
+USexport_AES_WG.msg for information regarding export from the US. 
+Downloads of Info-ZIP encryption software are subject to the limitations
+noted.
 
-      ftp://ftp.info-zip.org/pub/infozip/crypt/USexport.msg
+      ftp://ftp.info-zip.org/pub/infozip/crypt/USexport_AES_WG.msg
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -138,6 +142,13 @@ it.
       IZ_AES_WG Version History
       -------------------------
 
+      1.3  2013-11-18  Renamed USexport.msg to USexport_AES_WG.msg to
+                       distinguish it from the Traditional encryption
+                       notice, USexport.msg.
+      1.2  2013-04-12  Avoid <sys/isa_defs.h> on __sun systems with
+                       __sparc defined (for SunOS 4.x).
+      1.1  2012-12-31  #include <limits.h> instead of "limits.h" in
+                       aes.h (for VAX C).  (SMS)
       1.0  2011-07-07  Minor documentation changes.  (SMS, EG)
                        Compatible with UnZip 6.10 and Zip 3.1.
                        US Department of Commerce BIS notified.

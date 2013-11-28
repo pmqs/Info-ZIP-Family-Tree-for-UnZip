@@ -2493,7 +2493,7 @@ int mapnamew(__G__ renamed)
  *  MPN_NOMEM       - error (memory allocation failed) -> skip entry
  *  [also MPN_VOL_LABEL, MPN_CREATED_DIR]
  */
-{				    
+{
     wchar_t pathcompw[FILNAMSIZ];   /* path-component buffer */
     wchar_t *ppw, *cpw=NULL;        /* character pointers */
     wchar_t *lastsemiw = NULL;  /* pointer to last semi-colon in pathcomp */

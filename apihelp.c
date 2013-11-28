@@ -75,7 +75,7 @@ APIDocStruct APIDoc[] = {
 "             { (sizeof user_funs), NULL, NULL, NULL, MyUzpPassword, NULL };\n"
 "            if (UzpMainI( argc, argv, &user_funs))\n"
 "              printf(\"error: unzip failed\\n\");\n\n"
-"            See unzip.h and izunzip_example.c for details.\n"
+"            See unzip.h and libiz/izunzip_example.c for details.\n"
     },
 
     {

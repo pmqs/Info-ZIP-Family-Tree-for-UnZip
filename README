@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2013-10-22
+   Document date: 2013-11-26
 
 ------------------------------------------------------------------------
 
@@ -154,9 +154,9 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
   umask or default protection.
 
 - Behavior change: Now, on Unix(-like) and VMS systems,
-  -X/--restore-owner controls only restoration of Unix UID/GID or VMS
-  UIC.  On VMS, -ka/--keep-acl (/RESTORE = ACL) controls restoration of
-  ACLs.
+  -X/--restore-owner (/RESTORE = OWNER) controls only restoration of
+  Unix UID/GID or VMS UIC.  On VMS, -ka/--keep-acl (/RESTORE = ACL)
+  controls restoration of ACLs.
 
 - Behavior change: ZipInfo report format changes:
    - Headers and totals summary formats have been changed.  New option:
@@ -166,7 +166,7 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
 
 - Initial support for an UnZip object library on Unix and VMS, providing
   a callable UnZip interface.  Comments in an example main program
-  source module, izunzip_example.c, explain some usage details.
+  source module, libiz/izunzip_example.c, explain some usage details.
   Currently, only a simple .a or .OLB object library is offered, not a
   .so shared object or .EXE shareable image.
 

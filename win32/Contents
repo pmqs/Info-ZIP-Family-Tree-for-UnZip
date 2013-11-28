@@ -20,6 +20,21 @@ win32.c             Win32-specific support routines
 win32i64.c          Win32-specific large-file support routines
 winapp.rc           Resource file for regular console-mode UnZip application
 
+vc10\               Directory for Visual C++ 2010 (10.0) project files
+  unzip.sln           Solution file for all UnZip command-line tools
+  funzip\             Directory for FUnZip project files
+    funzip.vcxproj
+    funzip.vcxproj.filters
+  libbz2\             Directory for bzip2 library project files
+    libbz2.vcxproj
+    libbz2.vcxproj.filters
+  unzip\              Directory for UnZip project files
+    unzip.vcxproj
+    unzip.vcxproj.filters
+  unzipsfx\           Directory for UnZipSFX project files
+    unzipsfx.vcxproj
+    unzipsfx.vcxproj.filters
+
 vc6\                Directory for Visual C++ 6.0 project files
   funzip.dsp          Project file for fUnZip command-line tool
   unzip.dsp           Project file for UnZip command-line main program
@@ -35,21 +50,6 @@ vc8\                Directory for Visual C++ 2005 (8.0) project files
   unzipbz2.vcproj     Project file for UnZip with bzip2 support
   bz2lib.vcproj       Project file for bz2lib bzip2 compression library
   unzip.sln           Solution file for all UnZip command-line tools
-
-vc10\               Directory for Visual C++ 2010 (10.0) project files
-  unzip.sln           Solution file for all UnZip command-line tools
-  funzip\             Directory for FUnZip project files
-    funzip.vcxproj
-    funzip.vcxproj.filters
-  libbz2\             Directory for bzip2 library project files
-    libbz2.vcxproj
-    libbz2.vcxproj.filters
-  unzip\              Directory for UnZip project files
-    unzip.vcxproj
-    unzip.vcxproj.filters
-  unzipsfx\           Directory for UnZipSFX project files
-    unzipsfx.vcxproj
-    unzipsfx.vcxproj.filters
 
    crc_i386.c has been tested with MSVC and can be selected through the
 MSVC makefile.  It is provided for those who may have MSVC but no

@@ -45,7 +45,14 @@ extern "C"
 /* #define AES_TABLE_PTR                                                */
 
 /*  This include is used to find 8 and 32 bit unsigned integer types    */
-#include "limits.h"
+/***********************************************************************
+ * 2012-12-31 SMS for Info-ZIP.
+ * Changed "limits.h" to <limits.h> for VAX C (and general consistency).
+ *
+ * #include "limits.h"
+ ***********************************************************************
+ */
+#include <limits.h>
 
 #if UCHAR_MAX == 0xff                       /* an unsigned 8 bit type   */
   typedef unsigned char      aes_08t;

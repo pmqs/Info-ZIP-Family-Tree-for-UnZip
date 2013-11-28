@@ -3848,16 +3848,16 @@ static void show_version_info(__G)
           LoadFarStringSmall(AppleNFRSRC)));
         ++numopts;
 #  endif /* def APPLE_NFRSRC */
-#  ifdef ASM_CRC
-        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
-          LoadFarStringSmall(AsmCRC)));
-        ++numopts;
-#  endif
 #  ifdef APPLE_XATTR
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(AppleXATTR)));
         ++numopts;
 #  endif /* def APPLE_XATTR */
+#  ifdef ASM_CRC
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(AsmCRC)));
+        ++numopts;
+#  endif
 #  ifdef ASM_INFLATECODES
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(AsmInflateCodes)));

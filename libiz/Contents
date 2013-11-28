@@ -1,0 +1,8 @@
+      Contents of the UnZip 6.10 Source Archive "libiz" directory
+      -----------------------------------------------------------
+
+   General Documentation
+Contents        This file
+
+   Source Code
+izunzip_example.c  Example main program for callable UnZip (Unix, VMS)
