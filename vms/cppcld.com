@@ -1,6 +1,17 @@
-$!                                              9 May 2012.  SMS.
+$! CPPCLD.COM
 $!
-$! Info-ZIP VMS accessory procedure.
+$!     Info-ZIP VMS procedure to use a C preprocessor on a .CLD file.
+$!
+$!     Last revised:  2013-11-29  SMS.
+$!
+$!----------------------------------------------------------------------
+$! Copyright (c) 2012-2013 Info-ZIP.  All rights reserved.
+$!
+$! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+$! contents of which are also included in zip.h) for terms of use.  If,
+$! for some reason, all these files are missing, the Info-ZIP license
+$! may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+$!----------------------------------------------------------------------
 $!
 $! P1 = CC command
 $! P2 = Command definition input file (".CLD") with CPP directives.

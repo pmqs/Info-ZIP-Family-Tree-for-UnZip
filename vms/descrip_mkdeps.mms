@@ -1,6 +1,17 @@
-#                                               18 March 2013.  SMS.
+# DESCRIP_MKDEPS.MMS
 #
 #    UnZip 6.1 for VMS - MMS Dependency Description File.
+#
+#    Last revised:  2013-11-29
+#
+#----------------------------------------------------------------------
+# Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+#
+# See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+# contents of which are also included in zip.h) for terms of use.  If,
+# for some reason, all these files are missing, the Info-ZIP license
+# may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+#----------------------------------------------------------------------
 #
 #    MMS /EXTENDED_SYNTAX description file to generate a C source
 #    dependencies file.  Unsightly errors result when /EXTENDED_SYNTAX

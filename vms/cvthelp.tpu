@@ -1,13 +1,13 @@
 !       TITLE   CVTHELP.TPU
-!       IDENT   01-002
+!       IDENT   01-003
 !
 !++
-! Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+! Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
 !
-! See the accompanying file LICENSE, version 2000-Apr-09 or later
-! (the contents of which are also included in zip.h) for terms of use.
-! If, for some reason, all these files are missing, the Info-ZIP license
-! also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
+! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+! contents of which are also included in zip.h) for terms of use.  If,
+! for some reason, all these files are missing, the Info-ZIP license
+! may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
 !
 !++
 !
@@ -25,6 +25,9 @@
 !       $ EDIT/TPU/NOJOURNAL/NODISPLAY/COMMAND=CVTHELP file.HELP
 !
 !  Modified by:
+!
+!       01-003          Steven Schweda           29-NOV-2013
+!               Updated copyright, license.
 !
 !       01-002          Steven Schweda            1-OCT-2012 23:53
 !               Added <LITERALW> and <WLARETIL> for wide literals

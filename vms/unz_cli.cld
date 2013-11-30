@@ -1,6 +1,15 @@
 	Module		VMS_UNZIP_CLD
 	Ident		"03-005"
 
+!-----------------------------------------------------------------------
+! Copyright (c) 2001-2013 Info-ZIP.  All rights reserved.
+!
+! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+! contents of which are also included in zip.h) for terms of use.  If,
+! for some reason, all these files are missing, the Info-ZIP license
+! may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+!-----------------------------------------------------------------------
+
 Define	Verb		UNZIP
 	Parameter	P1, Label=ZIPFILE, Prompt="Zip file"
 	Parameter	P2, Label=INFILE, VALUE(LIST), Prompt="Files to UnZip"

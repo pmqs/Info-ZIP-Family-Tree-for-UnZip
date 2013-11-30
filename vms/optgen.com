@@ -1,6 +1,18 @@
-$!                                              4 August 2011.  SMS.
+$! OPTGEN.COM
 $!
-$! Info-ZIP VMS accessory procedure.
+$!     Info-ZIP VMS procedure to extract a program version from a C
+$!     header file.
+$!
+$!     Last revised:  2013-11-29  SMS.
+$!
+$!----------------------------------------------------------------------
+$! Copyright (c) 2011-2013 Info-ZIP.  All rights reserved.
+$!
+$! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+$! contents of which are also included in zip.h) for terms of use.  If,
+$! for some reason, all these files are missing, the Info-ZIP license
+$! may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+$!----------------------------------------------------------------------
 $!
 $! Find the UnZip or Zip (P1 = product name) program version.
 $!

@@ -864,7 +864,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (11 Nov 2013):
+6.10c09 (30 Nov 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1291,3 +1291,12 @@ Bugs fixed:
    for the DLL.  (windll/vc10/unzip32_dll.sln,
    windll/vc10/libbz2/libbz2.vcxproj,
    windll/vc10/libbz2/libbz2.vcxproj.filters) [SMS]
+ - Added or updated copyright and license information in various files.
+   (unix/configure, unix/configure_old, unix/Makefile,
+   unix/Makefile_old, unix/mlz.sh, unix/test_unzip.sh, unix/zipgrep,
+   vms/build_unzip.com, vms/collect_deps.com, vms/cppcld.com,
+   vms/cvthelp.tpu, vms/descrip.mms, vms/descrip_mkdeps.mms,
+   vms/descrip_src.mms, vms/find_bzip2_lib.com, vms/hlp_lib_next.com,
+   vms/makesfx.com, vms/mod_dep.com, vms/optgen.com, vms/test_unzip.com,
+   vms/unzip_cli.help, vms/UNZIP_DEF.RNH, vms/UNZIP_MSG.MSG,
+   vms/unz_cli.cld) [SMS]

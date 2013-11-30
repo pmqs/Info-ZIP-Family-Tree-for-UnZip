@@ -1,11 +1,25 @@
 #!/bin/sh
 
+#==============================================================================
+# unix/test_unzip.sh: UnZip (basic) test script.
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2013-11-29
+#
+# Copyright (c) 2011-2013 Info-ZIP.  All rights reserved.
+#
+# See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+# contents of which are also included in zip.h) for terms of use.  If,
+# for some reason, all these files are missing, the Info-ZIP license may
+# also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+#==============================================================================
+
+#==============================================================================
 #    UnZip test script.
 #
 #    $1 = test archive name.  Default: testmake.zip
 #    $2 = program directory (relative).  Default: .
 #    $3 = non-null to skip funzip and SFX tests.
 #
+#    2013-11-29  SMS.  Copyright, documentation, license.
 #    2013-06-03  SMS.  Added exit status value.
 #    2012-12-16  SMS.  Added "-mc-" to UnZip "-Z" command to suppress
 #                      member counts by dir/file/link, because not all
@@ -16,6 +30,7 @@
 #    2012-02-24  SMS.  Added $3 check for PPMd test.
 #                      Added exit status tests.
 #    2011-08-05  SMS.  New.
+#==============================================================================
 
 test_archive=${1:-testmake.zip}
 prod=${2:-.}

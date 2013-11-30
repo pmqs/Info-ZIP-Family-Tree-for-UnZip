@@ -2,7 +2,16 @@ $! BUILD_UNZIP.COM
 $!
 $!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
 $!
-$!     Last revised:  2013-10-13  SMS.
+$!     Last revised:  2013-11-29  SMS.
+$!
+$!----------------------------------------------------------------------
+$! Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+$!
+$! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+$! contents of which are also included in zip.h) for terms of use.  If,
+$! for some reason, all these files are missing, the Info-ZIP license
+$! may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+$!----------------------------------------------------------------------
 $!
 $!     Command arguments:
 $!     - Suppress C compilation (re-link): "NOCOMPILE"

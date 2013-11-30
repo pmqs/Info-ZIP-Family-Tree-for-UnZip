@@ -1,6 +1,17 @@
-$!                                              28 December 2006.  SMS.
+$! FIND_BZIP2_LIB.COM
 $!
-$! Info-ZIP VMS accessory procedure.
+$!     Info-ZIP VMS procedure to locate an object library.
+$!
+$!     Last revised:  2013-11-29
+$!
+$!----------------------------------------------------------------------
+$! Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+$!
+$! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+$! contents of which are also included in zip.h) for terms of use.  If,
+$! for some reason, all these files are missing, the Info-ZIP license
+$! may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+$!----------------------------------------------------------------------
 $!
 $! Find the BZIP2 object library under P1, starting in the [.'P2']
 $! destination directory.  (We assume, initially, that the BZIP2
