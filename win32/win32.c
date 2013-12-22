@@ -1204,6 +1204,98 @@ void close_outfile(__G)
 #     define Ansi_Fname  G.filename
 # endif
 
+/*---------------------------------------------------------------------------
+    If symbolic links are supported, allocate storage for a symlink
+    control structure, put the uncompressed "data" and other required
+    info into it, and add the structure to the "deferred symlinks"
+    chain.  Because we know it's a symbolic link, we shouldn't need to
+    worry about overflowing unsigned ints with unsigned longs.
+ ---------------------------------------------------------------------------*/
+
+# ifdef SYMLINKS
+    if (G.symlnk) {
+        extent ucsize = (extent)G.lrec.ucsize;
+#  ifdef SET_SYMLINK_ATTRIBS
+        /* 2013-12-05 SMS.
+         * Note that z_uidgid is not (yet?) declared for WIN32, and must
+         * be an array/ponter for this usage to make sense.  See
+         * unix/unix.c.
+         */
+        extent attribsize = sizeof(unsigned) +
+                            (have_uidgid_flg ? sizeof( z_uidgid) : 0);
+#  else
+        extent attribsize = 0;
+#  endif
+        /* Size of the symlink entry is the sum of:
+         *  struct size (includes 1 (buf[1]) for target text NUL),
+         *  system specific attribute data size (might be 0),
+         *  target text length (only -- NUL already counted, above),
+         *  link name length + 1 (NUL).
+         */
+        extent slnk_entrysize = sizeof( slinkentry) + attribsize +
+         ucsize + strlen( G.filename) + 1;
+
+        slinkentry *slnk_entry;
+
+        if (slnk_entrysize < ucsize) {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  symbolic link (%s) failed: mem alloc overflow\n",
+              FnFilter1(G.filename)));
+            fclose(G.outfile);
+            return;
+        }
+
+        if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize)) == NULL) {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  symbolic link (%s) failed: no mem\n",
+              FnFilter1(G.filename)));
+            fclose(G.outfile);
+            return;
+        }
+        slnk_entry->next = NULL;
+        slnk_entry->targetlen = ucsize;
+        slnk_entry->attriblen = attribsize;
+#  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        slnk_entry->wide = 0;
+#  endif
+#  ifdef SET_SYMLINK_ATTRIBS
+        memcpy( slnk_entry->buf, &(G.pInfo->file_attr),
+         sizeof( G.pInfo->file_attr));
+        if (have_uidgid_flg)
+            memcpy( (slnk_entry->buf+ sizeof( unsigned)), z_uidgid,
+             sizeof( z_uidgid));
+#  endif
+        slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
+        slnk_entry->fname = slnk_entry->target + ucsize + 1;
+        strcpy(slnk_entry->fname, G.filename);
+
+        /* move back to the start of the file to re-read the "link data" */
+        rewind(G.outfile);
+
+        if (fread(slnk_entry->target, 1, ucsize, G.outfile) != ucsize)
+        {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  symbolic link (%s) failed\n",
+              FnFilter1(G.filename)));
+            free(slnk_entry);
+            fclose(G.outfile);
+            return;
+        }
+        slnk_entry->target[ucsize] = '\0';
+        if (QCOND2)
+            Info(slide, 0, ((char *)slide, "-> %s ",
+              FnFilter1(slnk_entry->target)));
+        /* add this symlink record to the list of deferred symlinks */
+        if (G.slink_last != NULL)
+            G.slink_last->next = slnk_entry;
+        else
+            G.slink_head = slnk_entry;
+        G.slink_last = slnk_entry;
+        fclose( G.outfile);
+        return;
+    }
+# endif /* def SYMLINKS */
+
 # ifndef __RSXNT__
 #  if !(defined(UNICODE_SUPPORT) && defined(WIN32_WIDE))
       if (IsWinNT()) {
@@ -1331,6 +1423,96 @@ void close_outfile(__G)
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     } else {
       /* wide version */
+
+/*---------------------------------------------------------------------------
+    If symbolic links are supported, allocate storage for a symlink
+    control structure, put the uncompressed "data" and other required
+    info into it, and add the structure to the "deferred symlinks"
+    chain.  Because we know it's a symbolic link, we shouldn't need to
+    worry about overflowing unsigned ints with unsigned longs.
+ ---------------------------------------------------------------------------*/
+
+# ifdef SYMLINKS
+    if (G.symlnk) {
+        extent ucsize = (extent)G.lrec.ucsize;
+#  ifdef SET_SYMLINK_ATTRIBS
+        extent attribsize = sizeof(unsigned) +
+                            (have_uidgid_flg ? sizeof( z_uidgid) : 0);
+#  else
+        extent attribsize = 0;
+#  endif
+        /* Note: Hard-coded assumption that sizeof( wchar_t) = 2. */
+        int fname_aligner = (attribsize+ ucsize+ 1)& 1; /* Necessary? */
+
+        /* Size of the symlink entry is the sum of:
+         *  struct size (includes 1 (buf[1]) for target text NUL),
+         *  system specific attribute data size (might be 0),
+         *  target text length (only -- NUL already counted, above),
+         *  1 (optional) to align wide link name,
+         *  link name length + 1 (NUL).
+         */
+        extent slnk_entrysize = sizeof(slinkentry) + attribsize +
+         ucsize + fname_aligner +
+         sizeof( wchar_t)* (wcslen( G.unipath_widefilename)+ 1);
+
+        slinkentry *slnk_entry;
+
+        if (slnk_entrysize < ucsize) {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  symbolic link (%s) failed: mem alloc overflow\n",
+              FnFilter1(G.filename)));
+            fclose(G.outfile);
+            return;
+        }
+
+        if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize)) == NULL) {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  symbolic link (%s) failed: no mem\n",
+              FnFilter1(G.filename)));
+            fclose(G.outfile);
+            return;
+        }
+        slnk_entry->next = NULL;
+        slnk_entry->targetlen = ucsize;
+        slnk_entry->attriblen = attribsize;
+        slnk_entry->wide = 1;
+#  ifdef SET_SYMLINK_ATTRIBS
+        memcpy(slnk_entry->buf, &(G.pInfo->file_attr),
+               sizeof(unsigned));
+        if (have_uidgid_flg)
+            memcpy( (slnk_entry->buf + sizeof( unsigned)), z_uidgid,
+             sizeof( z_uidgid));
+#  endif
+        slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
+        slnk_entry->fname = slnk_entry->target + ucsize + 1 + fname_aligner;
+        wcscpy( (wchar_t *)slnk_entry->fname, G.unipath_widefilename);
+
+        /* move back to the start of the file to re-read the "link data" */
+        rewind(G.outfile);
+
+        if (fread(slnk_entry->target, 1, ucsize, G.outfile) != ucsize)
+        {
+            Info(slide, 0x201, ((char *)slide,
+              "warning:  symbolic link (%s) failed\n",
+              FnFilter1(G.filename)));
+            free(slnk_entry);
+            fclose(G.outfile);
+            return;
+        }
+        slnk_entry->target[ucsize] = '\0';
+        if (QCOND2)
+            Info(slide, 0, ((char *)slide, "-> %s ",
+              FnFilter1(slnk_entry->target)));
+        /* add this symlink record to the list of deferred symlinks */
+        if (G.slink_last != NULL)
+            G.slink_last->next = slnk_entry;
+        else
+            G.slink_head = slnk_entry;
+        G.slink_last = slnk_entry;
+        fclose( G.outfile);
+        return;
+    }
+# endif /* def SYMLINKS */
 
 #  ifndef __RSXNT__
       if (IsWinNT()) {
@@ -2185,6 +2367,18 @@ int mapattr(__G)
     G.pInfo->file_attr = ((unsigned)G.crec.external_file_attributes |
       (G.crec.external_file_attributes & FILE_ATTRIBUTE_DIRECTORY ?
        0 : FILE_ATTRIBUTE_ARCHIVE)) & 0xff;
+
+#ifdef SYMLINKS
+    if (SYMLINK_HOST( G.pInfo->hostnum))
+    {
+        unsigned int uxattr;
+
+        uxattr = (G.crec.external_file_attributes >> 16);   /* drwxrwxrwx */
+
+        G.pInfo->symlink = S_ISLNK( uxattr);
+    }
+#endif /* def SYMLINKS */
+
     return 0;
 
 } /* end function mapattr() */
@@ -4578,9 +4772,9 @@ wchar_t *local_to_wchar_string(local_string)
 }
 
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-#  ifdef DYNAMIC_WIDE_NAME
-wchar_t *utf8_to_wchar_string(utf8_string)
-  char *utf8_string;       /* path to get utf-8 name for */
+#  if defined( DYNAMIC_WIDE_NAME) || defined( SYMLINKS)
+wchar_t *utf8_to_wchar_string_dyn(utf8_string)
+  const char *utf8_string;      /* path to get utf-8 name for */
 {
   wchar_t  *qw;
   int       ulen;
@@ -4625,10 +4819,12 @@ wchar_t *utf8_to_wchar_string(utf8_string)
 
   return qw;
 }
-#  else /* def DYNAMIC_WIDE_NAME */
-void utf8_to_wchar_string( resultw, utf8_string)
-  wchar_t *resultw;        /* User's result buffer. */
-  char *utf8_string;       /* path to get utf-8 name for */
+#  endif /* defined( DYNAMIC_WIDE_NAME) || defined( SYMLINKS) */
+
+#  ifndef DYNAMIC_WIDE_NAME
+void utf8_to_wchar_string_stat( resultw, utf8_string)
+  wchar_t *resultw;             /* User's result buffer. */
+  const char *utf8_string;      /* path to get utf-8 name for */
 {
   int       ulen;
 
@@ -4653,7 +4849,7 @@ void utf8_to_wchar_string( resultw, utf8_string)
 
   return;
 }
-#  endif /* def DYNAMIC_WIDE_NAME [else] */
+#  endif /* ndef DYNAMIC_WIDE_NAME */
 
 int has_win32_wide()
 {
@@ -4693,6 +4889,69 @@ int has_win32_wide()
 
 #endif /* (defined(UNICODE_SUPPORT) && !defined(FUNZIP)) */
 
+
+/* Symbolic link (symlink) support. */
+
+#ifdef SYMLINKS
+
+/* symlink[w](): Create a symbolic link.
+ * Return zero, if success; non-zero, if failure.
+ */
+
+int symlink( const char *target, const char *name)
+{
+  int sts;
+
+  /* Flags arg (3) should be SYMBOLIC_LINK_FLAG_DIRECTORY if the
+   * target is a directory, but how should I know?
+   */
+  if (CreateSymbolicLinkA( name, target, 0))
+  {
+    sts = 0;
+  }
+  else
+  {
+    sts = GetLastError();
+  }
+  return sts;
+}
+
+
+# ifdef UNICODE_SUPPORT
+
+int symlinkw( const char *target, const wchar_t *namew)
+{
+  int sts;
+  wchar_t *targetw;
+
+  /* Convert UTF-8 target to UTF-16. */
+  targetw = utf8_to_wchar_string_dyn( target);
+  if (targetw == NULL)
+  {
+    sts = -1;
+  }
+  else
+  {
+    /* Flags arg (3) should be SYMBOLIC_LINK_FLAG_DIRECTORY if the
+     * target is a directory, but how should I know?
+     */
+
+    if (CreateSymbolicLinkW( namew, targetw, 0))
+    {
+      sts = 0;
+    }
+    else
+    {
+      sts = GetLastError();
+    }
+    free( targetw);
+  }
+  return sts;
+}
+
+# endif /* def UNICODE_SUPPORT */
+
+#endif /* def SYMLINKS */
 
 
 /* --------------------------------------------------- */

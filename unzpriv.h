@@ -2368,13 +2368,25 @@ typedef struct iztimes {
 #endif /* SET_DIR_ATTRIB */
 
 #ifdef SYMLINKS
-   typedef struct slinkentry {  /* info for deferred symlink creation */
-       struct slinkentry *next; /* pointer to next entry in chain */
-       extent targetlen;        /* length of target filespec */
-       extent attriblen;        /* length of system-specific attrib data */
-       char *target;            /* pointer to target filespec */
-       char *fname;             /* pointer to name of link */
-       char buf[1];             /* data/name/link buffer */
+   typedef struct slinkentry {  /* Info for deferred symlink creation. */
+       struct slinkentry *next; /* Pointer to next entry in chain. */
+       extent targetlen;        /* Length of target (filespec) (no NUL). */
+       extent attriblen;        /* Length of system-specific attrib data. */
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+       unsigned int wide;       /* fname is really wchar_t. */
+# endif
+       char *target;            /* Pointer to target (filespec). */
+       char *fname;             /* Pointer to name of link. */
+       char buf[1];             /* Data/name/link buffer.
+                                 *  #ifdef SET_SYMLINK_ATTRIBS
+                                 *   unsigned int file_attr    \
+                                 *   if (have_uidgid_flg)       } attriblen
+                                 *    UID/GID (opt)            /
+                                 *  #endif
+                                 *  target text (with NUL)
+                                 *  alignment byte for wide fname (optional)
+                                 *  fname (with NUL)
+                                 */
    } slinkentry;
 #endif /* SYMLINKS */
 
@@ -2803,6 +2815,11 @@ int    memflush                  OF((__GPRO__ ZCONST uch *rawbuf, ulg size));
 char  *fnfilter                  OF((ZCONST char *raw, uch *space,
                                      extent size));
 
+# if defined( UNICODE_SUPPORT) && defined( _MBCS)
+wchar_t *fnfilterw               OF((ZCONST wchar_t *src, wchar_t *dst,
+                                     extent siz));
+#endif
+
 /*---------------------------------------------------------------------------
     Decompression functions:
   ---------------------------------------------------------------------------*/
@@ -3176,6 +3193,9 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #define FnFilter2(fname) \
         fnfilter((fname), slide + (extent)((WSIZE>>1) + (WSIZE>>2)),\
                  (extent)(WSIZE>>2))
+#define FnFilterW1( fname) \
+        fnfilterw( (fname), (wchar_t *)(slide + (extent)(WSIZE>> 1)), \
+         (extent)((WSIZE>> 2)/ sizeof( wchar_t)))
 
 #ifndef FUNZIP   /* used only in inflate.c */
 #  define MESSAGE(str,len,flag)  (*G.message)((zvoid *)&G,(str),(len),(flag))
@@ -3190,8 +3210,9 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #ifdef SYMLINKS
    /* This macro defines the Zip "made by" hosts that are considered
       to support storing symbolic link entries. */
-#  define SYMLINK_HOST(hn) ((hn) == UNIX_ || (hn) == ATARI_ || \
-      (hn) == ATHEOS_ || (hn) == BEOS_ || (hn) == VMS_)
+#  define SYMLINK_HOST(hn) ( (hn) == UNIX_ || (hn) == ATARI_ || \
+      (hn) == ATHEOS_ || (hn) == BEOS_ || (hn) == VMS_ || \
+      (hn) == FS_FAT_ )
 #endif
 
 #ifndef TEST_NTSD               /* "NTSD valid?" checking function */

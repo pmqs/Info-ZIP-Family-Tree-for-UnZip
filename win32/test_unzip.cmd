@@ -2,6 +2,15 @@
 
 rem #    UnZip test script (Windows command).
 rem #
+rem #-----------------------------------------------------------------------
+rem # Copyright (c) 2012-2013 Info-ZIP.  All rights reserved.
+rem #
+rem # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+rem # contents of which are also included in zip.h) for terms of use.  If,
+rem # for some reason, all these files are missing, the Info-ZIP license
+rem # may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+rem #-----------------------------------------------------------------------
+rem #
 rem #    %1 = test archive name.  Default: testmake.zip
 rem #    %2 = program directory (relative).  Default: .
 rem #    %3 = non-null to skip funzip and SFX tests.
@@ -143,7 +152,7 @@ if exist %member_1% (
 
     if not !status! == 0 (
         echo ^>^>^> Fail: UnZip exit status = !status!.
-        set /a fail=%fail% + 1 `
+        set /a fail=%fail% + 1
     ) else (
         if exist dest_dir\%member_1% (
             echo N > no
@@ -225,7 +234,7 @@ echo ^>^>^> ###   be caused by a time-zone difference, which may not be importan
     )
 ) else (
     echo ^>^>^> Fail: The ZipInfo test relies on success in the UnZip test."
-    set /a fail=%fail% + 1 `
+    set /a fail=%fail% + 1
 )
 
 rem echo on
@@ -251,7 +260,7 @@ if "%3" == "" (
                 comp /a /l %member_1% dest_dir\%member_1%_fun < no > NUL 2>&1
                 set status=!ERRORLEVEL!
                 del /f no
-                
+
                 if !status! == 0 (
                     echo ^>^>^> Pass.
                     set /a pass=%pass% + 1

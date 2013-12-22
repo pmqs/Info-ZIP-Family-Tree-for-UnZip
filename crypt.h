@@ -7,7 +7,7 @@
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 /*
-  crypt.h (full version) by Info-ZIP.   Last revised: [see CR_VERSION_DATE]
+  crypt.h (full version) by Info-ZIP.   Last revised:  [see CR_VERSION_DATE]
 
   The main (Traditional) encryption/decryption source code for Info-Zip
   software was originally written in Europe.  To the best of our knowledge,
@@ -23,7 +23,25 @@
  */
 
 #ifndef __crypt_h       /* Don't include more than once. */
-# define __crypt_h
+#define __crypt_h
+
+/* To use crypt.c and crypt.h, the builder sets one or both of:
+ *
+ *    IZ_CRYPT_AES_WG   Include strong AES (WinZip/Gladman) encryption.
+ *    IZ_CRYPT_TRAD     Include Zip traditional weak encryption.
+ *
+ * Other necessary macros are derived from these.
+ *
+ * AES_WG encryption uses files in the aes_wg directory in addition to
+ * the basic crypt.c and crypt.h.  This implementation is intended to be
+ * compatible with the WinZip AES implementation, and uses AES
+ * encryption code supplied by Brian Gladman.  For more information, see
+ * aes_wg/README_AES_WG.txt in Info-ZIP product kits or on the Info-ZIP
+ * server.
+ *
+ * Source kits for both AES_WG and Traditional encryption are available
+ * separately on the Info-ZIP server.
+ */
 
 # undef IZ_CRYPT_ANY
 # if defined( IZ_CRYPT_AES_WG) || defined( IZ_CRYPT_TRAD)
@@ -110,8 +128,8 @@
  */
 #  ifdef IZ_CRYPT_AES_WG
     /* All data from extra field block. */
-#   if (MAX_SALT_LENGTH+ 2 > RAND_HEAD_LEN)
-#    define ENCR_HEAD_LEN (MAX_SALT_LENGTH+ 2)
+#   if (MAX_SALT_LENGTH + 2 > RAND_HEAD_LEN)
+#    define ENCR_HEAD_LEN (MAX_SALT_LENGTH + 2)
 #   endif
     /* Data required for password check. */
 #   if (PWD_VER_LENGTH > RAND_HEAD_LEN)

@@ -377,11 +377,11 @@ int open_outfile(__G)           /* return 1 if fail */
     r = (SSTAT(G.filename, &G.statbuf) == 0);
 #endif
 
-#ifdef SYMLINKS
+#if defined( SYMLINKS) && !defined( WIN32)
     if (TEST_EXIST && (r || lstat(G.filename, &G.statbuf) == 0))
 #else
     if (TEST_EXIST && r)
-#endif /* ?SYMLINKS */
+#endif /* defined( SYMLINKS) && !defined( WIN32) */
     {
         Trace((stderr, "open_outfile:  stat(%s) returns 0:  file exists\n",
           FnFilter1(G.filename)));
@@ -551,13 +551,13 @@ int open_outfile(__G)           /* return 1 if fail */
 
 #if defined(SYMLINKS) && defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
         G.outfile = (G.has_win32_wide
-                    ? zfopenw(G.unipath_widefilename, L"wbr")
+                    ? zfopenw(G.unipath_widefilename, FOPWR_W)
                     : zfopen(G.filename, FOPWR)
                     );
 #else
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
         G.outfile = (G.has_win32_wide
-                    ? zfopenw(G.unipath_widefilename, L"wb")
+                    ? zfopenw(G.unipath_widefilename, FOPW_W)
                     : zfopen(G.filename, FOPW)
                     );
 # else /* (UNICODE_SUPPORT && WIN32_WIDE) */
@@ -2477,26 +2477,6 @@ int check_for_newerw(__G__ filenamew)  /* return 1 if existing file is newer */
 #ifdef USE_EF_UT_TIME
     iztimes z_utime;
 #endif
-#ifdef AOS_VS
-    long    dyy, dmm, ddd, dhh, dmin, dss;
-
-
-    dyy = (lrec.last_mod_dos_datetime >> 25) + 1980;
-    dmm = (lrec.last_mod_dos_datetime >> 21) & 0x0f;
-    ddd = (lrec.last_mod_dos_datetime >> 16) & 0x1f;
-    dhh = (lrec.last_mod_dos_datetime >> 11) & 0x1f;
-    dmin = (lrec.last_mod_dos_datetime >> 5) & 0x3f;
-    dss = (lrec.last_mod_dos_datetime & 0x1f) * 2;
-
-    /* under AOS/VS, file times can only be set at creation time,
-     * with the info in a special DG format.  Make sure we can create
-     * it here - we delete it later & re-create it, whether or not
-     * it exists now.
-     */
-    if (!zvs_create(filenamew, (((ulg)dgdate(dmm, ddd, dyy)) << 16) |
-        (dhh*1800L + dmin*30L + dss/2L), -1L, -1L, (char *) -1, -1, -1, -1))
-        return DOES_NOT_EXIST;
-#endif /* AOS_VS */
 
     Trace((stderr, "check_for_newer:  doing stat(%s)\n", FnFilter1(filename)));
     if (SSTATW(filenamew, &G.statbuf)) {
@@ -2507,13 +2487,13 @@ int check_for_newerw(__G__ filenamew)  /* return 1 if existing file is newer */
         Trace((stderr, "check_for_newer:  doing lstat(%s)\n",
           FnFilter1(filename)));
         /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
-        if (zlstat(filename, &G.statbuf) == 0) {
+        if (lstatw(filenamew, &G.statbuf) == 0) {
             Trace((stderr,
               "check_for_newer:  lstat(%s) returns 0:  symlink does exist\n",
               FnFilter1(filename)));
             if (QCOND2 && !IS_OVERWRT_ALL)
                 Info(slide, 0, ((char *)slide, LoadFarString(FileIsSymLink),
-                  FnFilter1(filename), " with no real file"));
+                  FnFilterW1(filenamew), " with no real file"));
             return EXISTS_AND_OLDER;   /* symlink dates are meaningless */
         }
 #endif /* SYMLINKS */
@@ -2524,12 +2504,12 @@ int check_for_newerw(__G__ filenamew)  /* return 1 if existing file is newer */
 
 #ifdef SYMLINKS
     /* GRR OPTION:  could instead do this test ONLY if G.symlnk is true */
-    if (zlstat(filename, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
+    if (lstatw(filenamew, &G.statbuf) == 0 && S_ISLNK(G.statbuf.st_mode)) {
         Trace((stderr, "check_for_newer:  %s is a symbolic link\n",
           FnFilter1(filename)));
         if (QCOND2 && !IS_OVERWRT_ALL)
             Info(slide, 0, ((char *)slide, LoadFarString(FileIsSymLink),
-              FnFilter1(filename), ""));
+              FnFilterW1(filenamew), ""));
         return EXISTS_AND_OLDER;   /* symlink dates are meaningless */
     }
 #endif /* SYMLINKS */

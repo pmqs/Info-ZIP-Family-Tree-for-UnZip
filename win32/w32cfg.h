@@ -234,6 +234,15 @@
 #  undef UTF8_MAYBE_NATIVE      /* UTF-8 cannot be system charset on WIN32 */
 #endif
 
+/* Windows-only, wide-character, fopen() modes.  See also unzpriv.h. */
+#if defined( UNICODE_SUPPORT) && defined( WIN32_WIDE)
+# define FOPR_W  L"rb"
+# define FOPM_W  L"r+b"
+# define FOPW_W  L"wb"
+# define FOPWT_W L"wt"
+# define FOPWR_W L"w+b"
+#endif
+
 /* The following compiler systems provide or use a runtime library with a
  * locale-aware isprint() implementation.  For these systems, the "enhanced"
  * unprintable charcode detection in fnfilter() gets enabled.
@@ -307,13 +316,17 @@
 #define STR_TO_ISO
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+# if defined( DYNAMIC_WIDE_NAME) || defined( SYMLINKS)
+    wchar_t *utf8_to_wchar_string_dyn OF((const char *));
+# endif /* defined( DYNAMIC_WIDE_NAME) || defined( SYMLINKS) */
 # ifdef DYNAMIC_WIDE_NAME
-   wchar_t *utf8_to_wchar_string OF((char *));
+#  define utf8_to_wchar_string utf8_to_wchar_string_dyn
 # else /* def DYNAMIC_WIDE_NAME */
-   void utf8_to_wchar_string OF((wchar_t *, char *));
+#  define utf8_to_wchar_string utf8_to_wchar_string_stat
+    void utf8_to_wchar_string_stat OF((wchar_t *, const char *));
 # endif /* def DYNAMIC_WIDE_NAME [else] */
-   wchar_t *local_to_wchar_string OF((char *));
-   int has_win32_wide();
+    wchar_t *local_to_wchar_string OF((char *));
+    int has_win32_wide();
 #endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 
 /* 2013-07-08 SMS.
@@ -432,6 +445,23 @@ int getch_win32  OF((void));
 #  define SSTATW(pathw, pbuf) zstat_win32w(__W32STAT_G__ pathw, pbuf)
 # endif
 #endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+
+
+#ifdef SYMLINKS
+# define lstat SSTAT
+# define lstatw SSTATW
+# ifndef S_ISLNK
+#  ifndef S_IFLNK
+#   define S_IFLNK  0120000
+#  endif
+# define S_ISLNK(m) (((m)& S_IFMT) == S_IFLNK)
+# endif /* ndef S_ISLNK */
+
+int symlink( const char *target, const char *name);
+# ifdef UNICODE_SUPPORT
+int symlinkw( const char *target, const wchar_t *name);
+# endif /* def UNICODE_SUPPORT */
+#endif /* def SYMLINKS */
 
 
 #ifdef __WATCOMC__

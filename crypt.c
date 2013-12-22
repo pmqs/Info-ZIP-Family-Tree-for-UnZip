@@ -480,8 +480,8 @@ int ef_scan_for_aes( ef_buf, ef_len, vers, vend, mode, mthd)
  */
 
 local int ef_strip_aes( ef_buf, ef_len)
-          ZCONST uch *ef_buf;   /* Buffer containing extra field */
-          long ef_len;          /* Total length of extra field */
+    ZCONST uch *ef_buf;         /* Buffer containing extra field */
+    long ef_len;                /* Total length of extra field */
 {
     int ret = -1;               /* Return value. */
     unsigned eb_id;             /* Extra block ID. */
@@ -749,8 +749,6 @@ int zipbare(z, passwd)
     int passwd_ok;
     int r;                /* size of encryption header */
     int res;              /* return code */
-#   ifdef IZ_CRYPT_AES_WG
-#   endif /* def IZ_CRYPT_AES_WG */
 
 #   ifdef IZ_CRYPT_AES_WG
 #    define HEAD_LEN head_len   /* Variable header length. */

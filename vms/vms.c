@@ -520,9 +520,7 @@ static int get_rms_defaults(__GPRO)
  */
 
 #ifndef LACK_SETDFPROT
-/* Define/declare sys$setdfprot, if needed. */
-#ifndef sys$setdfprot
-# define sys$setdfprot SYS$SETDFPROT
+/* Declare sys$setdfprot(), in case system header files omit it. */
 extern int sys$setdfprot();
 #endif /* ndef LACK_SETDFPROT */
 
@@ -555,8 +553,6 @@ int get_rms_fileprot( void)
     }
     return sts;
 }
-
-#endif /* ndef LACK_SETDFPROT */
 
 
 int check_format(__G)

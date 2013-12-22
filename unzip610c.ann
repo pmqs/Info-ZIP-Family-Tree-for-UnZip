@@ -1,6 +1,6 @@
 UnZip 6.10c
 
-Announcement for UnZip Beta 6.10c, >>12 Jun 2013.  This is a beta
+Announcement for UnZip Beta 6.10c, >>21 Dec 2013.  This is a beta
 release.  Changes may be made before UnZip 6.10 is released.  See the
 file History.610 for development details of changes in this beta
 release.
@@ -8,14 +8,29 @@ release.
 Complaints and suggestions regarding this beta release can help to
 improve the next full release.
 
-Quick list of major changes in UnZip 6.10c:
+Quick list of major changes in UnZip 6.10c (See INSTALL and README for
+details):
 
 - New command-line parser (like that in Zip 3.0) allows long ("--xxx")
   and two-character short ("-yy") options.  Options are now negated by a
   trailing hyphen.  See extended help and manual for details.
 - Optional support for WinZip-compatible AES encryption (compression
-  method 99).  See INSTALL.
-- Optional support for LZMA and PPMd compression.  See INSTALL.
+  method 99).
+- Optional support for LZMA and PPMd compression.
+- Behavior change: Now, by default, date-time information is restored on
+  extracted files only, not on created directories.
+- Behavior change: Now, by default, permission/protection information is
+  restored on Unix(-like) and VMS systems, but limited by the user's
+  Unix umask or VMS default protection.
+- Behavior change: ZipInfo report format changes.
+- Behavior change: Now, on Unix(-like) and VMS systems,
+  -X/--restore-owner (/RESTORE = OWNER) controls only restoration of
+  Unix UID/GID or VMS UIC.
+- Behavior change: Apparent VMS version numbers (";ddd", where "ddd" is
+  a decimal number) are now stripped by default only on files which were
+  archived on a VMS system.  A Unix file named, for example, "fred;123"
+  will now, by default, be extracted on a non-VMS system as "fred;123",
+  not "fred".
 - Extended -j/--junk-dirs option accepts an optional value, the number
   of directory levels to discard.
 - New --jar option may help with poorly formed Java "jar" archives.
@@ -29,6 +44,7 @@ Quick list of major changes in UnZip 6.10c:
 - New -ka/--keep-acl option controls ACL restoration on VMS.  Now
   -X/--restore-owner controls restoration of only ownership (UIC),
   independent of ACLs.
+- New --license option shows the software license.
 - -s/--space-to-uscore should now work on most system types.
 - Revised documentation ("man", VMS help, ...).
 - fUnZip should support Zip64 (large-file) format extensions, and it
@@ -38,11 +54,15 @@ Quick list of major changes in UnZip 6.10c:
   help GNU grep users.
 - Optional support on Unix and VMS for an UnZip object library,
   providing a callable UnZip interface for a user-written program.
+- New user-triggered progress messages on Unix (SIGUSR1) and VMS
+  (Ctrl/T).
 - New C macro ICONV_MAPPING replaces the recently added
   USE_ICONV_MAPPING.
 - Revised Unix builders now use "CC=gcc" with target "generic", instead
-  of old target "generic_gcc".  See INSTALL for details on this and
-  other changes and options.
+  of old target "generic_gcc".
+- Support for AppleDouble storage of attribute/resource information on
+  Mac OS X systems, with options to control restoration of extended
+  attributes.
 - VMS CLI changes: New /CASE_MATCH is gone.  Old /[NO]CASE_INSENSITIVE
   is back, but deprecated, replaced by /MATCH=CASE={BLIND|SENSITIVE}.
   When built with WILD_STOP_AT_DIR defined, /MATCH=[NO]WILD_MATCH_SLASH
@@ -64,6 +84,8 @@ Quick list of major changes in UnZip 6.10c:
   protection is ignored, and the archive permissions are used.  (This is
   the old default behavior.)  With NOPROTECTION, archive permissions are
   ignored, and the default protection is used.
+- New builders for Microsoft Visual Studio (Visual C++) 2010 (and 2012,
+  and newer?) have more options, fewer projects.
 
 As always, see the UnZip manual page, the extended help in UnZip
 ("unzip -hh"), and any relevant OS-specific documentation for details on

@@ -317,7 +317,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (26 Nov 2013):
+6.10c09 (18 Dec 2013):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -406,7 +406,7 @@ Features added (or removed):
    (atheos/athcfg.h, atheos/atheos.c, beos/beocfg.h, beos/beos.c,
    man/unzip.1, unix/unix.c, unix/unxcfg.h, unzip.c, unzip.h, unzpriv.h,
    vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help, vms/UNZIP_DEF.RNH,
-   vms/vms.c) [SMS]
+   vms/vms.c, vms/vms.h) [SMS]
  - Added options -ka/--keep-acl (/RESTORE = ACL) on VMS, to control
    restoration of ACL.  Added VMS CLI option /RESTORE = OWNER (-X) to
    control restoration of owner/UIC.  With -k/--keep-permission
@@ -864,7 +864,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (30 Nov 2013):
+6.10c09 (11 Dec 2013):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -990,11 +990,11 @@ Bugs fixed:
    tested for validity.  Previously, some VMS-invalid directory
    specifications (such as "." or "..") would generate no error, and
    then be (silently) ignored.
- - Reformed the multi-value C macro CRYPT into simpler IZ_CRYPT_ANY and
-   IZ_CRYPT_TRAD.  The actual encryption code should now use only
-   IZ_CRYPT_AES_WG and IZ_CRYPT_TRAD (plus IZ_CRYPT_ANY, derived from
-   them).  At build time, users specify more controlled options:
-   CRYPT_AES_WG, CRYPT_AES_WG_SFX, CRYPT_TRAD_SFX, NO_CRYPT,
+ - Reformed the multi-value C macro CRYPT into simpler (binary)
+   IZ_CRYPT_ANY and IZ_CRYPT_TRAD.  The actual encryption code should
+   now use only IZ_CRYPT_AES_WG and IZ_CRYPT_TRAD (plus IZ_CRYPT_ANY,
+   derived from them).  At build time, users specify more controlled
+   options: CRYPT_AES_WG, CRYPT_AES_WG_SFX, CRYPT_TRAD_SFX, NO_CRYPT,
    NO_CRYPT_TRAD.  (crypt.c, crypt.h, ebcdic.h, extract.c, fileio.c,
    funzip.c, gbloffs.c, globals.h, INSTALL, ttyio.c, ttyio.h, unzip.c,
    unzpriv.h, amiga/filedate.c, qdos/qdos.c, windll/windll.c) [SMS]
@@ -1280,7 +1280,7 @@ Bugs fixed:
    files, object libraries, executables, and so on), instead of getting
    everything in the main, top-level directory on Unix, or the
    automatically chosen subdirectory on VMS.  This feature is intended
-   to make it easier to use one source tree for multiple different build
+   to make it easier to use one source tree for multiple build
    configurations (different compilers, options, hardware architectures,
    and so on).  For details, see INSTALL and [.vms]INSTALL_VMS.txt (and
    the builder files themselves).  (INSTALL, unix/configure,
@@ -1299,4 +1299,13 @@ Bugs fixed:
    vms/descrip_src.mms, vms/find_bzip2_lib.com, vms/hlp_lib_next.com,
    vms/makesfx.com, vms/mod_dep.com, vms/optgen.com, vms/test_unzip.com,
    vms/unzip_cli.help, vms/UNZIP_DEF.RNH, vms/UNZIP_MSG.MSG,
-   vms/unz_cli.cld) [SMS]
+   vms/unz_cli.cld, win32/test_unzip.cmd) [SMS]
+ - Experimental implementation of symbolic links on Windows (Vista or
+   later?).  To activate, define C macro SYMLINKS.  Slightly improved
+   symlink error handling/messages on all symlink-capable system types.
+   On Windows XP, the build may work with SYMLINKS defined, but the
+   resulting UnZip executable may fail immediately with exit status
+   (Command Prompt: %ERRORLEVEL%, PowerShell: $LASTEXITCODE) -1073741511
+   (0xC0000139), "Entry Point Not Found", possibly with a pop-up message
+   which mentions CreateSymbolicLinkA (and KERNEL32.dll).
+   (extract.c, fileio.c, unzpriv.h, win32/w32cfg.h, win32/win32.c) [SMS]

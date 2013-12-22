@@ -264,6 +264,12 @@ static ZCONST char Far AplDblNameTooLong[] =
      "finishing deferred symbolic links:\n";
    static ZCONST char Far SymLnkFinish[] =
      "  %-22s -> %s\n";
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+   static ZCONST char Far SymLnkFinishW[] =
+     "  %-22S -> %s\n";
+# endif
+   static ZCONST char Far SymLnkErrUnlink[] = "%sunlink error: %s";
+   static ZCONST char Far SymLnkErrSymlink[] = "symlink%s error: %s";
 # ifdef VMS
    static ZCONST char Far SymLnkError[] =
      "  %s\n";
@@ -3933,10 +3939,15 @@ static void set_deferred_symlink(__G__ slnk_entry)
     __GDEF
     slinkentry *slnk_entry;
 {
-    int sts;
+    int errno1 = 0;
+    int sts1;
+    int sts2;
     extent ucsize = slnk_entry->targetlen;
     char *linkfname = slnk_entry->fname;
     char *linktarget = (char *)izu_malloc(ucsize+1);
+#ifdef WIN32
+    char err_msg[ 32];
+#endif /* def WIN32 */
 
 #ifdef VMS
     static int vms_symlink_works = -1;
@@ -3961,7 +3972,19 @@ static void set_deferred_symlink(__G__ slnk_entry)
         return;
     }
     linktarget[ucsize] = '\0';
-    G.outfile = zfopen(linkfname, FOPR); /* open link placeholder for reading */
+    /* Open link placeholder for reading. */
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    if (slnk_entry->wide)
+    {
+        G.outfile = zfopenw( (wchar_t *)linkfname, FOPR_W);
+    }
+    else
+    {
+#else /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+    {
+#endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) [else] */
+        G.outfile = zfopen( linkfname, FOPR);
+    }
     /* Check that the following conditions are all fulfilled:
      * a) the placeholder file exists,
      * b) the placeholder file contains exactly "ucsize" bytes
@@ -3971,8 +3994,8 @@ static void set_deferred_symlink(__G__ slnk_entry)
      *    stored in the symlink control structure.
      */
     if (!G.outfile ||
-        fread(linktarget, 1, ucsize+1, G.outfile) != ucsize ||
-        strcmp(slnk_entry->target, linktarget))
+        fread( linktarget, 1, (ucsize+ 1), G.outfile) != ucsize ||
+        strcmp( slnk_entry->target, linktarget))
     {
         Info(slide, 0x201, ((char *)slide,
           LoadFarString(SymLnkWarnInvalid), FnFilter1(linkfname)));
@@ -3981,7 +4004,7 @@ static void set_deferred_symlink(__G__ slnk_entry)
             fclose(G.outfile);
         return;
     }
-    fclose(G.outfile);                  /* close "data" file for good... */
+    fclose(G.outfile);                  /* Close "data" file for good... */
 
 #ifdef VMS
     if (vms_symlink_works == 0)
@@ -3995,13 +4018,61 @@ static void set_deferred_symlink(__G__ slnk_entry)
     }
 #endif /* def VMS */
 
-    unlink(linkfname);                  /* ...and delete it */
-    sts = symlink(linktarget, linkfname);       /* create the real link */
-    if (QCOND2 || (sts != 0))
-        Info(slide, 0, ((char *)slide, LoadFarString(SymLnkFinish),
-          FnFilter1(linkfname), FnFilter2(linktarget)));
-    if (sts != 0)
-        perror("symlink error");
+    /* Delete the old placeholder, and create the real symlink. */
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+    sts1 = _wunlink( (wchar_t *)linkfname);
+    errno1 = errno;
+    sts2 = symlinkw( linktarget, (wchar_t *)linkfname);
+#else /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+    sts1 = unlink( linkfname);
+    errno1 = errno;
+    sts2 = symlink( linktarget, linkfname);
+#endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) [else] */
+
+    if (QCOND2 || (sts1 != 0) || (sts2 != 0))
+    {
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+        if (slnk_entry->wide)
+        {
+            Info(slide, 0, ((char *)slide, LoadFarString( SymLnkFinishW),
+             FnFilterW1( (ZCONST wchar_t *)linkfname),
+             FnFilter2( linktarget)));
+        }
+        else
+        {
+#else /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+        {
+#endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) [else] */
+
+            Info(slide, 0, ((char *)slide, LoadFarString(SymLnkFinish),
+             FnFilter1(linkfname), FnFilter2(linktarget)));
+        }
+    }
+
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+# define WIDE_STR (slnk_entry->wide ? "w" : "")
+#else
+# define WIDE_STR ""
+#endif
+    if (sts1 != 0)
+    {
+        Info( slide, 0x61, ((char *)slide, LoadFarString( SymLnkErrUnlink),
+         WIDE_STR, strerror( errno1)));
+    }
+    if (sts2 != 0)
+    {
+#ifdef WIN32
+        /* Use "decimal (0xhexadecimal)" message for GetLast Error() result. */
+        sprintf( err_msg, "%d (0x%x)", sts2, sts2);
+        Info( slide, 0x61, ((char *)slide, LoadFarString( SymLnkErrSymlink),
+         WIDE_STR, err_msg));
+#else /* def WIN32 */
+        /* Use normal C RTL message for errno. */
+        Info( slide, 0x61, ((char *)slide, LoadFarString( SymLnkErrSymlink),
+         WIDE_STR, strerror( errno)));
+#endif /* def WIN32 [else] */
+    }
+
     izu_free(linktarget);
 #ifdef SET_SYMLINK_ATTRIBS
     set_symlnk_attribs(__G__ slnk_entry);
@@ -4014,20 +4085,15 @@ static void set_deferred_symlink(__G__ slnk_entry)
 
 
 
-/*************************/
-/*  Function fnfilter()  */        /* here instead of in list.c for SFX */
-/*************************/
+/****************************/
+/*  Function fnfilter[w]()  */  /* here instead of in list.c for SFX */
+/****************************/
 
 /*
-  If Unicode is supported, assume we have what we need to do this
-  check using wide characters, avoiding MBCS issues.
+ * If Unicode is supported, assume we have what we need to do this
+ * check using wide characters, avoiding MBCS issues.
  */
 
-char *fnfilter(raw, space, size)   /* convert name to safely printable form */
-    ZCONST char *raw;
-    uch *space;
-    extent size;
-{
 #ifndef UZ_FNFILTER_REPLACECHAR
     /* A convenient choice for the replacement of unprintable char codes is
      * the "single char wildcard", as this character is quite unlikely to
@@ -4039,7 +4105,59 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
 # define UZ_FNFILTER_REPLACECHAR      '?'
 #endif
 
-#ifndef NATIVE   /* ASCII:  filter ANSI escape codes, etc. */
+#if defined( UNICODE_SUPPORT) && defined( _MBCS)
+
+/* fnfilterw() - Convert wide-character name to safely printable form. */
+
+wchar_t *fnfilterw( src, dst, siz) 
+    ZCONST wchar_t *src;        /* Pointer to source char (string). */
+    wchar_t *dst;               /* Pointer to destination char (string). */
+    extent siz;                 /* Not used (!). */
+{
+    wchar_t *dsx = dst;
+
+    /* Filter the wide chars. */
+    while (*src)
+    {
+        if (iswprint( *src))
+        {
+            /* Printable code.  Copy it. */
+            *dst++ = *src;
+        }
+        else
+        {
+            /* Unprintable code.  Substitute something printable for it. */
+            if (*src < 32)
+            {
+                /* Replace ASCII control code with "^{letter}". */
+                *dst++ = (wchar_t)'^';
+                *dst++ = (wchar_t)(64 + *src);
+            }
+            else
+            {
+                /* Replace other unprintable code with the placeholder. */
+                *dst++ = (wchar_t)UZ_FNFILTER_REPLACECHAR;
+            }
+        }
+        src++;
+    }
+    *dst = (wchar_t)0;  /* NUL-terminate the destination string. */
+    return dsx;
+}
+
+#endif /* defined( UNICODE_SUPPORT) && defined( _MBCS) */
+
+
+
+/* fnfilter() - Convert name to safely printable form. */
+
+char *fnfilter(raw, space, size)
+    ZCONST char *raw;
+    uch *space;
+    extent size;
+{
+
+#ifndef NATIVE          /* ASCII:  filter ANSI escape codes, etc. */
 
     ZCONST uch *r;
     uch *s = space;
@@ -4054,13 +4172,10 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
  * characters for ourselves.  After the wide-char replacements have been
  * made, the wide string is converted back to the local character set.
  */
-
     wchar_t *wstring;    /* wchar_t version of raw */
     size_t wslen;        /* length of wstring */
-    wchar_t *wc;         /* pointer to char in wstring */
     wchar_t *wostring;   /* wchar_t version of output string */
     size_t woslen;       /* length of wostring */
-    wchar_t *woc;        /* pointer to char in wostring */
     char *newraw;        /* new raw */
 
     /* 2012-11-06 SMS.
@@ -4070,8 +4185,7 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
      * should be doing any Unicode processing without some evidence that
      * the name actually is Unicode.  (Check bit 11 in the flags before
      * coming here?)
-     * https://sourceforge.net/tracker/?func=detail&aid=3584238&\
-     * group_id=118012&atid=679786
+     * http://sourceforge.net/p/infozip/bugs/40/
      */
 
     if (MB_CUR_MAX <= 1)
@@ -4104,27 +4218,9 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
 
         /* Convert the multi-byte Unicode to wide chars. */
         wslen = mbstowcs(wstring, raw, wslen + 1);
-        wc = wstring;
-        woc = wostring;
 
-        /* Filter the wide chars. */
-        while (*wc) {
-            if (!iswprint(*wc)) {
-                if (*wc < 32) {
-                    /* ASCII control codes are escaped as "^{letter}". */
-                    *woc++ = (wchar_t)'^';
-                    *woc++ = (wchar_t)(64 + *wc);
-                } else {
-                    /* Other unprintable codes are replaced by the
-                     * placeholder character. */
-                    *woc++ = (wchar_t)UZ_FNFILTER_REPLACECHAR;
-                }
-            } else {
-                *woc++ = *wc;
-            }
-            wc++;
-        }
-        *woc = (wchar_t)0;
+        /* Filter the wide-character string. */
+        fnfilterw( wstring, wostring, (2 * (wslen + 1) * sizeof(wchar_t)));
 
         /* Convert filtered wide chars back to multi-byte. */
         woslen = wcstombs( NULL, wostring, 0);
@@ -4176,23 +4272,23 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
         izu_free(newraw);
     }
     else
-# endif /* def UNICODE_SUPPORT */
+# endif /* defined( UNICODE_SUPPORT) && defined( _MBCS) */
     {
         /* No Unicode support, or apparently invalid Unicode. */
         r = (ZCONST uch *)raw;
 
         if (size > 0) {
             slim = space + size
-#  ifdef _MBCS
+# ifdef _MBCS
                          - (MB_CUR_MAX - 1)
-#  endif
+# endif
                          - 4;
         }
         while (*r) {
             if (size > 0 && s >= slim && se == NULL) {
                 se = s;
             }
-#  ifdef QDOS
+# ifdef QDOS
             if (qlflag & 2) {
                 if (*r == '/' || *r == '.') {
                     if (se != NULL && (s > (space + (size-3)))) {
@@ -4204,8 +4300,8 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                     continue;
                 }
             } else
-#  endif
-#  ifdef HAVE_WORKING_ISPRINT
+# endif
+# ifdef HAVE_WORKING_ISPRINT
             if (!isprint(*r)) {
                 if (*r < 32) {
                     /* ASCII control codes are escaped as "^{letter}". */
@@ -4224,7 +4320,7 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                     *s++ = UZ_FNFILTER_REPLACECHAR;
                     INCSTR(r);
                 }
-#  else /* !HAVE_WORKING_ISPRINT */
+# else /* !HAVE_WORKING_ISPRINT */
             if (*r < 32) {
                 /* ASCII control codes are escaped as "^{letter}". */
                 if (se != NULL && (s > (space + (size-4)))) {
@@ -4232,9 +4328,9 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                     break;
                 }
                 *s++ = '^', *s++ = (uch)(64 + *r++);
-#  endif /* ?HAVE_WORKING_ISPRINT */
+# endif /* ?HAVE_WORKING_ISPRINT */
             } else {
-#  ifdef _MBCS
+# ifdef _MBCS
                 unsigned i = CLEN(r);
                 if (se != NULL && (s > (space + (size-i-2)))) {
                     have_overflow = TRUE;
@@ -4242,13 +4338,13 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
                 }
                 for (; i > 0; i--)
                     *s++ = *r++;
-#  else /* def _MBCS */
+# else /* def _MBCS */
                 if (se != NULL && (s > (space + (size-3)))) {
                     have_overflow = TRUE;
                     break;
                 }
                 *s++ = *r++;
-#  endif /* def _MBCS [else] */
+# endif /* def _MBCS [else] */
              }
         }
         if (have_overflow) {
@@ -4270,9 +4366,9 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
 
     return (char *)space;
 
-#else /* NATIVE:  EBCDIC or whatever */
+#else /* def NATIVE */  /* EBCDIC or whatever. */
     return (char *)raw;
-#endif
+#endif /* def NATIVE [else] */
 
 } /* end function fnfilter() */
 
