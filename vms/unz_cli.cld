@@ -1,8 +1,8 @@
 	Module		VMS_UNZIP_CLD
-	Ident		"03-005"
+	Ident		"03-006"
 
 !-----------------------------------------------------------------------
-! Copyright (c) 2001-2013 Info-ZIP.  All rights reserved.
+! Copyright (c) 2001-2014 Info-ZIP.  All rights reserved.
 !
 ! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 ! contents of which are also included in zip.h) for terms of use.  If,
@@ -13,6 +13,8 @@
 Define	Verb		UNZIP
 	Parameter	P1, Label=ZIPFILE, Prompt="Zip file"
 	Parameter	P2, Label=INFILE, VALUE(LIST), Prompt="Files to UnZip"
+	Qualifier	AUTO_DIRECTORY, VALUE(TYPE=AUTO_DIR_KEYWORDS),
+			 Negatable
 	Qualifier	BINARY, VALUE(TYPE=CONVBIN_KEYWORDS), Negatable
 	Qualifier	TEXT, VALUE(TYPE=CONVTEXT_KEYWORDS, LIST), Negatable
 	Qualifier	SCREEN, Negatable
@@ -56,6 +58,8 @@ Define	Verb		UNZIP
 	Qualifier	YYZ_UNZIP, NonNegatable, DEFAULT
 	Qualifier	ZIPINFO, Syntax=INFORMATION, NonNegatable
 
+	DisAllow	AUTO_DIRECTORY and DIRECTORY
+	DisAllow	AUTO_DIRECTORY.REUSE and (neg AUTO_DIRECTORY)
 	DisAllow	BRIEF and FULL
 	DisAllow	DIRECTORY and SCREEN
 	DisAllow	BINARY and TEXT.ALL
@@ -96,6 +100,9 @@ Define	Verb		UNZIP
 	DisAllow	NOVERBOSE and (VERBOSE.NORMAL or VERBOSE.MORE)
 	DisAllow	VERBOSE.MORE and VERBOSE.NORMAL
 	DisAllow	ZIPINFO and HELP
+
+Define	Type		AUTO_DIR_KEYWORDS
+	Keyword		REUSE
 
 Define	Type		CONVBIN_KEYWORDS
 	Keyword		AUTO, DEFAULT

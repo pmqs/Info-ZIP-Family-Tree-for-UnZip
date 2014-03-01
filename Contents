@@ -69,7 +69,6 @@ unreduce.c      Reduce compression (methods 2-5), stub only
 unshrink.c      Shrink compression (method 1)
 unzip.c         UnZip main(), usage and options code
 unzip.h         Public part of main UnZip header file
-unzipstb.c      Minimal UnZip "stub" file demonstrating use of DLL versions
 unzpriv.h       Private (internal) part of main UnZip header file
 unzvers.h       Header with UnZip/UnZipSFX and ZipInfo version info
 zip.h           Redirecting header (to unzip.h) for crypt.c

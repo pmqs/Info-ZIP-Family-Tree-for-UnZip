@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2013-11-11
+   UnZip version 6.10.  Revised: 2014-02-27
 
 ------------------------------------------------------------------------
 
@@ -559,6 +559,9 @@ Windows (XP, Vista, 7, and so on)
    project builds should still work (so long as the BZIP2_SUPPORT macro
    is not defined).
 
+   Symbolic link support (C macro SYMLINKS) requires Windows Vista or
+   newer.
+
    Note that currently in the "unzipsfx" project, when enabling optional
    compression or encryption methods, both the base feature macro and
    the corresponding SFX-specific macro must be defined.  For example,
@@ -576,17 +579,17 @@ Windows (XP, Vista, 7, and so on)
    will fail, but the other project builds should still work (so long as
    the BZIP2_SUPPORT macro is not defined).
 
-   Currently, Microsoft Visual Studio 2010 and 2012 (Visual C++ v10.0
-   and v11.0) are the only tested versions.  Newer Visual Studio
-   versions may work, but have not been tested.  Builder files for older
-   Visual Studio versions have not been removed from the kit, and may
-   work in limited ways, but they have not been updated to handle the
-   latest optional features (optional compression and encryption
-   methods, and so on).  The Unix-like Windows environments, Cygwin and
-   MinGW, use the Unix builders, not the Visual Studio builders.  Other,
-   non-Microsoft compilers (like Borland or Watcom) have not been
-   tested.  Obsolete information for older Visual Studio versions and
-   other compilers follows:
+   Currently, Microsoft Visual Studio 2010 (Visual C++ v10.0), VS 2012
+   (VC++ v11.0), and VS 2013 (VC++ 12.0)are the only tested versions.
+   Newer Visual Studio versions may work, but have not been tested.
+   Builder files for older Visual Studio versions have not been removed
+   from the kit, and may work in limited ways, but they have not been
+   updated to handle the latest optional features (optional compression
+   and encryption methods, and so on).  The Unix-like Windows
+   environments, Cygwin and MinGW, use the Unix builders, not the Visual
+   Studio builders.  Other, non-Microsoft compilers (like Borland or
+   Watcom) have not been tested.  Obsolete information for older Visual
+   Studio versions and other compilers follows:
 
    For creating Windows executables, the Microsoft Visual C++ compiler
    platforms from version 2.x up to 8.0 (Visual Studio .Net C++ 2005)
@@ -1374,6 +1377,14 @@ seems to work.  For example:
     gcc -c -O1 szip/Ppmd8.c                                 # (Or "-O2"?)
     make -f unix/Makefile PPMD=1 [options] CC=gcc generic   # Re-link.
     make -f unix/Makefile test_ppmd                         # Re-test.
+
+If "PROD=subdir" is used with "make", then add a suitable "-o" option to
+the compiler command.  For example:
+
+    make -f unix/Makefile PPMD=1 [options] CC=gcc PROD=pd generic
+    make -f unix/Makefile PROD=pd test_ppmd
+    gcc -c -O1 -o pd/Ppmd8.o szip/Ppmd8.c
+    [...]
 
 Other compilers (AIX xlC?) may need some other optimization setting.  In
 any case, re-run the test after re-building UnZip, to verify that the

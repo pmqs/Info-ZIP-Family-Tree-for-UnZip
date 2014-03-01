@@ -40,12 +40,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\bzip2;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..;..\..\..\bzip2;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\$(Configuration);$(LibraryPath)</LibraryPath>
     <TargetName>unzip32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\..\..;..\..\..\bzip2;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <TargetName>unzip32</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -53,7 +56,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;UNZ32DLL_EXPORTS;DLL;WINDLL;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DLL;WINDLL;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;x_SYMLINKS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -73,19 +76,21 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UNZ32DLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DLL;WINDLL;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;x_SYMLINKS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>..\..\windll32.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\api.c" />
     <ClCompile Include="..\..\..\crc32.c" />
     <ClCompile Include="..\..\..\crypt.c" />
+    <ClCompile Include="..\..\..\envargs.c" />
     <ClCompile Include="..\..\..\explode.c" />
     <ClCompile Include="..\..\..\extract.c" />
     <ClCompile Include="..\..\..\fileio.c" />
@@ -97,6 +102,7 @@
     <ClCompile Include="..\..\..\ubz2err.c" />
     <ClCompile Include="..\..\..\unreduce.c" />
     <ClCompile Include="..\..\..\unshrink.c" />
+    <ClCompile Include="..\..\..\unzip.c" />
     <ClCompile Include="..\..\..\win32\nt.c" />
     <ClCompile Include="..\..\..\win32\win32.c" />
     <ClCompile Include="..\..\..\win32\win32i64.c" />

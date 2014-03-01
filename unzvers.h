@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -7,59 +7,59 @@
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 /*
-   unzvers.h (for UnZip) by Info-ZIP.
+ * unzvers.h (for UnZip) by Info-ZIP.
  */
 
-#ifndef __unzvers_h     /* don't include more than once */
-#define __unzvers_h
+#ifndef __UNZVERS_H
+# define __UNZVERS_H
 
 /*
-#ifdef BETA
+# ifdef BETA
 #  undef BETA
-#endif
+# endif
 */
 
-#ifndef BETA
-#  define BETA           /* undefine BETA for public releases */
-#endif
+# ifndef BETA
+#  define BETA                  /* Undefine BETA for public releases. */
+# endif
 
-#ifdef BETA
+# ifdef BETA
 #  define UZ_BETALEVEL      "c08+ BETA"
-#  define UZ_VERSION_DATE   "27 Aug 2013"       /* Internal beta version. */
-#else
+#  define UZ_VERSION_DATE   "26 Feb 2014"       /* Internal beta version. */
+# else
 #  define UZ_BETALEVEL      ""
 #  define UZ_VERSION_DATE   "?? ??? 2013"       /* Official release version. */
 #  define RELEASE
-#endif
+# endif
 
-#define UZ_MAJORVER    6   /* UnZip */
-#define UZ_MINORVER    1
+# define UZ_MAJORVER    6       /* UnZip */
+# define UZ_MINORVER    1
 
-#define ZI_MAJORVER    3   /* ZipInfo */
-#define ZI_MINORVER    1
+# define ZI_MAJORVER    3       /* ZipInfo */
+# define ZI_MINORVER    1
 
-#define UZ_PATCHLEVEL  0
+# define UZ_PATCHLEVEL  0
 
-#define UZ_VER_STRING  "6.10"         /* Keep in sync with Version numbers! */
+# define UZ_VER_STRING  "6.10"          /* Keep in sync with Version numbers! */
 
-#ifndef IZ_COMPANY_NAME               /* might be already defined... */
+# ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"
-#endif
+# endif
 
 /* these are obsolete but remain for backward compatibility: */
-#if (defined(OS2) || defined(__OS2__))
+# if (defined(OS2) || defined(__OS2__))
 #  define D2_MAJORVER    UZ_MAJORVER    /* DLL for OS/2 */
 #  define D2_MINORVER    UZ_MINORVER
 #  define D2_PATCHLEVEL  UZ_PATCHLEVEL
-#endif
+# endif
 
-#define DW_MAJORVER    UZ_MAJORVER    /* DLL for MS Windows */
-#define DW_MINORVER    UZ_MINORVER
-#define DW_PATCHLEVEL  UZ_PATCHLEVEL
+# define DW_MAJORVER    UZ_MAJORVER     /* DLL for MS Windows */
+# define DW_MINORVER    UZ_MINORVER
+# define DW_PATCHLEVEL  UZ_PATCHLEVEL
 
-#define WIN_VERSION_DATE  UZ_VERSION_DATE
+# define WIN_VERSION_DATE  UZ_VERSION_DATE
 
-#define UNZ_DLL_VERSION   UZ_VER_STRING
+# define UNZ_DLL_VERSION   UZ_VER_STRING
 
 /* The following version constants specify the UnZip version that introduced
  * the most recent incompatible change (means: change that breaks backward
@@ -80,16 +80,16 @@
  * be synchronized with the current UnZip version numbers.
  */
 /* generic DLL API minimum compatible version*/
-#define UZ_GENAPI_COMP_MAJOR  6
-#define UZ_GENAPI_COMP_MINOR  0
-#define UZ_GENAPI_COMP_REVIS  0
+# define UZ_GENAPI_COMP_MAJOR   6
+# define UZ_GENAPI_COMP_MINOR   1
+# define UZ_GENAPI_COMP_REVIS   0
 /* os2dll API minimum compatible version*/
-#define UZ_OS2API_COMP_MAJOR  6
-#define UZ_OS2API_COMP_MINOR  0
-#define UZ_OS2API_COMP_REVIS  0
+# define UZ_OS2API_COMP_MAJOR   6
+# define UZ_OS2API_COMP_MINOR   1
+# define UZ_OS2API_COMP_REVIS   0
 /* windll API minimum compatible version*/
-#define UZ_WINAPI_COMP_MAJOR  6
-#define UZ_WINAPI_COMP_MINOR  0
-#define UZ_WINAPI_COMP_REVIS  0
+# define UZ_WINAPI_COMP_MAJOR   6
+# define UZ_WINAPI_COMP_MINOR   1
+# define UZ_WINAPI_COMP_REVIS   0
 
-#endif /* !__unzvers_h */
+#endif /* ndef __UNZVERS_H */

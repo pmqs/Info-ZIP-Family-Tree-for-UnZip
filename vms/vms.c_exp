@@ -4723,6 +4723,9 @@ int mapname(__G__ renamed)
         return (error & ~MPN_MASK) | MPN_ERR_SKIP;
     }
 
+/* SMSd. */
+fprintf( stderr, " mapname(0).  G.fn: >%s<.\n", G.filename);
+
     if ( renamed )
     {
         if ( !(error = checkdir(__G__ pathcomp, APPEND_NAME | USE_DEFAULT)) )
@@ -4970,6 +4973,9 @@ int mapname(__G__ renamed)
 
     checkdir(__G__ pathcomp, APPEND_NAME);  /* returns 1 if truncated: care? */
     checkdir(__G__ G.filename, GETPATH);
+
+/* SMSd. */
+fprintf( stderr, " mapname(9).  G.fn: >%s<.\n", G.filename);
 
     return error;
 

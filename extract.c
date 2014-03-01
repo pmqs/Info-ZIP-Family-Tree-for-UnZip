@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -341,9 +341,9 @@ static ZCONST char Far Inflate[] = "inflate";
 #endif
 #ifndef SFX
    static ZCONST char Far Explode[] = "explode";
-# ifndef LZW_CLEAN
+#endif
+#ifndef LZW_CLEAN
    static ZCONST char Far Unshrink[] = "unshrink";
-# endif
 #endif
 
 #if (!defined(DELETE_IF_FULL) || !defined(HAVE_UNLINK))
@@ -1096,6 +1096,98 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 
 
 
+/* UNKN_COMPR macro: Unsupported compression method tests.
+ *
+ * Assume that compression methods from Store (STORED = 0) through
+ * Deflate64 (ENHDEFLATED = 9) are allowed, unless an UNKN_xxxx
+ * exception is true.
+ * Store (0) is always allowed.
+ * Currently, Implode (6) is allowed for non-SFX.
+ */
+#ifdef LZW_CLEAN                /* Shrink (1) not allowed. */
+# define UNKN_SHR (G.crec.compression_method == SHRUNK)
+#else
+# define UNKN_SHR  FALSE        /* Shrink (1) allowed. */
+#endif
+
+#ifdef COPYRIGHT_CLEAN          /* Reduce (2-5) not allowed. */
+# define UNKN_RED (G.crec.compression_method >= REDUCED1 && \
+                      G.crec.compression_method <= REDUCED4)
+#else
+# define UNKN_RED  FALSE        /* Reduce (2-5) allowed. */
+#endif
+
+#ifdef SFX                      /* Implode should have its own macro. */
+# define UNKN_IMPL (G.crec.compression_method == IMPLODED)
+#else
+# define UNKN_IMPL FALSE        /* Implode (6) allowed. */
+#endif
+
+                                /* Tokenize (7) not allowed. */
+#define UNKN_TOKN (G.crec.compression_method == TOKENIZED)
+
+#ifdef DEFLATE_SUPPORT
+# define UNKN_DEFL FALSE        /* Deflate (8) allowed. */
+#else
+# define UNKN_DEFL (G.crec.compression_method == DEFLATED)
+#endif
+
+#if defined( DEFLATE_SUPPORT) && defined( DEFLATE64_SUPPORT)
+# define UNKN_DEFL64 FALSE      /* Deflate64 (9) allowed. */
+#else
+# define UNKN_DEFL64 (G.crec.compression_method == ENHDEFLATED)
+#endif
+
+/* Assume that compression methods above Deflate64 (ENHDEFLATED = 9) are
+ * not allowed, unless an UNKN_xxxx exception is false.
+ */
+#ifdef IZ_CRYPT_AES_WG
+# define UNKN_AES_WG (G.crec.compression_method != AESENCRED)
+#else
+# define UNKN_AES_WG TRUE       /* AES_WG (99) unknown. */
+#endif
+
+#ifdef BZIP2_SUPPORT
+# define UNKN_BZ2 (G.crec.compression_method != BZIPPED)
+#else
+# define UNKN_BZ2 TRUE          /* Bzip2 (12) unknown. */
+#endif
+
+#ifdef LZMA_SUPPORT
+# define UNKN_LZMA (G.crec.compression_method != LZMAED)
+#else
+# define UNKN_LZMA TRUE         /* LZMA (14) unknown */
+#endif
+
+#ifdef PPMD_SUPPORT
+# define UNKN_PPMD (G.crec.compression_method != PPMDED)
+#else
+# define UNKN_PPMD TRUE         /* PPMd (98) unknown */
+#endif
+
+#ifdef USE_WAVP
+# define UNKN_WAVP (G.crec.compression_method != WAVPACKED)
+#else
+# define UNKN_WAVP TRUE         /* WavPack (97) unknown */
+#endif
+
+#define UNKN_COMPR \
+ ((UNKN_DEFL || UNKN_DEFL64 || UNKN_IMPL || UNKN_RED || \
+ UNKN_SHR || UNKN_TOKN) || \
+ ((G.crec.compression_method > ENHDEFLATED) && \
+ UNKN_AES_WG && UNKN_BZ2 && UNKN_LZMA && UNKN_PPMD && UNKN_WAVP))
+
+
+/* UNZVERS_SUPPORT macro: Version Needed to Extract. */
+#if (defined(BZIP2_SUPPORT) && (UNZIP_VERSION < UNZIP_BZIP2_VERS))
+    int unzvers_support = (UNKN_BZ2 ? UNZIP_VERSION : UNZIP_BZIP2_VERS);
+#   define UNZVERS_SUPPORT  unzvers_support
+#else
+#   define UNZVERS_SUPPORT  UNZIP_VERSION
+#endif
+
+
+
 
 /***************************/
 /*  Function store_info()  */
@@ -1104,77 +1196,6 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 static int store_info(__G)   /* return 0 if skipping, 1 if OK */
     __GDEF
 {
-#ifdef IZ_CRYPT_AES_WG
-#  define UNKN_AES (G.crec.compression_method != AESENCRED)
-#else
-#  define UNKN_AES TRUE       /* AES unknown */
-#endif
-
-#ifdef BZIP2_SUPPORT
-#  define UNKN_BZ2 (G.crec.compression_method != BZIPPED)
-#else
-#  define UNKN_BZ2 TRUE       /* bzip2 unknown */
-#endif
-
-#ifdef DEFLATE_SUPPORT
-#  ifdef DEFLATE64_SUPPORT
-#    define UNKN_DEFL ((G.crec.compression_method != DEFLATED) && \
-      (G.crec.compression_method != ENHDEFLATED))
-#  else
-#    define UNKN_DEFL (G.crec.compression_method != DEFLATED)
-#  endif
-#else
-#  define UNKN_DEFL TRUE
-#endif
-
-#ifdef LZMA_SUPPORT
-#  define UNKN_LZMA (G.crec.compression_method != LZMAED)
-#else
-#  define UNKN_LZMA TRUE      /* LZMA unknown */
-#endif
-
-#ifdef PPMD_SUPPORT
-#  define UNKN_PPMD (G.crec.compression_method != PPMDED)
-#else
-#  define UNKN_PPMD TRUE      /* PPMd unknown */
-#endif
-
-#ifdef USE_WAVP
-#  define UNKN_WAVP (G.crec.compression_method != WAVPACKED)
-#else
-#  define UNKN_WAVP TRUE      /* WavPack unknown */
-#endif
-
-#ifdef SFX
-   /* Fewer tests are needed for SFX, because Zip can't do everything. */
-#  define UNKN_COMPR \
-    ((G.crec.compression_method != STORED) && \
-    UNKN_AES && UNKN_BZ2 && UNKN_DEFL && UNKN_LZMA && UNKN_PPMD && UNKN_WAVP)
-#else
-#  ifdef COPYRIGHT_CLEAN  /* no reduced files */
-#    define UNKN_RED (G.crec.compression_method >= REDUCED1 && \
-                      G.crec.compression_method <= REDUCED4)
-#  else
-#    define UNKN_RED  FALSE  /* reducing not unknown */
-#  endif
-#  ifdef LZW_CLEAN  /* no shrunk files */
-#    define UNKN_SHR (G.crec.compression_method == SHRUNK)
-#  else
-#    define UNKN_SHR  FALSE  /* unshrinking not unknown */
-#  endif
-#  define UNKN_COMPR ((UNKN_RED || UNKN_SHR || \
-    (G.crec.compression_method == TOKENIZED) || \
-    (G.crec.compression_method != STORED)) && \
-    UNKN_AES && UNKN_BZ2 && UNKN_DEFL && UNKN_LZMA && UNKN_PPMD && UNKN_WAVP)
-#endif
-
-#if (defined(BZIP2_SUPPORT) && (UNZIP_VERSION < UNZIP_BZIP2_VERS))
-    int unzvers_support = (UNKN_BZ2 ? UNZIP_VERSION : UNZIP_BZIP2_VERS);
-#   define UNZVERS_SUPPORT  unzvers_support
-#else
-#   define UNZVERS_SUPPORT  UNZIP_VERSION
-#endif
-
 /*---------------------------------------------------------------------------
     Check central directory info for version/compatibility requirements.
   ---------------------------------------------------------------------------*/
@@ -2993,7 +3014,6 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             }
             break;
 
-#ifndef SFX
 #ifndef LZW_CLEAN
         case SHRUNK:
             if (!uO.tflag && QCOND2) {
@@ -3041,6 +3061,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             break;
 #endif /* !COPYRIGHT_CLEAN */
 
+#ifndef SFX                     /* Implode should have its own macro. */
         case IMPLODED:
             if (!uO.tflag && QCOND2) {
                 Info(slide, 0, ((char *)slide, LoadFarString(ExtractMsg),
@@ -3091,7 +3112,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 }
             }
             break;
-#endif /* !SFX */
+#endif /* ndef SFX */
 
 #ifdef DEFLATE_SUPPORT
         case DEFLATED:

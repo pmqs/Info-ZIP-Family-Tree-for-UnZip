@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -7,33 +7,32 @@
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
 */
 /*
- Example header file
-
- Do not use this header file in the WiZ application, use WIZ.H
- instead.
-
-*/
+ * Example header file
+ *
+ * Do not use this header file in the WiZ application.  Use WIZ.H instead.
+ */
 #ifndef _UZEXAMPL_H
-#define _UZEXAMPL_H
+# define _UZEXAMPL_H
 
-#include <windows.h>
-#ifdef __RSXNT__
-#  include "../win32/rsxntwin.h"
-#endif
-#include <assert.h>    /* required for all Windows applications */
-#include <stdlib.h>
-#include <stdio.h>
-#include <commdlg.h>
-#ifndef __RSXNT__
+# include "unzip.h"
+
+# include <windows.h>
+# ifdef __RSXNT__
+#  include "win32/rsxntwin.h"
+# endif
+# include <assert.h>    /* required for all Windows applications */
+# include <stdlib.h>
+# include <stdio.h>
+# include <commdlg.h>
+# ifndef __RSXNT__
 #  include <dlgs.h>
-#endif
-#include <windowsx.h>
+# endif
+# include <windowsx.h>
 
-#include "../unzip.h"
-#include "../windll/structs.h"
-#include "../windll/decs.h"
+# include "windll/structs.h"
+# include "windll/decs.h"
 
-/* Defines */
+/* Typedefs */
 
 typedef const UzpVer * (WINAPI * _DLL_UZVER)(void);
 typedef int (WINAPI * _DLL_UNZIP)(int, char **, int, char **,
@@ -53,20 +52,21 @@ extern int hFile;                 /* file handle             */
 int WINAPI DisplayBuf(LPSTR, unsigned long);
 
 /* Procedure Calls */
-#ifdef Z_UINT8_DEFINED
+# ifdef Z_UINT8_DEFINED
 void WINAPI ReceiveDllMessage(z_uint8 ucsize, z_uint8 csize,
     unsigned cfactor,
     unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
     char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
-#else
+# else
 void WINAPI ReceiveDllMessage(unsigned long ucsize, unsigned long csize,
     unsigned cfactor,
     unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
     char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
-#endif
+# endif
 void WINAPI ReceiveDllMessage_NO_INT64(unsigned long ucsiz_l,
     unsigned long ucsiz_h, unsigned long csiz_l, unsigned long csiz_h,
     unsigned cfactor,
     unsigned mo, unsigned dy, unsigned yr, unsigned hh, unsigned mm,
     char c, LPCSTR filename, LPCSTR methbuf, unsigned long crc, char fCrypt);
-#endif /* _UZEXAMPL_H */
+
+#endif /* ndef _UZEXAMPL_H */

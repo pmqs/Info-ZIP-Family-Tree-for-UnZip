@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2013-11-26
+   Document date: 2014-02-26
 
 ------------------------------------------------------------------------
 
@@ -135,10 +135,6 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
    - New "--license" option lists the license.  This allows distribution
      without additional documentation.
 
-- Initial support for AppleDouble storage of Finder info and resource
-  fork data on Macintosh (Mac OS X) systems.  Intended to be compatible
-  with Apple "ditto".
-
 - Behavior change: Now, by default, date-time information is restored on
   extracted files only, not on created directories.  Use "-D" to restore
   no date-time information.  Use "-D-" to restore date-time information
@@ -164,11 +160,27 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
    - "-v" report includes some raw hexadecimal values along with the old
      descriptions/interpretations.
 
+- New -da/--auto-auto-extract-dir option to specify a destination
+  directory for extracted files which is derived from the base name of
+  the archive.  For example, with -da, extraction of "fred.zip" is done
+  into subdirectory "fred" instead of into the current directory.  (On
+  VMS, subdirectory "[.fred]".) 
+
+- -j/--junk-dirs option now accepts an optional value, the number of
+  directory levels to discard.  As before, plain "-j" discards all
+  directory names.  "-j=N" discards only the top "N" directory levels.
+
+- Initial support for AppleDouble storage of Finder info and resource
+  fork data on Macintosh (Mac OS X) systems.  Intended to be compatible
+  with Apple "ditto".
+
 - Initial support for an UnZip object library on Unix and VMS, providing
   a callable UnZip interface.  Comments in an example main program
   source module, libiz/izunzip_example.c, explain some usage details.
   Currently, only a simple .a or .OLB object library is offered, not a
   .so shared object or .EXE shareable image.
+
+- Acorn port updated.
 
 - The Unix builders (unix/configure, unix/Makefile) have been changed
   substantially.  See INSTALL and unix/Makefile for details.
@@ -181,23 +193,25 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
      unix/configure_old and unix/Makefile_old.
    - Windows MinGW support.
    - Minor changes to accommodate BAE Systems STOP OS.
-
-- -j/--junk-dirs option now accepts an optional value, the number of
-  directory levels to discard.  As before, plain "-j" discards all
-  directory names.  "-j=N" discards only the top "N" directory levels.
-
-- Acorn port updated.
+   - Output from unix/configure script (used by "make generic") is more
+     informative.
 
 - VMS CLI changes:
    - /[NO]CASE_INSENSITIVE (for -C) is now deprecated, replaced by new
-     /MATCH = CASE = { BLIND | SENSITIVE}.
+     /MATCH = CASE = {BLIND|SENSITIVE}.
    - /[NO]TIMES (for -T) is now deprecated, replaced by new
      /[NO]DECIMAL_TIME.
    - /JUNK_DIRS (-j) now has an optional (integer) value.
-   - New qualifiers/values: /JAR (--jar), /LICENSE (--license),
-     /RESTORE = ACL (-ka), /RESTORE = [NO]PROTECTION =
-     [LIMITED|ORIGINAL] (-k), /RESTORE = OWNER (-X), /VERBOSE = COMMAND
-     (-sc).  Optional: /MATCH = [NO]WILD_MATCH_SLASH (-W).
+   - New qualifiers/values: /[NO]AUTO_DIRECTORY (-da), /JAR (--jar),
+     /LICENSE (--license), /RESTORE = ACL (-ka),
+     /RESTORE = [NO]PROTECTION = [LIMITED|ORIGINAL] (-k),
+     /RESTORE = OWNER (-X), /VERBOSE = COMMAND (-sc).  Optional:
+     /MATCH = [NO]WILD_MATCH_SLASH (-W).
+
+- New Windows builders for Microsoft Visual Studio (Visual C++) 2010
+  have more options, fewer projects.  (Service Pack 1 may be needed for
+  VS 2010.  VS 2012 (and newer?) should be compatible.)  Look for
+  "vc10/" directory under "win32/" and "windll/".
 
 ------------------------------------------------------------------------
 

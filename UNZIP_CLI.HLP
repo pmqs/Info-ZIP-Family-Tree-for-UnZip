@@ -182,6 +182,28 @@
    particularly /LIST.
 2 Qualifiers_Ordinary
    Qualifiers in this group modify the operation of UnZip.
+3 /AUTO_DIRECTORY (-da)
+   /NOAUTO_DIRECTORY (default)
+   /AUTO_DIRECTORY[=REUSE]
+
+   Specifies a destination directory  for  extracted  files  which  is
+   derived  from  the base name of the archive.  By default, files are
+   extracted (and  subdirectories  created)  in  the  current  default
+   directory.   With  /AUTO_DIRECTORY,  UnZip  automatically derives a
+   subdirectory name from the archive name, creates that subdirectory,
+   and extracts files into that subdirectory.
+
+   For example, with /AUTO_DIRECTORY, extraction of "fred.zip" is done
+   into  subdirectory "[.fred]" instead of into the current directory.
+   (On non-VMS systems, subdirectory "fred".)
+
+   Using  this  option  can  help  to  avoid  cluttering  the  current
+   directory with files extracted from an archive whose structure does
+   not include a top-level directory.
+
+   If -da is specified as a default option in an environment variable,
+   it  can be overridden by either a /NOAUTO_DIRECTORY qualifier or an
+   explicit /DIRECTORY=dest_dir qualifier.  See also /DIRECTORY.
 3 /BINARY (-b, -bb)
    /BINARY[=keyword]
    /NOBINARY   (Default.)
@@ -232,8 +254,8 @@
 
    Specifies a destination directory for extracted files.  By default,
    files  are  extracted  (and  subdirectories created) in the current
-   directory.  With "/DIRECTORY=dest_dir", extraction is done into the
-   specified directory, instead.
+   default directory.  With "/DIRECTORY=dest_dir", extraction is  done
+   into the specified directory, instead.
 
    [VMS] On VMS, only a VMS-style device:[directory] specification  is
    permitted.

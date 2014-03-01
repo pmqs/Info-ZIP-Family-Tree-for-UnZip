@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -15,46 +15,35 @@
  */
 
 #ifndef WIN32   /* this code is currently only tested for 32-bit console */
-#  define WIN32
+# define WIN32
 #endif
 
 #if defined(__WIN32__) && !defined(WIN32)
-#  define WIN32
+# define WIN32
 #endif
 
-/* Tell Microsoft Visual C++ 2005 to leave us alone and
- * let us use standard C functions the way we're supposed to.
- */
-#if defined(_MSC_VER) && (_MSC_VER >= 1400)
-#  ifndef _CRT_SECURE_NO_WARNINGS
-#    define _CRT_SECURE_NO_WARNINGS
-#  endif
-#  ifndef _CRT_NONSTDC_NO_WARNINGS
-#    define _CRT_NONSTDC_NO_WARNINGS
-#  endif
-#endif
+#include "uzexampl.h"
+#include "unzvers.h"
 
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <string.h>
-#include "uzexampl.h"
-#include "../unzvers.h"
 #ifdef WIN32
-#  include <winver.h>
+# include <winver.h>
 #else
-#  include <ver.h>
+# include <ver.h>
 #endif
 
 #ifndef _MAX_PATH
-#  define _MAX_PATH 260           /* max total file or directory name path */
+# define _MAX_PATH 260           /* max total file or directory name path */
 #endif
 
 #ifdef WIN32
-#define UNZ_DLL_NAME "UNZIP32.DLL\0"
+# define UNZ_DLL_NAME "UNZIP32.DLL\0"
 #else
-#define UNZ_DLL_NAME "UNZIP16.DLL\0"
+# define UNZ_DLL_NAME "UNZIP16.DLL\0"
 #endif
 
 #define DLL_WARNING "Cannot find %s."\
@@ -78,16 +67,55 @@ DWORD dwPlatformId = 0xFFFFFFFF;
 static ZCONST UzpVer *lpUzVersInfo = NULL;
 
 
-/* Forward References */
-int WINAPI DisplayBuf(LPSTR, unsigned long);
-int WINAPI GetReplaceDlgRetVal(LPSTR, unsigned);
-int WINAPI password(LPSTR, int, LPCSTR, LPCSTR);
-
-ZCONST UzpVer * UZ_EXP UzpVersion  OF((void));
 _DLL_UZVER pUzpVersion;
 _DLL_UNZIP pWiz_SingleEntryUnzip;
 
-static void FreeUpMemory(void);
+
+/* Call-back functions. */
+
+int WINAPI GetReplaceDlgRetVal(LPSTR filename, unsigned fnbufsiz)
+{
+/* This is where you will decide if you want to replace, rename etc existing
+   files.
+ */
+return 1;
+}
+
+
+/* Password entry routine - see password.c in the wiz directory for how
+   this is actually implemented in WiZ. If you have an encrypted file,
+   this will probably give you great pain.
+ */
+int WINAPI password(LPSTR p, int n, LPCSTR m, LPCSTR name)
+{
+return 1;
+}
+
+
+/* Dummy "print" routine that simply outputs what is sent from the dll */
+int WINAPI DisplayBuf(LPSTR buf, unsigned long size)
+{
+printf("%s", (char *)buf);
+return (int)(unsigned int) size;
+}
+
+
+static void FreeUpMemory(void)
+{
+if (hUF)
+   {
+   GlobalUnlock(hUF);
+   GlobalFree(hUF);
+   }
+if (hDCL)
+   {
+   GlobalUnlock(hDCL);
+   GlobalFree(hDCL);
+   }
+}
+
+
+/* Main program entry. */
 
 int main(int argc, char **argv)
 {
@@ -399,27 +427,6 @@ FreeUpMemory();
 return retcode;
 }
 
-int WINAPI GetReplaceDlgRetVal(LPSTR filename, unsigned fnbufsiz)
-{
-/* This is where you will decide if you want to replace, rename etc existing
-   files.
- */
-return 1;
-}
-
-static void FreeUpMemory(void)
-{
-if (hUF)
-   {
-   GlobalUnlock(hUF);
-   GlobalFree(hUF);
-   }
-if (hDCL)
-   {
-   GlobalUnlock(hDCL);
-   GlobalFree(hDCL);
-   }
-}
 
 /* This is a very stripped down version of what is done in Wiz. Essentially
    what this function is for is to do a listing of an archive contents. It
@@ -458,20 +465,4 @@ else
       ucsize, csiz, szCompFactor, mo, dy, yr, hh, mm, c, filename);
 
 printf("%s\n", psLBEntry);
-}
-
-/* Password entry routine - see password.c in the wiz directory for how
-   this is actually implemented in WiZ. If you have an encrypted file,
-   this will probably give you great pain.
- */
-int WINAPI password(LPSTR p, int n, LPCSTR m, LPCSTR name)
-{
-return 1;
-}
-
-/* Dummy "print" routine that simply outputs what is sent from the dll */
-int WINAPI DisplayBuf(LPSTR buf, unsigned long size)
-{
-printf("%s", (char *)buf);
-return (int)(unsigned int) size;
 }

@@ -1,6 +1,6 @@
 UnZip 6.10c
 
-Announcement for UnZip Beta 6.10c, >>21 Dec 2013.  This is a beta
+Announcement for UnZip Beta 6.10c, >>25 Feb 2014.  This is a beta
 release.  Changes may be made before UnZip 6.10 is released.  See the
 file History.610 for development details of changes in this beta
 release.
@@ -16,13 +16,16 @@ details):
   trailing hyphen.  See extended help and manual for details.
 - Optional support for WinZip-compatible AES encryption (compression
   method 99).
-- Optional support for LZMA and PPMd compression.
+- Optional support for LZMA (method 14) and PPMd (method 98)
+  compression.
 - Behavior change: Now, by default, date-time information is restored on
-  extracted files only, not on created directories.
+  extracted files only, not on created directories.  See option
+  -D/--dir-timestamps.
 - Behavior change: Now, by default, permission/protection information is
   restored on Unix(-like) and VMS systems, but limited by the user's
-  Unix umask or VMS default protection.
-- Behavior change: ZipInfo report format changes.
+  Unix umask or VMS default protection.  See option
+  -k/--keep-permissions, below.
+- Behavior change: ZipInfo report format changes (minor).
 - Behavior change: Now, on Unix(-like) and VMS systems,
   -X/--restore-owner (/RESTORE = OWNER) controls only restoration of
   Unix UID/GID or VMS UIC.
@@ -31,11 +34,17 @@ details):
   archived on a VMS system.  A Unix file named, for example, "fred;123"
   will now, by default, be extracted on a non-VMS system as "fred;123",
   not "fred".
+- New -da/--auto-extract-dir option specifies extraction into a
+  subdirectory whose name is derived from the base name of the archive. 
+  So, for example, "unzip -da fred.zip" would extract files into
+  subdirectory "fred" ("[.fred]" on VMS).  This avoids cluttering the
+  current directory with files if the archive structure lacks a
+  top-level directory.
 - Extended -j/--junk-dirs option accepts an optional value, the number
   of directory levels to discard.
 - New --jar option may help with poorly formed Java "jar" archives.
 - New -k/--keep-permissions option controls how permissions are restored
-  on Unix and VMS systems.  The default behavior has changed, to apply
+  on Unix and VMS systems.  The default behavior has changed to apply
   Unix umask or VMS default protection to the archive permissions.  With
   -k, the archive permissions are restored, ignoring the Unix umask or
   VMS default protection (the old default behavior).  With -k-, the
@@ -83,9 +92,15 @@ details):
   applied to the archive permissions.  With ORIGINAL, the default
   protection is ignored, and the archive permissions are used.  (This is
   the old default behavior.)  With NOPROTECTION, archive permissions are
-  ignored, and the default protection is used.
-- New builders for Microsoft Visual Studio (Visual C++) 2010 (and 2012,
-  and newer?) have more options, fewer projects.
+  ignored, and the default protection is used.  New
+  /[NO]AUTO_DIRECTORY[=REUSE] (-da/--auto-extract-dir) option controls
+  automatic extraction destination subdirectory.
+- New builders for Microsoft Visual Studio (Visual C++) 2010 have more
+  options, fewer projects.  (Service Pack 1 may be needed for VS 2010. 
+  VS 2012 (and newer?) should be compatible.)
+- Windows DLL now offers a command-line (argc, argv[]) interface which
+  should be more stable than the old binary structure interface.  See
+  example code in unzipstb.c.
 
 As always, see the UnZip manual page, the extended help in UnZip
 ("unzip -hh"), and any relevant OS-specific documentation for details on

@@ -40,6 +40,11 @@ Modern Bugs (UnZip 6.10):
    Debian Bug#652838: unzip: zipgrep parses long egrep options as short
    options
 
+ - On Windows with wide-character Unicode support, "-d dest_dir" or -da
+   works, but the extraction progress messages ("inflating: name") show
+   only the archive path, not the actual path used in the file system.
+   (The user-specified/requested destination directory is not shown.)
+
 
 Bugs (real and/or imagined):
 ---------------------------

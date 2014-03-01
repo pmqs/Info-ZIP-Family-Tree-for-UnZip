@@ -132,8 +132,9 @@ static char *zi_time   OF((__GPRO__ ZCONST ulg *datetimez,
 /*  Strings used in zipinfo.c (ZipInfo half)  */
 /**********************************************/
 
+static ZCONST char indentStr[] = "  ";
 static ZCONST char nullStr[] = "";
-static ZCONST char PlurSufx[] = "s";
+static ZCONST char plurSufx[] = "s";
 
 /* ZipInfHeader1[] is actually LogInitline[], which is put out in
  * process.c:do_seekable().
@@ -203,7 +204,7 @@ static ZCONST char Far OS_AtheOS[] = "AtheOS";
 static ZCONST char Far OS_BeOS[] = "BeOS";
 static ZCONST char Far OS_Tandem[] = "Tandem NSK";
 static ZCONST char Far OS_Theos[] = "Theos";
-static ZCONST char Far OS_MacDarwin[] = "Mac OS/X (Darwin)";
+static ZCONST char Far OS_MacDarwin[] = "Mac OS X (Darwin)";
 #ifdef OLD_THEOS_EXTRA
   static ZCONST char Far OS_TheosOld[] = "Theos (Old)";
 #endif /* OLD_THEOS_EXTRA */
@@ -293,23 +294,23 @@ static ZCONST char Far FileCommentLength[] =
 static ZCONST char Far FileDiskNum[] =
   "  disk number on which file begins:               disk %lu\n";
 static ZCONST char Far ApparentFileType[] =
-  "  apparent file type (%02x hex):                    %s%s\n";
+  "  %sapparent file type (%02x hex):                    %s%s\n";
 static ZCONST char Far VMSFileAttributes[] =
-  "  VMS file attributes (%06o octal):             %s\n";
+  "  %sVMS file attributes (%06o octal):             %s\n";
 static ZCONST char Far AmigaFileAttributes[] =
-  "  Amiga file attributes (%06o octal):           %s\n";
+  "  %sAmiga file attributes (%06o octal):           %s\n";
 static ZCONST char Far UnixFileAttributes[] =
-  "  Unix file attributes (%06o octal):            %s\n";
+  "  %sUnix file attributes (%06o octal):            %s\n";
 static ZCONST char Far NonMSDOSFileAttributes[] =
-  "  non-MSDOS external file attributes:             %06lX hex\n";
+  "  %snon-MSDOS external file attributes:             %06lX hex\n";
 static ZCONST char Far MSDOSFileAttributes[] =
-  "  MS-DOS file attributes (%02X hex):                none\n";
+  "  %sMS-DOS file attributes (%02X hex):                none\n";
 static ZCONST char Far MSDOSFileAttributesRO[] =
-  "  MS-DOS file attributes (%02X hex):                read-only\n";
+  "  %sMS-DOS file attributes (%02X hex):                read-only\n";
 static ZCONST char Far MSDOSFileAttributesAlpha[] =
-  "  MS-DOS file attributes (%02X hex):                %s%s%s%s%s%s%s%s\n";
+  "  %sMS-DOS file attributes (%02X hex):                %s%s%s%s%s%s%s%s\n";
 static ZCONST char Far TheosFileAttributes[] =
-  "  Theos file attributes (%04X hex):               %s\n";
+  "  %sTheos file attributes (%04X hex):               %s\n";
 
 static ZCONST char Far TheosFTypLib[] = "Library     ";
 static ZCONST char Far TheosFTypDir[] = "Directory   ";
@@ -362,6 +363,7 @@ static ZCONST char Far efTandem[] = "Tandem NSK";
 static ZCONST char Far efTheos[] = "Theos";
 static ZCONST char Far efAES[] = "AES_WG encrypt";
 static ZCONST char Far efJavaCAFE[] = "Java CAFE";
+static ZCONST char Far efLHdrExtn[] = "Local Hdr Ext'n";
 static ZCONST char Far efUnknown[] = "unknown";
 
 static ZCONST char Far OS2EAs[] = ".\n\
@@ -433,6 +435,9 @@ static ZCONST char Far MD5data[] = ".\n\
 static ZCONST char Far First20[] = ".  The first\n    20 are:  ";
 static ZCONST char Far ColonIndent[] = ":\n   ";
 static ZCONST char Far efFormat[] = " %02x";
+static ZCONST char Far efLHdrExtnBitMap[] = "  Bit map:";
+static ZCONST char Far efLHdrExtnBitMapByte[] = " %02x";
+static ZCONST char Far efLHdrExtnBitMapEol[] = "\n";
 
 static ZCONST char Far AesExtraField[] = ".\n\
     Vers: %s, Vend ID: %c%c, Mode: %s, Cmpr mthd: %s";
@@ -470,7 +475,7 @@ static ZCONST char Far *method[NUM_METHODS] = {
 
 
 
-#ifndef WINDLL
+#ifndef WINDLL_OLD
 
 /* 2012-12-12 SMS.
  * Free some storage, if it was allocated, and we care.
@@ -917,7 +922,7 @@ int zi_opts(__G__ pargc, pargv)
 
 } /* end function zi_opts() */
 
-#endif /* !WINDLL */
+#endif /* ndef WINDLL_OLD */
 
 
 
@@ -1229,7 +1234,7 @@ int zipinfo(__G)   /* return PK-type error code */
         }
 #if 0
         Info(slide, 0, ((char *)slide, LoadFarString(ZipfileStats),
-          members, (members==1L)? nullStr:PlurSufx,
+          members, (members==1L) ? nullStr : plurSufx,
           FmZofft(tot_ucsize, NULL, "u"),
           FmZofft(tot_csize, NULL, "u"),
           sgn, cfactor/10, cfactor%10));
@@ -1336,6 +1341,268 @@ static ZCONST char *cmpr_mthd( methid)
 }
 
 
+static ZCONST char Far *os[NUM_HOSTS] = {
+    OS_FAT, OS_Amiga, OS_VMS, OS_Unix, OS_VMCMS, OS_AtariST, OS_HPFS,
+    OS_Macintosh, OS_ZSystem, OS_CPM, OS_TOPS20, OS_NTFS, OS_QDOS,
+    OS_Acorn, OS_VFAT, OS_MVS, OS_BeOS, OS_Tandem, OS_Theos, OS_MacDarwin,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    OS_AtheOS
+};
+
+
+/***********************/
+/*  zi_vers_made_by()  */
+/***********************/
+
+static void zi_vers_made_by( __G__ indent, hnum, hver)
+    __GDEF
+    int indent;
+    unsigned hnum;
+    unsigned hver;
+{
+    char unkn[16];
+    ZCONST char *varmsg_str;
+
+    if (hnum >= NUM_HOSTS) {
+        sprintf(unkn, LoadFarString(UnknownNo),
+                (int)G.crec.version_made_by[1]);
+        varmsg_str = unkn;
+    } else {
+        varmsg_str = LoadFarStringSmall(os[hnum]);
+#ifdef OLD_THEOS_EXTRA
+        if (hnum == FS_VFAT_ && hver == 20) {
+            /* entry made by old non-official THEOS port zip archive */
+            varmsg_str = LoadFarStringSmall(OS_TheosOld);
+        }
+#endif /* OLD_THEOS_EXTRA */
+    }
+    Info(slide, 0, ((char *)slide, LoadFarString(HostOS), varmsg_str));
+    Info(slide, 0, ((char *)slide, LoadFarString(EncodeSWVer), hver/10,
+      hver%10));
+}
+
+
+/***************************/
+/*  zi_long_extern_attr()  */
+/***************************/
+
+static void zi_long_extern_attr( __G__ indent, hnum, xatt)
+    __GDEF
+    unsigned hnum;
+    unsigned xatt;
+{
+    unsigned xatth;
+    unsigned xattl;
+    char workspace[ 12], attribs[ 22];
+
+    xatth = (xatt >> 16) & 0xFFFF;
+    xattl = xatt & 0xFF;
+
+    if (hnum == VMS_) {
+        char   *p=attribs, *q=attribs+1;
+        int    i, j, k;
+
+        for (k = 0;  k < 12;  ++k)
+            workspace[k] = 0;
+        if (xatth & VMS_IRUSR)
+            workspace[0] = 'R';
+        if (xatth & VMS_IWUSR) {
+            workspace[1] = 'W';
+            workspace[3] = 'D';
+        }
+        if (xatth & VMS_IXUSR)
+            workspace[2] = 'E';
+        if (xatth & VMS_IRGRP)
+            workspace[4] = 'R';
+        if (xatth & VMS_IWGRP) {
+            workspace[5] = 'W';
+            workspace[7] = 'D';
+        }
+        if (xatth & VMS_IXGRP)
+            workspace[6] = 'E';
+        if (xatth & VMS_IROTH)
+            workspace[8] = 'R';
+        if (xatth & VMS_IWOTH) {
+            workspace[9] = 'W';
+            workspace[11] = 'D';
+        }
+        if (xatth & VMS_IXOTH)
+            workspace[10] = 'E';
+
+        *p++ = '(';
+        for (k = j = 0;  j < 3;  ++j) {    /* loop over groups of permissions */
+            for (i = 0;  i < 4;  ++i, ++k)  /* loop over perms within a group */
+                if (workspace[k])
+                    *p++ = workspace[k];
+            *p++ = ',';                       /* group separator */
+            if (j == 0)
+                while ((*p++ = *q++) != ',')
+                    ;                         /* system, owner perms are same */
+        }
+        *p-- = '\0';
+        *p = ')';   /* overwrite last comma */
+        Info(slide, 0, ((char *)slide, LoadFarString(VMSFileAttributes),
+         (indent ? indentStr : nullStr), xatth, attribs));
+
+    } else if (hnum == AMIGA_) {
+        switch (xatth & AMI_IFMT) {
+            case AMI_IFDIR:  attribs[0] = 'd';  break;
+            case AMI_IFREG:  attribs[0] = '-';  break;
+            default:         attribs[0] = '?';  break;
+        }
+        attribs[1] = (xatth & AMI_IHIDDEN)?   'h' : '-';
+        attribs[2] = (xatth & AMI_ISCRIPT)?   's' : '-';
+        attribs[3] = (xatth & AMI_IPURE)?     'p' : '-';
+        attribs[4] = (xatth & AMI_IARCHIVE)?  'a' : '-';
+        attribs[5] = (xatth & AMI_IREAD)?     'r' : '-';
+        attribs[6] = (xatth & AMI_IWRITE)?    'w' : '-';
+        attribs[7] = (xatth & AMI_IEXECUTE)?  'e' : '-';
+        attribs[8] = (xatth & AMI_IDELETE)?   'd' : '-';
+        attribs[9] = 0;   /* better dlm the string */
+        Info(slide, 0, ((char *)slide, LoadFarString(AmigaFileAttributes),
+          (indent ? indentStr : nullStr), xatth, attribs));
+
+    } else if (hnum == THEOS_) {
+        ZCONST char Far *fpFtyp;
+
+        switch (xatth & THS_IFMT) {
+            case THS_IFLIB:  fpFtyp = TheosFTypLib;  break;
+            case THS_IFDIR:  fpFtyp = TheosFTypDir;  break;
+            case THS_IFREG:  fpFtyp = TheosFTypReg;  break;
+            case THS_IFREL:  fpFtyp = TheosFTypRel;  break;
+            case THS_IFKEY:  fpFtyp = TheosFTypKey;  break;
+            case THS_IFIND:  fpFtyp = TheosFTypInd;  break;
+            case THS_IFR16:  fpFtyp = TheosFTypR16;  break;
+            case THS_IFP16:  fpFtyp = TheosFTypP16;  break;
+            case THS_IFP32:  fpFtyp = TheosFTypP32;  break;
+            default:         fpFtyp = TheosFTypUkn;  break;
+        }
+        strcpy(attribs, LoadFarStringSmall(fpFtyp));
+        attribs[12] = (xatth & THS_INHID) ? '.' : 'H';
+        attribs[13] = (xatth & THS_IMODF) ? '.' : 'M';
+        attribs[14] = (xatth & THS_IWOTH) ? '.' : 'W';
+        attribs[15] = (xatth & THS_IROTH) ? '.' : 'R';
+        attribs[16] = (xatth & THS_IEUSR) ? '.' : 'E';
+        attribs[17] = (xatth & THS_IXUSR) ? '.' : 'X';
+        attribs[18] = (xatth & THS_IWUSR) ? '.' : 'W';
+        attribs[19] = (xatth & THS_IRUSR) ? '.' : 'R';
+        attribs[20] = 0;
+        Info(slide, 0, ((char *)slide, LoadFarString(TheosFileAttributes),
+          (indent ? indentStr : nullStr), xatth, attribs));
+
+#ifdef OLD_THEOS_EXTRA
+    } else if (hnum == FS_VFAT_ && hostver == 20) {
+        /* process old non-official THEOS port zip archive */
+        ZCONST char Far *fpFtyp;
+
+        switch (xatth & _THS_IFMT) {
+            case _THS_IFLIB:  fpFtyp = TheosFTypLib;  break;
+            case _THS_IFDIR:  fpFtyp = TheosFTypDir;  break;
+            case _THS_IFREG:  fpFtyp = TheosFTypReg;  break;
+            case _THS_IODRC:  fpFtyp = TheosFTypRel;  break;
+            case _THS_IOKEY:  fpFtyp = TheosFTypKey;  break;
+            case _THS_IOIND:  fpFtyp = TheosFTypInd;  break;
+            case _THS_IOPRG:  fpFtyp = TheosFTypR16;  break;
+            case _THS_IO286:  fpFtyp = TheosFTypP16;  break;
+            case _THS_IO386:  fpFtyp = TheosFTypP32;  break;
+            default:         fpFtyp = TheosFTypUkn;  break;
+        }
+        strcpy(attribs, LoadFarStringSmall(fpFtyp));
+        attribs[12] = (xatth & _THS_HIDDN) ? 'H' : '.';
+        attribs[13] = (xatth & _THS_IXOTH) ? '.' : 'X';
+        attribs[14] = (xatth & _THS_IWOTH) ? '.' : 'W';
+        attribs[15] = (xatth & _THS_IROTH) ? '.' : 'R';
+        attribs[16] = (xatth & _THS_IEUSR) ? '.' : 'E';
+        attribs[17] = (xatth & _THS_IXUSR) ? '.' : 'X';
+        attribs[18] = (xatth & _THS_IWUSR) ? '.' : 'W';
+        attribs[19] = (xatth & _THS_IRUSR) ? '.' : 'R';
+        attribs[20] = 0;
+        Info(slide, 0, ((char *)slide, LoadFarString(TheosFileAttributes),
+          (indent ? indentStr : nullStr), xatth, attribs));
+#endif /* OLD_THEOS_EXTRA */
+
+    } else if ((hnum != FS_FAT_) && (hnum != FS_HPFS_) &&
+               (hnum != FS_NTFS_) && (hnum != FS_VFAT_) &&
+               (hnum != ACORN_) &&
+               (hnum != VM_CMS_) && (hnum != MVS_))
+    {                                 /* assume Unix-like */
+        switch ((unsigned)(xatth & UNX_IFMT)) {
+            case (unsigned)UNX_IFDIR:   attribs[0] = 'd';  break;
+            case (unsigned)UNX_IFREG:   attribs[0] = '-';  break;
+            case (unsigned)UNX_IFLNK:   attribs[0] = 'l';  break;
+            case (unsigned)UNX_IFBLK:   attribs[0] = 'b';  break;
+            case (unsigned)UNX_IFCHR:   attribs[0] = 'c';  break;
+            case (unsigned)UNX_IFIFO:   attribs[0] = 'p';  break;
+            case (unsigned)UNX_IFSOCK:  attribs[0] = 's';  break;
+            default:          attribs[0] = '?';  break;
+        }
+        attribs[1] = (xatth & UNX_IRUSR)? 'r' : '-';
+        attribs[4] = (xatth & UNX_IRGRP)? 'r' : '-';
+        attribs[7] = (xatth & UNX_IROTH)? 'r' : '-';
+
+        attribs[2] = (xatth & UNX_IWUSR)? 'w' : '-';
+        attribs[5] = (xatth & UNX_IWGRP)? 'w' : '-';
+        attribs[8] = (xatth & UNX_IWOTH)? 'w' : '-';
+
+        if (xatth & UNX_IXUSR)
+            attribs[3] = (xatth & UNX_ISUID)? 's' : 'x';
+        else
+            attribs[3] = (xatth & UNX_ISUID)? 'S' : '-';   /* S = undefined */
+        if (xatth & UNX_IXGRP)
+            attribs[6] = (xatth & UNX_ISGID)? 's' : 'x';   /* == UNX_ENFMT */
+        else
+            attribs[6] = (xatth & UNX_ISGID)? 'l' : '-';
+        if (xatth & UNX_IXOTH)
+            attribs[9] = (xatth & UNX_ISVTX)? 't' : 'x';   /* "sticky bit" */
+        else
+            attribs[9] = (xatth & UNX_ISVTX)? 'T' : '-';   /* T = undefined */
+        attribs[10] = 0;
+
+        Info(slide, 0, ((char *)slide, LoadFarString(UnixFileAttributes),
+          (indent ? indentStr : nullStr), xatth, attribs));
+
+    } else {
+        Info(slide, 0, ((char *)slide, LoadFarString(NonMSDOSFileAttributes),
+          (indent ? indentStr : nullStr), (xatth >> 8)));
+
+    } /* endif (hnum: external attributes format) */
+
+    if (xattl == 0)
+        Info(slide, 0, ((char *)slide, LoadFarString(MSDOSFileAttributes),
+          (indent ? indentStr : nullStr), xattl));
+    else if (xattl == 1)
+        Info(slide, 0, ((char *)slide, LoadFarString(MSDOSFileAttributesRO),
+          (indent ? indentStr : nullStr), xattl));
+    else
+        Info(slide, 0, ((char *)slide, LoadFarString(MSDOSFileAttributesAlpha),
+          (indent ? indentStr : nullStr),
+          xattl, ((xattl& 1) ? "rdo " : nullStr),
+          (xattl&   2)? "hid " : nullStr,
+          (xattl&   4)? "sys " : nullStr,
+          (xattl&   8)? "lab " : nullStr,
+          (xattl&  16)? "dir " : nullStr,
+          (xattl&  32)? "arc " : nullStr,
+          (xattl&  64)? "lnk " : nullStr,
+          (xattl& 128)? "exe"  : nullStr));
+}
+
+
+/***************************/
+/*  zi_long_intern_attr()  */
+/***************************/
+
+static void zi_long_intern_attr( __G__ indent, iatt)
+    __GDEF
+    int indent;
+    unsigned iatt;
+{
+    Info(slide, 0, ((char *)slide, LoadFarString(ApparentFileType),
+      (indent ? indentStr : nullStr), iatt,
+      ((iatt & 1) ? "text" : (iatt & 2)? "ebcdic" : "binary"),
+      ((G.crec.internal_file_attributes & 0xfc)? "+" : nullStr)));
+}
+
+
 /************************/
 /*  Function zi_long()  */
 /************************/
@@ -1350,17 +1617,13 @@ static int zi_long(__G__ pEndprev, error_in_archive)
     iztimes z_utime;
 #endif
     int  error;
-    unsigned  hostnum, hostver, extnum, extver, methid, methnum, xattr;
-    char workspace[12], attribs[22];
+    unsigned  hostnum, hostver, extnum, extver, methid, methnum;
+    unsigned fc_len;
+    unsigned iattr;
+    unsigned xattr;
+    char d_t_buf[ 21];
     ZCONST char *varmsg_str;
     char unkn[16];
-    static ZCONST char Far *os[NUM_HOSTS] = {
-        OS_FAT, OS_Amiga, OS_VMS, OS_Unix, OS_VMCMS, OS_AtariST, OS_HPFS,
-        OS_Macintosh, OS_ZSystem, OS_CPM, OS_TOPS20, OS_NTFS, OS_QDOS,
-        OS_Acorn, OS_VFAT, OS_MVS, OS_BeOS, OS_Tandem, OS_Theos, OS_MacDarwin,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        OS_AtheOS
-    };
     static ZCONST char Far *dtypelng[4] = {
         DeflNorm, DeflMax, DeflFast, DeflSFast
     };
@@ -1405,22 +1668,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
       FmZofft(G.crec.relative_offset_local_header, NULL, "u"),
       FmZofft(G.crec.relative_offset_local_header, FZOFFT_HEX_DOT_WID, "X")));
 
-    if (hostnum >= NUM_HOSTS) {
-        sprintf(unkn, LoadFarString(UnknownNo),
-                (int)G.crec.version_made_by[1]);
-        varmsg_str = unkn;
-    } else {
-        varmsg_str = LoadFarStringSmall(os[hostnum]);
-#ifdef OLD_THEOS_EXTRA
-        if (hostnum == FS_VFAT_ && hostver == 20) {
-            /* entry made by old non-official THEOS port zip archive */
-            varmsg_str = LoadFarStringSmall(OS_TheosOld);
-        }
-#endif /* OLD_THEOS_EXTRA */
-    }
-    Info(slide, 0, ((char *)slide, LoadFarString(HostOS), varmsg_str));
-    Info(slide, 0, ((char *)slide, LoadFarString(EncodeSWVer), hostver/10,
-      hostver%10));
+    zi_vers_made_by( __G__ 0, hostnum, hostver);
 
     if ((extnum >= NUM_HOSTS) || (os[extnum] == NULL)) {
         sprintf(unkn, LoadFarString(UnknownNo),
@@ -1461,12 +1709,6 @@ static int zi_long(__G__ pEndprev, error_in_archive)
       (G.crec.general_purpose_bit_flag & 8) ? "yes" : "no"));
     /* print upper 3 bits for amusement? */
 
-    /* For printing of date & time, a "char d_t_buf[21]" is required.
-     * To save stack space, we reuse the "char attribs[22]" buffer which
-     * is not used yet.
-     */
-#   define d_t_buf attribs
-
     zi_time(__G__ &G.crec.last_mod_dos_datetime, NULL, d_t_buf);
     Info(slide, 0, ((char *)slide, LoadFarString(FileModDate), d_t_buf));
 #ifdef USE_EF_UT_TIME
@@ -1505,202 +1747,14 @@ static int zi_long(__G__ pEndprev, error_in_archive)
       G.crec.file_comment_length));
     Info(slide, 0, ((char *)slide, LoadFarString(FileDiskNum),
       (ulg)(G.crec.disk_number_start + 1)));
-    Info(slide, 0, ((char *)slide, LoadFarString(ApparentFileType),
-      G.crec.internal_file_attributes,
-      ((G.crec.internal_file_attributes & 1)? "text"
-         : (G.crec.internal_file_attributes & 2)? "ebcdic"
-              : "binary"),             /* changed to accept EBCDIC */
-      ((G.crec.internal_file_attributes & 0xfc)? "+" : "")));
+
+    zi_long_intern_attr( __G__ 0, G.crec.internal_file_attributes);
+
 #ifdef ATARI
     printf("  external file attributes (hex):                   %.8lx\n",
       G.crec.external_file_attributes);
 #endif
-    xattr = (unsigned)((G.crec.external_file_attributes >> 16) & 0xFFFF);
-    if (hostnum == VMS_) {
-        char   *p=attribs, *q=attribs+1;
-        int    i, j, k;
-
-        for (k = 0;  k < 12;  ++k)
-            workspace[k] = 0;
-        if (xattr & VMS_IRUSR)
-            workspace[0] = 'R';
-        if (xattr & VMS_IWUSR) {
-            workspace[1] = 'W';
-            workspace[3] = 'D';
-        }
-        if (xattr & VMS_IXUSR)
-            workspace[2] = 'E';
-        if (xattr & VMS_IRGRP)
-            workspace[4] = 'R';
-        if (xattr & VMS_IWGRP) {
-            workspace[5] = 'W';
-            workspace[7] = 'D';
-        }
-        if (xattr & VMS_IXGRP)
-            workspace[6] = 'E';
-        if (xattr & VMS_IROTH)
-            workspace[8] = 'R';
-        if (xattr & VMS_IWOTH) {
-            workspace[9] = 'W';
-            workspace[11] = 'D';
-        }
-        if (xattr & VMS_IXOTH)
-            workspace[10] = 'E';
-
-        *p++ = '(';
-        for (k = j = 0;  j < 3;  ++j) {    /* loop over groups of permissions */
-            for (i = 0;  i < 4;  ++i, ++k)  /* loop over perms within a group */
-                if (workspace[k])
-                    *p++ = workspace[k];
-            *p++ = ',';                       /* group separator */
-            if (j == 0)
-                while ((*p++ = *q++) != ',')
-                    ;                         /* system, owner perms are same */
-        }
-        *p-- = '\0';
-        *p = ')';   /* overwrite last comma */
-        Info(slide, 0, ((char *)slide, LoadFarString(VMSFileAttributes), xattr,
-          attribs));
-
-    } else if (hostnum == AMIGA_) {
-        switch (xattr & AMI_IFMT) {
-            case AMI_IFDIR:  attribs[0] = 'd';  break;
-            case AMI_IFREG:  attribs[0] = '-';  break;
-            default:         attribs[0] = '?';  break;
-        }
-        attribs[1] = (xattr & AMI_IHIDDEN)?   'h' : '-';
-        attribs[2] = (xattr & AMI_ISCRIPT)?   's' : '-';
-        attribs[3] = (xattr & AMI_IPURE)?     'p' : '-';
-        attribs[4] = (xattr & AMI_IARCHIVE)?  'a' : '-';
-        attribs[5] = (xattr & AMI_IREAD)?     'r' : '-';
-        attribs[6] = (xattr & AMI_IWRITE)?    'w' : '-';
-        attribs[7] = (xattr & AMI_IEXECUTE)?  'e' : '-';
-        attribs[8] = (xattr & AMI_IDELETE)?   'd' : '-';
-        attribs[9] = 0;   /* better dlm the string */
-        Info(slide, 0, ((char *)slide, LoadFarString(AmigaFileAttributes),
-          xattr, attribs));
-
-    } else if (hostnum == THEOS_) {
-        ZCONST char Far *fpFtyp;
-
-        switch (xattr & THS_IFMT) {
-            case THS_IFLIB:  fpFtyp = TheosFTypLib;  break;
-            case THS_IFDIR:  fpFtyp = TheosFTypDir;  break;
-            case THS_IFREG:  fpFtyp = TheosFTypReg;  break;
-            case THS_IFREL:  fpFtyp = TheosFTypRel;  break;
-            case THS_IFKEY:  fpFtyp = TheosFTypKey;  break;
-            case THS_IFIND:  fpFtyp = TheosFTypInd;  break;
-            case THS_IFR16:  fpFtyp = TheosFTypR16;  break;
-            case THS_IFP16:  fpFtyp = TheosFTypP16;  break;
-            case THS_IFP32:  fpFtyp = TheosFTypP32;  break;
-            default:         fpFtyp = TheosFTypUkn;  break;
-        }
-        strcpy(attribs, LoadFarStringSmall(fpFtyp));
-        attribs[12] = (xattr & THS_INHID) ? '.' : 'H';
-        attribs[13] = (xattr & THS_IMODF) ? '.' : 'M';
-        attribs[14] = (xattr & THS_IWOTH) ? '.' : 'W';
-        attribs[15] = (xattr & THS_IROTH) ? '.' : 'R';
-        attribs[16] = (xattr & THS_IEUSR) ? '.' : 'E';
-        attribs[17] = (xattr & THS_IXUSR) ? '.' : 'X';
-        attribs[18] = (xattr & THS_IWUSR) ? '.' : 'W';
-        attribs[19] = (xattr & THS_IRUSR) ? '.' : 'R';
-        attribs[20] = 0;
-        Info(slide, 0, ((char *)slide, LoadFarString(TheosFileAttributes),
-          xattr, attribs));
-
-#ifdef OLD_THEOS_EXTRA
-    } else if (hostnum == FS_VFAT_ && hostver == 20) {
-        /* process old non-official THEOS port zip archive */
-        ZCONST char Far *fpFtyp;
-
-        switch (xattr & _THS_IFMT) {
-            case _THS_IFLIB:  fpFtyp = TheosFTypLib;  break;
-            case _THS_IFDIR:  fpFtyp = TheosFTypDir;  break;
-            case _THS_IFREG:  fpFtyp = TheosFTypReg;  break;
-            case _THS_IODRC:  fpFtyp = TheosFTypRel;  break;
-            case _THS_IOKEY:  fpFtyp = TheosFTypKey;  break;
-            case _THS_IOIND:  fpFtyp = TheosFTypInd;  break;
-            case _THS_IOPRG:  fpFtyp = TheosFTypR16;  break;
-            case _THS_IO286:  fpFtyp = TheosFTypP16;  break;
-            case _THS_IO386:  fpFtyp = TheosFTypP32;  break;
-            default:         fpFtyp = TheosFTypUkn;  break;
-        }
-        strcpy(attribs, LoadFarStringSmall(fpFtyp));
-        attribs[12] = (xattr & _THS_HIDDN) ? 'H' : '.';
-        attribs[13] = (xattr & _THS_IXOTH) ? '.' : 'X';
-        attribs[14] = (xattr & _THS_IWOTH) ? '.' : 'W';
-        attribs[15] = (xattr & _THS_IROTH) ? '.' : 'R';
-        attribs[16] = (xattr & _THS_IEUSR) ? '.' : 'E';
-        attribs[17] = (xattr & _THS_IXUSR) ? '.' : 'X';
-        attribs[18] = (xattr & _THS_IWUSR) ? '.' : 'W';
-        attribs[19] = (xattr & _THS_IRUSR) ? '.' : 'R';
-        attribs[20] = 0;
-        Info(slide, 0, ((char *)slide, LoadFarString(TheosFileAttributes),
-          xattr, attribs));
-#endif /* OLD_THEOS_EXTRA */
-
-    } else if ((hostnum != FS_FAT_) && (hostnum != FS_HPFS_) &&
-               (hostnum != FS_NTFS_) && (hostnum != FS_VFAT_) &&
-               (hostnum != ACORN_) &&
-               (hostnum != VM_CMS_) && (hostnum != MVS_))
-    {                                 /* assume Unix-like */
-        switch ((unsigned)(xattr & UNX_IFMT)) {
-            case (unsigned)UNX_IFDIR:   attribs[0] = 'd';  break;
-            case (unsigned)UNX_IFREG:   attribs[0] = '-';  break;
-            case (unsigned)UNX_IFLNK:   attribs[0] = 'l';  break;
-            case (unsigned)UNX_IFBLK:   attribs[0] = 'b';  break;
-            case (unsigned)UNX_IFCHR:   attribs[0] = 'c';  break;
-            case (unsigned)UNX_IFIFO:   attribs[0] = 'p';  break;
-            case (unsigned)UNX_IFSOCK:  attribs[0] = 's';  break;
-            default:          attribs[0] = '?';  break;
-        }
-        attribs[1] = (xattr & UNX_IRUSR)? 'r' : '-';
-        attribs[4] = (xattr & UNX_IRGRP)? 'r' : '-';
-        attribs[7] = (xattr & UNX_IROTH)? 'r' : '-';
-
-        attribs[2] = (xattr & UNX_IWUSR)? 'w' : '-';
-        attribs[5] = (xattr & UNX_IWGRP)? 'w' : '-';
-        attribs[8] = (xattr & UNX_IWOTH)? 'w' : '-';
-
-        if (xattr & UNX_IXUSR)
-            attribs[3] = (xattr & UNX_ISUID)? 's' : 'x';
-        else
-            attribs[3] = (xattr & UNX_ISUID)? 'S' : '-';   /* S = undefined */
-        if (xattr & UNX_IXGRP)
-            attribs[6] = (xattr & UNX_ISGID)? 's' : 'x';   /* == UNX_ENFMT */
-        else
-            attribs[6] = (xattr & UNX_ISGID)? 'l' : '-';
-        if (xattr & UNX_IXOTH)
-            attribs[9] = (xattr & UNX_ISVTX)? 't' : 'x';   /* "sticky bit" */
-        else
-            attribs[9] = (xattr & UNX_ISVTX)? 'T' : '-';   /* T = undefined */
-        attribs[10] = 0;
-
-        Info(slide, 0, ((char *)slide, LoadFarString(UnixFileAttributes), xattr,
-          attribs));
-
-    } else {
-        Info(slide, 0, ((char *)slide, LoadFarString(NonMSDOSFileAttributes),
-            G.crec.external_file_attributes >> 8));
-
-    } /* endif (hostnum: external attributes format) */
-
-    if ((xattr=(unsigned)(G.crec.external_file_attributes & 0xFF)) == 0)
-        Info(slide, 0, ((char *)slide, LoadFarString(MSDOSFileAttributes),
-          xattr));
-    else if (xattr == 1)
-        Info(slide, 0, ((char *)slide, LoadFarString(MSDOSFileAttributesRO),
-          xattr));
-    else
-        Info(slide, 0, ((char *)slide, LoadFarString(MSDOSFileAttributesAlpha),
-          xattr, (xattr&1)? "rdo " : nullStr,
-          (xattr&2)? "hid " : nullStr,
-          (xattr&4)? "sys " : nullStr,
-          (xattr&8)? "lab " : nullStr,
-          (xattr&16)? "dir " : nullStr,
-          (xattr&32)? "arc " : nullStr,
-          (xattr&64)? "lnk " : nullStr,
-          (xattr&128)? "exe" : nullStr));
+    zi_long_extern_attr( __G__ 0, hostnum, G.crec.external_file_attributes);
 
 /*---------------------------------------------------------------------------
     Analyze the extra field, if any, and print the file comment, if any (the
@@ -1861,6 +1915,9 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                 case EF_JAVA:
                     ef_fieldname = efJavaCAFE;
                     break;
+                case EF_LHDREXTN:
+                    ef_fieldname = efLHdrExtn;
+                    break;
                 default:
                     ef_fieldname = efUnknown;
                     break;
@@ -2011,7 +2068,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                         if (num > 0)
                             Info(slide, 0, ((char *)slide,
                               LoadFarString(UTdata), types,
-                              num == 1? nullStr : PlurSufx));
+                              num == 1 ? nullStr : plurSufx));
                     }
                     break;
                 case EF_UNIPATH:
@@ -2209,6 +2266,93 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                           md5));
                         break;
                     }   /* else: fall through !! */
+                case EF_LHDREXTN:
+                {
+                  long eb_ndx = 0;
+                  int eb_state = -1;
+                  uch bit_mask;
+                  unsigned hnum = (unsigned)-1;
+                  unsigned hver;
+
+                  Info( slide, 0, ((char *)slide,
+                   LoadFarString( efLHdrExtnBitMap)));
+                  while (eb_ndx < eb_len)
+                  {
+                    switch (eb_state)
+                    {
+                      case -1:          /* Seeking end of bit mask. */
+                        Info( slide, 0, ((char *)slide,
+                         LoadFarString( efLHdrExtnBitMapByte),
+                         *(ef_ptr+ eb_ndx)));
+                        if ((*(ef_ptr+ eb_ndx)& 0x80) == 0)
+                        {
+                          eb_state = 1;
+                          eb_ndx++;
+                          bit_mask = *ef_ptr;
+                          Info( slide, 0, ((char *)slide,
+                           LoadFarString( efLHdrExtnBitMapEol)));
+                        }
+                        break;
+                      case 0:           /* bit_mask[ 0]. */
+                        if (bit_mask& 0x01)
+                        { /* Version Made By. */
+                          if (eb_ndx+ 2 <= eb_len)
+                          {
+                            hver = *(ef_ptr+ eb_ndx);
+                            hnum = *(ef_ptr+ eb_ndx+ 1);
+                            zi_vers_made_by( __G__ 1, hnum, hver);
+                            eb_ndx += 2;
+                          }
+                          else
+                            break;
+                        }
+                        if (bit_mask& 0x02)
+                        { /* Internal File Atributes. */
+                          if (eb_ndx+ 2 <= eb_len)
+                          {
+                            iattr = makeword( ef_ptr+ eb_ndx);
+                            zi_long_intern_attr( __G__ 1, iattr);
+                            eb_ndx += 2;
+                          }
+                          else
+                            break;
+                        }
+                        if (bit_mask& 0x04)
+                        { /* External File Atributes. */
+                          if (eb_ndx+ 4 <= eb_len)
+                          {
+                            xattr = makelong( ef_ptr+ eb_ndx);
+                            if (hnum != (unsigned)-1)
+                            { /* Must know host type for ext attr. */
+                              zi_long_extern_attr( __G__ 1, hnum, xattr);
+                            }
+                            eb_ndx += 4;
+                          }
+                          else
+                            break;
+                        }
+                        if (bit_mask& 0x08)
+                        {
+                          if (eb_ndx+ 2 <= eb_len)
+                          {
+                            fc_len = makeword( ef_ptr+ eb_ndx);
+                            eb_ndx += 2;
+                            if (eb_ndx+ (long)fc_len <= eb_len)
+                            {
+                              eb_ndx += fc_len;
+                            }
+                            else
+                              break;
+                          }
+                          else
+                            break;
+                        }
+                      default:
+                        break;
+                    } /* switch (eb_state) */
+                  } /* while (eb_ndx < eb_len) */
+                } /* case EF_LHDREXTN */
+
                 default:
 ef_default_display:
                     if (eb_len > 0) {
@@ -2311,7 +2455,7 @@ static int zi_short(__G)   /* return PK-type error code */
     char        *p, workspace[12], attribs[16];
     char        methbuf[5];
     static ZCONST char dtype[5]="NXFS"; /* normal, maximum, fast, superfast */
-    static ZCONST char Far os[NUM_HOSTS+1][4] = {
+    static ZCONST char Far oss[NUM_HOSTS+1][4] = {
         "fat", "ami", "vms", "unx", "cms", "atr", "hpf", "mac", "zzz",
         "cpm", "t20", "ntf", "qds", "aco", "vft", "mvs", "be ", "nsk",
         "ths", "osx", "???", "???", "???", "???", "???", "???", "???",
@@ -2551,11 +2695,11 @@ static int zi_short(__G)   /* return PK-type error code */
     Info(slide, 0, ((char *)slide, "%s %s %s ", attribs,
       LoadFarStringSmall(((hostnum == FS_VFAT_ && hostver == 20) ?
                           os_TheosOld :
-                          os[hostnum])),
+                          oss[hostnum])),
       FmZofft(G.crec.ucsize, "8", "u")));
 #else
     Info(slide, 0, ((char *)slide, "%s %s %s ", attribs,
-      LoadFarStringSmall(os[hostnum]),
+      LoadFarStringSmall(oss[hostnum]),
       FmZofft(G.crec.ucsize, "8", "u")));
 #endif
     Info(slide, 0, ((char *)slide, "%c",

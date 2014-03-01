@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -2246,15 +2246,17 @@ char *do_wild(__G__ wildspec)
             return G.matchname;
         }
 
-        /* break the wildspec into a directory part and a wildcard filename */
+        /* Break the wildspec into a directory part and a wildcard filename. */
+        /* 2014-02-14 SMS.  Added test for "\". */
         if ((G.wildname = MBSRCHR(wildspec, '/')) == (ZCONST char *)NULL &&
-            (G.wildname = MBSRCHR(wildspec, ':')) == (ZCONST char *)NULL) {
+         (G.wildname = MBSRCHR(wildspec, '\\')) == (ZCONST char *)NULL &&
+         (G.wildname = MBSRCHR(wildspec, ':')) == (ZCONST char *)NULL) {
             G.dirname = ".";
             G.dirnamelen = 1;
             G.have_dirname = FALSE;
             G.wildname = wildspec;
         } else {
-            ++G.wildname;     /* point at character after '/' or ':' */
+            ++G.wildname;       /* Point at char after last '/', '\', or ':'. */
             G.dirnamelen = G.wildname - wildspec;
             if ((G.dirname = (char *)izu_malloc(G.dirnamelen+1)) == NULL) {
                 Info(slide, 1, ((char *)slide,
@@ -2415,7 +2417,6 @@ int mapname(__G__ renamed)
     int error;
     register unsigned workch;   /* hold the character being tested */
 
-
 /*---------------------------------------------------------------------------
     Initialize various pointers and counters and stuff.
   ---------------------------------------------------------------------------*/
@@ -2428,31 +2429,31 @@ int mapname(__G__ renamed)
     G.fnlen = strlen(G.filename);
 
     if (renamed) {
-        cp = G.filename;    /* point to beginning of renamed name... */
+        cp = G.filename;                /* Point to start of renamed name. */
         if (*cp) do {
-            if (*cp == '\\')    /* convert backslashes to forward */
+            if (*cp == '\\')            /* Convert backslashes to slashes. */
                 *cp = '/';
         } while (*PREINCSTR(cp));
         cp = G.filename;
         /* use temporary rootpath if user gave full pathname */
         if (G.filename[0] == '/') {
             G.renamed_fullpath = TRUE;
-            pathcomp[0] = '/';  /* copy the '/' and terminate */
+            pathcomp[0] = '/';          /* Copy the '/', and NUL-terminate. */
             pathcomp[1] = '\0';
             ++cp;
         } else if (isalpha((uch)G.filename[0]) && G.filename[1] == ':') {
             G.renamed_fullpath = TRUE;
             pp = pathcomp;
-            *pp++ = *cp++;      /* copy the "d:" (+ '/', possibly) */
+            *pp++ = *cp++;              /* Copy the "d:" (+ '/', possibly). */
             *pp++ = *cp++;
             if (*cp == '/')
-                *pp++ = *cp++;  /* otherwise add "./"? */
+                *pp++ = *cp++;          /* Otherwise add "./"? */
             *pp = '\0';
         }
     }
 
     /* pathcomp is ignored unless renamed_fullpath is TRUE: */
-    if ((error = checkdir(__G__ pathcomp, INIT)) != 0)    /* init path buffer */
+    if ((error = checkdir(__G__ pathcomp, INIT)) != 0)  /* init path buffer */
         return error;           /* ...unless no mem or vol label on hard disk */
 
     *pathcomp = '\0';           /* initialize translation buffer */
@@ -2468,24 +2469,24 @@ int mapname(__G__ renamed)
     for (; (workch = (uch)*cp) != 0; INCSTR(cp)) {
 
         switch (workch) {
-            case '/':             /* can assume -j flag not given */
+            case '/':                   /* Can assume -j flag not given. */
                 *pp = '\0';
                 maskDOSdevice(__G__ pathcomp);
                 if (strcmp(pathcomp, ".") == 0) {
-                    /* don't bother appending "./" to the path */
+                    /* Don't bother appending "./" to the path. */
                     *pathcomp = '\0';
                 } else if (!uO.ddotflag && strcmp(pathcomp, "..") == 0) {
-                    /* "../" dir traversal detected, skip over it */
+                    /* "../" dir traversal detected.  Skip over it. */
                     *pathcomp = '\0';
-                    killed_ddot = TRUE;     /* set "show message" flag */
+                    killed_ddot = TRUE;         /* Set "show message" flag. */
                 }
-                /* when path component is not empty, append it now */
+                /* When path component is not empty, append it now. */
                 if (*pathcomp != '\0' &&
                     ((error = checkdir(__G__ pathcomp, APPEND_DIR))
                      & MPN_MASK) > MPN_INF_TRUNC)
                     return error;
-                pp = pathcomp;    /* reset conversion buffer for next piece */
-                lastsemi = (char *)NULL; /* leave direct. semi-colons alone */
+                pp = pathcomp;  /* Reset conversion buffer for next piece. */
+                lastsemi = (char *)NULL; /* Leave dir semi-colons alone. */
                 break;
 
             case ':':             /* drive spec not stored, so no colon allowed */
@@ -2663,7 +2664,6 @@ int mapname(__G__ renamed)
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
 #undef Ansi_Fname
     }
-
     Trace((stderr, "mapname returns with filename = [%s] (error = %d)\n\n",
       FnFilter1(G.filename), error));
     return error;
@@ -2707,31 +2707,31 @@ int mapnamew(__G__ renamed)
     G.fnlen = wcslen(G.unipath_widefilename);
 
     if (renamed) {
-        cpw = G.unipath_widefilename;    /* point to beginning of renamed name... */
+        cpw = G.unipath_widefilename;   /* Point to start of renamed name. */
         if (*cpw) do {
-            if (*cpw == '\\')    /* convert backslashes to forward */
+            if (*cpw == '\\')           /* Convert backslashes to slashes. */
                 *cpw = '/';
         } while (*(++cpw));
         cpw = G.unipath_widefilename;
         /* use temporary rootpath if user gave full pathname */
         if (G.unipath_widefilename[0] == '/') {
             G.renamed_fullpath = TRUE;
-            pathcompw[0] = '/';  /* copy the '/' and terminate */
+            pathcompw[0] = '/';         /* Copy the '/', and NUL-terminate. */
             pathcompw[1] = '\0';
             ++cpw;
         } else if (iswalpha(G.unipath_widefilename[0]) && G.unipath_widefilename[1] == ':') {
             G.renamed_fullpath = TRUE;
             ppw = pathcompw;
-            *ppw++ = *cpw++;      /* copy the "d:" (+ '/', possibly) */
+            *ppw++ = *cpw++;            /* Copy the "d:" (+ '/', possibly). */
             *ppw++ = *cpw++;
             if (*cpw == '/')
-                *ppw++ = *cpw++;  /* otherwise add "./"? */
+                *ppw++ = *cpw++;        /* Otherwise add "./"? */
             *ppw = '\0';
         }
     }
 
     /* pathcomp is ignored unless renamed_fullpath is TRUE: */
-    if ((error = checkdirw(__G__ pathcompw, INIT)) != 0)    /* init path buffer */
+    if ((error = checkdirw(__G__ pathcompw, INIT)) != 0) /* init path buffer */
         return error;           /* ...unless no mem or vol label on hard disk */
 
     *pathcompw = '\0';          /* initialize translation buffer */
@@ -2747,24 +2747,24 @@ int mapnamew(__G__ renamed)
     for (; (workchw = *cpw) != 0; cpw++) {
 
         switch (workchw) {
-            case '/':             /* can assume -j flag not given */
+            case '/':                   /* Can assume -j flag not given. */
                 *ppw = '\0';
                 maskDOSdevicew(__G__ pathcompw);
                 if (wcscmp(pathcompw, L".") == 0) {
-                    /* don't botherw appending "./" to the path */
+                    /* Don't bother appending "./" to the path. */
                     *pathcompw = '\0';
                 } else if (!uO.ddotflag && wcscmp(pathcompw, L"..") == 0) {
-                    /* "../" dir traversal detected, skip over it */
+                    /* "../" dir traversal detected.  Skip over it. */
                     *pathcompw = '\0';
-                    killed_ddot = TRUE;     /* set "show message" flag */
+                    killed_ddot = TRUE;         /* Set "show message" flag. */
                 }
-                /* when path component is not empty, append it now */
+                /* When path component is not empty, append it now. */
                 if (*pathcompw != '\0' &&
                     ((error = checkdirw(__G__ pathcompw, APPEND_DIR))
                      & MPN_MASK) > MPN_INF_TRUNC)
                     return error;
-                ppw = pathcompw;    /* reset conversion buffer for next piece */
-                lastsemiw = (wchar_t *)NULL; /* leave direct. semi-colons alone */
+                ppw = pathcompw; /* Reset conversion buffer for next piece. */
+                lastsemiw = (wchar_t *)NULL; /* Leave dir semi-colons alone. */
                 break;
 
             case ':':             /* drive spec not stored, so no colon allowed */
@@ -2775,11 +2775,11 @@ int mapnamew(__G__ renamed)
             case '"':             /* no double quotes allowed */
             case '?':             /* no wildcards allowed */
             case '*':
-                *ppw++ = '_';      /* these rules apply equally to FAT and NTFS */
+                *ppw++ = '_';     /* these rules apply equally to FAT and NTFS */
                 break;
             case ';':             /* start of VMS version? */
-                lastsemiw = ppw;    /* remove VMS version later... */
-                *ppw++ = ';';      /*  but keep semicolon for now */
+                lastsemiw = ppw;  /* remove VMS version later... */
+                *ppw++ = ';';     /*  but keep semicolon for now */
                 break;
 
 
@@ -2855,13 +2855,16 @@ int mapnamew(__G__ renamed)
 
     *ppw = '\0';                   /* done with pathcomp:  terminate it */
 
-    /* if not saving them, remove VMS version numbers (appended "###") */
-    if (!uO.V_flag && lastsemiw) {
-        ppw = lastsemiw + 1;        /* semi-colon was kept:  expect #'s after */
-        while (iswdigit(*ppw))
-            ++ppw;
-        if (*ppw == '\0')          /* only digits between ';' and end:  nuke */
-            *lastsemiw = '\0';
+    /* If not saving them, remove a VMS version number (ending: ";###"). */
+    if (lastsemiw &&
+     ((uO.V_flag < 0) || ((uO.V_flag == 0) && (G.pInfo->hostnum == VMS_)))) {
+        ppw = lastsemiw + 1;      /* semi-colon was kept:  expect #'s after */
+        if (*ppw != '\0') {       /* At least one digit is required. */
+            while (iswdigit(*ppw))
+                ++ppw;
+            if (*ppw == '\0')     /* only digits between ';' and end:  nuke */
+                *lastsemiw = '\0';
+        }
     }
 
     maskDOSdevicew(__G__ pathcompw);
@@ -2912,7 +2915,6 @@ int mapnamew(__G__ renamed)
         /* success: skip the "extraction" quietly */
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
     }
-
     Trace((stderr, "mapname returns with filename = [%s] (error = %d)\n\n",
       FnFilter1(G.filename), error));
     return error;
@@ -4125,7 +4127,7 @@ char dateseparator()
 }
 
 
-#  ifndef WINDLL
+#  ifndef WINDLL_OLD
 
 /************************/
 /*  Function version()  */
@@ -4243,7 +4245,7 @@ void version(__G)
 
 } /* end function version() */
 
-#  endif /* !WINDLL */
+#  endif /* ndef WINDLL_OLD */
 # endif /* !SFX */
 
 
@@ -4678,7 +4680,7 @@ char *wide_to_local_string(wide_string, escape_all)
     } else {
       wc = (wchar_t)wide_string[i];
     }
-    /* Unter some vendor's C-RTL, the Wide-to-MultiByte conversion functions
+    /* Under some vendor's C-RTL, the Wide-to-MultiByte conversion functions
      * (like wctomb() et. al.) do not use the same codepage as the other
      * string arguments I/O functions (fopen, mkdir, rmdir etc.).
      * Therefore, we have to fall back to the underlying Win32-API call to

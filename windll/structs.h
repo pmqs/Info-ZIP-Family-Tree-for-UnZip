@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -10,20 +10,20 @@
 #define __unzip_structs_h
 
 #ifndef Far
-#  define Far far
+# define Far far
 #endif
 
 /* Porting definitions between Win 3.1x and Win32 */
 #ifdef WIN32
-#  define far
-#  define _far
-#  define __far
-#  define near
-#  define _near
-#  define __near
-#  ifndef FAR
-#    define FAR
-#  endif
+# define far
+# define _far
+# define __far
+# define near
+# define _near
+# define __near
+# ifndef FAR
+#  define FAR
+# endif
 #endif
 
 #ifdef __cplusplus
@@ -57,7 +57,7 @@ extern "C" {
  * declarations in applications that reference both the Zip and the UnZip DLL.
  */
 #ifndef DEFINED_ONCE
-#define DEFINED_ONCE
+# define DEFINED_ONCE
 
 typedef int (WINAPI DLLPRNT) (LPSTR, unsigned long);
 typedef int (WINAPI DLLPASSWORD) (LPSTR pwbuf, int bufsiz,
@@ -175,7 +175,7 @@ typedef struct {
 }
 #endif
 
-/* return codes of the (DLLPASSWORD)() callback function */
+/* Return codes of the (DLLREPLACE)() callback function. */
 #define IDM_REPLACE_NO     100
 #define IDM_REPLACE_TEXT   101
 #define IDM_REPLACE_YES    102

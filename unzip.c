@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -78,7 +78,7 @@
 # include "szip/SzVersion.h"
 #endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
 
-#ifndef WINDLL          /* The WINDLL port uses windll/windll.c instead... */
+#ifndef WINDLL_OLD      /* The WINDLL port uses windll/windll.c instead... */
 
 # ifdef DLL
 #  ifndef NO_EXCEPT_SIGNALS
@@ -138,79 +138,81 @@ USER_PROGRESS_CLASS void user_progress OF((int));
 
 # if !defined( SFX) || defined( DIAG_SFX)
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
-   static ZCONST char Far EnvUnZip[] = ENV_UNZIP;
-   static ZCONST char Far EnvUnZip2[] = ENV_UNZIP2;
-   static ZCONST char Far EnvZipInfo[] = ENV_ZIPINFO;
-   static ZCONST char Far EnvZipInfo2[] = ENV_ZIPINFO2;
+static ZCONST char Far EnvUnZip[] = ENV_UNZIP;
+static ZCONST char Far EnvUnZip2[] = ENV_UNZIP2;
+static ZCONST char Far EnvZipInfo[] = ENV_ZIPINFO;
+static ZCONST char Far EnvZipInfo2[] = ENV_ZIPINFO2;
 #   ifdef RISCOS
-   static ZCONST char Far EnvUnZipExts[] = ENV_UNZIPEXTS;
+static ZCONST char Far EnvUnZipExts[] = ENV_UNZIPEXTS;
 #   endif /* RISCOS */
-   static ZCONST char Far NoMemEnvArguments[] =
-    "envargs:  cannot get memory for arguments";
+static ZCONST char Far NoMemEnvArguments[] =
+ "envargs:  cannot get memory for arguments";
 #  endif /* !_WIN32_WCE */
-   static ZCONST char Far CmdLineParamTooLong[] =
-    "error:  command line parameter #%d exceeds internal size limit\n";
+static ZCONST char Far CmdLineParamTooLong[] =
+ "error:  command line parameter #%d exceeds internal size limit\n";
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 static ZCONST char Far NoMemArgsList[] =
-  "error:  no memory for arguments list";
+ "error:  no memory for arguments list";
 
 # if (defined(REENTRANT) && !defined(NO_EXCEPT_SIGNALS))
-  static ZCONST char Far CantSaveSigHandler[] =
-    "error:  cannot save signal handler settings\n";
+static ZCONST char Far CantSaveSigHandler[] =
+ "error:  cannot save signal handler settings\n";
 # endif
 
 # if !defined( SFX) || defined( DIAG_SFX) || defined( SFX_EXDIR)
-   static ZCONST char Far NotExtracting[] =
-     "caution:  not extracting; -d ignored\n";
-   static ZCONST char Far MustGiveExdir[] =
-     "error:  must specify directory to which to extract with -d option\n";
-   static ZCONST char Far OnlyOneExdir[] =
-     "error:  -d option used more than once (only one exdir allowed)\n";
+static ZCONST char Far NotExtracting[] =
+ "caution:  not extracting; -d ignored\n";
+static ZCONST char Far MustGiveExdir[] =
+ "error:  must specify directory to which to extract with -d option\n";
+static ZCONST char Far OnlyOneExdir[] =
+ "error:  -d option used more than once (only one exdir allowed)\n";
 # endif /* !defined( SFX) || defined( DIAG_SFX) || defined( SFX_EXDIR) */
 
 # if (defined(UNICODE_SUPPORT) && !defined(UNICODE_WCHAR))
-  static ZCONST char Far UTF8EscapeUnSupp[] =
-    "warning:  -U \"escape all non-ASCII UTF-8 chars\" is not supported\n";
+static ZCONST char Far UTF8EscapeUnSupp[] =
+ "warning:  -U \"escape all non-ASCII UTF-8 chars\" is not supported\n";
 # endif
 
 # ifdef IZ_CRYPT_ANY
-   static ZCONST char Far MustGivePasswd[] =
-     "error:  must give decryption password with -P option\n";
+static ZCONST char Far MustGivePasswd[] =
+ "error:  must give decryption password with -P option\n";
 # endif
 
 # ifndef SFX
-   static ZCONST char Far Zfirst[] =
-   "error:  -Z must be first option for ZipInfo mode (check UNZIP variable?)\n";
+static ZCONST char Far Zfirst[] =
+ "error:  -Z must be first option for ZipInfo mode (check UNZIP variable?)\n";
+static ZCONST char Far BadAutoDestValue[] =
+ "error:  option -da/auto-extract-dir value must be 'reuse'\n";
 # endif /* ndef SFX */
 
 static ZCONST char Far InvalidOptionsMsg[] = "error:\
   -fn or any combination of -c, -l, -p, -t, -u and -v options invalid\n";
 static ZCONST char Far IgnoreOOptionMsg[] =
-  "caution:  both -n and -o specified; ignoring -o\n";
+ "caution:  both -n and -o specified; ignoring -o\n";
 static ZCONST char Far BadJunkDirsValue[] =
-   "error:  option -j/--junk-dirs value must be numeric\n";
+ "error:  option -j/--junk-dirs value must be numeric\n";
 
 /* usage() strings */
 # ifndef SFX
 #  ifdef VMS
-   static ZCONST char Far Example3[] = "vms.c";
-   static ZCONST char Far Example2[] = "  unzip \"-V\" foo \"Bar\"\
+static ZCONST char Far Example3[] = "vms.c";
+static ZCONST char Far Example2[] = "  unzip \"-V\" foo \"Bar\"\
  (Quote names to preserve case, unless SET PROC/PARS=EXT)\n";
 #  else /* !VMS */
-   static ZCONST char Far Example3[] = "ReadMe";
+static ZCONST char Far Example3[] = "ReadMe";
 #   ifdef RISCOS
-   static ZCONST char Far Example2[] =
-"  unzip foo -d RAM:$   => extract all files from foo into RAMDisc\n";
+static ZCONST char Far Example2[] =
+ "  unzip foo -d RAM:$   => extract all files from foo into RAMDisc\n";
 #   else /* !RISCOS */
 #    if (defined(OS2) || (defined(DOS_FLX_OS2_W32) && defined(MORE)))
-   static ZCONST char Far Example2[] =
-     "";                /* no room:  too many local3[] items */
+static ZCONST char Far Example2[] =
+ "";                /* no room:  too many local3[] items */
 #    else /* !OS2 */
 #     ifdef MACOS
-   static ZCONST char Far Example2[] = ""; /* not needed */
+static ZCONST char Far Example2[] = ""; /* not needed */
 #     else /* !MACOS */
-   static ZCONST char Far Example2[] = " \
+static ZCONST char Far Example2[] = " \
  unzip -p foo | more  => send contents of foo.zip via pipe into program more\n";
 #     endif /* ?MACOS */
 #    endif /* ?OS2 */
@@ -219,56 +221,56 @@ static ZCONST char Far BadJunkDirsValue[] =
 
 /* local1[]:  command options */
 #  if defined(TIMESTAMP)
-   static ZCONST char Far local1[] =
-     "  -T  timestamp archive to latest";
+static ZCONST char Far local1[] =
+ "  -T  timestamp archive to latest";
 #  else /* !TIMESTAMP */
-   static ZCONST char Far local1[] = "";
+static ZCONST char Far local1[] = "";
 #  endif /* ?TIMESTAMP */
 
 /* local2[] and local3[]:  modifier options */
 #  ifdef DOS_FLX_H68_OS2_W32
 #   ifdef FLEXOS
-   static ZCONST char Far local2[] = "";
+static ZCONST char Far local2[] = "";
 #   else
-   static ZCONST char Far local2[] =
-     " -$  label removables (-$$ => fixed disks)";
+static ZCONST char Far local2[] =
+ " -$  label removables (-$$ => fixed disks)";
 #   endif
 #   ifdef OS2
 #    ifdef MORE
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -X  restore ACLs if supported              -s  spaces in filenames => '_'\n\
                                              -M  pipe through \"more\" pager\n";
 #    else
-   static ZCONST char Far local3[] = " \
+static ZCONST char Far local3[] = " \
  -X  restore ACLs if supported              -s  spaces in filenames => '_'\n\n";
 #    endif /* ?MORE */
 #   else /* !OS2 */
 #    ifdef WIN32
 #     ifdef NTSD_EAS
 #      ifdef MORE
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -X  restore ACLs (-XX => use privileges)   -s  spaces in filenames => '_'\n\
                                              -M  pipe through \"more\" pager\n";
 #      else
-   static ZCONST char Far local3[] = " \
+static ZCONST char Far local3[] = " \
  -X  restore ACLs (-XX => use privileges)   -s  spaces in filenames => '_'\n\n";
 #      endif /* ?MORE */
 #     else /* !NTSD_EAS */
 #      ifdef MORE
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -M  pipe through \"more\" pager            \
   -s  spaces in filenames => '_'\n\n";
 #      else
-   static ZCONST char Far local3[] = " \
+static ZCONST char Far local3[] = " \
                                             -s  spaces in filenames => '_'\n\n";
 #      endif /* ?MORE */
 #     endif /* ?NTSD_EAS */
 #    else /* !WIN32 */
 #     ifdef MORE
-   static ZCONST char Far local3[] = "  -\
+static ZCONST char Far local3[] = "  -\
 M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #     else /* def MORE */
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
                                              -s  spaces in filenames => '_'\n";
 #     endif /* def MORE [else] */
 #    endif /* ?WIN32 */
@@ -276,18 +278,18 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #  else /* !DOS_FLX_OS2_W32 */
 #   ifdef VMS
 #    ifdef KFLAG
-   static ZCONST char Far local2[] = " -X | -k | -ka  restore UIC | prot | ACL";
+static ZCONST char Far local2[] = " -X | -k | -ka  restore UIC | prot | ACL";
 #    else /* def KFLAG */
-   static ZCONST char Far local2[] = " -X | -ka  restore UIC | ACL";
+static ZCONST char Far local2[] = " -X | -ka  restore UIC | ACL";
 #    endif /* def KFLAG [else] */
 #    ifdef MORE
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
   -D- restore dir (-D: no) timestamps        -M  pipe through \"more\" pager\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
 \n\n";
 #    else /* def MORE */
-   static ZCONST char Far local3[] = "\n\
+static ZCONST char Far local3[] = "\n\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
   -D- restore dir (-D: no) timestamps\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
@@ -296,19 +298,19 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #   else /* !VMS */
 #    ifdef ATH_BEO_UNX
 #     ifdef KFLAG
-   static ZCONST char Far local2[] = " -X | -k  restore UID/GID | permissions";
+static ZCONST char Far local2[] = " -X | -k  restore UID/GID | permissions";
 #     else /* def KFLAG */
-   static ZCONST char Far local2[] = " -X  restore UID/GID info";
+static ZCONST char Far local2[] = " -X  restore UID/GID info";
 #     endif /* def KFLAG [else] */
 #     ifdef __APPLE__
 #      ifdef MORE
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n\
   -J  No special AppleDouble file handling\n\
   -Je/-Jf/-Jq/-Jr  ignore extended attrs/Finder info/quarantine/resource fork\
 \n";
 #      else /* def MORE */
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions   -J  No spec'l AplDbl file handling\
 \n\
   -Je/-Jf/-Jq/-Jr  ignore extended attrs/Finder info/quarantine/resource fork\
@@ -316,46 +318,46 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 #      endif /* def MORE [else] */
 #     else /* def __APPLE__ */
 #      ifdef MORE
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n";
 #      else /* def MORE */
-   static ZCONST char Far local3[] = "\
+static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions\n";
 #      endif /* def MORE [else] */
 #     endif /* def __APPLE__ [else] */
 #    else /* !ATH_BEO_UNX */
 #     ifdef TANDEM
-   static ZCONST char Far local2[] = "\
+static ZCONST char Far local2[] = "\
  -X  restore Tandem User ID                 -r  remove file extensions\n\
   -b  create 'C' (180) text files          ";
 #      ifdef MORE
-   static ZCONST char Far local3[] = " \
+static ZCONST char Far local3[] = " \
                                             -M  pipe through \"more\" pager\n";
 #      else /* def MORE */
-   static ZCONST char Far local3[] = "\n";
+static ZCONST char Far local3[] = "\n";
 #      endif /* def MORE [else] */
 #     else /* !TANDEM */
 #      ifdef AMIGA
-   static ZCONST char Far local2[] = " -N  restore comments as filenotes";
+static ZCONST char Far local2[] = " -N  restore comments as filenotes";
 #       ifdef MORE
-   static ZCONST char Far local3[] = " \
+static ZCONST char Far local3[] = " \
                                             -M  pipe through \"more\" pager\n";
 #       else /* def MORE */
-   static ZCONST char Far local3[] = "\n";
+static ZCONST char Far local3[] = "\n";
 #       endif /* def MORE [else] */
 #      else /* !AMIGA */
 #       ifdef MACOS
-   static ZCONST char Far local2[] = " -E  show Mac info during extraction";
-   static ZCONST char Far local3[] = " \
+static ZCONST char Far local2[] = " -E  show Mac info during extraction";
+static ZCONST char Far local3[] = " \
  -i  ignore filenames in mac extra info     -J  junk (ignore) Mac extra info\n\
 \n";
 #       else /* !MACOS */
 #        ifdef MORE
-   static ZCONST char Far local2[] = " -M  pipe through \"more\" pager";
-   static ZCONST char Far local3[] = "\n";
+static ZCONST char Far local2[] = " -M  pipe through \"more\" pager";
+static ZCONST char Far local3[] = "\n";
 #        else /* def MORE */
-   static ZCONST char Far local2[] = "";   /* Atari, Mac, CMS/MVS etc. */
-   static ZCONST char Far local3[] = "";
+static ZCONST char Far local2[] = "";   /* Atari, Mac, CMS/MVS etc. */
+static ZCONST char Far local3[] = "";
 #        endif /* def MORE [else] */
 #       endif /* ?MACOS */
 #      endif /* ?AMIGA */
@@ -367,9 +369,9 @@ M  pipe through \"more\" pager              -s  spaces in filenames => '_'\n\n";
 
 # ifndef NO_ZIPINFO
 #  ifdef VMS
-   static ZCONST char Far ZipInfoExample[] = "* or % (e.g., \"*font-%.zip\")";
+static ZCONST char Far ZipInfoExample[] = "* or % (e.g., \"*font-%.zip\")";
 #  else
-   static ZCONST char Far ZipInfoExample[] = "*, ?, [] (e.g., \"[a-j]*.zip\")";
+static ZCONST char Far ZipInfoExample[] = "*, ?, [] (e.g., \"[a-j]*.zip\")";
 #  endif
 
 static ZCONST char Far ZipInfoUsageLine1[] = "\
@@ -393,54 +395,54 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 \n  -C  be case-insensitive   %s\
   -x  exclude filenames that follow from listing\n";
 #  ifdef MORE
-   static ZCONST char Far ZipInfoUsageLine4[] =
+static ZCONST char Far ZipInfoUsageLine4[] =
      "  -M  page output through built-in \"more\"\n";
 #  else /* !MORE */
-   static ZCONST char Far ZipInfoUsageLine4[] = "";
+static ZCONST char Far ZipInfoUsageLine4[] = "";
 #  endif /* ?MORE */
 # endif /* !NO_ZIPINFO */
 
 # ifdef BETA
 #  ifndef VMSCLI
-    static              /* Used in vms/cmdline.c, so not static in VMS CLI. */
+static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 #  endif /* ndef VMSCLI */
-    ZCONST char Far BetaVersion[] = "%s\
+ZCONST char Far BetaVersion[] = "%s\
         THIS IS STILL A BETA VERSION OF UNZIP%s -- DO NOT DISTRIBUTE.\n\n";
 # endif
 
 # ifdef SFX
 #  ifndef VMSCLI
-    static              /* Used in vms/cmdline.c, so not static in VMS CLI. */
+static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 #  endif /* ndef VMSCLI */
-    ZCONST char Far UnzipSFXBanner[] =
+ZCONST char Far UnzipSFXBanner[] =
      "UnZipSFX %d.%d%d%s of %s, by Info-ZIP (http://www.info-zip.org).\n";
 #  ifdef SFX_EXDIR
-    static ZCONST char Far UnzipSFXOpts[] =
+static ZCONST char Far UnzipSFXOpts[] =
    "Valid options are -cfptuz; modifiers are -abCdjLnoPq%sV%s.\n";
 #  else
-    static ZCONST char Far UnzipSFXOpts[] =
+static ZCONST char Far UnzipSFXOpts[] =
      "Valid options are -cfptuz; modifiers are -abCjLnoPq%sV%s.\n";
 #  endif
 #  ifdef VMS
-    static ZCONST char Far UnzipSFXOptsV[] =
+static ZCONST char Far UnzipSFXOptsV[] =
 "(Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\n";
 #  endif /* def VMS */
-    static ZCONST char Far UnzipSFXOpts2[] =
+static ZCONST char Far UnzipSFXOpts2[] =
      "For license info: \"--license\".\n";
 # endif /* def SFX */
 
 # if !defined( SFX) || defined( DIAG_SFX)
-    static ZCONST char Far CompileOptions[] =
-     "UnZip special compilation options:\n";
-    static ZCONST char Far CompileOptFormat[] = "        %s\n";
+static ZCONST char Far CompileOptions[] =
+ "UnZip special compilation options:\n";
+static ZCONST char Far CompileOptFormat[] = "        %s\n";
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
-    static ZCONST char Far EnvOptions[] =
-     "\nUnZip and ZipInfo environment options:\n";
-    static ZCONST char Far EnvOptFormat[] = "%16s:  %.1024s\n";
+static ZCONST char Far EnvOptions[] =
+ "\nUnZip and ZipInfo environment options:\n";
+static ZCONST char Far EnvOptFormat[] = "%16s:  %.1024s\n";
 #  endif
-    static ZCONST char Far None[] = "[none]";
+static ZCONST char Far None[] = "[none]";
 #  ifdef ACORN_FTYPE_NFS
-    static ZCONST char Far AcornFtypeNFS[] = "ACORN_FTYPE_NFS";
+static ZCONST char Far AcornFtypeNFS[] = "ACORN_FTYPE_NFS";
 #  endif
 
 #  if defined( UNIX) && defined( __APPLE__)
@@ -450,220 +452,220 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #   if defined( __ppc__) || defined( __ppc64__)
 #    if APPLE_NFRSRC
 #     define APPLE_NFRSRC_MSG
-    static ZCONST char Far AppleNFRSRC[] =
-     "APPLE_NFRSRC         (\"/..namedfork/rsrc\" suffix for resource fork)";
+static ZCONST char Far AppleNFRSRC[] =
+ "APPLE_NFRSRC         (\"/..namedfork/rsrc\" suffix for resource fork)";
 #    endif /* APPLE_NFRSRC */
 #   else /* defined( __ppc__) || defined( __ppc64__) */
 #    if ! APPLE_NFRSRC
 #     define APPLE_NFRSRC_MSG
-    static ZCONST char Far AppleNFRSRC[] =
-     "APPLE_NFRSRC         (NOT!  \"/rsrc\" suffix for resource fork)";
+static ZCONST char Far AppleNFRSRC[] =
+ "APPLE_NFRSRC         (NOT!  \"/rsrc\" suffix for resource fork)";
 #    endif /* ! APPLE_NFRSRC */
 #   endif /* defined( __ppc__) || defined( __ppc64__) [else] */
 #   ifdef APPLE_XATTR
-    static ZCONST char Far AppleXATTR[] =
-     "APPLE_XATTR          (Apple extended attributes supported)";
+static ZCONST char Far AppleXATTR[] =
+ "APPLE_XATTR          (Apple extended attributes supported)";
 #   endif /* def APPLE_XATTR */
 #  endif /* defined( UNIX) && defined( __APPLE__) */
 
 #  ifdef ASM_CRC
-    static ZCONST char Far AsmCRC[] =
-     "ASM_CRC              (Assembly code used for CRC calculation)";
+static ZCONST char Far AsmCRC[] =
+ "ASM_CRC              (Assembly code used for CRC calculation)";
 #  endif
 #  ifdef ASM_INFLATECODES
-    static ZCONST char Far AsmInflateCodes[] =
-     "ASM_INFLATECODES     (Assembly code used for Inflate)";
+static ZCONST char Far AsmInflateCodes[] =
+ "ASM_INFLATECODES     (Assembly code used for Inflate)";
 #  endif
 #  ifdef CHECK_VERSIONS
-    static ZCONST char Far Check_Versions[] =
-     "CHECK_VERSIONS       (Check VMS versions, build v. run-time)";
+static ZCONST char Far Check_Versions[] =
+ "CHECK_VERSIONS       (Check VMS versions, build v. run-time)";
 #  endif
 #  ifdef COPYRIGHT_CLEAN
-    static ZCONST char Far Copyright_Clean[] =
-     "COPYRIGHT_CLEAN      (PKZIP 0.9x unreducing method not supported)";
+static ZCONST char Far Copyright_Clean[] =
+ "COPYRIGHT_CLEAN      (PKZIP 0.9x unreducing method not supported)";
 #  endif
 #  ifdef DEBUG
-    static ZCONST char Far UDebug[] = "DEBUG";
+static ZCONST char Far UDebug[] = "DEBUG";
 #  endif
 #  ifdef DEBUG_TIME
-    static ZCONST char Far DebugTime[] = "DEBUG_TIME";
+static ZCONST char Far DebugTime[] = "DEBUG_TIME";
 #  endif
 #  ifdef DEFLATE64_SUPPORT
-    static ZCONST char Far Deflate64_Sup[] =
-     "DEFLATE64_SUPPORT    (PKZIP 4.x Deflate64(tm) supported)";
+static ZCONST char Far Deflate64_Sup[] =
+ "DEFLATE64_SUPPORT    (PKZIP 4.x Deflate64(tm) supported)";
 #  endif
 #  ifdef DLL
-    static ZCONST char Far Dll[] =
-     "DLL                  (UnZip built as DLL or object library)";
+static ZCONST char Far Dll[] =
+ "DLL                  (UnZip built as DLL or object library)";
 #  endif
 #  ifdef DOSWILD
-    static ZCONST char Far DosWild[] = "DOSWILD";
+static ZCONST char Far DosWild[] = "DOSWILD";
 #  endif
 #  ifdef ICONV_MAPPING
-    static ZCONST char Far Iconv[] =
-     "ICONV_MAPPING        (ISO/OEM (iconv, -I/-O) conversion supported)";
+static ZCONST char Far Iconv[] =
+ "ICONV_MAPPING        (ISO/OEM (iconv, -I/-O) conversion supported)";
 #  endif
 #  ifdef IZ_HAVE_UXUIDGID
-    static ZCONST char Far ux_Uid_Gid[] =
-     "IZ_HAVE_UXUIDGID     (UID, GID > 16-bit (\"ux\" extra block) supported)";
+static ZCONST char Far ux_Uid_Gid[] =
+ "IZ_HAVE_UXUIDGID     (UID, GID > 16-bit (\"ux\" extra block) supported)";
 #  endif
 #  ifdef LZW_CLEAN
-    static ZCONST char Far LZW_Clean[] =
-     "LZW_CLEAN            (PKZIP/Zip 1.x unshrink method not supported)";
+static ZCONST char Far LZW_Clean[] =
+ "LZW_CLEAN            (PKZIP/Zip 1.x unshrink method not supported)";
 #  endif
 #  ifndef MORE
-    static ZCONST char Far No_More[] =
-     "NO_MORE              (Built-n -M pager (\"more\") disabled)";
+static ZCONST char Far No_More[] =
+ "NO_MORE              (Built-in -M pager (\"more\") disabled)";
 #  endif
 #  ifdef NO_ZIPINFO
-    static ZCONST char Far No_ZipInfo[] =
-     "NO_ZIPINFO           (ZipInfo -Z mode disabled)";
+static ZCONST char Far No_ZipInfo[] =
+ "NO_ZIPINFO           (ZipInfo -Z mode disabled)";
 #  endif
 #  ifdef NTSD_EAS
-    static ZCONST char Far NTSDExtAttrib[] =
-     "NTSD_EAS             (Windows NT extended attributes supported)";
+static ZCONST char Far NTSDExtAttrib[] =
+ "NTSD_EAS             (Windows NT extended attributes supported)";
 #  endif
 #  if defined(WIN32) && defined(NO_W32TIMES_IZFIX)
-    static ZCONST char Far W32NoIZTimeFix[] = "NO_W32TIMES_IZFIX";
+static ZCONST char Far W32NoIZTimeFix[] = "NO_W32TIMES_IZFIX";
 #  endif
 #  ifdef OLD_THEOS_EXTRA
-    static ZCONST char Far OldTheosExtra[] =
-     "OLD_THEOS_EXTRA      (Handle also old Theos port extra field)";
+static ZCONST char Far OldTheosExtra[] =
+ "OLD_THEOS_EXTRA      (Handle also old Theos port extra field)";
 #  endif
 #  ifdef OS2_EAS
-    static ZCONST char Far OS2ExtAttrib[] =
-     "OS2_EAS              (OS/2 extended attributes supported)";
-     "NTSD_EAS             (Windows NT extended attributes supported)";
+static ZCONST char Far OS2ExtAttrib[] =
+ "OS2_EAS              (OS/2 extended attributes supported)";
+ "NTSD_EAS             (Windows NT extended attributes supported)";
 #  endif
 #  ifdef QLZIP
-    static ZCONST char Far SMSExFldOnUnix[] = "QLZIP";
+static ZCONST char Far SMSExFldOnUnix[] = "QLZIP";
 #  endif
 #  ifdef REENTRANT
-    static ZCONST char Far Reentrant[] =
-     "REENTRANT            (UnZip built for reentrancy)";
+static ZCONST char Far Reentrant[] =
+ "REENTRANT            (UnZip built for reentrancy)";
 #  endif
 #  ifdef REGARGS
-    static ZCONST char Far RegArgs[] = "REGARGS";
+static ZCONST char Far RegArgs[] = "REGARGS";
 #  endif
 #  ifdef RETURN_CODES
-    static ZCONST char Far Return_Codes[] =
-     "RETURN_CODES         (Display error message at exit)";
+static ZCONST char Far Return_Codes[] =
+ "RETURN_CODES         (Display error message at exit)";
 #  endif
 #  ifdef SET_DIR_ATTRIB
-    static ZCONST char Far SetDirAttrib[] =
-     "SET_DIR_ATTRIB       (Setting directory attributes supported)";
+static ZCONST char Far SetDirAttrib[] =
+ "SET_DIR_ATTRIB       (Setting directory attributes supported)";
 #  endif
 #  ifdef SYMLINKS
-    static ZCONST char Far SymLinkSupport[] =
-     "SYMLINKS             (Symbolic links supported, if RTL and file sys do)";
+static ZCONST char Far SymLinkSupport[] =
+ "SYMLINKS             (Symbolic links supported, if RTL and file sys do)";
 #  endif
 #  ifdef TIMESTAMP
-    static ZCONST char Far TimeStamp[] =
-     "TIMESTAMP            (Restoring file timestamps supported)";
+static ZCONST char Far TimeStamp[] =
+ "TIMESTAMP            (Restoring file timestamps supported)";
 #  endif
 #  ifdef UNIXBACKUP
-    static ZCONST char Far UnixBackup[] =
-     "UNIXBACKUP           (-B creates backup files)";
+static ZCONST char Far UnixBackup[] =
+ "UNIXBACKUP           (-B creates backup files)";
 #  endif
 #  ifdef USE_EF_UT_TIME
-    static ZCONST char Far Use_EF_UT_time[] =
-     "USE_EF_UT_TIME       (Use Universal Time, if available)";
+static ZCONST char Far Use_EF_UT_time[] =
+ "USE_EF_UT_TIME       (Use Universal Time, if available)";
 #  endif
 #  ifndef LZW_CLEAN
-    static ZCONST char Far Unshrink_Sup[] =
-     "UNSHRINK_SUPPORT     (PKZIP/Zip 1.x unshrinking method supported)";
+static ZCONST char Far Unshrink_Sup[] =
+ "UNSHRINK_SUPPORT     (PKZIP/Zip 1.x unshrinking method supported)";
 #  endif
 #  ifndef COPYRIGHT_CLEAN
-    static ZCONST char Far Use_Smith_Code[] =
-     "USE_SMITH_CODE       (PKZIP 0.9x unreducing method supported)";
+static ZCONST char Far Use_Smith_Code[] =
+ "USE_SMITH_CODE       (PKZIP 0.9x unreducing method supported)";
 #  endif
 #  ifdef UNICODE_SUPPORT
 #   ifdef UTF8_MAYBE_NATIVE
 #    ifdef UNICODE_WCHAR
        /* direct native UTF-8 check AND charset transform via wchar_t */
-    static ZCONST char Far Unicode_Sup[] =
-     "UNICODE_SUPPORT [wide-chars, char coding: %s] (handle UTF-8 paths)";
+static ZCONST char Far Unicode_Sup[] =
+ "UNICODE_SUPPORT [wide-chars, char coding: %s] (handle UTF-8 paths)";
 #    else
        /* direct native UTF-8 check, only */
-    static ZCONST char Far Unicode_Sup[] =
-     "UNICODE_SUPPORT [char coding: %s] (handle UTF-8 paths)";
+static ZCONST char Far Unicode_Sup[] =
+ "UNICODE_SUPPORT [char coding: %s] (handle UTF-8 paths)";
 #    endif
-    static ZCONST char Far SysChUTF8[] = "UTF-8";
-    static ZCONST char Far SysChOther[] = "other";
+static ZCONST char Far SysChUTF8[] = "UTF-8";
+static ZCONST char Far SysChOther[] = "other";
 #   else /* !UTF8_MAYBE_NATIVE */
        /* charset transform via wchar_t, no native UTF-8 support */
-    static ZCONST char Far Unicode_Sup[] =
-     "UNICODE_SUPPORT [wide-chars] (handle UTF-8 paths)";
+static ZCONST char Far Unicode_Sup[] =
+ "UNICODE_SUPPORT [wide-chars] (handle UTF-8 paths)";
 #   endif /* ?UTF8_MAYBE_NATIVE */
 #  endif /* UNICODE_SUPPORT */
 #  ifdef WIN32_WIDE
-    static ZCONST char Far Win32_Wide_Sup[] =
-     "WIN32_WIDE           (Wide characters supported)";
+static ZCONST char Far Win32_Wide_Sup[] =
+ "WIN32_WIDE           (Wide characters supported)";
 #  endif
 #  ifdef _MBCS
-    static ZCONST char Far Have_MBCS_Support[] =
-     "MBCS-support         (Multibyte character support, MB_CUR_MAX = %u)";
+static ZCONST char Far Have_MBCS_Support[] =
+ "MBCS-support         (Multibyte character support, MB_CUR_MAX = %u)";
 #  endif
 #  ifdef MULT_VOLUME
-    static ZCONST char Far MultiVol_Sup[] =
-     "MULT_VOLUME          (Multi-volume archives supported)";
+static ZCONST char Far MultiVol_Sup[] =
+ "MULT_VOLUME          (Multi-volume archives supported)";
 #  endif
 #  ifdef LARGE_FILE_SUPPORT
-    static ZCONST char Far LFS_Sup[] =
-     "LARGE_FILE_SUPPORT   (Large files over 2 GiB supported)";
+static ZCONST char Far LFS_Sup[] =
+ "LARGE_FILE_SUPPORT   (Large files over 2 GiB supported)";
 #  endif
 #  ifdef ZIP64_SUPPORT
-    static ZCONST char Far Zip64_Sup[] =
-     "ZIP64_SUPPORT        (Archives using Zip64 for large files supported)";
+static ZCONST char Far Zip64_Sup[] =
+ "ZIP64_SUPPORT        (Archives using Zip64 for large files supported)";
 #  endif
 #  if (defined(__DJGPP__) && (__DJGPP__ >= 2))
 #   ifdef USE_DJGPP_ENV
-    static ZCONST char Far Use_DJGPP_Env[] = "USE_DJGPP_ENV";
+static ZCONST char Far Use_DJGPP_Env[] = "USE_DJGPP_ENV";
 #   endif
 #   ifdef USE_DJGPP_GLOB
-    static ZCONST char Far Use_DJGPP_Glob[] = "USE_DJGPP_GLOB";
+static ZCONST char Far Use_DJGPP_Glob[] = "USE_DJGPP_GLOB";
 #   endif
 #  endif /* __DJGPP__ && (__DJGPP__ >= 2) */
 #  ifdef USE_VFAT
-    static ZCONST char Far Use_VFAT_support[] = "USE_VFAT";
+static ZCONST char Far Use_VFAT_support[] = "USE_VFAT";
 #  endif
 #  ifdef USE_ZLIB
-    static ZCONST char Far UseZlib[] =
-     "USE_ZLIB             (Using ZLIB, build ver %s, run-time %s)";
+static ZCONST char Far UseZlib[] =
+ "USE_ZLIB             (Using ZLIB, build ver %s, run-time %s)";
 #  endif /* def USE_ZLIB */
 #  ifdef BZIP2_SUPPORT
-    static ZCONST char Far BZip2_Sup[] =
-     "BZIP2_SUPPORT        (PKZIP 4.6+, bzip2 lib ver %s)";
+static ZCONST char Far BZip2_Sup[] =
+ "BZIP2_SUPPORT        (PKZIP 4.6+, bzip2 lib ver %s)";
 #  endif /* def BZIP2_SUPPORT */
 #  ifdef LZMA_SUPPORT
-    static ZCONST char Far LZMA_Sup[] =
-     "LZMA_SUPPORT         (PKZIP 6.3+, LZMA compression, ver %s)";
+static ZCONST char Far LZMA_Sup[] =
+ "LZMA_SUPPORT         (PKZIP 6.3+, LZMA compression, ver %s)";
 #  endif /* def LZMA_SUPPORT */
 #  ifdef PPMD_SUPPORT
-    static ZCONST char Far PPMD_Sup[] =
-     "PPMD_SUPPORT         (PKZIP 6.3+, PPMd compression, ver %s)";
+static ZCONST char Far PPMD_Sup[] =
+ "PPMD_SUPPORT         (PKZIP 6.3+, PPMd compression, ver %s)";
 #  endif /* def PPMD_SUPPORT */
 #  ifdef VMS_TEXT_CONV
-    static ZCONST char Far VmsTextConv[] =
-     "VMS_TEXT_CONV        (Conversion of VMS var-len rec fmt text supported)";
+static ZCONST char Far VmsTextConv[] =
+ "VMS_TEXT_CONV        (Conversion of VMS var-len rec fmt text supported)";
 #  endif
 #  ifdef VMSCLI
-    static ZCONST char Far VmsCLI[] =
-     "VMSCLI               (Use VMS command-line interface)";
+static ZCONST char Far VmsCLI[] =
+ "VMSCLI               (Use VMS command-line interface)";
 #  endif
 #  ifdef VMSWILD
-    static ZCONST char Far VmsWild[] =
-     "VMSWILD              (Use VMS-style wildcard characters)";
+static ZCONST char Far VmsWild[] =
+ "VMSWILD              (Use VMS-style wildcard characters)";
 #  endif
 #  ifdef WILD_STOP_AT_DIR
-    static ZCONST char Far WildStopAtDir[] =
-     "WILD_STOP_AT_DIR     (Wildcard \"*\" doesn't span \"/\" dir delimiter)";
+static ZCONST char Far WildStopAtDir[] =
+ "WILD_STOP_AT_DIR     (Wildcard \"*\" doesn't span \"/\" dir delimiter)";
 #  endif
 #  ifdef IZ_CRYPT_AES_WG
-    static ZCONST char Far AesWgEncryptionNotice1[] =
-     "\nAES Strong Encryption notice:\n";
-    static ZCONST char Far AesWgEncryptionNotice2[] =
-     "\
+static ZCONST char Far AesWgEncryptionNotice1[] =
+ "\nAES Strong Encryption notice:\n";
+static ZCONST char Far AesWgEncryptionNotice2[] =
+ "\
         This executable includes 256-bit AES strong encryption and may be\n\
         subject to export restrictions in many countries, including the USA.\n";
 
@@ -672,32 +674,32 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  endif
 #  ifdef IZ_CRYPT_ANY
 #   ifdef IZ_CRYPT_TRAD
-    static ZCONST char Far TraditionalEncryptionNotice1[] =
-     "\nTraditional Zip Encryption notice:\n";
-    static ZCONST char Far TraditionalEncryptionNotice2[] =
-     "\
+static ZCONST char Far TraditionalEncryptionNotice1[] =
+ "\nTraditional Zip Encryption notice:\n";
+static ZCONST char Far TraditionalEncryptionNotice2[] =
+ "\
         The traditional zip encryption code of this program is not\n\
         copyrighted, and is put in the public domain.  It was originally\n\
         written in Europe, and, to the best of our knowledge, can be freely\n\
         distributed in both source and object forms from any country,\n\
         including the USA under License Exception TSU of the U.S. Export\n\
         Administration Regulations (section 740.13(e)) of 6 June 2002.\n";
-    static ZCONST char Far Decryption[] =
-"        IZ_CRYPT_TRAD        (Traditional (weak) encryption, ver %d.%d%s)\n";
-    static ZCONST char Far CryptDate[] = CR_VERSION_DATE;
+static ZCONST char Far Decryption[] =
+ "        IZ_CRYPT_TRAD        (Traditional (weak) encryption, ver %d.%d%s)\n";
+static ZCONST char Far CryptDate[] = CR_VERSION_DATE;
 #   endif /* def IZ_CRYPT_TRAD */
 #   ifdef PASSWD_FROM_STDIN
-    static ZCONST char Far PasswdStdin[] = "PASSWD_FROM_STDIN";
+static ZCONST char Far PasswdStdin[] = "PASSWD_FROM_STDIN";
 #   endif
 #  endif /* def IZ_CRYPT_ANY */
 #  ifndef __RSXNT__
 #   ifdef __EMX__
-    static ZCONST char Far EnvEMX[] = "EMX";
-    static ZCONST char Far EnvEMXOPT[] = "EMXOPT";
+static ZCONST char Far EnvEMX[] = "EMX";
+static ZCONST char Far EnvEMXOPT[] = "EMXOPT";
 #   endif
 #   if (defined(__GO32__) && (!defined(__DJGPP__) || (__DJGPP__ < 2)))
-    static ZCONST char Far EnvGO32[] = "GO32";
-    static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
+static ZCONST char Far EnvGO32[] = "GO32";
+static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 #   endif
 #  endif /* !__RSXNT__ */
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
@@ -706,24 +708,24 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #  ifdef COPYRIGHT_CLEAN                /* Maintainer, not Smith copyright. */
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
-    ZCONST char Far UnzipUsageLine1[] = "\
+ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
- Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip /license\n";
+ Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip /license\n";
 #   else /* def VMSCLI */
     static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
- Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip --license\n";
+ Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
 #  else /* def COPYRIGHT_CLEAN */       /* Smith copyright, not maintainer. */
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
-    ZCONST char Far UnzipUsageLine1[] = "\
+ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
- Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip /license\n";
+ Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip /license\n";
 #   else /* def VMSCLI */
-    static ZCONST char Far UnzipUsageLine1[] = "\
+static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
- Copyright (c) 1990-2013 Info-ZIP.  For software license: unzip --license\n";
+ Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
 #  endif /* def COPYRIGHT_CLEAN [else] */
 #  define UnzipUsageLine1v       UnzipUsageLine1
@@ -752,16 +754,16 @@ Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n\
 
 #  ifdef NO_ZIPINFO
 #  define ZIPINFO_MODE_OPTION  ""
-   static ZCONST char Far ZipInfoMode[] =
-     "(ZipInfo mode is disabled in this version.)";
+static ZCONST char Far ZipInfoMode[] =
+ "(ZipInfo mode is disabled in this version.)";
 #  else
 #  define ZIPINFO_MODE_OPTION  "[-Z] "
-   static ZCONST char Far ZipInfoMode[] =
-     "-Z => ZipInfo mode (\"unzip -Z\" for usage).";
+static ZCONST char Far ZipInfoMode[] =
+ "-Z => ZipInfo mode (\"unzip -Z\" for usage).";
 #  endif /* ?NO_ZIPINFO */
 
 #  ifdef VMS
-   static ZCONST char Far VMSusageLine2b[] = "\
+static ZCONST char Far VMSusageLine2b[] = "\
 => Define foreign command symbol in LOGIN.COM: \
 unzip == \"$ dev:[dir]unzip.exe\"\n";
 #  endif
@@ -887,13 +889,24 @@ int unzip(__G__ argc, argv)
     int argc;
     char *argv[];
 {
-# ifndef NO_ZIPINFO
-    char *p;
+/* Ignore argv[0] for DLL or object library.
+ * (Must use "-Z" for ZipInfo mode.)
+ */
+#  ifdef DLL
+#   ifndef IGNORE_ARGV0
+#    define IGNORE_ARGV0
+#   endif
+#  endif
+
+# if !defined( NO_ZIPINFO) && !defined( IGNORE_ARGV0)
+    char *p;            /* Temp character pointer for argv[0]. */
 # endif
+
 # if (defined(DOS_FLX_H68_NLM_OS2_W32) || !defined(SFX))
     int i;
 # endif
-    int retcode, error=FALSE;
+    int retcode;
+    int error = FALSE;
 
 # ifndef NO_EXCEPT_SIGNALS
 #  ifdef REENTRANT
@@ -1280,15 +1293,6 @@ int unzip(__G__ argc, argv)
 
     G.noargs = (argc == 1);   /* no options, no zipfile, no anything */
 
-/* Ignore argv[0] for DLL or object library.
- * (Must use "-Z" for ZipInfo mode.)
- */
-#  ifdef DLL
-#   ifndef IGNORE_ARGV0
-#    define IGNORE_ARGV0
-#   endif
-#  endif
-
 #  ifndef NO_ZIPINFO
 #   ifndef IGNORE_ARGV0
     for (p = argv[0] + strlen(argv[0]); p >= argv[0]; --p) {
@@ -1313,7 +1317,15 @@ int unzip(__G__ argc, argv)
         STRNICMP(p, "ii", 2) == 0 ||
 #    endif /* def THEOS [else] */
 #   endif /* def IGNORE_ARGV0 [else] */
-        (argc > 1 && strncmp(argv[1], "-Z", 2) == 0))
+        /* Check first arg for "-Z" or "--zipinfo-mode"
+         * (but not "--zipfile-comment").
+         */
+        ((argc > 1) &&
+         ((strncmp( argv[ 1], "-Z", 2) == 0) ||
+          ((strlen(  argv[ 1]) > 5) &&
+           (strncmp( argv[ 1], "--zipinfo-mode", strlen(  argv[ 1])) == 0)
+        )))
+    )
     {
         uO.zipinfo_mode = TRUE;
 #   ifndef _WIN32_WCE /* Win CE does not support environment variables */
@@ -1722,6 +1734,10 @@ static struct option_struct far options[] = {
     {UZO, "d",  "extract-dir",     o_REQUIRED_VALUE, o_NEGATABLE,
        'd',  "extraction root directory"},
 # endif
+# ifndef SFX
+    {UZO, "da", "auto-extract-dir", o_OPT_EQ_VALUE,  o_NEGATABLE,
+       o_da, "automatic extraction root directory"},
+# endif /* ndef SFX */
 # if (!defined(NO_TIMESTAMPS))
        /* seems the best long option name I can think of */
     {UZO, "D",  "dir-timestamps",  o_NO_VALUE,       o_NEGATABLE,
@@ -1843,7 +1859,7 @@ static struct option_struct far options[] = {
 #  if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
     {UZO, "si", "show-pid",        o_NO_VALUE,       o_NEGATABLE,
        o_si, "show process ID"},
-#  endif /* #if !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
+#  endif /* !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
     {UZO, "so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
        o_so, "show available options on this system"},
 # endif /* ndef SFX */
@@ -1862,6 +1878,8 @@ static struct option_struct far options[] = {
 # if !defined( SFX) || defined( DIAG_SFX)
     {UZO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
        'v',  "verbose"},
+    {UZO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
+       o_ve,  "version"},
 # endif
 # ifndef CMS_MVS
     {UZO, "V",  "keep-versions",  o_NO_VALUE,       o_NEGATABLE,
@@ -1883,7 +1901,7 @@ static struct option_struct far options[] = {
 # endif
     {UZO, "z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
        'z',  "display zipfile comment"},
-# ifndef SFX
+# if !defined( SFX) && !defined( NO_ZIPINFO)
     {UZO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NOT_NEGATABLE,
        'Z',  "ZipInfo mode (must be first option)"},
 # endif
@@ -1969,7 +1987,7 @@ static struct option_struct far options[] = {
        'z',  "print zipfile comment"},
     {ZIO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NEGATABLE,
        'Z',  "ZipInfo mode"},
-# endif /* !NO_ZIPINFO */
+# endif /* ndef NO_ZIPINFO */
 
     /* the end of the list */
     {0,   NULL, NULL,                   o_NO_VALUE,       o_NOT_NEGATABLE,
@@ -2000,7 +2018,9 @@ int uz_opts(__G__ pargc, pargv)
     char ***pargv;
 {
     char **args;
-    int argc, error=FALSE, showhelp=0;
+    int argc;
+    int uzo_err = FALSE;
+    int showhelp = 0;
 # ifdef ENABLE_USER_PROGRESS
     int show_pid = 0;
 # endif /* def ENABLE_USER_PROGRESS */
@@ -2188,6 +2208,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* ndef CMS_MVS */
 # if !defined(SFX) || defined(SFX_EXDIR)
             case ('d'):
+                /* 2014-02-19 SMS.  Negative is allowed why? */
                 if (negative) {   /* negative not allowed with -d exdir */
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(MustGiveExdir)));
@@ -2195,6 +2216,9 @@ int uz_opts(__G__ pargc, pargv)
                     UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
                     return(PK_PARAM);   /* don't extract here by accident */
                 }
+#  ifndef SFX
+                uO.auto_exdir = 0;              /* -d overrides -da. */
+#  endif /* ndef SFX */
                 if (uO.exdir != (char *)NULL) {
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OnlyOneExdir)));
@@ -2214,6 +2238,33 @@ int uz_opts(__G__ pargc, pargv)
                     /* else uO.exdir points at extraction dir */
                 }
                 value = NULL;           /* In use.  Don't free it. */
+                break;
+            case (o_da):
+#  ifndef SFX                           /* SFX ignores -da. */
+                if (negative)
+                {
+                    uO.auto_exdir = IZ_MAX( (uO.auto_exdir- 1), 0);
+                    negative = 0;
+                }
+                else if (value == NULL)
+                {
+                    uO.auto_exdir = 1;  /* Create new dest dir. */
+                }
+                else if (STRNICMP( value, "reuse", strlen( value)) == 0)
+                {
+                    uO.auto_exdir = 2;  /* Create new or reuse old dest dir. */
+                }
+                else
+                {
+                    /* Some invalid (non-"reuse") value found. */
+                    Info( slide, 0x401, ((char *)slide,
+                     LoadFarString( BadAutoDestValue)));
+                    /* Leaving early.  Free it. */
+                    FREE_NON_NULL( value);
+                    UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
+                    return PK_PARAM;
+                }
+#  endif /* ndef SFX */
                 break;
 # endif /* !defined(SFX) || defined(SFX_EXDIR) */
 # if !defined(NO_TIMESTAMPS)
@@ -2393,7 +2444,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifndef SFX
             case ('l'):
                 if (negative) {
-                    uO.vflag = IZ_MAX(uO.vflag-negative,0);
+                    uO.vflag = IZ_MAX( (uO.vflag- negative), 0);
                     negative = 0;
                 } else
                     ++uO.vflag;
@@ -2575,8 +2626,9 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* def UNICODE_SUPPORT */
 # if !defined( SFX) || defined( DIAG_SFX)
             case ('v'):    /* verbose */
+            case (o_ve):   /* version */
                 if (negative) {
-                    uO.vflag = IZ_MAX(uO.vflag-negative,0);
+                    uO.vflag = IZ_MAX( (uO.vflag- negative), 0);
                     negative = 0;
                 } else if (uO.vflag)
                     ++uO.vflag;
@@ -2681,7 +2733,7 @@ int uz_opts(__G__ pargc, pargv)
 # ifndef SFX
             case ('Z'):    /* should have been first option (ZipInfo) */
                 Info(slide, 0x401, ((char *)slide, LoadFarString(Zfirst)));
-                error = TRUE;
+                uzo_err = TRUE;
                 break;
 # endif /* ndef SFX */
 # ifdef VMS
@@ -2775,14 +2827,14 @@ int uz_opts(__G__ pargc, pargv)
                 value = NULL;           /* In use.  Don't free it. */
                 break;
             default:
-                error = TRUE;
+                uzo_err = TRUE;
                 break;
 
         } /* end switch */
 
         FREE_NON_NULL( value);          /* Free it now, if it's not in use. */
 
-    } /* get_option() */
+    } /* while get_option() */
 
 
     /* convert files and xfiles lists to arrays */
@@ -2844,7 +2896,7 @@ int uz_opts(__G__ pargc, pargv)
         (uO.tflag && uO.uflag) || (uO.fflag && uO.overwrite_none))
     {
         Info(slide, 0x401, ((char *)slide, LoadFarString(InvalidOptionsMsg)));
-        error = TRUE;
+        uzo_err = TRUE;
     }
     if (uO.aflag > 2)
         uO.aflag = 2;
@@ -2866,12 +2918,12 @@ int uz_opts(__G__ pargc, pargv)
 
 # ifdef SFX
 #  ifdef DIAG_SFX
-    if ((showhelp == 0) || error)
+    if ((showhelp == 0) || uzo_err)
 #  else /* def DIAG_SFX */
-    if (error)
+    if (uzo_err)
 #  endif /* def DIAG_SFX [else] */
 # else /* def SFX */
-    if ((showhelp == 0) && ((G.wildzipfn == NULL) || error))
+    if ((showhelp == 0) && ((G.wildzipfn == NULL) || uzo_err))
 # endif /* def SFX [else] */
     {
 # if defined( SFX) && defined( DIAG_SFX)
@@ -2896,12 +2948,12 @@ int uz_opts(__G__ pargc, pargv)
             return PK_OK;
         }
 #  ifndef SFX
-        if (!G.noargs && !error)
-            error = TRUE;       /* had options (not -h or -v) but no zipfile */
+        if (!G.noargs && !uzo_err)
+            uzo_err = TRUE;     /* had options (not -h or -v) but no zipfile */
 #  endif /* ndef SFX */
-#  ifndef DIAG_SFX
-        return USAGE(error);
-#  endif /* ndef DIAG_SFX */
+#  if defined( SFX) && !defined( DIAG_SFX)
+        return USAGE(uzo_err);
+#  endif /* defined( SFX) && !defined( DIAG_SFX) */
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 # if defined( SFX) && defined( DIAG_SFX)
@@ -2913,13 +2965,14 @@ int uz_opts(__G__ pargc, pargv)
 # ifdef SFX
     /* print our banner unless we're being fairly quiet */
     if (uO.qflag < 2)
-        Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXBanner),
-          UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          LoadFarStringSmall(VersionDate)));
+        Info(slide, (uzo_err ? 1 : 0),
+         ((char *)slide, LoadFarString(UnzipSFXBanner),
+         UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
+         LoadFarStringSmall(VersionDate)));
 #  ifdef BETA
     /* always print the beta warning:  no unauthorized distribution!! */
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(BetaVersion), "\n",
-      "SFX"));
+    Info(slide, (uzo_err ? 1 : 0),
+     ((char *)slide, LoadFarString(BetaVersion), "\n", "SFX"));
 #  endif /* def BETA */
 # endif /* def SFX */
 #endif /* 0  Duplicate below. */
@@ -2972,7 +3025,7 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
         (uO.tflag && uO.uflag) || (uO.fflag && uO.overwrite_none))
     {
         Info(slide, 0x401, ((char *)slide, LoadFarString(InvalidOptionsMsg)));
-        error = TRUE;
+        uzo_err = TRUE;
     }
     if (uO.aflag > 2)
         uO.aflag = 2;
@@ -2993,9 +3046,9 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
 # endif /* def MORE */
 
 # if defined( SFX) && !defined( DIAG_SFX)
-    if (error)
+    if (uzo_err)
 # else /* defined( SFX) && !defined( DIAG_SFX) */
-    if ((argc-- == 0) || error)
+    if ((argc-- == 0) || uzo_err)
 # endif /* defined( SFX) && !defined( DIAG_SFX) [else] */
     {
         *pargc = argc;
@@ -3005,23 +3058,24 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
             show_version_info(__G);
             return PK_OK;
         }
-        if (!G.noargs && !error)
-            error = TRUE;       /* had options (not -h or -v) but no zipfile */
+        if (!G.noargs && !uzo_err)
+            uzo_err = TRUE;     /* had options (not -h or -v) but no zipfile */
 # endif /* ndef SFX */
-        return USAGE(error);
+        return (uzo_err ? PK_PARAM : PK_COOL);
     }
 
 # ifdef SFX
 /* # if defined( SFX) && !defined( DIAG_SFX) */
     /* print our banner unless we're being fairly quiet */
     if (uO.qflag < 2)
-        Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXBanner),
-          UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          LoadFarStringSmall(VersionDate)));
+        Info(slide, (uzo_err ? 1 : 0),
+         ((char *)slide, LoadFarString(UnzipSFXBanner),
+         UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
+         LoadFarStringSmall(VersionDate)));
 #  ifdef BETA
     /* always print the beta warning:  no unauthorized distribution!! */
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(BetaVersion), "\n",
-      "SFX"));
+    Info(slide, (uzo_err ? 1 : 0),
+     ((char *)slide, LoadFarString(BetaVersion), "\n", "SFX"));
 #  endif /* def BETA */
 # endif /* def SFX */
 
@@ -3215,34 +3269,37 @@ void show_env( __G__ non_null_only)
 #   endif
 #  endif
 
-int usage(__G__ error)   /* return PK-type error code */
+/* SFX Usage guide. */
+
+int usage(__G__ u_err)   /* return PK-type error code */
     __GDEF
-    int error;
+    int u_err;
 {
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXBanner),
+    int flag = (u_err? 1 : 0);
+
+    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXBanner),
       UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
       LoadFarStringSmall(VersionDate)));
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXOpts),
+    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOpts),
       SFXOPT1, LOCAL));
 #  ifdef VMS
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXOptsV)));
+    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOptsV)));
 #  endif /* def VMS */
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(UnzipSFXOpts2)));
+    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOpts2)));
 #  ifdef BETA
-    Info(slide, error? 1 : 0, ((char *)slide, LoadFarString(BetaVersion), "\n",
-      "SFX"));
+    Info(slide, flag, ((char *)slide, LoadFarString(BetaVersion), "\n",
+     "SFX"));
 #  endif
 
-    if (error)
+    if (u_err)
         return PK_PARAM;
     else
-        return PK_COOL;     /* just wanted usage screen: no error */
+        return PK_COOL;         /* No error, but wanted usage guide. */
 
 } /* end function usage() */
 
-
-
 # else /* def SFX */
+
 #  ifdef VMS
 #    define QUOT '\"'
 #    define QUOTS "\""
@@ -3251,12 +3308,13 @@ int usage(__G__ error)   /* return PK-type error code */
 #    define QUOTS ""
 #  endif /* def VMS [else] */
 
-int usage(__G__ error)   /* return PK-type error code */
-    __GDEF
-    int error;
-{
-    int flag = (error? 1 : 0);
+/* Normal (Non-SFX) Usage guide. */
 
+int usage(__G__ u_err)   /* return PK-type error code */
+    __GDEF
+    int u_err;
+{
+    int flag = (u_err? 1 : 0);
 
 /*---------------------------------------------------------------------------
     Print either ZipInfo usage or UnZip usage, depending on incantation.
@@ -3295,7 +3353,7 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
           ZIPINFO_MODE_OPTION, LoadFarStringSmall(ZipInfoMode)));
 
 #  ifdef VMS
-        if (!error)  /* maybe no command-line tail found; show extra help */
+        if (!u_err)  /* maybe no command-line tail found; show extra help */
             Info(slide, flag, ((char *)slide, LoadFarString(VMSusageLine2b)));
 #  endif
 
@@ -3314,13 +3372,13 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
 
     } /* end if (uO.zipinfo_mode) */
 
-    if (error)
+    if (u_err)
     {
-        show_env( __G__ 1);
+        show_env( __G__ 1);     /* Show env vars, if option error. */
         return PK_PARAM;
     }
     else
-        return PK_COOL;     /* just wanted usage screen: no error */
+        return PK_COOL;         /* No error, but wanted usage guide. */
 
 } /* end function usage() */
 
@@ -3335,7 +3393,7 @@ static void show_license(__G)
 
     /* license array */
     static ZCONST char *text[] = {
-  "Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.",
+  "Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.",
   "",
   "This is version 2009-Jan-02 of the Info-ZIP license.",
   "",
@@ -4145,7 +4203,7 @@ static void show_version_info(__G)
 } /* end function show_version() */
 
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
-#endif /* ndef WINDLL */
+#endif /* ndef WINDLL_OLD */
 
 
 

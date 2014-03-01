@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,7 @@
 .\" unzip.1 by Greg Roelofs, Fulvio Marino, Jim van Zandt and others.
 .\"
 .\" =========================================================================
-.TH UNZIP 1L "07 Nov 2013 (v6.10)" "Info-ZIP"
+.TH UNZIP 1L "23 Feb 2014 (v6.10)" "Info-ZIP"
 .\" =========================================================================
 .\"
 .\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
@@ -332,7 +332,7 @@ timezone properly.
 Primary mode (when alone) or option.  When used as a primary mode
 (alone), and no archive is specified, an "\fCunzip \-v\fR" command
 generates a report showing the program version, build options, and
-relevant envrironment variables.
+relevant environment variables.
 .IP
 When used with some other primary mode option, \fB\-v\fP can make output
 more verbose.
@@ -340,6 +340,17 @@ more verbose.
 If no other primary mode is specified, and an archive \fIis\fP
 specified, then \fIUnZip\fP acts as if "\fB\-l\fP \fB\-v\fP" were
 specified, and a detailed listing is generated.  See \fB\-l\fP.
+.PP
+.PD 0
+.B \-\-version
+.TP
+.PD
+Primary Mode.  Display the program version, build options, and relevant
+environment variables.
+.IP
+Currently, \fB\-\-version\fP is implemented as a synonym for
+\fB\-v\fP/\fB\-\-verbose\fP, so, for proper operation, it must be
+specified with no other options.
 .PP
 .PD 0
 .B \-z
@@ -536,8 +547,8 @@ because of changes to the command-line parser.)
 .br
 Specifies a destination directory for extracted files.  By default,
 files are extracted (and subdirectories created) in the current
-directory.  With \fB\-d dest_dir\fP, extraction is done into the
-specified directory, instead.
+(default, working) directory.  With \fB\-d dest_dir\fP, extraction is
+done into the specified directory, instead.  See also \fB\-da\fP.
 .IP
 The option and directory may be concatenated without any white space
 between them, but this may cause normal shell behavior to be
@@ -547,6 +558,35 @@ is treated as a literal "\fB~\fP" subdirectory of the current directory.
 .IP
 [VMS] On VMS, only a VMS-style device:[directory] specification is
 permitted.
+.PP
+.PD 0
+.B \-da[=reuse]
+.TP
+.PD
+.B \-\-auto\-extract\-dir[=reuse]
+.br
+Specifies a destination directory for extracted files which is derived
+from the base name of the archive.  By default, files are extracted
+(and subdirectories created) in the current (default, working)
+directory.  With \fB\-da\fP, UnZip automatically derives a subdirectory
+name from the archive name, creates that subdirectory, and extracts
+files into that subdirectory.
+.IP
+For example, with \fB\-da\fP, extraction of "fred.zip" is done into
+subdirectory "fred" instead of into the current directory.  (On VMS,
+subdirectory "[.fred]".)
+.IP
+Using this option can help to avoid cluttering the current directory
+with files extracted from an archive whose structure does not include a
+top-level directory.
+.IP
+For greater safety, by default, UnZip will refuse to extract into an
+automatic extraction directory which already exists.  Specifying the
+optional keyword "reuse" will allow an existing directory to be used.
+.IP
+If \fB\-da\fP is specified as a default option in an environment
+variable, it can be overridden by either a negated \fB\-da\-\fP option
+or an explicit \fB\-d dest_dir\fP option.  See also \fB\-d\fP.
 .PP
 .PD 0
 .B \-E
@@ -691,7 +731,8 @@ and later.  See also \fB\-J\fP, \fB\-Je\fP, \fB\-Jf\fP, and \fB\-Jr\fP.
 .br
 Junk directories on extracted files.  With \fB\-j\fP, all directory
 information is stripped from an archive member name, so all files are
-extracted into the destination directory.  (See also \fB\-d\fP.)
+extracted into the destination directory.  (See also \fB\-d\fP and
+\fB\-da\fP.)
 .IP
 If a depth (\fB=depth\fP, where \fBdepth\fP is a positive integer) is
 specified, then that number of directory levels will be stripped from an
@@ -1077,6 +1118,13 @@ name, then \fIUnZip\fP acts as if "\fB\-l\fP \fB\-v\fP" were specified,
 and a detailed listing is generated.
 .PP
 .PD 0
+.B \-\-version
+.TP
+.PD
+Primary Mode.  Display the program version, build options, and relevant
+environment variables.  For details, see Primary Mode options.
+.PP
+.PD 0
 .B \-W
 .TP
 .PD
@@ -1129,11 +1177,11 @@ system privileges, and doubling the option (\fB\-XX\fP) on NT instructs
 a user who belongs to several groups can restore files owned by any of
 those groups, so long as the user IDs match the user's own.  Note that
 ordinary file attributes are always restored.  This option applies only
-to optional, extra ownership info available on some operating systems.
-(NT's access control lists do not appear to be especially compatible
-with OS/2's, so no attempt is made at cross-platform portability of
-access privileges.  It is not clear under which conditions this would
-ever be useful anyway.)
+to optional, extra ownership info available on some operating
+systems.  (NT's access control lists do not appear to be especially
+compatible with OS/2's, so no attempt is made at cross-platform
+portability of access privileges.  It is not clear under which
+conditions this would ever be useful anyway.)
 .PP
 .PD 0
 .BR "\-x member" " ..."
@@ -1146,9 +1194,9 @@ processing.  Because wildcard characters normally match "/" directory
 separators (for exceptions, see the option \fB\-W\fP), this option may
 be used to exclude any files that are in subdirectories.  For example,
 "\fCunzip\ foo\ *.[ch]\ \-x\ */*\fR" would extract all C source files
-(*.c, *.h) in the main directory, but none in any subdirectories. 
-Without the \fB\-x\fP option, all C source files in all directories
-within the archive would be extracted.
+(*.c, *.h) in the main directory, but none in any
+subdirectories.  Without the \fB\-x\fP option, all C source files in all
+directories within the archive would be extracted.
 .IP
 When the program sees \fB\-x\fP (\fB\-\-exclude\fP) on a command line,
 it stops scanning for options, and treats every succeeding item as an
@@ -1602,6 +1650,8 @@ encryption methods.
 No files were processed, because of bad encryption password(s).
 .IP 83
 Large-file archive could not be processed by this small-file program.
+.IP 84
+Failed to create automatic extraction directory.  (Already exists?)
 .RE
 .PP
 [VMS] On VMS, the standard Unix exit status values are translated into

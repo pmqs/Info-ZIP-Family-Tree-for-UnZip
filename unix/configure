@@ -4,9 +4,9 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2013-11-29
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2014-01-28
 #
-# Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -321,13 +321,18 @@ elif [ -f "${PROD}" ]; then
   echo "^^ Directory name exists as an ordinary file.  Unable to build."
   exit 1
 else
-  echo "-- Creating build root directory."
-  ${MKDIR} ${PROD}
-  status=$?
-  if [ $status -ne 0 ]; then
-    echo ''
-    echo "^^ Directory creation failed (${status})."
-    exit $status
+  if unix/unsafe_prod.sh "${PROD}"; then
+    echo "^^ Unsafe absolute (/x) or rising (../) PROD: ${PROD}"
+    exit 13
+  else
+    echo "-- Creating build root directory."
+    ${MKDIR} ${PROD}
+    status=$?
+    if [ $status -ne 0 ]; then
+      echo ''
+      echo "^^ Directory creation failed (${status})."
+      exit $status
+    fi
   fi
 fi
 
@@ -2768,8 +2773,18 @@ echon "Check ${CF_TEST}..."
 cat > conftest.c << _EOF_
 int main() { return 0; }
 _EOF_
-${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c >/dev/null 2>/dev/null
+${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c > /dev/null \
+ 2> conftest.err
 status=$?
+if [ $status -eq 0 ]; then
+  grep -i unknown < conftest.err > /dev/null 2> /dev/null
+  status=$?
+  if [ $status -eq 0 ]; then
+    status=666;
+  else
+    status=0
+  fi
+fi
 if [ $status -eq 0 ]; then
   echo '  Yes.'
   CFLAGS_TST="${CFLAGS_TST} ${CF_TEST}"
@@ -2783,8 +2798,18 @@ echon "Check ${CF_TEST}..."
 cat > conftest.c << _EOF_
 int main() { return 0; }
 _EOF_
-${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c >/dev/null 2>/dev/null
+${CC_TST} ${CFLAGS} ${CF_TEST} -o conftest conftest.c > /dev/null \
+ 2> conftest.err
 status=$?
+if [ $status -eq 0 ]; then
+  grep -i unknown < conftest.err > /dev/null 2> /dev/null
+  status=$?
+  if [ $status -eq 0 ]; then
+    status=666;
+  else
+    status=0
+  fi
+fi
 if [ $status -eq 0 ]; then
   echo '  Yes.'
   CFLAGS_TST="${CFLAGS_TST} ${CF_TEST}"

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -154,17 +154,6 @@
 #else
 #  if (!defined(VMS_TEXT_CONV) && !defined(SFX))
 #    define VMS_TEXT_CONV
-#  endif
-#endif
-
-/* Enable -B option per default on specific systems, to allow backing up
- * files that would be overwritten.
- * (This list of systems must be kept in sync with the list of systems
- * that add the B_flag to the UzpOpts structure, see unzip.h.)
- */
-#if (!defined(NO_UNIXBACKUP) && !defined(UNIXBACKUP))
-#  if defined(UNIX) || defined(OS2) || defined(WIN32)
-#    define UNIXBACKUP
 #  endif
 #endif
 
@@ -1241,6 +1230,16 @@ void izu_md_check( void);
 #  undef TIMESTAMP
 #endif
 
+/* For SFX, disable Reduce and Shrink compression methods. */
+#ifdef SFX
+# ifndef COPYRIGHT_CLEAN
+#  define COPYRIGHT_CLEAN       /* Disable Reduce. */
+# endif
+# ifndef LZW_CLEAN
+#  define LZW_CLEAN             /* Disable Shrink. */
+# endif
+#endif
+
 #if (!defined(COPYRIGHT_CLEAN) && !defined(USE_SMITH_CODE))
 #  define COPYRIGHT_CLEAN
 #endif
@@ -1594,20 +1593,22 @@ void izu_md_check( void);
 /* Most option IDs are set to the shortopt char.  For multichar short
  * options, ID is set to an arbitrary unused constant (defined below).
  */
-#define o_hh    0x101
+#define o_da    0x101   /* -da: Automatic destination directory. */
+#define o_hh    0x102   /* -hh: Extended help. */
 /* Mac-OS-X-specific: */
-#define o_Je    0x102   /* -Je: Ignore (all) extended attributes. */
-#define o_Jf    0x103   /* -Jf: Ignore Finder info. */
-#define o_Jq    0x104   /* -Jq: Ignore quarantine ("com.apple.quarantine") */
-#define o_Jr    0x105   /* -Jr: Ignore Resource fork. */
+#define o_Je    0x103   /* -Je: Ignore (all) extended attributes. */
+#define o_Jf    0x104   /* -Jf: Ignore Finder info. */
+#define o_Jq    0x105   /* -Jq: Ignore quarantine ("com.apple.quarantine"). */
+#define o_Jr    0x106   /* -Jr: Ignore Resource fork. */
 /* End Mac-OS-X-specific. */
-#define o_ja    0x106   /* --jar. */
-#define o_ka    0x107   /* -ka: Restore (VMS) ACL. */
-#define o_LI    0x108
-#define o_mc    0x109   /* See also zipinfo.c. */
-#define o_sc    0x10a   /* See also zipinfo.c. */
-#define o_si    0x10b
-#define o_so    0x10c   /* See also zipinfo.c. */
+#define o_ja    0x107   /* --jar. */
+#define o_ka    0x108   /* -ka: Restore (VMS) ACL. */
+#define o_LI    0x109   /* --license: Show license text. */
+#define o_mc    0x10a   /* -mc: Show separate dir/file/link member counts. */
+#define o_sc    0x10b   /* -sc: Show command line (and exit). */
+#define o_si    0x10c   /* -si: Show process ID. */
+#define o_so    0x10d   /* -so: Show options. */
+#define o_ve    0x10e   /* -version: Show program version/option info. */
 
 /* options array is set in unzip.c */
 struct option_struct {
@@ -2063,51 +2064,52 @@ struct file_list {
     Extra-field block ID values and offset info.
   ---------------------------------------------------------------------------*/
 /* extra-field ID values, all little-endian: */
-#define EF_PKSZ64    0x0001    /* PKWARE's 64-bit filesize extensions */
-#define EF_AV        0x0007    /* PKWARE's authenticity verification */
-#define EF_EFS       0x0008    /* PKWARE's extended language encoding */
+#define EF_PKSZ64    0x0001    /* PKWARE 64-bit filesize extensions */
+#define EF_AV        0x0007    /* PKWARE authenticity verification */
+#define EF_EFS       0x0008    /* PKWARE extended language encoding */
 #define EF_OS2       0x0009    /* OS/2 extended attributes */
-#define EF_PKW32     0x000a    /* PKWARE's Win95/98/WinNT filetimes */
-#define EF_PKVMS     0x000c    /* PKWARE's VMS */
-#define EF_PKUNIX    0x000d    /* PKWARE's Unix */
-#define EF_PKFORK    0x000e    /* PKWARE's future stream/fork descriptors */
-#define EF_PKPATCH   0x000f    /* PKWARE's patch descriptor */
-#define EF_PKPKCS7   0x0014    /* PKWARE's PKCS#7 store for X.509 Certs */
-#define EF_PKFX509   0x0015    /* PKWARE's file X.509 Cert&Signature ID */
-#define EF_PKCX509   0x0016    /* PKWARE's central dir X.509 Cert ID */
-#define EF_PKENCRHD  0x0017    /* PKWARE's Strong Encryption header */
-#define EF_PKRMCTL   0x0018    /* PKWARE's Record Management Controls*/
-#define EF_PKLSTCS7  0x0019    /* PKWARE's PKCS#7 Encr. Recipient Cert List */
-#define EF_PKIBM     0x0065    /* PKWARE's IBM S/390 & AS/400 attributes */
-#define EF_PKIBM2    0x0066    /* PKWARE's IBM S/390 & AS/400 compr. attribs */
-#define EF_IZVMS     0x4d49    /* Info-ZIP's VMS ("IM") */
-#define EF_IZUNIX    0x5855    /* Info-ZIP's first Unix[1] ("UX") */
-#define EF_IZUNIX2   0x7855    /* Info-ZIP's second Unix[2] ("Ux") */
-#define EF_IZUNIX3   0x7875    /* Info-ZIP's newest Unix[3] ("ux") */
-#define EF_TIME      0x5455    /* universal timestamp ("UT") */
-#define EF_UNIPATH   0x7075    /* Info-ZIP Unicode Path ("up") */
-#define EF_UNICOMNT  0x6375    /* Info-ZIP Unicode Comment ("uc") */
-#define EF_MAC3      0x334d    /* Info-ZIP's new Macintosh (= "M3") */
-#define EF_JLMAC     0x07c8    /* Johnny Lee's old Macintosh (= 1992) */
-#define EF_ZIPIT     0x2605    /* Thomas Brown's Macintosh (ZipIt) */
-#define EF_ZIPIT2    0x2705    /* T. Brown's Mac (ZipIt) v 1.3.8 and newer ? */
-#define EF_SMARTZIP  0x4d63    /* Mac SmartZip by Marco Bambini */
-#define EF_VMCMS     0x4704    /* Info-ZIP's VM/CMS ("\004G") */
-#define EF_MVS       0x470f    /* Info-ZIP's MVS ("\017G") */
-#define EF_ACL       0x4c41    /* (OS/2) access control list ("AL") */
-#define EF_NTSD      0x4453    /* NT security descriptor ("SD") */
-#define EF_ATHEOS    0x7441    /* AtheOS ("At") */
-#define EF_BEOS      0x6542    /* BeOS ("Be") */
-#define EF_QDOS      0xfb4a    /* SMS/QDOS ("J\373") */
-#define EF_AOSVS     0x5356    /* AOS/VS ("VS") */
-#define EF_SPARK     0x4341    /* David Pilling's Acorn/SparkFS ("AC") */
+#define EF_PKW32     0x000a    /* PKWARE Win95/98/WinNT filetimes */
+#define EF_PKVMS     0x000c    /* PKWARE VMS */
+#define EF_PKUNIX    0x000d    /* PKWARE Unix */
+#define EF_PKFORK    0x000e    /* PKWARE future stream/fork descriptors */
+#define EF_PKPATCH   0x000f    /* PKWARE patch descriptor */
+#define EF_PKPKCS7   0x0014    /* PKWARE PKCS#7 store for X.509 Certs */
+#define EF_PKFX509   0x0015    /* PKWARE file X.509 Cert&Signature ID */
+#define EF_PKCX509   0x0016    /* PKWARE central dir X.509 Cert ID */
+#define EF_PKENCRHD  0x0017    /* PKWARE Strong Encryption header */
+#define EF_PKRMCTL   0x0018    /* PKWARE Record Management Controls*/
+#define EF_PKLSTCS7  0x0019    /* PKWARE PKCS#7 Encr. Recipient Cert List */
+#define EF_PKIBM     0x0065    /* PKWARE IBM S/390, AS/400 attrs ("e\000") */
+#define EF_PKIBM2    0x0066    /* PKWARE IBM S/390, AS/400 cmp. ats ("f\000") */
+#define EF_JLMAC     0x07c8    /* Johnny Lee old Macintosh (= 1992) */
+#define EF_ZIPIT     0x2605    /* Thomas Brown Macintosh (ZipIt) */
+#define EF_ZIPIT2    0x2705    /* T. Brown Mac (ZipIt) v 1.3.8 and newer ? */
+#define EF_MAC3      0x334d    /* Info-ZIP new Macintosh (= "M3") */
 #define EF_TANDEM    0x4154    /* Tandem NSK ("TA") */
-#define EF_THEOS     0x6854    /* Jean-Michel Dubois' Theos "Th" */
-#define EF_THEOSO    0x4854    /* old Theos port */
-#define EF_MD5       0x4b46    /* Fred Kantor's MD5 ("FK") */
-#define EF_ASIUNIX   0x756e    /* ASi's Unix ("nu") */
+#define EF_SPARK     0x4341    /* David Pilling Acorn/SparkFS ("AC") */
+#define EF_NTSD      0x4453    /* NT security descriptor ("SD") */
+#define EF_VMCMS     0x4704    /* Info-ZIP VM/CMS ("\004G") */
+#define EF_MVS       0x470f    /* Info-ZIP MVS ("\017G") */
+#define EF_THEOSO    0x4854    /* Old Theos port ("TH") */
+#define EF_MD5       0x4b46    /* Fred Kantor MD5 ("FK") */
+#define EF_ACL       0x4c41    /* (OS/2) access control list ("AL") */
+#define EF_IZVMS     0x4d49    /* Info-ZIP VMS ("IM") */
+#define EF_SMARTZIP  0x4d63    /* Mac SmartZip by Marco Bambini ("cM") */
+#define EF_AOSVS     0x5356    /* AOS/VS ("VS") */
+#define EF_TIME      0x5455    /* universal timestamp ("UT") */
+#define EF_IZUNIX    0x5855    /* Info-ZIP first Unix[1] ("UX") */
+#define EF_UNICOMNT  0x6375    /* Info-ZIP Unicode Comment ("uc") */
+#define EF_BEOS      0x6542    /* BeOS ("Be") */
+#define EF_THEOS     0x6854    /* Jean-Michel Dubois Theos "Th" */
+#define EF_LHDREXTN  0x6c65    /* Local header extension ("el") */ 
+#define EF_UNIPATH   0x7075    /* Info-ZIP Unicode Path ("up") */
+#define EF_ASIUNIX   0x756e    /* ASi Unix ("nu") */
+#define EF_IZUNIX2   0x7855    /* Info-ZIP second Unix[2] ("Ux") */
+#define EF_IZUNIX3   0x7875    /* Info-ZIP newest Unix[3] ("ux") */
+#define EF_ATHEOS    0x7441    /* AtheOS ("At") */
 #define EF_AES_WG    0x9901    /* AES (WinZip/Gladman) encryption ("c^!") */
-#define EF_JAVA      0xcafe    /* Java ("CAFE") */
+#define EF_JAVA      0xcafe    /* Java */
+#define EF_QDOS      0xfb4a    /* SMS/QDOS ("J\373") */
 
 #define EB_AES_VERS       0    /* AES encryption version. */
 #define EB_AES_VEND       2    /* AES encryption vendor. */
@@ -2624,10 +2626,10 @@ typedef struct _APIDocStruct {
 
 #ifndef WINDLL
    int    MAIN                   OF((int argc, char **argv));
+#endif /* ndef WINDLL */
    int    unzip                  OF((__GPRO__ int argc, char **argv));
    int    uz_opts                OF((__GPRO__ int *pargc, char ***pargv));
    int    usage                  OF((__GPRO__ int error));
-#endif /* !WINDLL */
 
 /* Command-line option function prototypes. */
 
@@ -2683,7 +2685,7 @@ int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
 #endif /* def IZ_CRYPT_AES_WG */
 
 #if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
-   zvoid *getRISCOSexfield       OF((ZCONST uch *ef_buf, unsigned ef_len));
+   zvoid *getRISCOSexfield       OF((ZCONST uch *ef_buf, long ef_len));
 #endif
 
 #ifndef SFX
@@ -2693,9 +2695,7 @@ int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
   ---------------------------------------------------------------------------*/
 
 #ifndef NO_ZIPINFO
-#ifndef WINDLL
-   int   zi_opts                 OF((__GPRO__ int *pargc, char ***pargv));
-#endif
+int      zi_opts                 OF((__GPRO__ int *pargc, char ***pargv));
 void     zi_end_central          OF((__GPRO));
 int      zipinfo                 OF((__GPRO));
 /* static int      zi_long       OF((__GPRO__ zusz_t *pEndprev)); */
@@ -2743,6 +2743,7 @@ int      check_for_newer      OF((__GPRO__ char *filename)); /* os2,vmcms,vms */
 int      check_for_newerw     OF((__GPRO__ wchar_t *filenamew)); /* os2,vmcms,vms */
 #endif
 int      do_string            OF((__GPRO__ unsigned int length, int option));
+char    *name_only            OF((char *path));
 ush      makeword             OF((ZCONST uch *b));
 ulg      makelong             OF((ZCONST uch *sig));
 zusz_t   makeint64            OF((ZCONST uch *sig));
@@ -2796,11 +2797,6 @@ char    *fzofft               OF((__GPRO__ zoff_t val,
   ---------------------------------------------------------------------------*/
 
 int    extract_or_test_files     OF((__GPRO));
-/* static int   store_info          OF((void)); */
-/* static int   extract_or_test_member   OF((__GPRO)); */
-/* static int   TestExtraField   OF((__GPRO__ uch *ef, unsigned ef_len)); */
-/* static int   test_OS2         OF((__GPRO__ uch *eb, unsigned eb_size)); */
-/* static int   test_NT          OF((__GPRO__ uch *eb, unsigned eb_size)); */
 #ifndef SFX
   unsigned find_compr_idx        OF((unsigned compr_methodnum));
 #endif
@@ -3044,9 +3040,7 @@ int      iswildw         OF((ZCONST wchar_t *pw));                /* match.c */
 
 int      dateformat      OF((void));                                /* local */
 char     dateseparator   OF((void));                                /* local */
-#ifndef WINDLL
-   void  version         OF((__GPRO));                              /* local */
-#endif
+void     version         OF((__GPRO));                              /* local */
 int      mapattr         OF((__GPRO));                              /* local */
 int      mapname         OF((__GPRO__ int renamed));                /* local */
 int      checkdir        OF((__GPRO__ char *pathcomp, int flag));   /* local */

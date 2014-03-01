@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -13,6 +13,7 @@
   This module supplies an UnZip engine for use directly from C/C++
   programs.  The functions are:
 
+    char *UzpFeatures( void)
     ZCONST UzpVer *UzpVersion(void);
     unsigned UzpVersion2(UzpVer2 *version)
     int UzpMain(int argc, char *argv[]);
@@ -36,7 +37,7 @@
   ---------------------------------------------------------------------------*/
 
 
-#ifdef DLL      /* This source file supplies DLL-only interface code. */
+#ifdef DLL      /* This source file supplies library interface code. */
 
 # ifdef OS2
 #  define  INCL_DOSMEMMGR
@@ -59,7 +60,7 @@
 
 # include <setjmp.h>
 
-# ifndef POCKET_UNZIP    /* WinCE pUnZip defines this elsewhere. */
+# ifndef POCKET_UNZIP           /* WinCE pUnZip defines this elsewhere. */
 jmp_buf dll_error_return;
 # endif /* def POCKET_UNZIP */
 
@@ -68,9 +69,9 @@ jmp_buf dll_error_return;
   ---------------------------------------------------------------------------*/
 
 
-ZCONST UzpVer * UZ_EXP UzpVersion()     /* returns pointer to const struct */
+ZCONST UzpVer * UZ_EXP UzpVersion()
 {
-    static ZCONST UzpVer version = {    /* doesn't change between calls */
+    static ZCONST UzpVer version = {    /* Doesn't change between calls. */
         /* structure size */
         UZPVER_LEN,
         /* version flags */
@@ -188,6 +189,244 @@ unsigned UZ_EXP UzpVersion2(UzpVer2 *version)
 
 
 
+char *UzpFeatures()
+{
+    char *feats;
+    char tempstring[ 100];      /* Temporary string storage. */
+    char featurelist[ 1000];    /* Feature string storage. */
+
+    /* All features start and end with a semi-colon for easy parsing. */
+    strcpy( featurelist, ";");
+    tempstring[ 0] = '\0';      /* Avoid "unused" warning. */
+
+# ifdef ACORN_FTYPE_NFS
+    strcat( featurelist, "apple_nfrsrc;");
+# endif
+
+# if defined( UNIX) && defined( __APPLE__)
+
+#  ifndef APPLE_NFRSRC
+     Bad code: error APPLE_NFRSRC not defined.
+#  endif
+#  if defined( __ppc__) || defined( __ppc64__)
+#   if APPLE_NFRSRC
+    strcat( featurelist, "apple_nfrsrc;");
+#   endif /* APPLE_NFRSRC */
+#  else /* defined( __ppc__) || defined( __ppc64__) */
+#   if ! APPLE_NFRSRC
+    strcat( featurelist, "apple_rsrc;");
+#   endif /* ! APPLE_NFRSRC */
+#  endif /* defined( __ppc__) || defined( __ppc64__) [else] */
+
+#  ifdef APPLE_XATTR
+    strcat( featurelist, "apple_xattr;");
+#  endif /* def APPLE_XATTR */
+
+# endif /* defined( UNIX) && defined( __APPLE__) */
+
+# ifdef ASM_CRC
+    strcat( featurelist, "asm_crc;");
+# endif
+
+# ifdef ASM_INFLATECODES
+    strcat( featurelist, "asm_inflatecodes;");
+# endif
+
+# ifdef CHECK_VERSIONS
+    strcat( featurelist, "check_versions;");
+# endif
+
+    strcat( featurelist, "compmethods:store");
+# ifdef BZIP2_SUPPORT
+    strcat( featurelist, ",bzip2");
+# endif
+# ifdef DEFLATE_SUPPORT
+    strcat( featurelist, ",deflate");
+# endif
+# ifdef DEFLATE64_SUPPORT
+    strcat( featurelist, ",deflate64");
+# endif
+# ifdef LZMA_SUPPORT
+    strcat( featurelist, ",lzma");
+# endif
+# ifdef PPMD_SUPPORT
+    strcat( featurelist, ",ppmd");
+# endif
+    strcat( featurelist, ";");
+
+# ifdef COPYRIGHT_CLEAN
+    strcat( featurelist, "copyright_clean;");
+# endif
+
+# ifdef IZ_CRYPT_ANY
+
+#  ifdef IZ_CRYPT_TRAD
+    strcat( featurelist, "crypt;");
+#  endif
+
+#  ifdef IZ_CRYPT_AES_WG
+    strcat( featurelist, "crypt_aes_wg;");
+#  endif
+
+#  ifdef PASSWD_FROM_STDIN
+    strcat( featurelist, "passwd_from_stdin;");
+#  endif
+
+# endif /* def IZ_CRYPT_ANY */
+
+# ifdef DEBUG
+    strcat( featurelist, "debug;");
+# endif
+
+# ifdef DEBUG_TIME
+    strcat( featurelist, "debug_time;");
+# endif
+
+# ifdef DLL
+    strcat( featurelist, "dll;");
+# endif
+
+# ifdef DOSWILD
+    strcat( featurelist, "doswild;");
+# endif
+
+# ifdef ICONV_MAPPING
+    strcat( featurelist, "iconv_mapping;");
+# endif
+
+# ifdef IZ_HAVE_UXUIDGID
+    strcat( featurelist, "iz_have_uxuidgid;");
+# endif
+
+# ifdef LARGE_FILE_SUPPORT
+    strcat( featurelist, "large_file_support;");
+# endif
+
+# ifdef LZW_CLEAN
+    strcat( featurelist, "lzw_clean;");
+# endif
+
+# ifndef MORE
+    strcat( featurelist, "no_more;");
+# endif
+
+# ifdef MULT_VOLUME
+    strcat( featurelist, "mult_volume;");
+# endif
+
+# ifdef NTSD_EAS
+    strcat( featurelist, "ntsd_eas;");
+# endif
+
+# if defined( WIN32) && defined( NO_W32TIMES_IZFIX)
+    strcat( featurelist, "no_w32times_izfix;");
+# endif
+
+# ifdef OLD_THEOS_EXTRA
+    strcat( featurelist, "old_theos_extra;");
+# endif
+
+# ifdef OS2_EAS
+    strcat( featurelist, "os2_eas;");
+# endif
+
+# ifdef QLZIP
+    strcat( featurelist, "qlzip;");
+# endif
+
+# ifdef REENTRANT
+    strcat( featurelist, "reentrant;");
+# endif
+
+# ifdef REGARGS
+    strcat( featurelist, "regargs;");
+# endif
+
+# ifdef RETURN_CODES
+    strcat( featurelist, "return_codes;");
+# endif
+
+# ifdef SET_DIR_ATTRIB
+    strcat( featurelist, "set_dir_attrib;");
+# endif
+
+# ifdef SYMLINKS
+    strcat( featurelist, "symlinks;");
+# endif
+
+# ifdef TIMESTAMP
+    strcat( featurelist, "timestamp;");
+# endif
+
+# ifdef UNIXBACKUP
+    strcat( featurelist, "unixbackup;");
+# endif
+
+# ifdef UNICODE_SUPPORT
+    strcat( featurelist, "unicode;");
+# endif
+
+# if defined(__DJGPP__) && (__DJGPP__ >= 2)
+
+#  ifdef USE_DJGPP_ENV
+    strcat( featurelist, "use_djgpp_env;");
+#  endif
+
+#  ifdef USE_DJGPP_GLOB
+    strcat( featurelist, "use_djgpp_glob;");
+#  endif
+
+# endif /* defined(__DJGPP__) && (__DJGPP__ >= 2) */
+
+# ifdef USE_EF_UT_TIME
+    strcat( featurelist, "use_ef_ut_time;");
+# endif
+
+# ifdef USE_VFAT
+    strcat( featurelist, "use_vfat;");
+# endif
+
+# ifdef USE_ZLIB
+    strcat( featurelist, "zlib;");
+    sprintf( tempstring, "zlib_version:%s,%s;", ZLIB_VERSION, zlibVersion());
+    strcat( featurelist, tempstring);
+# endif
+
+# ifdef VMSCLI
+    strcat( featurelist, "vmscli;");
+# endif
+
+# ifdef VMSWILD
+    strcat( featurelist, "vmswild;");
+# endif
+
+# ifdef WILD_STOP_AT_DIR
+    strcat( featurelist, "wild_stop_at_dir;");
+# endif
+
+# ifdef WIN32_WIDE
+    strcat( featurelist, "win32_wide;");
+# endif
+
+# ifdef ZIP64_SUPPORT
+    strcat( featurelist, "zip64;");
+# endif
+
+# ifdef NO_ZIPINFO
+    strcat( featurelist, "no_zipinfo;");
+# endif
+
+    feats = malloc( strlen( featurelist) + 1);
+    if (feats != NULL)
+    {
+        strcpy( feats, featurelist);
+    }
+
+    return feats;
+}
+
+
+
 # ifndef SFX
 #  ifndef WINDLL
 
@@ -215,6 +454,8 @@ int UZ_EXP UzpAltMain(int argc, char *argv[], UzpInit *init)
     RETURN(r);
 }
 
+#  endif /* ndef WINDLL */
+
 
 int UZ_EXP UzpMainI( int argc, char *argv[], UzpCB *init)
 {
@@ -239,9 +480,6 @@ int UZ_EXP UzpMainI( int argc, char *argv[], UzpCB *init)
     RETURN(r);
 }
 
-#  endif /* ndef WINDLL */
-
-
 
 
 #  ifndef __16BIT__
@@ -254,8 +492,6 @@ void UZ_EXP UzpFreeMemBuffer(UzpBuffer *retstr)
         retstr->strlength = 0;
     }
 }
-
-
 
 
 #   ifndef WINDLL
@@ -298,12 +534,12 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
     UzpCB *UsrFuncts, UzpBuffer *retstr)
 {
     int r;
-#    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#    if defined(WINDLL) && !defined(CRTL_CP_IS_ISO)
     char *intern_zip, *intern_file;
-#    endif
+#    endif /* defined(WINDLL) && !defined(CRTL_CP_IS_ISO) */
 
     CONSTRUCTGLOBALS();
-#    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#    if defined(WINDLL) && !defined(CRTL_CP_IS_ISO)
     intern_zip = (char *)izu_malloc(strlen(zip)+1);
     if (intern_zip == NULL) {
        DESTROYGLOBALS();
@@ -319,7 +555,7 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
     ISO_TO_INTERN(file, intern_file);
 #     define zip intern_zip
 #     define file intern_file
-#    endif /* (defined(WINDLL) && !defined(CRTL_CP_IS_ISO)) */
+#    endif /* defined(WINDLL) && !defined(CRTL_CP_IS_ISO) */
     /* Copy those options that are meaningful for UzpUnzipToMemory, instead of
      * a simple "memcpy(G.UzO, optflgs, sizeof(UzpOpts));"
      */
@@ -337,22 +573,20 @@ int UZ_EXP UzpUnzipToMemory(char *zip, char *file, UzpOpts *optflgs,
     r = (unzipToMemory(__G__ zip, file, retstr) <= PK_WARN);
 
     DESTROYGLOBALS();
-#    if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#    if defined(WINDLL) && !defined(CRTL_CP_IS_ISO)
 #     undef file
 #     undef zip
     izu_free(intern_file);
     izu_free(intern_zip);
-#    endif
+#    endif /* defined(WINDLL) && !defined(CRTL_CP_IS_ISO) */
     if (!r && retstr->strlength) {
        izu_free(retstr->strptr);
        retstr->strptr = NULL;
     }
     return r;
 }
-#   endif /* !WINDLL */
-#  endif /* !__16BIT__ */
-
-
+#   endif /* ndef WINDLL */
+#  endif /* ndef __16BIT__ */
 
 
 
@@ -391,9 +625,8 @@ int UZ_EXP UzpFileTree(char *name, cbList(callBack), char *cpInclude[],
     return r;
 }
 
-#  endif /* OS2DLL */
-# endif /* !SFX */
-
+#  endif /* def OS2DLL */
+# endif /* ndef SFX */
 
 
 
@@ -461,7 +694,7 @@ int redirect_outfile(__G)
 # ifndef NO_SLIDE_REDIR
     G.redirect_slide = !G.pInfo->textmode;
 # endif
-# if (lenEOL != 1)
+# if lenEOL != 1
     if (G.pInfo->textmode) {
         G.redirect_size = (ulg)(G.lrec.ucsize * lenEOL);
         if (G.redirect_size < G.lrec.ucsize)
@@ -471,23 +704,23 @@ int redirect_outfile(__G)
         check_conversion = G.lrec.ucsize * lenEOL;
 #  endif /* def ZIP64_SUPPORT */
     } else
-# endif /* (lenEOL != 1) */
+# endif /* lenEOL != 1 */
     {
         G.redirect_size = (ulg)G.lrec.ucsize;
 # ifdef ZIP64_SUPPORT
         check_conversion = (z_uint8)G.lrec.ucsize;
-# endif
+# endif /* def ZIP64_SUPPORT */
     }
 
 # ifdef ZIP64_SUPPORT
     if ((z_uint8)G.redirect_size != check_conversion)
         return FALSE;
-# endif
+# endif /* def ZIP64_SUPPORT */
 
 # ifdef __16BIT__
     if ((ulg)((extent)G.redirect_size) != G.redirect_size)
         return FALSE;
-# endif
+# endif /* def __16BIT__ */
 # ifdef OS2
     DosAllocMem((void **)&G.redirect_buffer, G.redirect_size+1,
       PAG_READ|PAG_WRITE|PAG_COMMIT);
@@ -526,7 +759,6 @@ int writeToMemory(__GPRO__ ZCONST uch *rawbuf, extent size)
 
 
 
-
 int close_redirect(__G)
      __GDEF
 {
@@ -541,7 +773,6 @@ int close_redirect(__G)
     }
     return 0;
 }
-
 
 
 
@@ -652,8 +883,8 @@ int UZ_EXP UzpGrep(char *archive, char *file, char *pattern, int cmd,
 
     return retcode;
 }
-#   endif /* !WINDLL */
-#  endif /* !__16BIT__ */
+#   endif /* ndef WINDLL */
+#  endif /* ndef __16BIT__ */
 
 
 
@@ -690,7 +921,7 @@ int UZ_EXP UzpValidate(char *archive, int AllCodes)
 
     G.wildzipfn = (char *)izu_malloc( FILNAMSIZ);
     strcpy( G.wildzipfn, archive);
-#  if (defined(WINDLL) && !defined(CRTL_CP_IS_ISO))
+#  if defined(WINDLL) && !defined(CRTL_CP_IS_ISO)
     _ISO_INTERN(G.wildzipfn);
 #  endif
 
@@ -738,7 +969,7 @@ exit_retcode:
         return FALSE;
 }
 
-# endif /* !SFX */
+# endif /* ndef SFX */
 
 #else /* def DLL */
 

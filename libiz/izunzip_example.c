@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -56,6 +56,7 @@
 
 
 #ifdef MY_PW
+# define UZP_PW MyUzpPassword
 /*
  * MyUzpPassword(): Encryption password call-back function.
  */
@@ -73,7 +74,9 @@ int UZ_EXP MyUzpPassword( zvoid *pG,            /* Ignore (globals pointer). */
     strncpy( pwbuf, "password", size);
     return IZ_PW_ENTERED;
 }
-#endif /* def MY_PW */
+#else /* def MY_PW */
+# define UZP_PW NULL
+#endif /* def MY_PW [else] */
 
 
 /*
@@ -82,6 +85,7 @@ int UZ_EXP MyUzpPassword( zvoid *pG,            /* Ignore (globals pointer). */
 
 int main( int argc, char **argv)
 {
+    char *features;
     int sts;
 #ifdef __VMS
     int vsts;
@@ -95,13 +99,8 @@ int main( int argc, char **argv)
      * call-back function supplied here is the one which returns an
      * encryption password, and it's used only if MY_PW is defined.
      */
-
     UzpCB user_functions =
-#ifdef MY_PW
-     { (sizeof user_functions), NULL, NULL, NULL, MyUzpPassword, NULL };
-#else /* def MY_PW */
-     { (sizeof user_functions), NULL, NULL, NULL, NULL, NULL };
-#endif /* def MY_PW [else] */
+     { (sizeof user_functions), NULL, NULL, NULL, UZP_PW, NULL };
 
     /* Call the UnZip entry point function, UzpMainI(), passing it an
      * UnZip command expressed as an argument vector.
@@ -122,9 +121,14 @@ int main( int argc, char **argv)
     fprintf( stderr, " VMS sts = %d (%%x%08x).\n", vsts, vsts);
 #endif
 
-    /* Get and display the program version. */
+    /* Get and display the library version. */
     unzip_ver_p = UzpVersion();
     fprintf( stderr, " UnZip version %d.%d%d%s\n",
      unzip_ver_p->unzip.major, unzip_ver_p->unzip.minor,
      unzip_ver_p->unzip.patchlevel, unzip_ver_p->betalevel);
+
+    /* Get and display the library feature list. */
+    features = UzpFeatures();
+    if (features != NULL)
+        fprintf( stderr, " UnZip features: %s\n", features);
 }

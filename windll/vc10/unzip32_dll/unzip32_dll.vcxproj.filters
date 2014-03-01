@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\..\crc32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\crypt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\wrap\aescrypt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,6 +63,9 @@
     <ClCompile Include="..\..\..\wrap\sha1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\envargs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\explode.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,6 +99,9 @@
     <ClCompile Include="..\..\..\unshrink.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\unzip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\zipinfo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -106,9 +115,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\windll.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\crypt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

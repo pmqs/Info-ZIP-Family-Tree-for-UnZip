@@ -1,4 +1,4 @@
-UnZip, version 6.10c, ?? ??? 2013
+UnZip, version 6.10c, ?? ??? 2014
 
 These changes occurred in beta versions 6.10a through 6.10c.
 
@@ -317,7 +317,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (18 Dec 2013):
+6.10c09 (26 Feb 2014):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -386,7 +386,7 @@ Features added (or removed):
    vms/test_unzip.com, zipinfo.c) [SMS]
  - Volume labels can now be set on VMS (options: -$, --volume-label,
    /VOLUME_LABEL).  The destination device must be allocated, not
-   shared.
+   shared.  (unzip.c, unzip.h, vms/vms.c) [SMS]
  - Added option -k/--keep-permissions on AtheOS, BeOS, Unix, and VMS, to
    control how archived permissions or protections are determined on
    extracted files and directories.  The default behavior has changed
@@ -459,6 +459,59 @@ Features added (or removed):
    not they're defined.  If enough users object to the (bulky?) Usage
    report, we may be persuaded to provide a way to disable it.
    (unzip.c, unzpriv.h, vms/cmdline.c) [SMS]
+ - VMS CLI changes.  Added /[NO]JAR (--jar), /WILD_MATCH (-W).
+   Deprecated /[NO]TIMES in favor of new /[NO]DECIMAL_TIME.
+   (vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help) [SMS]
+ - The Unix and VMS builders now support "PROD=subdir", allowing the
+   user to specify a destination subdirectory for product files (object
+   files, object libraries, executables, and so on), instead of getting
+   everything in the main, top-level directory on Unix, or the
+   automatically chosen subdirectory on VMS.  This feature is intended
+   to make it easier to use one source tree for multiple build
+   configurations (different compilers, options, hardware architectures,
+   and so on).  For details, see INSTALL and [.vms]INSTALL_VMS.txt (and
+   the builder files themselves).  (INSTALL, unix/configure,
+   unix/Makefile, unix/mlz.sh, vms/build_unzip.com, vms/descrip.mms,
+   vms/INSTALL_VMS.txt) [SMS]
+ - Experimental implementation of symbolic links on Windows (Vista or
+   later?).  To activate, define C macro SYMLINKS.  Slightly improved
+   symlink error handling/messages on all symlink-capable system types.
+   On Windows XP, the build may work with SYMLINKS defined, but the
+   resulting UnZip executable may fail immediately with exit status
+   (Command Prompt: %ERRORLEVEL%, PowerShell: $LASTEXITCODE) -1073741511
+   (0xC0000139), "Entry Point Not Found", possibly with a pop-up message
+   which mentions CreateSymbolicLinkA (and KERNEL32.dll).
+   (extract.c, fileio.c, unzpriv.h, win32/w32cfg.h, win32/win32.c) [SMS]
+ - Added initial support in ZipInfo for a proposed extra field type
+   (0x414c = "LA") containing attributes which are missing from the
+   local directory header.  (unzpriv.h, zipinfo.c) [SMS]
+ - Added --version as a synonym for -v/--verbose.  When used as the only
+   option, the program version, build options, and relevant environment
+   variables are displayed.  (unzip.c, unzip.txt, unzpriv.h,
+   man/unzip.1) [SMS]
+ - Added library interface function UzpFeatures() to provide an
+   optional-feature string (a program-friendly edition of the "special
+   compilation options" section of the "-v/--verbose" report.  (api.c,
+   unzip.h, libiz/izunzip_example.c, windll/vc10/windll32.def) [SMS]
+ - Added new -da/--auto-extract-dir (/[NO]AUTO_DIRECTORY) option to
+   specify a destination directory for extracted files which is derived
+   from the base name of the archive.  For example, with -da, extraction
+   of "fred.zip" is done into subdirectory "fred" instead of into the
+   current directory.  (On VMS, subdirectory "[.fred]".)  Added new exit
+   status value, IZ_BADDEST (84), for failure to create automatic
+   destination directory.  (fileio.c, process.c, unzip.c, unzip.h,
+   man/unzip.1, vms/cmdline.c, vms/unzip_cli.help, vms/UNZIP_CLI.RNH,
+   vms/unz_cli.cld, vms/vms.c) [SMS]
+ - Added new command-line (argc, argv[]) interface to the Windows DLL,
+   which should be more stable than the old binary structure interface.
+   A revised example program, unzipstb.c (now in the windll/ directory),
+   illustrates usage.  (api.c, unzip.c, unzip.h, unzpriv.h, zipinfo.c,
+   win32/win32.c, windll/unzipstb.c, windll/windll.c,
+   windll/windll32.def, windll/vc10/unzip32_dll.sln,
+   windll/vc10/unzip32_dll/unzip32_dll.vcxproj,
+   windll/vc10/unzip32_dll/unzip32_dll.vcxproj.filters,
+   windll/vc10/unzipstb/unzipstb.vcxproj,
+   windll/vc10/unzipstb/unzipstb.vcxproj.filters) [SMS]
 
 
 Bugs fixed:
@@ -864,7 +917,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (11 Dec 2013):
+6.10c09 (26 Feb 2014):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -889,9 +942,10 @@ Bugs fixed:
  - On Unix, "make clean" missed some spots.  (unix/Makefile) [SMS]
  - A user-specified CFLAGS value for UNIX(-like) builds no longer needs
    to include "-I.".  (unix/configure) [SMS]
- - Some GCC versions would emit many "warning: format string is not a
-   string literal" diagnostics.  The Unix builders now add a compiler
-   option, "-Wno-format-security", to suppress these, where appropriate.
+ - Some Clang and GCC versions would emit many "warning: format string
+   is not a string literal" or similar diagnostics.  The Unix builders
+   now add compiler options, "-Wno-format-security" and/or
+   "-Wno-format-nonliteral", to suppress these, where appropriate.
    (unix/configure) [SMS]
  _ Changed C macros USE_BZIP2, USE_DEFLATE64, USE_LZMA, USE_PPMD, and
    USE_UNSHRINK to BZIP2_SUPPORT, DEFLATE64_SUPPORT, LZMA_SUPPORT,
@@ -1024,9 +1078,6 @@ Bugs fixed:
    mention this option (IZ_HAVE_UXUIDGID).  Forum topic:
    http://www.info-zip.org/phpBB3/viewtopic.php?f=3&t=402
    (process.c, unzip.c, unix/configure) [SMS]
- - VMS CLI changes.  Added /[NO]JAR (--jar), /WILD_MATCH (-W).
-   Deprecated /[NO]TIMES in favor of new /[NO]DECIMAL_TIME.
-   (vms/cmdline.c, vms/unz_cli.cld, vms/unzip_cli.help) [SMS]
  - VMS CLI UnZip executables (UNZIP_CLI.EXE) were being built with a
    ZipInfo module (zipinfo.c) which was compiled for the Unix-style
    interface, not the VMS CLI interface.  An obvious symptom was a
@@ -1275,17 +1326,6 @@ Bugs fixed:
    unzip.c was not including unix/macosx.h as needed, so the C macro
    APPLE_NFRSRC was not being defined properly.  An undefined
    APPLE_NFRSRC should have been detected, but was not.
- - The Unix and VMS builders now support "PROD=subdir", allowing the
-   user to specify a destination subdirectory for product files (object
-   files, object libraries, executables, and so on), instead of getting
-   everything in the main, top-level directory on Unix, or the
-   automatically chosen subdirectory on VMS.  This feature is intended
-   to make it easier to use one source tree for multiple build
-   configurations (different compilers, options, hardware architectures,
-   and so on).  For details, see INSTALL and [.vms]INSTALL_VMS.txt (and
-   the builder files themselves).  (INSTALL, unix/configure,
-   unix/Makefile, unix/mlz.sh, vms/build_unzip.com, vms/descrip.mms,
-   vms/INSTALL_VMS.txt) [SMS]
  - Windows DLL builders failed to deal with (optional) bzip2
    compression.  Now, a scheme like that used for UnZip proper is used
    for the DLL.  (windll/vc10/unzip32_dll.sln,
@@ -1300,12 +1340,23 @@ Bugs fixed:
    vms/makesfx.com, vms/mod_dep.com, vms/optgen.com, vms/test_unzip.com,
    vms/unzip_cli.help, vms/UNZIP_DEF.RNH, vms/UNZIP_MSG.MSG,
    vms/unz_cli.cld, win32/test_unzip.cmd) [SMS]
- - Experimental implementation of symbolic links on Windows (Vista or
-   later?).  To activate, define C macro SYMLINKS.  Slightly improved
-   symlink error handling/messages on all symlink-capable system types.
-   On Windows XP, the build may work with SYMLINKS defined, but the
-   resulting UnZip executable may fail immediately with exit status
-   (Command Prompt: %ERRORLEVEL%, PowerShell: $LASTEXITCODE) -1073741511
-   (0xC0000139), "Entry Point Not Found", possibly with a pop-up message
-   which mentions CreateSymbolicLinkA (and KERNEL32.dll).
-   (extract.c, fileio.c, unzpriv.h, win32/w32cfg.h, win32/win32.c) [SMS]
+ - "unzip --zipinfo-mode[...]" should have been equivalent to "unzip -Z
+   [...]", but the long option was not handled properly, causing a
+   spurious fatal error (message: "error:  -Z must be first option for
+   ZipInfo mode (check UNZIP variable?)", followed by two (!) Usage
+   guides).  (unzip.c) [SMS]
+ - Cleared a compiler complaint (unused variable: p) when building the
+   Windows DLL, or an object library without ZipInfo mode.  (unzip.c)
+   [SMS]
+ - Cleared a Microsoft (VC12) compiler complaint (type mismatch).
+   (zipinfo.c) [SMS]
+ - Removed a redundant declaration (Zipnfo).  (process.c) [SMS]
+ - Updated copyright messages, and corrected a typo ("Built-n").
+   (unzip.c) [SMS]
+ - Code tidying (comments, #directive indentation, #include path
+   simplification).  (windll/structs.h, windll/uzexampl.c,
+   windll/windll.c, windll/vc10/unzip32_dll/unzip32_dll.vcxproj,
+   windll/vc10/uzexampl/uzexampl.vcxproj) [SMS]
+ - Simplified handling of C macros UNIXBACKUP and NO_UNIXBACKUP.
+   (unzip.h, unzpriv.h) [SMS]
+

@@ -371,7 +371,7 @@ member ...
   Specifies a destination directory for extracted files.  By  default,
   files  are  extracted  (and  subdirectories  created) in the current
   directory.   With  "-d  dest_dir",  extraction  is  done  into   the
-  specified directory, instead.
+  specified directory, instead.  See also -da.
 
   The option and directory may be concatenated without any white space
   between  them,  but  this  may  cause  normal  shell  behavior to be
@@ -381,6 +381,29 @@ member ...
 
   [VMS] On VMS, only a VMS-style device:[directory]  specification  is
   permitted.
+3 -d
+-da[=reuse]
+--auto-extract-dir[=reuse]
+
+  Specifies a destination  directory  for  extracted  files  which  is
+  derived  from  the  base name of the archive.  By default, files are
+  extracted  (and  subdirectories  created)  in  the  current  default
+  directory.   With  -da,  UnZip  automatically derives a subdirectory
+  name from the archive name, creates that subdirectory, and  extracts
+  files into that subdirectory.
+
+  For example,  with  -da,  extraction  of  "fred.zip"  is  done  into
+  subdirectory  "[.fred]"  instead of into the current directory.  (On
+  non-VMS, systems, subdirectory "fred".)
+
+  For greater safety, by default, UnZip will refuse to extract into an
+  automatic extraction directory which already exists.  Specifying the
+  optional keyword "reuse" will allow  an  existing  directory  to  be
+  used.
+
+  If -da is specified as a default option in an environment  variable,
+  it  can be overridden by either a negated -da- option or an explicit
+  "-d dest_dir" option.  See also -d.
 3 -f
 -f
 --freshen

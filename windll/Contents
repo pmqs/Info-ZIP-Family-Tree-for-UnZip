@@ -1,51 +1,59 @@
       Contents of the UnZip 6.10 Source Archive "windll" Directory
       ------------------------------------------------------------
 
-Contents            This file
-decs.h              Exported function declarations
+Contents            This file.
+decs.h              Exported function declarations.
 structs.h           Header file, used by both the DLL and by calling
-                    applications, defines the structures used in the DLL
-                    interface
-unziplib.def        Definition file for 32-bit UnZip library
-uzexampl.c          A very simplistic example of how to load the DLL and
-                    make a call into it
-uzexampl.h          Header file for uzexampl.c
-windll16.def        Definition file for 16-bit UnZip DLL
-windll32.def        Definition file for 32-bit UnZip DLL
-windllgcc.def       Definition file for 32-bit UnZip DLL, for GCC tools
-windll_lc.def       Definition file for 32-bit UnZip DLL, for LCC tools
+                    applications.  Defines the structures used in the
+                    DLL interface.
+unziplib.def        Definition file for 32-bit UnZip library.
+unzipstb.c          A simple DLL example program using the command-line
+                    (argc, argv[]) interface.
+uzexampl.c          A simple DLL example program using the binary
+                    structure (windll\structs.h:DCL) interface.
+uzexampl.h          Header file for uzexampl.c.
+windll16.def        Definition file for 16-bit UnZip DLL.
+windll32.def        Definition file for 32-bit UnZip DLL.
+windllgcc.def       Definition file for 32-bit UnZip DLL, for GCC tools.
+windll_lc.def       Definition file for 32-bit UnZip DLL, for LCC tools.
 windll.c            Contains the entry point for the DLL, "fake"
                     printing, sound, rename, replace and password
-                    functions
-windll.h            Header file for both 16- and 32-bit DLLs
-windll.rc           Resource file for both 16- and 32-bit DLLs
-windll.txt          Simplistic explanation of how to use DLL
+                    functions.
+windll.h            Header file for both 16- and 32-bit DLLs.
+windll.rc           Resource file for both 16- and 32-bit DLLs.
+windll.txt          Simplistic explanation of how to use DLL.
 
-guisfx\             Directory with GUI frontend for SFX stub
-  dialog.h            Interface declarations to dialog definition
-  sfxw.ico            Icon graphic (binary file)
-  sfxwiz.c            Main source module for SFX stub
-  sfxwiz.dlg          Dialog window definitions
-  sfxwiz.rc           Resourses for GUISFX stub
+guisfx\             Directory with GUI frontend for SFX stub.
+  dialog.h            Interface declarations to dialog definition.
+  sfxw.ico            Icon graphic (binary file).
+  sfxwiz.c            Main source module for SFX stub.
+  sfxwiz.dlg          Dialog window definitions.
+  sfxwiz.rc           Resourses for GUISFX stub.
   sfxwiz16.mak        "make" file for 16-bit GUISFX stub (Borland
-                      C++ 4.52)
+                      C++ 4.52).
   unzsfx16.def        Linker definition file for 16-bit unzipsfx static
-                      library
+                      library.
 
 csharp\             Example files for using the Visual C++ DLL with C#
-                    under the .NET framework 1.1
+                    under the .NET framework 1.1.
 vb\                 Example files for using the Visual C++ DLL with
-                    Visual Basic
+                    Visual Basic.
 
-vc10\               Directory for Visual C++ 2010 (10.0) project files
-  unzip32_dll.sln   Solution file for UnZip DLL and example program
-  libbz2\           Directory for bzip2 library project files
+vc10\               Directory for Visual C++ 2010 (10.0) project files.
+  unzip32_dll.sln   Solution file for UnZip DLL and example program.
+  libbz2\           Directory for bzip2 library project files.
     libbz2.vcxproj
     libbz2.vcxproj.filters
-  unzip32_dll\      Directory for UnZip DLL project files
+  unzip32_dll\      Directory for UnZip DLL project files.
     unzip32_dll.vcxproj
     unzip32_dll.vcxproj.filters
-  uzexampl\         Directory for UnZip DLL example program project files
+  unzipstb\         Directory for UnZip DLL command-line (argc, argv[])
+                    interface example program project files.
+    unzipstb.vcxproj
+    unzipstb.vcxproj.filters
+  uzexampl\         Directory for UnZip DLL binary structure
+                    (windll\structs.h:DCL) interface example program
+                    project files
     uzexampl.vcxproj
     uzexampl.vcxproj.filters
 

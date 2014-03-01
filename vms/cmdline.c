@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -220,6 +220,8 @@ $DESCRIPTOR(cli_match_wild,     "MATCH.WILD_MATCH_SLASH"); /* -W[-] */
 #endif /* def WILD_STOP_AT_DIR */
 $DESCRIPTOR(cli_screen,         "SCREEN");              /* -c */
 $DESCRIPTOR(cli_directory,      "DIRECTORY");           /* -d */
+$DESCRIPTOR(cli_auto_dir,       "AUTO_DIRECTORY");      /* -da */
+$DESCRIPTOR(cli_auto_dir_reuse, "AUTO_DIRECTORY.REUSE"); /* -da=reuse */
 $DESCRIPTOR(cli_freshen,        "FRESHEN");             /* -f */
 $DESCRIPTOR(cli_help,           "HELP");                /* -h */
 $DESCRIPTOR(cli_help_normal,    "HELP.NORMAL");         /* -h */
@@ -441,7 +443,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
          */
 
         /*
-         * Extract destination directory.
+         * Extract destination directory (-d).
          */
         status = cli$present( &cli_directory);
         if (status == CLI$_PRESENT)
@@ -760,6 +762,38 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             ADD_ARG( opt);
         }
 
+        /* Automatic destination directory.
+         * Add the desired "-da[-]" value.
+         */
+#define OPT_DA  "-da"           /* "-da" Use auto destination dir. */
+#define OPT_DAN "-da-"          /* ""    Normal destination dir (default). */
+#define OPT_DAR "-da=reuse"     /* "-da=reuse" Allow existing auto dest dir. */ 
+
+        status = cli$present( &cli_auto_dir);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NOAUTO_DIRECTORY */
+                opt = OPT_DAN;
+            }
+            else
+            {
+                status = cli$present( &cli_auto_dir_reuse);
+                if (status & 1)
+                {
+                    /* /AUTO_DIRECTORY=REUSE */
+                    opt = OPT_DAR;
+                }
+                else
+                {
+                    /* /AUTO_DIRECTORY */
+                    opt = OPT_DA;
+                }
+            }
+            ADD_ARG( opt);
+        }
+
         /* Freshen existing files, create none.
          * Clear any existing "-f" option with "-f-", then add
          * the desired "f" value.
@@ -782,7 +816,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             }
             ADD_ARG( opt);
         }
-
 
         /*
          * Help.
@@ -1715,7 +1748,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     }
 
     /*
-    **  Get the output directory, for UnZip.
+    **  Get the output directory (-d), for UnZip.
     **/
     if (output_directory.dsc$w_length != 0) {
         x = cmdl_len;
@@ -2116,7 +2149,8 @@ Primary mode qualifiers (Do \"unzip -h\" for Unix-style options):\n\
   /COMMENT, /FRESHEN, /HELP[=EXTENDED], /LICENSE, /LIST, /PIPE, /SCREEN,\n\
   /TEST, /TIMESTAMP, /UPDATE, /VERBOSE\n\
 General qualifiers:\n\
-  /[NO]BINARY[=ALL|AUTO|NONE], /DIRECTORY=dir, /DOT_VERSION,\n\
+  /[NO]AUTO_DIRECTORY, /[NO]BINARY[=ALL|AUTO|NONE], /DIRECTORY=dir,\n\
+  /DOT_VERSION, /[NO]BINARY[=ALL|AUTO|NONE], /DIRECTORY=dir, /DOT_VERSION,\n\
   /EXCLUDE=(member [,...]), /EXISTING={NEW_VERSION|OVERWRITE|NOEXTRACT},\n\
 "));
 

@@ -20,4 +20,5 @@ EXPORTS
      Wiz_UnzipToMemory
      Wiz_Grep
      UzpFreeMemBuffer
-
+     UzpMainI
+     UzpFeatures

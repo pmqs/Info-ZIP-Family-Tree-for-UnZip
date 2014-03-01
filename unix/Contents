@@ -10,6 +10,7 @@ mlz.sh          Shell script to extract all objects from an object library
 README.zOS      Notes for z/OS UNIX environment
 test_unzip.sh   Shell script to run basic UnZip tests
 unix.c          Unix-specific support routines
+unsafe_prod.sh  Shell script to check for an unsafe PROD directory spec
 unxcfg.h        Unix-specific configuration settings
 zipgrep         Shell script to use egrep on zip archive members
 Packaging/      Solaris (SysV) package info

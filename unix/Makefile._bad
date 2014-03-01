@@ -1,8 +1,8 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-01-21
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2013-11-29
 #
-# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -1204,18 +1204,28 @@ $(PROD)/flags_bz: $(PROD)/flags
 #----------------------------------------------------------------------------
 
 clean:
-	@if unix/unsafe_prod.sh "$(PROD)"; then \
-          echo "Won't clean absolute (/x) or rising (../) PROD: $(PROD)"; \
+	if [ "$(PROD)" = '.' ]; then \
+          clean_prod=1; \
         else \
-          echo "rm -f \"$(PROD)\"/*.o \"$(PROD)\"/*.a $(UNZIP_PPGMS)"; \
-          rm -f "$(PROD)"/*.o "$(PROD)"/*.a $(UNZIP_PPGMS); \
-          echo "rm -f \"$(PROD)\"/flags \"$(PROD)\"/flags_bz"; \
-          rm -f "$(PROD)"/flags "$(PROD)"/flags_bz; \
-          echo "rm -f $(PROD)/manout"; \
-          rm -rf "$(PROD)"/manout; \
+          clean_prod=0; \
+        fi; \
+        export clean_prod
+	echo $${clean_prod}
+	if [ $${clean_prod} -eq 0 ]; then \
+          echo "$(PROD)" | grep -e '^/' -e '../' > /dev/null 2>&1; \
+          if [ $$? -eq 0 ]; then clean_prod=0; fi \
         fi
-#       # Remove empty $(PROD) directory.
-	if [ -d "$(PROD)" ]; then \
+	echo $${clean_prod}
+	@if [ $${clean_prod} -eq 0 ]; then \
+          echo "Can't clean: absolute (/) or rising (../) PROD: $(PROD)"; \
+        fi
+	if [ $${clean_prod} -ne 0 ]; then \
+          rm -f $(PROD)/*.o $(PROD)/*.a $(UNZIP_PPGMS); \
+          rm -f $(PROD)/flags $(PROD)/flags_bz; \
+          rm -rf $(PROD)/manout; \
+        fi
+	@# Remove empty $(PROD) directory.
+	if [ $${clean_prod} -ne 0 -a -d "$(PROD)" ]; then \
           ls -1 "${PROD}"/* > /dev/null 2>&1 || \
           rm -r "$(PROD)" ; \
         fi

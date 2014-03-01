@@ -10,10 +10,18 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\unzipstb.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\crypt.h" />
+    <ClInclude Include="..\..\..\unzip.h" />
+    <ClInclude Include="..\..\..\unzvers.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{BE884407-2908-4690-846D-60031B5D17FA}</ProjectGuid>
+    <ProjectGuid>{FDD441BF-F3BC-4628-B383-CB974C40A055}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>uzexampl</RootNamespace>
+    <RootNamespace>unzipstb</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -51,12 +59,17 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;DLL;WINDLL</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>unzip32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -67,34 +80,17 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;DLL;WINDLL</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>unzip32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\uzexampl.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\aes_wg\fileenc.h" />
-    <ClInclude Include="..\..\..\bzip2\bzlib.h" />
-    <ClInclude Include="..\..\..\globals.h" />
-    <ClInclude Include="..\..\..\szip\LzmaDec.h" />
-    <ClInclude Include="..\..\..\szip\Ppmd8.h" />
-    <ClInclude Include="..\..\..\szip\Types.h" />
-    <ClInclude Include="..\..\..\unzip.h" />
-    <ClInclude Include="..\..\..\unzpriv.h" />
-    <ClInclude Include="..\..\..\unzvers.h" />
-    <ClInclude Include="..\..\..\win32\w32cfg.h" />
-    <ClInclude Include="..\..\decs.h" />
-    <ClInclude Include="..\..\structs.h" />
-    <ClInclude Include="..\..\uzexampl.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

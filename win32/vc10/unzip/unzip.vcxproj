@@ -53,8 +53,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-     
-<PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;x_SYMLINKS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -69,7 +68,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ASM_CRC;x_BZIP2_SUPPORT;x_CRYPT_AES_WG;LZMA_SUPPORT;PPMD_SUPPORT;x_SYMLINKS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
