@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2014-04-25
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2014-05-10
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -159,11 +159,6 @@
 #  OSDEP_OS    - OS-dependent Assembler object file names
 #  PGMEXT      - Binary program file extension
 #  DLLEXT      - Binary program DLL (.so) file extension
-#  BINDIR      - Binary program installation directory
-#  BINPERMS    - Binary program installation file permissions
-#  MANEXT      - Manual page file extension
-#  MANDIR      - Manual page installation directory
-#  MANPERMS    - Manual page installation file permissions
 #
 #==============================================================================
 
@@ -248,7 +243,6 @@ MKDIR='mkdir'                              # Create directory
 
 # Build Directories
 PROD=${PROD:-.}                            # Root
-PROD_MAN="${PROD}/manout"                  # Manuals
 
 # Build Controls
 PORT=${PORT:-}                             # UnZip port name
@@ -276,9 +270,9 @@ LIB_UNZIP=''                               # UnZip object library
 LIB_Z=''                                   # ZLIB compression
 
 # Private object library base names.
-L_AES_WG='iz_prvt_aes'
-L_LZMA='iz_prvt_lzma'
-L_PPMD='iz_prvt_ppmd'
+L_AES_WG='iz_aes_wg'
+L_LZMA='iz_lzma'
+L_PPMD='iz_ppmd'
 
 # Build makefiles.
 MK_BZ='Makefile'                           # BZIP2 compression
@@ -295,15 +289,6 @@ OSDEP_OS=${OSDEP_OS:-}                     # Assembler object file names
 # Defaults to unix files, customized based on PORT and tests.
 PGMEXT=${PGMEXT:-}                         # Program file extension
 DLLEXT=${DLLEXT:-'.so'}                    # DLL (.so) file extension
-MANEXT=${MANEXT:-'.l'}                     # man page file extension
-
-# OS-dependent installation directories.
-BINDIR=${BINDIR:-"$HOME/bin"}              # Where to install executables
-MANDIR=${MANDIR:-'manl'}                   # Where to install man pages
-
-# OS-dependent installation file permissions.
-BINPERMS=${BINPERMS:-'755'}                # Executable programs
-MANPERMS=${MANPERMS:-'644'}                # man pages
 
 # System identification (raw).
 UNAME_S=''                                 # System/kernel name
@@ -338,27 +323,6 @@ else
       echo "^^ Directory creation failed (${status})."
       exit $status
     fi
-  fi
-fi
-
-
-#==============================================================================
-# Check for build manuals directory.  Create if required.
-#==============================================================================
-echo "Check build directory for manuals: (${PROD_MAN})"
-if [ -d "${PROD_MAN}" ]; then
-  echo "-- Build manuals directory is OK."
-elif [ -f "${PROD_MAN}" ]; then
-  echo "^^ Directory name exists as an ordinary file.  Unable to build."
-  exit 1
-else
-  echo "-- Creating build manuals directory."
-  ${MKDIR} ${PROD_MAN}
-  status=$?
-  if [ $status -ne 0 ]; then
-    echo ''
-    echo "^^ Directory creation failed (${status})."
-    exit $status
   fi
 fi
 
@@ -481,7 +445,7 @@ fi
 # successful compilation of UnZip, as well as the options for standard code
 # optimization.
 
-echon 'Check C compiler type (optimization and listing options)...'
+echon 'Check C compiler type (opt and list options)...'
 
 if [ -z "${CFLAGS_OPT}" ]; then
   # Sun C?
@@ -1283,7 +1247,6 @@ _EOF_
       ;;
 esac
 
-lprod=0
 #------------------------------------------------------------------------------
 # E) Configure optional AES (WinZip/Gladman) encryption library.
 #------------------------------------------------------------------------------
@@ -1310,14 +1273,9 @@ _EOF_
       if [ $status -eq 0 ]; then
         LIB_AES_WG="${PROD}/lib${L_AES_WG}.a"
         CFLAGS_TST="${CFLAGS_TST} -DCRYPT_AES_WG"
-        if [ $lprod -eq 0 ]; then
-          lprod=1
-          LFLAGS1="${LFLAGS1} -L${PROD}"
-        fi
-        LFLAGS2="${LFLAGS2} -l${L_AES_WG}"
         echo '  Yes.'
         echo "-- Including AES_WG encryption support."
-        echo "-- Building lib${L_AES_WG}.a in ${PROD}/ directory."
+        echo "-- Building ${PROD}/lib${L_AES_WG}.a."
       else
         echo '  No.'
         echo "^^ AES_WG test build failed. Check aes_wg/ directory."
@@ -1364,14 +1322,9 @@ _EOF_
       if [ $status -eq 0 ]; then
         LIB_LZMA="${PROD}/lib${L_LZMA}.a"
         CFLAGS_TST="${CFLAGS_TST} -DLZMA_SUPPORT"
-        if [ $lprod -eq 0 ]; then
-          lprod=1
-          LFLAGS1="${LFLAGS1} -L${PROD}"
-        fi
-        LFLAGS2="${LFLAGS2} -l${L_LZMA}"
         echo '  Yes.'
         echo "-- Including LZMA compression support."
-        echo "-- Building lib${L_LZMA}.a in ${PROD}/ directory."
+        echo "-- Building ${PROD}/lib${L_LZMA}.a."
       else
         echo '  No.'
         echo "^^ LZMA test build failed. Check szip/ directory."
@@ -1418,14 +1371,9 @@ _EOF_
       if [ $status -eq 0 ]; then
         LIB_PPMD="${PROD}/lib${L_PPMD}.a"
         CFLAGS_TST="${CFLAGS_TST} -DPPMD_SUPPORT"
-        if [ $lprod -eq 0 ]; then
-          lprod=1
-          LFLAGS1="${LFLAGS1} -L${PROD}"
-        fi
-        LFLAGS2="${LFLAGS2} -l${L_PPMD}"
         echo '  Yes.'
         echo "-- Including PPMd compression support."
-        echo "-- Building lib${L_PPMD}.a in ${PROD}/ directory."
+        echo "-- Building ${PROD}/lib${L_PPMD}.a."
       else
         echo '  No.'
         echo "^^ PPMd test build failed.  Check szip/ directory."
@@ -2700,35 +2648,6 @@ fi
 #------------------------------------------------------------------------------
 # K) Configure system-specific resources.
 #------------------------------------------------------------------------------
-# Check for /usr/local/bin.
-echon 'Check for /usr/local/bin...'
-if [ -d /usr/local/bin ]; then
-  echo '  Yes.'
-  BINDIR='/usr/local/bin'
-else
-  echo '  No.'
-fi
-echo "-- Using BINDIR=${BINDIR}"
-
-# Check for /usr/local/man.
-echon 'Check for /usr/local/man...'
-if [ -d /usr/local/man/man1 ]; then
-  echo '  Yes (man1).'
-  MANDIR='/usr/local/man/man1'
-  MANEXT='.1'
-else
-  if [ -d /usr/local/man/manl ]; then
-    echo '  Yes (manl).'
-    MANDIR='/usr/local/man/manl'
-  else
-    if [ -d /usr/man/manl ]; then
-      echo '  No (manl).'
-      MANDIR='/usr/man/manl'
-    fi
-  fi
-fi
-echo "-- Using MANDIR=${MANDIR} ; MANEXT=${MANEXT}"
-
 # Check symbolic links.
 echon 'Check symbolic links...'
 if ln -s /dev/null null >/dev/null 2>/dev/null ; then
@@ -2886,10 +2805,8 @@ echo "CC=\"${CC}\" CF=\"${CFLAGS}\"" \
      "OSDEP_OCS=\"${OSDEP_OCS}\"" \
      "OSDEP_OCU=\"${OSDEP_OCU}\"" \
      "OSDEP_OS=\"${OSDEP_OS}\"" \
-     "PGMEXT=\"${PGMEXT}\" DLLEXT=\"${DLLEXT}\"" \
-     "BINDIR=\"${BINDIR}\" BINPERMS=\"${BINPERMS}\"" \
-     "MANDIR=\"${MANDIR}\" MANPERMS=\"${MANPERMS}\"" \
-     "MANEXT=\"${MANEXT}\""\
+     "PGMEXT=\"${PGMEXT}\"" \
+     "DLLEXT=\"${DLLEXT}\"" \
      > flags
 
 #------------------------------------------------------------------------------

@@ -1300,7 +1300,7 @@ static int do_seekable(__G__ lastchance)        /* return PK-type error code */
         {
 #ifndef NO_ZIPINFO
             if (uO.zipinfo_mode)
-                error = zipinfo(__G);                 /* ZIPINFO 'EM */
+                error = zipinform(__G);                 /* ZIPINFO 'EM */
             else
 #endif /* ndef NO_ZIPINFO */
 #ifndef SFX

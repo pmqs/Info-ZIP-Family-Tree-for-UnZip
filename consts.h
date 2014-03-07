@@ -38,6 +38,9 @@ ZCONST char Far FilenameNotMatched[] = "caution: filename not matched:  %s\n";
 ZCONST char Far ExclFilenameNotMatched[] =
   "caution: excluded filename not matched:  %s\n";
 
+ZCONST char Far ExtractMsg[] =
+  "%8sing: %-22s  %s%s";
+
 #ifdef VMS
   ZCONST char Far ReportMsg[] = "\
   (please check that you have transferred or created the zipfile in the\n\

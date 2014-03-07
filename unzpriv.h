@@ -2697,7 +2697,7 @@ int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
 #ifndef NO_ZIPINFO
 int      zi_opts                 OF((__GPRO__ int *pargc, char ***pargv));
 void     zi_end_central          OF((__GPRO));
-int      zipinfo                 OF((__GPRO));
+int      zipinform               OF((__GPRO));
 /* static int      zi_long       OF((__GPRO__ zusz_t *pEndprev)); */
 /* static int      zi_short      OF((__GPRO)); */
 /* static char    *zi_time       OF((__GPRO__ ZCONST ulg *datetimez,

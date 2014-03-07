@@ -524,7 +524,16 @@ OPTIONS (Ordinary)
                   restored with no extended attributes (-Je), no Finder info
                   (-Jf), and no resource fork (-Jr); no "._name" file is
                   created.
-               .PP -Je
+
+              Note that -j acts on the path of an archive member, and is
+              independent of the destination directory specified using -d or
+              -da.  For example, with "-d zz -j=1", an archive
+              member like "a/b/c/d/ee.txt" would be extracted as "zz/b/c/d/ee.txt",
+              with -j=1 stripping the "a/" off the archive path, and
+              -d zz adding the "zz/" to the path in the destination file
+              system.
+
+       -Je
        --junk-extattr
               [Mac OS X] Ignore all  Mac  OS  extended  attributes.   Extended
               attribute  processing  is  available on Mac OS X 10.4 and later.
@@ -1378,4 +1387,4 @@ AUTHORS
        the proginfo/CONTRIBS file in the UnZip source distribution for a rela-
        tively complete version.
 
-Info-ZIP                      23 Feb 2014 (v6.10)                    UNZIP(1L)
+Info-ZIP                      09 May 2014 (v6.10)                    UNZIP(1L)

@@ -204,11 +204,6 @@ static ZCONST char Far ExtFieldMsg[] =
   "%s:  bad extra field length (%s)\n";
 static ZCONST char Far OffsetMsg[] =
   "file #%lu:  bad zipfile offset (%s):  %ld\n";
-#ifndef ENABLE_USER_PROGRESS
-static /* Used in unzip.c:user_progress(). */
-#endif /* ndef ENABLE_USER_PROGRESS */
-       ZCONST char Far ExtractMsg[] =
-  "%8sing: %-22s  %s%s";
 #ifndef SFX
    static ZCONST char Far LengthMsg[] =
      "%s  %s:  %s bytes required to uncompress to %s bytes;\n    %s\

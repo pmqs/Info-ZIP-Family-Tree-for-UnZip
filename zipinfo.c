@@ -14,7 +14,7 @@
 
   Contains:  zi_opts()
              zi_end_central()
-             zipinfo()
+             zipinform()
              zi_long()
              zi_short()
              zi_time()
@@ -995,11 +995,11 @@ void zi_end_central(__G)
 
 
 
-/************************/
-/*  Function zipinfo()  */
-/************************/
+/**************************/
+/*  Function zipinform()  */
+/**************************/
 
-int zipinfo(__G)   /* return PK-type error code */
+int zipinform(__G)   /* return PK-type error code */
     __GDEF
 {
     int do_this_file=FALSE, error, error_in_archive=PK_COOL;
@@ -1312,7 +1312,7 @@ int zipinfo(__G)   /* return PK-type error code */
 
     return error_in_archive;
 
-} /* end function zipinfo() */
+} /* end function zipinform() */
 
 
 
