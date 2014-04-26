@@ -317,7 +317,7 @@ Features added (or removed):
    UnZip process ID, for convenience in forming a "kill -USR1 <pid>"
    command.  (unzip.c, unzpriv.h, vms/vms.c) [SMS]
 
-6.10c09 (26 Feb 2014):
+6.10c09 (7 March 2014):
  - Added optional support for PPMd compression (method 98).  (extract.c,
    lzma/Ppmd.h, lzma/Ppmd8.c, lzma/Ppmd8.h, lzma/Ppmd8Dec.c,
    lzma/README_LZMA.txt, unix/configure, unix/Makefile,
@@ -595,7 +595,7 @@ Bugs fixed:
    bit. When this bit is set, a verification checksum is in the first 3
    bytes of the external attributes.  In this case, only use last byte of
    external attributes by clearing other bytes in
-   G.crec.external_file_attributes. (process.c)  [EG]
+   G.crec.external_file_attributes. (process.c) [EG]
  - Add check for NO_UNICODE_SUPPORT.  Automatically set WIN32_WIDE on Windows
    if UNICODE_SUPPORT set.  Remove UNICODE_SUPPORT and WIN32_WIDE macros
    from project.  (win32/w32cfg.h, win32/vc6/unzip.dsp) [EG]
@@ -917,7 +917,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (26 Feb 2014):
+6.10c09 (24 Apr 2014):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -967,7 +967,7 @@ Bugs fixed:
    buffer in more situations in the DLL, to solve a problem with data
    corruption when inflating to memory.  Adapted another suggestion for
    a better window size calculation.  The old method gave poor results
-   for buffer sizes which were not powers of two.  (inflate,c)  [IH, SMS]
+   for buffer sizes which were not powers of two.  (inflate,c) [IH, SMS]
  - Fixed many problems when building with REENTRANT defined, mostly in
    the new command-line option code, but also in ppmd_read_byte() and
    the user-triggered progress message.  Reformed globals access in
@@ -1112,7 +1112,7 @@ Bugs fixed:
  - -M (/MORE) used bad carriage control on VMS, adding spurious blank
    lines to the output.  Changed the prompt function on VMS to use the
    same output file as the message function (stderr or stdout) to avoid
-   this.  (fileio.c, globals.h)  [SMS]
+   this.  (fileio.c, globals.h) [SMS]
  - Revised VMS DCL builder to recreate object libraries when not
    compiling (NOCOMPILE).  (vms/build_unzip.com) [SMS]
  - Fixed some bad behavior (program aborts or loops, or faulty memory
@@ -1163,7 +1163,8 @@ Bugs fixed:
    non-null value is required for each.  "-L." should be harmless for
    LFLAGS2.)  Stopped putting redundant "-L." linker options into
    "flags".  (unix/configure) [SMS]
- - Added some conditionality for SGI IRIX.
+ - Added some conditionality for SGI IRIX.  (Knowing nothing, we assume
+   that large-file support is still missing on SGI IRIX.)
    http://sourceforge.net/p/infozip/bugs/41/  (unzpriv.h) [SMS]
  - Disambiguated some Windows-specific error messages.  (win32/win32.c)
    [SMS]
@@ -1209,18 +1210,20 @@ Bugs fixed:
    as before, using a three-digit decimal format, "Unk:ddd", but larger
    values are displayed using a four-digit hexadecimal format,
    "UnkXXXX".  http://sourceforge.net/p/infozip/bugs/27/  (list.c) [SMS]
- - In ZipInfo reports, an unexpectedly large host version number value
-   (>99) caused a (mostly harmless) buffer overflow, and spoiled the
-   report format.  Now, values less than 100 are displayed as before,
-   using a digit-dot-digit decimal format, "d.d", but larger values are
-   displayed using a two-digit hexadecimal format, "xXX".  Forum topic:
-   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=267
-   (zipinfo.c) [SMS]
+ - In ZipInfo reports, an unexpectedly large "version made by" value
+   (>99) caused a (mostly harmless) buffer overflow, and could spoil the
+   report format.  Now, for system types where space always allows,
+   large values should always be displayed properly.  On VMS, a more
+   careful calculation is done to determine space requirements, and
+   large values should be displayed properly when space allows.  Forum
+   topics: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=267
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=437
+   (zipinfo.c) [quanww, sanvila, SMS]
  - Added some crude, optional, dynamic memory tracing diagnostic
    capability for use by developers.  (api.c, crypt.c, envargs.c,
    extract.c, fileio.c, funzip.c, globals.c, inflate.c, match.c,
    memdiag.c, process.c, timezone.c, unshrink.c, unzip.c, unzpriv.h,
-   win32/win32.c) [SMS]
+   unix/unix.c, win32/win32.c) [SMS]
  - On Windows, with Unicode support, a buffer overrun in pathname
    storage could cause a variety of problems, including spurious error
    messages and program failure.  That problem should be solved.  Some
@@ -1290,7 +1293,7 @@ Bugs fixed:
    inadequate for large files.  Users who still experience the problem
    are encouraged to report the circumstances.
    http://sourceforge.net/p/infozip/bugs/44/  (win32/nt.c,
-   win32/w32cfg.h, win32/win32.c) [awaterson, SMS]
+   win32/w32cfg.h, win32/win32.c) [awaterson, Dmitry, SMS]
  - On Mac OS X, extended attributes (such as "com.apple.quarantine")
    were erroneously treated as more resource-fork data, so the
    extracted file did not get the proper attributes, and its resource
@@ -1325,7 +1328,8 @@ Bugs fixed:
    suffix, and this failed.  After some recent code restructuring,
    unzip.c was not including unix/macosx.h as needed, so the C macro
    APPLE_NFRSRC was not being defined properly.  An undefined
-   APPLE_NFRSRC should have been detected, but was not.
+   APPLE_NFRSRC should have been detected, but was not.  (api.c,
+   unzip.c) [SMS]
  - Windows DLL builders failed to deal with (optional) bzip2
    compression.  Now, a scheme like that used for UnZip proper is used
    for the DLL.  (windll/vc10/unzip32_dll.sln,
@@ -1359,4 +1363,46 @@ Bugs fixed:
    windll/vc10/uzexampl/uzexampl.vcxproj) [SMS]
  - Simplified handling of C macros UNIXBACKUP and NO_UNIXBACKUP.
    (unzip.h, unzpriv.h) [SMS]
-
+ - On Unix, "-d exdir" was limited to creating a maximum of one
+   directory.  So, for example, "-d fred1/fred2" would fail if the
+   directory fred1 did not already exist.  (unix/unix.c) [SMS]
+ - On VMS, a long archive path (resulting in a directory specification
+   longer than 255 characters) could be truncated, even on an ODS5
+   destination file system, where such a path was valid.  (vms/vms.c)
+   [SMS]
+ - Tidied code based on Cppcheck analysis, GCC _FORTIFY_SOURCE=2, LLVM
+   Clang, and some inspection (buffer overflow, syntax error in disused
+   code, unused variable/value, memory management, bad error handling,
+   bad I/O formats, and so on).  (apihelp.c, crypt.c, extract.c,
+   fileio.c, funzip.c, process.c, timezone.c, ttyio.c, unzip.c,
+   zipinfo.c, amiga/amiga.c, aosvs/aosvs.c, beos/beos.c,
+   macos/source/macbin3.c, macos/source/macdir.c, macos/source/macos.c,
+   macos/source/pathname.c, qdos/callstub.c, qdos/makesfx.c,
+   tandem/tandem.c, tandem/tanunz.c, theos/_setargv.c, theos/theos.c,
+   unix/unix.c, vms/cmdline.c, vms/vms.c, windll/unzipstb.c) [Dmitry,
+   SMS].
+ - Unrealistic size data in an archive could cause a buffer overflow
+   when reporting the resulting unrealistic compression ratio in a
+   long listing (-lv) report.  Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=432
+   (list.c) [SMS]
+ - A user response longer than eight characters to an interactive query
+   (like, say, "replace XXX? [y]es, [n]o, [A]ll, [N]one, [r]ename: ")
+   could be only partially consumed, leaving excess characters to be
+   read by a later interactive query, without any additional user
+   response.  Now, a whole line should be read, even if only the first
+   character is significant.  (extract.c, fileio.c, process.c,
+   unzpriv.h, vms/vms.c) [SMS]
+ - Changes to accommodate old K&R-style C compilers:  Changed some API
+   function declarations/prototypes to remove prototypes where they are
+   not supported.  Changed the object-library example program to work
+   when prototypes are not supported.  Renamed some members of the
+   _version_type structure to avoid conflicts with macros "major" and
+   "minor" on SunOS 4.1.4.  Added some type casts to clear some compiler
+   complaints.  Indented a "#error" directive.  Added a missing ranlib
+   command to the "make" rule for libizunzip.a on Unix.  (api.c,
+   apihelp.c, funzip.c, unzip.c, unzip.h, libiz/izunzip_example.c,
+   unix/Makefile, windll/unzipstb.c, windll/uzexampl.c) [SMS]
+ - Added the method descriptor ("creating", "extracting", "inflating",
+   "testing", and so on) to the user progress message.  (extract.c,
+   globals.h, unzip.c, unzpriv.h, unix/unix.c, vms/vms.c) [SMS]

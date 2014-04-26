@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -232,17 +232,17 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
 #endif /* def RETRY_CREATEFILE */
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-    hFile = CreateFileW(
+        hFile = CreateFileW(
 #else
-    hFile = CreateFileA(
+        hFile = CreateFileA(
 #endif
-        FileName,
-        ACCESS_SYSTEM_SECURITY | WRITE_DAC | WRITE_OWNER | READ_CONTROL,
-        FILE_SHARE_READ | FILE_SHARE_DELETE, /* no sd updating allowed here */
-        NULL,
-        OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS,
-        NULL
+         FileName,
+         ACCESS_SYSTEM_SECURITY | WRITE_DAC | WRITE_OWNER | READ_CONTROL,
+         FILE_SHARE_READ | FILE_SHARE_DELETE, /* no sd updating allowed here */
+         NULL,
+         OPEN_EXISTING,
+         FILE_FLAG_BACKUP_SEMANTICS,
+         NULL
         );
 
 #ifdef RETRY_CREATEFILE
@@ -250,7 +250,11 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
         {
             if (GetLastError() != ERROR_SHARING_VIOLATION)
                 break;   /* Not a sharing error.  Get out now.  Otherwise: */
-            Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+            Sleep( IZ_CREATEFILE_TRY_TIME_MS);  /* Sleep, then retry. */
+        }
+        else
+        {
+            break;       /* Not a sharing error.  (Success?)  Get out now. */
         }
     }
 #endif /* def RETRY_CREATEFILE */
@@ -289,25 +293,29 @@ static VOID GetRemotePrivilegesSet(char *FileName, PDWORD dwRemotePrivileges)
 #endif /* def RETRY_CREATEFILE */
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-        hFile = CreateFileW(
+            hFile = CreateFileW(
 #else
-        hFile = CreateFileA(
+            hFile = CreateFileA(
 #endif
-            FileName,
-            ACCESS_SYSTEM_SECURITY,
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, /* max */
-            NULL,
-            OPEN_EXISTING,
-            0,
-            NULL
+             FileName,
+             ACCESS_SYSTEM_SECURITY,
+             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, /* max */
+             NULL,
+             OPEN_EXISTING,
+             0,
+             NULL
             );
 
 #ifdef RETRY_CREATEFILE
             if (hFile == INVALID_HANDLE_VALUE)
             {
                 if (GetLastError() != ERROR_SHARING_VIOLATION)
-                    break;   /* Not a sharing error.  Get out now.  Otherwise: */
-                Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+                    break;  /* Not a sharing error.  Get out now.  Otherwise: */
+                Sleep( IZ_CREATEFILE_TRY_TIME_MS);  /* Sleep, then retry. */
+            }
+            else
+            {
+                break;  /* Not a sharing error.  (Success?)  Get out now. */
             }
         }
 #endif /* def RETRY_CREATEFILE */

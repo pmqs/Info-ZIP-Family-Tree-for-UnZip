@@ -80,18 +80,18 @@ int main(int argc, char *argv[])
     printf("UnZip DLL example: checking version numbers (DLL is dated %s)\n",
       pVersion->date);
     printf("   UnZip versions:    expecting %u.%u%u, using %u.%u%u%s\n",
-      UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, pVersion->unzip.major,
-      pVersion->unzip.minor, pVersion->unzip.patchlevel, pVersion->betalevel);
+      UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, pVersion->unzip.vmajor,
+      pVersion->unzip.vminor, pVersion->unzip.patchlevel, pVersion->betalevel);
     printf("   ZipInfo versions:  expecting %u.%u%u, using %u.%u%u\n",
-      ZI_MAJORVER, ZI_MINORVER, UZ_PATCHLEVEL, pVersion->zipinfo.major,
-      pVersion->zipinfo.minor, pVersion->zipinfo.patchlevel);
+      ZI_MAJORVER, ZI_MINORVER, UZ_PATCHLEVEL, pVersion->zipinfo.vmajor,
+      pVersion->zipinfo.vminor, pVersion->zipinfo.patchlevel);
 
 /*
     D2_M*VER and os2dll.* are obsolete, though retained for compatibility:
 
     printf("   OS2 DLL versions:  expecting %u.%u%u, using %u.%u%u\n",
-      D2_MAJORVER, D2_MINORVER, D2_PATCHLEVEL, pVersion->os2dll.major,
-      pVersion->os2dll.minor, pVersion->os2dll.patchlevel);
+      D2_MAJORVER, D2_MINORVER, D2_PATCHLEVEL, pVersion->os2dll.vmajor,
+      pVersion->os2dll.vminor, pVersion->os2dll.patchlevel);
  */
 
     if (pVersion->flag & 2)
@@ -106,10 +106,10 @@ int main(int argc, char *argv[])
 #define UZDLL_MINVERS_MINOR             1
 #define UZDLL_MINVERS_PATCHLEVEL        0
     /* This UnZip DLL stub requires a DLL version of at least: */
-    if ( (pVersion->unzip.major < UZDLL_MINVERS_MAJOR) ||
-         ((pVersion->unzip.major == UZDLL_MINVERS_MAJOR) &&
-          ((pVersion->unzip.minor < UZDLL_MINVERS_MINOR) ||
-           ((pVersion->unzip.minor == UZDLL_MINVERS_MINOR) &&
+    if ( (pVersion->unzip.vmajor < UZDLL_MINVERS_MAJOR) ||
+         ((pVersion->unzip.vmajor == UZDLL_MINVERS_MAJOR) &&
+          ((pVersion->unzip.vminor < UZDLL_MINVERS_MINOR) ||
+           ((pVersion->unzip.vminor == UZDLL_MINVERS_MINOR) &&
             (pVersion->unzip.patchlevel < UZDLL_MINVERS_PATCHLEVEL)
            )
           )
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 #if defined(MODERN) && !defined(NO_STDDEF_H)
         ( offsetof(UzpVer, dllapimin)
 #else
-          ((unsigned)&(((UzpVer *)0)->dllapimin))
+          ((unsigned)&(((UzpVer *)0)->dllapimin)
 #endif
          + sizeof(_version_type) ))
     {
@@ -149,12 +149,12 @@ int main(int argc, char *argv[])
         printf(
           "   UnZip API version: can handle <= %u.%u%u, DLL supplies %u.%u%u\n",
           UZ_API_COMP_MAJOR, UZ_API_COMP_MINOR, UZ_API_COMP_REVIS,
-          pVersion->dllapimin.major, pVersion->dllapimin.minor,
+          pVersion->dllapimin.vmajor, pVersion->dllapimin.vminor,
           pVersion->dllapimin.patchlevel);
-        if ( (pVersion->dllapimin.major > UZ_API_COMP_MAJOR) ||
-             ((pVersion->dllapimin.major == UZ_API_COMP_MAJOR) &&
-              ((pVersion->dllapimin.minor > UZ_API_COMP_MINOR) ||
-               ((pVersion->dllapimin.minor == UZ_API_COMP_MINOR) &&
+        if ( (pVersion->dllapimin.vmajor > UZ_API_COMP_MAJOR) ||
+             ((pVersion->dllapimin.vmajor == UZ_API_COMP_MAJOR) &&
+              ((pVersion->dllapimin.vminor > UZ_API_COMP_MINOR) ||
+               ((pVersion->dllapimin.vminor == UZ_API_COMP_MINOR) &&
                 (pVersion->dllapimin.patchlevel > UZ_API_COMP_REVIS)
                )
               )

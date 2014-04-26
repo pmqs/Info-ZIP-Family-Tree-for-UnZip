@@ -682,6 +682,14 @@ AppleDouble archive member are ignored, so the data fork file is
 restored with no extended attributes (\fB\-Je\fP), no Finder info
 (\fB\-Jf\fP), and no resource fork (\fB\-Jr\fP); no "._name" file is
 created.
+.IP
+Note that \fB\-j\fP acts on the path of an archive member, and is
+independent of the destination directory specified using \fB\-d\fP or
+\fB\-da\fP.  For example, with "\fB\-d zz\fP \fB\-j=1\fP", an archive
+member like "a/b/c/d/ee.txt" would be extracted as "zz/b/c/d/ee.txt",
+with \fB\-j=1\fP stripping the "a/" off the archive path, and
+\fB\-d zz\fP adding the "zz/" to the path in the destination file
+system.
 .EE
  .PP
 .PD 0

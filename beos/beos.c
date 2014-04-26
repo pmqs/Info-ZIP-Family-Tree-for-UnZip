@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1554,7 +1554,7 @@ static void assign_MIME( const char *file )
 {
     char *fullname;
     char buff[PATH_MAX], cwd_buff[PATH_MAX];
-    int retval;
+/*  int retval;  2014-03-13 SMS.  This function is "void". */
 
     if( file[0] == '/' ) {
         fullname = (char *)file;
@@ -1563,7 +1563,7 @@ static void assign_MIME( const char *file )
         fullname = buff;
     }
 
-    retval = update_mime_info( fullname, FALSE, TRUE, TRUE );
+    /* retval = */ update_mime_info( fullname, FALSE, TRUE, TRUE );
 }
 #endif
 

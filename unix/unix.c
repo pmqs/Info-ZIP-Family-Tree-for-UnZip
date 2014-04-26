@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -156,9 +156,9 @@ DIR *opendir(dirspec)
 {
     DIR *dirp;
 
-    if ((dirp = malloc(sizeof(DIR)) != NULL) {
+    if ((dirp = izu_malloc(sizeof(DIR))) != NULL) {
         if ((dirp->dirhandle = fopen(dirspec, "r")) == NULL) {
-            free(dirp);
+            izu_free(dirp);
             dirp = NULL;
         }
     }
@@ -169,7 +169,7 @@ void closedir(dirp)
     DIR *dirp;
 {
     fclose(dirp->dirhandle);
-    free(dirp);
+    izu_free(dirp);
 }
 
 /*
@@ -236,7 +236,8 @@ char *do_wild(__G__ wildspec)
         } else {
             ++G.wildname;     /* point at character after '/' */
             G.dirnamelen = G.wildname - wildspec;
-            if ((G.dirname = (char *)malloc(G.dirnamelen+1)) == (char *)NULL) {
+            if ((G.dirname =
+             (char *)izu_malloc( G.dirnamelen+ 1)) == (char *)NULL) {
                 Info(slide, 0x201, ((char *)slide,
                   "warning:  cannot allocate wildcard buffers\n"));
                 strncpy(G.matchname, wildspec, FILNAMSIZ);
@@ -285,7 +286,7 @@ char *do_wild(__G__ wildspec)
     if ((DIR *)G.wild_dir == (DIR *)NULL) {
         G.notfirstcall = FALSE; /* nothing left--reset for new wildspec */
         if (G.have_dirname)
-            free(G.dirname);
+            izu_free(G.dirname);
         return (char *)NULL;
     }
 
@@ -313,7 +314,7 @@ char *do_wild(__G__ wildspec)
     G.wild_dir = (zvoid *)NULL;
     G.notfirstcall = FALSE;       /* reset for new wildspec */
     if (G.have_dirname)
-        free(G.dirname);
+        izu_free(G.dirname);
     return (char *)NULL;
 
 } /* end function do_wild() */
@@ -655,8 +656,11 @@ int mapname(__G__ renamed)
         checkdir(__G__ G.filename, GETPATH);
         if (G.created_dir) {
             if (QCOND2) {
-                Info(slide, 0, ((char *)slide, "   creating: %s\n",
-                  FnFilter1(G.filename)));
+                Info( slide, 0, ((char *)slide, ExtractMsg, "creat",
+                  FnFilter1( G.filename), "", "\n"));
+#ifdef ENABLE_USER_PROGRESS
+                G.extract_msg_str = "creat";
+#endif /* def ENABLE_USER_PROGRESS */
             }
 #ifndef NO_CHMOD
 # ifdef KFLAG
@@ -831,14 +835,14 @@ int checkdir(__G__ pathcomp, flag)
             too_long = TRUE;                    /* check if extracting dir? */
         if (SSTAT(G.buildpath, &G.statbuf)) {   /* path doesn't exist */
             if (!G.create_dirs) { /* told not to create (freshening) */
-                free(G.buildpath);
+                izu_free(G.buildpath);
                 return MPN_INF_SKIP;    /* path doesn't exist: nothing to do */
             }
             if (too_long) {
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  path too long: %s\n",
                   FnFilter1(G.buildpath)));
-                free(G.buildpath);
+                izu_free(G.buildpath);
                 /* no room for filenames:  fatal */
                 return MPN_ERR_TOOLONG;
             }
@@ -850,7 +854,7 @@ int checkdir(__G__ pathcomp, flag)
                   FnFilter2(G.buildpath),
                   strerror(errno),
                   FnFilter1(G.filename)));
-                free(G.buildpath);
+                izu_free(G.buildpath);
                 /* path didn't exist, tried to create, failed */
                 return MPN_ERR_SKIP;
             }
@@ -860,14 +864,14 @@ int checkdir(__G__ pathcomp, flag)
               "checkdir error:  %s exists but is not directory\n\
                  unable to process %s.\n",
               FnFilter2(G.buildpath), FnFilter1(G.filename)));
-            free(G.buildpath);
+            izu_free(G.buildpath);
             /* path existed but wasn't dir */
             return MPN_ERR_SKIP;
         }
         if (too_long) {
             Info(slide, 1, ((char *)slide,
               "checkdir error:  path too long: %s\n", FnFilter1(G.buildpath)));
-            free(G.buildpath);
+            izu_free(G.buildpath);
             /* no room for filenames:  fatal */
             return MPN_ERR_TOOLONG;
         }
@@ -887,7 +891,7 @@ int checkdir(__G__ pathcomp, flag)
         strcpy(pathcomp, G.buildpath);
         Trace((stderr, "getting and freeing path [%s]\n",
           FnFilter1(pathcomp)));
-        free(G.buildpath);
+        izu_free(G.buildpath);
         G.buildpath = G.end = (char *)NULL;
         return MPN_OK;
     }
@@ -934,10 +938,10 @@ int checkdir(__G__ pathcomp, flag)
     if (FUNCTION == INIT) {
         Trace((stderr, "initializing buildpath to "));
 #ifdef ACORN_FTYPE_NFS
-        if ((G.buildpath = (char *)malloc(strlen(G.filename)+G.rootlen+
+        if ((G.buildpath = (char *)izu_malloc(strlen(G.filename)+G.rootlen+
                                           (uO.acorn_nfs_ext ? 5 : 1)))
 #else
-        if ((G.buildpath = (char *)malloc(strlen(G.filename)+G.rootlen+1))
+        if ((G.buildpath = (char *)izu_malloc(strlen(G.filename)+G.rootlen+1))
 #endif
             == (char *)NULL)
             return MPN_NOMEM;
@@ -959,58 +963,104 @@ int checkdir(__G__ pathcomp, flag)
     on the command line.
   ---------------------------------------------------------------------------*/
 
+/* 2014-03-10 SMS.
+ * Changed to create multiple directory levels, as needed.
+ */
+
 #if (!defined(SFX) || defined(SFX_EXDIR))
-    if (FUNCTION == ROOT) {
+    if (FUNCTION == ROOT)
+    {
+        char *tmproot;                          /* Temporary path storage. */
+
         Trace((stderr, "initializing root path to [%s]\n",
-          FnFilter1(pathcomp)));
-        if (pathcomp == (char *)NULL) {
-            G.rootlen = 0;
+         FnFilter1( pathcomp)));
+
+        /* If NULL arg, then clear any current root path (and length). */
+        if (pathcomp == (char *)NULL)
+        {
+            if (G.rootlen > 0)
+            {
+                izu_free( G.rootpath);
+                G.rootlen = 0;
+            }
             return MPN_OK;
         }
-        if (G.rootlen > 0)      /* rootpath was already set, nothing to do */
-            return MPN_OK;
-        if ((G.rootlen = strlen(pathcomp)) > 0) {
-            char *tmproot;
 
-            if ((tmproot = (char *)malloc(G.rootlen+2)) == (char *)NULL) {
+        /* If rootpath has already been set, then do nothing, be happy. */
+        if (G.rootlen > 0)
+            return MPN_OK;
+
+        /* Allocate temporary path storage, if needed.  (+2 for slash + NUL.) */
+        if ((G.rootlen = strlen( pathcomp)) > 0)
+        {
+            if ((tmproot = (char *)izu_malloc( G.rootlen+ 2)) == (char *)NULL)
+            {
                 G.rootlen = 0;
                 return MPN_NOMEM;
             }
-            strcpy(tmproot, pathcomp);
-            if (tmproot[G.rootlen-1] == '/') {
-                tmproot[--G.rootlen] = '\0';
+            strcpy( tmproot, pathcomp);
+            if (tmproot[ G.rootlen- 1] == '/')
+            {
+                tmproot[ --G.rootlen] = '\0';   /* Trim trailing slash. */
             }
-            if (G.rootlen > 0 && (SSTAT(tmproot, &G.statbuf) ||
-                                  !S_ISDIR(G.statbuf.st_mode)))
-            {   /* path does not exist */
-                if (!G.create_dirs /* || iswild(tmproot) */ ) {
-                    free(tmproot);
-                    G.rootlen = 0;
-                    /* skip (or treat as stored file) */
-                    return MPN_INF_SKIP;
+        }
+        if (G.rootlen > 0)              /* If any path remains, ... */
+        {
+            int not_done;
+            char *slash;
+
+            /* Create the directory (tree), as needed, if allowed. */
+            not_done = 1;
+            slash = tmproot;            /* (-1 to do a leading slash.) */
+            while (not_done)
+            {
+                slash = strchr( (slash+ 1), '/');
+                if (slash == NULL)
+                {			
+                    not_done = 0;   /* No more slashes. */
                 }
-                /* create the directory (could add loop here scanning tmproot
-                 * to create more than one level, but why really necessary?) */
-                if (mkdir(tmproot, 0777) == -1) {
-                    Info(slide, 1, ((char *)slide,
-                      "checkdir:  cannot create extraction directory: %s\n\
+                else
+                {
+                    *slash = '\0';  /* Temp'ly truncate path at next slash. */
+                }
+                if (SSTAT( tmproot, &G.statbuf) ||
+                 !S_ISDIR( G.statbuf.st_mode))
+                {   /* Path (segment) does not exist (or is not dir). */
+                    if (!G.create_dirs)
+                    {
+                        izu_free( tmproot);
+                        G.rootlen = 0;
+                        /* Skip (or treat as stored file). */
+                        return MPN_INF_SKIP;
+                    }
+                    if (mkdir(tmproot, 0777) == -1)
+                    {
+                        Info(slide, 1, ((char *)slide,
+                         "checkdir:  cannot create extraction directory: %s\n\
            %s\n",
-                      FnFilter1(tmproot), strerror(errno)));
-                    free(tmproot);
-                    G.rootlen = 0;
-                    /* path didn't exist, tried to create, and failed: */
-                    /* file exists, or 2+ subdir levels required */
-                    return MPN_ERR_SKIP;
+                        FnFilter1( tmproot), strerror( errno)));
+                        izu_free( tmproot);
+                        G.rootlen = 0;
+                        /* Path didn't exist.  Creation failed. */
+                        return MPN_ERR_SKIP;
+                    }
                 }
-            }
-            tmproot[G.rootlen++] = '/';
-            tmproot[G.rootlen] = '\0';
-            if ((G.rootpath = (char *)realloc(tmproot, G.rootlen+1)) == NULL) {
-                free(tmproot);
+                if (slash != NULL)
+                {
+                    *(slash++) = '/';           /* Restore the NUL'd slash. */
+                }
+            } /* while  (Path segments.) */
+            tmproot[ G.rootlen++] = '/';        /* Append slash. */
+            tmproot[ G.rootlen] = '\0';         /* NUL terminate. */
+            /* Right-size the rootpath storage. */
+            if ((G.rootpath =
+             (char *)izu_realloc( tmproot, (G.rootlen+ 1))) == NULL)
+            {
+                izu_free( tmproot);
                 G.rootlen = 0;
                 return MPN_NOMEM;
             }
-            Trace((stderr, "rootpath now = [%s]\n", FnFilter1(G.rootpath)));
+            Trace((stderr, "rootpath now = [%s]\n", FnFilter1( G.rootpath)));
         }
         return MPN_OK;
     }
@@ -1020,10 +1070,12 @@ int checkdir(__G__ pathcomp, flag)
     END:  free rootpath, immediately prior to program exit.
   ---------------------------------------------------------------------------*/
 
-    if (FUNCTION == END) {
+    if (FUNCTION == END)
+    {
         Trace((stderr, "freeing rootpath\n"));
-        if (G.rootlen > 0) {
-            free(G.rootpath);
+        if (G.rootlen > 0)
+        {
+            izu_free( G.rootpath);
             G.rootlen = 0;
         }
         return MPN_OK;
@@ -1170,7 +1222,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             return;
         }
 
-        if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize)) == NULL) {
+        if ((slnk_entry = (slinkentry *)izu_malloc(slnk_entrysize)) == NULL) {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: no mem\n",
               FnFilter1(G.filename)));
@@ -1198,7 +1250,7 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed\n",
               FnFilter1(G.filename)));
-            free(slnk_entry);
+            izu_free(slnk_entry);
             fclose(G.outfile);
             return;
         }
@@ -1426,7 +1478,7 @@ int defer_dir_attribs(__G__ pd)
 {
     uxdirattr *d_entry;
 
-    d_entry = (uxdirattr *)malloc(sizeof(uxdirattr) + strlen(G.filename));
+    d_entry = (uxdirattr *)izu_malloc(sizeof(uxdirattr) + strlen(G.filename));
     *pd = (direntry *)d_entry;
     if (d_entry == (uxdirattr *)NULL) {
         return PK_MEM;
@@ -2306,7 +2358,7 @@ void init_conversion_charsets( __G)
     if (!locale)
         locale = getenv("LANG");
 
-    if (locale && (loc = malloc(strlen(locale) + 1)) != NULL)
+    if (locale && (loc = izu_malloc(strlen(locale) + 1)) != NULL)
     {
         char *p;
         int i;
@@ -2333,7 +2385,7 @@ void init_conversion_charsets( __G)
             }
         }
         /* 2012-11-27 SMS. */
-        free( loc);
+        izu_free( loc);
     }
 
     if (*G.oem_cp == '\0')      /* Set default one. */
@@ -2367,13 +2419,13 @@ void charset_to_intern(char *string, char *from_charset)
     slen = strlen(string);
     s = string;
     dlen = buflen = 2 * slen;
-    d = buf = malloc(buflen + 1);
+    d = buf = izu_malloc(buflen + 1);
     if (d)
     {
         memset( buf, 0, buflen);
         if(iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1)
             strncpy(string, buf, buflen);
-        free(buf);
+        izu_free(buf);
     }
     iconv_close(cd);
 }

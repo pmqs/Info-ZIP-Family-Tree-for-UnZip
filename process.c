@@ -73,9 +73,18 @@ static ZCONST char Far CannotAllocateBuffers[] =
      "\nAuto-run command: %s\nExecute this command? [y/n] ";
    static ZCONST char Far NotAutoRunning[] =
      "Not executing auto-run command.";
-# endif
+# endif /* def CHEAP_SFX_AUTORUN */
 #else /* def SFX */
    /* process_zipfiles() strings */
+# ifdef VMS
+   static ZCONST char Far DestDirPrompt[] =
+    "\nDestination subdirectory name (only -- No \"[\", \"]\", \".DIR\"): ";
+# else /* def VMS */
+   static ZCONST char Far DestDirPrompt[] =
+    "\nDestination subdirectory name: ";
+#endif  /* def VMS [else] */
+   static ZCONST char Far InputError[] =
+    " NULL\n(EOF or read error)\n";
 # if (defined(IZ_CHECK_TZ) && defined(USE_EF_UT_TIME))
      static ZCONST char Far WarnInvalidTZ[] =
        "Warning: TZ environment variable not found, cannot use UTC times!!\n";
@@ -84,8 +93,12 @@ static ZCONST char Far CannotAllocateBuffers[] =
    static ZCONST char Far CannotFindWildcardMatch[] =
      "%s:  cannot find any matches for wildcard specification \"%s\".\n";
 # endif /* !(defined(UNIX) || defined(AMIGA)) */
+   static ZCONST char Far AutoDestDirQuery[] =
+"[D]ifferent destination, [R]etry, re[U]se existing dir, or [S]kip archive? ";
    static ZCONST char Far BadAutoDestDir[] =
-     "Automatic directory name exists: %s\n";
+     "  Automatic destination directory exists: %s\n";
+   static ZCONST char Far BadDestDir[] =
+     "  Destination directory exists: %s\n";
    static ZCONST char Far FilesProcessOK[] =
      "%d archive%s successfully processed.\n";
    static ZCONST char Far ArchiveWarning[] =
@@ -387,8 +400,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
     if (G.autorun_command[0] && !uO.qflag) { /* NO autorun without prompt! */
         Info(slide, 0x81, ((char *)slide, LoadFarString(AutorunPrompt),
                       FnFilter1(G.autorun_command)));
-        if (fgets(G.answerbuf, 9, stdin) != (char *)NULL
-            && toupper(*G.answerbuf) == 'Y')
+        if ((fgets_ans( __G) >= 0) && (toupper( *G.answerbuf) == 'Y'))
             system(G.autorun_command);
         else
             Info(slide, 1, ((char *)slide, LoadFarString(NotAutoRunning)));
@@ -418,14 +430,69 @@ int process_zipfiles(__G)    /* return PK-type error code */
             want_blank = 1;
 
 # ifndef SFX
+#  define ANS ((char *)(slide + (extent)(WSIZE>> 1)))
+        /* Automatic destination subdirectory? */
         if (uO.auto_exdir > 0)
         {
-            auto_dest_dir = name_only( G.zipfn);
+          int auto_exdir_state;
+          int temp_reuse;
 
-#  ifdef VMS
-            /* For the existence test, VMS wants "directory_name.DIR". */
-            if (auto_dest_dir != NULL)
+          auto_exdir_state = 1;                         /* Initial state. */
+          temp_reuse = 0;
+          while (auto_exdir_state > 0)  /* Still ok? */
+          {
+            auto_exdir_state &= 3;      /* Clear transient error flag. */
+            if ((auto_exdir_state& 3) == 1)
             {
+              /* Get subdirectory name from archive name. */
+              auto_dest_dir = name_only( G.zipfn);
+            }
+            else if ((auto_exdir_state& 3) == 2)
+            {
+              /* Get subdirectory name from user. */
+              Info( slide, 0x81, ((char *)slide,
+               LoadFarString( DestDirPrompt)));
+              if (fgets( ANS, (WSIZE>> 1), stdin) == (char *)NULL)
+              {
+                /* fgets() failed (Null, EOF?). */
+                Info(slide, 1, ((char *)slide,
+                 LoadFarString( InputError)));
+                auto_exdir_state = -1;                  /* Fatal error. */
+              }
+              else
+              {
+                /* Trim trailing newline. */
+                if ((strlen( ANS) > 0) && (ANS[ strlen( ANS)- 1] == '\n'))
+                {
+                  ANS[ strlen( ANS)- 1] = '\0';
+                }
+                if (strlen( ANS) == 0)
+                {
+                  /* Bad (null) response from user. */
+                  auto_exdir_state |= 4;                /* Transient error. */
+                }
+                else
+                {
+                  /* Store the user-specified name. */
+                  auto_dest_dir = izu_malloc( strlen( ANS)+ 1);
+                  if (auto_dest_dir == NULL)
+                  {
+                    auto_exdir_state = -1;              /* Fatal error. */
+                  }
+                  else
+                  {
+                    strcpy( auto_dest_dir, ANS);
+                  }
+                }
+              }
+            } /* (Else, retry the same name.) */
+            
+            if ((auto_exdir_state > 0) && (auto_exdir_state < 4))
+            {
+#  ifdef VMS
+              /* For the existence test, VMS wants "directory_name.DIR". */
+              if (auto_dest_dir != NULL)
+              {
 #   define DIR_TYPE ".DIR"
                 auto_dest_dir_name =
                 izu_malloc( (strlen( auto_dest_dir)+ sizeof( DIR_TYPE)));
@@ -435,47 +502,112 @@ int process_zipfiles(__G)    /* return PK-type error code */
                     strcpy( (auto_dest_dir_name+ strlen( auto_dest_dir)),
                      DIR_TYPE);
                 }
-            }
+              }
 #  endif /* def VMS */
-
-            if (AUTO_DEST_DIR_NAME != NULL)
-            {
+              if (AUTO_DEST_DIR_NAME != NULL)
+              {
                 /* Name not found, or it's a directory, and reuse is ok? */
                 if ((SSTAT( AUTO_DEST_DIR_NAME, &G.statbuf) != 0) ||
-                 (S_ISDIR( G.statbuf.st_mode) && (uO.auto_exdir > 1)))
+                 ((S_ISDIR( G.statbuf.st_mode) &&
+                 ((uO.auto_exdir > 1) || (temp_reuse != 0)))))
                 {
 #  ifdef VMS
-                    /* For use, VMS wants "[.directory_name]", so form it
-                     * (in already allocated storage).
-                     */
-                    strcpy( AUTO_DEST_DIR_NAME, "[.");
-                    strcat( AUTO_DEST_DIR_NAME, auto_dest_dir);
-                    strcat( AUTO_DEST_DIR_NAME, "]");
-#  endif /* def VMS */
-                    if (uO.exdir != NULL)           /* Free any old storage. */
-                        izu_free( uO.exdir);
-                    uO.exdir = AUTO_DEST_DIR_NAME;  /* Set the new dir name. */
+                  /* For use, VMS wants "[.directory_name]", so form it
+                   * (in already allocated storage).
+                   */
+                  strcpy( AUTO_DEST_DIR_NAME, "[.");
+                  strcat( AUTO_DEST_DIR_NAME, auto_dest_dir);
+                  strcat( AUTO_DEST_DIR_NAME, "]");
+                  izu_free( auto_dest_dir);     /* Free the raw name storage. */
+#  endif /* def VMS */				
+                  if (uO.exdir != NULL)         /* Free any old storage. */
+                    izu_free( uO.exdir);
+                  uO.exdir = AUTO_DEST_DIR_NAME;    /* Set the new dir name. */
+                  auto_exdir_state = 0;                 /* Happy. */
                 }
                 else
                 {
-                    error_auto_dest = 1;
-                    error = IZ_BADDEST;
-                    ++NumLoseFiles;
-
-                    /* Show the name of the archive being skipped. */
-#  ifdef WIN32  /* Win32 console may require codepage conversion for G.zipfn. */
-                    Info( slide, 0, ((char *)slide,
-                     LoadFarString( LogInitline), FnFilter1( G.zipfn)));
-#  else
-                    Info( slide, 0, ((char *)slide,
-                     LoadFarString( LogInitline), G.zipfn));
-#  endif
-                    /* Show the name of the bad destination directory. */
-                    Info( slide, 1, ((char *)slide,
-                     LoadFarString( BadAutoDestDir), AUTO_DEST_DIR_NAME));
+                  auto_exdir_state |= 4;                /* Transient error. */
                 }
+              }
+              else
+              {
+                auto_exdir_state |= 4;                  /* Transient error. */
+              }
             }
-        }
+            if (auto_exdir_state >= 4)
+            {
+              /* Show the name of the archive being skipped. */
+#  ifdef WIN32  /* Win32 console may require codepage conversion for G.zipfn. */
+              Info( slide, 0, ((char *)slide,
+               LoadFarString( LogInitline), FnFilter1( G.zipfn)));
+#  else
+              Info( slide, 0, ((char *)slide,
+               LoadFarString( LogInitline), G.zipfn));
+#  endif
+              /* Show the name of the bad destination directory. */
+              if ((auto_exdir_state& 1) != 0)
+              {
+                Info( slide, 1, ((char *)slide,
+                 LoadFarString( BadAutoDestDir), AUTO_DEST_DIR_NAME));
+                auto_exdir_state = 2;                   /* Next, ask user. */
+              }
+              else
+              {
+                Info( slide, 1, ((char *)slide,
+                 LoadFarString( BadDestDir), AUTO_DEST_DIR_NAME));
+              }
+
+              /* Ask Dest, Retry, reUse, Skip? */
+              *ANS = ' ';
+              while (*ANS == ' ')
+              {
+                temp_reuse = 0;         /* Reset temp reuse flag. */
+                Info( slide, 0x81, ((char *)slide,
+                 LoadFarString( AutoDestDirQuery)));
+                if (fgets( ANS, (WSIZE>> 1), stdin) == (char *)NULL)
+                {
+                  /* fgets() failed (Null, EOF?). */
+                  Info(slide, 1, ((char *)slide,
+                   LoadFarString( InputError)));
+                  auto_exdir_state = -1;                /* Fatal error. */
+                  *ANS = '\0';
+                }
+                else
+                {
+                  /* Parse user input (first character). */
+                  switch (*ANS)
+                  {
+                    case 'D':
+                    case 'd':
+                      auto_exdir_state = 2;             /* Ask user. */
+                      break;
+                    case 'U':
+                    case 'u':           /* Same as 'R', except... */
+                      temp_reuse = 1;   /* Allow dest dir reuse (once). */
+                    case 'R':
+                    case 'r':
+                      auto_exdir_state = 3;             /* Retry. */
+                      break;
+                    case 'S':
+                    case 's':
+                      auto_exdir_state = -1;            /* Fatal error. */
+                      break;
+                    default:
+                      *ANS = ' ';       /* Ask again. */
+                  } /* switch */
+                }
+              } /* while (*ANS == ' ')  (Dest, Retry, reUse, Skip?) */
+            }
+          } /* while (auto_exdir_state > 0)  (Destination query.) */
+
+          if (auto_exdir_state != 0)
+          {
+            error_auto_dest = 1;
+            error = IZ_BADDEST;
+            ++NumLoseFiles;
+          }
+        } /* if (uO.auto_exdir > 0) */
 
         if (error_auto_dest == 0)
 # endif /* ndef SFX */
@@ -1466,7 +1598,7 @@ static int find_ecrec64(__G__ searchlen)         /* return PK-class error */
 
     /* Check for consistency */
 #ifdef TEST
-    fprintf(stdout, "\nnumber of disks (ECR) %u, (ECLOC64) %lu\n",
+    fprintf(stdout, "\nnumber of disks (ECR) %u, (ECLOC64) %u\n",
             G.ecrec.number_this_disk, ecloc64_total_disks); fflush(stdout);
 #endif
     if ((G.ecrec.number_this_disk != 0xFFFF) &&

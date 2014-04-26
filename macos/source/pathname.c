@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2003 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -127,8 +127,8 @@ long theDirID;
 Boolean isDirectory;
 unsigned short namelen, pathlen = strlen(ExtractPath);
 unsigned long ext_length  = 0;
-unsigned long num_to_cut  = 0;
-long firstpart_length = pathlen;
+/* unsigned long num_to_cut  = 0;  2014-03-13 SMS.  Unused. */
+/* long firstpart_length = pathlen;  2014-03-13 SMS.  Unused. */
 
 AssertStr(ExtractPath,"FindNewExtractFolder ExtractPath == NULL")
 
@@ -263,7 +263,7 @@ void FindDesktopFolder(char *Path)
 {
 char buffer[255];
 FSSpec  volumes[50];        /* 50 Volumes should be enough */
-short   actVolCount, volIndex = 1, VolCount = 0;
+short   actVolCount, volIndex = 1 /* , VolCount = 0  2014-03-13 SMS.  Unused. */;
 OSErr   err;
 short     i, foundVRefNum;
 FSSpec spec;

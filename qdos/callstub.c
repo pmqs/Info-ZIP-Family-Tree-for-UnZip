@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2000 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -191,7 +191,7 @@ int unpackit ( __QP_t *tmpdir, __QP_t *outdir, char *basfil, int con)
 int main(void)
 {
     int con;
-    int r,n;
+    int r = 0 /* ,n  2014-03-13 SMS.  Uninitialized (r), unused (n). */;
     __QA(PATH_MAX) tmpdir;
     __QA(PATH_MAX) outdir;
     char basfil[PATH_MAX];

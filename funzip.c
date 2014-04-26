@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -433,7 +433,7 @@ char **argv;
       if (ef_len > 0)
       {
         /* Allocate storage for the extra field, and read it. */
-        ef_buf = izu_malloc( ef_len);
+        ef_buf = (uch *)izu_malloc( ef_len);
         if (ef_buf == (uch *)NULL)
           err(PK_MEM, "out of memory");
 
@@ -595,10 +595,10 @@ char **argv;
     if (ucsize != csize) {
 #endif /* def IZ_CRYPT_ANY [else] */
 #ifdef ZIP64_SUPPORT
-      Info(slide, 1, ((char *)slide, "len %lld, siz %lld\n",
+      Info(slide, 1, ((char *)slide, "len %llu, siz %llu\n",
        ucsize, csize));
 #else /* def ZIP64_SUPPORT */
-      Info(slide, 1, ((char *)slide, "len %ld, siz %ld\n",
+      Info(slide, 1, ((char *)slide, "len %lu, siz %lu\n",
        ucsize, csize));
 #endif /*  def ZIP64_SUPPORT [else] */
       err(PK_BADERR, "invalid compressed data--length mismatch");

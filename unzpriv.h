@@ -2722,6 +2722,7 @@ void     fnprint                 OF((__GPRO));
     Functions in fileio.c:
   ---------------------------------------------------------------------------*/
 
+
 int      open_input_file      OF((__GPRO));
 int      open_outfile         OF((__GPRO));                    /* also vms.c */
 void     undefer_input        OF((__GPRO));
@@ -2735,6 +2736,7 @@ int      seek_zipf            OF((__GPRO__ zoff_t abs_offset));
 #else
    int   flush                OF((__GPRO__ uch *buf, ulg size, int unshrink));
 #endif
+int      fgets_ans            OF((__GPRO));
 /* static int  disk_error     OF((__GPRO)); */
 void     handler              OF((int signal));
 time_t   dos_to_unix_time     OF((ulg dos_datetime));
@@ -3505,6 +3507,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
    extern ZCONST char Far  FilenameNotMatched[];
    extern ZCONST char Far  ExclFilenameNotMatched[];
    extern ZCONST char Far  ReportMsg[];
+   extern ZCONST char Far  ExtractMsg[];
 
 #ifndef SFX
    extern ZCONST char Far  Zipnfo[];

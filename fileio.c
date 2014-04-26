@@ -22,6 +22,7 @@
              readbyte()
              fillinbuf()
              seek_zipf()
+             fgets_ans()
              flush()                  (non-VMS)
              is_vms_varlen_txt()      (non-VMS, VMS_TEXT_CONV only)
              disk_error()             (non-VMS)
@@ -587,7 +588,7 @@ int open_outfile(__G)           /* return 1 if fail */
     Trace((stderr, "open_outfile:  fopen(%s) for writing succeeded\n",
       FnFilter1(G.filename)));
 #   endif /* def MTS */
-#  endif /* /* def TOPS20 [else] */
+#  endif /* def TOPS20 [else] */
 
 #  ifdef USE_FWRITE
 #   ifdef DOS_NLM_OS2_W32
@@ -906,6 +907,38 @@ int seek_zipf(__G__ abs_offset)
     }
     return(PK_OK);
 } /* end function seek_zipf() */
+
+
+
+
+/************************/
+/* Function fgets_ans() */
+/************************/
+
+int fgets_ans( __G)
+    __GDEF
+{
+    char *ans;
+    int ret;
+    char waste[ 8];
+
+    ans = fgets( G.answerbuf, sizeof( G.answerbuf), stdin);
+    if (ans == NULL)
+    {   /* Error or end-of-file. */
+        ret = -1;                       /* Failure code. */
+        *G.answerbuf = '\0';            /* Null the answer buffer. */
+    }
+    else
+    {
+        ret = 0;                        /* Success code. */
+        /* Read any remaining chars on line, leaving G.answerbuf intact. */
+        while ((ans != NULL) && (ans[ strlen( ans)- 1] != '\n'))
+        {
+            ans = fgets( waste, sizeof( waste), stdin);
+        }
+    }
+    return ret;
+}
 
 
 
@@ -1608,10 +1641,10 @@ static int disk_error(__G)
     {
         Info(slide, 0x4a1, ((char *)slide, LoadFarString(DiskFullQuery),
          FnFilter1(G.filename)));
-        fgets(G.answerbuf, sizeof(G.answerbuf), stdin);
-        if ((*G.answerbuf == 'y') || (*G.answerbuf == 'y'))
+        fgets_ans( __G);
+        if (toupper( *G.answerbuf) == 'Y')      /* Error = "no". */
             /* Stop writing to this file. */
-            G.disk_full = 1;       /*  (outfile bad?), but new OK */
+            G.disk_full = 1;            /*  (outfile bad?), but new OK. */
     }
     else
     {

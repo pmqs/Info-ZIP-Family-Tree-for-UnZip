@@ -370,7 +370,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     unsigned int cmdl_len;              /* used size of buffer */
     unsigned int status;
     int exclude_list;
-    int len;
     int x;
     int zipinfo;
 

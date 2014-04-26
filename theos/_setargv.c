@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -98,7 +98,7 @@ int _setargv(int *argc, char ***argv)
 {
     register int nargc;     /* New arguments counter */
     char **nargv;           /* New arguments pointers */
-    register int i, j;
+    register int i /* , j  2014-03-13 SMS.  Unused. */ ;
     int asize;              /* argv array size */
     char *arg;
     char lib[256];
@@ -125,7 +125,7 @@ int _setargv(int *argc, char ***argv)
                 short insert;
                 strcpy(lib, libname(arg));
                 /* add library name if necessary */
-                for (j = 2, insert = 1; i < nargc; i++) {
+                for (/* j = 2 */, insert = 1; i < nargc; i++) {
                     if (ismember(nargv[i])
                      && ! strcmp(lib, libname(nargv[i]))) {
                         insert = 0;

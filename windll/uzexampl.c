@@ -305,10 +305,10 @@ lpUzVersInfo = (*pUzpVersion)();
 #   define UZDLL_MINVERS_MINOR          UZ_MINORVER
 #   define UZDLL_MINVERS_PATCHLEVEL     UZ_PATCHLEVEL
 /* This UnZip DLL stub requires a DLL version of at least: */
-if ( (lpUzVersInfo->unzip.major < UZDLL_MINVERS_MAJOR) ||
-     ((lpUzVersInfo->unzip.major == UZDLL_MINVERS_MAJOR) &&
-      ((lpUzVersInfo->unzip.minor < UZDLL_MINVERS_MINOR) ||
-       ((lpUzVersInfo->unzip.minor == UZDLL_MINVERS_MINOR) &&
+if ( (lpUzVersInfo->unzip.vmajor < UZDLL_MINVERS_MAJOR) ||
+     ((lpUzVersInfo->unzip.vmajor == UZDLL_MINVERS_MAJOR) &&
+      ((lpUzVersInfo->unzip.vminor < UZDLL_MINVERS_MINOR) ||
+       ((lpUzVersInfo->unzip.vminor == UZDLL_MINVERS_MINOR) &&
         (lpUzVersInfo->unzip.patchlevel < UZDLL_MINVERS_PATCHLEVEL)
        )
       )
@@ -316,7 +316,7 @@ if ( (lpUzVersInfo->unzip.major < UZDLL_MINVERS_MAJOR) ||
 {
   char str[256];
   wsprintf(str, "The version %u.%u%u of the loaded UnZip DLL is too old!",
-           lpUzVersInfo->unzip.major, lpUzVersInfo->unzip.minor,
+           lpUzVersInfo->unzip.vmajor, lpUzVersInfo->unzip.vminor,
            lpUzVersInfo->unzip.patchlevel);
   printf("%s\n", str);
   FreeLibrary(hUnzipDll);
@@ -327,10 +327,10 @@ if ( (lpUzVersInfo->unzip.major < UZDLL_MINVERS_MAJOR) ||
 if (lpUzVersInfo->structlen >=
     (offsetof(UzpVer, dllapimin) + sizeof(_version_type)))
 {
-  if ( (lpUzVersInfo->dllapimin.major > UZ_WINAPI_COMP_MAJOR) ||
-       ((lpUzVersInfo->dllapimin.major == UZ_WINAPI_COMP_MAJOR) &&
-        ((lpUzVersInfo->dllapimin.minor > UZ_WINAPI_COMP_MINOR) ||
-         ((lpUzVersInfo->dllapimin.minor == UZ_WINAPI_COMP_MINOR) &&
+  if ( (lpUzVersInfo->dllapimin.vmajor > UZ_WINAPI_COMP_MAJOR) ||
+       ((lpUzVersInfo->dllapimin.vmajor == UZ_WINAPI_COMP_MAJOR) &&
+        ((lpUzVersInfo->dllapimin.vminor > UZ_WINAPI_COMP_MINOR) ||
+         ((lpUzVersInfo->dllapimin.vminor == UZ_WINAPI_COMP_MINOR) &&
           (lpUzVersInfo->dllapimin.patchlevel > UZ_WINAPI_COMP_REVIS)
          )
         )
@@ -338,7 +338,7 @@ if (lpUzVersInfo->structlen >=
   {
     char str[256];
     wsprintf(str, "Found incompatible WinDLL API version %u.%u%u, aborting!",
-             lpUzVersInfo->dllapimin.major, lpUzVersInfo->dllapimin.minor,
+             lpUzVersInfo->dllapimin.vmajor, lpUzVersInfo->dllapimin.vminor,
              lpUzVersInfo->dllapimin.patchlevel);
     printf("%s\n", str);
     FreeLibrary(hUnzipDll);

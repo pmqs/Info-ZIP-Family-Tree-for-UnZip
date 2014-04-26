@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -38,7 +38,7 @@ APIDocStruct APIDoc[] = {
 "  Example:  /* Check the major version number of the DLL code. */\n"
 "            UzpVer *pVersion;\n"
 "            pVersion = UzpVersion();\n"
-"            if (pVersion->unzip.major != UZ_MAJORVER)\n"
+"            if (pVersion->unzip.vmajor != UZ_MAJORVER)\n"
 "              fprintf(stderr, \"error: using wrong version of DLL\\n\");\n\n"
 "            See unzip.h for details and unzipstb.c for an example.\n"
     },
@@ -152,8 +152,6 @@ void APIhelp(__G__ fname)
 {
     if (fname != NULL)
     {
-        struct APIDocStruct *doc;
-
         if (function_help(__G__ APIDoc, fname))
             return;
 #ifdef SYSTEM_API_DETAILS

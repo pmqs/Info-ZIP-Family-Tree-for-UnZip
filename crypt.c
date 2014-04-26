@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -745,7 +745,6 @@ int zipbare(z, passwd)
     struct zlist far *localz; /* local header */
     uch buf[1024];        /* write buffer */
     int b;                /* bytes in buffer */
-    zoff_t z_siz;
     int passwd_ok;
     int r;                /* size of encryption header */
     int res;              /* return code */
@@ -761,6 +760,7 @@ int zipbare(z, passwd)
     zoff_t n;                   /* Bytes actually read. */
     zoff_t nn;                  /* Bytes requested. */
     zoff_t nout;                /* Total bytes put out. */
+    zoff_t z_siz;
 #   else /* def IZ_CRYPT_AES_WG */
 #    define HEAD_LEN RAND_HEAD_LEN      /* Constant trad. header length. */
 #   endif /* def IZ_CRYPT_AES_WG [else] */
@@ -880,12 +880,13 @@ int zipbare(z, passwd)
     /* Good password.  Proceed to decrypt the entry. */
     z->siz -= HEAD_LEN;         /* Subtract the encryption header length. */
     localz->siz = z->siz;       /* Local, too. */
-    z_siz = z->siz;             /* Save z->siz as Use z_siz for I/O later. */
 
     localz->flg = z->flg &= ~9;         /* Clear the encryption and */
     z->lflg = localz->lflg &= ~9;       /* data-descriptor flags. */
 
 #   ifdef IZ_CRYPT_AES_WG
+    z_siz = z->siz;             /* Save z->siz as Use z_siz for I/O later. */
+
     if (how_orig == AESENCRED)
     {
         localz->how = aes_mthd; /* Set the compression method value(s) */
@@ -1254,7 +1255,7 @@ local int testkey(__G__ hd_len, h, key)
     Trace((stdout,
       "  (c | (b<<8)) = %04x  (crc >> 16) = %04x  lrec.time = %04x\n",
       (ush)(c | (b<<8)), (ush)(GLOBAL(lrec.crc32) >> 16),
-      ((ush)GLOBAL(lrec.last_mod_dos_datetime) & 0xffff))));
+      ((ush)GLOBAL(lrec.last_mod_dos_datetime) & 0xffff)));
     if ((ush)(c | (b<<8)) != (GLOBAL(pInfo->ExtLocHdr) ?
                            ((ush)GLOBAL(lrec.last_mod_dos_datetime) & 0xffff) :
                            (ush)(GLOBAL(lrec.crc32) >> 16)))

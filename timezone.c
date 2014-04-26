@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -492,9 +492,17 @@ void tzset()
         tzname[0] = statism.chars + statism.ttis[dstfirst].tt_abbrind;
         tzname[1] = statism.chars + statism.ttis[!dstfirst].tt_abbrind;
         real_timezone_is_set = TRUE;
-        if (TZstring) {
+        if (TZstring)
+        {
             if (old_TZstring)
-                old_TZstring = izu_realloc(old_TZstring, strlen(TZstring) + 1);
+            {
+                char *temp_TZstring = old_TZstring;
+
+                old_TZstring =
+                 izu_realloc( old_TZstring, (strlen( TZstring)+ 1));
+                if (old_TZstring == NULL)
+                    izu_free( temp_TZstring);
+            }
             else
                 old_TZstring = izu_malloc(strlen(TZstring) + 1);
             if (old_TZstring)

@@ -1612,7 +1612,6 @@ static int replace_rms_overwrite(__GPRO)
  */
 static int replace(__GPRO)
 {
-    char answ[10];
     int replace_code;
 
     if (replace_code_all >= 0)
@@ -1647,7 +1646,7 @@ static int replace(__GPRO)
               FnFilter1(G.filename)));
             fflush(stderr);
 
-            if (fgets(answ, sizeof(answ), stdin) == (char *)NULL)
+            if (fgets_ans( __G) < 0)
             {
                 Info(slide, 1, ((char *)slide, AssumeNo));
                 /* Handle the NULL answer as "N",
@@ -1662,8 +1661,8 @@ static int replace(__GPRO)
             /* Strip off a trailing newline, to avoid corrupt
              * complaints when displaying the answer.
              */
-            if (answ[strlen(answ) - 1] == '\n')
-                answ[strlen(answ) - 1] = '\0';
+            if (G.answerbuf[ strlen( G.answerbuf)- 1] == '\n')
+             G.answerbuf[ strlen( G.answerbuf)- 1] = '\0';
 
             /* Extra newline to avoid having the extracting:/inflating:/...:
              * message overwritten by the next query.
@@ -1671,7 +1670,7 @@ static int replace(__GPRO)
             Info(slide, 1, ((char *)slide, "\n"));
 
             /* Interpret response.  Store upper-case answer for future use. */
-            switch (answ[0])
+            switch (G.answerbuf[ 0])
             {
                 case 'N':
                     replace_code_all = REPL_NO_EXTRACT;
@@ -1693,7 +1692,8 @@ static int replace(__GPRO)
                     break;
                 default:
                     /* Invalid response.  Try again. */
-                    Info(slide, 1, ((char *)slide, InvalidResponse, answ));
+                    Info(slide, 1, ((char *)slide, InvalidResponse,
+                     G.answerbuf));
             }
         } while (replace_code < 0);
     }
@@ -2566,7 +2566,7 @@ static int _flush_stream(__G__ rawbuf, size, final_flag)
 
     for (start = end; start < size && end < size; )
     {
-        unsigned eol_off, eol_len;
+        unsigned eol_len;
 
         got_eol = 0;
 
@@ -2581,7 +2581,7 @@ static int _flush_stream(__G__ rawbuf, size, final_flag)
             continue;
 
         /* Find record end */
-        end = start+(eol_off = find_eol(rawbuf+start, size-start, &eol_len));
+        end = start+ find_eol( (rawbuf+ start), (size- start), &eol_len);
 
         if ( end >= size )
             continue;
@@ -3614,9 +3614,7 @@ static ZCONST short ydays[] = {
 static time_t mkgmtime(tm)
     struct tm *tm;
 {
-    time_t m_time;
     int yr, mo, dy, hh, mm, ss;
-    unsigned days;
 
     yr = tm->tm_year - 70;
     mo = tm->tm_mon;
@@ -4364,14 +4362,13 @@ int dest_dev_name( char *path)
 
 int dest_struct_level( char *path)
 {
-    int acp_code = -1;
-
 #ifdef DVI$C_ACP_F11V5
 
     /* Should know about ODS5 file system.  Do actual check.
      * (This should be non-VAX with __CRTL_VER >= 70200000.)
      */
 
+    int acp_code = -1;
     int sts;
 
     struct dsc$descriptor_s dev_descr =
@@ -4464,7 +4461,6 @@ static void adj_dir_name_ods5(__GPRO__ char *dest, char *src, int src_len)
     for (src_last = src + src_len; src < src_last; src++)
     {
         prop = char_prop[uchr = *src];          /* Get source char, props. */
-        prop = char_prop[uchr];                 /* Get source char props. */
         if (uO.sflag && (prop & 8) != 0)
         {                                       /* With "-s", simply    */
             uchr = '_';                         /* replace SP with "_". */
@@ -4939,7 +4935,7 @@ int mapname(__G__ renamed)
     }
 
     /* If there is one, adjust the name.type;version segment. */
-    if (strlen(cp) == 0)
+    if (*cp == '\0')
     {
         /* Directory only, no file name.  Create the directory, as needed.
            Report directory creation to user.
@@ -4947,9 +4943,13 @@ int mapname(__G__ renamed)
         checkdir(__G__ "", APPEND_NAME);   /* create directory, if not found */
         checkdir(__G__ G.filename, GETPATH);
         if (created_dir) {
-            if (QCOND2) {
-                Info(slide, 0, ((char *)slide, "   creating: %s\n",
-                  FnFilter1(G.filename)));
+            if (QCOND2)
+            {
+                Info( slide, 0, ((char *)slide, ExtractMsg, "creat",
+                  FnFilter1( G.filename), "", "\n"));
+#ifdef ENABLE_USER_PROGRESS
+                G.extract_msg_str = "creat";
+#endif /* def ENABLE_USER_PROGRESS */
             }
             /* set dir time (note trailing '/') */
             return (error & ~MPN_MASK) | MPN_CREATED_DIR;
@@ -5024,14 +5024,12 @@ int checkdir(__G__ pathcomp, fcn)
            of the user-specified destination directory.  Previously, various
            values behaved badly, without complaint, e.g. "-d sys$scratch".
         */
-        char *root_dest;
 
         /* If the root path has already been set, return immediately. */
         if (rootlen > 0)
             return MPN_OK;
 
         /* Initialization. */
-        root_dest = PATH_DEFAULT;   /* Default destination for ODSx sensing. */
         root_has_dir = 0;           /* Root includes a directory. */
         fab = cc$rms_fab;           /* Initialize FAB. */
         nam = CC_RMS_NAMX;          /* Initialize NAM[L]. */
@@ -5126,7 +5124,6 @@ int checkdir(__G__ pathcomp, fcn)
 
         /* Save the (valid) device:[directory] spec. */
         strcpy(pathbuf, nam.NAMX_ESA);
-        root_dest = pathbuf;
 
         /* At this point, the true destination is known.  If the user
          * supplied an invalid destination directory, the default
@@ -5140,8 +5137,8 @@ int checkdir(__G__ pathcomp, fcn)
          strncpy( dest_dev, nam.NAMX_L_DEV, nam.NAMX_B_DEV);
          dest_dev_len = nam.NAMX_B_DEV;
 
-        /* If not yet known, determine the destination (root_dest) file
-         * system type, ODS2 or ODS5, real or user-specified (ODS2).
+        /* If not yet known, determine the destination file system type,
+         * ODS2 or ODS5, real or user-specified (ODS2).
          */
         if (ods2_names < 0)
         {
@@ -5319,7 +5316,7 @@ int checkdir(__G__ pathcomp, fcn)
                         mkdir_failed = 1;   /* Mine for GETPATH */
                 }
             }
-            if ( strlen(pathcomp) + (end-pathbuf) > 255 )
+            if ( strlen(pathcomp) + (end-pathbuf) > NAMX_MAXRSS )
                 return MPN_INF_TRUNC;
             strcpy(end, pathcomp);
             end += strlen(pathcomp);
@@ -5913,10 +5910,12 @@ void version(__G)
     char vms_vers[16];
     int ver_maj;
 # endif
-# ifdef __DECC_VER
+# ifndef __GNUC__
+#  ifdef __DECC_VER
     char buf2[40];
     int  vtyp;
-# endif
+#  endif /* def __DECC_VER */
+# endif /* ndef __GNUC__ */
 
 # ifdef VMS_VERSION
     /* Truncate the version string at the first (trailing) space. */
@@ -6040,7 +6039,6 @@ return ((unsigned int) c1- (unsigned int) c2);
 
 int establish_ctrl_t( void ctrl_t_ast())
 {
-    int i;
     int status;
     short iosb[ 4];
 
@@ -6156,8 +6154,6 @@ int openr_id = OPENR_ID;        /* Callback id storage, read. */
 
 int acc_cb(int *id_arg, struct FAB *fab, struct RAB *rab)
 {
-    int sts;
-
 # ifndef REENTRANT
     /* Get process RMS_DEFAULT values, if not already done. */
     if (rms_defaults_known == 0)

@@ -580,7 +580,7 @@ Windows (XP, Vista, 7, and so on)
    the BZIP2_SUPPORT macro is not defined).
 
    Currently, Microsoft Visual Studio 2010 (Visual C++ v10.0), VS 2012
-   (VC++ v11.0), and VS 2013 (VC++ 12.0)are the only tested versions.
+   (VC++ v11.0), and VS 2013 (VC++ 12.0) are the only tested versions.
    Newer Visual Studio versions may work, but have not been tested.
    Builder files for older Visual Studio versions have not been removed
    from the kit, and may work in limited ways, but they have not been

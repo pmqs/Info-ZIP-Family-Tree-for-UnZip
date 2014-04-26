@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -348,7 +348,7 @@ int mapname(__G__ renamed)
 #else
     /* supress G.rootpath even when user gave a relative pathname */
 # if 1
-    G.renamed_fullpath = (renamed && strpbrk(G.filename, ":/");
+    G.renamed_fullpath = (renamed && strpbrk(G.filename, ":/"));
 # else
     G.renamed_fullpath = (renamed &&
                           (strchr(G.filename, ':') || strchr(G.filename, '/')));
@@ -975,14 +975,14 @@ void version(__G)
 #   ifdef AZTEC_C
      strcpy(buf1,"Manx Aztec C ");
 #   else
-     strcpy(buf1,"UNKNOWN ");
+     strcpy(buf1,"Unknown C ");
 #   endif
 #  endif
 # endif
 /* "under" */
   sprintf(buf3,"AmigaDOS v%d",WBversion);
 #else
-  strcpy(buf1,"Unknown compiler ");
+  strcpy(buf1,"Unknown C ");
   strcpy(buf3,"Unknown OS");
 #endif
 

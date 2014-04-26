@@ -447,7 +447,8 @@ static ZCONST char Far AcornFtypeNFS[] = "ACORN_FTYPE_NFS";
 
 #  if defined( UNIX) && defined( __APPLE__)
 #   ifndef APPLE_NFRSRC
-     Bad code: error APPLE_NFRSRC not defined.
+ /* Next "#" indented to accommodate K&R (#error-ignorant) compilers. */
+ #   error APPLE_NFRSRC not defined.
 #   endif
 #   if defined( __ppc__) || defined( __ppc64__)
 #    if APPLE_NFRSRC
@@ -535,7 +536,6 @@ static ZCONST char Far OldTheosExtra[] =
 #  ifdef OS2_EAS
 static ZCONST char Far OS2ExtAttrib[] =
  "OS2_EAS              (OS/2 extended attributes supported)";
- "NTSD_EAS             (Windows NT extended attributes supported)";
 #  endif
 #  ifdef QLZIP
 static ZCONST char Far SMSExFldOnUnix[] = "QLZIP";
@@ -1372,7 +1372,7 @@ int unzip(__G__ argc, argv)
 
     if ((argc < 0) || error) {
         retcode = error;
-        if (error)
+        if ((argc < -1) || error)
         {
             Info(slide, 0x401, ((char *)slide, "\n"));
             USAGE( error);
@@ -4442,14 +4442,13 @@ int free_args( args)
     izu_free(args[i]);
   }
   izu_free(args);
-  args = NULL;          /* 2012-12-11 SMS.  Mark as freed. */
   return i;
 }
 
 
 /* insert_arg
  *
- * Insert the argument arg into the array args before argument at_arg.
+ * Insert the argument arg into the array *pargs before argument at_arg.
  * If at_arg = -1 then append to end.
  * Return the new count of arguments (argc).
  *
@@ -5810,8 +5809,10 @@ int arg;
   }
 
   if (G.filename != NULL)
-  {
-    fprintf( stderr, "   %s\n", FnFilter1(G.filename));
+  { /* Repeat the extraction message (to the extent possible). */
+    fprintf( stderr, ExtractMsg,
+     ((G.extract_msg_str == NULL) ? "????" : G.extract_msg_str),
+     FnFilter1( G.filename), "", "");
   }
 
 # ifndef VMS

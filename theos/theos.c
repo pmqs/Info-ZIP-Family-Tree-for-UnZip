@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2005 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -741,7 +741,7 @@ int checkdir(__G__ pathcomp, flag)
                     Info(slide, 1, ((char*)slide,
                       "checkdir error:  can't create library %s\n\
                      unable to process %s.\n",
-                      FnFilter2(buildpath), FnFilter1(G.filename));
+                      FnFilter2(buildpath), FnFilter1(G.filename)));
                     free(buildpath);
                     /* path didn't exist, tried to create, failed */
                     return MPN_ERR_SKIP;
@@ -750,7 +750,7 @@ int checkdir(__G__ pathcomp, flag)
                 Info(slide, 1, ((char *)slide,
                   "checkdir error:  cannot create %s\n\
                  unable to process %s.\n",
-                  FnFilter2(buildpath), FnFilter1(G.filename));
+                  FnFilter2(buildpath), FnFilter1(G.filename)));
                 free(buildpath);
                 /* path didn't exist, tried to create, failed */
                 return MPN_ERR_SKIP;
@@ -760,7 +760,7 @@ int checkdir(__G__ pathcomp, flag)
             Info(slide, 1, ((char *)slide,
               "checkdir error:  %s exists but is not directory\n\
                  unable to process %s.\n",
-              FnFilter2(buildpath), FnFilter1(G.filename));
+              FnFilter2(buildpath), FnFilter1(G.filename)));
             free(buildpath);
             /* path existed but wasn't dir */
             return MPN_ERR_SKIP;
@@ -768,7 +768,7 @@ int checkdir(__G__ pathcomp, flag)
             Info(slide, 1, ((char *)slide,
               "checkdir error:  %s exists but is not library\n\
                  unable to process %s.\n",
-              FnFilter2(buildpath), FnFilter1(G.filename));
+              FnFilter2(buildpath), FnFilter1(G.filename)));
             free(buildpath);
             /* path existed but wasn't lib */
             return MPN_ERR_SKIP;

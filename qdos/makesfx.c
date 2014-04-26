@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2000 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -10,6 +10,10 @@
  * makesfx - Makes a QDOS sfx zip file
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  * created by Jonathan Hudson, 04/09/95
+ */
+
+/* 2013-03-13 SMS.
+ * No error checking/handling on malloc(), realloc().
  */
 
 #include <stdio.h>
@@ -54,7 +58,7 @@ struct qdirect  {
 int fs_headr (int fd, long t, struct qdirect *qs, short size)
 {
     NTC ntc;
-    int r = -1;
+    int r /* = -1  2014-03-13 SMS.  Unused. */;
     struct stat s;
 
     fstat(fd, &s);

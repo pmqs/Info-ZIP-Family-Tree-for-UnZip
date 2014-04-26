@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -461,33 +461,38 @@ typedef struct Globals {
 #  if (defined(SFX) && defined(CHEAP_SFX_AUTORUN))
     char autorun_command[FILNAMSIZ];
 #  endif
-# endif /* !FUNZIP */
 
-# ifdef IZ_CRYPT_AES_WG
+#  ifdef IZ_CRYPT_AES_WG
     /* 2011-05-24 SMS.
      * AES_WG encryption parameters.
      */
     zoff_t ucsize_aes;          /* AES uncompressed bytes left to decrypt. */
     fcrypt_ctx zcx[ 1];         /* AES context. */
-# endif /* def IZ_CRYPT_AES_WG */
+#  endif /* def IZ_CRYPT_AES_WG */
 
 /* 7-Zip (LZMA, PPMd) memory allocation function structure. */
-# if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
+#  if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
     ISzAlloc g_Alloc;
-# endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
+#  endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
 
 /* 7-Zip LZMA compression parameters. */
-# ifdef LZMA_SUPPORT
+#  ifdef LZMA_SUPPORT
     CLzmaProps clzma_props;     /* LZMA properties. */
     CLzmaDec state_lzma;        /* LZMA context. */
-# endif /* def LZMA_SUPPORT */
+#  endif /* def LZMA_SUPPORT */
 
 /* 7-Zip PPMd compression parameters. */
-# ifdef PPMD_SUPPORT
+#  ifdef PPMD_SUPPORT
     CPpmd8 ppmd8;               /* PPMd structure. */
     int ppmd_constructed;       /* PPMd initialization flag. */
     CByteInToLook szios;        /* 7-Zip-like I/O structure. */
-# endif /* def PPMD_SUPPORT */
+#  endif /* def PPMD_SUPPORT */
+
+#  ifdef ENABLE_USER_PROGRESS	        
+    ZCONST char *extract_msg_str;       /* Mthd str used with ExtractMsg[]. */
+#  endif /* def ENABLE_USER_PROGRESS */
+
+# endif /* ndef FUNZIP */
 
 # ifdef SYSTEM_SPECIFIC_GLOBALS
     SYSTEM_SPECIFIC_GLOBALS

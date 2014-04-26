@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2011 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -497,6 +497,7 @@ int zgetch(__G__ f)
 #endif
     char c;
     struct sgttyb sg;           /* tty device structure */
+    int bc;                     /* read() result. */
 
     GTTY(f, &sg);               /* get settings */
 #if (defined(USE_SYSV_TERMIO) || defined(USE_POSIX_TERMIOS))
@@ -512,7 +513,7 @@ int zgetch(__G__ f)
     STTY(f, &sg);               /* set cbreak mode */
     GLOBAL(echofd) = f;         /* in case ^C hit (not perfect: still CBREAK) */
 
-    read(f, &c, 1);             /* read our character */
+    bc = read(f, &c, 1);        /* read our character */
 
 #if (defined(USE_SYSV_TERMIO) || defined(USE_POSIX_TERMIOS))
     sg.c_cc[VMIN] = oldmin;     /* restore old values */
@@ -525,7 +526,7 @@ int zgetch(__G__ f)
     STTY(f, &sg);               /* restore canonical mode */
     GLOBAL(echofd) = -1;
 
-    return (int)(uch)c;
+    return (bc > 0) ? (int)(uch)c : -1;
 }
 
 
@@ -538,6 +539,8 @@ int zgetch(__G__ f)
     int f;    /* file descriptor from which to read (must be open already) */
 {
     char c, c2;
+    int bc;                      /* read() result. */
+    int bc2;                     /* read() result. */
 
 /*---------------------------------------------------------------------------
     Get a character from the given file descriptor without echo; can't fake
@@ -546,13 +549,13 @@ int zgetch(__G__ f)
   ---------------------------------------------------------------------------*/
 
     echoff(f);
-    read(f, &c, 1);
-    if (c != '\n')
+    bc = read(f, &c, 1);
+    if ((bc > 0) && (c != '\n'))
         do {
-            read(f, &c2, 1);   /* throw away all other chars up thru newline */
-        } while (c2 != '\n');
+            bc2 = read(f, &c2, 1);  /* Discard remaining chars (through NL). */
+        } while ((c2 != '\n') && (bc2 > 0));
     echon();
-    return (int)c;
+    return (bc > 0) ? (int)c : -1;
 }
 
 #endif /* !VMS */
@@ -661,6 +664,7 @@ char *getp(__G__ m, p, n)
     int i;                      /* number of characters input */
     char *w;                    /* warning on retry */
     int f;                      /* file descriptor for tty device */
+    int bc;                     /* read() result. */
 
 #ifdef PASSWD_FROM_STDIN
     /* Read from stdin. This is unsafe if the password is stored on disk. */
@@ -680,10 +684,10 @@ char *getp(__G__ m, p, n)
         i = 0;
         echoff(f);
         do {                    /* read line, keeping n */
-            read(f, &c, 1);
+            bc = read(f, &c, 1);
             if (i < n)
                 p[i++] = c;
-        } while (c != '\n');
+        } while ((c != '\n') && (bc > 0));
         echon();
         PUTC('\n', stderr);  fflush(stderr);
         w = "(line too long--try again)\n";

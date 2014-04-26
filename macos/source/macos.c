@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -705,7 +705,7 @@ int checkdir(__G__ pathcomp, flag)
 #if (!defined(SFX) || defined(SFX_EXDIR))
     if (FUNCTION == ROOT) {
         Trace((stderr, "initializing root path to [%s]\n",
-          FnFilter1pathcomp)));
+          FnFilter1( pathcomp)));
         if (pathcomp == (char *)NULL) {
             rootlen = 0;
             return MPN_OK;
@@ -1123,7 +1123,7 @@ short maccreat(char *sz)
 {
     OSErr   err;
     char scriptTag = newExtraField.fpb.hFileInfo.ioFlXFndrInfo.fdScript;
-    static char Num = 0;
+/*  static char Num = 0;  2014-03-13 SMS.  Unused. */
 
     sz = sz;
 

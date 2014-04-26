@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1561,7 +1561,6 @@ long yrtable[132]={
 long int dgdate(short mm, short dd, short yy)
 {
     long int temp;
-    short ytmp;
 
     if (mm<1 || mm>12 || dd<1 || dd>31 || yy<1968 || yy>2099)
         return 0L;

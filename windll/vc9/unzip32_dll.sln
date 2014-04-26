@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unzip32_dll", "unzip32_dll\unzip32_dll.vcproj", "{33CDCEDF-2655-4031-892D-93F653277971}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4BF85175-8BBC-4EC6-BAB8-E30976B13E12} = {4BF85175-8BBC-4EC6-BAB8-E30976B13E12}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbz2", "libbz2\libbz2.vcproj", "{4BF85175-8BBC-4EC6-BAB8-E30976B13E12}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "uzexampl", "uzexampl\uzexampl.vcproj", "{96160398-33D6-4E55-8855-6E31326F2D96}"
+	ProjectSection(ProjectDependencies) = postProject
+		{33CDCEDF-2655-4031-892D-93F653277971} = {33CDCEDF-2655-4031-892D-93F653277971}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unzipstb", "unzipstb\unzipstb.vcproj", "{C50C9F1F-67E7-4CF9-BFF9-CC5893C20C05}"
+	ProjectSection(ProjectDependencies) = postProject
+		{33CDCEDF-2655-4031-892D-93F653277971} = {33CDCEDF-2655-4031-892D-93F653277971}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{33CDCEDF-2655-4031-892D-93F653277971}.Debug|Win32.ActiveCfg = Debug|Win32
+		{33CDCEDF-2655-4031-892D-93F653277971}.Debug|Win32.Build.0 = Debug|Win32
+		{33CDCEDF-2655-4031-892D-93F653277971}.Release|Win32.ActiveCfg = Release|Win32
+		{33CDCEDF-2655-4031-892D-93F653277971}.Release|Win32.Build.0 = Release|Win32
+		{4BF85175-8BBC-4EC6-BAB8-E30976B13E12}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4BF85175-8BBC-4EC6-BAB8-E30976B13E12}.Debug|Win32.Build.0 = Debug|Win32
+		{4BF85175-8BBC-4EC6-BAB8-E30976B13E12}.Release|Win32.ActiveCfg = Release|Win32
+		{4BF85175-8BBC-4EC6-BAB8-E30976B13E12}.Release|Win32.Build.0 = Release|Win32
+		{96160398-33D6-4E55-8855-6E31326F2D96}.Debug|Win32.ActiveCfg = Debug|Win32
+		{96160398-33D6-4E55-8855-6E31326F2D96}.Debug|Win32.Build.0 = Debug|Win32
+		{96160398-33D6-4E55-8855-6E31326F2D96}.Release|Win32.ActiveCfg = Release|Win32
+		{96160398-33D6-4E55-8855-6E31326F2D96}.Release|Win32.Build.0 = Release|Win32
+		{C50C9F1F-67E7-4CF9-BFF9-CC5893C20C05}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C50C9F1F-67E7-4CF9-BFF9-CC5893C20C05}.Debug|Win32.Build.0 = Debug|Win32
+		{C50C9F1F-67E7-4CF9-BFF9-CC5893C20C05}.Release|Win32.ActiveCfg = Release|Win32
+		{C50C9F1F-67E7-4CF9-BFF9-CC5893C20C05}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

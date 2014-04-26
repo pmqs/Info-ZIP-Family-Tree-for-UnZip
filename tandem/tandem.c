@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -778,7 +778,7 @@ DIR *opendir(const char *dirname)
    char fname[FILENAME_MAX + 1];
    short fnamelen;
    char *p;
-   short searchid, err, end;
+   short searchid, err /* , end  2014-03-13 SMS.  Unused. */;
    struct dirent *entry;
    DIR *dirp;
    char ext[EXTENSION_MAX + 1];
@@ -808,13 +808,13 @@ DIR *opendir(const char *dirname)
                                DISK_DEVICE
                              );
    if (err != 0) {
-     end = FILENAME_FINDFINISH_(searchid);
+     /* end = */ FILENAME_FINDFINISH_(searchid);
      return NULL;
    }
 
    /* Create DIR structure */
    if ((dirp = malloc(sizeof(DIR))) == NULL ) {
-     end = FILENAME_FINDFINISH_(searchid);
+     /* end = */ FILENAME_FINDFINISH_(searchid);
      return NULL;
    }
    dirp->D_list = dirp->D_curpos = NULL;
@@ -828,7 +828,7 @@ DIR *opendir(const char *dirname)
            ) == 0 ){
      /*  Create space for entry */
      if ((entry = malloc (sizeof(struct dirent))) == NULL) {
-       end = FILENAME_FINDFINISH_(searchid);
+       /* end = */ FILENAME_FINDFINISH_(searchid);
        return NULL;
      }
 
@@ -849,7 +849,7 @@ DIR *opendir(const char *dirname)
      dirp->D_curpos->d_next = NULL;
    };
 
-   end = FILENAME_FINDFINISH_(searchid);
+   /* end = */ FILENAME_FINDFINISH_(searchid);
 
    if (err == 1) {  /*  Should return EOF at end of search */
      dirp->D_curpos = dirp->D_list;        /* Set current pos to start */

@@ -1352,6 +1352,10 @@ void close_outfile(__G)
                break;   /* Not a sharing error.  Get out now.  Otherwise: */
             Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
          }
+         else
+         {
+             break;     /* Not a sharing error.  (Success?)  Get out now. */
+         }
       }
 #endif /* def RETRY_CREATEFILE */
 
@@ -1555,6 +1559,10 @@ void close_outfile(__G)
             if (GetLastError() != ERROR_SHARING_VIOLATION)
                break;   /* Not a sharing error.  Get out now.  Otherwise: */
             Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+         }
+         else
+         {
+             break;     /* Not a sharing error.  (Success?)  Get out now. */
          }
       }
 #endif /* def RETRY_CREATEFILE */
@@ -2010,8 +2018,12 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
         if (hFile == INVALID_HANDLE_VALUE)
         {
             if (GetLastError() != ERROR_SHARING_VIOLATION)
-                break;   /* Not a sharing error.  Get out now.  Otherwise: */
+                break;  /* Not a sharing error.  Get out now.  Otherwise: */
             Sleep( IZ_CREATEFILE_TRY_TIME_MS); /* Sleep, then retry. */
+        }
+        else
+        {
+            break;      /* Not a sharing error.  (Success?)  Get out now. */
         }
     }
 #endif /* def RETRY_CREATEFILE */

@@ -275,8 +275,10 @@ freely, subject to the above disclaimer and the following restrictions:
 /* Function prototype control.  (See also globals.h.) */
 # ifdef PROTO
 #  define OF(a) a
+#  define OFT(a) a
 # else
 #  define OF(a) ()
+#  define OFT(a)
 # endif
 
 /* enable the "const" keyword only if MODERN and if not otherwise instructed */
@@ -615,8 +617,8 @@ typedef struct _UzpOpts {
 
 /* intended to be a private struct: */
 typedef struct _ver {
-    uch major;              /* e.g., integer 5 */
-    uch minor;              /* e.g., 2 */
+    uch vmajor;             /* e.g., integer 5 */
+    uch vminor;             /* e.g., 2 */
     uch patchlevel;         /* e.g., 0 */
     uch not_used;
 } _version_type;

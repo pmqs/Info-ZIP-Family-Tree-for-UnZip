@@ -83,7 +83,11 @@ int UZ_EXP MyUzpPassword( zvoid *pG,            /* Ignore (globals pointer). */
  * main(): Example main program.
  */
 
-int main( int argc, char **argv)
+int main( OFT( int) argc, OFT( char **)argv)
+#ifdef NO_PROTO
+    int argc;
+    char **argv;
+#endif /* def NO_PROTO */
 {
     char *features;
     int sts;
@@ -91,6 +95,7 @@ int main( int argc, char **argv)
     int vsts;
 #endif
     ZCONST UzpVer *unzip_ver_p; /* Storage for program version string. */
+    UzpCB user_functions;       /* User-supplied call-back functions. */
 
     /* Populate the user-supplied call-back function structure.
      *
@@ -99,8 +104,12 @@ int main( int argc, char **argv)
      * call-back function supplied here is the one which returns an
      * encryption password, and it's used only if MY_PW is defined.
      */
-    UzpCB user_functions =
-     { (sizeof user_functions), NULL, NULL, NULL, UZP_PW, NULL };
+    user_functions.structlen = sizeof( user_functions);
+    user_functions.msgfn = NULL;
+    user_functions.inputfn = NULL;
+    user_functions.pausefn = NULL;
+    user_functions.passwdfn = UZP_PW;
+    user_functions.statrepfn = NULL;
 
     /* Call the UnZip entry point function, UzpMainI(), passing it an
      * UnZip command expressed as an argument vector.
@@ -124,7 +133,7 @@ int main( int argc, char **argv)
     /* Get and display the library version. */
     unzip_ver_p = UzpVersion();
     fprintf( stderr, " UnZip version %d.%d%d%s\n",
-     unzip_ver_p->unzip.major, unzip_ver_p->unzip.minor,
+     unzip_ver_p->unzip.vmajor, unzip_ver_p->unzip.vminor,
      unzip_ver_p->unzip.patchlevel, unzip_ver_p->betalevel);
 
     /* Get and display the library feature list. */

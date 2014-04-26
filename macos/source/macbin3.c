@@ -196,7 +196,9 @@ static Boolean  HeaderIsMacBinary(char *header,
 {
     Boolean isIt = false;
     unsigned long resourceForkLength, dataForkLength, df_rf_length;
+#ifdef TRACE_MACBINARY /* 2014-03-13 SMS.  Used only for trace. */
     short commentLength;
+#endif /* def TRACE_MACBINARY */
     Byte    mbVersion;
 
 #ifdef TRACE_MACBINARY
@@ -234,7 +236,9 @@ printf("\n           mbVersion: %d",mbVersion);
 
     resourceForkLength = LONG_AT_OFFSET(header, kResourceForkLengthOffset);
     dataForkLength     = LONG_AT_OFFSET(header, kDataForkLengthOffset);
+#ifdef TRACE_MACBINARY
     commentLength      = WORD_AT_OFFSET(header, kGetInfoCommentLengthOffset);
+#endif /* def TRACE_MACBINARY */
     df_rf_length = dataForkLength + resourceForkLength;
 
 #ifdef TRACE_MACBINARY

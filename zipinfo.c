@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -302,7 +302,7 @@ static ZCONST char Far AmigaFileAttributes[] =
 static ZCONST char Far UnixFileAttributes[] =
   "  %sUnix file attributes (%06o octal):            %s\n";
 static ZCONST char Far NonMSDOSFileAttributes[] =
-  "  %snon-MSDOS external file attributes:             %06lX hex\n";
+  "  %snon-MSDOS external file attributes:             %06X hex\n";
 static ZCONST char Far MSDOSFileAttributes[] =
   "  %sMS-DOS file attributes (%02X hex):                none\n";
 static ZCONST char Far MSDOSFileAttributesRO[] =
@@ -1388,6 +1388,7 @@ static void zi_vers_made_by( __G__ indent, hnum, hver)
 
 static void zi_long_extern_attr( __G__ indent, hnum, xatt)
     __GDEF
+    int indent;
     unsigned hnum;
     unsigned xatt;
 {
@@ -2421,24 +2422,6 @@ ef_default_display:
 
 
 
-/***************************/
-/*  Function host_ver_3()  */
-/***************************/
-
-static void host_ver_3( outbuf, hv)
-    char *outbuf;
-    unsigned hv;
-{
-    if (hv < 100)
-        sprintf( outbuf, "%u.%u", (hv/ 10), (hv% 10));
-    else
-        sprintf( outbuf, "x%02X", (hv% 256));
-}
-
-
-
-
-
 /*************************/
 /*  Function zi_short()  */
 /*************************/
@@ -2495,9 +2478,8 @@ static int zi_short(__G)   /* return PK-type error code */
         sprintf(&methbuf[1], "%03u", G.crec.compression_method);
     }
 
-    for (k = 0;  k < 15;  ++k)
-        attribs[k] = ' ';
-    attribs[15] = 0;
+    memset( attribs, ' ', (sizeof( attribs)- 1));
+    attribs[ sizeof( attribs)- 1] = 0;
 
     xattr = (unsigned)((G.crec.external_file_attributes >> 16) & 0xFFFF);
     switch (hostnum) {
@@ -2539,8 +2521,17 @@ static int zi_short(__G)   /* return PK-type error code */
                     *p++ = ',';                     /* group separator */
                 }
                 *--p = ' ';   /* overwrite last comma */
-                if ((p - attribs) < 12)
-                    host_ver_3( &attribs[ 12], hostver);
+
+                if ((p - attribs) < 11)
+                {   /* Enough space for "xx.x".  Any version fits. */
+                    sprintf( &attribs[ 11], "%2u.%u",
+                     (hostver/ 10), (hostver% 10));
+                }
+                else if (((p - attribs) < 12) && (hostver < 100))
+                {   /* Enough space for "x.x", and version complies. */
+                    sprintf( &attribs[ 12], "%u.%u",
+                     (hostver/ 10), (hostver% 10));
+                }
             }
             break;
 
@@ -2558,7 +2549,7 @@ static int zi_short(__G)   /* return PK-type error code */
             attribs[6] = (xattr & AMI_IWRITE)?    'w' : '-';
             attribs[7] = (xattr & AMI_IEXECUTE)?  'e' : '-';
             attribs[8] = (xattr & AMI_IDELETE)?   'd' : '-';
-            host_ver_3( &attribs[ 12], hostver);
+            sprintf( &attribs[ 11], "%2u.%u", (hostver/ 10), (hostver% 10));
             break;
 
         case THEOS_:
@@ -2583,7 +2574,7 @@ static int zi_short(__G)   /* return PK-type error code */
             attribs[6] = (xattr & THS_IXUSR) ? '.' : 'X';
             attribs[7] = (xattr & THS_IWUSR) ? '.' : 'W';
             attribs[8] = (xattr & THS_IRUSR) ? '.' : 'R';
-            host_ver_3( &attribs[ 12], hostver);
+            sprintf( &attribs[ 11], "%2u.%u", (hostver/ 10), (hostver% 10));
             break;
 
         case FS_VFAT_:
@@ -2610,7 +2601,7 @@ static int zi_short(__G)   /* return PK-type error code */
                 attribs[6] = (xattr & _THS_IXUSR) ? '.' : 'X';
                 attribs[7] = (xattr & _THS_IWUSR) ? '.' : 'W';
                 attribs[8] = (xattr & _THS_IRUSR) ? '.' : 'R';
-                host_ver_3( &attribs[ 12], hostver);
+                sprintf( &attribs[ 11], "%2u.%u", (hostver/ 10), (hostver% 10));
                 break;
             } /* else: fall through! */
 #endif /* OLD_THEOS_EXTRA */
@@ -2629,8 +2620,8 @@ static int zi_short(__G)   /* return PK-type error code */
                )
             {
                 xattr = (unsigned)(G.crec.external_file_attributes & 0xFF);
-                sprintf( attribs, ".r.-...     ");
-                host_ver_3( &attribs[ 12], hostver);
+                sprintf( attribs, ".r.-...    ");
+                sprintf( &attribs[ 11], "%2u.%u", (hostver/ 10), (hostver% 10));
                 attribs[2] = (xattr & 0x01)? '-' : 'w';
                 attribs[5] = (xattr & 0x02)? 'h' : '-';
                 attribs[6] = (xattr & 0x04)? 's' : '-';
@@ -2686,7 +2677,7 @@ static int zi_short(__G)   /* return PK-type error code */
             else
                 attribs[9] = (xattr & UNX_ISVTX)? 'T' : '-';  /* T==undefined */
 
-            host_ver_3( &attribs[ 12], hostver);
+            sprintf( &attribs[ 11], "%2u.%u", (hostver/ 10), (hostver% 10));
             break;
 
     } /* end switch (hostnum: external attributes format) */

@@ -52,7 +52,7 @@ int closedir(DIR *dPtr)
 DIR *opendir(char *dirName)
 {
     int fullPath;
-    unsigned pathLen;
+/*  unsigned pathLen;  2014-03-13 SMS.  Unused. */
     char *s;
     HParamBlockRec hPB;
     CInfoPBRec cPB;
@@ -65,7 +65,7 @@ DIR *opendir(char *dirName)
     printerr("GetCompletePath", err, err, __LINE__, __FILE__, dirName);
 
     if (dirName == NULL || *dirName == '\0' ||
-        (pathLen = strlen(dirName)) >= 256) {
+        (/* pathLen = */ strlen(dirName)) >= 256) {
         errno = EINVAL;
         return NULL;
     }

@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-01-21
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-04-25
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -543,16 +543,16 @@ O_PPMD   = $(PROD)/Ppmd8.o      \
 #----------------------------------------------------------------------------
 
 # object archive: AES (WinZip/Gladman) encryption
-AR_AES   = $(PROD)/libaes.a
+AR_AES   = $(PROD)/libiz_prvt_aes.a
 
 # object archive: BZIP2 compression
 AR_BZ    = bzip2/libbz2.a
 
 # object archive: LZMA compression
-AR_LZMA  = $(PROD)/liblzma.a
+AR_LZMA  = $(PROD)/libiz_prvt_lzma.a
 
 # object archive: PPMd compression
-AR_PPMD  = $(PROD)/libppmd.a
+AR_PPMD  = $(PROD)/libiz_prvt_ppmd.a
 
 # object archive: Callable UnZip
 AR_UNZIP = $(PROD)/libizunzip.a
@@ -1044,6 +1044,7 @@ $(AR_UNZIP): $(O_UNZIPL) $(O_UNZIPN) $(LIB_AES_WG) $(LIB_LZMA) $(LIB_PPMD)
 	@echo 'Building/updating Callable UnZip object library...'
 	unix/mlz.sh "$(AR_UNZIP)" "$(O_UNZIPL) $(O_UNZIPN)" \
          $(LIB_AES_WG) $(LIB_LZMA) $(LIB_PPMD)
+	-$(RANLIB) $@
 
 #----------------------------------------------------------------------------
 #  Build rules: Link programs (.o + .a -> unzips)
