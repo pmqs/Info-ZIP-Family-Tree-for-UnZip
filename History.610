@@ -917,7 +917,7 @@ Bugs fixed:
    sprintf() lines for specific compiler versions.  Change (bad) Mac OS X
    message string '" (Mac OS X")' to '" (Mac OS X)"'.  (unix/unix.c) [AD]
 
-6.10c09 (24 Apr 2014):
+6.10c09 (4 May 2014):
  - Minor code tidying: UZbunzip2() and UZlzma() are now static.
    (extract.c, unzpriv.h) [SMS]
  - A bare "#if" directive embedded in a multi-line comment block
@@ -1213,7 +1213,7 @@ Bugs fixed:
  - In ZipInfo reports, an unexpectedly large "version made by" value
    (>99) caused a (mostly harmless) buffer overflow, and could spoil the
    report format.  Now, for system types where space always allows,
-   large values should always be displayed properly.  On VMS, a more
+   large values should always be displayed properly.  For VMS, a more
    careful calculation is done to determine space requirements, and
    large values should be displayed properly when space allows.  Forum
    topics: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=267
@@ -1406,3 +1406,24 @@ Bugs fixed:
  - Added the method descriptor ("creating", "extracting", "inflating",
    "testing", and so on) to the user progress message.  (extract.c,
    globals.h, unzip.c, unzpriv.h, unix/unix.c, vms/vms.c) [SMS]
+ - Restructured "man" documentation directories.  Now, "man" source
+   files (*.1) are supplied in a "man/man1/" directory, allowing direct
+   use of a "man -M ./man" command in the kit directory.  Formatted
+   "man" output files (*.txt) are now supplied in a "docs/" directory.
+   (INSTALL, README, unix/configure, unix/Makefile) [SMS]
+ - On Unix systems, a temporary object library used during a build for
+   some optional feature (for example, liblzma.a) could easily collide
+   with an existing system-wide object library or shared object, and
+   cause a link failure (undefined symbol, or similar).  Now, these
+   temporary object library names include a distinctive prefix,
+   "iz_prvt_" which should be enough to avoid the problem.
+   (unix/configure, unix/Makefile) [SMS]
+ - The Unix builders now support use of the "make" macro PREFIX to
+   specify a destination directory tree with the "install" target, and
+   MANSUFX replaces MANEXT for modifying the names of the installed
+   "man" files.  The "install" target was trying build programs as well
+   as just copying them, which was more than it knew how to do.  Some
+   obsolete, disfunctional, or experimental targets ("generic_XXX",
+   "*shlib*") have been removed.  The rules used to create the formatted
+   manual (".txt") files now use "man -M", allowing them to work with
+   non-GNU "man" programs.

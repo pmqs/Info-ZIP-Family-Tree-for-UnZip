@@ -19,17 +19,23 @@ unzip610b.ann   Notes on the UnZip 6.10b beta release
 unzip610c.ann   Notes on the UnZip 6.10c beta release
 proginfo/       Programming docs, additional technical info, contributor list
 
-   User Program Documentation ("man"/help output)
-funzip.txt      fUnZip manual page, human-readable format
-unzip.txt       UnZip manual page, human-readable format
-unzipsfx.txt    UnZipSFX manual page, human-readable format
-zipgrep.txt     ZipGrep manual page, human-readable format
-zipinfo.txt     ZipInfo manual page, human-readable format
-UNZIP.HTX       UnZip VMS Help output (Unix-style command-line)  [?]
-UNZIP_CLI.HTX   UnZip VMS Help output (VMS-style command-line)  [?]
+   User Program Documentation ("man"/help formatted output)
+docs/
+ funzip.txt     fUnZip manual page, formatted output
+ unzip.txt      UnZip manual page, formatted output
+ unzipsfx.txt   UnZipSFX manual page, formatted output
+ zipgrep.txt    ZipGrep manual page, formatted output
+ zipinfo.txt    ZipInfo manual page, formatted output
+ UNZIP.HTX      UnZip VMS Help output (Unix-style command-line)
+ UNZIP_CLI.HTX  UnZip VMS Help output (VMS-style command-line)
 
    User Program Documentation ("man") Source Directory
-man/            nroff "man" sources for the main user documentation
+man/man1/       nroff "man" sources for the main user documentation
+ funzip.1       fUnZip manual page, source
+ unzip.1        UnZip manual page, source
+ unzipsfx.1     UnZipSFX manual page, source
+ zipgrep.1      ZipGrep manual page, source
+ zipinfo.1      ZipInfo manual page, source
 
    Miscellaneous
 file_id.diz     BBS-oriented file describing this archive  [?]
@@ -37,7 +43,7 @@ testmake.zip    Test archive for checking whether newly built UnZip works
 testmake_ppmd.zip  Test archive with PPMd compression
 
    Source Code
-api.c           Generic DLL entry points, support functions (required for DLLs)
+api.c           DLL, object library entry points, support functions
 api.h           Header file for api.c
 apihelp.c       API help text for DLL versions (currently OS/2 only)
 consts.h        Global, initialized variables that never change

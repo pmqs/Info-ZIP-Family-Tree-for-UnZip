@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2014-02-26
+   Document date: 2014-02-29
 
 ------------------------------------------------------------------------
 
@@ -72,9 +72,9 @@ files.)  Many OS-specific subdirectories include "INSTALL*" and/or
 additional (mostly old) documentation of particular interest to
 developers.
 
-   For program usage information, source kits include ".txt" files with
-Unix "man" output, and may also include ".htx" files with VMS help
-output.
+   For program usage information, source kits include a "docs"
+subdirectory wich contains ".txt" files with formatted Unix "man"
+output, and may also include ".htx" files with VMS help output.
 
 ------------------------------------------------------------------------
 

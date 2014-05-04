@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-04-25
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-05-04
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -12,7 +12,7 @@
 
 #==============================================================================
 #
-# INSTRUCTIONS (such as they are):
+# INSTRUCTIONS
 #
 # "make -f unix/Makefile generic"         Make UnZip on most systems using cc.
 #
@@ -46,9 +46,6 @@
 # If at all possible, use the generic targets.  The other (older)
 # targets are less well tested, and may need considerable help from the
 # user to get optimal results (or any success at all).
-#
-# The "generic_docs" and "generic_man" targets also invoke
-# "unix/configure", and generate the UnZip documentation files.
 #
 # Optional UnZip features are controlled by setting "make" macros as
 # described below or by the results of tests done by configure (such as
@@ -118,14 +115,13 @@
 # Be sure to test your new UnZip (and UnZipSFX and fUnZip and ZipInfo).  A
 # successful build does not guarantee a working program.
 
-#####################
-# DEFAULT TARGETS   #
-#####################
+###########
+# TARGETS #
+###########
 
 # List of supported systems/targets in this version
-GENERIC_TARGETS1  = generic  generic_man  generic_docs  generic_pkg  flags
-GENERIC_TARGETS2  = generic1 generic2 generic3 generic_bz2 generic_zlib
-GENERIC_TARGETS3  = generic_shlib
+GENERIC_TARGETS1  = generic  generic_pkg  config_flags
+GENERIC_TARGETS2  = generic1  generic2  generic3
 
 MISC_TARGETS = clean  clean_bzip2  clean_docs  clean_exe  dashv
 
@@ -133,14 +129,14 @@ SYS_TARGETS01  = 386i 3Bx 7300 7300_gcc amdahl amdahl_eft apollo aviion
 SYS_TARGETS02  = bsd bsdi bsdi_noasm bull coherent convex cray cray_opt
 SYS_TARGETS03  = cyber_sgi cygwin dec dnix encore eta freebsd gcc gould
 SYS_TARGETS04  = hk68 hp hpux isc isc_gcc isi linux linux_dos linux_noasm
-SYS_TARGETS05  = linux_shlib linux_shlibz lynx macosx macosx_gcc minix mips
+SYS_TARGETS05  = lynx macosx macosx_gcc minix mips
 SYS_TARGETS06  = mpeix next next10 next2x next3x nextfat osf1 pixel ptx
 SYS_TARGETS07  = pyramid qnxnto realix regulus sco sco_dos sco_sl sco_x286
 SYS_TARGETS08  = sequent sgi solaris stardent stellar sunos3 sunos4
 SYS_TARGETS09  = sysv sysv_gcc sysv6300 tahoe ti_sysv ultrix vax v7
 SYS_TARGETS10  = xenix xos
 
-# By default, print help on which "make" file targets to try.
+# By default, print help on which "make" targets to try.
 
 # What you can make ...
 help:
@@ -150,7 +146,6 @@ help:
 	@echo ''
 	@echo "  $(GENERIC_TARGETS1)"
 	@echo "  $(GENERIC_TARGETS2)"
-	@echo "  $(GENERIC_TARGETS3)"
 	@echo ''
 	@echo 'Additional "make" targets include:'
 	@echo ''
@@ -190,16 +185,13 @@ help:
 	@echo 'using one of the other "make" targets.  The generic targets'
 	@echo 'use the unix/configure script to generate an intermediate'
 	@echo '"flags" file which is used by unix/Makefile.  For debugging'
-	@echo 'purposes, the "flags" target can be used to generate the'
-	@echo '"flags" file only.'
+	@echo 'purposes, the "config_flags" target can be used to generate'
+	@echo 'the "flags" file only.'
 	@echo ''
-	@echo 'To make the manuals use "make -f unix/Makefile generic_man" to'
-	@echo 'autodetect and use the proper flags.'
-	@echo ''
-	@echo 'Use generic_docs to make the plain text docs.  These are the'
-	@echo 'files, like unzip.txt, that should already be in the UnZip root'
-	@echo 'directory.  To recreate these files, clear out the originals'
-	@echo 'using the clean_docs target, then use the generic_docs target.'
+	@echo 'Use the "docs" target to make the plain-text "man" output'
+	@echo 'files.  These are the files, like "unzip.txt", that are'
+	@echo 'supplied in the "docs" directory.  Newly generated ".txt"'
+	@echo 'files will be placed in the "$(PROD)/manout" directory.'
 	@echo ''
 	@echo 'After UnZip has been built, use dashv to get an "unzip -v"'
 	@echo 'report from the created executable.'
@@ -248,7 +240,6 @@ list:
 	@echo 'Generic targets:'
 	@echo "  $(GENERIC_TARGETS1)"
 	@echo "  $(GENERIC_TARGETS2)"
-	@echo "  $(GENERIC_TARGETS3)"
 	@echo ''
 	@echo 'Specific targets:'
 	@echo "  $(SYS_TARGETS01)"
@@ -335,15 +326,18 @@ OSDEP_OS =
 # - This default may be customized by unix/configure based on PORT
 #    Executable programs
 #    DLL (.so) (currently not used)
-#    man page
+#    man page (section) suffix
 PGMEXT =
 DLLEXT = .so
-MANEXT = 1
+MANSUFX =
 
 # OS-dependent installation directories: executables and man pages
 # - This default may be customized by unix/configure based on PORT
-BINDIR = /usr/local/bin
-MANDIR = /usr/local/man/man$(MANEXT)
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+MANDIR = $(PREFIX)/man
+
+MANDIR1 = $(MANDIR)/man1
 
 # OS-dependent installation file permissions: executables and man pages
 # - This default may be customized by unix/configure based on PORT
@@ -588,17 +582,17 @@ UNZIP_PPGMS = $(LIB_UNZIP)  \
 #----------------------------------------------------------------------------
 #  Build configuration:  Manuals
 #----------------------------------------------------------------------------
-MAN_FUZ     = funzip.$(MANEXT)
-MAN_SFX     = unzipsfx.$(MANEXT)
-MAN_UNZIP   = unzip.$(MANEXT)
-MAN_ZGREP   = zipgrep.$(MANEXT)
-MAN_ZINFO   = zipinfo.$(MANEXT)
+MAN_FUZ     = funzip.1$(MANSUFX)
+MAN_SFX     = unzipsfx.1$(MANSUFX)
+MAN_UNZIP   = unzip.1$(MANSUFX)
+MAN_ZGREP   = zipgrep.1$(MANSUFX)
+MAN_ZINFO   = zipinfo.1$(MANSUFX)
 
-PMAN_FUZ    = $(PROD)/manout/$(MAN_FUZ)
-PMAN_SFX    = $(PROD)/manout/$(MAN_SFX)
-PMAN_UNZIP  = $(PROD)/manout/$(MAN_UNZIP)
-PMAN_ZGREP  = $(PROD)/manout/$(MAN_ZGREP)
-PMAN_ZINFO  = $(PROD)/manout/$(MAN_ZINFO)
+PMAN_FUZ    = $(PROD)/manout/funzip.txtr
+PMAN_SFX    = $(PROD)/manout/unzipsfx.txtr
+PMAN_UNZIP  = $(PROD)/manout/unzip.txtr
+PMAN_ZGREP  = $(PROD)/manout/zipgrep.txtr
+PMAN_ZINFO  = $(PROD)/manout/zipinfo.txtr
 
 UNZIP_PMANS = $(PMAN_UNZIP) \
               $(PMAN_SFX)   \
@@ -622,7 +616,7 @@ UNZIP_DOCS = $(DOC_UNZIP) \
 #  Build configuration:  Installation
 #----------------------------------------------------------------------------
 
-# (probably can change next two to `install' and `install -d' if you have it)
+# (Probably can change next two to "install" and "install -d", if you have it.)
 INSTALL   = cp
 INSTALL_PROGRAM = $(INSTALL)
 INSTALL_D = mkdir -p
@@ -639,11 +633,17 @@ INSTALLEDBIN = $(BIN_FUZ)   \
                $(BIN_ZGREP) \
                $(BIN_ZINFO)
 
-INSTALLEDMAN = $(MANDIR)/$(MAN_FUZ)   \
-               $(MANDIR)/$(MAN_SFX)   \
-               $(MANDIR)/$(MAN_UNZIP) \
-               $(MANDIR)/$(MAN_ZGREP) \
-               $(MANDIR)/$(MAN_ZINFO)
+INSTALLEDMAN = $(MANDIR1)/$(MAN_FUZ)   \
+               $(MANDIR1)/$(MAN_SFX)   \
+               $(MANDIR1)/$(MAN_UNZIP) \
+               $(MANDIR1)/$(MAN_ZGREP) \
+               $(MANDIR1)/$(MAN_ZINFO)
+
+INSTALLEDMAN_GZ = $(MANDIR1)/$(MAN_FUZ).gz   \
+                  $(MANDIR1)/$(MAN_SFX).gz   \
+                  $(MANDIR1)/$(MAN_UNZIP).gz \
+                  $(MANDIR1)/$(MAN_ZGREP).gz \
+                  $(MANDIR1)/$(MAN_ZINFO).gz
 
 # Solaris 2.x package stuff:
 PKGDIR  = IZunzip
@@ -656,8 +656,8 @@ VERSION = Version 6.1
 
 #----------------------------------------------------------------------------
 #  Build rules: File suffixes
-#  - Remove all built-in rules
-#  - Only explicit 1:1 rules are used
+#  - Disable all built-in rules.
+#  - Only explicit 1:1 rules are used.
 #----------------------------------------------------------------------------
 .SUFFIXES:
 
@@ -665,7 +665,7 @@ VERSION = Version 6.1
 #  Build rules: C compile (.c -> .o)
 #  - Explicit 1:1 rules are used.
 #  - Across various "make" utilities, pattern rule support is inconsistent.
-#  - Sys V "make" has issues with $< when input and output names differ.
+#  - Sys V "make" may have problems with $< when input and output names differ.
 #----------------------------------------------------------------------------
 
 # C Compile rules: UnZip
@@ -1082,7 +1082,7 @@ $(PPGM_ZINFO): $(PPGM_UNZIP)
 #  Build rules: Documentation
 #  - Explicit 1:1 rules are used.
 #  - Across various "make" utilities, pattern rule support is inconsistent.
-#  - Sys V "make" has issues with $< when input and output names differ.
+#  - Sys V "make" ay hava problems with $< when input and output names differ.
 #----------------------------------------------------------------------------
 
 # UnZip documentation output directory rules
@@ -1094,38 +1094,43 @@ $(PROD)/manout:
 
 # UnZip text documentation generation rules
 
-$(DOC_UNZIP): man/unzip.1
-	man man/unzip.1    | col -bx | uniq | expand > $@
+$(DOC_UNZIP): man/man1/unzip.1
+	man -M man unzip    | col -bx | uniq | expand > $@
+	@echo ''
 
-$(DOC_SFX):   man/unzipsfx.1
-	man man/unzipsfx.1 | col -bx | uniq | expand > $@
+$(DOC_SFX):   man/man1/unzipsfx.1
+	man -M man unzipsfx | col -bx | uniq | expand > $@
+	@echo ''
 
-$(DOC_FUZ):   man/funzip.1
-	man man/funzip.1   | col -bx | uniq | expand > $@
+$(DOC_FUZ):   man/man1/funzip.1
+	man -M man funzip   | col -bx | uniq | expand > $@
+	@echo ''
 
-$(DOC_ZINFO): man/zipinfo.1
-	man man/zipinfo.1  | col -bx | uniq | expand > $@
+$(DOC_ZINFO): man/man1/zipinfo.1
+	man -M man zipinfo  | col -bx | uniq | expand > $@
+	@echo ''
 
-$(DOC_ZGREP): man/zipgrep.1
-	man man/zipgrep.1  | col -bx | uniq | expand > $@
+$(DOC_ZGREP): man/man1/zipgrep.1
+	man -M man zipgrep  | col -bx | uniq | expand > $@
+	@echo ''
 
 # UnZip man page generation rule
 # - Requires nroff, or GNU groff package
 
-$(PMAN_UNZIP): man/unzip.1
-	nroff -man man/unzip.1    | col -bx | uniq > $@
+$(PMAN_UNZIP): man/man1/unzip.1
+	nroff -man man/man1/unzip.1    | col -bx | uniq > $@
 
-$(PMAN_SFX):   man/unzipsfx.1
-	nroff -man man/unzipsfx.1 | col -bx | uniq > $@
+$(PMAN_SFX):   man/man1/unzipsfx.1
+	nroff -man man/man1/unzipsfx.1 | col -bx | uniq > $@
 
-$(PMAN_FUZ):   man/funzip.1
-	nroff -man man/funzip.1   | col -bx | uniq > $@
+$(PMAN_FUZ):   man/man1/funzip.1
+	nroff -man man/man1/funzip.1   | col -bx | uniq > $@
 
-$(PMAN_ZINFO): man/zipinfo.1
-	nroff -man man/zipinfo.1  | col -bx | uniq > $@
+$(PMAN_ZINFO): man/man1/zipinfo.1
+	nroff -man man/man1/zipinfo.1  | col -bx | uniq > $@
 
-$(PMAN_ZGREP): man/zipgrep.1
-	nroff -man man/zipgrep.1  | col -bx | uniq > $@
+$(PMAN_ZGREP): man/man1/zipgrep.1
+	nroff -man man/man1/zipgrep.1  | col -bx | uniq > $@
 
 #----------------------------------------------------------------------------
 #  Build rules: Standard build targets
@@ -1137,8 +1142,6 @@ objs:       $(O_UNZIP)
 objsdll:    $(O_DLL)
 docs:       $(PROD)/manout $(UNZIP_DOCS)
 manuals:    $(PROD)/manout $(UNZIP_PMANS)
-unzipsman:  unzips manuals
-unzipsdoc:  unzips docs
 
 #----------------------------------------------------------------------------
 #  Build rules: ???????
@@ -1158,7 +1161,7 @@ unix_make:
 
 # Main flags
 
-flags: $(PROD)/flags
+config_flags: $(PROD)/flags
 
 $(PROD)/flags: unix/configure
 	@echo "Running:  unix/configure"
@@ -1177,7 +1180,7 @@ $(PROD)/flags: unix/configure
 
 # BZIP2 flags
 
-flags_bz: $(PROD)/flags_bz
+config_flags_bz: $(PROD)/flags_bz
 
 $(PROD)/flags_bz: $(PROD)/flags
 
@@ -1239,18 +1242,31 @@ clean_docs:
 #  Build rules: Installation-related
 #----------------------------------------------------------------------------
 
-install: unzips manuals
+install: install_bin install_man
+
+install_gz: install_bin install_man_gz
+
+install_bin:
 	-$(INSTALL_D) $(BINDIR)
 	$(INSTALL_PROGRAM) $(UNZIP_PPGMS) $(PPGM_ZGREP) $(BINDIR)
 	$(RM) $(BIN_ZINFO)
 	$(LN) $(BIN_UNZIP) $(BIN_ZINFO)
-	-$(INSTALL_D) $(MANDIR)
-	$(INSTALL) $(UNZIP_PMANS) $(MANDIR)
 	$(CHMOD) $(BINPERMS) $(INSTALLEDBIN)
+
+install_man:
+	-$(INSTALL_D) $(MANDIR1)
+	$(INSTALL) man/man1/funzip.1   $(MANDIR1)/$(MAN_FUZ)
+	$(INSTALL) man/man1/unzip.1    $(MANDIR1)/$(MAN_UNZIP)
+	$(INSTALL) man/man1/unzipsfx.1 $(MANDIR1)/$(MAN_SFX)
+	$(INSTALL) man/man1/zipgrep.1  $(MANDIR1)/$(MAN_ZGREP)
+	$(INSTALL) man/man1/zipinfo.1  $(MANDIR1)/$(MAN_ZINFO)
 	$(CHMOD) $(MANPERMS) $(INSTALLEDMAN)
 
+install_man_gz: install_man
+	gzip $(INSTALLEDMAN)
+
 uninstall:
-	$(RM) $(INSTALLEDBIN) $(INSTALLEDMAN)
+	$(RM) $(INSTALLEDBIN) $(INSTALLEDMAN)  $(INSTALLEDMAN_GZ)
 
 #----------------------------------------------------------------------------
 #  Build rules: SVR4 Package generation Interface
@@ -1407,20 +1423,6 @@ generic: $(PROD)/flags
 	eval $(MAKE) $(MAKEF) unzips ACONF_DEP=$(PROD)/flags \
          `cat $(PROD)/flags`
 
-# generic_man
-# - Generate flags file (if doesn't exist), then man pages
-
-generic_man: $(PROD)/flags
-	eval $(MAKE) $(MAKEF) manuals ACONF_DEP=$(PROD)/flags \
-         `cat $(PROD)/flags`
-
-# generic_docs
-# - Generate flags file (if doesn't exist), then plain text docs
-
-generic_docs: flags
-	eval $(MAKE) $(MAKEF) docs ACONF_DEP=$(PROD)/flags \
-         `cat $(PROD)/flags`
-
 # generic_pkg
 # - Generate flags file (if doesn't exist), then UnZip modules, then perform
 #   SVR4 package-creation
@@ -1440,35 +1442,6 @@ generic2: unix_make  # second try if unknown:  hope make is called "make"
 
 generic3: unix_make  # third try if unknown:  hope make is called "make"
 	make $(MAKEF) unzips CF="$(CF) -DSYSV"
-
-# Generic build including bzip2 decompression support for UnZip.
-# Requires presence of the bzip2 sources in subdirectory bzip2.
-generic_bz2: $(PROD)/flags_bz $(AR_BZ)
-
-# Generic unzip and funzip target using either shared or static zlib for
-# inflate rather than the original UnZip version.  (libz was libgz prior
-# to 0.94)  Need to figure out how to force unzipsfx to use static libz.
-generic_zlib: $(PROD)/flags $(AR_Z)
-
-# Generic GNU C shared library.  This is an example of how to compile
-# UnZip as a shared library.  (Doing so as a static library would be
-# similar.)  See also the linux_shlib target.
-
-generic_shlib: unix_make
-	@echo \
- 'This target requires GNU C.  When done, do "setenv LD_LIBRARY_PATH `pwd`"'
-	@echo \
- 'or similar in order to test the shared library in place (with ./unzip_shlib ,'
-	@echo \
- 'which is UnZip linked with the DLL).  This target is an example only.'
-	@echo ''
-	$(MAKE) objsdll CC=gcc CFLAGS="-O3 -Wall -fPIC -DDLL"
-	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(O_DLL)
-	$(RM) libunzip.so.0 libunzip.so
-	$(LN) -s libunzip.so.0.4 libunzip.so.0
-	$(LN) -s libunzip.so.0 libunzip.so
-	gcc -c -O unzipstb.c
-	gcc -o unzip_shlib $(O_STUB) -L. -lunzip
 
 #----------------------------------------------------------------------------
 #  "Autoconfig" group, aliases for the generic targets using configure:
@@ -1713,36 +1686,6 @@ linux_dos: unix_make
 # Due to limitations of the cross-compiling package, this has to be
 # done manually:
 	@echo "Copy $(UNZIP_PPGMS) to your DOS partition and use coff2exe."
-
-# Linux ELF shared library (ooo, it's so easy).  This is a test target for
-# now, and it only makes the UnZip/ZipInfo stuff (not fUnZip or UnZipSFX).
-# The version number may eventually change to match the UnZip version.  Or
-# not.  Whatever.  Also do "setenv LD_LIBRARY_PATH `pwd`" or similar to test
-# the DLL in place (with unzip_shlib, which is UnZip linked with the shared
-# library).
-#
-linux_shlib: unix_make
-	$(MAKE) objsdll CC=gcc CFLAGS="-O3 -Wall -fPIC" \
-         LOC="-DDLL -DASM_CRC $(LOC)" \
-         AS=gcc AF="-fPIC -Di386 $(AF)" OSDEP_OS="$(PROD)/crc_gcc.o"
-	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(O_DLL) \
-         $(PROD)/crc_gcc.pic.o
-	ln -sf libunzip.so.0.4 libunzip.so.0
-	ln -sf libunzip.so.0 libunzip.so
-	gcc -c -O unzipstb.c
-	gcc -o unzip_shlib $(O_STUB) -L. -lunzip
-
-# Linux ELF shared library, as above, but using inflate() from zlib (libz.so)
-# instead of the original UnZip version.  (libz was libgz prior to 0.94)
-linux_shlibz: unix_make
-	$(MAKE) objsdll CC=gcc AS=gcc AF="-fPIC -Di386 $(AF)" \
-         OSDEP_OS="$(PROD)/crc_gcc.o" CFLAGS="-O3 -Wall -fPIC" \
-         LOC="-DDLL -DUSE_ZLIB -DASM_CRC $(LOC)"
-	gcc -shared -Wl,-soname,libunzip.so.0 -o libunzip.so.0.4 $(O_DLL) \
-         $(PROD)/crc_gcc.pic.o
-	ln -sf libunzip.so.0.4 libunzip.so.0
-	gcc -c -O unzipstb.c
-	gcc -o unzip $(O_STUB) -L. -lunzip -lz
 
 # LynxOS-x86 2.3.0 and newer, a real-time BSD-like OS; uses gcc.
 lynx: unix_make

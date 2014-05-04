@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2014-02-27
+   UnZip version 6.10.  Revised: 2014-05-04
 
 ------------------------------------------------------------------------
 
@@ -424,20 +424,20 @@ following:
    In some situations, the "unix/configure" script may not set all the
 build options as desired.  One way to work around problems with "make
 generic" is to use a two-step procedure.  First, instead of doing "make
-generic", do "make flags".  For example:
+generic", do "make config_flags".  For example:
 
-      make -f unix/Makefile [other-options ...] flags
+      make -f unix/Makefile [other-options ...] config_flags
 
 This should run the "unix/configure" script, which generates a "flags"
-file in the main UnZip directory.  The (text) file "flags" contains all
-the "make" macros which will be used in the second step.  This file can
-be edited to make final adjustments to compile options, link options,
-and so on.
+(text) file in the main destination directory ("$(PROD)", default: ".").
+The file "flags" contains all the "make" macros which will be used in
+the second step.  This file can be edited to make final adjustments to
+compile options, link options, and so on.
 
    When "flags" has been changed as desired, the second step is to build
 using the "generic" target.  For example:
 
-      make -f unix/Makefile generic
+      make -f unix/Makefile [other-options ...] generic
 
 This should do the build using the changed "flags" file.
 
@@ -768,11 +768,37 @@ the "man" files into their default locations, "/usr/local/bin" and
 
       make -f unix/Makefile install
 
-   The "make" macros BINDIR and MANDIR can be used to specify different
-destination directories.  For example:
+   The "make" macro PREFIX can be used to specify a destination
+directory tree different from the default, "/usr/local".  For example,
+the following command should install the programs into "/usr/bin" and
+the "man" files into "/usr/man/man1":
 
-      make -f unix/Makefile BINDIR=/usr/tools/bin \
-       MANDIR=/usr/tools/man1 install
+      make -f unix/Makefile PREFIX=/usr install
+
+   The "make" macro MANSUFX can be defined to add a "section" suffix to
+the installed "man" files.  For example, the following command also
+installs into the "/usr" tree, but the "man" files will be installed as
+"XXX.1l" instead of the default "XXX.1":
+
+      make -f unix/Makefile PREFIX=/usr MANSUFX=l install
+
+   The "make" macros BINDIR and MANDIR can be used instead of PREFIX to
+direct the programs and "man" files to (non-standard) separate
+destinations.  For example, the following command should install the
+programs into "/usr/exe" and the "man" files into "/usr/tools/man/man1":
+
+      make -f unix/Makefile BINDIR=/usr/exe MANDIR=/usr/tools/man \
+       install
+
+   The "make" targets "install_bin" and "install_man" can be used
+instead of "install" to install only the programs or only the "man"
+files, respectively.
+
+   The "make" target "install_gz" does what "install" does, and then
+uses gzip to compress the installed "man" files.  Similarly,
+"install_man_gz" does what "install_man" does, and then uses gzip to
+compress the installed "man" files.  These targets should be used only
+on systems where the "man" program supports gzip-compressed files.
 
    The user who does the installation needs write permission in all the
 destination directories.  Permissions should be set to 755 for the
@@ -802,8 +828,8 @@ Acorn RISC OS
 BeOS
    The default installation location is "/boot/usr/local".  (Executables
    and "man" files go into the "bin" and "man/man1" subdirectories
-   there, respectively.  The corresponding plain-text (".txt") files may
-   be more useful, however.
+   there, respectively.  The corresponding plain-text (".txt") files in
+   the "docs/" directory may be more useful, however.
 
 Macintosh (Pre-Mac-OS-X)
    MacZip requires at least System 7 and a Macintosh with a minimum of a
@@ -838,7 +864,7 @@ Human68K, TOPS-20, AOS/VS, etc.
 correctly (often "TZ").  Unix and VMS generally do so by default.
 Windows does, if set up properly.  Other operating systems may not.  See
 the discussion of the -f and -u options in the UnZip man page (or
-unzip.txt).
+docs/unzip.txt).
 
 ------------------------------------------------------------------------
 
@@ -1220,10 +1246,10 @@ RETURN_CODES   (VMS only)
 
 VMSCLI   (VMS only)
    For internal use only.  Use VMS-style "slash options" (/FOOBAR)
-   instead of the default Unix-style hyphen options (-f).  Automatic
-   options stored in DCL symbols or logical names (UNZIP_OPTS or
-   ZIPINFO_OPTS) must always be in the Unix style.  Beginning with UnZip
-   5.32, the VMS builders generate both VMS-style (*_CLI.EXE) and
+   instead of the default Unix-style hyphen options (-f, --foobar).
+   Automatic options stored in DCL symbols or logical names (UNZIP_OPTS
+   or ZIPINFO_OPTS) must always be in the Unix style.  Beginning with
+   UnZip 5.32, the VMS builders generate both VMS-style (*_CLI.EXE) and
    Unix-style executables, so a user normally does NOT need to specify
    VMSCLI.
 
