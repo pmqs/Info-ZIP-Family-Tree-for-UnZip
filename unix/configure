@@ -4,7 +4,7 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2014-05-10
+# - For UnZip, UnZipSFX, fUnZip, and ZipInfo            Revised: 2014-08-18
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -113,13 +113,13 @@
 #    LIST        - Enable compile/linker listing generation
 #
 #   UnZip optional feature configuration:
-#    AES_WG      - Enable AES encryption (WinZip/Gladman)
-#    ICONV       - Enable ISO/OEM character conversion using iconv.
-#    IZ_BZIP2    - Enable BZIP2 compression
-#    IZ_ZLIB     - Use ZLIB for deflate compression
-#    LIBUNZIP    - Build UnZip object library
-#    LZMA        - Enable LZMA compression
-#    PPMD        - Enable PPMd compression
+#    NO_AES_WG   - Disable AES encryption (WinZip/Gladman).
+#    IZ_BZIP2    - Enable/direct BZIP2 compression.
+#    NO_IZ_BZIP2 - Disable BZIP2 compression.
+#    NO_ICONV    - Disable ISO/OEM character conversion using iconv.
+#    NO_LZMA     - Disable LZMA compression.
+#    NO_PPMD     - Disable PPMd compression.
+#    IZ_ZLIB     - Use ZLIB for deflate compression.
 #
 #==============================================================================
 # Build utility generated configuration flags:
@@ -149,7 +149,6 @@
 #  LIB_BZ      - BZIP2 compression build dependencies
 #  LIB_LZMA    - LZMA compression build dependencies
 #  LIB_PPMD    - PPMd compression build dependencies
-#  LIB_UNZIP   - UnZip object library
 #  LIB_Z       - ZLIB compression build dependencies
 #  MK_BZ       - BZIP2 compression build makefile
 #  OSDEP_H     - OS-dependent C header file names
@@ -184,11 +183,12 @@ echo ''
 echo 'Generating system-dependent flags...'
 
 # Evaluate only variables in this list.  Complain about others, but continue.
-valid_vars1='|AES_WG|AFLAGS|AS|CC|CC_BZ|CFLAGS|CFLAGS_OPT|CPP|DLLEXT|ICONV'
-valid_vars2='|IZ_BZIP2|IZ_ZLIB|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP|LZMA'
-valid_vars3='|OSDEP_H|OSDEP_OCF|OSDEP_OCS|OSDEP_OCU|OSDEP_OS'
-valid_vars4='|PGMEXT|PPMD|PROD|RANLIB|'
-valid_vars="${valid_vars1}${valid_vars2}${valid_vars3}${valid_vars4}"
+valid_v1='|AFLAGS|AS|CC|CC_BZ|CFLAGS|CFLAGS_OPT|CPP|DLLEXT'
+valid_v2='|IZ_BZIP2|IZ_ZLIB|LD|LFLAGS1|LFLAGS2|LIST|LOCAL_UNZIP'
+valid_v3='|NO_AES_WG|NO_ICONV|NO_IZ_BZIP2|NO_LZMA|NO_PPMD'
+valid_v4='|OSDEP_H|OSDEP_OCF|OSDEP_OCS|OSDEP_OCU|OSDEP_OS'
+valid_v5='|PGMEXT|PROD|RANLIB|'
+valid_vars="${valid_v1}${valid_v2}${valid_v3}${valid_v4}${valid_v5}"
 
 argc=$#
 while [ ${argc} -gt 0 ]; do
@@ -253,12 +253,13 @@ PORT_SPEC=''                               # Port specification method
                                            # - Explicit ('E') via PORT=port
                                            #   Implicit ('I') via config test
 
-AES_WG=${AES_WG:-}                         # AES (WinZip/Gladman) encryption
-ICONV=${ICONV:-}                           # ISO/OEM (iconv) conversion
-IZ_BZIP2=${IZ_BZIP2:-}                     # BZIP2 compression
+NO_AES_WG=${NO_AES_WG:-}                   # AES (WinZip/Gladman) encryption
+IZ_BZIP2=${IZ_BZIP2:-}                     # BZIP2 compression (directory)
+NO_IZ_BZIP2=${NO_IZ_BZIP2:-}               # BZIP2 compression (disable)
+NO_ICONV=${NO_ICONV:-}                     # ISO/OEM (iconv) conversion
+NO_LZMA=${NO_LZMA:-}                       # LZMA compression
+NO_PPMD=${NO_PPMD:-}                       # PPMd compression
 IZ_ZLIB=${IZ_ZLIB:-}                       # ZLIB compression
-LZMA=${LZMA:-}                             # LZMA compression
-PPMD=${PPMD:-}                             # PPMd compression
 
 # Generated Build Dependencies for "make".
 # These contain an object library name, if the feature is enabled.
@@ -266,7 +267,6 @@ LIB_AES_WG=''                              # AES (WinZip/Gladman) encryption
 LIB_BZ=''                                  # BZIP2 compression
 LIB_LZMA=''                                # LZMA compression
 LIB_PPMD=''                                # PPMd compression
-LIB_UNZIP=''                               # UnZip object library
 LIB_Z=''                                   # ZLIB compression
 
 # Private object library base names.
@@ -346,11 +346,12 @@ fi
 SRCDIR=` pwd `
 
 IZ_BZIP2_A=''
-if [ -n "${IZ_BZIP2}" ]; then
-  tmp=` ( cd "${IZ_BZIP2}" && pwd ) 2> /dev/null `
-  if [ -n "$tmp" ]; then
-    IZ_BZIP2_A="$tmp"
-  fi
+if [ -z "${IZ_BZIP2}" ]; then
+  IZ_BZIP2='bzip2'
+fi
+tmp=` ( cd "${IZ_BZIP2}" && pwd ) 2> /dev/null `
+if [ -n "$tmp" ]; then
+  IZ_BZIP2_A="$tmp"
 fi
 
 IZ_ZLIB_A=''
@@ -823,8 +824,9 @@ _EOF_
         CFLAGS_OPT="-O3 ${C_PARMS}"
         CFLAGS_TST="${CFLAGS_TST} -D_ALL_SOURCE"
         CFLAGS_TST="${CFLAGS_TST} -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"
+        CFLAGS_TST="${CFLAGS_TST} -DICONV=1"
         LFLAGS2="${LFLAGS2} -q64"
-        AR='ar -cq -X64'
+        AR='ar -X64 -cq'
         AR_BZ='ar -X64'
         if [ -n "${LIST}" ]; then # Listings enabled?
           CFLAGS_OPT="${CFLAGS_OPT} -qlist -qsource -qshowinc -qreport"
@@ -855,8 +857,9 @@ _EOF_
         CFLAGS_OPT="-O3 ${C_PARMS}"
         CFLAGS_TST="${CFLAGS_TST} -D_ALL_SOURCE"
         CFLAGS_TST="${CFLAGS_TST} -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"
+        CFLAGS_TST="${CFLAGS_TST} -DICONV=1"
         LFLAGS2="${LFLAGS2} -q64"
-        AR='ar -cq -X64'
+        AR='ar -X64 -cq'
         AR_BZ='ar -X64'
         if [ -n "${LIST}" ]; then # Listings enabled?
           CFLAGS_OPT="${CFLAGS_OPT} -qlist -qsource -qshowinc -qreport"
@@ -917,6 +920,7 @@ _EOF_
         CFLAGS_TST="${CFLAGS_TST} -DEBCDIC -DSYSV"
         CFLAGS_TST="${CFLAGS_TST} -D_ALL_SOURCE -D_OPEN_SYS_TIMED_EXT"
         CFLAGS_TST="${CFLAGS_TST} -D_XOPEN_SOURCE_EXTENDED=1"
+        CFLAGS_TST="${CFLAGS_TST} -DICONV=1"
         RANLIB="echo"               # z/OS UNIX has no ranlib utility
         echo "  IBM z/OS XL C ($CFLAGS_OPT)"
       fi
@@ -962,6 +966,7 @@ _EOF_
         CFLAGS_TST="${CFLAGS_TST} -DEBCDIC -DSYSV"
         CFLAGS_TST="${CFLAGS_TST} -D_ALL_SOURCE -D_OPEN_SYS_TIMED_EXT"
         CFLAGS_TST="${CFLAGS_TST} -D_XOPEN_SOURCE_EXTENDED=1"
+        CFLAGS_TST="${CFLAGS_TST} -DICONV=1"
         RANLIB="echo"               # z/VM UNIX has no ranlib utility
         echo "  IBM XL C for z/VM ($CFLAGS_OPT)"
       fi
@@ -1250,8 +1255,10 @@ esac
 #------------------------------------------------------------------------------
 # E) Configure optional AES (WinZip/Gladman) encryption library.
 #------------------------------------------------------------------------------
-# AES (WinZip/Gladman) encryption.  (User must request: "AES_WG=1".)
-if [ -n "${AES_WG}" ]; then
+# AES (WinZip/Gladman) encryption.  (User may disable: NO_AES_WG=1.)
+if [ -n "${NO_AES_WG}" ]; then
+  echo "AES WG encryption disabled."
+else
   echon "Check AES_WG (AES WinZip/Gladman) encryption support..."
   if [ -d "${SRCDIR}/aes_wg" ]; then
     echo ''
@@ -1291,15 +1298,15 @@ _EOF_
     echo "^^ Directory aes_wg not found."
     echo "^^ Unable to include AES_WG encryption support."
   fi
-else
-  echo "AES WG encryption not requested."
 fi
 
 #------------------------------------------------------------------------------
 # F) Configure optional LZMA compression library.
 #------------------------------------------------------------------------------
-# LZMA compression.  (User must request: "LZMA=1".)
-if [ -n "${LZMA}" ]; then
+# LZMA compression.  (User may disable: NO_LZMA=1.)
+if [ -n "${NO_LZMA}" ]; then
+  echo "LZMA compression disabled."
+else
   echon "Check LZMA compression support..."
   if [ -d "${SRCDIR}/szip" ]; then
     echo ''
@@ -1340,15 +1347,15 @@ _EOF_
     echo "^^ Directory szip/ not found."
     echo "^^ Unable to include LZMA compression support."
   fi
-else
-  echo "LZMA compression not requested."
 fi
 
 #------------------------------------------------------------------------------
 # F'') Configure optional PPMd compression library.
 #------------------------------------------------------------------------------
-# PPMd compression.  (User must request: "PPMD=1".)
-if [ -n "${PPMD}" ]; then
+# PPMd compression.  (User may disable: NO_PPMD=1.)
+if [ -n "${NO_PPMD}" ]; then
+  echo "PPMd compression disabled."
+else
   echon "Check PPMd compression support..."
   if [ -d "${SRCDIR}/szip" ]; then
     echo ''
@@ -1389,15 +1396,16 @@ _EOF_
     echo "^^ Directory szip/ not found."
     echo "^^ Unable to include PPMd compression support."
   fi
-else
-  echo "PPMd compression not requested."
 fi
 
 #------------------------------------------------------------------------------
 # G) Configure optional BZIP2 compression library.
 #------------------------------------------------------------------------------
-# BZIP2 compression.  (User must request: "IZ_BZIP2=bzip2_dir".)
-if [ -n "${IZ_BZIP2}" ]; then
+# BZIP2 compression.
+# (User may disable or direct: "NO_IZ_BZIP2=1", "IZ_BZIP2=bzip2_dir".)
+if [ -n "${NO_IZ_BZIP2}" ]; then
+  echo "BZIP2 compression disabled."
+else
   echon "Check BZIP2 compression support..."
   if [ -d "${IZ_BZIP2_A}" ]; then
     echo ''
@@ -1440,7 +1448,7 @@ if [ -n "${IZ_BZIP2}" ]; then
           fi
         else
           echo ''
-          echon "  Check for BZIP2 Makefile in I_BZIP2 (${IZ_BZIP2})..."
+          echon "  Check for BZIP2 Makefile in IZ_BZIP2 (${IZ_BZIP2})..."
           if [ -f "${IZ_BZIP2_A}/Makefile" ]; then
             LIB_BZ="${IZ_BZIP2}/libbz2.a"
             CFLAGS_TST="${CFLAGS_TST} -I${IZ_BZIP2} -DBZIP2_SUPPORT"
@@ -1530,8 +1538,6 @@ _EOF_
     echo "^^ Directory ${IZ_BZIP2} not found."
     echo "^^ Unable to include BZIP2 compression support."
   fi
-else
-  echo "BZIP2 compression not requested."
 fi
 
 #------------------------------------------------------------------------------
@@ -1627,15 +1633,6 @@ _EOF_
   fi
 else
   echo "ZLIB not requested."
-fi
-
-#------------------------------------------------------------------------------
-# H') Configure UnZip object library.
-#------------------------------------------------------------------------------
-# UnZip object library.  (User must request: "LIBUNZIP=1".)
-if [ -n "${LIBUNZIP}" ]; then
-  LIB_UNZIP="${PROD}/libizunzip.a"
-  echo "Building UnZip object library (${LIB_UNZIP})"
 fi
 
 #------------------------------------------------------------------------------
@@ -2024,8 +2021,8 @@ int main()
   return (out == 0);
 }
 _EOF_
-    $CC_TST ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} -o conftest \
-     conftest.c >/dev/null 2>/dev/null
+    ${CC_TST} ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} \
+     -o conftest conftest.c >/dev/null 2>/dev/null
     status=$?
     if [ $status -eq 0 ]; then
       ucname=` echo ${func} | tr '[a-z]' '[A-Z]' `
@@ -2081,7 +2078,8 @@ int main()
 #endif
 }
 _EOF_
-  $CC_TST $CFLAGS -o conftest conftest.c >/dev/null 2>/dev/null
+  ${CC_TST} ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} \
+   -o conftest conftest.c >/dev/null 2>/dev/null
   status=$?
   if [ $status -ne 0 ]; then
     echo '  No.'
@@ -2129,8 +2127,10 @@ else
 fi
 
 # Configure optional ISO/OEM (iconv) conversion library.
-# (User must request: "ICONV=1", and UNICODE_SUPPORT must be enabled.)
-if [ -n "${ICONV}" ]; then
+# (User may disable: "NO_ICONV=1", and UNICODE_SUPPORT must be enabled.)
+if [ -n "${NO_ICONV}" ]; then
+  echo "ISO/OEM (iconv) conversion support disabled."
+else
   echon "Check ISO/OEM (iconv) conversion support..."
   if [ $iconv_ok -eq 0 ]; then
     echo '  No.'
@@ -2171,8 +2171,6 @@ _EOF_
       echo "^^ Unable to include ISO/OEM (iconv) conversion support."
     fi
   fi
-else
-  echo "ISO/OEM (iconv) conversion support not requested."
 fi
 
 
@@ -2492,7 +2490,8 @@ int main()
   return mblen(tst, MB_CUR_MAX);
 }
 _EOF_
-$CC_TST ${CFLAGS} -o conftest conftest.c >/dev/null 2>/dev/null
+${CC_TST} ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} \
+ -o conftest conftest.c >/dev/null 2>/dev/null
 status=$?
 if [ $status -ne 0 ]; then
   echo '  No (NO_MBCS).'
@@ -2521,8 +2520,8 @@ int main()
   return (tst == NULL);
 }
 _EOF_
-  $CC_TST ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} -o conftest \
-   conftest.c >/dev/null 2>/dev/null
+  ${CC_TST} ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} \
+   -o conftest conftest.c >/dev/null 2>/dev/null
   status=$?
   if [ $status -eq 0 ]; then
     ./conftest >/dev/null
@@ -2550,7 +2549,8 @@ main()
 #endif
 }
 _EOF_
-$CC_TST ${CFLAGS} -c conftest.c >/dev/null 2>/dev/null
+${CC_TST} ${CFLAGS} ${CFLAGS_OPT} ${CFLAGS_TST} ${CFLAGS_USR} \
+ -c conftest.c >/dev/null 2>/dev/null
 status=$?
 if [ $status -ne 0 ]; then
   echo '  No (NO_VALLOC).'
@@ -2797,7 +2797,6 @@ echo "CC=\"${CC}\" CF=\"${CFLAGS}\"" \
      "LIB_BZ=\"${LIB_BZ}\"" \
      "LIB_LZMA=\"${LIB_LZMA}\"" \
      "LIB_PPMD=\"${LIB_PPMD}\"" \
-     "LIB_UNZIP=\"${LIB_UNZIP}\"" \
      "LIB_Z=\"${LIB_Z}\"" \
      "MK_BZ=\"${MK_BZ}\"" \
      "OSDEP_H=\"${OSDEP_H}\"" \

@@ -19,7 +19,8 @@
 #  define NO_STRNICMP      /* MVS has no strnicmp() */
 #  include <features.h>
    /* MVS complains if a function has the same name as a csect. */
-#  if defined(__UNZIP_C)
+#  if defined(IZ_BIGBUILD) /* Primary C file supplies pragmas   */
+#  elif defined(__UNZIP_C)
 #    pragma csect(STATIC,"unzip_s")
 #  elif defined(__CRC32_C)
 #    pragma csect(STATIC,"crc32_s")
@@ -68,6 +69,7 @@
 
 #define USE_STRM_INPUT
 #define USE_FWRITE
+#define NO_USER_PROGRESS 
 
 #define PATH_MAX 128
 

@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-05-10
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-05-14
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -53,45 +53,46 @@
 #
 # Optional features include (see INSTALL for installation instructions):
 #
-# AES encryption - If you want AES encryption (WinZip/Gladman) support
-#   included, unzip the AES_WG source kit (iz_aes_wg13.zip, or whatever
-#   is the latest version, available on the Info-ZIP server) to populate
-#   the local ./aes_wg subdirectory, and set the "make" macro AES_WG to
-#   1.   See the files INSTALL and aes_wg/README_AES_WG.txt for more
-#   information.
+# AES encryption - See the files INSTALL and aes_wg/README_AES_WG.txt
+#   for more information.  To include AES_WG (WinZip/Gladman) encryption
+#   support, unpack a compatible AES_WG source kit (iz_aes_wg13.zip, or
+#   the latest compatible kit available on the Info-ZIP server) to
+#   populate the local ./aes_wg subdirectory.  To disable AES_WG
+#   encryption support (when the source kit is present), set the "make"
+#   macro NO_AES_WG to 1.   
 #
-# LZMA compression - If you want LZMA compression support included, set
-#   the "make" macro LZMA to 1.  See the files INSTALL and
-#   szip/README_LZMA.txt and INSTALL for more information.
+# LZMA compression - See the files INSTALL and szip/README_LZMA.txt for
+#   more information.  To disable LZMA compression support, set the
+#   "make" macro NO_LZMA to 1.  
 #
-# PPMd compression - If you want PPMd compression support included, set
-#   the "make" macro PPMD to 1.  See the files INSTALL and
-#   szip/README_LZMA.txt and INSTALL for more information.
+# PPMd compression - See the files INSTALL and szip/README_LZMA.txt for
+#   more information.  To disable PPMd compression support, set the
+#   "make" macro NO_PPMD to 1.
 #
-# Bzip2 compression - If you want bzip2 compression support included, there
-#   are three options:
-#   - Create a local build of bzip2 by unzipping the latest bzip2 source
-#     archive into the ./bzip2 subdirectory and setting the "make" macro
-#     IS_BZIP2 to bzip2.  unix/Makefile will attempt to properly build the
-#     library using the bzip2 "make" file.
-#   - Use an existing build of the bzip2 library by setting the "make" macro
-#     IZ_BZIP2 to a directory containing the bzip2 header file and object
-#     (and/or shared) library files.
-#   - Use the system bzip2 library.  Ensure the local ./bzip2 subdirectory
-#     exists and does not contain the files Makefile, libbz2.a, or bzlib.h.
-#     Set the "make" macro IZ_BZIP2 to bzip2.  However, use one of the above
-#     options first, if possible, to avoid an issue with error handling that
-#     may not be corrected in the system library.
-#   See the files INSTALL and bzip2/README_BZIP2.txt for more information.
+# Bzip2 compression -   See the files INSTALL and bzip2/README_BZIP2.txt
+#   for more information.  To disable bzip2 compression support, set the
+#   "make" macro NO_IZ_BZIP2 to 1.
+#   To include  bzip2 compression support, there are three options: 
+#   - Let the UnZip builders build a bzip2 object library from the
+#     source kit in the bzip2 subdirectory.
+#   - Use an existing build of the bzip2 library by setting the "make"
+#     macro IZ_BZIP2 to a directory containing the bzip2 header file and
+#     object (and/or shared) library files.
+#   - Use the system bzip2 library.  To do this, ensure that the local
+#     ./bzip2 subdirectory exists and does not contain the files
+#     Makefile, libbz2.a, or bzlib.h.  It may be safer to use one of the
+#     above options first, if possible, to avoid an possible problem
+#     with error handling that may not be done as expected by the system
+#     library.
 #
-# Zlib deflation - If you want to use zlib for decompressing instead of
-#   UnZip's built-in code, there are two options:
+# Zlib deflation - To use zlib to handle Deflate compression instead of
+#   UnZip's built-in Deflate code, there are two options:
 #   - Use an existing build of the zlib support by setting the "make"
 #     macro IZ_ZLIB to a directory containing suitable zlib header and
 #     object/shared library files.
-#   - Use the system zlib support by ensuring the local ./zlib subdirectory
-#     exists, and does not contain the files libz.a or bzlib.h. Set the
-#     "make" macro IZ_BZIP2 to zlib.
+#   - Use the system zlib support by ensuring that the local ./zlib
+#     subdirectory exists, and does not contain the files libz.a or
+#     bzlib.h.  Set the "make" macro IZ_ZLIB to "zlib".
 #
 # UnZip Ports:
 #
@@ -154,17 +155,22 @@ help:
 	@echo 'For a list including specific targets for older systems:'
 	@echo '   make -f unix/Makefile list'
 	@echo ''
-	@echo '"make" macros to enable varions optional features:'
-	@echo '    "AES_WG=1"        Add AES encryption (WinZip/Gladman).'
+	@echo '"make" macros to control various optional features:'
+	@echo '    "NO_AES_WG=1"     Disable AES_WG encryption.'
+	@echo '    "BINS=[L][M][U]   Binaries build list:'
+	@echo '                       L: object library (libizunzip.a)'
+	@echo '                       M: main program (UnZip)'
+	@echo '                       U: utility programs (fUnZip, UnZipSFX)'
+	@echo '                       Default: MU.'
 	@echo '    "CC=gcc"          Use "gcc" instead of "cc" for C compiler.'
-	@echo '    "ICONV=1"         Enable ISO/OEM (iconv) conversion.'
-	@echo '    "IZ_BZIP2=bz2dir" Add BZIP2 compression from dir bz2dir.'
-	@echo '    "IZ_ZLIB=zdir"    Use ZLIB from dir zdir for deflate.'
-	@echo '    "LIBUNZIP=1"      Create UnZip object library.'
+	@echo '    "NO_ICONV=1"      Disable ISO/OEM (iconv) conversion.'
+	@echo '    "IZ_BZIP2=bz2dir" Use bzip2 compression from dir "bz2dir".'
+	@echo '    "NO_IZ_BZIP2=1"   Disable bzip2 compression.'
+	@echo '    "IZ_ZLIB=zdir"    Use zlib from dir "zdir" for Deflate.'
 	@echo '    "LIST=1"          Generate C compiler and linker listing.'
 	@echo '    "LOCAL_UNZIP=opts" Add C compiler options, "opts".'
-	@echo '    "LZMA=1"          Add LZMA compression.'
-	@echo '    "PPMD=1"          Add PPMd compression.'
+	@echo '    "NO_LZMA=1"       Disable LZMA compression.'
+	@echo '    "NO_PPMD=1"       Disable PPMd compression.'
 	@echo '    "PROD=subdir"     Build product files in "subdir", not ".".'
 	@echo ''
 	@echo 'Examples:'
@@ -287,14 +293,16 @@ PROD = .
 #    BZIP2 compression
 #    LZMA compression
 #    PPMd compression
-#    Callable UnZip
 #    ZLIB compression
 LIB_AES_WG  =
 LIB_BZ      =
 LIB_LZMA    =
 LIB_PPMD    =
-LIB_UNZIP   =
 LIB_Z       =
+
+# Binaries build list (executables and/or object library).
+# - Default: main program and utilities.
+BINS = MU
 
 # Build "make" files
 # - Alternatively, use bzip2/Makebz2.iz
@@ -558,16 +566,13 @@ AR_Z     = zlib/libz.a
 #----------------------------------------------------------------------------
 #  Build configuration:  Executable programs
 #----------------------------------------------------------------------------
+LIB_UNZIP   = $(PROD)/libizunzip.a
+
 PGM_FUZ     = funzip$(PGMEXT)
 PGM_SFX     = unzipsfx$(PGMEXT)
 PGM_UNZIP   = unzip$(PGMEXT)
 PGM_ZGREP   = zipgrep
 PGM_ZINFO   = zipinfo$(PGMEXT)
-
-UNZIP_PGMS  = $(LIB_UNZIP)  \
-              $(PGM_FUZ)    \
-              $(PGM_SFX)    \
-              $(PGM_UNZIP)
 
 PPGM_FUZ    = $(PROD)/$(PGM_FUZ)
 PPGM_SFX    = $(PROD)/$(PGM_SFX)
@@ -575,8 +580,7 @@ PPGM_UNZIP  = $(PROD)/$(PGM_UNZIP)
 PPGM_ZGREP  = unix/zipgrep
 PPGM_ZINFO  = $(PROD)/$(PGM_ZINFO)
 
-UNZIP_PPGMS = $(LIB_UNZIP)  \
-              $(PPGM_FUZ)   \
+UNZIP_PPGMS = $(PPGM_FUZ)   \
               $(PPGM_SFX)   \
               $(PPGM_UNZIP)
 
@@ -1145,11 +1149,17 @@ $(PMAN_ZGREP): man/man1/zipgrep.1
 #----------------------------------------------------------------------------
 
 all:        generic_msg generic
-unzips:     $(UNZIP_PPGMS)
-objs:       $(O_UNZIP)
-objsdll:    $(O_DLL)
 docs:       $(PROD)/manout $(UNZIP_DOCS)
 manuals:    $(PROD)/manout $(UNZIP_PMANS)
+
+# Binaries build list (BINS) options:
+L:          $(LIB_UNZIP)
+LM:         $(LIB_UNZIP) $(PPGM_UNZIP)
+LMU:        $(LIB_UNZIP) $(UNZIP_PPGMS)
+LU:         $(LIB_UNZIP) $(PPGM_FUZ) $(PPGM_SFX)
+M:          $(PPGM_UNZIP)
+MU:         $(UNZIP_PPGMS)
+U:          $(PPGM_FUZ) $(PPGM_SFX)
 
 #----------------------------------------------------------------------------
 #  Build rules: ???????
@@ -1159,6 +1169,7 @@ unix_make:
 # @echo \
 # '(Ignore any errors from `make'"' due to the following command; it's harmless.)"
 	-@2>&1 $(LN) unix/Makefile . > /dev/null || echo > /dev/null
+	if [ ! -d $(PROD) ]; then mkdir "$(PROD)"; fi
 
 #----------------------------------------------------------------------------
 #  Build rules: Configuration flags.
@@ -1180,10 +1191,11 @@ $(PROD)/flags: unix/configure
          "CFLAGS='$(LOCAL_UNZIP)'" \
          "LFLAGS1='$(LFLAGS1)'" \
          "LFLAGS2='$(LFLAGS2)'" \
-         "AES_WG='$(AES_WG)'" \
-         "LZMA='$(LZMA)'" \
-         "PPMD='$(PPMD)'" \
+         "NO_AES_WG='$(NO_AES_WG)'" \
          "IZ_BZIP2='$(IZ_BZIP2)'" \
+         "NO_IZ_BZIP2='$(NO_IZ_BZIP2)'" \
+         "NO_LZMA='$(NO_LZMA)'" \
+         "NO_PPMD='$(NO_PPMD)'" \
          "IZ_ZLIB='$(IZ_ZLIB)'"
 
 # BZIP2 flags
@@ -1284,7 +1296,7 @@ uninstall:
 #         See "README" under unix/Packaging
 #----------------------------------------------------------------------------
 
-svr4package: unzips
+svr4package: $(BINS)
 	@echo 'Creating SVR4 package for Unix ...'
 	-@rm -rf $(PKGDIR) $(PKGDIR)_`uname -p`.pkg
 	-@sed -e "s/.VERSION./$(VERSION)/g" \
@@ -1428,7 +1440,7 @@ generic_msg:
 # - Generate flags file (if doesn't exist), then unzip modules
 
 generic: $(PROD)/flags
-	eval $(MAKE) $(MAKEF) unzips ACONF_DEP=$(PROD)/flags \
+	eval $(MAKE) $(MAKEF) $(BINS) ACONF_DEP=$(PROD)/flags \
          `cat $(PROD)/flags`
 
 # generic_pkg
@@ -1443,13 +1455,13 @@ generic_pkg: generic svr4package
 #  - Can not assume that the "make" utility groks "$(MAKE)".
 #----------------------------------------------------------------------------
 
-generic1: unzips     # first try if unknown
+generic1: $(BINS)     # first try if unknown
 
 generic2: unix_make  # second try if unknown:  hope make is called "make"
-	make $(MAKEF) unzips CF="$(CF) -DBSD"
+	make $(MAKEF) $(BINS) CF="$(CF) -DBSD"
 
 generic3: unix_make  # third try if unknown:  hope make is called "make"
-	make $(MAKEF) unzips CF="$(CF) -DSYSV"
+	make $(MAKEF) $(BINS) CF="$(CF) -DSYSV"
 
 #----------------------------------------------------------------------------
 #  "Autoconfig" group, aliases for the generic targets using configure:
@@ -1462,32 +1474,32 @@ solaris: generic_pkg
 #  "Normal" group (BSD vs. SysV may be set in unzip.h via predefined macros):
 #----------------------------------------------------------------------------
 
-386i: unzips     # sun386i, SunOS 4.0.2
-#3Bx: unzips     # AT&T 3B2/1000-80; should work on any WE32XXX machine
-bull: unzips     # Bull DPX/2, BOS 2.00.45 (doesn't require -Xk switch)
-convex: unzips   # Convex C-120 and C-210 (-O is enough; -ext is default)
-cray: unzips     # Cray-2 and Y-MP, using default (possibly old) compiler
-dec: unzips      # DEC 5820 (MIPS RISC), test version of Ultrix v4.0
-encore: unzips   # Multimax
-eta: unzips      # ETA-10P*, hybrid SysV with BSD 4.3 enhancements
-gould: unzips    # Gould PN9000 running UTX/32 2.1Bu01
-hp: unzips       # HP 9000 series (68020), 4.3BSD or HP-UX A.B3.10 Ver D
-hpux: unzips     # (to match Zip's makefile entry)
-mips: unzips     # MIPS M120-5(?), SysV.3 [error in sys/param.h file?]
-next10: unzips   # NeXT (generic; use next2x or next3x for better opt.)
-osf1: unzips     # DECstation, including Alpha-based; DEC OSF/1 v1.x
-pyr_: unzips     # [failsafe target for pyramid target below]
-pyr_ucb: unzips  # Pyramids running BSD universe by default (see below)
-realix: unzips   # Modcomp Real/IX (SysV.3); note "gcc" = GLS C, not GNU
-sco: unzips      # Xenix/386 (tested on 2.3.1); SCO Unix 3.2.0.
-sgi: unzips      # Silicon Graphics; Irix 3.3.2, 4.0.x, 5.2, etc.
-stellar: unzips  # gs-2000
-sun: unzips      # old target; no good with solaris...use "sunos" now
-sunos: unzips    # no good with SunOS 3.x...use "sunos3" or "sunos4" now
-sunos4: unzips   # Sun 3, 4; SunOS 4.x (SOME SYSTEMS ARE SYSTEM V!)
-tahoe: unzips    # tahoe (CCI Power6/32), 4.3BSD
-ultrix: unzips   # VAXen, DEC 58x0 (MIPS guts), DECstation 2100; v4.x
-vax: unzips      # general-purpose VAX target (not counting VMS)
+386i: $(BINS)     # sun386i, SunOS 4.0.2
+#3Bx: $(BINS)     # AT&T 3B2/1000-80; should work on any WE32XXX machine
+bull: $(BINS)     # Bull DPX/2, BOS 2.00.45 (doesn't require -Xk switch)
+convex: $(BINS)   # Convex C-120 and C-210 (-O is enough; -ext is default)
+cray: $(BINS)     # Cray-2 and Y-MP, using default (possibly old) compiler
+dec: $(BINS)      # DEC 5820 (MIPS RISC), test version of Ultrix v4.0
+encore: $(BINS)   # Multimax
+eta: $(BINS)      # ETA-10P*, hybrid SysV with BSD 4.3 enhancements
+gould: $(BINS)    # Gould PN9000 running UTX/32 2.1Bu01
+hp: $(BINS)       # HP 9000 series (68020), 4.3BSD or HP-UX A.B3.10 Ver D
+hpux: $(BINS)     # (to match Zip's makefile entry)
+mips: $(BINS)     # MIPS M120-5(?), SysV.3 [error in sys/param.h file?]
+next10: $(BINS)   # NeXT (generic; use next2x or next3x for better opt.)
+osf1: $(BINS)     # DECstation, including Alpha-based; DEC OSF/1 v1.x
+pyr_: $(BINS)     # [failsafe target for pyramid target below]
+pyr_ucb: $(BINS)  # Pyramids running BSD universe by default (see below)
+realix: $(BINS)   # Modcomp Real/IX (SysV.3); note "gcc" = GLS C, not GNU
+sco: $(BINS)      # Xenix/386 (tested on 2.3.1); SCO Unix 3.2.0.
+sgi: $(BINS)      # Silicon Graphics; Irix 3.3.2, 4.0.x, 5.2, etc.
+stellar: $(BINS)  # gs-2000
+sun: $(BINS)      # old target; no good with solaris...use "sunos" now
+sunos: $(BINS)    # no good with SunOS 3.x...use "sunos3" or "sunos4" now
+sunos4: $(BINS)   # Sun 3, 4; SunOS 4.x (SOME SYSTEMS ARE SYSTEM V!)
+tahoe: $(BINS)    # tahoe (CCI Power6/32), 4.3BSD
+ultrix: $(BINS)   # VAXen, DEC 58x0 (MIPS guts), DECstation 2100; v4.x
+vax: $(BINS)      # general-purpose VAX target (not counting VMS)
 
 #----------------------------------------------------------------------------
 #  BSD group (for timezone structs [struct timeb]):
@@ -1496,7 +1508,7 @@ vax: unzips      # general-purpose VAX target (not counting VMS)
 bsd: _bsd        # generic BSD (BSD 4.2 & Ultrix handled in unzip.h)
 
 _bsd: unix_make
-	$(MAKE) unzips CF="$(CF) -DBSD"
+	$(MAKE) $(BINS) CF="$(CF) -DBSD"
 
 #----------------------------------------------------------------------------
 #  SysV group (for extern long timezone and ioctl.h instead of sgtty.h):
@@ -1509,7 +1521,7 @@ sysv: _sysv     # generic System V Unix (Xenix handled in unzip.h)
 xos: _sysv      # Olivetti LSX-3005..3045, X/OS 2.3 and 2.4
 
 _sysv: unix_make
-	$(MAKE) unzips CF="$(CF) -DSYSV"
+	$(MAKE) $(BINS) CF="$(CF) -DSYSV"
 
 # extension to perform SVR4 package-creation after compilation
 _sysvp: _sysv svr4package
@@ -1522,7 +1534,8 @@ pixel: _v7      # Pixel 80, 100 (68000-based, V7/mostly BSD4.1 compat.)
 v7: _v7         # generic Unix Version 7 box (prob. only Pixel...)
 
 _v7:
-	make $(MAKEF) unzips CF="$(CF) -DV7 -DNO_PARAM_H \
+	if [ ! -d $(PROD) ]; then mkdir "$(PROD)"; fi
+	make $(MAKEF) $(BINS) CF="$(CF) -DV7 -DNO_PARAM_H \
          -DSHORT_NAMES -DBSD -DZMEM -DNO_LCHOWN -DNO_LCHMOD"
 
 #----------------------------------------------------------------------------
@@ -1531,61 +1544,61 @@ _v7:
 
 # AT&T 3B2/1000-80; should work on any WE32XXX machine
 3Bx: unix_make
-	$(MAKE) unzips CF="$(CF) -DCBREAK=2"
+	$(MAKE) $(BINS) CF="$(CF) -DCBREAK=2"
 
 # AT&T 7300 (M68000/SysV.3) (add -DSYSV? -DNO_LIMITS?)
 7300: unix_make
-	$(MAKE) unzips CF="$(CF) -DNO_DIR -DNO_MKDIR -DNO_STRNICMP \
+	$(MAKE) $(BINS) CF="$(CF) -DNO_DIR -DNO_MKDIR -DNO_STRNICMP \
          -DNO_UID_GID -DNO_FCHMOD -DNO_LCHOWN -DNO_LCHMOD -DCBREAK=2"
 
 7300_gcc: unix_make
-	$(MAKE) unzips CC=gcc LD=gcc LF2="" CFLAGS="-O2" \
+	$(MAKE) $(BINS) CC=gcc LD=gcc LF2="" CFLAGS="-O2" \
          LOC="-DNO_DIR -DNO_MKDIR -DNO_STDLIB_H -DNO_STRNICMP \
          -DNO_UID_GID -DNO_FCHMOD -DNO_LCHOWN -DNO_LCHMOD -DCBREAK=2 $(LOC)"
 	$(STRIP) $(UNZIP_PPGMS)
 
 # Amdahl (IBMish) mainframe, UTS (SysV) 1.2.4, 2.0.1, 3.x
 amdahl: unix_make
-	$(MAKE) unzips CF="$(CF) -DSYSV -DNO_UID_GID -DNO_LCHOWN -DNO_LCHMOD"
+	$(MAKE) $(BINS) CF="$(CF) -DSYSV -DNO_UID_GID -DNO_LCHOWN -DNO_LCHMOD"
 
 # Amdahl UTS 2.1.4 with "extended file types" filesystem (aarrrggghhhh...)
 amdahl_eft: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -eft -DSYSV -DNO_UID_GID -DNO_LCHOWN -DNO_LCHMOD"
 
 # Apollo Domain/OS machines (added -D...SOURCE options) [Gordon Fox, 960810]
 apollo: unix_make
-	$(MAKE) unzips CF="$(CF) -D_INCLUDE_BSD_SOURCE \
+	$(MAKE) $(BINS) CF="$(CF) -D_INCLUDE_BSD_SOURCE \
          -D_INCLUDE_XOPEN_SOURCE -DNO_LCHOWN -DNO_LCHMOD"
 
 # BSDI BSD/OS on 386 platform, using the assembler replacement for crc32.c
 bsdi: unix_make
 	@echo 'NOTE:  use bsdi_noasm target for non-Intel BSD/OS compiles.'
-	$(MAKE) unzips CC=gcc2 LD=shlicc2 AS=gcc2 \
+	$(MAKE) $(BINS) CC=gcc2 LD=shlicc2 AS=gcc2 \
          CFLAGS="-O3 -Wall -DASM_CRC -DBSD" OSDEP_OS="$(PROD)/crc_gcc.o"
 
 # BSDI BSD/OS
 bsdi_noasm: unix_make
 # @echo 'NOTE:  use bsd target for non-Intel BSD/OS compiles.'
-	$(MAKE) unzips CC=gcc2 LD=shlicc2 AS=gcc2 \
+	$(MAKE) $(BINS) CC=gcc2 LD=shlicc2 AS=gcc2 \
          CFLAGS="-O3 -Wall -DBSD"
 
 # Coherent 3.x/4.x, Mark Williams C.  ``For Coherent's CC, it needs either
 # -T0 or -T150000 (or bigger) added to the CFLAGS, otherwise the compiler
 # runs out of memory and dies in zipinfo.c.'' [Fred "Fredex" Smith, 940719]
 coherent: unix_make
-	$(MAKE) unzips CFLAGS="$(CFLAGS) -T0 -DNO_LCHOWN -DNO_LCHMOD"
+	$(MAKE) $(BINS) CFLAGS="$(CFLAGS) -T0 -DNO_LCHOWN -DNO_LCHMOD"
 
 # Cray-2, Y-MP or C90, running Unicos 5.x to 8.x (SysV + BSD enhancements)
 # and Standard (ANSI) C compiler 3.0 or later.
 cray_opt: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CFLAGS="$(CFLAGS) -h scalar3 -h vector3 -DNO_LCHOWN -DNO_LCHMOD"
 
 # The unzip41 build on a Cyber 910/SGI running Irix v3.3.3 was successful
 # with the following change to Makefile:
 cyber_sgi: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CFLAGS="$(CFLAGS) -I/usr/include/bsd -DNO_LCHOWN -DNO_LCHMOD" \
          LF="-lbsd $(LF)" SL="-lbsd $(SL)"
 
@@ -1595,7 +1608,7 @@ cyber_sgi: unix_make
 # This port does not offer full access to the Windows file system.
 # Info-ZIP recommends using "win32/Makefile.gcc" instead.
 cygwin: unix_make
-	$(MAKE) unzips CC=gcc LD=gcc AS=gcc \
+	$(MAKE) $(BINS) CC=gcc LD=gcc AS=gcc \
          CFLAGS="-O3 -DASM_CRC -DNO_LCHOWN -DNO_LCHMOD" \
          AF="-Di386 $(AF)" OSDEP_OS="$(PROD)/crc_gcc.o" \
          E=".exe" CP="cp" LN="ln -s"
@@ -1607,12 +1620,12 @@ cygwin: unix_make
 #  -X9 = warnings if a function is used without a declaration
 #
 dnix: unix_make
-	$(MAKE) unzips CFLAGS="$(CFLAGS) -X7 -X9 -DDNIX"
+	$(MAKE) $(BINS) CFLAGS="$(CFLAGS) -X7 -X9 -DDNIX"
 
 # FreeBSD on Intel:
 freebsd: unix_make
 	@echo 'NOTE:  use bsd target for non-Intel FreeBSD compiles (if any).'
-	$(MAKE) unzips CC=gcc LD=gcc AS=gcc \
+	$(MAKE) $(BINS) CC=gcc LD=gcc AS=gcc \
          CFLAGS="-O3 -Wall -DASM_CRC -DBSD" \
          AF="-Di386 $(AF)" OSDEP_OS="$(PROD)/crc_gcc.o"
 
@@ -1624,25 +1637,25 @@ freebsd: unix_make
 # with "echo" instead).
 #
 gcc: unix_make
-	$(MAKE) unzips CC=gcc LD=gcc CFLAGS="-O3" LF2=""
+	$(MAKE) $(BINS) CC=gcc LD=gcc CFLAGS="-O3" LF2=""
 	$(STRIP) $(UNZIP_PPGMS)
 
 # Heurikon HK68 (68010), UniPlus+ System V 5.0, Green Hills C-68000
 hk68: unix_make
-	$(MAKE) unzips CC="gcc" LD="gcc" \
+	$(MAKE) $(BINS) CC="gcc" LD="gcc" \
          LF="-n $(LF)" SL="-n $(SL)" FL="-n $(FL)" \
          CFLAGS="-ga -X138 -Dlocaltime=localti -Dtimezone=timezon"
 
 # ISC Unix on 386 platform
 isc: unix_make
-	$(MAKE) unzips LF2="-lc_s $(LF2)" OSDEP_OS="$(PROD)/crc_sysv.o" \
+	$(MAKE) $(BINS) LF2="-lc_s $(LF2)" OSDEP_OS="$(PROD)/crc_sysv.o" \
          CFLAGS="-O" \
          LOC="-DASM_CRC -DSYSV -DNO_UID_GID -DNEED_PTEM -DNO_LCHOWN \
          -DNO_LCHMOD $(LOC)" \
          AF="-DNO_UNDERLINE -Djecxz=jcxz -DALIGNMENT='.align 16' $(AF)"
 
 isc_gcc: unix_make
-	$(MAKE) unzips AS=gcc CC=gcc LD=gcc OSDEP_OS="$(PROD)/crc_gcc.o" \
+	$(MAKE) $(BINS) AS=gcc CC=gcc LD=gcc OSDEP_OS="$(PROD)/crc_gcc.o" \
          LF="-shlib $(LF)" SL="-shlib $(SL)" FL="-shlib $(FL)" LF2="" \
          CFLAGS="-O3" \
          LOC="-DSYSV -DASM_CRC -DNO_UID_GID -DNEED_PTEM -DNO_LCHOWN \
@@ -1653,7 +1666,7 @@ isc_gcc: unix_make
 # "ISI machine (68025 CPU)" (based on e-mail from Rob White <rsw@tfs.com>;
 # no further information).  May also need DIRENT defined.
 isi: unix_make
-	$(MAKE) unzips CF="$(CF) -DDECLARE_ERRNO -DNO_LCHOWN -DNO_LCHMOD"
+	$(MAKE) $(BINS) CF="$(CF) -DDECLARE_ERRNO -DNO_LCHOWN -DNO_LCHMOD"
 
 # The "generic" target should work with GNU/Linux.  The following
 # instructons are old, and probably obsolete...
@@ -1663,7 +1676,7 @@ isi: unix_make
 # systems.)
 linux: unix_make
 	@echo 'NOTE:  use linux_noasm target for non-Intel Linux compiles.'
-	$(MAKE) unzips CC=gcc LD=gcc AS=gcc \
+	$(MAKE) $(BINS) CC=gcc LD=gcc AS=gcc \
          CFLAGS="-O3 -Wall -DASM_CRC" \
          AF="-Di386 $(AF)" OSDEP_OS="$(PROD)/crc_gcc.o"
 
@@ -1672,18 +1685,18 @@ linux_asm: linux
 # Linux (Posix, approximately SysV):  virtually any version since before 0.96,
 # for any platform.  Change "-O" to "-O3" or whatever, as desired...
 linux_noasm: unix_make
-	$(MAKE) unzips CC=gcc LD=gcc CFLAGS="-O -Wall"
+	$(MAKE) $(BINS) CC=gcc LD=gcc CFLAGS="-O -Wall"
 
 # Linux with lcc compiler:  __inline__ (stat.h) not recognized, and must edit
 # /usr/include/gnu/types.h to get rid of "long long" if __LCC__ defined.  -O3
 # (or -O2 or -O) is ignored.  [GRR 960828: test target only]
 #
 linux_lcc: unix_make
-	$(MAKE) unzips CC=lcc LD=lcc CFLAGS="-O3 -Wall -D__inline__= "
+	$(MAKE) $(BINS) CC=lcc LD=lcc CFLAGS="-O3 -Wall -D__inline__= "
 
 # Linux host with go32 (djgpp) cross-compiler (go32crs.tgz) for 32-bit DOS.
 linux_dos: unix_make
-	$(MAKE) unzips CC=go32gcc CFLAGS="-O2 -Wall" \
+	$(MAKE) $(BINS) CC=go32gcc CFLAGS="-O2 -Wall" \
          LD=go32gcc \
          OSDEP_H="msdos/doscfg.h" \
          OSDEP_OCF="$(PROD)/msdos.o" \
@@ -1697,28 +1710,28 @@ linux_dos: unix_make
 
 # LynxOS-x86 2.3.0 and newer, a real-time BSD-like OS; uses gcc.
 lynx: unix_make
-	$(MAKE) unzips CC=gcc CF="$(CF) -DLynx -DLYNX -DBSD -DUNIX"
+	$(MAKE) $(BINS) CC=gcc CF="$(CF) -DLynx -DLYNX -DBSD -DUNIX"
 
 # Macintosh MacOS X (Unix-compatible enviroment), using standard compiler
 macosx: unix_make
-	$(MAKE) unzips CFLAGS="-O3 -Wall -DBSD" LF2=""
+	$(MAKE) $(BINS) CFLAGS="-O3 -Wall -DBSD" LF2=""
 	$(STRIP) $(UNZIP_PPGMS)
 
 # Macintosh MacOS X (Unix-compatible enviroment), using gcc
 macosx_gcc: unix_make
-	$(MAKE) unzips CC=gcc CFLAGS="-O3 -Wall -DBSD" LF2=""
+	$(MAKE) $(BINS) CC=gcc CFLAGS="-O3 -Wall -DBSD" LF2=""
 	$(STRIP) $(UNZIP_PPGMS)
 
 # Minix 1.5 PC for the 386.  Invoke as is to use default cc, or as "make
 # minix CC=gcc" to use gcc.  Try "make linux" if you have a working termios.h.
 minix: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -DMINIX -DSHORT_NAMES -DNO_LCHOWN -DNO_LCHMOD" \
          CC=$(CC) LD=$(CC)
 
 # MPE/iX, the Unix variant for HP 3000 systems.
 mpeix: unix_make
-	$(MAKE) unzips CC=c89 \
+	$(MAKE) $(BINS) CC=c89 \
          CF="$(CF) -DUNIX -D_POSIX_SOURCE -DHAVE_TERMIOS_H \
           -DPASSWD_FROM_STDIN -DNO_PARAM_H -DNO_LCHOWN -DNO_LCHMOD" \
          LF2=-lbsd CP=cp LN="ln -s"
@@ -1742,22 +1755,22 @@ next:
 
 # 68030 BSD 4.3+Mach.  NeXT 2.x: make the executable smaller.
 next2x: unix_make
-	$(MAKE) unzips LF2="-object -s"
+	$(MAKE) $(BINS) LF2="-object -s"
 
 # NeXT 3.x: as above, plus better optimization.
 next3x: unix_make
-	$(MAKE) unzips CFLAGS="-O2" LF2="-object -s"
+	$(MAKE) $(BINS) CFLAGS="-O2" LF2="-object -s"
 
 # NeXT 3.1+: make the executable fat (multi-architecture binary [MAB],
 # for "black" [NeXT] and "white" [x86] hardware, so far).
 nextfat: unix_make
-	$(MAKE) unzips CFLAGS="-O2 -arch i386 -arch m68k" \
+	$(MAKE) $(BINS) CFLAGS="-O2 -arch i386 -arch m68k" \
          LF2="-arch i386 -arch m68k -object -s"
 
 # Sequent Symmetry running Dynix/ptx (sort of SysV.3):  needs to link
 # with libseq to get symlink().
 ptx: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -DSYSV -DTERMIO -DPTX -DNO_LCHOWN -DNO_LCHMOD" \
          LF2="$(LF2) -lseq"
 
@@ -1779,29 +1792,29 @@ qnxnto: unix_make
 	@if [ "$(ARCH)" = "" ] ; then \
           echo "You didn't set ARCH; I'll assume you meant ARCH=x86..." ; \
           echo '' ; \
-          $(MAKE) $(MAKEF) CC="qcc -Vgcc_ntox86" unzips ; \
+          $(MAKE) $(MAKEF) CC="qcc -Vgcc_ntox86" $(BINS) ; \
         else \
           echo "Making UnZip for $(ARCH)..." ; \
           echo '' ; \
-          $(MAKE) $(MAKEF) CC="qcc -Vgcc_nto$(ARCH)" unzips ; \
+          $(MAKE) $(MAKEF) CC="qcc -Vgcc_nto$(ARCH)" $(BINS) ; \
         fi
 
 # REGULUS:  68040-based, "real-time" SysV.3 mutant; uses gcc, with "REGULUS"
 # predefined.
 regulus: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -traditional -DSYSV -DNO_MKDIR -DNO_LCHOWN -DNO_LCHMOD"
 
 # SCO UNIX with shared libraries and no international support.  If you are
 # not using a USA-style keyboard and display, you may want to remove -nointl
 # to get support.  It adds quite a bit to the size of the executable.
 sco_sl: unix_make
-	$(MAKE) unzips LF="$(LF) -nointl" LF2="$(LF2) -lc_s" \
+	$(MAKE) $(BINS) LF="$(LF) -nointl" LF2="$(LF2) -lc_s" \
          SL="$(SL) -nointl" FL="$(FL) -nointl"
 
 # SCO Xenix/286 2.2.3 or later with development system 2.2.1 or later
 sco_x286: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -Mel2 -LARGE -DNO_MKDIR -DNO_LCHOWN -DNO_LCHMOD" \
          LF="$(LF) -Mel2 -LARGE -lx" SL="$(SL) -Mel2 -LARGE" \
          FL="$(FL) -Mel2 -LARGE"
@@ -1809,27 +1822,27 @@ sco_x286: unix_make
 # Sequent Symmetry with Dynix.  (386, but needs -DZMEM)
 # This should also work on Balance but I can't test it just yet.
 sequent: unix_make
-	$(MAKE) unzips CF="$(CF) -DBSD -DZMEM -DNO_LCHOWN -DNO_LCHMOD"
+	$(MAKE) $(BINS) CF="$(CF) -DBSD -DZMEM -DNO_LCHOWN -DNO_LCHMOD"
 
 # Sun 2, 3, 4 running SunOS 3.x
 sunos3: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -DNO_UID_GID -DUID_USHORT -DNO_LCHOWN -DNO_LCHMOD"
 
 # Generic System V + GNU C
 sysv_gcc: unix_make
-	$(MAKE) unzips CC=gcc LD=gcc CFLAGS="-O2 -DSYSV" LF2=""
+	$(MAKE) $(BINS) CC=gcc LD=gcc CFLAGS="-O2 -DSYSV" LF2=""
 	$(STRIP) $(UNZIP_PPGMS)
 
 # AT&T 6300+, System V.2 Unix:  run-time out-of-memory error if don't use -Ml;
 # also compile-time error if work arrays dimensioned at HSIZE+2 (>32K)
 sysv6300: unix_make
-	$(MAKE) unzips CF="$(CF) -Ml -DSYSV -DNO_LCHOWN -DNO_LCHMOD" \
+	$(MAKE) $(BINS) CF="$(CF) -Ml -DSYSV -DNO_LCHOWN -DNO_LCHMOD" \
          LF="$(LF) -Ml" SL="$(SL) -Ml" FL="$(FL) -Ml"
 
 # Texas Instruments System V.3 (running on HP 9000-1500)
 ti_sysv: unix_make
-	$(MAKE) unzips \
+	$(MAKE) $(BINS) \
          CF="$(CF) -DSYSV -DNO_UID_GID -DUID_USHORT -DNO_LCHOWN -DNO_LCHMOD"
 
 # SCO Xenix
@@ -1837,5 +1850,5 @@ ti_sysv: unix_make
 # - unzip needs to be linked with -lx [for the opendir(), readdir(),
 #   telldir(), rewinddir(), and closedir() calls]")
 xenix: unix_make
-	$(MAKE) unzips LF2="$(LF2) -lx"
+	$(MAKE) $(BINS) LF2="$(LF2) -lx"
 

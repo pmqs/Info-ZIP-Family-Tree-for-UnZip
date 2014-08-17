@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -25,10 +25,11 @@
 #ifndef __crypt_h       /* Don't include more than once. */
 #define __crypt_h
 
-/* To use crypt.c and crypt.h, the builder sets one or both of:
+/* To enable encryption (using crypt.c and crypt.h), the builder sets
+ * one or both of:
  *
- *    IZ_CRYPT_AES_WG   Include strong AES (WinZip/Gladman) encryption.
- *    IZ_CRYPT_TRAD     Include Zip traditional weak encryption.
+ *    IZ_CRYPT_AES_WG   Include AES (WinZip/Gladman) (strong) encryption.
+ *    IZ_CRYPT_TRAD     Include Zip Traditional (weak) encryption.
  *
  * Other necessary macros are derived from these.
  *
@@ -40,7 +41,8 @@
  * server.
  *
  * Source kits for both AES_WG and Traditional encryption are available
- * separately on the Info-ZIP server.
+ * separately on the Info-ZIP server.  Contact us if an encryption-free
+ * version of either the Zip or UnZip source kit is needed.
  */
 
 # undef IZ_CRYPT_ANY

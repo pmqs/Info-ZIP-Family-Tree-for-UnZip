@@ -2434,7 +2434,10 @@ static int zi_short(__G)   /* return PK-type error code */
     time_t      *z_modtim;
 #endif
     int         k, error, error_in_archive=PK_COOL;
-    unsigned    hostnum, hostver, methid, methnum, xattr;
+    unsigned    hostnum, hostver, methid, methnum;
+    unsigned    xattr_high;
+    unsigned    xattr_low;
+#define xattr xattr_high
     char        *p, workspace[12], attribs[16];
     char        methbuf[5];
     static ZCONST char dtype[5]="NXFS"; /* normal, maximum, fast, superfast */
@@ -2481,7 +2484,9 @@ static int zi_short(__G)   /* return PK-type error code */
     memset( attribs, ' ', (sizeof( attribs)- 1));
     attribs[ sizeof( attribs)- 1] = 0;
 
-    xattr = (unsigned)((G.crec.external_file_attributes >> 16) & 0xFFFF);
+    xattr_high = (unsigned)((G.crec.external_file_attributes >> 16) & 0xFFFF);
+    xattr_low = (unsigned)((G.crec.external_file_attributes) & 0xFFFF);
+
     switch (hostnum) {
         case VMS_:
             {   int    i, j;
@@ -2620,7 +2625,7 @@ static int zi_short(__G)   /* return PK-type error code */
                )
             {
                 xattr = (unsigned)(G.crec.external_file_attributes & 0xFF);
-                sprintf( attribs, ".r.-...    ");
+                sprintf( attribs, ".r.-....   ");
                 sprintf( &attribs[ 11], "%2u.%u", (hostver/ 10), (hostver% 10));
                 attribs[2] = (xattr & 0x01)? '-' : 'w';
                 attribs[5] = (xattr & 0x02)? 'h' : '-';
@@ -2642,6 +2647,12 @@ static int zi_short(__G)   /* return PK-type error code */
                         STRNICMP(p, "bat", 3) == 0)
                         attribs[3] = 'x';
                 }
+                /* Check for symlink.  Currently this is for symlinks created
+                   on Windows by Zip 3.1 or later. */
+                if (xattr_high && (xattr_high & UNX_IFMT) == UNX_IFLNK)
+                  attribs[7] = 'l';
+                else
+                  attribs[7] = '-';
                 break;
             } /* else: fall through! */
 

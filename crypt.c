@@ -222,8 +222,8 @@ local z_uint4 near *crytab_init(__G)
 #  ifdef IZ_CRYPT_TRAD
 
 /***********************************************************************
- * Write encryption header to file zfile using the password passwd
- * and the cyclic redundancy check crc.
+ * Write (Traditional) encryption header to file zfile using the password
+ * passwd and the cyclic redundancy check crc.
  */
 void crypthead(passwd, crc)
     ZCONST char *passwd;         /* password string */
@@ -270,8 +270,6 @@ void crypthead(passwd, crc)
  * bfwrite() keeps byte counts, does splits, and calls fwrite() to
  * write out the data.
  *
- * now write to global y
- *
  * A bug has been found when encrypting large files that don't
  * compress.  See trees.c for the details and the fix.
  */
@@ -279,9 +277,6 @@ unsigned zfwrite(buf, item_size, nb)
     zvoid *buf;                 /* data buffer */
     extent item_size;           /* size of each item in bytes */
     extent nb;                  /* number of items */
-#if 0
-    FILE *f;                    /* file to write to */
-#endif
 {
     int t;                      /* temporary */
 
@@ -317,10 +312,11 @@ unsigned zfwrite(buf, item_size, nb)
     return bfwrite(buf, item_size, nb, BFWRITE_DATA);
 }
 
+
 #  ifdef IZ_CRYPT_AES_WG
 
 /***********************************************************************
- * Write encryption header to file zfile.
+ * Write AES_WG encryption header to file zfile.
  *
  * Size (bytes)    Content
  * Variable        Salt value
@@ -562,15 +558,14 @@ local int ef_strip_aes( ef_buf, ef_len)
 /***********************************************************************
  * Encrypt the zip entry described by z from file in_file to file y
  * using the password passwd.  Return an error code in the ZE_ class.
+ *
+ * bfwrite() should take care of any byte counting.
  */
 int zipcloak(z, passwd)
     struct zlist far *z;        /* zip entry to encrypt */
     ZCONST char *passwd;        /* password string */
 {
     int res;                    /* result code */
-#if 0
-    zoff_t n;                   /* holds offset and counts size */
-#endif /* 0 */
     struct zlist far *localz;   /* local header */
     uch buf[1024];              /* write buffer */
     zoff_t size;                /* size of input data */
@@ -585,12 +580,6 @@ int zipcloak(z, passwd)
     /* Set encrypted bit, clear extended local header bit and write local
        header to output file */
 
-#if 0
-    /* 2011-05-19 SMS.  Caller is now responsible for the offset. */
-    /* Save position in output file. */
-    if ((n = (zoff_t)zftello(y)) == (zoff_t)-1L) return ZE_TEMP;
-#endif /* 0 */
-
     /* assume this archive is one disk and the file is open */
 
     /* read the local header */
@@ -598,9 +587,6 @@ int zipcloak(z, passwd)
 
     /* Update (assumed only one) disk.  Caller is responsible for offset. */
     z->dsk = 0;
-#if 0
-    z->off = n;
-#endif /* 0 */
 
     /* Set the encryption flags, and unset any extended local header flags. */
     z->flg |= 1,  z->flg &= ~8;
@@ -617,10 +603,14 @@ int zipcloak(z, passwd)
     }
     else
     {
-        /* Determine AES encryption salt length, and header length. */
-        /*                Note: v-- No parentheses in SALT_LENGTH def'n. --v */
-        salt_len = SALT_LENGTH( (encryption_method- (AES_MIN_ENCRYPTION- 1)));
-        HEAD_LEN = salt_len+ PWD_VER_LENGTH;
+        /* Determine AES encryption salt length, and header+trailer length.
+         * Header has salty stuff.  Trialer has Message Authentication
+         * Code (MAC).
+         */
+        /*                Note: v-- No parentheses in SALT_LENGTH def'n.   --v */
+        salt_len = SALT_LENGTH( (encryption_method - (AES_MIN_ENCRYPTION - 1)) );
+        HEAD_LEN = salt_len + PWD_VER_LENGTH +                       /* Header. */
+         MAC_LENGTH( encryption_method - (AES_MIN_ENCRYPTION - 1) ); /* Trailer. */
 
         /* get the salt */
         prng_rand( zsalt, salt_len, &aes_rnp);
@@ -642,27 +632,22 @@ int zipcloak(z, passwd)
     }
 #   endif /* def IZ_CRYPT_AES_WG */
 
-    /* Add size of encryption header. */
+    /* Add size of encryption header (AES_WG: header+trailer). */
     localz->siz += HEAD_LEN;
     z->siz = localz->siz;
 
-    /* Put the local header */
+    /* Put out the local header. */
     if ((res = putlocal(localz, PUTLOCAL_WRITE)) != ZE_OK) return res;
 
-    /* Write out encryption header at top of file data. */
+    /* Write out an encryption header before the file data. */
     if (z->encrypt_method != NO_ENCRYPTION)
     {
 #   ifdef IZ_CRYPT_AES_WG
         if ((z->encrypt_method >= AES_MIN_ENCRYPTION) &&
          (z->encrypt_method <= AES_MAX_ENCRYPTION))
         {
-            aes_crypthead( zsalt, salt_len, zpwd_verifier);
-#if 0
-            z->siz += HEAD_LEN+         /* to be updated later */
-             MAC_LENGTH( encryption_method- (AES_MIN_ENCRYPTION- 1));
-#endif /* 0 */
-            tempzn += HEAD_LEN+
-             MAC_LENGTH( encryption_method- (AES_MIN_ENCRYPTION- 1));
+            aes_crypthead( zsalt, salt_len, zpwd_verifier );
+            tempzn += HEAD_LEN;         /* Count header+trailer. */
         }
         else
         {
@@ -670,18 +655,12 @@ int zipcloak(z, passwd)
 #   ifdef IZ_CRYPT_TRAD
             /* Initialize keys with password and write random header */
             crypthead( passwd, localz->crc);
-#if 0
-            z->siz += RAND_HEAD_LEN;    /* to be updated later */
-#endif /* 0 */
-            tempzn += HEAD_LEN;
+            tempzn += HEAD_LEN;         /* Count header. */
 #    endif /* IZ_CRYPT_TRAD */
 #   ifdef IZ_CRYPT_AES_WG
         }
 #   endif /* def IZ_CRYPT_AES_WG */
     }
-
-    /* Point the global "key" to our password for zfwrite(). */
-    key = (char *)passwd;
 
     /* Read, encrypt, and write out member data. */
     for (size = z->siz- HEAD_LEN; size > 0; )
@@ -702,6 +681,21 @@ int zipcloak(z, passwd)
         }
         size -= bytes_to_read;
     }
+
+#   ifdef IZ_CRYPT_AES_WG
+    /* For AES_WG, write out an AES_WG MAC trailer. */
+    if ((z->encrypt_method >= AES_MIN_ENCRYPTION) &&
+     (z->encrypt_method <= AES_MAX_ENCRYPTION))
+    {
+      int ret;
+
+      ret = fcrypt_end( auth_code,      /* Returned msg auth code (MAC). */
+                        &zctx);         /* AES context. */
+
+      bfwrite(auth_code, 1, ret, BFWRITE_DATA);
+      /* tempzn already got this trailer size when it got the header size. */
+    }
+#   endif /* def IZ_CRYPT_AES_WG */
 
     /* Since we seek to the start of each local header can skip
        reading any extended local header */
@@ -745,6 +739,7 @@ int zipbare(z, passwd)
     struct zlist far *localz; /* local header */
     uch buf[1024];        /* write buffer */
     int b;                /* bytes in buffer */
+    zoff_t z_siz;
     int passwd_ok;
     int r;                /* size of encryption header */
     int res;              /* return code */
@@ -760,25 +755,15 @@ int zipbare(z, passwd)
     zoff_t n;                   /* Bytes actually read. */
     zoff_t nn;                  /* Bytes requested. */
     zoff_t nout;                /* Total bytes put out. */
-    zoff_t z_siz;
 #   else /* def IZ_CRYPT_AES_WG */
 #    define HEAD_LEN RAND_HEAD_LEN      /* Constant trad. header length. */
 #   endif /* def IZ_CRYPT_AES_WG [else] */
-
-#if 0
-    /* 2011-05-19 SMS.  Caller is now responsible for the offset. */
-    /* Save position in output file. */
-    if ((n = (zoff_t)zftello(y)) == (zoff_t)-1L) return ZE_TEMP;
-#endif /* 0 */
 
     /* Read local header. */
     res = readlocal(&localz, z);
 
     /* Update (assumed only one) disk.  Caller is responsible for offset. */
     z->dsk = 0;
-#if 0
-    z->off = n;
-#endif /* 0 */
 
     passwd_ok = 1;              /* Assume a good password. */
 
@@ -880,13 +865,12 @@ int zipbare(z, passwd)
     /* Good password.  Proceed to decrypt the entry. */
     z->siz -= HEAD_LEN;         /* Subtract the encryption header length. */
     localz->siz = z->siz;       /* Local, too. */
+    z_siz = z->siz;             /* Save z->siz as Use z_siz for I/O later. */
 
     localz->flg = z->flg &= ~9;         /* Clear the encryption and */
     z->lflg = localz->lflg &= ~9;       /* data-descriptor flags. */
 
 #   ifdef IZ_CRYPT_AES_WG
-    z_siz = z->siz;             /* Save z->siz as Use z_siz for I/O later. */
-
     if (how_orig == AESENCRED)
     {
         localz->how = aes_mthd; /* Set the compression method value(s) */
@@ -1255,7 +1239,7 @@ local int testkey(__G__ hd_len, h, key)
     Trace((stdout,
       "  (c | (b<<8)) = %04x  (crc >> 16) = %04x  lrec.time = %04x\n",
       (ush)(c | (b<<8)), (ush)(GLOBAL(lrec.crc32) >> 16),
-      ((ush)GLOBAL(lrec.last_mod_dos_datetime) & 0xffff)));
+      ((ush)GLOBAL(lrec.last_mod_dos_datetime) & 0xffff))));
     if ((ush)(c | (b<<8)) != (GLOBAL(pInfo->ExtLocHdr) ?
                            ((ush)GLOBAL(lrec.last_mod_dos_datetime) & 0xffff) :
                            (ush)(GLOBAL(lrec.crc32) >> 16)))

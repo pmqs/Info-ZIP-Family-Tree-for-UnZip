@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -457,9 +457,9 @@ int getch_win32  OF((void));
 # define S_ISLNK(m) (((m)& S_IFMT) == S_IFLNK)
 # endif /* ndef S_ISLNK */
 
-int symlink( const char *target, const char *name);
+int symlink( const char *target, const char *name, int is_dir);
 # ifdef UNICODE_SUPPORT
-int symlinkw( const char *target, const wchar_t *name);
+int symlinkw( const char *target, const wchar_t *name, int is_dir);
 # endif /* def UNICODE_SUPPORT */
 #endif /* def SYMLINKS */
 

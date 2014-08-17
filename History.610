@@ -513,6 +513,12 @@ Features added (or removed):
    windll/vc10/unzipstb/unzipstb.vcxproj,
    windll/vc10/unzipstb/unzipstb.vcxproj.filters) [SMS]
 
+6.10c10 (? ??? 2014):
+ - Added initial support for Windows directory symlinks (using a symlink
+   name with a trailing slash) on Unix, VMS, and Windows.  (extract.c,
+   process.c, unzpriv.h, zipinfo.c, unix/unix.c, vms/vms.c,
+   win32/w32cfg.h, win32/win32.c) [EG, SMS]
+
 
 Bugs fixed:
 
@@ -1439,3 +1445,28 @@ Bugs fixed:
  - Added a new variable/macro, COL, to the unix builders to accommodate
    SunOS 4.x, where /bin/col does not support "-x", but /usr/5bin/col
    does.  (unix/configure, unix/Makefile) [SMS]
+
+6.10c09 (13 May 2014):
+ - Changed LIBUNZIP macro in the Unix builders to a more versatile
+   BINS=[L][M][U] scheme.  (unix/configure, unix/Makefile) [SMS]
+ - If memory allocation failed in the unmatched-name detection code for
+   file list and -x/--exclude (/EXCLUDE) list names, no notice was
+   given, and unmatched names were not reported.  Now, less memory is
+   used (char, instead of int arrays), and such (unlikely) failures are
+   fatal.  (extract.c) [SMS]
+
+6.10c10 (18 Aug 2014):
+ - Reconciled common encryption code with Zip.  (crypt.c, crypt.h) [SMS]
+ - Added a dummy/comment C macro, x_SYMLINKS, to the Windows vc10
+   builder for UnZipSFX (like the existing one in the UnZip builder).
+   (win32/vc10/unzipsfx/unzipsfx.vcxproj) [SMS]
+ - Support single-source z/OS MVS builds.  (zos/bbunzip.c,
+   zos/build.jcl) [AD]
+ - Add z/OS MVS executable and source ship builds.  (zos/xmit.jcl,
+   zos/zipsrc.jcl) [AD]
+ - Correct ar -X option placement.  (unix/configure) [AD]
+ - IBM XL C builds with ICONV=1 to support utf-8 via iconv().
+   (unix/configure) [AD]
+ - Unix builder script was ignoring some early test results when running
+   later tests, causing erroneous configuration related to wide
+   characters and Unicode.  (unix/configure)  [EG, SMS]

@@ -38,6 +38,7 @@
              do_wild()
              mapattr()
              mapname()
+             mapnamew()
              maskDOSdevice()
              map2fat()
              checkdir()
@@ -1269,6 +1270,11 @@ void close_outfile(__G)
         slnk_entry->fname = slnk_entry->target + ucsize + 1;
         strcpy(slnk_entry->fname, G.filename);
 
+        /* If symlink name ends in '/', then flag as directory. */
+        slnk_entry->is_dir = 0;
+        if (G.filename[ strlen( G.filename)- 1] == '/')
+            slnk_entry->is_dir = 1;
+
         /* move back to the start of the file to re-read the "link data" */
         rewind(G.outfile);
 
@@ -1490,6 +1496,10 @@ void close_outfile(__G)
         slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
         slnk_entry->fname = slnk_entry->target + ucsize + 1 + fname_aligner;
         wcscpy( (wchar_t *)slnk_entry->fname, G.unipath_widefilename);
+
+        slnk_entry->is_dir = 0;
+        if (G.filename[strlen(G.filename) - 1] == '/')
+          slnk_entry->is_dir = 1;
 
         /* move back to the start of the file to re-read the "link data" */
         rewind(G.outfile);
@@ -2382,7 +2392,7 @@ int mapattr(__G)
       (G.crec.external_file_attributes & FILE_ATTRIBUTE_DIRECTORY ?
        0 : FILE_ATTRIBUTE_ARCHIVE)) & 0xff;
 
-#ifdef SYMLINKS
+# ifdef SYMLINKS
     if (SYMLINK_HOST( G.pInfo->hostnum))
     {
         unsigned int uxattr;
@@ -2391,7 +2401,7 @@ int mapattr(__G)
 
         G.pInfo->symlink = S_ISLNK( uxattr);
     }
-#endif /* def SYMLINKS */
+# endif /* def SYMLINKS */
 
     return 0;
 
@@ -2419,6 +2429,9 @@ int mapname(__G__ renamed)
  */
 {
     char pathcomp[FILNAMSIZ];   /* path-component buffer */
+# ifdef SYMLINKS
+    char pathcopy[FILNAMSIZ];   /* Copy of path we can alter. */
+# endif
     char *pp, *cp=NULL;         /* character pointers */
     char *lastsemi = NULL;      /* pointer to last semi-colon in pathcomp */
 # ifdef ACORN_FTYPE_NFS
@@ -2473,6 +2486,22 @@ int mapname(__G__ renamed)
     if (!renamed) {             /* cp already set if renamed */
         cp = G.jdir_filename;   /* Start at beginning of non-junked path. */
     }
+
+# ifdef SYMLINKS
+    /* If a symlink with a trailing "/", then use a copy without the "/". */
+    if (G.pInfo->symlink)
+    {
+        size_t lenm1;
+
+        lenm1 = strlen( cp)- 1;
+        if (cp[ lenm1] == '/')
+        {
+            strncpy( pathcopy, cp, lenm1);
+            pathcopy[ lenm1] = '\0';
+            cp = pathcopy;
+        }
+    }
+# endif /* def SYMLINKS */
 
 /*---------------------------------------------------------------------------
     Begin main loop through characters in filename.
@@ -2561,7 +2590,15 @@ int mapname(__G__ renamed)
     fore exiting.
   ---------------------------------------------------------------------------*/
 
-    if (lastchar(G.filename, G.fnlen) == '/') {
+    if ((lastchar(G.filename, G.fnlen) == '/')
+# ifdef SYMLINKS
+     /* Process a symlink as a file, even if it looks like a directory.
+      * (Which a Windows directory symlink might do.)
+      */
+     && !G.pInfo->symlink
+# endif /* def SYMLINKS */
+     )
+    {
 # ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
         char *ansi_name = (char *)alloca(strlen(G.filename) + 1);
 
@@ -2701,6 +2738,9 @@ int mapnamew(__G__ renamed)
  */
 {
     wchar_t pathcompw[FILNAMSIZ];   /* path-component buffer */
+#  ifdef SYMLINKS
+    wchar_t pathcopy[FILNAMSIZ];
+#  endif /* def SYMLINKS */
     wchar_t *ppw, *cpw=NULL;        /* character pointers */
     wchar_t *lastsemiw = NULL;  /* pointer to last semi-colon in pathcomp */
     int killed_ddot = FALSE;    /* is set when skipping "../" pathcomp */
@@ -2751,6 +2791,22 @@ int mapnamew(__G__ renamed)
     if (!renamed) {             /* cp already set if renamed */
         cpw = G.unipath_jdir_widefilename;  /* Beginning of non-junked path. */
     }
+
+#  ifdef SYMLINKS
+    /* If a symlink with a trailing "/", then use a copy without the "/". */
+    if (G.pInfo->symlink)
+    {
+        size_t lenm1;
+
+        lenm1 = wcslen( cpw)- 1;
+        if (cpw[ lenm1] == L'/')
+        {
+            wcsncpy( pathcopy, cpw, lenm1);
+            pathcopy[ lenm1] = L'\0';
+            cpw = pathcopy;
+        }
+    }
+#  endif /* def SYMLINKS */
 
 /*---------------------------------------------------------------------------
     Begin main loop through characters in filename.
@@ -2827,7 +2883,15 @@ int mapnamew(__G__ renamed)
     fore exiting.
   ---------------------------------------------------------------------------*/
 
-    if (G.unipath_widefilename[wcslen(G.unipath_widefilename) - 1] == '/') {
+    if ((G.unipath_widefilename[wcslen(G.unipath_widefilename) - 1] == '/')
+#  ifdef SYMLINKS
+     /* Process a symlink as a file, even if it looks like a directory.
+      * (Which a Windows directory symlink might do.)
+      */
+     && !G.pInfo->symlink
+#  endif /* def SYMLINKS */
+     )
+    {
         checkdirw(__G__ G.unipath_widefilename, GETPATH);
         if (G.created_dir) {
             if (QCOND2) {
@@ -4912,14 +4976,15 @@ int has_win32_wide()
  * Return zero, if success; non-zero, if failure.
  */
 
-int symlink( const char *target, const char *name)
+int symlink( const char *target, const char *name, int is_dir)
 {
   int sts;
 
-  /* Flags arg (3) should be SYMBOLIC_LINK_FLAG_DIRECTORY if the
-   * target is a directory, but how should I know?
+  /* Flags arg (3) is SYMBOLIC_LINK_FLAG_DIRECTORY if the target is a
+   * directory.
    */
-  if (CreateSymbolicLinkA( name, target, 0))
+  if (CreateSymbolicLinkA( name, target,
+   (is_dir ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0)))
   {
     sts = 0;
   }
@@ -4933,7 +4998,7 @@ int symlink( const char *target, const char *name)
 
 # ifdef UNICODE_SUPPORT
 
-int symlinkw( const char *target, const wchar_t *namew)
+int symlinkw( const char *target, const wchar_t *namew, int is_dir)
 {
   int sts;
   wchar_t *targetw;
@@ -4946,11 +5011,11 @@ int symlinkw( const char *target, const wchar_t *namew)
   }
   else
   {
-    /* Flags arg (3) should be SYMBOLIC_LINK_FLAG_DIRECTORY if the
-     * target is a directory, but how should I know?
+    /* Flags arg (3) is SYMBOLIC_LINK_FLAG_DIRECTORY if the target is a
+     * directory.
      */
-
-    if (CreateSymbolicLinkW( namew, targetw, 0))
+    if (CreateSymbolicLinkW( namew, targetw,
+     (is_dir ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0)))
     {
       sts = 0;
     }

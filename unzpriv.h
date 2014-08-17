@@ -1555,6 +1555,7 @@ void izu_md_check( void);
 /*--------------------------------------------------------------------
     Long option support
     23 August 2003
+    Originally from Zip 3.0
     Updated for UnZip 1 March 2008
     See unzip.c
   --------------------------------------------------------------------*/
@@ -2374,6 +2375,7 @@ typedef struct iztimes {
        struct slinkentry *next; /* Pointer to next entry in chain. */
        extent targetlen;        /* Length of target (filespec) (no NUL). */
        extent attriblen;        /* Length of system-specific attrib data. */
+       int is_dir;              /* 1 if link is directory, 0 if not. */
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
        unsigned int wide;       /* fname is really wchar_t. */
 # endif

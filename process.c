@@ -2066,9 +2066,14 @@ int process_cdir_file_hdr(__G)    /* return PK-type error code */
         G.pInfo->lcflag = 1;
 
     /* Handle the PKWare verification bit, bit 2 (0x0004) of internal
-       attributes.  If this is set, then a verification checksum is in the
-       first 3 bytes of the external attributes.  In this case all we can use
-       for setting file attributes is the last external attributes byte. */
+     * attributes.  If this is set, then a verification checksum is in
+     * the first 3 bytes of the external attributes.  In this case all
+     * we can use for setting file attributes is the last external
+     * attributes byte.
+     *
+     * Use of this bit is incompatible with symlinks, which require use
+     * of the symlink bit in the high end of the external attributes.
+     */
     if (G.crec.internal_file_attributes & 0x0004)
       G.crec.external_file_attributes &= (ulg)0xff;
 

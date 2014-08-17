@@ -18,18 +18,19 @@
              store_info()
              find_compr_idx()
              extract_or_test_entrylist()
+             extract_or_test_entrylistw()       (Wide Char Windows)
              extract_or_test_member()
              TestExtraField()
              test_compr_eb()
              memextract()
              memflush()
-             extract_izvms_block()    (VMS or VMS_TEXT_CONV)
-             set_deferred_symlink()   (SYMLINKS only)
+             extract_izvms_block()              (VMS or VMS_TEXT_CONV)
+             set_deferred_symlink()             (SYMLINKS only)
              fnfilter()
-             dircomp()                (SET_DIR_ATTRIB only)
-             UZbunzip2()              (BZIP2_SUPPORT only)
-             UZlzma()                 (LZMA_SUPPORT only)
-             UZppmd()                 (PPMD_SUPPORT only)
+             dircomp()                          (SET_DIR_ATTRIB only)
+             UZbunzip2()                        (BZIP2_SUPPORT only)
+             UZlzma()                           (LZMA_SUPPORT only)
+             UZppmd()                           (PPMD_SUPPORT only)
 
   ---------------------------------------------------------------------------*/
 
@@ -272,6 +273,10 @@ static ZCONST char Far AplDblNameTooLong[] =
    static ZCONST char Far SymLnkError[] =
      "  %s\n";
 # endif /* def VMS */
+# ifdef WIN32
+   static ZCONST char Far SymLnkErrSymlinkPriv[] =
+     "Insufficient privilege to create symlink (may need Administrative)";
+# endif /* def WIN32 */
 #endif
 
 #ifndef WINDLL
@@ -407,27 +412,34 @@ static ZCONST char Far InfoInconsistentJavaCAFE[] =
 int extract_or_test_files(__G)    /* return PK-type error code */
      __GDEF
 {
-    unsigned i, j;
+    unsigned i;
+    unsigned j;
     zoff_t cd_bufstart;
     uch *cd_inptr;
     int cd_incnt;
-    ulg filnum=0L, blknum=0L;
+    ulg filnum = 0L;
+    ulg blknum = 0L;
     int reached_end;
     int sts;
 #ifndef SFX
     int no_endsig_found;
 #endif
-    int error, error_in_archive=PK_COOL;
-    int *fn_matched=NULL, *xn_matched=NULL;
+    int error;
+    int error_in_archive = PK_COOL;
+    char *fn_matched = NULL;
+    char *xn_matched = NULL;
     zucn_t members_processed;
-    ulg num_skipped=0L, num_bad_pwd=0L;
+    ulg num_skipped = 0L;
+    ulg num_bad_pwd = 0L;
     zoff_t old_extra_bytes = 0L;
 #ifdef SET_DIR_ATTRIB
-    unsigned num_dirs=0;
+    unsigned num_dirs = 0;
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-    direntryw *dirlistw=(direntryw *)NULL, **sorted_dirlistw=(direntryw **)NULL;
+    direntryw *dirlistw = (direntryw *)NULL;
+    direntryw **sorted_dirlistw = (direntryw **)NULL;
 # endif
-    direntry *dirlist=(direntry *)NULL, **sorted_dirlist=(direntry **)NULL;
+    direntry *dirlist = (direntry *)NULL;
+    direntry **sorted_dirlist = (direntry **)NULL;
 #endif
 
     /*
@@ -499,15 +511,35 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     G.reported_backslash = FALSE;
 #endif
 
-    /* malloc space for check on unmatched filespecs (OK if one or both NULL) */
-    if (G.filespecs > 0  &&
-        (fn_matched=(int *)izu_malloc(G.filespecs*sizeof(int))) != (int *)NULL)
-        for (i = 0;  i < G.filespecs;  ++i)
-            fn_matched[i] = FALSE;
-    if (G.xfilespecs > 0  &&
-        (xn_matched=(int *)izu_malloc(G.xfilespecs*sizeof(int))) != (int *)NULL)
-        for (i = 0;  i < G.xfilespecs;  ++i)
-            xn_matched[i] = FALSE;
+    /* Allocate space for checking unmatched list/-x list file specs. */
+    if (G.filespecs > 0)
+    {   /* Member list. */
+        fn_matched = (char *)izu_malloc( G.filespecs* sizeof( char));
+        if (fn_matched == (char *)NULL)
+        {
+            Info( slide, 0x401, ((char *)slide,
+             "Not enough memory for (include) file list"));
+            return PK_MEM;
+        }
+        else
+        {
+            memset( fn_matched, FALSE, G.filespecs);
+        }
+    }
+    if (G.xfilespecs > 0)
+    {   /* -x. */
+        xn_matched = (char *)izu_malloc( G.xfilespecs* sizeof( char));
+        if (xn_matched == (char *)NULL)
+        {
+            Info( slide, 0x401, ((char *)slide,
+             "Not enough memory for exclude file list"));
+            return PK_MEM;
+        }
+        else
+        {
+            memset( xn_matched, FALSE, G.xfilespecs);
+        }
+    }
 
 /*---------------------------------------------------------------------------
     Begin main loop over blocks of member files.  We know the entire central
@@ -732,8 +764,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                         if (match(G.filename, G.pfnames[i], uO.C_flag WISEP))
                         {
                             do_this_file = 1;  /* ^-- ignore case or not? */
-                            if (fn_matched)
-                                fn_matched[i] = TRUE;
+                            fn_matched[i] = TRUE;
                             break;       /* found match, so stop looping */
                         }
                     }
@@ -746,8 +777,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                         if (match(G.filename, G.pxnames[i], uO.C_flag WISEP))
                         {
                             do_this_file = 0; /* ^-- ignore case or not? */
-                            if (xn_matched)
-                                xn_matched[i] = TRUE;
+                            xn_matched[i] = TRUE;
                             break;
                         }
                     }
@@ -3372,7 +3402,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             if (G.lrec.compression_method == AESENCRED)
             {
                 /* Subtract the MAC data size from G.csize, to keep
-                 * the MAC data away from UZlzma().  Remember doing
+                 * the MAC data away from UZppmd().  Remember doing
                  * this, so that G.csize can be restored later, before
                  * trying to read the MAC data.
                  */
@@ -4162,7 +4192,7 @@ static void set_deferred_symlink(__G__ slnk_entry)
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     sts1 = _wunlink( (wchar_t *)linkfname);
     errno1 = errno;
-    sts2 = symlinkw( linktarget, (wchar_t *)linkfname);
+    sts2 = symlinkw( linktarget, (wchar_t *)linkfname, slnk_entry->is_dir);
 #else /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
     sts1 = unlink( linkfname);
     errno1 = errno;
@@ -4202,14 +4232,23 @@ static void set_deferred_symlink(__G__ slnk_entry)
     if (sts2 != 0)
     {
 #ifdef WIN32
-        /* Use "decimal (0xhexadecimal)" message for GetLast Error() result. */
-        sprintf( err_msg, "%d (0x%x)", sts2, sts2);
-        Info( slide, 0x61, ((char *)slide, LoadFarString( SymLnkErrSymlink),
-         WIDE_STR, err_msg));
+        if (sts2 == 1314)
+        {
+          /* Insufficient privilege error. */
+          Info( slide, 0x61, ((char *)slide,
+           LoadFarString( SymLnkErrSymlinkPriv)));
+        }
+        else
+        {
+            /* Use "decimal (0xhexadecimal)" msg for GetLast Error() result. */
+            sprintf( err_msg, "%d (0x%x)", sts2, sts2);
+            Info( slide, 0x61, ((char *)slide,
+             LoadFarString( SymLnkErrSymlink), WIDE_STR, err_msg));
+        }
 #else /* def WIN32 */
         /* Use normal C RTL message for errno. */
-        Info( slide, 0x61, ((char *)slide, LoadFarString( SymLnkErrSymlink),
-         WIDE_STR, strerror( errno)));
+        Info( slide, 0x61, ((char *)slide,
+         LoadFarString( SymLnkErrSymlink), WIDE_STR, strerror( errno)));
 #endif /* def WIN32 [else] */
     }
 

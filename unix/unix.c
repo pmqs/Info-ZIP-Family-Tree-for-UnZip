@@ -452,7 +452,7 @@ int mapattr(__G)
                  */
                 G.pInfo->symlink = S_ISLNK(G.pInfo->file_attr) &&
                                    SYMLINK_HOST(G.pInfo->hostnum);
-#endif
+#endif /* def SYMLINKS */
                 return 0;
             }
             /* fall through! */
@@ -492,7 +492,7 @@ int mapattr(__G)
                  */
                 G.pInfo->symlink = S_ISLNK(G.pInfo->file_attr) &&
                                    (G.pInfo->hostnum == FS_FAT_);
-#endif
+#endif /* def SYMLINKS */
                 return 0;
             }
             G.pInfo->file_attr = (unsigned)(0444 | tmp<<6 | tmp<<3 | tmp);
@@ -529,6 +529,9 @@ int mapname(__G__ renamed)
  */
 {
     char pathcomp[FILNAMSIZ];      /* path-component buffer */
+#ifdef SYMLINKS
+    char pathcopy[FILNAMSIZ];      /* Copy of path we can alter. */
+#endif /* def SYMLINKS */
     char *pp, *cp=(char *)NULL;    /* character pointers */
     char *lastsemi=(char *)NULL;   /* pointer to last semi-colon in pathcomp */
 #ifdef ACORN_FTYPE_NFS
@@ -538,7 +541,6 @@ int mapname(__G__ renamed)
     int killed_ddot = FALSE;       /* is set when skipping "../" pathcomp */
     int error = MPN_OK;
     register unsigned workch;      /* hold the character being tested */
-
 
 /*---------------------------------------------------------------------------
     Initialize various pointers and counters and stuff.
@@ -561,6 +563,22 @@ int mapname(__G__ renamed)
     *pathcomp = '\0';           /* initialize translation buffer */
     pp = pathcomp;              /* point to translation buffer */
     cp = G.jdir_filename;       /* Start at beginning of non-junked path. */
+
+#ifdef SYMLINKS
+    /* If a symlink with a trailing "/", then use a copy without the "/". */
+    if (G.pInfo->symlink)
+    {
+        size_t lenm1;
+
+        lenm1 = strlen( cp)- 1;
+        if (cp[ lenm1] == '/')
+        {
+            strncpy( pathcopy, cp, lenm1);
+            pathcopy[ lenm1] = '\0';
+            cp = pathcopy;
+        }
+    }
+#endif /* def SYMLINKS */
 
 /*---------------------------------------------------------------------------
     Begin main loop through characters in filename.
@@ -652,7 +670,15 @@ int mapname(__G__ renamed)
     fore exiting.
   ---------------------------------------------------------------------------*/
 
-    if (G.filename[strlen(G.filename) - 1] == '/') {
+    if (G.filename[strlen(G.filename) - 1] == '/'
+#ifdef SYMLINKS
+     /* Process a symlink as a file, even if it looks like a directory.
+      * (Which a Windows directory symlink might do.)
+      */
+     && !G.pInfo->symlink
+#endif /* def SYMLINKS */
+     )
+    {
         checkdir(__G__ G.filename, GETPATH);
         if (G.created_dir) {
             if (QCOND2) {
@@ -798,7 +824,9 @@ int checkdir(__G__ pathcomp, flag)
  /* static int rootlen = 0; */  /* length of rootpath */
  /* static char *rootpath;  */  /* user's "extract-to" directory */
  /* static char *buildpath; */  /* full path (so far) to extracted file */
- /* static char *end;       */  /* pointer to end of buildpath ('\0') */
+#ifdef SHORT_NAMES
+    static char *end;           /* pointer to end of buildpath ('\0') */
+#endif /* def SHORT_NAMES */
 
 #define FN_MASK   7
 #define FUNCTION  (flag & FN_MASK)

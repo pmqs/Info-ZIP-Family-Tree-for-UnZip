@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2014-05-04
+   UnZip version 6.10.  Revised: 2014-05-14
 
 ------------------------------------------------------------------------
 
@@ -134,11 +134,11 @@ IZ_AES_WG kit.
 
    The IZ_AES_WG kit should be unpacked in the main UnZip directory,
 where it should populate the "aes_wg" subdirectory.  For example, if the
-proper IZ_AES_WG kit is "iz_aes_wg12.zip", then use commands like the
+proper IZ_AES_WG kit is "iz_aes_wg13.zip", then use commands like the
 following:
 
       cd unzip61                        # (If not already there.)
-      unzip ../iz_aes_wg12.zip
+      unzip ../iz_aes_wg13.zip
 
    See the "Build" section, below, for details on how to build UnZip
 with AES encryption support.
@@ -251,44 +251,54 @@ the popular "make" options):
    --------------------------------------
 
    When using "make generic", add the "make" macros listed below to
-enable the corresponding optional features:
+control the corresponding optional features:
 
-      AES_WG=1          Enable support for WinZip-compatible AES
-                        (strong) encryption.  This requires a separate
+      NO_AES_WG=1       Disable support for WinZip-compatible AES
+                        (strong) encryption (if the optional source kit
+                        is present).  Support requires a separate
                         IZ_AES_WG source kit, as described above
-                        ("Optional Source Kits").
+                        ("Optional Source Kits"), but is enabled by
+                        default if that source kit is present.  
+
+      BINS=[L][M][U]    Binaries build list:
+                         L: object library (libizunzip.a)
+                         M: main program (UnZip)
+                         U: utility programs (fUnZip, UnZipSFX)
+                         Default: MU.
+                        Specify "BINS=LMU" to build the UnZip object
+                        library along with the usual executables.
 
       CC=gcc            Compile and link using "gcc" instead of "cc".
                         (This method replaces the separate "generic_gcc"
                         target, which was used with UnZip 6.0, and has
                         been removed.)
 
-      ICONV=1           Enable ISO/OEM (iconv) character conversion
-                        (options: -I, -O).
+      NO_ICONV=1        Disable ISO/OEM (iconv) character conversion
+                        (options: -I, -O), if it's normallty supported
+                        on this system type.
 
-      IZ_BZIP2=bz2dir   Enable support for the bzip2 compression method.
-                        "bz2dir" specifies the directory where the bzip2
-                        code resides.  Use "IZ_BZIP2=bzip2" to have the
-                        UnZip builders build the required bzip2 object
-                        library from source files in the "bzip2"
-                        subdirectory.  "IZ_BZIP2=bzip2" should also work
-                        if the operating system includes bzip2 support,
-                        even if a bzip2 source kit is not found in the
-                        "bzip2" subdirectory.
+      NO_IZ_BZIP2=1     Disable support for the bzip2 compression
+                        method.  See also IZ_BZIP2.
+
+      IZ_BZIP2=bz2dir   Use bzip2 compression code from the "bz2dir"
+                        directory.  By default, the code in the
+                        "./bzip2" subdirectory will be used (unless
+                        NO_IZ_BZIP2=1 is specified).  Specify
+                        "IZ_BZIP2=bzip2" without a bzip2 source kit
+                        there to attempt to get a bzip2 library from the
+                        operating system.
 
       IZ_ZLIB=zdir      Use zlib for the Deflate compression method,
                         instead of UnZip's internal Deflate code.
                         "zdir" specifies the directory where the zlib
                         code resides.
 
-      LIBUNZIP=1        Build an UnZip object library.
-
       LOCAL_UNZIP=<opts>  Build using "<opts>" (C compiler options,
                           typically defining C macros).
 
-      LZMA=1            Enable support for the LZMA compression method.
+      NO_LZMA=1         Disable support for the LZMA compression method.
 
-      PPMD=1            Enable support for the PPMd compression method.
+      NO_PPMD=1         Disable support for the PPMd compression method.
 
       PROD=subdir       Use "subdir" as the destination directory for
                         product files (object files, object libraries,
@@ -311,8 +321,7 @@ enable the corresponding optional features:
 the optional compression and encryption methods enabled, might look like
 the following:
 
-      make -f unix/Makefile CC=gcc AES_WG=1 ICONV=1 IZ_BZIP2=bzip2 \
-       LZMA=1 PPMD=1 generic
+      make -f unix/Makefile CC=gcc generic
 
    The following commands would build UnZip in the "cc" subdirectory
 using "cc" as the compiler, and again, in the "gcc" subdirectory using
@@ -321,11 +330,9 @@ are used.  See "Building with Bzip2 Compression", below.  ("CC=cc" is
 the default, so specifying it explicitly is normally not needed, but
 doing so is harmless and clear.)
 
-      make -f unix/Makefile CC=cc PROD=cc AES_WG=1 ICONV=1 \
-       IZ_BZIP2=../iz_bzip2 LZMA=1 PPMD=1 generic
+      make -f unix/Makefile CC=cc PROD=cc generic
 
-      make -f unix/Makefile CC=gcc PROD=gcc AES_WG=1 ICONV=1 \
-       IZ_BZIP2=../iz_bzip2 LZMA=1 PPMD=1 generic
+      make -f unix/Makefile CC=gcc PROD=gcc generic
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -412,9 +419,9 @@ example build command, but also enable support in UnZipSFX for AES
 encryption, and for LZMA and PPMd compression, use a command like the
 following:
 
-      make -f unix/Makefile CC=gcc AES_WG=1 ICONV=1 IZ_BZIP2=bzip2 \
+      make -f unix/Makefile CC=gcc \
        LOCAL_UNZIP='-DCRYPT_AES_WG_SFX -DLZMA_SFX -DPPMD_SFX' \
-       LZMA=1 PPMD=1 generic
+       generic
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1398,16 +1405,16 @@ module using a lower level of optimization than the usual, and then
 re-link the programs.  On AIX, "-O2" seems to work.  On HP-UX, "-O1"
 seems to work.  For example:
 
-    make -f unix/Makefile PPMD=1 [options] CC=gcc generic   # Build.
+    make -f unix/Makefile [options] CC=gcc generic          # Build.
     make -f unix/Makefile test_ppmd                         # Test.
     gcc -c -O1 szip/Ppmd8.c                                 # (Or "-O2"?)
-    make -f unix/Makefile PPMD=1 [options] CC=gcc generic   # Re-link.
+    make -f unix/Makefile [options] CC=gcc generic          # Re-link.
     make -f unix/Makefile test_ppmd                         # Re-test.
 
 If "PROD=subdir" is used with "make", then add a suitable "-o" option to
 the compiler command.  For example:
 
-    make -f unix/Makefile PPMD=1 [options] CC=gcc PROD=pd generic
+    make -f unix/Makefile [options] CC=gcc PROD=pd generic
     make -f unix/Makefile PROD=pd test_ppmd
     gcc -c -O1 -o pd/Ppmd8.o szip/Ppmd8.c
     [...]

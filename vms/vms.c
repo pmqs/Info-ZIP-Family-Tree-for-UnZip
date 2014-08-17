@@ -222,7 +222,7 @@ static int  (*_close_routine)(__GPRO);
 
 #ifdef SYMLINKS
 static int  _read_link_rms(__GPRO__ int byte_count, char *link_text_buf);
-#endif /* SYMLINKS */
+#endif /* def SYMLINKS */
 
 static void init_buf_ring(void);
 static void set_default_datetime_XABs(__GPRO);
@@ -775,7 +775,7 @@ static int create_default_output(__GPRO)
     text_output = (G.pInfo->textmode
 #ifdef SYMLINKS
                    && !G.symlnk
-#endif
+#endif /* def SYMLINKS */
                   ) ||
                   (uO.cflag &&
                    (!uO.bflag || (!(uO.bflag - 1) && G.pInfo->textfile)));
@@ -789,7 +789,7 @@ static int create_default_output(__GPRO)
     bin_fixed = !text_output &&
 #ifdef SYMLINKS
                 !G.symlnk &&
-#endif
+#endif /* def SYMLINKS */
                 (uO.bflag != 0) && ((uO.bflag != 1) || !G.pInfo->textfile);
 
     rfm = FAB$C_STMLF;  /* Default, stream-LF format from VMS or UNIX */
@@ -849,7 +849,7 @@ static int create_default_output(__GPRO)
         if (G.symlnk)
             /* Symlink file is read back to retrieve the link text. */
             fileblk.fab$b_fac |= FAB$M_GET;
-#endif
+#endif /* def SYMLINKS */
 
         /* 2004-11-23 SMS.
          * If RMS_DEFAULT values have been determined, and have not been
@@ -1072,7 +1072,7 @@ static int create_rms_output(__GPRO)
                 outfab->fab$b_fac |= FAB$M_GET;
             }
         }
-#endif /* SYMLINKS */
+#endif /* def SYMLINKS */
 
         /* 2004-11-23 SMS.
          * Set the "sequential access only" flag, as otherwise, on a
@@ -2766,7 +2766,7 @@ static int _read_link_rms(__GPRO__ int byte_count, char *link_text_buf)
     return sts;
 }
 
-#endif /* SYMLINKS */
+#endif /* def SYMLINKS */
 
 
 
@@ -2915,7 +2915,7 @@ static int _close_rms(__GPRO)
             }
         }
     }
-#endif /* SYMLINKS */
+#endif /* def SYMLINKS */
 
     /* Link XABRDT, XABDAT, and (optionally) XABPRO. */
     if (xabrdt != NULL)
@@ -3078,7 +3078,7 @@ static int _close_qio(__GPRO)
 
         }
     }
-#endif /* SYMLINKS */
+#endif /* def SYMLINKS */
 
     status = sys$qiow(0, pka_devchn, IO$_DEACCESS, &pka_acp_iosb,
                       0, 0,
@@ -4213,7 +4213,7 @@ int mapattr(__G)
                    */
                   G.pInfo->symlink = S_ISLNK(uxattr) &&
                                      SYMLINK_HOST(G.pInfo->hostnum);
-#endif
+#endif /* def SYMLINKS */
                   theprot  = (unix_to_vms[uxattr & 07] << XAB$V_WLD)
                            | (unix_to_vms[(uxattr>>3) & 07] << XAB$V_GRP)
                            | (unix_to_vms[(uxattr>>6) & 07] << XAB$V_OWN);
@@ -4289,7 +4289,7 @@ int mapattr(__G)
                  */
                 G.pInfo->symlink = S_ISLNK(uxattr) &&
                                    (G.pInfo->hostnum == FS_FAT_);
-#endif
+#endif /* def SYMLINKS */
             }
             theprot = defprot;
             if ( tmp & 1 )   /* Test read-only bit */
@@ -4695,6 +4695,10 @@ int mapname(__G__ renamed)
     int renamed;
 {
     char pathcomp[FILNAMSIZ];       /* Path-component buffer. */
+#ifdef SYMLINKS
+    char pathcopy[FILNAMSIZ];       /* Copy of path we can alter. */
+#endif /* def SYMLINKS */
+
     char *last_slash;               /* Last slash in path. */
     char *next_slash;               /* Next slash in path. */
     int  dir_len;                   /* Length of a directory segment. */
@@ -4884,8 +4888,25 @@ int mapname(__G__ renamed)
        done, and only the name (with version?) remains.
     */
     *pathcomp = '\0';           /* Initialize translation buffer. */
-    last_slash = strrchr( G.filename, '/');     /* Find last slash. */
     cp = G.jdir_filename;       /* Start at beginning of non-junked path. */
+
+#ifdef SYMLINKS
+    /* If a symlink with a trailing "/", then use a copy without the "/". */
+    if (G.pInfo->symlink)
+    {
+        size_t lenm1;
+
+        lenm1 = strlen( cp)- 1;
+        if (cp[ lenm1] == '/')
+        {
+            strncpy( pathcopy, cp, lenm1);
+            pathcopy[ lenm1] = '\0';
+            cp = pathcopy;
+        }
+    }
+#endif /* def SYMLINKS */
+
+    last_slash = strrchr( cp, '/');     /* Find last slash. */
 
     /* Loop through the directory segments. */
     while (cp < last_slash)
