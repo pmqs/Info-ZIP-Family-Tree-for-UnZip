@@ -1,11 +1,11 @@
 $! BUILD_UNZIP.COM
 $!
-$!     Build procedure for VMS versions of UnZip/ZipInfo and UnZipSFX.
+$!     UnZip 6.10 for VMS -- DCL Build procedure.
 $!
-$!     Last revised:  2013-11-29  SMS.
+$!     Last revised:  2014-10-09  SMS.
 $!
 $!----------------------------------------------------------------------
-$! Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+$! Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 $!
 $! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 $! contents of which are also included in zip.h) for terms of use.  If,
@@ -18,37 +18,43 @@ $!     - Suppress C compilation (re-link): "NOCOMPILE"
 $!     - Suppress linking executables: "NOLINK"
 $!     - Suppress help file processing: "NOHELP"
 $!     - Suppress message file processing: "NOMSG"
-$!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
+$!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.10.)
 $!     - Select compiler environment: "VAXC", "DECC", "GNUC"
-$!     - Select AES_WG encryption support: "AES_WG"
+$!     - Disable AES_WG encryption support: "NOAES_WG"
 $!       By default, the SFX programs are built without AES_WG support.
 $!       Add "CRYPT_AES_WG_SFX=1" to the LOCAL_UNZIP C macros to enable
 $!       it.  (See LOCAL_UNZIP, below.)
-$!     - Select BZIP2 support: "USEBZ2"
-$!       This option is a shortcut for "IZ_BZIP2=SYS$DISK:[.bzip2]", and
-$!       runs the DCL build procedure there,
-$!     - Select BZIP2 support: "IZ_BZIP2=dev:[dir]", where "dev:[dir]"
-$!       (or a suitable logical name) tells where to find "bzlib.h".
-$!       The BZIP2 object library (LIBBZ2_NS.OLB) is expected to be in
-$!       a "[.dest]" directory under that one ("dev:[dir.ALPHAL]", for
-$!       example), or in that directory itself.
-$!       By default, the SFX programs are built without BZIP2 support.
-$!       Add "BZIP2_SFX=1" to the LOCAL_UNZIP C macros to enable it.
-$!       (See LOCAL_UNZIP, below.)
-$!     - Select LZMA compression support: "LZMA"
-$!       By default, the SFX programs are built without LZMA support.
-$!       Add "LZMA_SFX=1" to the LOCAL_UNZIP C macros to enable it.
-$!       (See LOCAL_UNZIP, below.)
-$!     - Select PPMd compression support: "PPMD"
-$!       By default, the SFX programs are built without PPMd support.
-$!       Add "PPMD_SFX=1" to the LOCAL_UNZIP C macros to enable it.
-$!       (See LOCAL_UNZIP, below.)
+$!     - Direct bzip2 support: "IZ_BZIP2=dev:[dir]"
+$!       Disable bzip2 support: "NOIZ_BZIP2"
+$!       By default, bzip2 support is enabled, and uses the bzip2 source
+$!       kit supplied in the [.bzip2] directory.  Specify NOIZ_BZIP2
+$!       to disable bzip2 support. Specify IZ_BZIP2 with a value
+$!       ("dev:[dir]", or a suitable logical name) to use the bzip2
+$!       header file and object library found there.  The bzip2 object
+$!       library (LIBBZ2_NS.OLB) is expected to be in a simple "[.dest]"
+$!       directory under that one ("dev:[dir.ALPHAL]", for example), or
+$!       in that directory itself.)  By default, the SFX programs are
+$!       built without bzip2 support.  Add "BZIP2_SFX=1" to the
+$!       LOCAL_UNZIP C macros to enable it.  (See LOCAL_UNZIP, below.)
 $!     - Use ZLIB compression library: "IZ_ZLIB=dev:[dir]", where
 $!       "dev:[dir]" (or a suitable logical name) tells where to find
 $!       "zlib.h".  The ZLIB object library (LIBZ.OLB) is expected to be
 $!       in a "[.dest]" directory under that one ("dev:[dir.ALPHAL]",
 $!       for example), or in that directory itself.
-$!     - Select large-file support: "LARGE"
+$!     - Disable LZMA compression support: "NOLZMA"
+$!       By default, the SFX programs are built without LZMA support.
+$!       Add "LZMA_SFX=1" to the LOCAL_UNZIP C macros to enable it.
+$!       (See LOCAL_UNZIP, below.)
+$!     - Disable PPMd compression support: "NOPPMD"
+$!       By default, the SFX programs are built without PPMd support.
+$!       Add "PPMD_SFX=1" to the LOCAL_UNZIP C macros to enable it.
+$!       (See LOCAL_UNZIP, below.)
+$!     - Enable large-file (>2GB) support: "LARGE"
+$!       Disable large-file (>2GB) support: "NOLARGE"
+$!       Large-file support is always disabled on VAX.  It is enabled by
+$!       default on IA64, and on Alpha systems which are modern enough
+$!       to allow it.  Specify NOLARGE=1 explicitly to disable support
+$!       (and to skip the test on Alpha).
 $!     - Select compiler listings: "LIST"  Note that the whole argument
 $!       is added to the compiler command, so more elaborate options
 $!       like "LIST/SHOW=ALL" (quoted or space-free) may be specified.
@@ -66,7 +72,7 @@ $!       must be quoted or space-free.  Default is
 $!       LINKOPTS="/NOMAP /NOTRACEBACK", but if the user specifies a
 $!       LINKOPTS string, then only the user-specified qualifier(s) will
 $!       be included.
-$!     - Select installation of CLI interface version of UnZip:
+$!     - Select installation of VMS CLI interface version of UnZip:
 $!       "VMSCLI" or "CLI"
 $!     - Force installation of UNIX interface version of UnZip
 $!       (override LOCAL_UNZIP environment): "NOVMSCLI" or "NOCLI"
@@ -136,7 +142,7 @@ $ endif
 $!
 $! Check for the presence of "VMSCLI" in LOCAL_UNZIP.  If yes, we will
 $! define the foreign command for "unzip" to use the executable
-$! containing the CLI interface.
+$! containing the VMS CLI interface.
 $!
 $ pos_cli = f$locate( "VMSCLI", LOCAL_UNZIP)
 $ len_local_unzip = f$length( LOCAL_UNZIP)
@@ -144,7 +150,7 @@ $ if (pos_cli .ne. len_local_unzip)
 $ then
 $     CLI_IS_DEFAULT = 1
 $     ! Remove "VMSCLI" macro from LOCAL_UNZIP. The UnZip executable
-$     ! including the CLI interface is now created unconditionally.
+$     ! including the VMS CLI interface is now created unconditionally.
 $     LOCAL_UNZIP = f$extract( 0, pos_cli, LOCAL_UNZIP)+ -
        f$extract( pos_cli+7, len_local_unzip- (pos_cli+ 7), LOCAL_UNZIP)
 $ else
@@ -165,17 +171,16 @@ $ lib_unzipcli_name = "UNZIPCLI.OLB"
 $ lib_unzipsfx_name = "UNZIPSFX.OLB"
 $ lib_unzipsfxcli_name = "UNZSFXCLI.OLB"
 $!
-$ AES_WG = ""
+$ AES_WG = 0
+$ BUILD_BZIP2 = 0
 $ CCOPTS = ""
 $ DASHV = 0
 $ IZ_BZIP2 = ""
-$ BUILD_BZIP2 = 0
 $ IZ_ZLIB = ""
-$ LINKOPTS = "/nomap /notraceback"
-$ LISTING = " /nolist"
 $ LARGE_FILE = 0
 $ LIBUNZIP = 0
-$ LZMA = 0
+$ LINKOPTS = "/nomap /notraceback"
+$ LISTING = " /nolist"
 $ MAKE_EXE = 1
 $ MAKE_HELP = 1
 $ MAKE_HELP_TEXT = 0
@@ -184,7 +189,10 @@ $ MAKE_OBJ = 1
 $ MAKE_SYM = 0
 $ MAY_USE_DECC = 1
 $ MAY_USE_GNUC = 0
-$ PPMD = 0
+$ NOAES_WG = 0
+$ NOIZ_BZIP2 = 0
+$ NOLZMA = 0
+$ NOPPMD = 0
 $ PROD = ""
 $ SLASHV = 0
 $ TEST = 0
@@ -226,13 +234,17 @@ $         IZ_BZIP2 = f$extract( (eq+ 1), 1000, opts)
 $         goto argloop_end
 $     endif
 $!
-$     if (f$extract( 0, 6, curr_arg) .eqs. "USEBZ2")
+$     if ((f$extract( 0, 8, curr_arg) .eqs. "NOAES_WG") .or. -
+       (f$extract( 0, 9, curr_arg) .eqs. "NO_AES_WG"))
 $     then
-$         if (IZ_BZIP2 .eqs. "")
-$         then
-$             IZ_BZIP2 = "SYS$DISK:[.BZIP2]"
-$             BUILD_BZIP2 = 1
-$         endif
+$         NOAES_WG = 1
+$         goto argloop_end
+$     endif
+$!
+$     if ((f$extract( 0, 9, curr_arg) .eqs. "NOIZ_BZIP") .or. -
+       (f$extract( 0, 10, curr_arg) .eqs. "NO_IZ_BZIP"))
+$     then
+$         NOIZ_BZIP2 = 1
 $         goto argloop_end
 $     endif
 $!
@@ -256,6 +268,12 @@ $         LARGE_FILE = 1
 $         goto argloop_end
 $     endif
 $!
+$     if (f$extract( 0, 8, curr_arg) .eqs. "LIBUNZIP")
+$     then
+$         LIBUNZIP = 1
+$         goto argloop_end
+$     endif
+$!
 $     if (f$extract( 0, 7, curr_arg) .eqs. "LINKOPT")
 $     then
 $         opts = f$edit( curr_arg, "COLLAPSE")
@@ -270,27 +288,9 @@ $         LISTING = "/''curr_arg'"      ! But see below for mods.
 $         goto argloop_end
 $     endif
 $!
-$     if (f$extract( 0, 8, curr_arg) .eqs. "LIBUNZIP")
-$     then
-$         LIBUNZIP = 1
-$         goto argloop_end
-$     endif
-$!
-$     if (f$extract( 0, 4, curr_arg) .eqs. "LZMA")
-$     then
-$         LZMA = 1
-$         goto argloop_end
-$     endif
-$!
 $     if (curr_arg .eqs. "NOCOMPILE")
 $     then
 $         MAKE_OBJ = 0
-$         goto argloop_end
-$     endif
-$!
-$     if (curr_arg .eqs. "NOLINK")
-$     then
-$         MAKE_EXE = 0
 $         goto argloop_end
 $     endif
 $!
@@ -300,15 +300,35 @@ $         MAKE_HELP = 0
 $         goto argloop_end
 $     endif
 $!
+$     if (f$extract( 0, 7, curr_arg) .eqs. "NOLARGE")
+$     then
+$         LARGE_FILE = -1
+$         goto argloop_end
+$     endif
+$!
+$     if (curr_arg .eqs. "NOLINK")
+$     then
+$         MAKE_EXE = 0
+$         goto argloop_end
+$     endif
+$!
+$     if ((f$extract( 0, 6, curr_arg) .eqs. "NOLZMA") .or. -
+       (f$extract( 0, 7, curr_arg) .eqs. "NO_LZMA"))
+$     then
+$         NOLZMA = 1
+$         goto argloop_end
+$     endif
+$!
 $     if (curr_arg .eqs. "NOMSG")
 $     then
 $         MAKE_MSG = 0
 $         goto argloop_end
 $     endif
 $!
-$     if (f$extract( 0, 4, curr_arg) .eqs. "PPMD")
+$     if ((f$extract( 0, 6, curr_arg) .eqs. "NOPPMD") .or. -
+       (f$extract( 0, 7, curr_arg) .eqs. "NO_PPMD"))
 $     then
-$         PPMD = 1
+$         NOPPMD = 1
 $         goto argloop_end
 $     endif
 $!
@@ -444,16 +464,16 @@ $     endif
 $!
 $     cc = "cc /standard = relax /prefix = all /ansi"
 $     defs = "''LOCAL_UNZIP'MODERN"
-$     if (LARGE_FILE .ne. 0)
+$     if (LARGE_FILE .ge. 0)
 $     then
 $         defs = "LARGE_FILE_SUPPORT, ''defs'"
 $     endif
 $ else
-$     if (LARGE_FILE .ne. 0)
+$     if (LARGE_FILE .gt. 0)
 $     then
 $        say "LARGE_FILE_SUPPORT is not available on VAX."
-$        LARGE_FILE = 0
 $     endif
+      LARGE_FILE = -1
 $     HAVE_DECC_VAX = (f$search( "SYS$SYSTEM:DECC$COMPILER.EXE") .nes. "")
 $     HAVE_VAXC_VAX = (f$search( "SYS$SYSTEM:VAXC.EXE") .nes. "")
 $     MAY_HAVE_GNUC = (f$trnlnm( "GNU_CC") .nes. "")
@@ -488,21 +508,35 @@ $         opts = "''opts' SYS$DISK:[.''destm']VAXCSHR.OPT /OPTIONS,"
 $     endif
 $ endif
 $!
+$ if ((NOIZ_BZIP2 .le. 0) .and. (IZ_BZIP2 .eqs. ""))
+$ then
+$     IZ_BZIP2 = "SYS$DISK:[.BZIP2]"
+$     BUILD_BZIP2 = 1
+$ endif
+$!
 $ if (IZ_BZIP2 .nes. "")
 $ then
 $     defs = "BZIP2_SUPPORT, ''defs'"
 $ endif
 $!
-$! Set AES_WG-related data.
+$! Set AES_WG-related data.  Default is enabled, if source is available.
 $!
-$ if (AES_WG .ne. 0)
+$ if ((AES_WG .eq. 0) .and. (NOAES_WG .eq. 0))
+$ then
+$     if (f$search( "[.aes_wg]aes.h") .nes. "")
+$     then
+$         AES_WG = 1
+$     endif
+$ endif
+$!
+$ if (AES_WG .gt. 0)
 $ then
 $     defs = defs+ ", CRYPT_AES_WG"
 $ endif
 $!
 $! Set LZMA-related data.
 $!
-$ if (LZMA .ne. 0)
+$ if (NOLZMA .le. 0)
 $ then
 $     defs = defs+ ", LZMA_SUPPORT"
 $     if (arch .eqs. "VAX")
@@ -513,7 +547,7 @@ $ endif
 $!
 $! Set PPMD-related data.
 $!
-$ if (PPMD .ne. 0)
+$ if (NOPPMD .le. 0)
 $ then
 $     defs = defs+ ", PPMD_SUPPORT"
 $     if (arch .eqs. "VAX")
@@ -522,7 +556,7 @@ $         if (vaxc .ne. 0)
 $         then
 $             defs = defs+ ", NO_SIGNED_CHAR"
 $         endif
-$         if (LZMA .eq. 0)
+$         if (NOLZMA .le. 0)
 $         then
 $             defs = defs+ ", _SZ_NO_INT_64"
 $         endif
@@ -532,7 +566,7 @@ $!
 $! Change the destination directory, if the large-file option is enabled.
 $!
 $ destb = destm
-$ if (LARGE_FILE .ne. 0)
+$ if (LARGE_FILE .ge. 0)
 $ then
 $     destl = "L"
 $ endif
@@ -686,6 +720,20 @@ $         endif
 $     endif
 $ endif
 $!
+$! Verify (default) large-file support on Alpha.
+$!
+$ if ((arch .eqs. "ALPHA") .and. (LARGE_FILE .eq. 0))
+$ then
+$     @ [.vms]check_large.com 'dest' large_file_ok
+$     if (f$trnlnm( "large_file_ok") .eqs. "")
+$     then
+$         deassign large_file_ok
+$         say "Large-file support not available (OS/CRTL too old?)."
+$         goto error
+$     endif
+$     deassign large_file_ok
+$ endif
+$!
 $ if (MAKE_OBJ)
 $ then
 $!
@@ -765,8 +813,7 @@ $ say ""
 $!
 $ tmp = f$verify( 1)    ! Turn echo on to see what's happening.
 $!
-$!------------------------------- UnZip section ------------------------------
-$!
+$!-------------------------- UnZip section -----------------------------
 $!
 $ if (MAKE_HELP)
 $ then
@@ -855,7 +902,7 @@ $         cc 'DEF_LIBUNZIP' /object = [.'dest']ZIPINFO_L.OBJ ZIPINFO.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']VMS_L.OBJ [.VMS]VMS.C
 $     endif
 $!
-$     if (AES_WG .ne. 0)
+$     if (AES_WG .gt. 0)
 $     then
 $         cc 'DEF_UNX' /object = [.'dest']AESCRYPT.OBJ [.AES_WG]AESCRYPT.C
 $         cc 'DEF_UNX' /object = [.'dest']AESKEY.OBJ [.AES_WG]AESKEY.C
@@ -867,13 +914,13 @@ $         cc 'DEF_UNX' /object = [.'dest']PWD2KEY.OBJ [.AES_WG]PWD2KEY.C
 $         cc 'DEF_UNX' /object = [.'dest']SHA1.OBJ [.AES_WG]SHA1.C
 $     endif
 $!
-$     if (LZMA .ne. 0)
+$     if (NOLZMA .le. 0)
 $     then
 $         cc 'DEF_UNX' /object = [.'dest']LZFIND.OBJ [.SZIP]LZFIND.C
 $         cc 'DEF_UNX' /object = [.'dest']LZMADEC.OBJ [.SZIP]LZMADEC.C
 $     endif
 $!
-$     if (PPMD .ne. 0)
+$     if (NOPPMD .le. 0)
 $     then
 $         cc 'DEF_UNX' /object = [.'dest']PPMD8.OBJ [.SZIP]PPMD8.C
 $         cc 'DEF_UNX' /object = [.'dest']PPMD8DEC.OBJ [.SZIP]PPMD8DEC.C
@@ -942,7 +989,7 @@ $     libr /object /replace 'lib_unzip' -
        [.'dest']ZIPINFO.OBJ, -
        [.'dest']VMS.OBJ
 $!
-$     if (AES_WG .ne. 0)
+$     if (AES_WG .gt. 0)
 $     then
 $         libr /object /replace 'lib_unzip' -
            [.'dest']AESCRYPT.OBJ, -
@@ -955,14 +1002,14 @@ $         libr /object /replace 'lib_unzip' -
            [.'dest']SHA1.OBJ
 $     endif
 $!
-$     if (LZMA .ne. 0)
+$     if (NOLZMA .le. 0)
 $     then
 $         libr /object /replace 'lib_unzip' -
            [.'dest']LZFIND.OBJ, -
            [.'dest']LZMADEC.OBJ
 $     endif
 $!
-$     if (PPMD .ne. 0)
+$     if (NOPPMD .le. 0)
 $     then
 $         libr /object /replace 'lib_unzip' -
            [.'dest']PPMD8.OBJ, -
@@ -1004,7 +1051,7 @@ $         libr /object /replace 'lib_libunzip' -
            [.'dest']MATCH.OBJ, -
            [.'dest']UNREDUCE.OBJ
 $!
-$         if (AES_WG .ne. 0)
+$         if (AES_WG .gt. 0)
 $         then
 $             libr /object /replace 'lib_libunzip' -
                [.'dest']AESCRYPT.OBJ, -
@@ -1017,14 +1064,14 @@ $             libr /object /replace 'lib_libunzip' -
                [.'dest']SHA1.OBJ
 $         endif
 $!
-$         if (LZMA .ne. 0)
+$         if (NOLZMA .le. 0)
 $         then
 $             libr /object /replace 'lib_libunzip' -
                [.'dest']LZFIND.OBJ, -
                [.'dest']LZMADEC.OBJ
 $         endif
 $!
-$         if (PPMD .ne. 0)
+$         if (NOPPMD .le. 0)
 $         then
 $             libr /object /replace 'lib_libunzip' -
                [.'dest']PPMD8.OBJ, -
@@ -1061,7 +1108,7 @@ $     link /executable = [.'dest']'unzx_unx'.EXE -
 $!
 $ endif
 $!
-$!----------------------- UnZip (CLI interface) section ----------------------
+$!------------------- UnZip (CLI interface) section --------------------
 $!
 $! Process the CLI help file, if desired.
 $!
@@ -1144,7 +1191,7 @@ $     link /executable = [.'dest']'unzx_cli'.EXE -
 $!
 $ endif
 $!
-$!-------------------------- UnZipSFX section --------------------------------
+$!------------------------- UnZipSFX section ---------------------------
 $!
 $ if (MAKE_OBJ)
 $ then
@@ -1187,7 +1234,7 @@ $     libr /object /replace 'lib_unzipsfx' -
        [.'dest']UBZ2ERR_.OBJ, -
        [.'dest']VMS_.OBJ
 $!
-$     if (AES_WG .ne. 0)
+$     if (AES_WG .gt. 0)
 $     then
 $         libr /object /replace 'lib_unzipsfx' -
            [.'dest']AESCRYPT.OBJ, -
@@ -1200,14 +1247,14 @@ $         libr /object /replace 'lib_unzipsfx' -
            [.'dest']SHA1.OBJ
 $     endif
 $!
-$     if (LZMA .ne. 0)
+$     if (NOLZMA .le. 0)
 $     then
 $         libr /object /replace 'lib_unzipsfx' -
            [.'dest']LZFIND.OBJ, -
            [.'dest']LZMADEC.OBJ
 $     endif
 $!
-$     if (PPMD .ne. 0)
+$     if (NOPPMD .le. 0)
 $     then
 $         libr /object /replace 'lib_unzipsfx' -
            [.'dest']PPMD8.OBJ, -
@@ -1242,14 +1289,14 @@ $     link /executable = [.'dest']'unzsfx_unx'.EXE -
 $!
 $ endif
 $!
-$!--------------------- UnZipSFX (CLI interface) section ---------------------
+$!----------------- UnZipSFX (CLI interface) section -------------------
 $!
 $ if (MAKE_OBJ)
 $ then
 $!
 $! Compile the SFX CLI sources.
 $!
-$     cc 'DEF_SXCLI' /object = [.'dest']UNZSXCLI.OBJ UNZIP.C
+$     cc 'DEF_SXCLI' /object = [.'dest']UNZSFXCLI.OBJ UNZIP.C
 $     cc 'DEF_SXCLI' /object = [.'dest']CMDLINE_.OBJ -
        [.VMS]CMDLINE.C
 $!
@@ -1275,7 +1322,7 @@ $!
 $! Link the SFX CLI executable.
 $!
 $     link /executable = [.'dest']'unzsfx_cli'.EXE -
-       SYS$DISK:[.'dest']UNZSXCLI.OBJ, -
+       SYS$DISK:[.'dest']UNZSFXCLI.OBJ, -
        'lib_unzipsfxcli' /library, -
        'lib_unzipsfx' /library, -
        'lib_bzip2_opts' -
@@ -1286,7 +1333,7 @@ $     link /executable = [.'dest']'unzsfx_cli'.EXE -
 $!
 $ endif
 $!
-$!----------------------------- Symbols section ------------------------------
+$!------------------------- Symbols section ----------------------------
 $!
 $ if (MAKE_SYM)
 $ then

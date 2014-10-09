@@ -6,7 +6,7 @@
 .!  Date:       12 Jul 94 (orig. UNZIP.RNH, 23 Oct 91)
 .!
 .!----------------------------------------------------------------------
-.! Copyright (c) 1991-2013 Info-ZIP.  All rights reserved.
+.! Copyright (c) 1991-2014 Info-ZIP.  All rights reserved.
 .!
 .! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 .! contents of which are also included in zip.h) for terms of use.  If,
@@ -602,7 +602,7 @@ regular filename character, the -W option would not work as expected on
 a wildcard file name specification.)
 .!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 <SUBTOPIC>
-/NAMES (-2, -L, -s)
+/NAMES (-0 -2, -L, -s)
 <NEXT>
 /NAMES
 <NEXT>
@@ -611,6 +611,10 @@ a wildcard file name specification.)
 Selects name transformations during extraction.  The keywords are:
 
 <LITERAL>
+[NO]CHAR_SET  CHAR_SET: Use CP850 character-set mapping on names
+              of archive members which originated on a FAT or
+              NTFS file system.  (Default condition.)
+              NOCHAR_SET: Do not map these archive member names.
 DOWNCASE      Convert filenames from all-uppercase operating
               systems to lowercase.  (-L)
 DOWNCASE=ALL  Convert all filenames to lowercase.  (-LL)

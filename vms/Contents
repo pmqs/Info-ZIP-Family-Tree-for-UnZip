@@ -3,6 +3,7 @@
 
 build_unzip.com     DCL script to build UnZip (and friends)
 bzlib.h             VMS wrapper header file for the bzip2 library definitions
+check_large.com     DCL script to check large-file support (on Alpha)
 cmdline.c           VMS-style command-line-interface code (if VMSCLI defined)
 collect_deps.com    DCL script used in source dependencies creation
 Contents            This file

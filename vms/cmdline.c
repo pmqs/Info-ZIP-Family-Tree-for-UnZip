@@ -245,6 +245,7 @@ $DESCRIPTOR(cli_super_quiet,    "QUIET.SUPER");         /* -qq */
 $DESCRIPTOR(cli_test,           "TEST");                /* -t */
 $DESCRIPTOR(cli_pipe,           "PIPE");                /* -p */
 $DESCRIPTOR(cli_password,       "PASSWORD");            /* -P */
+$DESCRIPTOR(cli_names_char_set, "NAMES.CHAR_SET");      /* -0, -0- */
 $DESCRIPTOR(cli_names_down,     "NAMES.DOWNCASE");      /* -L, -LL */
 $DESCRIPTOR(cli_names_down_all, "NAMES.DOWNCASE.ALL");  /* -LL */
 $DESCRIPTOR(cli_names_nodown,   "NAMES.NODOWNCASE");    /* -L-L- */
@@ -1110,15 +1111,34 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
 
         /*
          * Transform names.
+         * Do not map FAT/NTFS names.
          * Convert names to ODS2 restrictions.
          * Convert spaces in names to underscores.
          * Clear any existing "-2"/"-s" option with "-2-"/"-s-", then
          * add the desired "2"/"s" value.
          */
+#define OPT_0   "-0"            /* "-0"  Do not map FAT/NTFS names. */
+#define OPT_0N  "-0-"           /* "-0-" Map FAT/NTFS names. */
 #define OPT_2   "-2-2"          /* "-2"  Convert names to ODS2. */
 #define OPT_2N  "-2-"           /* ""    Normal extract (default). */
 #define OPT_S   "-s-s"          /* "-s"  Convert spaces. */
 #define OPT_SN  "-s-"           /* ""    Preserve spaces (default). */
+
+        status = cli$present( &cli_names_char_set);
+        if ((status & 1) || (status == CLI$_NEGATED))
+        {
+            if (status == CLI$_NEGATED)
+            {
+                /* /NAMES = NOCHAR_SET */
+                opt = OPT_0;
+            }
+            else
+            {
+                /* /NAMES = CHAR_SET */
+                opt = OPT_0N;
+            }
+            ADD_ARG( opt);
+        }
 
         status = cli$present( &cli_names_nodown);
         if (status & 1)

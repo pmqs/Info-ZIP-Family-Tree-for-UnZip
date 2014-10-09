@@ -8,7 +8,7 @@
 .\" unzip.1 by Greg Roelofs, Fulvio Marino, Jim van Zandt and others.
 .\"
 .\" =========================================================================
-.TH UNZIP 1L "09 May 2014 (v6.10)" "Info-ZIP"
+.TH UNZIP 1L "10 Oct 2014 (v6.10)" "Info-ZIP"
 .\" =========================================================================
 .\"
 .\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
@@ -363,6 +363,24 @@ Primary mode.  Display only the archive comment.
 .SH OPTIONS (Ordinary)
 .PP
 .PD 0
+.B \-0
+.TP
+.PD
+.B \-\-no-char\-set
+.br
+Do not transform FAT/NTFS names.  By default, a particular character
+mapping (CP850) is applied to the names of archive members which
+originated on a FAT or NTFS file system (typically on an MS-DOS or
+Windows system).  This can cause unexpected characters in extracted file
+names if the corresponding (inverse) mapping was not used when the
+archive was created.  With \-0/\-\-no\-char\-set, the extracted file
+name should agree with the name stored in the archive.
+.IP
+On Unix (or BeOS), \-0/\-\-no\-char\-set effectively overrides any
+\-I/\-\-iso-char-set or \-O/\-\-oem-char-set option which may also be
+specified.
+.PP
+.PD 0
 .B \-2
 .TP
 .PD
@@ -646,7 +664,7 @@ Primary Mode options.
 .PD
 .B \-\-iso\-char\-set char_set
 .br
-[Unix] Select ISO character set \fIchar_set\fP.
+[Unix] Select ISO character set \fIchar_set\fP.  See also \-0 and -O.
 .PP
 .PD 0
 .B \-i
@@ -676,20 +694,20 @@ separate "._name" file, as it would be on a non-Mac file system.
 .EX
 Note that "\fB\-J\fP" is \fInot\fP equivalent to
 "\fB\-Je\ \-Jf\ \-Jr\fP".  With "\fB\-J\fP", an AppleDouble archive
-member is restored as a separate "._name" file, as it would be on a
-non-Mac file system.  With "\fB\-Je\ \-Jf\ \-Jr\fP", all the data in an
-AppleDouble archive member are ignored, so the data fork file is
-restored with no extended attributes (\fB\-Je\fP), no Finder info
-(\fB\-Jf\fP), and no resource fork (\fB\-Jr\fP); no "._name" file is
-created.
+member is restored as a separate "._name" file, as it would
+be on a non-Mac file system.  With "\fB\-Je\ \-Jf\ \-Jr\fP", all the
+data in an AppleDouble archive member are ignored, so the
+data fork file is restored with no extended attributes
+(\fB\-Je\fP), no Finder info (\fB\-Jf\fP), and no resource fork (\fB\-Jr\fP);
+no "._name" file is created.
 .IP
 Note that \fB\-j\fP acts on the path of an archive member, and is
 independent of the destination directory specified using \fB\-d\fP or
 \fB\-da\fP.  For example, with "\fB\-d zz\fP \fB\-j=1\fP", an archive
-member like "a/b/c/d/ee.txt" would be extracted as "zz/b/c/d/ee.txt",
-with \fB\-j=1\fP stripping the "a/" off the archive path, and
-\fB\-d zz\fP adding the "zz/" to the path in the destination file
-system.
+member like "a/b/c/d/ee.txt" would be extracted as
+"zz/b/c/d/ee.txt", with \fB\-j=1\fP stripping the "a/" off the
+archive path, and \fB\-d zz\fP adding the "zz/" to the path in the
+destination file system.
 .EE
 .PP
 .PD 0
@@ -894,7 +912,7 @@ query choice is offered: to overwrite the existing file.
 .PD
 .B \-\-oem\-char\-set char_set
 .br
-[Unix] Select OEM character set \fIchar_set\fP.
+[Unix] Select OEM character set \fIchar_set\fP.  See also \-0 and \-I.
 .PP
 .PD 0
 .B \-o

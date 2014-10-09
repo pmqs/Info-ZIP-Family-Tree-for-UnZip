@@ -222,8 +222,8 @@ local z_uint4 near *crytab_init(__G)
 #  ifdef IZ_CRYPT_TRAD
 
 /***********************************************************************
- * Write (Traditional) encryption header to file zfile using the password
- * passwd and the cyclic redundancy check crc.
+ * Write (Traditional) encryption header to file zfile using the
+ * password passwd and the cyclic redundancy check crc.
  */
 void crypthead(passwd, crc)
     ZCONST char *passwd;         /* password string */
@@ -603,9 +603,9 @@ int zipcloak(z, passwd)
     }
     else
     {
-        /* Determine AES encryption salt length, and header+trailer length.
-         * Header has salty stuff.  Trialer has Message Authentication
-         * Code (MAC).
+        /* Determine AES encryption salt length, and header+trailer
+         * length.  Header has salty stuff.  Trailer has Message
+         * Authentication Code (MAC).
          */
         /*                Note: v-- No parentheses in SALT_LENGTH def'n.   --v */
         salt_len = SALT_LENGTH( (encryption_method - (AES_MIN_ENCRYPTION - 1)) );
@@ -752,9 +752,9 @@ int zipbare(z, passwd)
     char aes_mode = 0;  /* AES encryption mode.  (Init'd to hush cmplr.) */
     ush aes_mthd = 0;   /* Actual compress method.  (Init'd to hush cmplr.) */
     ush how_orig;               /* Original encryption method. */
-    zoff_t n;                   /* Bytes actually read. */
-    zoff_t nn;                  /* Bytes requested. */
-    zoff_t nout;                /* Total bytes put out. */
+    size_t n;                   /* Bytes actually read. */
+    size_t nn;                  /* Bytes requested. */
+    uzoff_t nout;               /* Total bytes put out. */
 #   else /* def IZ_CRYPT_AES_WG */
 #    define HEAD_LEN RAND_HEAD_LEN      /* Constant trad. header length. */
 #   endif /* def IZ_CRYPT_AES_WG [else] */
@@ -925,7 +925,7 @@ int zipbare(z, passwd)
             if (n == nn)
             {
                 fcrypt_decrypt( buf, n, &zctx);
-                n = IZ_MIN( n, (z->siz- nout));
+                n = IZ_MIN( n, (z->siz - nout));
                 bfwrite( buf, 1, n, BFWRITE_DATA);
                 nout += n;      /* Bytes written. */
             }

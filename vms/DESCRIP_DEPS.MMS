@@ -1,5 +1,5 @@
 #
-# UnZip for VMS - MMS (or MMK) Source Dependency File.
+#    UnZip for VMS -- MMS (or MMK) Source Dependency File.
 #
 
 # This description file is included by other description files.  It is

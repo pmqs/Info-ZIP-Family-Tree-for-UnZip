@@ -2,7 +2,6 @@
       ----------------------------------------------------------
 
 configure       Shell script to probe system environment, capabilities
-configure.txt   Change notes on "configure"
 Contents        This file
 macosx.h        Mac-OS-X-specific header file
 Makefile        "make" file for various Unix-like systems

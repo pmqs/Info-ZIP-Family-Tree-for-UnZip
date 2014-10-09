@@ -513,11 +513,43 @@ Features added (or removed):
    windll/vc10/unzipstb/unzipstb.vcxproj,
    windll/vc10/unzipstb/unzipstb.vcxproj.filters) [SMS]
 
-6.10c10 (? ??? 2014):
+6.10c10 (18 Aug 2014):
  - Added initial support for Windows directory symlinks (using a symlink
    name with a trailing slash) on Unix, VMS, and Windows.  (extract.c,
    process.c, unzpriv.h, zipinfo.c, unix/unix.c, vms/vms.c,
    win32/w32cfg.h, win32/win32.c) [EG, SMS]
+
+6.10c11 (10 Oct 2014):
+ - Added option -0/--no-char-set (/NAMES = [NO]CHAR_SET) to suppress
+   certain character mapping (CP850) in some extracted file names.
+   ("-0" is hyphen+zero.)  Historically a particular character mapping
+   was applied (and still is, by default) to the names of archive
+   members which originated on a FAT or NTFS file system (typically on
+   an MS-DOS or Windows system).  This can cause unexpected characters
+   in extracted file names if the corresponding (inverse) mapping was
+   not used when the archive was created.  With -0/--no-char-set, the
+   extracted file name should agree with the name stored in the archive.
+   -0/--no-char-set is supported on all operating systems.  On Unix (or
+   BeOS) it effectively overrides any -I/--iso-char-set or
+   -O/--oem-char-set option which may also be specified. Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=4&t=447
+   (fileio.c, unzip.c, unzip.h, man/man1/unzip.1, vms/cmdline.c,
+   vms/unzip_cli.help, vms/unz_cli.cld) [SMS, JBCarpen]
+ - A Bzip2 source kit (version 1.0.6, modified for better VMS support)
+   is now included in the kit.  (Old bzip2/descrbz2.mms removed. 
+   bzip2/README_bz2.txt, bzip2/)  [SMS]
+ - Changed Unix and VMS builders:
+    - Enable bzip2, LZMA, and PPMd compression support by default.
+    - On VMS, enable large-file support by default on Alpha and IA64
+      (with a run-time check on Alpha, using a new DCL script).
+    - On Unix, enable AES_WG support by default, if AES_WG source kit is
+      available.
+    - On VMS, notify user if AES_WG source is available but not used.
+    - Minor typography changes.
+   (INSTALL, unix/configure, unix/Makefile, unix/unsafe_prod.sh,
+   vms/build_unzip.com, vms/check_large.com (new), vms/collect_deps.com,
+   vms/descrip.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms,
+   vms/INSTALL_VMS.txt) [SMS]
 
 
 Bugs fixed:
@@ -1470,3 +1502,17 @@ Bugs fixed:
  - Unix builder script was ignoring some early test results when running
    later tests, causing erroneous configuration related to wide
    characters and Unicode.  (unix/configure)  [EG, SMS]
+
+6.10c11 (09 Oct 2014):
+ - Windows DLL interface/entry functions Wiz_SingleEntryUnzip() and
+   Wiz_UnzipToMemory() were not setting the global flag has_win32_wide,
+   causing problems with Unicode/wide file/member names. 
+   (windll/windll.c) [Andreas Schniertshauer, SMS]
+ - Work around MS compiler quirk which caused bad behavior in the
+   Windows DLL.  Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=4&t=447
+   (windll/windll.c)  [JBCarpen, SMS]
+ - ZipInfo displayed wrong data for MD5 extra block (ID = 0x4b46). 
+   (zipinfo.c) [Wojtek Michalski]
+
+

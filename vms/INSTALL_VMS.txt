@@ -1,17 +1,19 @@
-            UnZip Installation Supplement for VMS (OpenVMS)
-            -----------------------------------------------
+      INSTALL_VMS.txt -- UnZip Installation Supplement for VMS (OpenVMS)
+      ==================================================================
 
-   UnZip version 6.10.  Revised: 2013-10-13.
+   UnZip version 6.10.  Revised: 2014-10-10.
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------------------
 
-      Source Kits
-      -----------
+      Unpack the Source Kit(s)
+      ------------------------
 
-   UnZip source kits are distributed as Zip archives and tar+gzip kits.
-A Zip archive is usually the more convenient form for a VMS user.  If an
-UnZip program is not already available on the target system, pre-built
-UnZip programs may be found in many freeware collections, and on the
+   UnZip is normally distributed as a Zip archive (which requires some
+kind of unzip program to unpack), or as a gzip-compressed "tar" archive
+(which requires programs like "gzip" and "tar" to unpack).  A Zip
+archive is usually the more convenient form for a VMS user.  If an UnZip
+program is not already available on the target system, pre-built UnZip
+programs for VMS may be found in many freeware collections, and on the
 Info-ZIP server:
 
       ftp://ftp.info-zip.org/pub/infozip/vms/
@@ -32,192 +34,328 @@ below.  For example:
 
       UNZIP -b unzip61.zip              ! Unpack the UnZip source kit.
 
-   Some optional UnZip features may require additional source kits.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-   o Bzip2 Compression
+      Optional Source Kits
+      --------------------
 
-     By default, UnZip can use the Deflate compression method.  To add
-     support for the optional "bzip2" compression method, obtain and
-     build the bzip2 software ("http://www.bzip.org/" or, for a more
-     VMS-friendly kit, "http://antinode.info/dec/sw/bzip2.html").  The
-     build instructions below explain how to use the appropriate bzip2
-     header files and object library to build UnZip with bzip2 support.
+   Advanced Encryption Standard (AES) Encryption
+   ---------------------------------------------
 
-   o Encryption
+   To enable support for AES encryption, a separate IZ_AES_WG source kit
+is needed.  On the Info-ZIP FTP server, the IZ_AES_WG source kit should
+be found in:
 
-     This UnZip release includes the Traditional encryption code
-     ("CRYPT") previously supplied in the separate package zcrypt29.zip,
-     but you still can decide whether to activate the CRYPT code or not.
-     CRYPT is enabled by default, but you may disable it by specifying
-     the C macro "NO_CRYPT" in the LOCAL_UNZIP symbol/macro (explained
-     below).  See README_CR.txt for more on CRYPT.
+      ftp://ftp.info-zip.org/pub/infozip/crypt/
 
-     This UnZip release offers optional support for Advanced Encryption
-     Standard (AES) encryption, which is a stronger encryption method
-     than Traditional Zip encryption.  A separate IZ_AES_WG source kit
-     is required to enable this AES encryption option.  See
-     README_AES_WG.txt for more on the optional AES encryption.  The
-     IZ_AES_WG source kit must be unpacked in the UnZip source
-     directory, where it creates a [.aes_wg] subdirectory.  File and
-     path names may vary, but commands like the following should extract
-     the IZ_AES_WG source kit in the right place:
+The latest kit should be:
 
-        SET DEFAULT [.unzip61]          ! The main UnZip source dir.
-        UNZIP [-]iz_aes_wg.zip          ! Unpack the IZ_AES_WG kit.
+      ftp://ftp.info-zip.org/pub/infozip/crypt/iz_aes_wg.zip
+
+but other, older kits may also be available there.  Version
+compatibility information should be included in the IZ_AES_WG
+documentation.  The latest version of that should be:
+
+      ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
+
+It might be wise to read that before downloading any particular
+IZ_AES_WG kit.
+
+   The IZ_AES_WG kit should be unpacked in the main UnZip directory,
+where it should populate the [.aes_wg] subdirectory.  For example, if
+the proper IZ_AES_WG kit is "iz_aes_wg13.zip", then use commands like
+the following:
+
+      SET DEFAULT [.unzip61]            ! (If not already there.)
+      UNZIP [-]iz_aes_wg13.zip
+
+   See the "Build" section, below, for details on how to build UnZip
+with AES encryption support.
 
      The IZ_AES_WG code may be too modern for VAX C.
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Bzip2 Compression
+   -----------------
+
+   All the source files needed to enable support for the bzip2
+compression method are included in the UnZip source kit.  The [.bzip2]
+subdirectory contains a bzip2 (version 1.0.6) source kit, with some
+modifications for better VMS compatibility.  For general information on
+bzip2 compression, or to download a different bzip2 source kit:
+
+      http://www.bzip.org/
+
+   For a more VMS-friendly kit:
+
+      http://antinode.info/dec/sw/bzip2.html
+
+   The UnZip builders for VMS wiil, by default, use the bzip2 source kit
+which is included in the UnZip source kit to create the required bzip2
+object library.  The builders can also use an existing bzip2 object
+library, which is supplied by the user.  For details on how to use an
+existing bzip2 object library, or how to disable bzip2 compression
+support, look for IZ_BZIP2 in the "Build" section below.
+
+------------------------------------------------------------------------
 
       Build
       -----
 
    On VMS, two build methods are provided: a DCL command procedure, and
 description files for MMS or MMK.  Both methods must be run from the
-main source directory, not the [.VMS] subdirectory.
+main source directory, not the [.vms] subdirectory.
 
    A simple build using the command procedure looks like this:
-      @ [.VMS]BUILD_UNZIP.COM
+
+      @ [.vms]build_unzip.com
 
    A simple build using MMS or MMK looks like this:
-     MMS /DESCRIP = [.VMS]DESCRIP.MMS   ! Or, with MMK, ...
-     MMK /DESCRIP = [.VMS]DESCRIP.MMS
+
+     MMS /DESCRIP = [.vms]descrip.mms   ! Using MMS.
+     MMK /DESCRIP = [.vms]descrip.mms   ! Using MMK.
 
    Various options for each build method are explained in comments in
-each main builder file, either [.VMS]BUILD_UNZIP.COM or
-[.VMS]DESCRIP.MMS.
+each main builder file, either [.vms]build_unzip.com or
+[.vms]descrip.mms.  Principal build options are described in the
+following section.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      Build Options
+      -------------
+
+   This section describes the principal build options.
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Compilers on VAX
+   ----------------
 
    On VAX, the builders attempt to cope with the various available C
-compilers, DEC/Compaq/HP C, VAX C, or GNU C.  If DEC/Compaq/HP C is not
+compilers: DEC/Compaq/HP C, VAX C, or GNU C.  If DEC/Compaq/HP C is not
 available or not desired, comments in each main builder file explain the
-command-line options used to select a different compiler.
+command-line options used to select a different compiler.  Some of the
+more modern optional features may use C language features which VAX C
+does not support.
 
-      Note that on non-VAX systems with VMS V7.2 or later (and with a
-      sufficiently new C compiler), UnZip 6.0 (and later) can support
-      files (both data files and Zip archives) larger than 2GB.  For the
-      greatest compatibility with previous UnZip versions, by default,
-      the builders create old-style, small-file programs.  The user must
-      specify the appropriate builder command-line option to create
-      large-file-capable programs.
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-   Here are some more complex build examples:
+   Large-File Support
+   ------------------
 
-   o Build with the large-file option enabled (non-VAX only):
+   Support for archives and member files larger than 2GB is available on
+Alpha systems with VMS V7.2 or later (and with a sufficiently new C
+compiler), and on all IA64 systems.  Large-file support is not available
+on VAX.  By default, the builders will enable large-file support where
+it is available.  (Note that UnZip versions before 6.10c (BETA) required
+the user to request large-file support explicitly.  Now it must be
+disabled explicitly, if it's not desired.)
 
-        @ [.VMS]BUILD_UNZIP LARGE
-     or:
-        MMS /DESC = [.VMS] /MACRO = LARGE=1
+      On Alpha, the builders will initially assume that large-file
+      support is available, but will test large-file support before 
+      continuing.  If large-file support is not available, the build
+      will fail, and a message will advise the user to add "NOLARGE" to
+      the build command.
 
-   o Re-link the executables (small-file and large-file):
+   To disable large-file support using the DCL builder, use a command
+like the following:
 
-        @ [.VMS]BUILD_UNZIP NOCOMPILE
-        @ [.VMS]BUILD_UNZIP LARGE NOCOMPILE
-     or
-        MMK /DESC = [.VMS] CLEAN_EXE  ! Delete existing executables.
-        MMK /DESC = [.VMS]            ! Build new executables.
-        MMK /DESC = [.VMS] /MACRO = LARGE=1 CLEAN_EXE
-        MMK /DESC = [.VMS] /MACRO = LARGE=1
+      @ [.vms]build_unzip.com NOLARGE
 
-   o Build a large-file product from scratch, for debug, getting
-     compiler listings and link maps:
+   Using the MMS or MMK builder (MMS shown):
 
-        MMS /DESC = [.VMS] CLEAN
-        MMS /DESC = [.VMS] /MACRO = (DBG=1, LARGE=1. LIST=1)
+     MMS /DESCRIP = [.vms]descrip.mms /MACRO = (NOLARGE=1)
 
-   o Bzip2 Compression
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      We assume that bzip2 has been built according to its own
-      instructions.  To build UnZip with bzip2 support, define the macro
-      IZ_BZIP2 on the BUILD_UNZIP.COM or MMS/MMK command line to specify
-      the directory where the bzip2 files may be found.  For example:
+   Bzip2 Compression
+   -----------------
 
-         @ [.VMS]BUILD_UNZIP LARGE -
+   The optional bzip2 compression method is enabled by default, and the
+required source code is included in the UnZip source kit.  By default,
+the builders will use the bzip2 source kit in the [.bzip2] subdirectory
+to build the required bzip2 object library.
+
+   To disable bzip2 compression, add the appropriate option to the
+builder command line.  For example:
+
+         @ [.vms]build_unzip NOIZ_BZIP2
+      or:
+         MMS /DESC = [.vms] /MACRO = (NOIZ_BZIP2)
+
+   Users who regularly work with multiple UnZip versions (or optional
+configurations) can avoid repeatedly building the bzip2 object library
+by manually building a bzip2 object library (with BZ_NO_STDIO defined)
+in some common location.  Then, when building UnZip, specify that bzip2
+directory as the value of the MMS macro IZ_BZIP2.  For example:
+
+         @ [.vms]build_unzip -
           IZ_BZIP2=SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS]
       or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, -
-          IZ_BZIP2=SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS])
+         MMS /DESC = [.vms] /MACRO = -
+          IZ_BZIP2=SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS]
+
+   Defining a logical name for the bzip2 directory can simplify commands
+like these:
+
+         DEFINE IZ_BZIP2_106 -
+          SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS]
+
+         @ [.vms]build_unzip IZ_BZIP2=IZ_BZIP2_106
+      or:
+         MMS /DESC = [.vms] /MACRO = (IZ_BZIP2=IZ_BZIP2_106)
+
 
       Note that historically, UnZip has been built with the default
       compiler option, /NAMES = UPPERCASE, while bzip2 is normally built
-      with /NAMES = AS_IS, to avoid name collisions.  With modern
-      compilers, the "#pragma names" directives in [.VMS]BZLIB.H will
-      handle these differences without user intervention.  An old
-      compiler (for example, DEC C V4.0-000) will emit complaints
-      %CC-I-UNKNOWNPRAGMA, and will mishandle the bzip2 library function
-      names, which will cause the link to fail.  To solve this problem,
-      either build the bzip2 BZ_NO_STDIO object library with /NAMES =
-      UPPERCASE, or else build UnZip with /NAMES = AS_IS.  For example:
+      with /NAMES = AS_IS, to avoid name collisions in the bzip2 code.
+      With modern compilers, the "#pragma names" directives in
+      [.vms]bzlib.h will handle these differences without user
+      intervention.  An old compiler (for example, DEC C V4.0-000) will
+      emit complaints %CC-I-UNKNOWNPRAGMA, and will mishandle the bzip2
+      library function names, which will cause the link to fail.  To
+      solve this problem, either build the bzip2 BZ_NO_STDIO object
+      library with /NAMES = UPPERCASE, or else build UnZip with
+      /NAMES = AS_IS.  For example:
 
-         @ [.VMS]BUILD_UNZIP LARGE "CCOPTS=/NAMES=AS_IS" -
-          IZ_BZIP2=SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS]
+         @ [.vms]build_unzip "CCOPTS=/NAMES=AS_IS" IZ_BZIP2=IZ_BZIP2_106
       or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, "CCOPTS=/NAMES=AS_IS", -
-          IZ_BZIP2=SYS$SYSDEVICE:[UTILITY.SOURCE.BZIP2.BZIP2-1_0_6A_VMS])
+         MMS /DESC = [.vms] /MACRO = ("CCOPTS=/NAMES=AS_IS", -
+          IZ_BZIP2=IZ_BZIP2_106)
 
       The %CC-I-UNKNOWNPRAGMA complaints are still emitted, but the link
       (and the program) should work.
 
-   o Other Optional Compression Methods (LZMA, PPMd)
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      LZMA and PPMd compression (new in UnZip version 6.10) are not
-      enabled by default, but the required source code is included in
-      the UnZip source kit.  To enable LZMA and/or PPMd compression, add
-      the appropriate option to the builder command line.  For example:
+   LZMA and PPMd Compression Methods
+   ---------------------------------
 
-         @ [.VMS]BUILD_UNZIP LARGE LZMA PPMD
+   The optional LZMA and PPMd compression methods (new in UnZip version
+6.10) are enabled by default, and the required source code is included
+in the UnZip source kit.
+
+   To disable LZMA and/or PPMd compression, add the appropriate option
+to the builder command line.  For example:
+
+         @ [.vms]build_unzip NOLZMA NOPPMD
       or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, LZMA=1, PPMD=1)
+         MMS /DESC = [.vms] /MACRO = (NOLZMA=1, NOPPMD=1)
 
-   o Encryption
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      By default, Traditional Zip encryption is enabled.  To disable it,
-      the C macro NO_CRYPT must be defined at build time.  This can be
-      done by adding NO_CRYPT to the LOCAL_UNZIP symbol/macro.  For
-      example:
+   Advanced Encryption Standard (AES) Encryption
+   ---------------------------------------------
+
+   By default, AES encryption is not enabled.  To enable it, first
+download and unpack the separate IZ_AES_WG source kit, as explained
+above.  With the IZ_AES_WG source kit unpacked into its [.aes_wg]
+subdirectory, add the appropriate AES_WG option to the builder command
+line.  For example:
+
+         @ [.vms]build_unzip AES_WG
+      or:
+         MMS /DESC = [.vms] /MACRO = (AES_WG=1)
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Traditional Zip Encryption
+   --------------------------
+
+   By default, Traditional Zip encryption is enabled.  To disable it,
+the C macro NO_CRYPT must be defined at build time.  This can be done by
+adding NO_CRYPT to the LOCAL_UNZIP symbol/macro.  For example:
 
          LOCAL_UNZIP == "NO_CRYPT"
-         @ [.VMS]BUILD_UNZIP LARGE
+         @ [.vms]build_unzip
       or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, "LOCAL_UNZIP=NO_CRYPT")
+         MMS /DESC = [.vms] /MACRO = ("LOCAL_UNZIP=NO_CRYPT")
 
-      By default, AES encryption is not enabled.  To enable it, first
-      download and unpack the separate IZ_AES_WG source kit, as
-      explained above.  With the IZ_AES_WG source kit unpacked into its
-      [.aes_wg] subdirectory, add the appropriate AES_WG option to the
-      builder command line.  For example:
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-         @ [.VMS]BUILD_UNZIP LARGE AES_WG
-      or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, AES_WG=1)
+      More Complex Build Examples
+      ---------------------------
 
+   Here are some more complex build examples:
+
+   o Build with the large-file option disabled (non-VAX, typically used
+     only on old Alpha systems):
+
+        @ [.vms]build_unzip NOLARGE
+     or:
+        MMS /DESC = [.vms] /MACRO = NOLARGE=1
+
+   o Re-link the executables:
+
+        @ [.vms]build_unzip NOCOMPILE
+     or
+        MMK /DESC = [.vms] CLEAN_EXE  ! Delete existing executables.
+        MMK /DESC = [.vms]            ! Build new executables.
+
+   o Build from scratch, for debug, getting compiler listings and link
+     maps:
+
+        MMS /DESC = [.vms] CLEAN
+        MMS /DESC = [.vms] /MACRO = (DBG=1, LIST=1)
+
+
+   Another build option, HELP_TEXT, can be used to create formatted,
+plain-text HELP output files.  These files, UNZIP.HTX and UNZIP_CLI.HTX,
+contain the results of a command like "HELP UNZIP..." using the help
+source files for the UNIX-like command line and the VMS-like command
+line, respectively.  For example:
+
+      @ [.vms]build_unzip HELP_TEXT
+   or:
+      MMS /DESC = [.vms] HELP_TEXT
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Destination Directories
+   -----------------------
 
    By default, system-architecture-specific files (like objects and
 executables) are placed in separate subdirectories, such as [.ALPHA],
 [.IA64], or [.VAX].  Large-file products get their own subdirectories,
 [.ALPHAL] or [.IA64L].  On VAX, VAX C products are placed in [.VAXV],
 GNU C products in [.VAXG].  If desired, the user may specify some other
-subdirectory, using the PROD symbol/macro.  For example, to build
-large-file programs in a [.ALPHA_LARGE] subdirectory:
+subdirectory, using the PROD option/macro.  For example, to build
+programs without large-file support or any optional compression methods
+in a [.ALPHA_BASIC] subdirectory:
 
-         @ [.VMS]BUILD_UNZIP LARGE PROD=ALPHA_LARGE
+         @ [.vms]build_unzip NOLARGE NOIZ_BZIP2 NOLZMA NOPPMD -
+          PROD=ALPHA_BASIC
       or:
-         MMS /DESC = [.VMS] /MACRO = (LARGE=1, PROD=ALPHA_LARGE)
+         MMS /DESC = [.vms] /MACRO = (NOLARGE=1, NOIZ_BZIP2=1, -
+          NOLZMA=1, NOPPMD=1, PROD=ALPHA_BASIC)
 
-This option makes it easier to build multiple UnZip variants with
-different options using the same source tree.
+   The PROD=dest_dir feature makes it easier to build multiple UnZip
+variants with different options using the same source tree.
+
+      Note that if PROD=dest_dir is specified for a build, then it must
+      also be specified for other builder operations, such as TEST or
+      CLEAN, which also need to know which destination directory to use.
+
+      Note that PROD=dest_dir has no effect on any automatically built
+      bzip2 object library, so it's generally safer to use a pre-built
+      bzip2 object library in an external directory when using PROD,
+      especially when using one source tree for different hardware
+      architectures.
 
    Each product builder announces what the destination directory will be
 when it is run.
 
-   Common files, such as the help libraries (UNZIP.HLP for the default
-UNIX-like command-line interface, UNZIP_CLI.HLP for the VMS-like
-command-line interface), are placed in the main directory.  With a
-mixed-architecture VMS cluster, the same main directory on a shared disk
-may be used by all system types.  (Using the NOHELP option with
+   Common files, such as the help library source files (UNZIP.HLP for
+the default UNIX-like command-line interface, UNZIP_CLI.HLP for the
+VMS-like command-line interface) are placed in the main directory.  With
+a mixed-architecture VMS cluster, the same main directory on a shared
+disk may be used by all system types.  (Using the NOHELP option with
 BUILD_UNZIP.COM can keep it from making the same help files repeatedly.)
 Building the help files is detailed below.
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------------------
 
       Test
       ----
@@ -225,43 +363,43 @@ Building the help files is detailed below.
    After a successful build, an "unzip -v" or "UNZIP_CLI /VERBOSE"
 report can be generated using the builders:
 
-      @ [.VMS]BUILD_UNZIP LARGE DASHV
-      @ [.VMS]BUILD_UNZIP LARGE SLASHV
+      @ [.vms]build_unzip DASHV
+      @ [.vms]build_unzip SLASHV
    or:
-      MMS /DESC = [.VMS] /MACRO = (LARGE=1) DASHV
-      MMS /DESC = [.VMS] /MACRO = (LARGE=1) SLASHV
+      MMS /DESC = [.vms] DASHV
+      MMS /DESC = [.vms] SLASHV
 
    A set of basic UnZip tests can be run using the builders:
 
-      @ [.VMS]BUILD_UNZIP LARGE TEST
+      @ [.vms]build_unzip TEST
    or:
-      MMS /DESC = [.VMS] /MACRO = (LARGE=1) TEST
+      MMS /DESC = [.vms] TEST
 
-   Specify "LARGE" or not, the same as when building the programs.  (On
-VAX, also specify same the compiler option: VAXC, ...)  Other normal
-build options are allowed, but not required.  The builders use a DCL
-procedure, [.vms]test_unzip.com, to do this job.  This procedure may be
-run directly, but it needs to be told where to find the program
-executables, so it's normally easier to use one of the builders to run
-it, because they know where the executables are stored.  (Which is why
-those options which affect the destination directory are required for
-TEST.)
+   If "PROD=dest_dir" was specified for the build, then it must be
+specified here, too.  (On VAX, also specify same the compiler option:
+VAXC, ...)  Other normal build options are allowed, but not required.
+The builders use a DCL procedure, [.vms]test_unzip.com, to do this job.
+This procedure may be run directly, but it needs to be told where to
+find the program executables, so it's normally easier to use one of the
+builders to run it, because they know where the executables are stored.
+(Which is why those options which affect the destination directory are
+required for TEST.)
 
    If PPMd compression was enabled, then a separate PPMd test can be run
 similarly:
 
-      @ [.VMS]BUILD_UNZIP LARGE TEST_PPMD
+      @ [.vms]build_unzip TEST_PPMD
    or:
-      MMS /DESC = [.VMS] /MACRO = (LARGE=1) TEST_PPMD
+      MMS /DESC = [.vms] TEST_PPMD
 
-   The test procedure leaves its results files in place (for inspection,
-as desired).  To clean up after running the tests, use the CLEAN_TEST
-target in the MMS/MMK builder, or do the job manually:
+   The test procedures leave their results files in place (for
+inspection, as desired).  To clean up after running the tests, use the
+CLEAN_TEST target in the MMS/MMK builder, or do the job manually:
 
-      MMS /DESC = [.VMS] CLEAN_TEST
+      MMS /DESC = [.vms] CLEAN_TEST
    or:
-      DELETE [.TEST_DIR_*...]*.*;*  ! Repeat as needed.
-      DELETE TEST_DIR_*.DIR;*
+      DELETE [.test_dir_*...]*.*;*  ! Repeat as needed.
+      DELETE test_dir_*.DIR;*
 
    Note: For its self-extracting archive (SFX) tests, the test procedure
 may try to use SET FILE /ATTRIBUTES to adjust the attributes of the
@@ -281,7 +419,7 @@ system, where the archive file attributes should be more convenient
 (/BINARY) UnZip option, which should give the test archives the desired
 attributes.
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------------------
 
       Install
       -------
@@ -302,22 +440,22 @@ On a non-VAX system, different symbols could be defined for the
 small-file and large-file programs.  For example:
 
    UNZIPS  :== $ dev:[dir.ALPHA]UNZIP.EXE  ! UNZIPS = small-file UnZip.
-   UNZIP*L :== $ dev:[dir.ALPHAL]UNZIP.EXE ! UNZIP[L] =large-file UnZip.
+   UNZIP*L :== $ dev:[dir.ALPHAL]UNZIP.EXE ! UNZIP[L]= large-file UnZip.
 
 
    The builders create help library source files, UNZIP.HLP and
 UNZIP_CLI.HLP.  These may be incorporated into an existing help library,
 or a separate UnZip help library may be created using commands like
-these, using either UNZIP.HLP (as shown) or UNZIP_CLI.HLP:
+the following, using either UNZIP.HLP (as shown) or UNZIP_CLI.HLP:
 
-   $ LIBRARY /HELP dev:[dir]existing_library.HLB UNZIP.HLP
+      LIBRARY /HELP dev:[dir]existing_library.HLB UNZIP.HLP
 
-   $ LIBRARY /CREATE /HELP UNZIP.HLB UNZIP.HLP
+      LIBRARY /CREATE /HELP UNZIP.HLB UNZIP.HLP
 
 UnZip help may then be accessed from a separate UnZip help library using
 a command like:
 
-   $ HELP /LIBRARY = device:[directory]UNZIP.HLB
+      HELP /LIBRARY = device:[directory]UNZIP.HLB
 
    For greater ease, the user (or system manager) may define a
 HLP$LIBRARY logical name to allow the HELP utility to find the UnZip help
@@ -330,14 +468,14 @@ define a HLP$LIBRARY logical name for an UnZip help library.
 destination directory with the program executables.  A user may gain DCL
 access to the UnZip error messages using a command like:
 
-   $ SET MESSAGE device:[directory]UNZIP_MSG.EXE
+      SET MESSAGE device:[directory]UNZIP_MSG.EXE
 
 For system-wide access, the system manager may move or copy this file to
 SYS$MESSAGE, although this could cause some confusion if multiple
 versions of UnZip are used on the system, and their error message source
 files differ.
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------------------
 
       Self-Extracting Archives
       ------------------------

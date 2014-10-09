@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-05-14
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-10-10
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -27,8 +27,8 @@
 # are more flags for the linker, if they need to be at the end of the
 # line instead of at the beginning (for example, some libraries).
 # LOCAL_UNZIP is a "make" macro that can be used to add default C flags
-# to your compile without editing "make" file (e.g., -DDEBUG_STRUC, or
-# -FPi87 on PCs using Microsoft C).
+# to your compile without editing the "make" file (e.g., -DDEBUG_STRUC,
+# or -FPi87 on a PC using Microsoft C).
 #
 # The "generic" target invokes the "unix/configure" script to test the
 # compile and other parts of the environment to see what's supported.
@@ -59,20 +59,20 @@
 #   the latest compatible kit available on the Info-ZIP server) to
 #   populate the local ./aes_wg subdirectory.  To disable AES_WG
 #   encryption support (when the source kit is present), set the "make"
-#   macro NO_AES_WG to 1.   
+#   macro NO_AES_WG to 1.
 #
 # LZMA compression - See the files INSTALL and szip/README_LZMA.txt for
 #   more information.  To disable LZMA compression support, set the
-#   "make" macro NO_LZMA to 1.  
+#   "make" macro NO_LZMA to 1.
 #
 # PPMd compression - See the files INSTALL and szip/README_LZMA.txt for
 #   more information.  To disable PPMd compression support, set the
 #   "make" macro NO_PPMD to 1.
 #
-# Bzip2 compression -   See the files INSTALL and bzip2/README_BZIP2.txt
+# Bzip2 compression - See the files INSTALL and bzip2/README_BZIP2.txt
 #   for more information.  To disable bzip2 compression support, set the
 #   "make" macro NO_IZ_BZIP2 to 1.
-#   To include  bzip2 compression support, there are three options: 
+#   To include bzip2 compression support, there are three options:
 #   - Let the UnZip builders build a bzip2 object library from the
 #     source kit in the bzip2 subdirectory.
 #   - Use an existing build of the bzip2 library by setting the "make"
@@ -81,8 +81,8 @@
 #   - Use the system bzip2 library.  To do this, ensure that the local
 #     ./bzip2 subdirectory exists and does not contain the files
 #     Makefile, libbz2.a, or bzlib.h.  It may be safer to use one of the
-#     above options first, if possible, to avoid an possible problem
-#     with error handling that may not be done as expected by the system
+#     above options first, if possible, to avoid a possible problem with
+#     error handling that may not be done as expected by the system
 #     library.
 #
 # Zlib deflation - To use zlib to handle Deflate compression instead of
@@ -121,21 +121,21 @@
 ###########
 
 # List of supported systems/targets in this version
-GENERIC_TARGETS1  = generic  generic_pkg  config_flags
-GENERIC_TARGETS2  = generic1  generic2  generic3
+GENERIC_TARGETS1 = generic  generic_pkg  config_flags
+GENERIC_TARGETS2 = generic1  generic2  generic3
 
 MISC_TARGETS = clean  clean_bzip2  clean_docs  clean_exe  dashv
 
-SYS_TARGETS01  = 386i 3Bx 7300 7300_gcc amdahl amdahl_eft apollo aviion
-SYS_TARGETS02  = bsd bsdi bsdi_noasm bull coherent convex cray cray_opt
-SYS_TARGETS03  = cyber_sgi cygwin dec dnix encore eta freebsd gcc gould
-SYS_TARGETS04  = hk68 hp hpux isc isc_gcc isi linux linux_dos linux_noasm
-SYS_TARGETS05  = lynx macosx macosx_gcc minix mips
-SYS_TARGETS06  = mpeix next next10 next2x next3x nextfat osf1 pixel ptx
-SYS_TARGETS07  = pyramid qnxnto realix regulus sco sco_dos sco_sl sco_x286
-SYS_TARGETS08  = sequent sgi solaris stardent stellar sunos3 sunos4
-SYS_TARGETS09  = sysv sysv_gcc sysv6300 tahoe ti_sysv ultrix vax v7
-SYS_TARGETS10  = xenix xos
+SYS_TARGETS01 = 386i 3Bx 7300 7300_gcc amdahl amdahl_eft apollo aviion
+SYS_TARGETS02 = bsd bsdi bsdi_noasm bull coherent convex cray cray_opt
+SYS_TARGETS03 = cyber_sgi cygwin dec dnix encore eta freebsd gcc gould
+SYS_TARGETS04 = hk68 hp hpux isc isc_gcc isi linux linux_dos linux_noasm
+SYS_TARGETS05 = lynx macosx macosx_gcc minix mips
+SYS_TARGETS06 = mpeix next next10 next2x next3x nextfat osf1 pixel ptx
+SYS_TARGETS07 = pyramid qnxnto realix regulus sco sco_dos sco_sl sco_x286
+SYS_TARGETS08 = sequent sgi solaris stardent stellar sunos3 sunos4
+SYS_TARGETS09 = sysv sysv_gcc sysv6300 tahoe ti_sysv ultrix vax v7
+SYS_TARGETS10 = xenix xos
 
 # By default, print help on which "make" targets to try.
 
@@ -174,16 +174,16 @@ help:
 	@echo '    "PROD=subdir"     Build product files in "subdir", not ".".'
 	@echo ''
 	@echo 'Examples:'
-	@echo '   make -f unix/Makefile generic'
-	@echo '    - make UnZip programs using cc.'
-	@echo '   make -f unix/Makefile generic CC=gcc AES_WG=1'
-	@echo '    - make UnZip programs using gcc, with AES_WG encryption.'
+	@echo '   Make UnZip programs using cc:'
+	@echo '      make -f unix/Makefile generic'
+	@echo '   Make UnZip programs using gcc, without LZMA compression.'
+	@echo '      make -f unix/Makefile generic CC=gcc NO_LZMA=1'
 	@echo ''
 	@echo 'Note that many of these optional "make" macros direct the'
 	@echo '"unix/configure" script, and so may work only with the'
 	@echo '"generic" target.'
 	@echo ''
-	@echo 'First try "make -f unix/Makefile generic" (to use "cc")'
+	@echo 'First, try "make -f unix/Makefile generic" (to use "cc")'
 	@echo '(or "make -f unix/Makefile generic CC=gcc" (to use "gcc")),'
 	@echo 'as "generic" should automatically set the proper flags.'
 	@echo ''
@@ -207,7 +207,7 @@ help:
 	@echo ''
 	@echo '  For most users, the best build method is the generic target'
 	@echo '  using the default compiler (cc is often gcc), or by specifying'
-	@echo '  an explicit CC=gcc override.'
+	@echo '  an explicit "CC=gcc" override.'
 	@echo ''
 	@echo '  Other (older) targets are less well tested, and may need'
 	@echo '  considerable help from the user to get optimal results (or'
@@ -237,7 +237,7 @@ help:
 # list
 # - Display list of supported systems/targets in this version.
 # - The SYSTEM variable is no longer supported.  Instead, use:
-# -    make -f unix/Makefile <target>
+#      make -f unix/Makefile <target>
 list:
 	@echo ''
 	@echo 'Type "make -f unix/Makefile <target>", where <target> is one of'
@@ -273,11 +273,11 @@ list:
 #####################
 
 #----------------------------------------------------------------------------
-# Defaults most systems use
+# Defaults most systems use:
 # - The generic target invokes unix/configure to build $(PROD)/flags and
 #   $(PROD)/flags_bz containing system derived settings that are used by
 #   this "make" file.
-# - use "make" macro LOCAL_UNZIP to add C compiler flags (such as
+# - Use "make" macro LOCAL_UNZIP to add C compiler flags (such as
 #   -DDOSWILD).
 #----------------------------------------------------------------------------
 
@@ -353,29 +353,29 @@ BINPERMS = 755
 MANPERMS = 644
 
 # C compiler and flags: core and bzip2
-# - CC and LD must match, else "unresolved symbol:  ___main" is possible)
+# - CC and LD must match, else "unresolved symbol: ___main" is possible.
 # - To use "gcc", specify "make" macro, "CC=gcc", instead of editing here.
-CC     = cc
-CC_BZ  = $(CC)
+CC      = cc
+CC_BZ   = $(CC)
 
 CF_NOOPT = -I. -DUNIX $(LOCAL_UNZIP)
-CFLAGS = -O
-CF     = $(CFLAGS) $(CF_NOOPT)
-CF_BZ  = $(CF)
+CFLAGS  = -O
+CF      = $(CFLAGS) $(CF_NOOPT)         # C compiler flags (core components)
+CF_BZ   = $(CF)                         # C compiler flags (BZIP2 components)
 
 # C preprocessor
-CPP    = $(CC) -E
+CPP     = $(CC) -E
 
 # Assembler and assembler flags
-AS     = as
-AF     = $(LOCAL_UNZIP)
+AS      = as
+AF      = $(LOCAL_UNZIP)
 
 # Linker and linker flags (early and late)
-# - CC and LD must match, else "unresolved symbol:  ___main" is possible)
+# - CC and LD must match, else "unresolved symbol: ___main" is possible.
 # - To use "gcc", specify "make" macro, "CC=gcc", instead of editing here.
-LD     = $(CC)
-LF1    =
-LF2    = -s
+LD      = $(CC)
+LF1     =
+LF2     = -s
 
 # Other utility programs
 AR      = ar cq
@@ -539,28 +539,28 @@ O_PPMD   = $(PROD)/Ppmd8.o      \
            $(PROD)/Ppmd8Dec.o
 
 # object files: ZLIB compression
-# - N/A. ZLIB is not built as part of UnZip
+# - N/A.  ZLIB is not built as part of UnZip.
 
 #----------------------------------------------------------------------------
-#  Build configuration:  object archive libraries
+#  Build configuration:  object libraries
 #----------------------------------------------------------------------------
 
-# object archive: AES (WinZip/Gladman) encryption
+# object library: AES (WinZip/Gladman) encryption
 AR_AES   = $(PROD)/libiz_aes_wg.a
 
-# object archive: BZIP2 compression
+# object library: BZIP2 compression
 AR_BZ    = bzip2/libbz2.a
 
-# object archive: LZMA compression
+# object library: LZMA compression
 AR_LZMA  = $(PROD)/libiz_lzma.a
 
-# object archive: PPMd compression
+# object library: PPMd compression
 AR_PPMD  = $(PROD)/libiz_ppmd.a
 
-# object archive: Callable UnZip
+# object library: Callable UnZip
 AR_UNZIP = $(PROD)/libizunzip.a
 
-# object archive: ZLIB compression
+# object library: ZLIB compression
 AR_Z     = zlib/libz.a
 
 #----------------------------------------------------------------------------
@@ -605,17 +605,17 @@ UNZIP_PMANS = $(PMAN_UNZIP) \
               $(PMAN_ZGREP) \
               $(PMAN_ZINFO)
 
-DOC_FUZ    = $(PROD)/manout/funzip.txt
-DOC_SFX    = $(PROD)/manout/unzipsfx.txt
-DOC_UNZIP  = $(PROD)/manout/unzip.txt
-DOC_ZGREP  = $(PROD)/manout/zipgrep.txt
-DOC_ZINFO  = $(PROD)/manout/zipinfo.txt
+DOC_FUZ     = $(PROD)/manout/funzip.txt
+DOC_SFX     = $(PROD)/manout/unzipsfx.txt
+DOC_UNZIP   = $(PROD)/manout/unzip.txt
+DOC_ZGREP   = $(PROD)/manout/zipgrep.txt
+DOC_ZINFO   = $(PROD)/manout/zipinfo.txt
 
-UNZIP_DOCS = $(DOC_UNZIP) \
-             $(DOC_SFX)   \
-             $(DOC_FUZ)   \
-             $(DOC_ZINFO) \
-             $(DOC_ZGREP)
+UNZIP_DOCS  = $(DOC_UNZIP) \
+              $(DOC_SFX)   \
+              $(DOC_FUZ)   \
+              $(DOC_ZINFO) \
+              $(DOC_ZGREP)
 
 #----------------------------------------------------------------------------
 #  Build configuration:  Installation
@@ -782,9 +782,9 @@ $(PROD)/unix_l.o:   unix/unix.c $(H_UNZIPL) unix/macosx.h
 	$(CC) -c $(CF) -DDLL -o $@ unix/unix.c
 
 # B) UnZip C files for specific ports
-#    - Files under msdos and os2 are used when cross compiling for those ports
-#    - Generated when referenced by OSDEP_OC*
-#    - OSDEP_OC* are customized by unix/configure, based on PORT macro
+#    - Files under msdos and os2 are used when cross compiling for those ports.
+#    - Generated when referenced by OSDEP_OC*.
+#    - OSDEP_OC* are customized by unix/configure, based on PORT macro.
 
 $(PROD)/msdos.o:    msdos/msdos.c  $(H_UNZIP)
 	$(CC) -c $(CF) -o $@ msdos/msdos.c
@@ -864,8 +864,8 @@ $(PROD)/ubz2err_s.o:  ubz2err.c   $(H_UNZIP)
 	$(CC) -c $(CF) -DSFX -o $@ ubz2err.c
 
 # B) UnZipSFX C files for specific ports
-#    - Generated when referenced by OSDEP_OC*
-#    - OSDEP_OC* are customized by unix/configure, based on PORT macro
+#    - Generated when referenced by OSDEP_OC*.
+#    - OSDEP_OC* are customized by unix/configure, based on PORT macro.
 
 $(PROD)/msdos_s.o:  msdos/msdos.c $(H_UNZIP)
 	$(CC) -c $(CF) -DSFX -o $@ msdos/msdos.c
@@ -949,28 +949,28 @@ $(PROD)/sha1.o:     aes_wg/sha1.c     $(H_AES)
 
 # C Compile rules: LZMA compression
 
-$(PROD)/LzFind.o:  szip/LzFind.c      $(H_LZMA)
+$(PROD)/LzFind.o:   szip/LzFind.c     $(H_LZMA)
 	$(CC) -c $(CF) -o $@ szip/LzFind.c
 
-$(PROD)/LzmaDec.o: szip/LzmaDec.c     $(H_LZMA)
+$(PROD)/LzmaDec.o:  szip/LzmaDec.c    $(H_LZMA)
 	$(CC) -c $(CF) -o $@ szip/LzmaDec.c
 
 #----------------------------------------------------------------------------
 
 # C Compile rules: PPMd compression
 
-$(PROD)/Ppmd8.o:  szip/Ppmd8.c          $(H_PPMD)
+$(PROD)/Ppmd8.o:    szip/Ppmd8.c      $(H_PPMD)
 	$(CC) -c $(CF) -o $@ szip/Ppmd8.c
 
-$(PROD)/Ppmd8Dec.o:  szip/Ppmd8Dec.c    $(H_PPMD)
+$(PROD)/Ppmd8Dec.o: szip/Ppmd8Dec.c   $(H_PPMD)
 	$(CC) -c $(CF) -o $@ szip/Ppmd8Dec.c
 
 #----------------------------------------------------------------------------
 #  Build rules: Assemble (.S -> .o)
-#  - Optional assembler replacements for C routines
-#  - All are port-specific
-#    - Generated when referenced by OSDEP_OS
-#    - OSDEP_OS is customized by unix/configure, based on PORT macro
+#  - Optional assembler replacements for C routines.
+#  - All are port-specific.
+#    - Generated when referenced by OSDEP_OS.
+#    - OSDEP_OS is customized by unix/configure, based on PORT macro.
 #----------------------------------------------------------------------------
 
 # Assembler rule: CRC-32
@@ -985,15 +985,15 @@ $(O_CRC_G):  crc_i386.S $(ACONF_DEP)
 
 # 3) Assembler rule: CRC 32bit, SysV AS
 $(O_CRC_SV): crc_i386.S $(ACONF_DEP)
-	$(CPP) $(AF) crc_i386.S > _crc_i386s.s
-	$(AS) -c -o $@ crc_i386s.s
-	$(RM) crc_i386s.s
+	$(CPP) $(AF) crc_i386.S > $(PROD)/_crc_i386s.s
+	$(AS) -c -o $@ $(PROD)/_crc_i386s.s
+	$(RM) $(PROD)/_crc_i386s.s
 
 #----------------------------------------------------------------------------
-#  Build rules: Object archives (.o -> .a)
+#  Build rules: Object libraries (.o -> .a)
 #----------------------------------------------------------------------------
 
-# Object archive rule: AES (WinZip/Gladman) encryption
+# Object library rule: AES (WinZip/Gladman) encryption
 
 $(AR_AES): $(O_AES)
 	@echo 'Building/updating AES (WinZip/Gladman) object library...'
@@ -1001,7 +1001,7 @@ $(AR_AES): $(O_AES)
 	$(AR) $@ $(O_AES)
 	-$(RANLIB) $@
 
-# Object archive rule: LZMA compression
+# Object library rule: LZMA compression
 
 $(AR_LZMA): $(O_LZMA)
 	@echo 'Building/updating LZMA object library...'
@@ -1009,7 +1009,7 @@ $(AR_LZMA): $(O_LZMA)
 	$(AR) $@ $(O_LZMA)
 	-$(RANLIB) $@
 
-# Object archive rule: PPMd compression
+# Object library rule: PPMd compression
 
 $(AR_PPMD): $(O_PPMD)
 	@echo 'Building/updating PPMd object library...'
@@ -1017,7 +1017,7 @@ $(AR_PPMD): $(O_PPMD)
 	$(AR) $@ $(O_PPMD)
 	-$(RANLIB) $@
 
-# Object archive rule: BZIP2 compression
+# Object library rule: BZIP2 compression
 
 $(AR_BZ):
 	@echo 'Building/updating BZIP2 object library...'
@@ -1034,7 +1034,7 @@ $(AR_BZ):
           ); \
         fi
 
-# Object archive rule: ZLIB compression
+# Object library rule: ZLIB compression
 
 $(AR_Z):
 	@echo 'Building/updating ZLIB object library...'
@@ -1043,16 +1043,16 @@ $(AR_Z):
            `cat ../$(PROD)/flags`; \
         )
 
-# Object archive rule: Callable UnZip
+# Object library rule: Callable UnZip
 
 $(AR_UNZIP): $(O_UNZIPL) $(O_UNZIPN) $(LIB_AES_WG) $(LIB_LZMA) $(LIB_PPMD)
 	@echo 'Building/updating Callable UnZip object library...'
-	unix/mlz.sh "$(AR_UNZIP)" "$(O_UNZIPL) $(O_UNZIPN)" \
+	sh unix/mlz.sh "$(AR_UNZIP)" "$(O_UNZIPL) $(O_UNZIPN)" \
          $(LIB_AES_WG) $(LIB_LZMA) $(LIB_PPMD)
 	-$(RANLIB) $@
 
 #----------------------------------------------------------------------------
-#  Build rules: Link programs (.o + .a -> unzips)
+#  Build rules: Link programs (.o + .a -> executables)
 #----------------------------------------------------------------------------
 
 # Link rule: unzip
@@ -1060,21 +1060,21 @@ $(AR_UNZIP): $(O_UNZIPL) $(O_UNZIPN) $(LIB_AES_WG) $(LIB_LZMA) $(LIB_PPMD)
 $(PPGM_UNZIP): $(O_UNZIP) $(LIB_AES_WG) $(LIB_BZ) $(LIB_LZMA) \
                 $(LIB_PPMD) $(LIB_Z)
 	$(LD) -o $@ $(LF1) $(O_UNZIP) $(LIB_AES_WG) $(LIB_LZMA) \
-         $(LIB_PPMD) $(LF2)
+         $(LIB_PPMD) $(LIB_Z) $(LF2)
 
 # Link rule: unzipsfx
 
 $(PPGM_SFX): $(O_SFX) $(LIB_AES_WG) $(LIB_BZ) $(LIB_LZMA) \
               $(LIB_PPMD) $(LIB_Z)
 	$(LD) -o $@ $(LF1) $(O_SFX) $(LIB_AES_WG) $(LIB_LZMA) \
-         $(LIB_PPMD) $(LF2)
+         $(LIB_PPMD) $(LIB_Z) $(LF2)
 
 # Link rule: funzip
 
 $(PPGM_FUZ): $(O_FUZ) $(LIB_AES_WG) $(LIB_BZ) $(LIB_LZMA) \
               $(LIB_PPMD) $(LIB_Z)
 	$(LD) -o $@ $(LF1) $(O_FUZ) $(LIB_AES_WG) $(LIB_LZMA) \
-         $(LIB_PPMD) $(LF2)
+         $(LIB_PPMD) $(LIB_Z) $(LF2)
 
 # Link rule: zipinfo
 
@@ -1090,11 +1090,11 @@ $(PPGM_ZINFO): $(PPGM_UNZIP)
 #  Build rules: Documentation
 #  - Explicit 1:1 rules are used.
 #  - Across various "make" utilities, pattern rule support is inconsistent.
-#  - Sys V "make" ay hava problems with $< when input and output names differ.
+#  - Sys V "make" may have problems with $< when input and output names differ.
 #----------------------------------------------------------------------------
 
 # UnZip documentation output directory rules
-# - Creates $(PROD)/manout directory if unix/configure not executed
+# - Creates $(PROD)/manout directory if unix/configure does not.
 
 $(PROD)/manout:
 	if [ ! -d "$(PROD)" ]; then mkdir "$(PROD)"; fi
@@ -1126,8 +1126,8 @@ $(DOC_ZGREP): man/man1/zipgrep.1
 	man -M ` pwd `/man zipgrep  | $(COL) -bx | uniq | expand > $@
 	@echo ''
 
-# UnZip man page generation rule
-# - Requires nroff, or GNU groff package
+# UnZip alternate documentation generation rules
+# - Requires nroff, or GNU groff package.
 
 $(PMAN_UNZIP): man/man1/unzip.1
 	nroff -man man/man1/unzip.1    | $(COL) -bx | uniq > $@
@@ -1150,7 +1150,7 @@ $(PMAN_ZGREP): man/man1/zipgrep.1
 
 all:        generic_msg generic
 docs:       $(PROD)/manout $(UNZIP_DOCS)
-manuals:    $(PROD)/manout $(UNZIP_PMANS)
+docsrof:    $(PROD)/manout $(UNZIP_PMANS)
 
 # Binaries build list (BINS) options:
 L:          $(LIB_UNZIP)
@@ -1172,10 +1172,10 @@ unix_make:
 	if [ ! -d $(PROD) ]; then mkdir "$(PROD)"; fi
 
 #----------------------------------------------------------------------------
-#  Build rules: Configuration flags.
+#  Build rules: Configuration flags
 #  - Creates files containing system-dependent flag values.
-#  - Generated by unix/configure based on build utility program, platform and
-#    features selected.
+#  - Generated by unix/configure based on build utility program,
+#    platform and features selected.
 #----------------------------------------------------------------------------
 
 # Main flags
@@ -1204,31 +1204,31 @@ config_flags_bz: $(PROD)/flags_bz
 
 $(PROD)/flags_bz: $(PROD)/flags
 
-# C macros, and their effects:
-# ZMEM                  - includes C language versions of memset(), memcpy(),
-#                         and memcmp() (util.c).
-# HAVE_DIRENT_H         - use <dirent.h> instead of <sys/dir.h>
-# NODIR                 - for 3B1, which has neither getdents() nor opendir().
-# HAVE_NDIR_H           - use <ndir.h> (unix/unix.c).
-# HAVE_SYS_DIR_H        - use <sys/dir.h>
-# HAVE_SYS_NDIR_H       - use <sys/ndir.h>
-# UTIL                  - select routines for utilities (note, cloak, split)
-# NO_RMDIR              - remove directories using a system("rmdir ...") call.
-# NO_PROTO              - cannot handle ANSI prototypes
-# NO_CONST              - cannot handle ANSI const
-# NO_LARGE_FILE_SUPPORT - do not enable Large File support even if available.
-# NO_ZIP64_SUPPORT      - do not enable Zip64 archive support even if available.
-# NO_UNICODE_SUPPORT    - do not enable Unicode support even if available.
-# NO_BZIP2_SUPPORT      - do not compile in bzip2 code even if available.
+# C macros (-Dxxxx, or edit a header file), and their effects:
+#
+# HAVE_DIRENT_H         - Use <dirent.h> instead of <sys/dir.h>.
+# HAVE_NDIR_H           - Use <ndir.h> (unix/unix.c).
+# HAVE_SYS_DIR_H        - Use <sys/dir.h>.
+# HAVE_SYS_NDIR_H       - Use <sys/ndir.h>.
+# NODIR                 - For 3B1, which has neither getdents() nor opendir().
+# NO_BZIP2_SUPPORT      - Do not compile in bzip2 code even if available.
+# NO_CONST              - Cannot handle ANSI "const" keyword.
+# NO_LARGE_FILE_SUPPORT - Do not enable Large File support even if available.
+# NO_PROTO              - Cannot handle ANSI function prototypes.
+# NO_RMDIR              - Remove directories using a system("rmdir ...") call.
+# NO_UNICODE_SUPPORT    - Do not enable Unicode support even if available.
+# NO_ZIP64_SUPPORT      - Do not enable Zip64 archive support even if available.
+# ZMEM                  - Include C language versions of memset(),
+#                         memcpy(), and memcmp() (util.c).
 
 #----------------------------------------------------------------------------
 #  Build rules: Clean-up targets
-#  - Used to remove old output files before performing a new build
+#  - Used to remove old output files before performing a new build.
 #  - Used when incompatible build options (or source changes) are required.
 #----------------------------------------------------------------------------
 
 clean:
-	@if unix/unsafe_prod.sh "$(PROD)"; then \
+	@if sh unix/unsafe_prod.sh "$(PROD)"; then \
           echo "Won't clean absolute (/x) or rising (../) PROD: $(PROD)"; \
         else \
           echo "rm -f \"$(PROD)\"/*.o \"$(PROD)\"/*.a $(UNZIP_PPGMS)"; \
@@ -1284,27 +1284,28 @@ install_man:
 
 install_man_gz: install_man
 	gzip $(INSTALLEDMAN)
+	$(CHMOD) $(MANPERMS) $(INSTALLEDMAN_GZ)
 
 uninstall:
-	$(RM) $(INSTALLEDBIN) $(INSTALLEDMAN)  $(INSTALLEDMAN_GZ)
+	$(RM) $(INSTALLEDBIN) $(INSTALLEDMAN) $(INSTALLEDMAN_GZ)
 
 #----------------------------------------------------------------------------
 #  Build rules: SVR4 Package generation Interface
-#  - Originally tested under Sun Solaris 2.x (by JBush)
-#  - Other SVr4s may be very similar, and could possibly use this
-#  Note:  Expects version info to be stored in VERSION macro variable
-#         See "README" under unix/Packaging
+#  - Originally tested under Sun Solaris 2.x (by JBush).
+#  - Other SVr4s may be very similar, and could possibly use this.
+#  Note:  Expects version info to be stored in VERSION macro variable.
+#         See "README" under unix/Packaging/.
 #----------------------------------------------------------------------------
 
 svr4package: $(BINS)
 	@echo 'Creating SVR4 package for Unix ...'
 	-@rm -rf $(PKGDIR) $(PKGDIR)_`uname -p`.pkg
 	-@sed -e "s/.VERSION./$(VERSION)/g" \
-           -e "s/.PSTAMP./$(LOGNAME)_`date | tr  ' ' '_'`/g" \
-           -e "s/.ARCH./Solaris_`uname -rp | tr ' ' ','`/g" \
-           unix/Packaging/pkginfo.in > unix/Packaging/pkginfo
+         -e "s/.PSTAMP./$(LOGNAME)_`date | tr  ' ' '_'`/g" \
+         -e "s/.ARCH./Solaris_`uname -rp | tr ' ' ','`/g" \
+         unix/Packaging/pkginfo.in > unix/Packaging/pkginfo
 	-@sed -e "s/.ARCH./`uname -p`/g" \
-           unix/Packaging/preinstall.in > unix/Packaging/preinstall
+         unix/Packaging/preinstall.in > unix/Packaging/preinstall
 	/usr/bin/pkgmk -d . -b . -r . -f unix/Packaging/prototype $(PKGDIR)
 	/usr/bin/pkgtrans -o -s . $(PKGDIR)_`uname -p`.pkg $(PKGDIR)
 	@echo ''
@@ -1315,7 +1316,7 @@ svr4package: $(BINS)
 	@echo ''
 
 #----------------------------------------------------------------------------
-#  Build rules: Make a distribution
+#  Build rules: Distribution kit
 #----------------------------------------------------------------------------
 
 dist: $(DOC_UNZIP)
@@ -1422,7 +1423,7 @@ testmake_ppmd_zip:
 
 #----------------------------------------------------------------------------
 #  Generic targets
-#  - These invoke the configure script to determine configuration.
+#  - These invoke the unix/configure script to determine configuration.
 #----------------------------------------------------------------------------
 
 # generic_msg
@@ -1437,7 +1438,7 @@ generic_msg:
 	@echo ''
 
 # generic
-# - Generate flags file (if doesn't exist), then unzip modules
+# - Generate flags file (if doesn't exist), then UnZip modules.
 
 generic: $(PROD)/flags
 	eval $(MAKE) $(MAKEF) $(BINS) ACONF_DEP=$(PROD)/flags \
@@ -1451,7 +1452,7 @@ generic_pkg: generic svr4package
 
 #----------------------------------------------------------------------------
 #  Old, non-"generic" targets
-#  - For those systems which do not work with the generic targets.
+#  - For those systems which do not work with the "generic" targets.
 #  - Can not assume that the "make" utility groks "$(MAKE)".
 #----------------------------------------------------------------------------
 

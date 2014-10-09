@@ -477,6 +477,7 @@ typedef struct _UzpCB {
 /* the collection of general UnZip option flags and option arguments */
 typedef struct _UzpOpts {
 # ifndef FUNZIP
+    int zero_flag;      /* -0: No mapping of FAT/NTFS names (in do_string). */
     int aflag;          /* -a: ASCII-EBCDIC and/or end-of-line translation. */
 #  ifdef VMS
     int bflag;          /* -b: Force fixed record format for binary files. */
@@ -484,80 +485,80 @@ typedef struct _UzpOpts {
 #  ifdef TANDEM
     int bflag;          /* -b: Create text files in 'C' format (180). */
 #  endif /* def TANDEM */
-# ifdef UNIXBACKUP
+#  ifdef UNIXBACKUP
     int B_flag;         /* -B: Back up existing files, renaming to *~#####. */
-# endif /* def UNIXBACKUP */
+#  endif /* def UNIXBACKUP */
     int cflag;          /* -c: Output to stdout. */
     int C_flag;         /* -C: Match filenames case-insensitively. */
     int D_flag;         /* -D: Don't restore directory (-DD: any) timestamps. */
     char *exdir;        /* -d: Extraction destination (root) directory. */
-#ifndef SFX
+#  ifndef SFX
     int auto_exdir;     /* -da: Automatic extraction destination (root) dir. */
-#endif /* ndef SFX */
-# ifdef MACOS
+#  endif /* ndef SFX */
+#  ifdef MACOS
     int E_flag;         /* -E: Show Mac extra field during restoring. */
-# endif /* def MACOS */
+#  endif /* def MACOS */
     int fflag;          /* -f: "Freshen" (extract only newer files). */
-# if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
+#  if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
     int acorn_nfs_ext;  /* -F: RISC OS types & NFS filetype extensions */
-# endif
+#  endif
     int hflag;          /* -h: Header line (ZipInfo). */
-# ifdef MACOS
+#  ifdef MACOS
     int i_flag;         /* -i: Ignore filenames stored in Mac extra field. */
-# endif /* def MACOS */
-#ifdef RISCOS
+#  endif /* def MACOS */
+#  ifdef RISCOS
     int scanimage;      /* -I: Scan image files. */
-#endif /* def RISCOS */
+#  endif /* def RISCOS */
     int jflag;          /* -j: Junk pathnames. */
 /*
  * VAX C V3.1-051 loves "\" in #define, but hates it in #if.
  * HP C V7.3-009 dislikes "defined" in macro in #if (%CC-I-EXPANDEDDEFINED).
  * It seems safest to avoid any continuation lines in either.
  */
-# if defined(__ATHEOS__) || defined(__BEOS__) || defined(__HAIKU__)
+#  if defined(__ATHEOS__) || defined(__BEOS__) || defined(__HAIKU__)
 #  define J_FLAG 1
-# else
-#  if defined(MACOS) || (defined( UNIX) && defined( __APPLE__))
-#   define J_FLAG 1
+#  else
+#   if defined(MACOS) || (defined( UNIX) && defined( __APPLE__))
+#    define J_FLAG 1
+#   endif
 #  endif
-# endif
-# ifdef J_FLAG
+#  ifdef J_FLAG
     int J_flag;         /* -J: Ignore AtheOS/BeOS/MacOS extra field. info. */
-# endif
-# if defined( UNIX) && defined( __APPLE__)
+#  endif
+#  if defined( UNIX) && defined( __APPLE__)
     int Je_flag;        /* -Je: Ignore (all) extended attributes. */
     int Jf_flag;        /* -Jf: Ignore Finder info. */
     int Jq_flag;        /* -Jq: Ignore quarantine ("com.apple.quarantine") */
     int Jr_flag;        /* -Jr: Ignore Resource fork. */
-# endif /* defined( UNIX) && defined( __APPLE__) */
+#  endif /* defined( UNIX) && defined( __APPLE__) */
     int java_cafe;      /* --jar: Java CAFE extra block assumed/detected. */
-# if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
+#  if (defined(__ATHEOS__) || defined(__BEOS__) || defined(UNIX))
     int K_flag;         /* -K: Keep setuid/setgid/tacky permissions. */
-# endif
-# if !defined( NO_KFLAG) && !defined( KFLAG)
-#  if defined( __ATHEOS__) || defined( __BEOS__) || defined( UNIX)
-#   define KFLAG
-#  else
-#   if defined( VMS)
-#    define KFLAG
-#   endif
 #  endif
-# endif /* !defined( NO_KFLAG) && !defined( KFLAG) */
-# ifdef KFLAG
+#  if !defined( NO_KFLAG) && !defined( KFLAG)
+#   if defined( __ATHEOS__) || defined( __BEOS__) || defined( UNIX)
+#    define KFLAG
+#   else
+#    if defined( VMS)
+#     define KFLAG
+#    endif
+#   endif
+#  endif /* !defined( NO_KFLAG) && !defined( KFLAG) */
+#  ifdef KFLAG
     int kflag;          /* -k: Owner+group restoration control. */
-# endif
-# ifdef VMS
+#  endif
+#  ifdef VMS
     int ka_flag;        /* -ka: VMS ACL restoration control. */
-# endif
+#  endif
     int lflag;          /* -12slmv: Listing format (ZipInfo) */
     int L_flag;         /* -L: Convert filenames (some OS's) to lowercase. */
     int member_counts;  /* -mc: Show separate dir/file/link member counts. */
     int overwrite_none; /* -n: Never overwrite files (no prompting). */
-# ifdef AMIGA
+#  ifdef AMIGA
     int N_flag;         /* -N: Restore comments as AmigaDOS filenotes. */
-# endif
+#  endif
     int overwrite_all;  /* -o: OK to overwrite files without prompting. */
-# endif /* !FUNZIP */
+# endif /* ndef FUNZIP */
     char *pwdarg;       /* -P: Command-line password. */
     int qflag;          /* -q: Quiet.  Produce much less output. */
 # ifdef TANDEM

@@ -227,8 +227,8 @@ static int UnzipParseString(LPCSTR s, unsigned int *pargCee, char ***pargVee)
     str2 = strchr(str1, ' ');
 
     /*  Go through the string character by character, looking for instances
-        of two spaces together. Terminate when you find the trailing @
-    */
+     *  of two spaces together.  Terminate when you find the trailing @.
+     */
     while ((str2[0] != '\0') && (str2[0] != '@'))
     {
         while ((str2[0] == ' ') && (str2[1] == ' '))
@@ -249,11 +249,10 @@ static int UnzipParseString(LPCSTR s, unsigned int *pargCee, char ***pargVee)
 
 
     /* Okay, now we have gotten rid of any tabs and replaced them with
-       spaces, and have replaced multiple spaces with a single space. We
-       couldn't do this before because the folder names could have actually
-       contained these characters.
-    */
-
+     * spaces, and have replaced multiple spaces with a single space.  We
+     * couldn't do this before because the folder names could actually
+     * have contained these characters.
+     */
     str2 = str3 = str1;
 
     while ((str2[0] != '\0') && (str3[0] != '@'))
@@ -294,6 +293,26 @@ LPUSERFUNCTIONS lpUserFunc;
     G.lpUserFunctions = lpUserFunc;
 
     SETLOCALE(LC_CTYPE, "");
+
+#ifdef UNICODE_SUPPORT
+    /* Initialize Unicode. */
+    G.unicode_escape_all = 0;
+    G.unicode_mismatch = 0;
+
+    G.unipath_version = 0;
+    G.unipath_checksum = 0;
+    G.unipath_filename = NULL;
+
+# ifdef WIN32_WIDE
+#  ifdef DYNAMIC_WIDE_NAME
+    G.unipath_widefilename = NULL;
+#  else /* def DYNAMIC_WIDE_NAME */
+    *G.unipath_widefilename = L'\0';
+#  endif /* def DYNAMIC_WIDE_NAME [else] */
+
+    G.has_win32_wide = has_win32_wide();
+# endif /* def WIN32_WIDE */
+#endif /* UNICODE_SUPPORT */
 
     if (!G.lpUserFunctions->print ||
         !G.lpUserFunctions->sound ||
@@ -413,31 +432,34 @@ LPDCL lpDCL;
 #endif
                      );
 
-    if (lpDCL->lpszExtractDir != NULL && G.extract_flag)
-       {
-#ifndef CRTL_CP_IS_ISO
-       char *pExDirRoot = (char *)malloc(strlen(lpDCL->lpszExtractDir)+1);
+    /* 2014-09-03 SMS.
+     * Always allocate pExDirRoot (uO.exdir), because
+     * process.c:process_zipfiles() and free_G_buffers() now expect
+     * this.
+     */
+    if ((lpDCL->lpszExtractDir != NULL) && G.extract_flag)
+      {
+      char *pExDirRoot = (char *)malloc(strlen(lpDCL->lpszExtractDir)+1);
+      if (pExDirRoot == NULL)
+         return FALSE;
 
-       if (pExDirRoot == NULL)
-           return FALSE;
-       ISO_TO_INTERN(lpDCL->lpszExtractDir, pExDirRoot);
-#else /* ndef CRTL_CP_IS_ISO */
-#  define pExDirRoot lpDCL->lpszExtractDir
-#endif /* ndef CRTL_CP_IS_ISO [else] */
-       if (strlen(pExDirRoot) >= FILNAMSIZ)
-           {
-           /* The supplied extract root path exceed the filename size limit. */
-#ifndef CRTL_CP_IS_ISO
-           free(pExDirRoot);
-#endif
-           return FALSE;
-           }
-       uO.exdir = pExDirRoot;
-       }
+#ifdef CRTL_CP_IS_ISO
+      strcpy(pExDirRoot, lpDCL->lpszExtractDir);
+#else /* def CRTL_CP_IS_ISO */
+      ISO_TO_INTERN(lpDCL->lpszExtractDir, pExDirRoot);
+#endif /* def CRTL_CP_IS_ISO [else] */
+      if (strlen(pExDirRoot) >= FILNAMSIZ)
+         {
+         /* The supplied extract root path exceeds the filename size limit. */
+         free(pExDirRoot);
+         return FALSE;
+         }
+      uO.exdir = pExDirRoot;
+      }
     else
-       {
-       uO.exdir = (char *)NULL;
-       }
+      {
+      uO.exdir = (char *)NULL;
+      }
 
 /* G.wildzipfn needs to be initialized so that do_wild does not wind
  * up clearing out the zip file name when it returns in process.c
@@ -451,12 +473,14 @@ LPDCL lpDCL;
  * compatibility?)
  */
     if (strlen(lpDCL->lpszZipFN) >= FILNAMSIZ)
-       /* length of supplied archive name exceed the system's filename limit */
-       return FALSE;
+      {
+      /* Length of supplied archive name exceeds the system's filename limit. */
+      return FALSE;
+      }
 
     G.wildzipfn = GlobalAlloc(GPTR, FILNAMSIZ);
     if (G.wildzipfn == NULL)
-       return FALSE;
+      return FALSE;
 
     lstrcpy(G.wildzipfn, lpDCL->lpszZipFN);
     _ISO_INTERN(G.wildzipfn);
@@ -1012,8 +1036,9 @@ int WINAPI Wiz_Grep(LPSTR archive, LPSTR file, LPSTR pattern, int cmd,
     UzpBuffer retstr;
 
     /* Turn off any windows printing functions, as they may not have been
-     * identified yet. There is no requirement that we initialize the
-     * dll with printing stuff for this. */
+     * identified yet.  There is no requirement that we initialize the
+     * dll with printing stuff for this.
+     */
     Wiz_NoPrinting(TRUE);
 
     if (!Wiz_UnzipToMemory(archive, file, lpUserFunctions, &retstr)) {
@@ -1070,7 +1095,8 @@ int WINAPI Wiz_Grep(LPSTR archive, LPSTR file, LPSTR pattern, int cmd,
         for (j = 0; j < patternLen; j++) {
             /* We cannot do strncmp here, as we may be dealing with a
              * "binary" file, such as a word processing file, or perhaps
-             * even a true executable of some sort. */
+             * even a true executable of some sort.
+             */
             if (p[j] != sz[j]) {
                 compare = FALSE;
                 break;

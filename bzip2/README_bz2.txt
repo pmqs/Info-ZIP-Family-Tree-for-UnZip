@@ -1,9 +1,9 @@
-This folder is the root folder for the externally supplied bzip2 source code.
-Additionally, this folder contains the following Info-ZIP-specific files:
+   This directory contains a bzip2 source kit (version 1.0.6, with
+changes for better VMS support), plus the following additional,
+Info-ZIP-specific files:
 
-  00README.IZ   this file
-  Makebz2.iz    "generic" make script for the base bzip2 lib used in UnZip
-  makbz2iz.msc  make script for the bzip2 support, win32 port, MS VC++
-  makbz2iz.wat  make script for bzip2 support, msdos & win32, OpenWatcom C++
-  descrbz2.mms  MMS/MMK make script for OpenVMS
-  buildbz2.com  OpenVMS DCL procedure to build the base bz2 lib used in UnZip
+   README_bz2.txt   This file.
+   Makebz2.iz       Generic "make" file.
+   makbz2iz.msc     MS VC++ "make" file.
+   makbz2iz.wat     OpenWatcom C++ "make" file.
+   buildbz2.com     VMS DCL script.

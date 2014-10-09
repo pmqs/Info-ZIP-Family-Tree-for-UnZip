@@ -2,10 +2,10 @@ $! COLLECT_DEPS.COM
 $!
 $!    Info-ZIP VMS procedure to collect MMS/MMK dependencies.
 $!
-$!    Last revised:  2013-11-29
+$!    Last revised:  2014-10-08
 $!
 $!----------------------------------------------------------------------
-$! Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+$! Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 $!
 $! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 $! contents of which are also included in zip.h) for terms of use.  If,
@@ -52,7 +52,7 @@ $! Include proper-inclusion-check preface.
 $!
 $ incl_macro = "INCL_"+ f$parse( p2, , , "NAME", "SYNTAX_ONLY")
 $ write deps_out "#"
-$ write deps_out "# ''p1' - MMS (or MMK) Source Dependency File."
+$ write deps_out "#    ''p1' -- MMS (or MMK) Source Dependency File."
 $ write deps_out "#"
 $ write deps_out ""
 $ write deps_out -

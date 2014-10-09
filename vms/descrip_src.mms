@@ -1,11 +1,11 @@
 # DESCRIP_SRC.MMS
 #
-#    UnZip 6.1 for VMS - MMS (or MMK) Source Description File.
+#    UnZip 6.10 for VMS -- MMS (or MMK) Source Description File.
 #
-#    Last revised:  2013-11-29
+#    Last revised:  2014-10-10
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -52,6 +52,8 @@ VAXC_OR_FORCE_VAXC = 1
 
 # Analyze architecture-related and option macros.
 
+# Compiler options on VAX.
+
 .IFDEF __ALPHA__                # __ALPHA__
 DECC = 1
 DESTM = ALPHA
@@ -79,12 +81,96 @@ UNK_DEST = 1
 .ENDIF                              # __IA64__
 .ENDIF                          # __ALPHA__
 
-.IFDEF LARGE                    # LARGE
-.IFDEF __VAX__                      # __VAX__
-.ELSE                               # __VAX__
+# AES_WG support.  Default to disabled, but the .FIRST rule will detect
+# the presence of the optional source kit, and advise accordingly.
+
+# Translate NO_AES_WG to NOAES_WG.
+.IFDEF NO_AES_WG                # NO_AES_WG
+.IFDEF NOAES_WG                     # NOAES_WG
+.ELSE                               # NOAES_WG
+NOAES_WG = 1
+.ENDIF                              # NOAES_WG
+.ENDIF                          # NO_AES_WG
+
+# Skip AES_WG check if AES_WG is explicitly disabled.
+.IFDEF NOAES_WG                 # NOAES_WG
+.IFDEF NOCHECK_AES_WG               # NOCHECK_AES_WG
+.ELSE                               # NOCHECK_AES_WG
+NOCHECK_AES_WG = 1
+.ENDIF                              # NOCHECK_AES_WG
+.ELSE                           # NOAES_WG
+.IFDEF AES_WG                       # AES_WG
+.ELSE                               # AES_WG
+.IFDEF NOCHECK_AES_WG                   # NOCHECK_AES_WG
+.ELSE                                   # NOCHECK_AES_WG
+CHECK_AES_WG = 1
+.ENDIF                                  # NOCHECK_AES_WG
+.ENDIF                              # AES_WG
+.ENDIF                          # NOAES_WG
+
+# Large-file support.  Always no on VAX.  Assume yes elsewhere.  On
+# Alpha, the .FIRST rule will detect incompatibility (before VMS V7.2).
+
+# Targets which can bypass the AES_WG test and, on Alpha, the (slow)
+# large-file test. 
+# (Not "" or ALL.  Could add help- and message-related.)
+
+TRGT_CLEAN = 1
+TRGT_CLEAN_ALL = 1
+TRGT_CLEAN_EXE = 1
+TRGT_CLEAN_OLB = 1
+TRGT_CLEAN_TEST = 1
+TRGT_DASHV = 1
+TRGT_HELP = 1
+TRGT_HELP_TEXT = 1
+TRGT_SLASHV = 1
+TRGT_TEST = 1
+TRGT_TEST_PPMD = 1
+
+TRGT = TRGT_$(MMSTARGETS)
+
+.IFDEF $(TRGT)                  # $(TRGT)
+.IFDEF NOCHECK_AES_WG               # NOCHECK_AES_WG
+.ELSE                               # NOCHECK_AES_WG
+NOCHECK_AES_WG = 1
+.ENDIF                              # NOCHECK_AES_WG
+.IFDEF __ALPHA__                    # __ALPHA__
+.IFDEF NOCHECK_LARGE                    # NOCHECK_LARGE
+.ELSE                                   # NOCHECK_LARGE
+NOCHECK_LARGE = 1
+.ENDIF                                  # NOCHECK_LARGE
+.ENDIF                              # __ALPHA__
+.ENDIF                          # $(TRGT)
+
+.IFDEF __VAX__                  # __VAX__
+.IFDEF NOLARGE                      # NOLARGE
+.ELSE                               # NOLARGE
+NOLARGE = 1
+.ENDIF                              # NOLARGE
+.ENDIF                          # __VAX__
+
+# Translate NO_LARGE to NOLARGE.
+.IFDEF NO_LARGE                 # NO_LARGE
+.IFDEF NOLARGE                      # NOLARGE
+.ELSE                               # NOLARGE
+NOLARGE = 1
+.ENDIF                              # NOLARGE
+.ENDIF                          # NO_LARGE
+
+.IFDEF NOLARGE                  # NOLARGE
+.ELSE                           # NOLARGE
+.IFDEF LARGE                        # LARGE
+.ELSE                               # LARGE
+LARGE = 1
+.IFDEF __ALPHA__                        # __ALPHA__
+.IFDEF NOCHECK_LARGE                        # NOCHECK_LARGE
+.ELSE                                       # NOCHECK_LARGE
+CHECK_LARGE = 1
+.ENDIF                                      # NOCHECK_LARGE
+.ENDIF                                  # __ALPHA__
+.ENDIF                              # LARGE
 DESTL = L
-.ENDIF                              # __VAX__
-.ENDIF                          # LARGE
+.ENDIF                          # NOLARGE
 
 DEST_STD = $(DESTM)$(DESTL)
 .IFDEF PROD                     # PROD
@@ -127,21 +213,101 @@ NON_VAX_CMPL = 1
 .ENDIF                              # VAXC_OR_FORCE_VAXC
 .ENDIF                          # __VAX__
 
-# Shortcut to include BZIP2 support from the optional bzip2 source subdir
-# in the UnZip source location.
+# BZIP2 options.  (Default: IZ_BZIP2=[.bzip2].  To disable, define
+# NO_IZ_BZIP2 or NOIZ_BZIP2.)
 
-BZ2DIR_BIN = SYS$DISK:[.BZIP2.$(DESTM)]
+BZ2DIR_BIN = [.BZIP2.$(DEST_STD)]
+BZ2DIR_BIN_DIR = [.BZIP2]$(DEST_STD).DIR
 BZ2_OLB = LIBBZ2_NS.OLB
 LIB_BZ2_LOCAL = $(BZ2DIR_BIN)$(BZ2_OLB)
 
-.IFDEF USEBZ2                   # USEBZ2
+# Translate NO_IZ_BZIP2 to NOIZ_BZIP2.
+.IFDEF NO_IZ_BZIP2              # NO_IZ_BZIP2
+.IFDEF NOIZ_BZIP2                   # NOIZ_BZIP2
+.ELSE                               # NOIZ_BZIP2
+NOIZ_BZIP2 = 1
+.ENDIF                              # NOIZ_BZIP2
+.ENDIF                          # NO_IZ_BZIP2
+
+.IFDEF NOIZ_BZIP2               # NOIZ_BZIP2
+.IFDEF IZ_BZIP2                     # IZ_BZIP2
+IZ_BZIP2_ERR = 1
+.ELSE                               # IZ_BZIP2
+.ENDIF                              # IZ_BZIP2
+.ELSE                           # NOIZ_BZIP2
 .IFDEF IZ_BZIP2                     # IZ_BZIP2
 .ELSE                               # IZ_BZIP2
 IZ_BZIP2 = SYS$DISK:[.BZIP2]
 LIB_BZ2_DEP = $(LIB_BZ2_LOCAL)
 BUILD_BZIP2 = 1
+.IFDEF LARGE                            # LARGE
+IZ_BZIP2_MACROS = /MACRO = (LARGE=1)
+.ENDIF                                  # LARGE
 .ENDIF                              # IZ_BZIP2
-.ENDIF                          # USEBZ2
+.ENDIF                          # NOIZ_BZIP2
+
+.IFDEF IZ_BZIP2                 # IZ_BZIP2
+CDEFS_BZ = , BZIP2_SUPPORT
+CFLAGS_INCL = /include = ([], [.VMS])
+LIB_BZIP2_OPTS = LIB_BZIP2:$(BZ2_OLB) /library,
+.ENDIF                          # IZ_BZIP2
+
+# LZMA options.  (Default: LZMA.  To disable, define NO_LZMA or NOLZMA.)
+
+# Translate NO_LZMA to NOLZMA.
+.IFDEF NO_LZMA                  # NO_LZMA
+.IFDEF NOLZMA                       # NOLZMA
+.ELSE                               # NOLZMA
+NOLZMA = 1
+.ENDIF                              # NOLZMA
+.ENDIF                          # NO_LZMA
+
+.IFDEF NOLZMA                   # NOLZMA
+.IFDEF LZMA                         # LZMA
+LZMA_ERR = 1
+.ELSE                               # LZMA
+.ENDIF                              # LZMA
+.ELSE                           # NOLZMA
+.IFDEF LZMA                         # LZMA
+.ELSE                               # LZMA
+LZMA = 1
+.ENDIF                              # LZMA
+.ENDIF                          # NOLZMA
+
+.IFDEF LZMA                     # LZMA
+LZMA_PPMD = 1
+.IFDEF __VAX__                      # __VAX__
+CDEFS_LZMA = , LZMA_SUPPORT, _SZ_NO_INT_64
+.ELSE                               # __VAX__
+CDEFS_LZMA = , LZMA_SUPPORT
+.ENDIF                              # __VAX__
+.IFDEF CFLAGS_INCL                  # CFLAGS_INCL
+.ELSE                               # CFLAGS_INCL
+CFLAGS_INCL = /include = ([], [.VMS])
+.ENDIF                              # CFLAGS_INCL
+.ENDIF                          # LZMA
+
+# PPMd options.  (Default: PPMD.  To disable, define NO_PPMD or NOPPMD.)
+
+# Translate NO_PPMD to NOPPMD.
+.IFDEF NO_PPMD                  # NO_PPMD
+.IFDEF NOPPMD                       # NOPPMD
+.ELSE                               # NOPPMD
+NOPPMD = 1
+.ENDIF                              # NOPPMD
+.ENDIF                          # NO_PPMD
+
+.IFDEF NOPPMD                   # NOPPMD
+.IFDEF PPMD                         # PPMD
+PPMD_ERR = 1
+.ELSE                               # PPMD
+.ENDIF                              # PPMD
+.ELSE                           # NOPPMD
+.IFDEF PPMD                         # PPMD
+.ELSE                               # PPMD
+PPMD = 1
+.ENDIF                              # PPMD
+.ENDIF                          # NOPPMD
 
 # Complain about any problems (and die) if warranted.  Otherwise, show
 # optional package directories being used, and the destination
@@ -186,49 +352,115 @@ BUILD_BZIP2 = 1
 	@ write sys$output ""
 	I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 .ELSE                                       # LARGE_VAX
-.IFDEF IZ_BZIP2                                 # IZ_BZIP2
-.IFDEF BUILD_BZIP2                                  # BUILD_BZIP2
-	@ if (f$search( "$(IZ_BZIP2)bzlib.h") .eqs. "") then -
+.IFDEF IZ_BZIP2_ERR                             # IZ_BZIP2_ERR
+	@ write sys$output -
+ "   Macro ""IZ_BZIP2"" conflicts with ""NOIZ_BZIP2"" or ""NO_IZ_BZIP2""."
+	@ write sys$output ""
+	I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+.ELSE                                           # IZ_BZIP2_ERR
+.IFDEF LZMA_ERR                                     # LZMA_ERR
+	@ write sys$output -
+ "   Macro ""LZMA"" conflicts with ""NOLZMA"" or ""NO_LZMA""."
+	@ write sys$output ""
+	I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+.ELSE                                               # LZMA_ERR
+.IFDEF PPMD_ERR                                         # PPMD_ERR
+	@ write sys$output -
+ "   Macro ""PPMD"" conflicts with ""NOPPMD"" or ""NO_PPMD""."
+	@ write sys$output ""
+	I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+.ELSE                                                   # PPMD_ERR
+.IFDEF IZ_BZIP2                                             # IZ_BZIP2
+.IFDEF BUILD_BZIP2                                              # BUILD_BZIP2
+	@ no_bzlib_h = (f$search( "$(IZ_BZIP2)bzlib.h") .eqs. "")
+	@ if (no_bzlib_h) then -
 	   write sys$output "   Can not find header file $(IZ_BZIP2)bzlib.h"
-	@ if (f$search( "$(IZ_BZIP2)bzlib.h") .eqs. "") then -
+	@ if (no_bzlib_h) then -
 	   write sys$output ""
-	@ if (f$search( "$(IZ_BZIP2)bzlib.h") .eqs. "") then -
+	@ if (no_bzlib_h) then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 	@ write sys$output "   BZIP2 dir: $(BZ2DIR_BIN)"
 	@ define lib_bzip2 $(BZ2DIR_BIN)
-	@ if (f$search( "$(IZ_BZIP2)$(DESTM).dir") .eqs. "") then -
+ 	@ if (f$search( "$(BZ2DIR_BIN_DIR)") .eqs. "") then -
 	   create /directory $(BZ2DIR_BIN)
-.ELSE                                               # BUILD_BZIP2
+.ELSE                                                           # BUILD_BZIP2
 	@ @[.VMS]FIND_BZIP2_LIB.COM $(IZ_BZIP2) $(SEEK_BZ) $(BZ2_OLB) lib_bzip2
-	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	@ no_lib_bzip2 = (f$trnlnm( "lib_bzip2") .eqs. "")
+	@ if (no_lib_bzip2) then -
 	   write sys$output "   Can not find BZIP2 object library."
-	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	@ if (no_lib_bzip2) then -
 	   write sys$output ""
-	@ if (f$trnlnm( "lib_bzip2") .eqs. "") then -
+	@ if (no_lib_bzip2) then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 	@ write sys$output "   BZIP2 dir: ''f$trnlnm( "lib_bzip2")'"
-.ENDIF                                              # BUILD_BZIP2
+.ENDIF                                                          # BUILD_BZIP2
 	@ write sys$output ""
 	@ define incl_bzip2 $(IZ_BZIP2)
-.ENDIF                                          # IZ_BZIP2
-.IFDEF IZ_ZLIB                                  # IZ_ZLIB
+.ENDIF                                                      # IZ_BZIP2
+.IFDEF IZ_ZLIB                                              # IZ_ZLIB
 	@ @[.VMS]FIND_BZIP2_LIB.COM $(IZ_ZLIB) $(SEEK_BZ) LIBZ.OLB lib_zlib
-	@ if (f$trnlnm( "lib_zlib") .eqs. "") then -
+	@ no_lib_zlib = (f$trnlnm( "lib_zlib") .eqs. "")
+	@ if (no_lib_zlib) then -
 	   write sys$output "   Can not find ZLIB object library."
-	@ if (f$trnlnm( "lib_zlib") .eqs. "") then -
+	@ if (no_lib_zlib) then -
 	   write sys$output ""
-	@ if (f$trnlnm( "lib_zlib") .eqs. "") then -
+	@ if (no_lib_zlib) then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 	@ write sys$output "   ZLIB dir:  ''f$trnlnm( "lib_zlib")'"
 	@ write sys$output ""
 	@ define incl_zlib $(IZ_ZLIB)
 	@ @[.VMS]FIND_BZIP2_LIB.COM $(IZ_ZLIB) -
 	   contrib.infback9 infback9.h incl_zlib_contrib_infback9
-.ENDIF                                          # IZ_ZLIB
+.ENDIF                                                      # IZ_ZLIB
 	@ write sys$output "   Destination: [.$(DEST)]"
 	@ write sys$output ""
 	if (f$search( "$(DEST).DIR;1") .eqs. "") then -
 	 create /directory [.$(DEST)]
+.IFDEF CHECK_LARGE                                          # CHECK_LARGE
+	@ write sys$output ""
+	@ write sys$output "   Verifying large-file support..."
+	@ @[.VMS]CHECK_LARGE.COM $(DEST) large_ok
+	@ no_large = (f$trnlnm( "large_ok") .eqs. "")
+	@ if (no_large) then -
+	   write sys$output -
+	    "   Large-file support not available with this VMS/CRTL version."
+	@ if (no_large) then -
+	   write sys$output "   Add ""/MACRO = NOLARGE=1""."
+	@ if (no_large) then -
+	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+	@ write sys$output "   Large-file support ok."
+	@ write sys$output ""
+.ENDIF                                                      # CHECK_LARGE
+.IFDEF NOCHECK_AES_WG                                       # NOCHECK_AES_WG
+.ELSE                                                       # NOCHECK_AES_WG
+.IFDEF AES_WG                                                   # AES_WG
+	@ no_aes_wg_kit = (f$search( "[.aes_wg]aes.h") .eqs. "")
+	@ if (no_aes_wg_kit) then -
+	   write sys$output ""
+	@ if (no_aes_wg_kit) then -
+	   write sys$output -
+	    "   Optional AES_WG source kit ([.aes_wg]) not found."
+	@ if (no_aes_wg_kit) then -
+	   write sys$output ""
+	@ if (no_aes_wg_kit) then -
+	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
+.ELSE                                                           # AES_WG
+	@ aes_wg_kit = (f$search( "[.aes_wg]aes.h") .nes. "")
+	@ if (aes_wg_kit) then -
+	   write sys$output ""
+	@ if (aes_wg_kit) then -
+	   write sys$output -
+	    "   Optional AES_WG source kit found, but support not enabled."
+	@ if (aes_wg_kit) then -
+	   write sys$output -
+	    "   To enable AES_WG support, add ""/MACRO = AES_WG=1""."
+	@ if (aes_wg_kit) then -
+	   write sys$output ""
+.ENDIF                                                          # AES_WG
+.ENDIF                                                      # NOCHECK_AES_WG
+.ENDIF                                                  # PPMD_ERR
+.ENDIF                                              # LZMA_ERR
+.ENDIF                                          # IZ_BZIP2_ERR
 .ENDIF                                      # LARGE_VAX
 .ENDIF                                  # NON_VAX_CMPL
 .ENDIF                              # VAX_MULTI_CMPL
@@ -239,31 +471,6 @@ BUILD_BZIP2 = 1
 .IFDEF AES_WG                   # AES_WG
 CDEFS_AES = , CRYPT_AES_WG
 .ENDIF                          # AES_WG
-
-# BZIP2 options.
-
-.IFDEF IZ_BZIP2                 # IZ_BZIP2
-CDEFS_BZ = , BZIP2_SUPPORT
-CFLAGS_INCL = /include = ([], [.VMS])
-LIB_BZIP2_OPTS = LIB_BZIP2:$(BZ2_OLB) /library,
-.ENDIF                          # IZ_BZIP2
-
-# LZMA options.
-
-.IFDEF LZMA                     # LZMA
-LZMA_PPMD = 1
-.IFDEF __VAX__                      # __VAX__
-CDEFS_LZMA = , LZMA_SUPPORT, _SZ_NO_INT_64
-.ELSE                               # __VAX__
-CDEFS_LZMA = , LZMA_SUPPORT
-.ENDIF                              # __VAX__
-.IFDEF CFLAGS_INCL                  # CFLAGS_INCL
-.ELSE                               # CFLAGS_INCL
-CFLAGS_INCL = /include = ([], [.VMS])
-.ENDIF                              # CFLAGS_INCL
-.ENDIF                          # LZMA
-
-# PPMd options.
 
 .IFDEF PPMD                     # PPMD
 .IFDEF LZMA                         # LZMA

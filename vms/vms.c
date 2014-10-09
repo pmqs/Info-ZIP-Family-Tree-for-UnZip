@@ -4362,13 +4362,13 @@ int dest_dev_name( char *path)
 
 int dest_struct_level( char *path)
 {
+    int acp_code = -1;
+
 #ifdef DVI$C_ACP_F11V5
 
     /* Should know about ODS5 file system.  Do actual check.
      * (This should be non-VAX with __CRTL_VER >= 70200000.)
      */
-
-    int acp_code = -1;
     int sts;
 
     struct dsc$descriptor_s dev_descr =

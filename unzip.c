@@ -1698,8 +1698,10 @@ static struct option_struct far options[] = {
 
   /* UnZip options */
 
-  /* short longopt                 value_type        negatable
+  /*    short   longopt            value_type        negatable
        ID    name */
+    {UZO, "0",  "no-char-set",     o_NO_VALUE,       o_NEGATABLE,
+       '0',  "don't map FAT/NTFS names"},
 # ifdef VMS
     {UZO, "2",  "force-ods2",      o_NO_VALUE,       o_NEGATABLE,
        '2',  "Force ODS2-compliant names."},
@@ -2141,6 +2143,12 @@ int uz_opts(__G__ pargc, pargv)
                 value = NULL;           /* In use.  Don't free it. */
                 break;
 # endif /* def RISCOS */
+            case ('0'):
+                if (negative) {
+                    uO.zero_flag = IZ_MAX( uO.zero_flag- negative, 0);
+                } else
+                    ++uO.zero_flag;
+                break;
             case ('a'):
                 if (negative) {
                     uO.aflag = IZ_MAX(uO.aflag-negative,0);

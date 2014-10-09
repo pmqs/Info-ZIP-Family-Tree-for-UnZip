@@ -1,11 +1,11 @@
 # DESCRIP.MMS
 #
-#    UnZip 6.1 for VMS - MMS (or MMK) Description File.
+#    UnZip 6.10 for VMS -- MMS (or MMK) Description File.
 #
-#    Last revised:  2013-11-29
+#    Last revised:  2014-10-08
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2001-2013 Info-ZIP.  All rights reserved.
+# Copyright (c) 2001-2014 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -22,10 +22,12 @@
 #
 # Optional macros:
 #
-#    AES_WG=1       Enable AES_WG encryption support.  By default, the
-#                   SFX programs are built without AES_WG support.  Add
+#    AES_WG=1       Enable/disable AES_WG encryption support.  Specify
+#    NOAES_WG=1     either AES_WG=1 or NOAES_WG=1 to skip the [.aes_wg]
+#                   source directory test.  By default, the SFX programs
+#                   are built without AES_WG support.  Add
 #                   "CRYPT_AES_WG_SFX=1" to the LOCAL_UNZIP C macros to
-#                   enable it.  (See LOCAL_UNZIP, below.)
+#                   enable it.  (See LOCAL_UNZIP, below.) 
 #
 #    CCOPTS=xxx     Compile with CC options xxx.  For example:
 #                   CCOPTS=/ARCH=HOST
@@ -34,16 +36,20 @@
 #    TRC=1          Default is /NOTRACEBACK, but TRC=1 enables link with
 #                   /TRACEBACK without compiling for debug.
 #
-#    IZ_BZIP2=dev:[dir]  Build with optional BZIP2 support.  The value
-#                        of the MMS macro, ("dev:[dir]", or a suitable
-#                   logical name) tells where to find "bzlib.h".  The
-#                   BZIP2 object library (LIBBZ2_NS.OLB) is expected to
-#                   be in a "[.dest]" directory under that one
+#    IZ_BZIP2=dev:[dir]  Direct/disable with optional bzip2 support.
+#    NOIZ_BZIP2=1        By default, bzip2 support is enabled, and uses
+#                   the bzip2 source kit supplied in the [.bzip2]
+#                   directory.  Specify NOIZ_BZIP2=1 to disable bzip2
+#                   support.  Specify IZ_BZIP2 with a value
+#                   ("dev:[dir]", or a suitable logical name) to use the
+#                   bzip2 header file and object library found there.
+#                   The bzip2 object library (LIBBZ2_NS.OLB) is expected
+#                   to be in a simple "[.dest]" directory under that one
 #                   ("dev:[dir.ALPHAL]", for example), or in that
-#                   directory itself.  See also USEBZ2=1, below.)
-#                   By default, the SFX programs are built without BZIP2
-#                   support.  Add "BZIP2_SFX=1" to the LOCAL_UNZIP C
-#                   macros to enable it.  (See LOCAL_UNZIP, below.)
+#                   directory itself.)  By default, the SFX programs are
+#                   built without bzip2 support.  Add "BZIP2_SFX=1" to
+#                   the LOCAL_UNZIP C macros to enable it.  (See
+#                   LOCAL_UNZIP, below.)
 #
 #    IZ_ZLIB=dev:[dir]  Use ZLIB compression library instead of internal
 #                       compression routines.  The value of the MMS
@@ -54,7 +60,12 @@
 #                   ("dev:[dir.ALPHAL]", for example), or in that
 #                   directory itself.
 #
-#    LARGE=1        Enable large-file (>2GB) support.  Non-VAX only.
+#    LARGE=1        Enable/disable large-file (>2GB) support.  Always
+#    NOLARGE=1      disabled on VAX.  Enabled by default on Alpha and
+#                   IA64.  On Alpha, by default, large-file support is
+#                   tested, and the build will fail if that test fails.
+#                   Specify NOLARGE=1 explicitly to disable support (and
+#                   to skip the test on Alpha).
 #
 #    LIBUNZIP=1     Build LIBIZUNZIP.OLB as a callable UnZip library.
 #
@@ -69,20 +80,22 @@
 #                   example:
 #                   "LOCAL_UNZIP=NO_EXCEPT_SIGNALS=1, NO_SYMLINKS=1"
 #
-#    LZMA=1         Enable LZMA compression support.  By default, the
-#                   SFX programs are built without LZMA support.  Add
-#                   "LZMA_SFX=1" to the LOCAL_UNZIP C macros to enable
-#                   it.  (See LOCAL_UNZIP, above.)
+#    NOLZMA=1       Disable LZMA compression support, which is enabled
+#                   by default for the normal UnZip programs.  By
+#                   default, the SFX programs are built without LZMA
+#                   support.  Add "LZMA_SFX=1" to the LOCAL_UNZIP C
+#                   macros to enable it.  (See LOCAL_UNZIP, above.)
+#
+#    NOPPMD=1       Disable PPMd compression support, which is enabled
+#                   by default for the normal UnZip programs.  By
+#                   default, the SFX programs are built without PPMd
+#                   support.  Add "PPMD_SFX=1" to the LOCAL_UNZIP C
+#                   macros to enable it.  (See LOCAL_UNZIP, above.)
 #
 #    NOSHARE=1      Link /NOSYSSHR (not using shareable images).
 #    NOSHARE=OLDVAX Link /NOSYSSHR on VAX for:
 #                      DEC C with VMS before V7.3.
 #                      VAX C without DEC C RTL (DEC C not installed).
-#
-#    PPMD=1         Enable PPMd compression support.  By default, the
-#                   SFX programs are built without PPMd support.  Add
-#                   "PPMD_SFX=1" to the LOCAL_UNZIP C macros to enable
-#                   it.  (See LOCAL_UNZIP, above.)
 #
 #    PROD=subdir    Use [.subdir] as the destination for
 #                   architecture-specific product files (.EXE, .OBJ,
@@ -90,13 +103,6 @@
 #                   automatically generated using rules defined in
 #                   [.VMS]DESCRIP_SRC.MMS.  Note that using this option
 #                   carelessly can confound the CLEAN* targets.
-#
-#    USEBZ2=1       Build with optional BZIP2 support.  This macro
-#                   is a shortcut for IZ_BZIP2=SYS$DISK:[.BZIP2].
-#                   Additionally, it causes invocation of the
-#                   UnZip-supplied bzip2 builder, [.bzip2]descrbz2.mms,
-#                   which should lead to a bzip2-enabled build of UnZip
-#                   directly from the sources.
 #
 # VAX-specific optional macros:
 #
@@ -545,9 +551,12 @@ $(OPT_ID_SFX) :
 # Local BZIP2 object library.
 
 $(LIB_BZ2_LOCAL) :
-	$(MMS) $(MMSQUALIFIERS) /DESCR=$(IZ_BZIP2)descrbz2.mms'macro' -
-	   /MACRO = (SRCDIR=$(IZ_BZIP2), DSTDIR=$(BZ2DIR_BIN), -
-	   DEST=$(IZ_BZIP2)$(DESTM)) $(MMSTARGETS)
+	def_dev_dir_orig = f$environment( "default")
+	set default $(IZ_BZIP2)
+	$(MMS) $(MMSQUALIFIERS) /DESCR=[.vms]descrip.mms -
+	 $(IZ_BZIP2_MACROS) -
+	 $(MMSTARGETS)
+	set default 'def_dev_dir_orig'
 
 # Normal UnZip executable.
 

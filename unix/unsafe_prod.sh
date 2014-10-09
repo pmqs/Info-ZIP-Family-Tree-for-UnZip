@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #==============================================================================
-# unix/unsafe_prod.sh: Check PROD directory safety.     Revised: 2014-01-21
+# unix/unsafe_prod.sh: Check PROD directory safety.     Revised: 2014-09-29
 #
 # Copyright (c) 2014 Info-ZIP.  All rights reserved.
 #
@@ -20,12 +20,16 @@ fi
 # Return zero, if unsafe.
 unsafe_prod=0
 
+# "." is safe
 if [ "${prod}" = '.' ]; then
   unsafe_prod=1
 fi
 
+# Unsafe: "..", leading "/" or "../", trailing "/..", "/../" anywhere.
 if [ ${unsafe_prod} -eq 0 ]; then
-  echo "${prod}" | grep -e '^/' -e '\.\./' > /dev/null 2>&1
+  echo "${prod}" | \
+   grep -e '^\.\.$' -e '^/' -e '^\.\./' -e '/\.\.$' -e '/\.\./' \
+   > /dev/null 2>&1
   if [ $? -ne 0 ]; then
     unsafe_prod=1
   fi

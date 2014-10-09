@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2014-05-14
+   UnZip version 6.10.  Revised: 2014-10-06
 
 ------------------------------------------------------------------------
 
@@ -133,9 +133,9 @@ It might be wise to read that before downloading any particular
 IZ_AES_WG kit.
 
    The IZ_AES_WG kit should be unpacked in the main UnZip directory,
-where it should populate the "aes_wg" subdirectory.  For example, if the
-proper IZ_AES_WG kit is "iz_aes_wg13.zip", then use commands like the
-following:
+where it should populate the "aes_wg" subdirectory.  For example, if
+the proper IZ_AES_WG kit is "iz_aes_wg13.zip", then use commands like
+the following:
 
       cd unzip61                        # (If not already there.)
       unzip ../iz_aes_wg13.zip
@@ -148,46 +148,27 @@ with AES encryption support.
    Bzip2 Compression
    -----------------
 
-   To enable support for the bzip2 compression method, the UnZip
-programs must be linked with a bzip2 object library, such as "libbz2.a".
-For proper error handling, the bzip2 object library should be built with
-the C macro BZ_NO_STDIO defined (which is not the bzip2 default).  For
-general information on bzip2 compression, or to download a bzip2 source
-kit:
+   All the source files needed to enable support for the bzip2
+compression method are included in the UnZip source kit.  The "bzip2"
+subdirectory contains a bzip2 (version 1.0.6) source kit, with some
+modifications for better VMS compatibility.  For general information on
+bzip2 compression, or to download a different bzip2 source kit:
 
       http://www.bzip.org/
 
-Any bzip2 version from 1.0.3 up should be compatible.  Bzip2 version
-1.0.6 was current when this UnZip version was developed.
-
-   The UnZip builders for Unix systems can use a pre-built (BZ_NO_STDIO)
-object library, or they can build a proper bzip2 object library, if they
-find bzip2 source files in the "bzip2" subdirectory of the main UnZip
-directory.  To have the UnZip builders do the work, let's assume that
-you have downloaded a bzip2 kit, like, say, "bzip2-1.0.6.tar.gz", and
-put it in the same directory as the UnZip source kit.  To unpack that
-kit, and put its contents where the UnZip builders expect them, use
-commands like the following:
-
-      cd unzip61                        # (If not already there.)
-      gzip -dc ../bzip2-1.0.6.tar.gz | tar xf -
-      mv bzip2-1.0.6/* bzip2
+   The UnZip builders for Unix, VMS, and Windows wiil, by default, use
+the bzip2 source kit which is included in the UnZip source kit to create
+the required bzip2 object library.  The Unix and VMS builders can also
+use an existing bzip2 object library, which could be supplied by the
+user or included with the OS.  For details on how to use an existing
+bzip2 object library, or how to disable bzip2 compression support, look
+for IZ_BZIP2 in the "Build" section below, or in an appropriate
+OS-specific build document.
 
    The UnZip builders will attempt to build a bzip2 object library from
 sources only in the "bzip2" subdirectory of the main UnZip directory.
 Existing bzip2 kits in other directory trees should be safe from damage
 by UnZip builders.
-
-   See the "Build" section, below, for details on how to build UnZip
-with bzip2 compression support.
-
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-   LZMA and PPMd Compression
-   -------------------------
-
-   All the source files needed to enable support for the LZMA and PPMd
-compression methods are included in the UnZip source kit.
 
 ------------------------------------------------------------------------
 
@@ -206,8 +187,9 @@ limited.  On Amiga, an additional executable, MakeSFX, is provided,
 because a self-extracting archive on Amiga cannot be created by simple
 concatenation ("cat", COPY), as it can on other systems.
 
-   Various documentation files (Unix "man" files, VMS HELP files, and so
-on) may also be created, if they were not already included in the kit.
+   Various documentation files (formatted Unix "man" files, VMS HELP
+files, and so on) may also be created, if they were not already included
+in the kit.
 
    Additional shell scripts, utility programs, and so on may also reside
 in system-dependent subdirectories.
@@ -374,14 +356,16 @@ a LOCAL_UNZIP environment variable.  Also, beware of changes to these
    Building with Bzip2 Compression
    -------------------------------
 
-   The Unix and VMS builders for UnZip can use a bzip2 source kit which
-has been placed in the "bzip2" subdirectory of the main UnZip directory,
-as described above ("Optional Source Kits").  Users who regularly work
-with multiple UnZip versions can avoid duplicating the bzip2 code by
-manually building a bzip2 object library ("libbz2.a" on Unix) with
-BZ_NO_STDIO defined, in some common location.  Then, when building
-UnZip, specify that bzip2 directory as the value of the "make" macro
-IZ_BZIP2.  For example:
+   By default, the Unix, VMS, and Windows builders for UnZip will use
+the bzip2 source kit which is supplied in the "bzip2" subdirectory of
+the main UnZip directory, as described above ("Optional Source Kits").
+
+   Unix and VMS users who regularly work with multiple UnZip versions
+(or optional configurations) can avoid repeatedly building the bzip2
+object library by manually building a bzip2 object library ("libbz2.a"
+on Unix), with BZ_NO_STDIO defined, in some common location.  Then, when
+building UnZip, specify that bzip2 directory as the value of the "make"
+macro IZ_BZIP2.  For example:
 
       make -f unix/Makefile IZ_BZIP2=../../bzip2/bzip-1.0.6 generic
 
@@ -903,16 +887,11 @@ BZIP2_SFX
    bzip2 compression support is disabled in UnZipSFX even when it's
    enabled in UnZip itself.
 
-BZIP2_SUPPORT   (requires additional external code distribution)
+BZIP2_SUPPORT   (requires bzip2 object library)
    Enable support for bzip2 compression.  UnZip can optionally support
    the "bzip2" compression algorithm on most ports on 32-bit (or higher)
    platforms.  Currently, this support is integrated in the builders for
    MSDOS 32-bit (DJGPP), Unix, VMS, and Windows.
-
-      Prerequisites:
-      You have to obtain the bzip2 source kit (version 1.03 or higher).
-      To have the UnZip builder build the bzip2 object library, extract
-      the source files into the "bzip2" subdirectory.
 
       Compilation:
       - MSDOS, Windows: You have to supply the macro definition

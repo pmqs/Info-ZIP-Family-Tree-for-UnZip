@@ -1,11 +1,11 @@
 # DESCRIP_MKDEPS.MMS
 #
-#    UnZip 6.1 for VMS - MMS Dependency Description File.
+#    UnZip 6.10 for VMS -- MMS Dependency Description File.
 #
-#    Last revised:  2013-11-29
+#    Last revised:  2014-10-09
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2004-2013 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -21,7 +21,7 @@
 #       " LZMA_SFX, PPMD_SFX, API_DOC, MEMDIAG"
 #    $ MMS /EXTEND /DESCRIP = [.VMS]DESCRIP_MKDEPS.MMS /SKIP -
 #       /MACRO = (AES_WG=1, IZ_BZIP2=iz_bzip2, IZ_ZLIB=iz_zlib, -
-#       LZMA=1, PPMD=1, LIBUNZIP=1, "LOCAL_UNZIP=''L_U'")
+#       LIBUNZIP=1, "LOCAL_UNZIP=''L_U'")
 #
 # If the IZ_AES_WG encryption source kit has not been installed, then
 # the macros AES_WG and CRYPT_AES_WG_SFX should not be defined.

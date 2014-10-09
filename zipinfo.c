@@ -2261,8 +2261,8 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                         int i;
 
                         for (i = 0;  i < 16;  ++i)
-                            sprintf(&md5[i<<1], "%02x", ef_ptr[15-i]);
-                        md5[32] = '\0';
+                            sprintf(&md5[i<<1], "%02x", ef_ptr[18-i]);
+                        md5[32] = '\0'; /* Redundant? */
                         Info(slide, 0, ((char *)slide, LoadFarString(MD5data),
                           md5));
                         break;

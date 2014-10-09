@@ -2876,14 +2876,20 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
         flag = (option==DS_FN_L) ? G.lrec.general_purpose_bit_flag :
          G.crec.general_purpose_bit_flag;
-        /* skip ISO/OEM translation if stored name is UTF-8 */
-        /* 2012-05-20 SMS.
+
+        /* Skip ISO/OEM translation if stored name is UTF-8.
+         *
+         * 2012-05-20 SMS.
          * Added check for Java "CAFE" extra block, to avoid mistaking
          * Java's mostly-zero header info for an MS-DOS origin.  A more
          * rigorous hostnum test might be easier, but might break other
          * stuff.
+         *
+         * 2014-09-19 SMS.
+         * Also skip translation if user so requests (-0).
          */
-        if (((flag & UTF8_BIT) == 0) && (uO.java_cafe <= 0))
+        if ((uO.zero_flag == 0) &&
+         ((flag & UTF8_BIT) == 0) && (uO.java_cafe <= 0))
         {
           /* translate the Zip entry filename coded in host-dependent "extended
              ASCII" into the compiler's (system's) internal text code page */

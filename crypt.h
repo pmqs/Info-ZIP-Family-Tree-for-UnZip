@@ -23,13 +23,13 @@
  */
 
 #ifndef __crypt_h       /* Don't include more than once. */
-#define __crypt_h
+# define __crypt_h
 
-/* To enable encryption (using crypt.c and crypt.h), the builder sets
- * one or both of:
+/* To enable encryption (use crypt.c and crypt.h), the builder sets one
+ * or both of:
  *
- *    IZ_CRYPT_AES_WG   Include AES (WinZip/Gladman) (strong) encryption.
- *    IZ_CRYPT_TRAD     Include Zip Traditional (weak) encryption.
+ *    IZ_CRYPT_AES_WG   Include strong AES (WinZip/Gladman) encryption.
+ *    IZ_CRYPT_TRAD     Include Zip traditional weak encryption.
  *
  * Other necessary macros are derived from these.
  *
@@ -45,7 +45,9 @@
  * version of either the Zip or UnZip source kit is needed.
  */
 
-# undef IZ_CRYPT_ANY
+# ifdef IZ_CRYPT_ANY
+#  undef IZ_CRYPT_ANY
+# endif
 # if defined( IZ_CRYPT_AES_WG) || defined( IZ_CRYPT_TRAD)
 #  define IZ_CRYPT_ANY
 # endif /* defined( IZ_CRYPT_AES_WG) || defined( IZ_CRYPT_TRAD) */
@@ -56,22 +58,22 @@
 #   include "aes_wg/fileenc.h"
 #  endif /* def IZ_CRYPT_AES_WG */
 
-#  ifdef CR_BETA
-#   undef CR_BETA       /* This is not a beta release. */
-#  endif
-
 #  ifndef CR_BETA
 #   define CR_BETA      /* This is a beta release. */
+#  endif
+
+#  ifdef CR_BETA
+#   undef CR_BETA       /* This is not a beta release. */
 #  endif
 
 #  define CR_MAJORVER        3
 #  define CR_MINORVER        0
 #  ifdef CR_BETA
-#   define CR_BETA_VER      "j BETA"
-#   define CR_VERSION_DATE  "21 Mar 2013"       /* Last real code change. */
+#   define CR_BETA_VER      "k BETA"
+#   define CR_VERSION_DATE  "01 Oct 2014"       /* Last real code change. */
 #  else
 #   define CR_BETA_VER      ""
-#   define CR_VERSION_DATE  "01 Apr 2013"       /* Last public release date. */
+#   define CR_VERSION_DATE  "01 Oct 2014"       /* Last public release date. */
 #   define CR_RELEASE
 #  endif
 

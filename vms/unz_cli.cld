@@ -137,6 +137,7 @@ Define	Type		MATCH_OPTS
 	Keyword		WILD_MATCH_SLASH, Negatable
 
 Define	Type		NAMES_KEYWORDS
+	Keyword		CHAR_SET, Negatable
 	Keyword		DOWNCASE, VALUE(TYPE=DOWNCASE_OPTS), NonNegatable
 	Keyword		NODOWNCASE, NonNegatable
 	Keyword		ODS2, Negatable
