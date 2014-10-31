@@ -2,7 +2,7 @@
 #
 #    UnZip 6.10 for VMS -- MMS (or MMK) Description File.
 #
-#    Last revised:  2014-10-08
+#    Last revised:  2014-11-10
 #
 #----------------------------------------------------------------------
 # Copyright (c) 2001-2014 Info-ZIP.  All rights reserved.
@@ -22,12 +22,13 @@
 #
 # Optional macros:
 #
-#    AES_WG=1       Enable/disable AES_WG encryption support.  Specify
-#    NOAES_WG=1     either AES_WG=1 or NOAES_WG=1 to skip the [.aes_wg]
-#                   source directory test.  By default, the SFX programs
-#                   are built without AES_WG support.  Add
-#                   "CRYPT_AES_WG_SFX=1" to the LOCAL_UNZIP C macros to
-#                   enable it.  (See LOCAL_UNZIP, below.) 
+#    AES_WG=1       Enable/disable AES (WinZip/Gladman) encryption
+#    NOAES_WG=1     support.  Specify either AES_WG=1 or NOAES_WG=1 to
+#                   skip the [.aes_wg] source directory test.
+#                   By default, the SFX programs are built without
+#                   AES_WG support.  Add "CRYPT_AES_WG_SFX=1" to the
+#                   LOCAL_UNZIP C macros to enable it.  (See
+#                   LOCAL_UNZIP, below.)
 #
 #    CCOPTS=xxx     Compile with CC options xxx.  For example:
 #                   CCOPTS=/ARCH=HOST
@@ -36,15 +37,15 @@
 #    TRC=1          Default is /NOTRACEBACK, but TRC=1 enables link with
 #                   /TRACEBACK without compiling for debug.
 #
-#    IZ_BZIP2=dev:[dir]  Direct/disable with optional bzip2 support.
-#    NOIZ_BZIP2=1        By default, bzip2 support is enabled, and uses
-#                   the bzip2 source kit supplied in the [.bzip2]
-#                   directory.  Specify NOIZ_BZIP2=1 to disable bzip2
-#                   support.  Specify IZ_BZIP2 with a value
-#                   ("dev:[dir]", or a suitable logical name) to use the
-#                   bzip2 header file and object library found there.
-#                   The bzip2 object library (LIBBZ2_NS.OLB) is expected
-#                   to be in a simple "[.dest]" directory under that one
+#    IZ_BZIP2=dev:[dir]  Direct/disable optional bzip2 support.  By
+#    NOIZ_BZIP2=1        default, bzip2 support is enabled, and uses the
+#                   bzip2 source kit supplied in the [.bzip2] directory.
+#                   Specify NOIZ_BZIP2=1 to disable bzip2 support.
+#                   Specify IZ_BZIP2 with a value ("dev:[dir]", or a
+#                   suitable logical name) to use the bzip2 header file
+#                   and object library found there.  The bzip2 object
+#                   library (LIBBZ2_NS.OLB) is expected to be in a
+#                   simple "[.dest]" directory under that one
 #                   ("dev:[dir.ALPHAL]", for example), or in that
 #                   directory itself.)  By default, the SFX programs are
 #                   built without bzip2 support.  Add "BZIP2_SFX=1" to
@@ -52,11 +53,11 @@
 #                   LOCAL_UNZIP, below.)
 #
 #    IZ_ZLIB=dev:[dir]  Use ZLIB compression library instead of internal
-#                       compression routines.  The value of the MMS
-#                   macro ("dev:[dir]", or a suitable logical name)
-#                   tells where to find "zlib.h".  The ZLIB object
-#                   library (LIBZ.OLB) is expected to be in a
-#                   "[.dest]" directory under that one
+#                       Deflate compression routines.  The value of the
+#                   MMS macro IZ_ZLIB ("dev:[dir]", or a suitable
+#                   logical name) tells where to find "zlib.h".  The
+#                   ZLIB object library (LIBZ.OLB) is expected to be in
+#                   a "[.dest]" directory under that one
 #                   ("dev:[dir.ALPHAL]", for example), or in that
 #                   directory itself.
 #
@@ -92,8 +93,8 @@
 #                   support.  Add "PPMD_SFX=1" to the LOCAL_UNZIP C
 #                   macros to enable it.  (See LOCAL_UNZIP, above.)
 #
-#    NOSHARE=1      Link /NOSYSSHR (not using shareable images).
-#    NOSHARE=OLDVAX Link /NOSYSSHR on VAX for:
+#    NOSYSSHR=1     Link /NOSYSSHR (not using shareable images).
+#    NOSYSSHR=OLDVAX  Link /NOSYSSHR on VAX for:
 #                      DEC C with VMS before V7.3.
 #                      VAX C without DEC C RTL (DEC C not installed).
 #
@@ -149,28 +150,36 @@
 #
 # Example commands:
 #
-# To build the conventional small-file product using the DEC/Compaq/HP C
-# compiler (Note: DESCRIP.MMS is the default description file name.):
+# To build the large-file product (except on VAX) with all the available
+# optional compression methods using the DEC/Compaq/HP C compiler (Note:
+# DESCRIP.MMS is the default description file name.):
 #
 #    MMS /DESCRIP = [.VMS]
 #
-# To get the large-file executables (on a non-VAX system):
+# To get small-file executables (on a non-VAX system):
 #
-#    MMS /DESCRIP = [.VMS] /MACRO = (LARGE=1)
+#    MMS /DESCRIP = [.VMS] /MACRO = (NOLARGE=1)
 #
 # To delete the architecture-specific generated files for this system
 # type:
 #
-#    MMS /DESCRIP = [.VMS] /MACRO = (LARGE=1) CLEAN     ! Large-file.
-# or
-#    MMS /DESCRIP = [.VMS] CLEAN                        ! Small-file.
+#    MMS /DESCRIP = [.VMS] CLEAN
+#    MMS /DESCRIP = [.VMS] /MACRO = (NOLARGE=1) CLEAN   ! Non-VAX,
+#                                                       ! small-file.
 #
-# To build a complete small-file product for debug with compiler
-# listings and link maps:
+# To build a complete product for debug with compiler listings and link
+# maps:
 #
 #    MMS /DESCRIP = [.VMS] CLEAN
 #    MMS /DESCRIP = [.VMS] /MACRO = (DBG=1, LIST=1)
 #
+#
+#    Note that option macros like NOLARGE or PROD affect the destination
+#    directory for various product files, including executables, and
+#    various clean and test targets (CLEAN, DASHV, TEST, and so on) need
+#    to use the proper destination directory.  Thus, if NOLARGE or PROD
+#    is specified for a build, then the same macro must be specified for
+#    the various clean and test targets, too.
 #
 #    Note that on a Unix system, LOCAL_UNZIP contains compiler
 #    options, such as "-g" or "-DCRYPT_AES_WG_SFX", but on a VMS
@@ -243,15 +252,28 @@ ALL : $(UNZIP) $(UNZIP_CLI) $(UNZIPSFX) $(UNZIPSFX_CLI) $(UNZIP_HELP) \
       $(UNZIP_MSG_EXE) $(LIB_LIBUNZIP) $(LIBUNZIP_OPT)
 	@ write sys$output "Done."
 
-# CLEAN target.  Delete the [.$(DEST)] directory and everything in it.
+# CLEAN* targets.  These also similarly clean a local bzip2 directory.
+
+# CLEAN target.  Delete:
+#    The [.$(DEST)] directory and everything in it.
 
 CLEAN :
 	if (f$search( "[.$(DEST)]*.*") .nes. "") then -
-	 delete [.$(DEST)]*.*;*
-	if (f$search( "$(DEST).dir") .nes. "") then -
-	 set protection = w:d $(DEST).dir;*
-	if (f$search( "$(DEST).dir") .nes. "") then -
-	 delete $(DEST).dir;*
+	 delete /noconfirm [.$(DEST)]*.*;*
+	if (f$search( "$(DEST).DIR") .nes. "") then -
+	 set protection = w:d $(DEST).DIR;*
+	if (f$search( "$(DEST).DIR") .nes. "") then -
+	 delete /noconfirm $(DEST).DIR;*
+.IFDEF BUILD_BZIP2              # BUILD_BZIP2
+	@ write sys$output ""
+	@ write sys$output "Cleaning bzip2..."
+	def_dev_dir_orig = f$environment( "default")
+	set default $(IZ_BZIP2)
+	$(MMS) $(MMSQUALIFIERS) /DESCR=[.vms]descrip.mms -
+	 $(IZ_BZIP2_MACROS) -
+	 $(MMSTARGETS)
+	set default 'def_dev_dir_orig'
+.ENDIF                          # BUILD_BZIP2
 
 # CLEAN_ALL target.  Delete:
 #    The [.$(DEST)] directory and everything in it (CLEAN),
@@ -264,49 +286,49 @@ CLEAN :
 #
 CLEAN_ALL : CLEAN
 	if (f$search( "[.ALPHA*]*.*") .nes. "") then -
-	 delete [.ALPHA*]*.*;*
-	if (f$search( "ALPHA*.dir", 1) .nes. "") then -
-	 set protection = w:d ALPHA*.dir;*
-	if (f$search( "ALPHA*.dir", 2) .nes. "") then -
-	 delete ALPHA*.dir;*
+	 delete /noconfirm [.ALPHA*]*.*;*
+	if (f$search( "ALPHA*.DIR", 1) .nes. "") then -
+	 set protection = w:d ALPHA*.DIR;*
+	if (f$search( "ALPHA*.DIR", 2) .nes. "") then -
+	 delete /noconfirm ALPHA*.DIR;*
 	if (f$search( "[.IA64*]*.*") .nes. "") then -
-	 delete [.IA64*]*.*;*
-	if (f$search( "IA64*.dir", 1) .nes. "") then -
-	 set protection = w:d IA64*.dir;*
-	if (f$search( "IA64*.dir", 2) .nes. "") then -
-	 delete IA64*.dir;*
+	 delete /noconfirm [.IA64*]*.*;*
+	if (f$search( "IA64*.DIR", 1) .nes. "") then -
+	 set protection = w:d IA64*.DIR;*
+	if (f$search( "IA64*.DIR", 2) .nes. "") then -
+	 delete /noconfirm IA64*.DIR;*
 	if (f$search( "[.VAX*]*.*") .nes. "") then -
-	 delete [.VAX*]*.*;*
-	if (f$search( "VAX*.dir", 1) .nes. "") then -
-	 set protection = w:d VAX*.dir;*
-	if (f$search( "VAX*.dir", 2) .nes. "") then -
-	 delete VAX*.dir;*
+	 delete /noconfirm [.VAX*]*.*;*
+	if (f$search( "VAX*.DIR", 1) .nes. "") then -
+	 set protection = w:d VAX*.DIR;*
+	if (f$search( "VAX*.DIR", 2) .nes. "") then -
+	 delete /noconfirm VAX*.DIR;*
 	if (f$search( "help_temp_*.*") .nes. "") then -
-	 delete help_temp_*.*;*
+	 delete /noconfirm help_temp_*.*;*
 	if (f$search( "[.VMS]UNZIP_CLI.RNH") .nes. "") then -
-	 delete [.VMS]UNZIP_CLI.RNH;*
+	 delete /noconfirm [.VMS]UNZIP_CLI.RNH;*
 	if (f$search( "UNZIP_CLI.HLP") .nes. "") then -
-	 delete UNZIP_CLI.HLP;*
+	 delete /noconfirm UNZIP_CLI.HLP;*
 	if (f$search( "UNZIP_CLI.HTX") .nes. "") then -
-	 delete UNZIP_CLI.HTX;*
+	 delete /noconfirm UNZIP_CLI.HTX;*
 	if (f$search( "UNZIP.HLP") .nes. "") then -
-	 delete UNZIP.HLP;*
+	 delete /noconfirm UNZIP.HLP;*
 	if (f$search( "UNZIP.HTX") .nes. "") then -
-	 delete UNZIP.HTX;*
-	if (f$search( "test_dir_*.dir;*") .nes. "") then -
+	 delete /noconfirm UNZIP.HTX;*
+	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
 	 set protection = w:d [.test_dir_*...]*.*;*
-	if (f$search( "test_dir_*.dir;*") .nes. "") then -
-	 set protection = w:d test_dir_*.dir;*
+	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
+	 set protection = w:d test_dir_*.DIR;*
 	if (f$search( "[.test_dir_*.*]*.*") .nes. "") then -
-	 delete [.test_dir_*.*]*.*;*
+	 delete /noconfirm [.test_dir_*.*]*.*;*
 	if (f$search( "[.test_dir_*]*.*") .nes. "") then -
-	 delete [.test_dir_*]*.*;*
-	if (f$search( "test_dir_*.dir;*") .nes. "") then -
-	 delete test_dir_*.dir;*
+	 delete /noconfirm [.test_dir_*]*.*;*
+	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
+	 delete /noconfirm test_dir_*.DIR;*
 	if (f$search( "*.MMSD") .nes. "") then -
-	 delete *.MMSD;*
+	 delete /noconfirm *.MMSD;*
 	if (f$search( "[.VMS]*.MMSD") .nes. "") then -
-	 delete [.VMS]*.MMSD;*
+	 delete /noconfirm [.VMS]*.MMSD;*
 	@ write sys$output ""
 	@ write sys$output "Note:  This procedure will not"
 	@ write sys$output "   DELETE [.VMS]DESCRIP_DEPS.MMS;*"
@@ -324,27 +346,57 @@ CLEAN_ALL : CLEAN
 
 CLEAN_EXE :
 	if (f$search( "[.$(DEST)]*.EXE") .nes. "") then -
-         delete [.$(DEST)]*.EXE;*
+	 delete /noconfirm [.$(DEST)]*.EXE;*
+.IFDEF BUILD_BZIP2              # BUILD_BZIP2
+	@ write sys$output ""
+	@ write sys$output "Cleaning bzip2..."
+	def_dev_dir_orig = f$environment( "default")
+	set default $(IZ_BZIP2)
+	$(MMS) $(MMSQUALIFIERS) /DESCR=[.vms]descrip.mms -
+	 $(IZ_BZIP2_MACROS) -
+	 $(MMSTARGETS)
+	set default 'def_dev_dir_orig'
+.ENDIF                          # BUILD_BZIP2
 
 # CLEAN_OLB target.  Delete the object libraries in [.$(DEST)].
 
 CLEAN_OLB :
 	if (f$search( "[.$(DEST)]*.OLB") .nes. "") then -
-         delete [.$(DEST)]*.OLB;*
+	 delete /noconfirm [.$(DEST)]*.OLB;*
+.IFDEF BUILD_BZIP2              # BUILD_BZIP2
+	@ write sys$output ""
+	@ write sys$output "Cleaning bzip2..."
+	def_dev_dir_orig = f$environment( "default")
+	set default $(IZ_BZIP2)
+	$(MMS) $(MMSQUALIFIERS) /DESCR=[.vms]descrip.mms -
+	 $(IZ_BZIP2_MACROS) -
+	 $(MMSTARGETS)
+	set default 'def_dev_dir_orig'
+.ENDIF                          # BUILD_BZIP2
 
 # CLEAN_TEST target.  Delete the test directories, [.test_dir_*...].
 
 CLEAN_TEST :
-	if (f$search( "test_dir_*.dir;*") .nes. "") then -
+	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
 	 set protection = w:d [.test_dir_*...]*.*;*
-	if (f$search( "test_dir_*.dir;*") .nes. "") then -
-	 set protection = w:d test_dir_*.dir;*
+	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
+	 set protection = w:d test_dir_*.DIR;*
 	if (f$search( "[.test_dir_*.*]*.*") .nes. "") then -
-	 delete [.test_dir_*.*]*.*;*
+	 delete /noconfirm [.test_dir_*.*]*.*;*
 	if (f$search( "[.test_dir_*]*.*") .nes. "") then -
-	 delete [.test_dir_*]*.*;*
-	if (f$search( "test_dir_*.dir;*") .nes. "") then -
-	 delete test_dir_*.dir;*
+	 delete /noconfirm [.test_dir_*]*.*;*
+	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
+	 delete /noconfirm test_dir_*.DIR;*
+.IFDEF BUILD_BZIP2              # BUILD_BZIP2
+	@ write sys$output ""
+	@ write sys$output "Cleaning bzip2..."
+	def_dev_dir_orig = f$environment( "default")
+	set default $(IZ_BZIP2)
+	$(MMS) $(MMSQUALIFIERS) /DESCR=[.vms]descrip.mms -
+	 $(IZ_BZIP2_MACROS) -
+	 $(MMSTARGETS)
+	set default 'def_dev_dir_orig'
+.ENDIF                          # BUILD_BZIP2
 
 # DASHV target.  Generate an "unzip -v" report.
 
@@ -371,7 +423,7 @@ SLASHV :
 TEST :
 	@[.vms]test_unzip.com testmake.zip [.$(DEST)]
 
-# TEST_PPMD target.  Runs a PPMdtest procedure.
+# TEST_PPMD target.  Runs a PPMd test procedure.
 
 TEST_PPMD :
 	@[.vms]test_unzip.com testmake_ppmd.zip [.$(DEST)] NOSFX
@@ -422,7 +474,7 @@ OPT_ID_SFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OPT
 
 [.$(DEST)]UNZ_CLI.CLD : [.VMS]UNZ_CLI.CLD
 	@[.vms]cppcld.com "$(CC) $(CFLAGS_ARCH)" -
-         $(MMS$SOURCE) $(MMS$TARGET) "$(CDEFS)"
+	 $(MMS$SOURCE) $(MMS$TARGET) "$(CDEFS)"
 
 [.$(DEST)]ZIPINFO_C.OBJ : ZIPINFO.C
 	$(CC) $(CFLAGS) $(CDEFS_CLI) $(MMS$SOURCE)
@@ -551,17 +603,21 @@ $(OPT_ID_SFX) :
 # Local BZIP2 object library.
 
 $(LIB_BZ2_LOCAL) :
+	@ write sys$output ""
+	@ write sys$output "Building bzip2..."
 	def_dev_dir_orig = f$environment( "default")
 	set default $(IZ_BZIP2)
 	$(MMS) $(MMSQUALIFIERS) /DESCR=[.vms]descrip.mms -
 	 $(IZ_BZIP2_MACROS) -
 	 $(MMSTARGETS)
 	set default 'def_dev_dir_orig'
+	@ write sys$output ""
 
 # Normal UnZip executable.
 
 $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
-           $(LIB_UNZIP) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID)
+            $(LIB_UNZIP) $(LIB_BZ2_DEP) \
+            $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP) /library, -
 	 $(LIB_BZIP2_OPTS) -
@@ -569,12 +625,13 @@ $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
-	 $(NOSHARE_OPTS)
+	 $(NOSYSSHR_OPTS)
 
 # CLI UnZip executable.
 
 $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
-               $(LIB_UNZIP_CLI) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID)
+                $(LIB_UNZIP_CLI) $(LIB_BZ2_DEP) \
+                $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP_CLI) /library, -
 	 $(LIB_UNZIP) /library, -
@@ -583,12 +640,13 @@ $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID) /options -
-	 $(NOSHARE_OPTS)
+	 $(NOSYSSHR_OPTS)
 
 # SFX UnZip executable.
 
 $(UNZIPSFX) : [.$(DEST)]UNZIPSFX.OBJ \
-              $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) $(OPT_FILE) $(OPT_ID_SFX)
+               $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) \
+               $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX) /library, -
 	 $(LIB_BZIP2_OPTS) -
@@ -596,13 +654,13 @@ $(UNZIPSFX) : [.$(DEST)]UNZIPSFX.OBJ \
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
-	 $(NOSHARE_OPTS)
+	 $(NOSYSSHR_OPTS)
 
 # SFX CLI UnZip executable.
 
 $(UNZIPSFX_CLI) : [.$(DEST)]UNZSFXCLI.OBJ \
-                  $(LIB_UNZIPSFX_CLI) $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) \
-                  $(OPT_FILE) $(OPT_ID_SFX)
+                   $(LIB_UNZIPSFX_CLI) $(LIB_UNZIPSFX) $(LIB_BZ2_DEP) \
+                   $(OPT_FILE) $(OPT_ID_SFX)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIPSFX_CLI) /library, -
 	 $(LIB_UNZIPSFX) /library, -
@@ -611,7 +669,7 @@ $(UNZIPSFX_CLI) : [.$(DEST)]UNZSFXCLI.OBJ \
 	 $(LIB_ZLIB_OPTS) -
 	 $(LFLAGS_ARCH) -
 	 $(OPT_ID_SFX) /options -
-	 $(NOSHARE_OPTS)
+	 $(NOSYSSHR_OPTS)
 
 
 # Help library source files.
@@ -631,16 +689,16 @@ UNZIP_CLI.HLP : [.VMS]UNZIP_CLI.HELP [.VMS]CVTHELP.TPU
 .HLP.HTX :
 	help_temp_name = "help_temp_"+ f$getjpi( 0, "PID")
 	if (f$search( help_temp_name+ ".HLB") .nes. "") then -
-         delete 'help_temp_name'.HLB;*
+         delete /noconfirm 'help_temp_name'.HLB;*
 	library /create /help 'help_temp_name'.HLB $(MMS$SOURCE)
 	help /library = sys$disk:[]'help_temp_name'.HLB -
          /output = 'help_temp_name'.OUT unzip...
-	delete 'help_temp_name'.HLB;*
+	delete /noconfirm 'help_temp_name'.HLB;*
 	create /fdl = [.VMS]STREAM_LF.FDL $(MMS$TARGET)
 	open /append help_temp $(MMS$TARGET)
 	copy 'help_temp_name'.OUT help_temp
 	close help_temp
-	delete 'help_temp_name'.OUT;*
+	delete /noconfirm 'help_temp_name'.OUT;*
 
 UNZIP.HTX : UNZIP.HLP [.VMS]STREAM_LF.FDL
 

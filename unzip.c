@@ -3762,7 +3762,7 @@ static void show_options(__G)
     __GDEF
 {
     extent i;
-    int lolen;
+    size_t lolen;
     char optiontext[200];
     char gr[4];
     char sh[7];
@@ -4580,7 +4580,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
   int depth;
 {
   ZCONST char *shortopt;
-  int clen;
+  size_t clen;
   ZCONST char *nextchar;
   ZCONST char *s;
   ZCONST char *start;
@@ -4595,7 +4595,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
   nextchar = arg + (*optchar);
   clen = MB_CLEN(nextchar);
   /* next char in arg */
-  (*optchar) +=  clen;
+  (*optchar) +=  (int)clen;
   /* get first char of short option */
   shortopt = arg + (*optchar);
   /* no value */
@@ -4653,7 +4653,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
       } else {
         *negated = 1;
         /* set up to skip negating dash */
-        (*optchar) += clen;
+        (*optchar) += (int)clen;
         clen = 1;
       }
     }
@@ -4683,7 +4683,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         }
         (*value)[0] = *(arg + (*optchar) + clen);
         (*value)[1] = '\0';
-        *optchar += clen;
+        *optchar += (int)clen;
         clen = 1;
       } else {
         /* one char values require a value */

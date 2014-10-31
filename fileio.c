@@ -102,14 +102,14 @@
 */
 #ifdef WINDLL
 # define WriteError(buf,len,strm) \
-   (win_fprintf(pG, strm, (extent)len, (char far *)buf) != (int)(len))
+   (win_fprintf(pG, (strm), (int)(len), (char far *)(buf)) != (len))
 #else /* !WINDLL */
 # ifdef USE_FWRITE
 #  define WriteError(buf,len,strm) \
-    ((extent)fwrite((char *)(buf),1,(extent)(len),strm) != (extent)(len))
+    (fwrite((char *)(buf), 1, (len), (strm)) != (len))
 # else
 #  define WriteError(buf,len,strm) \
-    ((extent)write(fileno(strm),(char *)(buf),(extent)(len)) != (extent)(len))
+    (write(fileno(strm), (char *)(buf), (int)(len)) != (len))
 # endif
 #endif /* ?WINDLL */
 
@@ -393,7 +393,9 @@ int open_outfile(__G)           /* return 1 if fail */
         if (uO.B_flag) {    /* do backup */
             char *tname;
             z_stat tmpstat;
-            int blen, flen, tlen;
+            size_t blen;
+	    size_t flen;
+	    size_t tlen;
 
             blen = strlen(BackupSuffix);
             flen = strlen(G.filename);
@@ -902,7 +904,7 @@ int seek_zipf(__G__ abs_offset)
         G.incnt -= (int)inbuf_offset;
         G.inptr = G.inbuf + (int)inbuf_offset;
     } else {
-        G.incnt += (G.inptr-G.inbuf) - (int)inbuf_offset;
+        G.incnt += (int)(G.inptr- G.inbuf) - (int)inbuf_offset;
         G.inptr = G.inbuf + (int)inbuf_offset;
     }
     return(PK_OK);
@@ -1362,7 +1364,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
                                 } else
 # endif
                                 if (!uO.cflag && WriteError(transbuf,
-                                    (extent)(q-transbuf), G.outfile))
+                                    (q- transbuf), G.outfile))
                                     return disk_error(__G);
                                 else if (uO.cflag && (*G.message)((zvoid *)&G,
                                          transbuf, (ulg)(q-transbuf), 0x2000))
@@ -1386,7 +1388,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
                             } else
 # endif
                             if (!uO.cflag &&
-                                WriteError(transbuf, (extent)(q-transbuf),
+                                WriteError(transbuf, (q- transbuf),
                                   G.outfile))
                                 return disk_error(__G);
                             else if (uO.cflag && (*G.message)((zvoid *)&G,
@@ -1467,11 +1469,11 @@ static int partflush(__G__ rawbuf, size, unshrink)
         if (q > transbuf) {
 # ifdef DLL
             if (G.redirect_data) {
-                if (writeToMemory(__G__ transbuf, (extent)(q-transbuf)))
+                if (writeToMemory(__G__ transbuf, (q- transbuf)))
                     return PK_ERR;
             } else
 # endif
-            if (!uO.cflag && WriteError(transbuf, (extent)(q-transbuf),
+            if (!uO.cflag && WriteError(transbuf, (q- transbuf),
                 G.outfile))
                 return disk_error(__G);
             else if (uO.cflag && (*G.message)((zvoid *)&G, transbuf,
@@ -2758,7 +2760,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
 
 #ifdef WINDLL
             /* ran out of local mem -- had to cheat */
-            win_fprintf((zvoid *)&G, stdout, (extent)(q-G.outbuf),
+            win_fprintf((zvoid *)&G, stdout, (int)(q-G.outbuf),
                         (char *)G.outbuf);
             win_fprintf((zvoid *)&G, stdout, 2, (char *)"\n\n");
 #else /* def WINDLL */
@@ -3148,7 +3150,7 @@ char *name_only( path)
     char *result = NULL;
     char *dot;
     char *name;
-    int len;
+    size_t len;
 
     name = strrchr( path, '/');
     if (name == NULL)
@@ -3537,7 +3539,7 @@ char *plastchar(ptr, len)
     ZCONST char *ptr;
     extent len;
 {
-    unsigned clen;
+    extent clen;
     ZCONST char *oldptr = ptr;
     while(*ptr != '\0' && len > 0){
         oldptr = ptr;

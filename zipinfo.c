@@ -2041,7 +2041,8 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                 case EF_TIME:
                     if (eb_len > 0) {
                         char types[80];
-                        int num = 0, len;
+                        int num = 0;
+			size_t len;
 
                         *types = '\0';
                         if (*ef_ptr & 1) {

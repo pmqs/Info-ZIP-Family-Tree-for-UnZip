@@ -1,7 +1,7 @@
       INSTALL_VMS.txt -- UnZip Installation Supplement for VMS (OpenVMS)
       ==================================================================
 
-   UnZip version 6.10.  Revised: 2014-10-10.
+   UnZip version 6.10.  Revised: 2014-10-20.
 
 ------------------------------------------------------------------------
 
@@ -154,7 +154,7 @@ the user to request large-file support explicitly.  Now it must be
 disabled explicitly, if it's not desired.)
 
       On Alpha, the builders will initially assume that large-file
-      support is available, but will test large-file support before 
+      support is available, but will test large-file support before
       continuing.  If large-file support is not available, the build
       will fail, and a message will advise the user to add "NOLARGE" to
       the build command.
@@ -278,6 +278,15 @@ adding NO_CRYPT to the LOCAL_UNZIP symbol/macro.  For example:
       More Complex Build Examples
       ---------------------------
 
+   When doing complex or multiple builds, note that the MMS (or MMK)
+builders offer a set of CLEAN* targets, which can be used to remove some
+or all old build products (object files, object libraries, executables,
+and so on).  It's usually a good idea to do some kind of "MMS CLEAN"
+before making significant changes to the build options.  The DCL-script
+builder, [.vms]build_zip.com, has no such options, so its users must
+manually clean out any old build products when necessary, including any
+bzip2 products which are created under the [.bzip2] subdirectory.
+
    Here are some more complex build examples:
 
    o Build with the large-file option disabled (non-VAX, typically used
@@ -352,7 +361,7 @@ the default UNIX-like command-line interface, UNZIP_CLI.HLP for the
 VMS-like command-line interface) are placed in the main directory.  With
 a mixed-architecture VMS cluster, the same main directory on a shared
 disk may be used by all system types.  (Using the NOHELP option with
-BUILD_UNZIP.COM can keep it from making the same help files repeatedly.)
+build_unzip.com can keep it from making the same help files repeatedly.)
 Building the help files is detailed below.
 
 ------------------------------------------------------------------------
@@ -458,11 +467,11 @@ a command like:
       HELP /LIBRARY = device:[directory]UNZIP.HLB
 
    For greater ease, the user (or system manager) may define a
-HLP$LIBRARY logical name to allow the HELP utility to find the UnZip help
-library automatically.  See HELP HELP /USERLIBRARY for more details.
-The command procedure [.vms]hlp_lib_next.com may be used to determine
-the next available HLP$LIBRARY logical name, and could be adapted to
-define a HLP$LIBRARY logical name for an UnZip help library.
+HLP$LIBRARY logical name to allow the HELP utility to find the UnZip
+help library automatically.  See HELP HELP /USERLIBRARY for more
+details. The command procedure [.vms]hlp_lib_next.com may be used to
+determine the next available HLP$LIBRARY logical name, and could be
+adapted to define a HLP$LIBRARY logical name for an UnZip help library.
 
    The builders also create VMS message files, UNZIP_MSG.EXE, in the
 destination directory with the program executables.  A user may gain DCL

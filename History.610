@@ -536,7 +536,7 @@ Features added (or removed):
    (fileio.c, unzip.c, unzip.h, man/man1/unzip.1, vms/cmdline.c,
    vms/unzip_cli.help, vms/unz_cli.cld) [SMS, JBCarpen]
  - A Bzip2 source kit (version 1.0.6, modified for better VMS support)
-   is now included in the kit.  (Old bzip2/descrbz2.mms removed. 
+   is now included in the kit.  (Old bzip2/descrbz2.mms removed.
    bzip2/README_bz2.txt, bzip2/)  [SMS]
  - Changed Unix and VMS builders:
     - Enable bzip2, LZMA, and PPMd compression support by default.
@@ -550,6 +550,25 @@ Features added (or removed):
    vms/build_unzip.com, vms/check_large.com (new), vms/collect_deps.com,
    vms/descrip.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms,
    vms/INSTALL_VMS.txt) [SMS]
+
+6.10c12 (31 Oct 2014):
+ - Changed Windows (win32\vc10) and Windows DLL (windll\vc10) builders:
+    - Enabled bzip2 compression support by default.
+    - Added x64 platform to projects, disabling 32-bit assembly code
+      explicitly (ASM_CRC).
+   (win32/vc10/unzip.sln, win32/vc10/funzip/funzip.vcxproj,
+   win32/vc10/libbz2/libbz2.vcxproj, win32/vc10/unzip/unzip.vcxproj,
+   win32/vc10/unzipsfx/unzipsfx.vcxproj, windll/vc10/unzip32_dll.sln,
+   windll/vc10/libbz2/libbz2.vcxproj,
+   windll/vc10/unzip32_dll/unzip32_dll.vcxproj,
+   windll/vc10/unzipstb/unzipstb.vcxproj,
+   windll/vc10/uzexampl/uzexampl.vcxproj) [SMS]
+ - Minor code changes to accommodate Windows x64 builds:
+    - Changed some types and added some type casts.
+    - Changed system identification text in the "-v" report.
+    - Disabled 32-bit assembly code (ASM_CRC) when _WIN64 is defined.
+   (extract.c, fileio.c, globals.h, process.c, unzpriv.h,
+   win32/w32cfg.h, win32/win32.c, windll/windll.c, zipinfo.c) [SMS]
 
 
 Bugs fixed:
@@ -1503,16 +1522,21 @@ Bugs fixed:
    later tests, causing erroneous configuration related to wide
    characters and Unicode.  (unix/configure)  [EG, SMS]
 
-6.10c11 (09 Oct 2014):
+6.10c11 (03 Nov 2014):
  - Windows DLL interface/entry functions Wiz_SingleEntryUnzip() and
    Wiz_UnzipToMemory() were not setting the global flag has_win32_wide,
-   causing problems with Unicode/wide file/member names. 
+   causing problems with Unicode/wide file/member names.
    (windll/windll.c) [Andreas Schniertshauer, SMS]
  - Work around MS compiler quirk which caused bad behavior in the
    Windows DLL.  Forum topic:
    http://www.info-zip.org/phpBB3/viewtopic.php?f=4&t=447
    (windll/windll.c)  [JBCarpen, SMS]
- - ZipInfo displayed wrong data for MD5 extra block (ID = 0x4b46). 
+ - ZipInfo displayed wrong data for MD5 extra block (ID = 0x4b46).
    (zipinfo.c) [Wojtek Michalski]
+ - A corrupt (or crafted) archive could cause memory access problems.
+   Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=450
+   (extract.c) [Michal Zalewski, SMS]
 
+6.10c12 (11 Nov 2014):
+ - No news.
 

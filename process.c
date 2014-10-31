@@ -2961,7 +2961,7 @@ zwchar *wchar_to_wide_string(wchar_string)
 zwchar *local_to_wide_string(local_string)
   ZCONST char *local_string;
 {
-  int wsize;
+  size_t wsize;
   wchar_t *wc_string;
   zwchar *wide_string;
 

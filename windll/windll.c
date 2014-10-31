@@ -1031,7 +1031,8 @@ int WINAPI Wiz_Grep(LPSTR archive, LPSTR file, LPSTR pattern, int cmd,
                    int SkipBin, LPUSERFUNCTIONS lpUserFunctions)
 {
     int retcode = FALSE, compare;
-    ulg i, j, patternLen, buflen;
+    ulg i, j, buflen;
+    size_t patternLen;
     char * sz, *p;
     UzpBuffer retstr;
 

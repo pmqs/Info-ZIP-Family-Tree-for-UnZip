@@ -2,7 +2,7 @@
 #
 #    UnZip 6.10 for VMS -- MMS (or MMK) Source Description File.
 #
-#    Last revised:  2014-10-10
+#    Last revised:  2014-10-20
 #
 #----------------------------------------------------------------------
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
@@ -51,8 +51,6 @@ VAXC_OR_FORCE_VAXC = 1
 .ENDIF                          # VAXC
 
 # Analyze architecture-related and option macros.
-
-# Compiler options on VAX.
 
 .IFDEF __ALPHA__                # __ALPHA__
 DECC = 1
@@ -192,27 +190,6 @@ GCC_C =
 GCC_L =
 .ENDIF                          # GNUC
 
-# Check for option problems.
-
-.IFDEF __VAX__                  # __VAX__
-.IFDEF LARGE                        # LARGE
-LARGE_VAX = 1
-.ENDIF                              # LARGE
-.IFDEF VAXC_OR_FORCE_VAXC           # VAXC_OR_FORCE_VAXC
-.IFDEF GNUC                             # GNUC
-VAX_MULTI_CMPL = 1
-.ENDIF                                  # GNUC
-.ENDIF                              # VAXC_OR_FORCE_VAXC
-.ELSE                           # __VAX__
-.IFDEF VAXC_OR_FORCE_VAXC           # VAXC_OR_FORCE_VAXC
-NON_VAX_CMPL = 1
-.ELSE                               # VAXC_OR_FORCE_VAXC
-.IFDEF GNUC                             # GNUC
-NON_VAX_CMPL = 1
-.ENDIF                                  # GNUC
-.ENDIF                              # VAXC_OR_FORCE_VAXC
-.ENDIF                          # __VAX__
-
 # BZIP2 options.  (Default: IZ_BZIP2=[.bzip2].  To disable, define
 # NO_IZ_BZIP2 or NOIZ_BZIP2.)
 
@@ -308,6 +285,27 @@ PPMD_ERR = 1
 PPMD = 1
 .ENDIF                              # PPMD
 .ENDIF                          # NOPPMD
+
+# Check for option problems.
+
+.IFDEF __VAX__                  # __VAX__
+.IFDEF LARGE                        # LARGE
+LARGE_VAX = 1
+.ENDIF                              # LARGE
+.IFDEF VAXC_OR_FORCE_VAXC           # VAXC_OR_FORCE_VAXC
+.IFDEF GNUC                             # GNUC
+VAX_MULTI_CMPL = 1
+.ENDIF                                  # GNUC
+.ENDIF                              # VAXC_OR_FORCE_VAXC
+.ELSE                           # __VAX__
+.IFDEF VAXC_OR_FORCE_VAXC           # VAXC_OR_FORCE_VAXC
+NON_VAX_CMPL = 1
+.ELSE                               # VAXC_OR_FORCE_VAXC
+.IFDEF GNUC                             # GNUC
+NON_VAX_CMPL = 1
+.ENDIF                                  # GNUC
+.ENDIF                              # VAXC_OR_FORCE_VAXC
+.ENDIF                          # __VAX__
 
 # Complain about any problems (and die) if warranted.  Otherwise, show
 # optional package directories being used, and the destination
@@ -472,6 +470,8 @@ PPMD = 1
 CDEFS_AES = , CRYPT_AES_WG
 .ENDIF                          # AES_WG
 
+# PPMd options.
+
 .IFDEF PPMD                     # PPMD
 .IFDEF LZMA                         # LZMA
 .IFDEF __VAX__                          # __VAX__
@@ -544,8 +544,8 @@ CDEFS_LARGE = , LARGE_FILE_SUPPORT
 C_LOCAL_UNZIP = , $(LOCAL_UNZIP)
 .ENDIF
 
-CDEFS = VMS $(CDEFS_AES) $(CDEFS_BZ) $(CDEFS_LARGE) $(CDEFS_LZMA) \
- $(CDEFS_PPMD) $(CDEFS_ZL) $(C_LOCAL_UNZIP)
+CDEFS = VMS $(CDEFS_AES) $(CDEFS_BZ) $(CDEFS_LARGE) \
+ $(CDEFS_LZMA) $(CDEFS_PPMD) $(CDEFS_ZL) $(C_LOCAL_UNZIP)
 
 CDEFS_UNX = /define = ($(CDEFS))
 
@@ -573,68 +573,68 @@ CFLAGS_ARCH =
 .ENDIF                                      # FORCE_VAXC
 .ENDIF                                  # DECC
 
-# LINK (share) library options.
-# Omit shareable image options file for NOSHARE.
+# LINK (sysshr) library options.
+# Omit shareable image options file for NOSYSSHR.
 
 .IFDEF VAXC_OR_FORCE_VAXC               # VAXC_OR_FORCE_VAXC
-.IFDEF NOSHARE                              # NOSHARE
+.IFDEF NOSYSSHR                             # NOSYSSHR
 OPT_FILE =
 LFLAGS_ARCH =
-.ELSE                                       # NOSHARE
+.ELSE                                       # NOSYSSHR
 OPT_FILE = [.$(DEST)]VAXCSHR.OPT
 LFLAGS_ARCH = $(OPT_FILE) /options,
-.ENDIF                                      # NOSHARE
+.ENDIF                                      # NOSYSSHR
 .ELSE                                   # VAXC_OR_FORCE_VAXC
 .IFDEF GNUC                                 # GNUC
 LFLAGS_GNU = GNU_CC:[000000]GCCLIB.OLB /LIBRARY
-.IFDEF NOSHARE                                  # NOSHARE
+.IFDEF NOSYSSHR                                 # NOSYSSHR
 OPT_FILE =
 LFLAGS_ARCH = $(LFLAGS_GNU),
-.ELSE                                           # NOSHARE
+.ELSE                                           # NOSYSSHR
 OPT_FILE = [.$(DEST)]VAXCSHR.OPT
 LFLAGS_ARCH = $(LFLAGS_GNU), SYS$DISK:$(OPT_FILE) /options,
-.ENDIF                                          # NOSHARE
+.ENDIF                                          # NOSYSSHR
 .ELSE                                       # GNUC
 OPT_FILE =
 LFLAGS_ARCH =
 .ENDIF                                      # GNUC
 .ENDIF                                  # VAXC_OR_FORCE_VAXC
 
-# LINK NOSHARE options.
+# LINK NOSYSSHR options.
 
-.IFDEF NOSHARE                  # NOSHARE
+.IFDEF NOSYSSHR                 # NOSYSSHR
 .IFDEF __ALPHA__                    # __ALPHA__
-NOSHARE_OPTS = , SYS$LIBRARY:STARLET.OLB /LIBRARY\
+NOSYSSHR_OPTS = , SYS$LIBRARY:STARLET.OLB /LIBRARY\
  /INCLUDE = CMA$TIS /NOSYSSHR
 .ELSE                               # __ALPHA__
 .IFDEF __IA64__                         # __IA64__
-NOSHARE_OPTS = , SYS$LIBRARY:STARLET.OLB /LIBRARY\
+NOSYSSHR_OPTS = , SYS$LIBRARY:STARLET.OLB /LIBRARY\
  /INCLUDE = CMA$TIS /NOSYSSHR
 .ELSE                                   # __IA64__
 OLDVAX_OLDVAX = 1
 .IFDEF DECC                                 # DECC
-.IFDEF OLDVAX_$(NOSHARE)                        # OLDVAX_$(NOSHARE)
-NOSHARE_OPTS = , SYS$LIBRARY:DECCRTL.OLB /LIBRARY\
+.IFDEF OLDVAX_$(NOSYSSHR)                       # OLDVAX_$(NOSYSSHR)
+NOSYSSHR_OPTS = , SYS$LIBRARY:DECCRTL.OLB /LIBRARY\
  /INCLUDE = CMA$TIS /NOSYSSHR
-.ELSE                                           # OLDVAX_$(NOSHARE)
-NOSHARE_OPTS = , SYS$LIBRARY:DECCRTL.OLB /LIBRARY\
+.ELSE                                           # OLDVAX_$(NOSYSSHR)
+NOSYSSHR_OPTS = , SYS$LIBRARY:DECCRTL.OLB /LIBRARY\
  /INCLUDE = (CMA$TIS, CMA$TIS_VEC) /NOSYSSHR
-.ENDIF                                          # OLDVAX_$(NOSHARE)
+.ENDIF                                          # OLDVAX_$(NOSYSSHR)
 .ELSE                                       # DECC
-.IFDEF OLDVAX_$(NOSHARE)                        # OLDVAX_$(NOSHARE)
-NOSHARE_OPTS = , SYS$LIBRARY:VAXCRTL.OLB /LIBRARY,\
+.IFDEF OLDVAX_$(NOSYSSHR)                       # OLDVAX_$(NOSYSSHR)
+NOSYSSHR_OPTS = , SYS$LIBRARY:VAXCRTL.OLB /LIBRARY,\
  SYS$LIBRARY:IMAGELIB.OLB /LIBRARY /NOSYSSHR
-.ELSE                                           # OLDVAX_$(NOSHARE)
-NOSHARE_OPTS = , SYS$LIBRARY:VAXCRTL.OLB /LIBRARY,\
+.ELSE                                           # OLDVAX_$(NOSYSSHR)
+NOSYSSHR_OPTS = , SYS$LIBRARY:VAXCRTL.OLB /LIBRARY,\
  SYS$LIBRARY:DECCRTL.OLB /LIBRARY /INCLUDE = CMA$TIS,\
  SYS$LIBRARY:IMAGELIB.OLB /LIBRARY /NOSYSSHR
-.ENDIF                                          # OLDVAX_$(NOSHARE)
+.ENDIF                                          # OLDVAX_$(NOSYSSHR)
 .ENDIF                                      # DECC
 .ENDIF                                  # __IA64__
 .ENDIF                              # __ALPHA__
-.ELSE                           # NOSHARE
-NOSHARE_OPTS =
-.ENDIF                          # NOSHARE
+.ELSE                           # NOSYSSHR
+NOSYSSHR_OPTS =
+.ENDIF                          # NOSYSSHR
 
 # LIST options.
 
@@ -655,6 +655,8 @@ LINKFLAGS_LIST = /nomap
 CFLAGS = \
  $(CFLAGS_ARCH) $(CFLAGS_DBG) $(CFLAGS_INCL) $(CFLAGS_LIST) $(CCOPTS) \
  /object = $(MMS$TARGET)
+
+CFLAGS_DEP = $(CFLAGS_ARCH) $(CFLAGS_INCL) $(CCOPTS)
 
 LINKFLAGS = \
  $(LINKFLAGS_DBG) $(LINKFLAGS_LIST) $(LINKOPTS) \

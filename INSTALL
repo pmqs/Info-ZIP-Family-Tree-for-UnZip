@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2014-10-06
+   UnZip version 6.10.  Revised: 2014-11-08
 
 ------------------------------------------------------------------------
 
@@ -69,15 +69,16 @@ options.)
 This should create an "unzip61" directory which contains the UnZip
 source kit, and that is where the rest of the work is done.
 
-   Some unzip programs, such as the Extraction Wizard in Windows, may
-want to add another add another "unzip61" directory above the top-level
-directory in the Zip archive.  This extra, top-level directory is not
-needed, and probably makes finding the archive's top-level directory
-harder.  (With the Windows Extraction Wizard, this extra directory can
-easily be deleted manually.)  Many of the instructions below assume that
-you're in the archive's main (top-level) directory, that is, the
-directory which contains this INSTALL file (and many other UnZip files
-and directories).
+   Some unzip programs, such as the Extraction Wizard ("Extract
+Compressed (Zipped) Folders") in Windows, may want to add another add
+another "unzip61" directory above the top-level directory in the Zip
+archive.  This extra, top-level directory is not needed, and probably
+makes finding the archive's top-level directory harder.  (With the
+Windows Extraction Wizard, this extra directory can easily be deleted
+manually from the default destination path before letting the extraction
+proceed.)  Many of the instructions below assume that you're in the
+archive's main (top-level) directory, that is, the directory which
+contains this INSTALL file (and many other UnZip files and directories).
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -240,7 +241,7 @@ control the corresponding optional features:
                         is present).  Support requires a separate
                         IZ_AES_WG source kit, as described above
                         ("Optional Source Kits"), but is enabled by
-                        default if that source kit is present.  
+                        default if that source kit is present.
 
       BINS=[L][M][U]    Binaries build list:
                          L: object library (libizunzip.a)
@@ -544,11 +545,7 @@ Windows (XP, Vista, 7, and so on)
    Preprocessor Definitions (C macros).  Some popular macros are
    included but disabled by "x_" prefixes, which are easy to remove.
    The solution file, unzip.sln, includes the "libbz2" project, which is
-   marked as a prerequisite for the "unzip" and "unzipsfx" projects.  If
-   there is no bzip2 source kit in the bzip2\ directory, then the
-   "libbz2" project build will fail, but the "unzip" and "unzipsfx"
-   project builds should still work (so long as the BZIP2_SUPPORT macro
-   is not defined).
+   marked as a prerequisite for the "unzip" and "unzipsfx" projects.
 
    Symbolic link support (C macro SYMLINKS) requires Windows Vista or
    newer.
@@ -565,10 +562,7 @@ Windows (XP, Vista, 7, and so on)
    UnZip itself, optional features are controlled by Preprocessor
    Definitions (C macros).  Also similarly, the solution file,
    unzip32_dll.sln, includes the "libbz2" project as as a prerequisite
-   for the "unz32dll" and "uzexampl" projects, and if there is no bzip2
-   source kit in the bzip2\ directory, then the "libbz2" project build
-   will fail, but the other project builds should still work (so long as
-   the BZIP2_SUPPORT macro is not defined).
+   for the "unz32dll" and "uzexampl" projects.
 
    Currently, Microsoft Visual Studio 2010 (Visual C++ v10.0), VS 2012
    (VC++ v11.0), and VS 2013 (VC++ 12.0) are the only tested versions.
@@ -894,9 +888,8 @@ BZIP2_SUPPORT   (requires bzip2 object library)
    MSDOS 32-bit (DJGPP), Unix, VMS, and Windows.
 
       Compilation:
-      - MSDOS, Windows: You have to supply the macro definition
-        "USEBZ2=1" on the command line when you invoke the "make"
-        program.
+      - MSDOS: You have to supply the macro definition "USEBZ2=1" on the
+        command line when you invoke the "make" program.
       - Unix: The target "generic" automatically enables bzip2 support
         when its unix/configure script detects bzip2 sources in the
         "bzip2" subdirectory.  See the Unix section below for details on

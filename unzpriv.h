@@ -1081,7 +1081,13 @@ void izu_md_check( void);
 #  endif
 #endif
 
+/* Zlib includes its own CRC32 code, obviating ours. */
 #if (defined(USE_ZLIB) && defined(ASM_CRC))
+#  undef ASM_CRC
+#endif
+
+/* Do not use our (32-bit) assembly code for 64-bit Windows. */
+#if (defined(_WIN64) && defined(ASM_CRC))
 #  undef ASM_CRC
 #endif
 
@@ -3285,7 +3291,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #ifdef _MBCS
 #  define STRLOWER(str1, str2) \
    { \
-       char  *p, *q, c; unsigned i; \
+       char  *p, *q, c; size_t i; \
        p = (char *)(str1); \
        q = (char *)(str2); \
        while ((c = *p) != '\0') { \

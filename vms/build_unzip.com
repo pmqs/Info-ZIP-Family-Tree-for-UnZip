@@ -2,7 +2,7 @@ $! BUILD_UNZIP.COM
 $!
 $!     UnZip 6.10 for VMS -- DCL Build procedure.
 $!
-$!     Last revised:  2014-10-09  SMS.
+$!     Last revised:  2014-10-20  SMS.
 $!
 $!----------------------------------------------------------------------
 $! Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
@@ -28,7 +28,7 @@ $!     - Direct bzip2 support: "IZ_BZIP2=dev:[dir]"
 $!       Disable bzip2 support: "NOIZ_BZIP2"
 $!       By default, bzip2 support is enabled, and uses the bzip2 source
 $!       kit supplied in the [.bzip2] directory.  Specify NOIZ_BZIP2
-$!       to disable bzip2 support. Specify IZ_BZIP2 with a value
+$!       to disable bzip2 support.  Specify IZ_BZIP2 with a value
 $!       ("dev:[dir]", or a suitable logical name) to use the bzip2
 $!       header file and object library found there.  The bzip2 object
 $!       library (LIBBZ2_NS.OLB) is expected to be in a simple "[.dest]"
@@ -120,6 +120,18 @@ $!     of "VMSCLI" now is the selection of the VMS CLI style UnZip
 $!     executable in the foreign command definition.)
 $!
 $!
+$! Save the current default disk:[directory], and set default to the
+$! directory above where this procedure is situated (which had better be
+$! the main distribution directory).
+$!
+$ here = f$environment( "default")
+$ here = f$parse( here, , , "device")+ f$parse( here, , , "directory")
+$!
+$ proc = f$environment( "procedure")
+$ proc_dir = f$parse( proc, , , "device")+ f$parse( proc, , , "directory")
+$ set default 'proc_dir'
+$ set default [-]
+$!
 $ on error then goto error
 $ on control_y then goto error
 $ OLD_VERIFY = f$verify( 0)
@@ -127,7 +139,7 @@ $!
 $ edit := edit                  ! override customized edit commands
 $ say := write sys$output
 $!
-$!##################### Read settings from environment ########################
+$! Get LOCAL_UNZIP symbol options.
 $!
 $ if (f$type( LOCAL_UNZIP) .eqs. "")
 $ then
@@ -159,7 +171,7 @@ $ endif
 $ delete /symbol /local pos_cli
 $ delete /symbol /local len_local_unzip
 $!
-$!##################### Customizing section #############################
+$! Various library and program names.
 $!
 $ unzx_unx = "UNZIP"
 $ unzx_cli = "UNZIP_CLI"
@@ -170,6 +182,8 @@ $ lib_unzip_name = "UNZIP.OLB"
 $ lib_unzipcli_name = "UNZIPCLI.OLB"
 $ lib_unzipsfx_name = "UNZIPSFX.OLB"
 $ lib_unzipsfxcli_name = "UNZSFXCLI.OLB"
+$!
+$! Analyze command-line options.
 $!
 $ AES_WG = 0
 $ BUILD_BZIP2 = 0
@@ -226,11 +240,25 @@ $         DASHV = 1
 $         goto argloop_end
 $     endif
 $!
+$     if (f$extract( 0, 9, curr_arg) .eqs. "HELP_TEXT")
+$     then
+$         MAKE_HELP_TEXT = 1
+$         goto argloop_end
+$     endif
+$!
 $     if (f$extract( 0, 7, curr_arg) .eqs. "IZ_BZIP")
 $     then
 $         opts = f$edit( curr_arg, "COLLAPSE")
 $         eq = f$locate( "=", opts)
 $         IZ_BZIP2 = f$extract( (eq+ 1), 1000, opts)
+$         goto argloop_end
+$     endif
+$!
+$     if (f$extract( 0, 7, curr_arg) .eqs. "IZ_ZLIB")
+$     then
+$         opts = f$edit( curr_arg, "COLLAPSE")
+$         eq = f$locate( "=", opts)
+$         IZ_ZLIB = f$extract( (eq+ 1), 1000, opts)
 $         goto argloop_end
 $     endif
 $!
@@ -245,12 +273,6 @@ $     if ((f$extract( 0, 9, curr_arg) .eqs. "NOIZ_BZIP") .or. -
        (f$extract( 0, 10, curr_arg) .eqs. "NO_IZ_BZIP"))
 $     then
 $         NOIZ_BZIP2 = 1
-$         goto argloop_end
-$     endif
-$!
-$     if (f$extract( 0, 9, curr_arg) .eqs. "HELP_TEXT")
-$     then
-$         MAKE_HELP_TEXT = 1
 $         goto argloop_end
 $     endif
 $!
@@ -397,6 +419,7 @@ $         TEST_PPMD = 1
 $         goto argloop_end
 $     endif
 $!
+$     say ""
 $     say "Unrecognized command-line option: ''curr_arg'"
 $     goto error
 $!
@@ -412,12 +435,7 @@ $ else
 $     UNZEXEC = unzx_unx
 $ endif
 $!
-$!#######################################################################
-$!
-$! Find out current disk, directory, compiler and options
-$!
-$ workdir = f$environment( "default")
-$ here = f$parse( workdir, , , "device")+ f$parse( workdir, , , "directory")
+$! Build.
 $!
 $! Sense the host architecture (Alpha, Itanium, or VAX).
 $!
@@ -450,6 +468,7 @@ $     USE_DECC_VAX = 0
 $!
 $     if (MAY_USE_GNUC)
 $     then
+$         say ""
 $         say "GNU C is not supported for ''arch'."
 $         say "You must use DEC/Compaq/HP C to build UnZip."
 $         goto error
@@ -457,6 +476,7 @@ $     endif
 $!
 $     if (.not. MAY_USE_DECC)
 $     then
+$         say ""
 $         say "VAX C is not supported for ''arch'."
 $         say "You must use DEC/Compaq/HP C to build UnZip."
 $         goto error
@@ -473,7 +493,7 @@ $     if (LARGE_FILE .gt. 0)
 $     then
 $        say "LARGE_FILE_SUPPORT is not available on VAX."
 $     endif
-      LARGE_FILE = -1
+$     LARGE_FILE = -1
 $     HAVE_DECC_VAX = (f$search( "SYS$SYSTEM:DECC$COMPILER.EXE") .nes. "")
 $     HAVE_VAXC_VAX = (f$search( "SYS$SYSTEM:VAXC.EXE") .nes. "")
 $     MAY_HAVE_GNUC = (f$trnlnm( "GNU_CC") .nes. "")
@@ -556,7 +576,7 @@ $         if (vaxc .ne. 0)
 $         then
 $             defs = defs+ ", NO_SIGNED_CHAR"
 $         endif
-$         if (NOLZMA .le. 0)
+$         if (NOLZMA .gt. 0)
 $         then
 $             defs = defs+ ", _SZ_NO_INT_64"
 $         endif
@@ -675,6 +695,7 @@ $     then
 $         @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_BZIP2' 'seek_bz' 'bz2_olb' lib_bzip2
 $         if (f$trnlnm( "lib_bzip2") .eqs. "")
 $         then
+$             say ""
 $             say "Can't find BZIP2 object library.  Can't link."
 $             goto error
 $         else
@@ -695,6 +716,7 @@ $     defs = "''defs', USE_ZLIB"
 $     @ [.VMS]FIND_BZIP2_LIB.COM 'IZ_ZLIB' 'seek_zl' 'zlib_olb' lib_zlib
 $     if (f$trnlnm( "lib_zlib") .eqs. "")
 $     then
+$         say ""
 $         say "Can't find ZLIB object library.  Can't link."
 $         goto error
 $     else
@@ -714,6 +736,7 @@ $         create /directory [.'dest']
 $     else
 $         if (MAKE_EXE .or. MAKE_MSG)
 $         then
+$             say ""
 $             say "Can't find directory ""[.''dest']"".  Can't link."
 $             goto error
 $         endif
@@ -727,11 +750,11 @@ $ then
 $     @ [.vms]check_large.com 'dest' large_file_ok
 $     if (f$trnlnm( "large_file_ok") .eqs. "")
 $     then
-$         deassign large_file_ok
+$         say ""
 $         say "Large-file support not available (OS/CRTL too old?)."
+$         say "Add ""NOLARGE"" to the command."
 $         goto error
 $     endif
-$     deassign large_file_ok
 $ endif
 $!
 $ if (MAKE_OBJ)
@@ -926,11 +949,10 @@ $         cc 'DEF_UNX' /object = [.'dest']PPMD8.OBJ [.SZIP]PPMD8.C
 $         cc 'DEF_UNX' /object = [.'dest']PPMD8DEC.OBJ [.SZIP]PPMD8DEC.C
 $     endif
 $!
+$! Create the callable library link options file, if needed.
+$!
 $     if (LIBUNZIP .ne. 0)
 $     then
-$!
-$! Create the callable library link options file.
-$!
 $         def_dev_dir_orig = f$environment( "default")
 $         set default [.'dest']
 $         def_dev_dir = f$environment( "default")
@@ -957,7 +979,6 @@ $         then
 $             write opt_file_lib "''libunzip_opt'" - ", " - ","
 $         endif
 $         close opt_file_lib
-$!
 $     endif
 $!
 $ endif
@@ -1092,7 +1113,6 @@ $     @ [.vms]optgen.com UnZip iz_unzip_versn
 $     open /write opt_file_ln SYS$DISK:[.'dest']UNZIP.OPT
 $     write opt_file_ln "Ident = ""UnZip ''f$trnlnm( "iz_unzip_versn")'"""
 $     close opt_file_ln
-$     deassign iz_unzip_versn
 $     tmp = f$verify( optgen_verify)
 $!
 $! Link the executable.
@@ -1273,7 +1293,6 @@ $     @ [.vms]optgen.com UnZip iz_unzip_versn
 $     open /write opt_file_ln SYS$DISK:[.'dest']UNZIPSFX.OPT
 $     write opt_file_ln "Ident = ""UnZipSFX ''f$trnlnm( "iz_unzip_versn")'"""
 $     close opt_file_ln
-$     deassign iz_unzip_versn
 $     tmp = f$verify( optgen_verify)
 $!
 $! Link the SFX executable.
@@ -1356,6 +1375,14 @@ $!
 $ if (f$trnlnm( "iz_unzip_versn", "LNM$PROCESS_TABLE") .nes. "")
 $ then
 $     deassign iz_unzip_versn
+$ endif
+$!
+$ if (arch .eqs. "ALPHA")
+$ then
+$     if (f$trnlnm( "large_file_ok", "LNM$PROCESS_TABLE") .nes. "")
+$     then
+$         deassign large_file_ok
+$     endif
 $ endif
 $!
 $ if (IZ_BZIP2 .nes. "")

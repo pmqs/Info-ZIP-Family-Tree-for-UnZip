@@ -24,8 +24,8 @@
 # endif
 
 # ifdef BETA
-#  define UZ_BETALEVEL      "c11 BETA"
-#  define UZ_VERSION_DATE   "10 Oct 2014"       /* Internal beta version. */
+#  define UZ_BETALEVEL      "c12 BETA"
+#  define UZ_VERSION_DATE   "11 Nov 2014"       /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
 #  define UZ_VERSION_DATE   "?? ??? 2014"       /* Official release version. */

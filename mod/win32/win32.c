@@ -58,7 +58,7 @@
 #include "../unzip.h"
 #include <windows.h>    /* must be AFTER unzip.h to avoid struct G problems */
 #ifdef __RSXNT__
-# include "../win32/rsxntwin.h"
+#  include "../win32/rsxntwin.h"
 #endif
 #include "../win32/nt.h"
 
@@ -77,9 +77,9 @@
 
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
 #  if (defined(__EMX__) || defined(__CYGWIN__))
-#   define MKDIRW(pathw,mode)   _wmkdir(pathw,mode)
+#  define MKDIRW(pathw,mode)   _wmkdir(pathw,mode)
 #  else
-#   define MKDIRW(pathw,mode)   _wmkdir(pathw)
+#  define MKDIRW(pathw,mode)   _wmkdir(pathw)
 #  endif
 # endif
 
@@ -93,29 +93,29 @@
 
 # ifndef SFX
 #  ifdef HAVE_WORKING_DIRENT_H
-#   include <dirent.h>         /* use readdir() */
-#   define zdirent  dirent
-#   define zDIR     DIR
-#   define Opendir  opendir
-#   define Readdir  readdir
-#   define Closedir closedir
-#  else /* def HAVE_WORKING_DIRENT_H */
-typedef struct zdirent {
-    char    reserved [21];
-    char    ff_attrib;
-    short   ff_ftime;
-    short   ff_fdate;
-    long    size;
-    char    d_name[MAX_PATH];
-    int     d_first;
-    HANDLE  d_hFindFile;
-} zDIR;
+#    include <dirent.h>         /* use readdir() */
+#    define zdirent  dirent
+#    define zDIR     DIR
+#    define Opendir  opendir
+#    define Readdir  readdir
+#    define Closedir closedir
+#  else /* !HAVE_WORKING_DIRENT_H */
+     typedef struct zdirent {
+         char    reserved [21];
+         char    ff_attrib;
+         short   ff_ftime;
+         short   ff_fdate;
+         long    size;
+         char    d_name[MAX_PATH];
+         int     d_first;
+         HANDLE  d_hFindFile;
+     } zDIR;
 
-    static zDIR           *Opendir  (const char *n);
-    static struct zdirent *Readdir  (zDIR *d);
-    static void            Closedir (zDIR *d);
-#  endif /* def HAVE_WORKING_DIRENT_H [else] */
-# endif /* ndef SFX */
+     static zDIR           *Opendir  (const char *n);
+     static struct zdirent *Readdir  (zDIR *d);
+     static void            Closedir (zDIR *d);
+#  endif /* ?HAVE_WORKING_DIRENT_H */
+# endif /* !SFX */
 
 # ifdef SET_DIR_ATTRIB
 typedef struct NTdirattr {      /* struct for holding unix style directory */
@@ -131,54 +131,55 @@ typedef struct NTdirattr {      /* struct for holding unix style directory */
 #  endif
     char buf[1];                /* buffer stub for directory SD and name */
 } NTdirattr;
-#  define NtAtt(d)  ((NTdirattr *)d)    /* typecast shortcut */
+#define NtAtt(d)  ((NTdirattr *)d)    /* typecast shortcut */
 
 #  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-typedef struct NTdirattrw {     /* struct for holding unix style directory */
-    struct NTdirattrw *next;    /*  info until can be sorted and set at end */
-    wchar_t *fnw;               /* filename of directory */
-    FILETIME Modft;     /* File time type defined in NT, `last modified' time */
-    FILETIME Accft;     /* NT file time type, `last access' time */
-    FILETIME Creft;     /* NT file time type, `file creation' time */
+ typedef struct NTdirattrw {     /* struct for holding unix style directory */
+    struct NTdirattrw *next;     /*  info until can be sorted and set at end */
+    wchar_t *fnw;                /* filename of directory */
+    FILETIME Modft;    /* File time type defined in NT, `last modified' time */
+    FILETIME Accft;    /* NT file time type, `last access' time */
+    FILETIME Creft;    /* NT file time type, `file creation' time */
     int gotTime;
     unsigned perms;             /* same as min_info.file_attr */
 #   ifdef NTSD_EAS
     unsigned SDlen;             /* length of SD data in buf */
 #   endif
-    wchar_t buf[1];             /* buffer stub for directory SD and name */
-} NTdirattrw;
-#   define NtAttw(dw)  ((NTdirattrw *)dw)       /* typecast shortcut */
+    wchar_t buf[1];                /* buffer stub for directory SD and name */
+ } NTdirattrw;
+#  define NtAttw(dw)  ((NTdirattrw *)dw)    /* typecast shortcut */
 #  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
-# endif /* def SET_DIR_ATTRIB */
+
+# endif /* SET_DIR_ATTRIB */
 
 
 /* Function prototypes */
 # ifdef NTSD_EAS
 #  if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-static int  SetSD(__GPRO__ wchar_t *path, unsigned fperms,
-                  uch *eb_ptr, unsigned eb_len);
+   static int  SetSD(__GPRO__ wchar_t *path, unsigned fperms,
+                     uch *eb_ptr, unsigned eb_len);
 #  else
-static int  SetSD(__GPRO__ char *path, unsigned fperms,
-                  uch *eb_ptr, unsigned eb_len);
+   static int  SetSD(__GPRO__ char *path, unsigned fperms,
+                     uch *eb_ptr, unsigned eb_len);
 #  endif
-static int  FindSDExtraField(__GPRO__
-                             uch *ef_ptr, unsigned ef_len,
-                             uch **p_ebSD_ptr, unsigned *p_ebSD_len);
-# endif /* def NTSD_EAS */
+   static int  FindSDExtraField(__GPRO__
+                                uch *ef_ptr, unsigned ef_len,
+                                uch **p_ebSD_ptr, unsigned *p_ebSD_len);
+# endif /* NTSD_EAS */
 
 # ifndef NO_W32TIMES_IZFIX
-static void utime2NtfsFileTime(time_t ut, FILETIME *pft);
+   static void utime2NtfsFileTime(time_t ut, FILETIME *pft);
 # endif
 static void utime2VFatFileTime(time_t ut, FILETIME *pft, int clipDosMin);
 # if (defined(W32_STAT_BANDAID) && !defined(NO_W32TIMES_IZFIX))
-static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut);
+   static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut);
 # endif
 # ifdef W32_STAT_BANDAID
-static int VFatFileTime2utime(const FILETIME *pft, time_t *ut);
+   static int VFatFileTime2utime(const FILETIME *pft, time_t *ut);
 # endif
 static int FStampIsLocTime(__GPRO__ const char *path);
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-static int FStampIsLocTimeW(__GPRO__ const wchar_t *pathw);
+   static int FStampIsLocTimeW(__GPRO__ const wchar_t *pathw);
 # endif
 
 
@@ -191,30 +192,30 @@ static int  getNTfiletimeW  (__GPRO__ FILETIME *pModFT, FILETIME *pAccFT,
 static int  isfloppy        (int nDrive);
 static int  NTQueryVolInfo  (__GPRO__ const char *name);
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-static int  NTQueryVolInfoW (__GPRO__ const wchar_t *namew);
+   static int  NTQueryVolInfoW  (__GPRO__ const wchar_t *namew);
 # endif
 static int  IsVolumeOldFAT  (__GPRO__ const char *name);
 static void maskDOSdevice   (__GPRO__ char *pathcomp);
 static void map2fat         (char *pathcomp, char **pEndFAT);
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
-static void maskDOSdevicew  (__GPRO__ wchar_t *pathcompw);
-static void map2fatw        (wchar_t *pathcompw, wchar_t **pEndFATw);
+  static void maskDOSdevicew (__GPRO__ wchar_t *pathcompw);
+  static void map2fatw      (wchar_t *pathcompw, wchar_t **pEndFATw);
 # endif
 
 
 # if (defined(__MINGW32__) && !defined(USE_MINGW_GLOBBING))
-int _CRT_glob = 0;      /* suppress command line globbing by C RTL */
+   int _CRT_glob = 0;   /* suppress command line globbing by C RTL */
 # endif
 
 # ifdef ACORN_FTYPE_NFS
 /* Acorn bits for NFS filetyping */
 typedef struct {
-    uch ID[2];
-    uch size[2];
-    uch ID_2[4];
-    uch loadaddr[4];
-    uch execaddr[4];
-    uch attr[4];
+  uch ID[2];
+  uch size[2];
+  uch ID_2[4];
+  uch loadaddr[4];
+  uch execaddr[4];
+  uch attr[4];
 } RO_extra_block;
 
 # endif /* ACORN_FTYPE_NFS */
@@ -223,6 +224,7 @@ typedef struct {
 /* static int renamed_fullpath; */     /* ditto */
 /* static int fnlen;            */     /* ditto */
 /* static unsigned nLabelDrive; */     /* ditto */
+
 
 
 # ifdef SFX
@@ -237,17 +239,20 @@ char *GetLoadPath(__GPRO)
     extern char *_pgmptr;
     return _pgmptr;
 
-#  else /* def MSC */   /* use generic API call */
+#  else    /* use generic API call */
 
     GetModuleFileName(NULL, G.filename, FILNAMSIZ);
     _ISO_INTERN(G.filename);    /* translate to codepage of C rtl's stdio */
     return G.filename;
-#  endif /* def MSC [else] */
+#  endif
 
 } /* end function GetLoadPath() */
 
 
-# else /* def SFX */
+
+
+
+# else /* !SFX */
 
 #  ifndef HAVE_WORKING_DIRENT_H
 
@@ -295,6 +300,8 @@ static zDIR *Opendir(n)
 } /* end of function Opendir() */
 
 
+
+
 /**********************/        /* Borrowed from ZIP 2.0 sources            */
 /* Function Readdir() */        /* Difference: no special handling for      */
 /**********************/        /*             hidden or system files.      */
@@ -320,6 +327,8 @@ static struct zdirent *Readdir(d)
 } /* end of function Readdir() */
 
 
+
+
 /***********************/
 /* Function Closedir() */       /* Borrowed from ZIP 2.0 sources */
 /***********************/
@@ -331,8 +340,10 @@ static void Closedir(d)
     izu_free(d);
 }
 
-#  endif /* ndef HAVE_WORKING_DIRENT_H */
-# endif /* def SFX [else] */
+#  endif /* !HAVE_WORKING_DIRENT_H */
+# endif /* ?SFX */
+
+
 
 
 # ifdef NTSD_EAS
@@ -399,6 +410,7 @@ static int SetSD(__G__ path, fperms, eb_ptr, eb_len)
     izu_free(security_data);
     return error;
 }
+
 
 
 
@@ -510,7 +522,7 @@ static int FindSDExtraField(__GPRO__
 
 #   ifdef __BORLANDC__
 /* Turn off warning about not using all parameters for this function only */
-#    pragma argsused
+#  pragma argsused
 #   endif
 int test_NTSD(__G__ eb, eb_size, eb_ucptr, eb_ucsize)
     __GDEF
@@ -522,8 +534,10 @@ int test_NTSD(__G__ eb, eb_size, eb_ucptr, eb_ucsize)
     return (ValidateSecurity(eb_ucptr) ? PK_OK : PK_WARN);
 } /* end function test_NTSD() */
 
-#  endif /* ndef SFX */
-# endif /* def NTSD_EAS */
+#  endif /* !SFX */
+# endif /* NTSD_EAS */
+
+
 
 
 /**********************/
@@ -545,6 +559,7 @@ int IsWinNT(void)       /* returns TRUE if real NT, FALSE if Win9x or Win32s */
 }
 
 
+/* DEBUG_TIME insertion: */
 # ifdef DEBUG_TIME
 static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft);
 
@@ -566,11 +581,11 @@ static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft)
     }
     return rval;
 }
-#  define FTTrace(x)   show_NTFileTime x
+#define FTTrace(x)   show_NTFileTime x
 # else
-#  define FTTrace(x)
-# endif /* def DEBUG_TIME */
-
+#define FTTrace(x)
+# endif /* DEBUG_TIME */
+/* end of DEBUG_TIME insertion */
 
 # ifndef IZ_USE_INT64
 #  if (defined(__GNUC__) || defined(ULONG_LONG_MAX))
@@ -594,23 +609,23 @@ static int show_NTFileTime(FILE *hdo, char *TTmsg, int isloc, FILETIME *pft)
      typedef unsigned __int64     ULLNG64;
 #    define IZ_USE_INT64
 #  endif
-# endif /* ndef IZ_USE_INT64 */
+# endif
 
 /* scale factor and offset for conversion time_t -> FILETIME */
-# define NT_QUANTA_PER_UNIX 10000000L
-# define UNIX_TIME_ZERO_HI  0x019DB1DEUL
-# define UNIX_TIME_ZERO_LO  0xD53E8000UL
+#define NT_QUANTA_PER_UNIX 10000000L
+#define UNIX_TIME_ZERO_HI  0x019DB1DEUL
+#define UNIX_TIME_ZERO_LO  0xD53E8000UL
 /* special FILETIME values for bound-checks */
-# define UNIX_TIME_UMAX_HI  0x0236485EUL
-# define UNIX_TIME_UMAX_LO  0xD4A5E980UL
-# define UNIX_TIME_SMIN_HI  0x0151669EUL
-# define UNIX_TIME_SMIN_LO  0xD53E8000UL
-# define UNIX_TIME_SMAX_HI  0x01E9FD1EUL
-# define UNIX_TIME_SMAX_LO  0xD4A5E980UL
-# define DOSTIME_MIN_FT_HI  0x01A8E79FUL
-# define DOSTIME_MIN_FT_LO  0xE1D58000UL
+#define UNIX_TIME_UMAX_HI  0x0236485EUL
+#define UNIX_TIME_UMAX_LO  0xD4A5E980UL
+#define UNIX_TIME_SMIN_HI  0x0151669EUL
+#define UNIX_TIME_SMIN_LO  0xD53E8000UL
+#define UNIX_TIME_SMAX_HI  0x01E9FD1EUL
+#define UNIX_TIME_SMAX_LO  0xD4A5E980UL
+#define DOSTIME_MIN_FT_HI  0x01A8E79FUL
+#define DOSTIME_MIN_FT_LO  0xE1D58000UL
 /* time_t equivalent of DOSTIME_MINIMUM */
-# define UTIME_1980_JAN_01_00_00   315532800L
+#define UTIME_1980_JAN_01_00_00   315532800L
 
 
 # ifndef NO_W32TIMES_IZFIX
@@ -631,7 +646,7 @@ static void utime2NtfsFileTime(time_t ut, FILETIME *pft)
     pft->dwLowDateTime = (DWORD)NTtime;
     pft->dwHighDateTime = (DWORD)(NTtime >> 32);
 
-#  else /* def IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
+#  else /* !IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
     unsigned int b1, b2, carry = 0;
     unsigned long r0, r1, r2, r3;
     long r4;            /* signed, to catch environments with signed time_t */
@@ -654,10 +669,10 @@ static void utime2NtfsFileTime(time_t ut, FILETIME *pft)
         carry++;
     pft->dwHighDateTime = r4 + (r2 >> 16) + (r3 >> 16)
                             + UNIX_TIME_ZERO_HI + carry;
-#  endif /* def IZ_USE_INT64 [else] */
+#  endif /* ?IZ_USE_INT64 */
 
 } /* end function utime2NtfsFileTime() */
-# endif /* ndef NO_W32TIMES_IZFIX */
+# endif /* !NO_W32TIMES_IZFIX */
 
 
 
@@ -721,9 +736,9 @@ static void utime2VFatFileTime(time_t ut, FILETIME *pft, int clipDosMin)
 
 
  /* nonzero if `y' is a leap year, else zero */
-# define leap(y) (((y)%4 == 0 && (y)%100 != 0) || (y)%400 == 0)
+#define leap(y) (((y)%4 == 0 && (y)%100 != 0) || (y)%400 == 0)
  /* number of leap years from 1970 to `y' (not including `y' itself) */
-# define nleap(y) (((y)-1969)/4 - ((y)-1901)/100 + ((y)-1601)/400)
+#define nleap(y) (((y)-1969)/4 - ((y)-1901)/100 + ((y)-1601)/400)
 
 extern ZCONST ush ydays[];              /* defined in fileio.c */
 
@@ -757,7 +772,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
         }
     }
     else
-#    endif /* def CHECK_UTIME_SIGNED_UNSIGNED */
+#    endif /* CHECK_UTIME_SIGNED_UNSIGNED */
     {
         if (NTtime < ((ULLNG64)UNIX_TIME_ZERO_LO +
                       ((ULLNG64)UNIX_TIME_ZERO_HI << 32))) {
@@ -770,13 +785,13 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
             return FALSE;
         }
     }
-#   endif /* ndef TIME_T_TYPE_DOUBLE */
+#   endif /* !TIME_T_TYPE_DOUBLE */
 
     NTtime -= ((ULLNG64)UNIX_TIME_ZERO_LO +
                ((ULLNG64)UNIX_TIME_ZERO_HI << 32));
     *ut = (time_t)(NTtime / (unsigned long)NT_QUANTA_PER_UNIX);
     return TRUE;
-#  else /* def IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
+#  else /* !IZ_USE_INT64 (64-bit integer arithmetics may not be supported) */
     time_t days;
     SYSTEMTIME w32tm;
 
@@ -798,7 +813,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
         }
     }
     else
-#    endif /* def CHECK_UTIME_SIGNED_UNSIGNED */
+#    endif /* CHECK_UTIME_SIGNED_UNSIGNED */
     {
         if ((pft->dwHighDateTime < UNIX_TIME_ZERO_HI) ||
             ((pft->dwHighDateTime == UNIX_TIME_ZERO_HI) &&
@@ -813,7 +828,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
             return FALSE;
         }
     }
-#   endif /* ndef TIME_T_TYPE_DOUBLE */
+#   endif /* !TIME_T_TYPE_DOUBLE */
 
     FileTimeToSystemTime(pft, &w32tm);
 
@@ -828,7 +843,7 @@ static int NtfsFileTime2utime(const FILETIME *pft, time_t *ut)
     *ut = (time_t)(86400L * days + 3600L * (time_t)w32tm.wHour +
                    (time_t)(60 * w32tm.wMinute + w32tm.wSecond));
     return TRUE;
-#  endif /* def IZ_USE_INT64 [else] */
+#  endif /* ?IZ_USE_INT64 */
 } /* end function NtfsFileTime2utime() */
 # endif /* W32_STAT_BANDAID && !NO_W32TIMES_IZFIX */
 
@@ -885,7 +900,7 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
      * a resolution of 2 seconds and are therefore even numbers.
      */
     return (((*ut)&1) == (time_t)0);
-#  else /* ndef HAVE_MKTIME */
+#  else /* HAVE_MKTIME */
     FileTimeToSystemTime(&lft, &w32tm);
 #   ifndef TIME_T_TYPE_DOUBLE
     /* underflow and overflow handling */
@@ -909,7 +924,7 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
         }
     }
     else
-#    endif /* def CHECK_UTIME_SIGNED_UNSIGNED */
+#    endif /* CHECK_UTIME_SIGNED_UNSIGNED */
     {
         if ((pft->dwHighDateTime < UNIX_TIME_ZERO_HI) ||
             ((pft->dwHighDateTime == UNIX_TIME_ZERO_HI) &&
@@ -924,7 +939,7 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
             return FALSE;
         }
     }
-#   endif /* ndef TIME_T_TYPE_DOUBLE [else] */
+#   endif /* !TIME_T_TYPE_DOUBLE */
     ltm.tm_year = w32tm.wYear - 1900;
     ltm.tm_mon = w32tm.wMonth - 1;
     ltm.tm_mday = w32tm.wDay;
@@ -941,10 +956,11 @@ static int VFatFileTime2utime(const FILETIME *pft, time_t *ut)
      * (The only known exception is creation time on VFAT partitions.)
      */
     return (*ut != (time_t)-1L);
-#  endif /* ndef HAVE_MKTIME [else] */
+#  endif /* ?HAVE_MKTIME */
 
 } /* end function VFatFileTime2utime() */
-# endif /* def W32_STAT_BANDAID */
+# endif /* W32_STAT_BANDAID */
+
 
 
 /******************************/
@@ -965,14 +981,19 @@ static int FStampIsLocTimeW(__GPRO__ const wchar_t *pathw)
 
 
 
+
 # ifndef NO_W32TIMES_IZFIX
-#  define UTIME_2_IZFILETIME(ut, pft) \
-    if (fs_uses_loctime) {utime2VFatFileTime(ut, pft, TRUE);} \
-    else {utime2NtfsFileTime(ut, pft);}
+# define UTIME_2_IZFILETIME(ut, pft) \
+   if (fs_uses_loctime) {utime2VFatFileTime(ut, pft, TRUE);} \
+   else {utime2NtfsFileTime(ut, pft);}
 # else
-#  define UTIME_2_IZFILETIME(ut, pft) \
-    utime2VFatFileTime(ut, pft, fs_uses_loctime);
+# define UTIME_2_IZFILETIME(ut, pft) \
+   utime2VFatFileTime(ut, pft, fs_uses_loctime);
 # endif
+
+
+
+
 
 
 
@@ -1014,7 +1035,7 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
         }
         return (int)eb_izux_flg;
     }
-# endif /* def USE_EF_UT_TIME */
+# endif /* USE_EF_UT_TIME */
 # ifndef NO_W32TIMES_IZFIX
     if (!fs_uses_loctime) {
         time_t ux_modtime;
@@ -1072,7 +1093,7 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
           }
           return (int)eb_izux_flg;
       }
-#  endif /* def USE_EF_UT_TIME */
+#  endif /* USE_EF_UT_TIME */
 #  ifndef NO_W32TIMES_IZFIX
       if (!fs_uses_loctime) {
           time_t ux_modtime;
@@ -1080,7 +1101,7 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
           ux_modtime = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
           utime2NtfsFileTime(ux_modtime, pModFT);
       } else
-#  endif /* ndef NO_W32TIMES_IZFIX */
+#  endif /* NO_W32TIMES_IZFIX */
       {
           FILETIME lft;
 
@@ -1093,7 +1114,8 @@ static int getNTfiletime(__G__ pModFT, pAccFT, pCreFT)
       return (EB_UT_FL_MTIME | EB_UT_FL_ATIME);
 
   } /* end function getNTfiletime() */
-# endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+# endif /* (UNICODE_SUPPORT && WIN32_WIDE) */
+
 
 
 
@@ -1107,7 +1129,7 @@ int SetFileSize(FILE *file, zusz_t filesize)
     /* RSXNT environment lacks a translation function from C file pointer
        to Win32-API file handle. So, simply do nothing. */
     return 0;
-# else /* def __RSXNT__ */
+# else /* !__RSXNT__ */
     /* not yet verified, if that really creates an unfragmented file
       rommel@ars.de
      */
@@ -1143,8 +1165,9 @@ int SetFileSize(FILE *file, zusz_t filesize)
     }
     /* move file position pointer back to the start of the file! */
     return (SetFilePointer(os_fh, 0, 0, FILE_BEGIN) == 0xFFFFFFFF) ? -1 : 0;
-# endif /* def __RSXNT__ [else] */
+# endif /* ?__RSXNT__ */
 } /* end function SetFileSize() */
+
 
 
 
@@ -1319,16 +1342,16 @@ void close_outfile(__G)
        * Perhaps the count or time interval should depend on the file
        * size?
        */
-# ifdef RETRY_CREATEFILE
+#ifdef RETRY_CREATEFILE
       for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
       {
-# endif /* def RETRY_CREATEFILE */
+#endif /* def RETRY_CREATEFILE */
 
          hFile = CreateFileA( Ansi_Fname,
           GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-# ifdef RETRY_CREATEFILE
+#ifdef RETRY_CREATEFILE
          if (hFile == INVALID_HANDLE_VALUE)
          {
             if (GetLastError() != ERROR_SHARING_VIOLATION)
@@ -1340,7 +1363,7 @@ void close_outfile(__G)
              break;     /* Not a sharing error.  (Success?)  Get out now. */
          }
       }
-# endif /* def RETRY_CREATEFILE */
+#endif /* def RETRY_CREATEFILE */
 
       /* sfield@microsoft.com: set attributes before time in case we decide to
          support other filetime members later.  This also allows us to apply
@@ -1381,7 +1404,7 @@ void close_outfile(__G)
         }
 #  endif /* ? (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
       }
-# endif /* def NTSD_EAS */
+# endif /* NTSD_EAS */
 
       /* skip restoring time stamps on user's request */
       if (uO.D_flag <= 1) {
@@ -1405,7 +1428,7 @@ void close_outfile(__G)
 
     return;
 
-# undef Ansi_Fname
+#undef Ansi_Fname
 
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
     } else {
@@ -1419,15 +1442,15 @@ void close_outfile(__G)
     worry about overflowing unsigned ints with unsigned longs.
  ---------------------------------------------------------------------------*/
 
-#  ifdef SYMLINKS
+# ifdef SYMLINKS
     if (G.symlnk) {
         extent ucsize = (extent)G.lrec.ucsize;
-#   ifdef SET_SYMLINK_ATTRIBS
+#  ifdef SET_SYMLINK_ATTRIBS
         extent attribsize = sizeof(unsigned) +
                             (have_uidgid_flg ? sizeof( z_uidgid) : 0);
-#   else
+#  else
         extent attribsize = 0;
-#   endif
+#  endif
         /* Note: Hard-coded assumption that sizeof( wchar_t) = 2. */
         int fname_aligner = (attribsize+ ucsize+ 1)& 1; /* Necessary? */
 
@@ -1463,13 +1486,13 @@ void close_outfile(__G)
         slnk_entry->targetlen = ucsize;
         slnk_entry->attriblen = attribsize;
         slnk_entry->wide = 1;
-#   ifdef SET_SYMLINK_ATTRIBS
+#  ifdef SET_SYMLINK_ATTRIBS
         memcpy(slnk_entry->buf, &(G.pInfo->file_attr),
                sizeof(unsigned));
         if (have_uidgid_flg)
             memcpy( (slnk_entry->buf + sizeof( unsigned)), z_uidgid,
              sizeof( z_uidgid));
-#   endif
+#  endif
         slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
         slnk_entry->fname = slnk_entry->target + ucsize + 1 + fname_aligner;
         wcscpy( (wchar_t *)slnk_entry->fname, G.unipath_widefilename);
@@ -1503,7 +1526,7 @@ void close_outfile(__G)
         fclose( G.outfile);
         return;
     }
-#  endif /* def SYMLINKS */
+# endif /* def SYMLINKS */
 
 #  ifndef __RSXNT__
       if (IsWinNT()) {
@@ -1531,16 +1554,16 @@ void close_outfile(__G)
          time stamps */
 
       /* 2013-07-08 SMS.  See note above. */
-#  ifdef RETRY_CREATEFILE
+#ifdef RETRY_CREATEFILE
       for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
       {
-#  endif /* def RETRY_CREATEFILE */
+#endif /* def RETRY_CREATEFILE */
 
          hFile = CreateFileW(G.unipath_widefilename,
           GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-#  ifdef RETRY_CREATEFILE
+#ifdef RETRY_CREATEFILE
          if (hFile == INVALID_HANDLE_VALUE)
          {
             if (GetLastError() != ERROR_SHARING_VIOLATION)
@@ -1552,7 +1575,7 @@ void close_outfile(__G)
              break;     /* Not a sharing error.  (Success?)  Get out now. */
          }
       }
-#  endif /* def RETRY_CREATEFILE */
+#endif /* def RETRY_CREATEFILE */
 
       /* sfield@microsoft.com: set attributes before time in case we decide to
          support other filetime members later.  This also allows us to apply
@@ -1614,6 +1637,7 @@ void close_outfile(__G)
 # endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
 
 } /* end function close_outfile() */
+
 
 
 
@@ -1773,9 +1797,9 @@ int set_direc_attribs(__G__ d)
 #   ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
     ansi_name = (char *)alloca(strlen(d->fn) + 1);
     INTERN_TO_ISO(d->fn, ansi_name);
-#    define Ansi_Dirname  ansi_name
+#   define Ansi_Dirname  ansi_name
 #   else
-#    define Ansi_Dirname  d->fn
+#   define Ansi_Dirname  d->fn
 #   endif
 
     /* Skip restoring directory time stamps on user' request. */
@@ -1976,11 +2000,11 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
     int fs_uses_loctime = FStampIsLocTime(__G__ fname);
 
 /* 2013-07-08 SMS.  See note above. */
-#  ifdef RETRY_CREATEFILE
+# ifdef RETRY_CREATEFILE
     int cf_tries;
-#  endif
+# endif
 
-#  ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
+# ifdef __RSXNT__        /* RSXNT/EMX C rtl uses OEM charset */
     char *ansi_name = (char *)alloca(strlen(fname) + 1);
 
     INTERN_TO_ISO(fname, ansi_name);
@@ -1991,16 +2015,16 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
 
     /* open a handle to the file to prepare setting the mod-time stamp */
 
-#  ifdef RETRY_CREATEFILE
+#ifdef RETRY_CREATEFILE
     for (cf_tries = IZ_CREATEFILE_TRY_COUNT; cf_tries > 0 ; cf_tries--)
     {
-#  endif /* def RETRY_CREATEFILE */
+#endif /* def RETRY_CREATEFILE */
 
         hFile = CreateFileA( Ansi_Fname,
          GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-#  ifdef RETRY_CREATEFILE
+#ifdef RETRY_CREATEFILE
         if (hFile == INVALID_HANDLE_VALUE)
         {
             if (GetLastError() != ERROR_SHARING_VIOLATION)
@@ -2012,7 +2036,7 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
             break;      /* Not a sharing error.  (Success?)  Get out now. */
         }
     }
-#  endif /* def RETRY_CREATEFILE */
+#endif /* def RETRY_CREATEFILE */
 
     if ( hFile == INVALID_HANDLE_VALUE ) {
         errstat = -1;
@@ -2028,10 +2052,11 @@ int stamp_file(__GPRO__ ZCONST char *fname, time_t modtime)
 
     return errstat;
 
-#  undef Ansi_Fname
+#undef Ansi_Fname
 } /* end function stamp_file() */
 
-# endif /* def TIMESTAMP */
+# endif /* TIMESTAMP */
+
 
 
 
@@ -2189,6 +2214,7 @@ static int NTQueryVolInfoW(__GPRO__ const wchar_t *namew)
 
 
 
+
 /*****************************/
 /* Function IsVolumeOldFAT() */
 /*****************************/
@@ -2204,6 +2230,7 @@ static int IsVolumeOldFATw(__GPRO__ const wchar_t *namew)
     return (NTQueryVolInfoW(__G__ namew) ? G.lastVolOldFAT : FALSE);
 }
 # endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 
 
 
@@ -2345,7 +2372,7 @@ char *do_wild(__G__ wildspec)
 
 } /* end function do_wild() */
 
-# endif /* ndef SFX */
+# endif /* !SFX */
 
 
 
@@ -2684,7 +2711,7 @@ int mapname(__G__ renamed)
         }
         /* success: skip the "extraction" quietly */
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
-# undef Ansi_Fname
+#undef Ansi_Fname
     }
     Trace((stderr, "mapname returns with filename = [%s] (error = %d)\n\n",
       FnFilter1(G.filename), error));
@@ -2694,6 +2721,7 @@ int mapname(__G__ renamed)
 
 
 # if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
 
 int mapnamew(__G__ renamed)
     __GDEF
@@ -2971,6 +2999,7 @@ int mapnamew(__G__ renamed)
 
 
 # endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 
 
 
@@ -3292,8 +3321,8 @@ int checkdir(__G__ pathcomp, flag)
  /* static char *endHPFS;       */   /* corresponding pointers to end of */
  /* static char *endFAT;        */   /*  buildpath ('\0') */
 
-# define FN_MASK   7
-# define FUNCTION  (flag & FN_MASK)
+#   define FN_MASK   7
+#   define FUNCTION  (flag & FN_MASK)
 
 
 
@@ -3359,7 +3388,7 @@ int checkdir(__G__ pathcomp, flag)
             }
             G.created_dir = TRUE;
         }
-# endif /* def FIX_STAT_BUG */
+# endif /* FIX_STAT_BUG */
         if (SSTAT(G.buildpathFAT, &G.statbuf))   /* path doesn't exist */
         {
             if (!G.create_dirs) { /* told not to create (freshening) */
@@ -3638,7 +3667,7 @@ int checkdir(__G__ pathcomp, flag)
         }
         return MPN_OK;
     }
-# endif /* (!defined(SFX) || defined(SFX_EXDIR)) */
+# endif /* !SFX || SFX_EXDIR */
 
 /*---------------------------------------------------------------------------
     END:  free rootpath, immediately prior to program exit.
@@ -3768,7 +3797,7 @@ int checkdirw(__G__ pathcompw, flag)
               G.created_dir = TRUE;
               }
         }
-#  endif /* def FIX_STAT_BUG */
+#  endif /* FIX_STAT_BUG */
         if (SSTATW(G.buildpathFATw, &G.statbuf))   /* path doesn't exist */
         {
             if (!G.create_dirs) { /* told not to create (freshening) */
@@ -4109,7 +4138,7 @@ int checkdirw(__G__ pathcompw, flag)
         }
         return MPN_OK;
     }
-#  endif /* (!defined(SFX) || defined(SFX_EXDIR)) */
+#  endif /* !SFX || SFX_EXDIR */
 
 /*---------------------------------------------------------------------------
     END:  free rootpath, immediately prior to program exit.
@@ -4129,6 +4158,7 @@ int checkdirw(__G__ pathcompw, flag)
 } /* end function checkdirw() */
 
 # endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
 
 
 
@@ -4276,11 +4306,7 @@ void version(__G)
       "unknown compiler (SDK?)", "",
 #   endif /* ?compilers */
 
-#   ifdef _WIN64
-      "\nWindows NT family", " (64-bit)",
-#   else
-      "\nWindows 9x or NT family", " (32-bit)",
-#   endif
+      "\nWindows 9x / Windows NT/2K/XP/2K3", " (32-bit)",
 
 #   ifdef __DATE__
       " on ", __DATE__
@@ -4296,7 +4322,7 @@ void version(__G)
 } /* end function version() */
 
 #  endif /* ndef WINDLL_OLD */
-# endif /* ndef SFX */
+# endif /* !SFX */
 
 
 
@@ -4314,7 +4340,7 @@ int screensize(int *tt_rows, int *tt_cols)
     return 0;           /* signal success */
 }
 
-# endif /* def MORE */
+# endif /* MORE */
 
 
 
@@ -4411,7 +4437,7 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
                     TTrace((stdout,"NTFS, recalculated modtime %08lx\n",
                             buf->st_mtime));
                 } else
-#  endif /* ndef NO_W32TIMES_IZFIX */
+#  endif /* NO_W32TIMES_IZFIX */
                 {
                     /*  On VFAT and FAT-like filesystems, the FILETIME values
                      *  are converted back to the stable local time before
@@ -4461,7 +4487,7 @@ int zstat_win32(__W32STAT_GLOBALS__ const char *path, z_stat *buf)
         } /* assumes: stat() won't fail on non-dirs without good reason */
 #       undef Ansi_Path
     }
-#  endif /* def W32_STATROOT_FIX */
+#  endif /* W32_STATROOT_FIX */
     return -1;
 }
 
@@ -4511,7 +4537,7 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
                     TTrace((stdout,"NTFS, recalculated modtime %08lx\n",
                             buf->st_mtime));
                 } else
-#   endif /* ndef NO_W32TIMES_IZFIX */
+#   endif /* NO_W32TIMES_IZFIX */
                 {
                     /*  On VFAT and FAT-like filesystems, the FILETIME values
                      *  are converted back to the stable local time before
@@ -4559,21 +4585,21 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
             return 0;
         } /* assumes: stat() won't fail on non-dirs without good reason */
     }
-#   endif /* def W32_STATROOT_FIX */
+#   endif /* W32_STATROOT_FIX */
     return -1;
 }
 
 #  endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
 
-# endif /* def W32_STAT_BANDAID */
+# endif /* W32_STAT_BANDAID */
 
 
 
 # ifdef W32_USE_IZ_TIMEZONE
-#  include "timezone.h"
-#  define SECSPERMIN    60
-#  define MINSPERHOUR   60
-#  define SECSPERHOUR   (SECSPERMIN * MINSPERHOUR)
+#include "timezone.h"
+#define SECSPERMIN      60
+#define MINSPERHOUR     60
+#define SECSPERHOUR     (SECSPERMIN * MINSPERHOUR)
 static void conv_to_rule(LPSYSTEMTIME lpw32tm, struct rule * ZCONST ptrule);
 
 static void conv_to_rule(LPSYSTEMTIME lpw32tm, struct rule * ZCONST ptrule)
@@ -4638,7 +4664,7 @@ int GetPlatformLocalTimezone(register struct state * ZCONST sp,
 }
 # endif /* W32_USE_IZ_TIMEZONE */
 
-#endif /* ndef FUNZIP */
+#endif /* !FUNZIP */
 
 
 
@@ -4691,7 +4717,7 @@ int getch_win32(void)
 # endif
   return ret;
 }
-#endif /* ndef WINDLL */
+#endif /* !WINDLL */
 
 
 

@@ -371,18 +371,14 @@
     zvoid *wild_dir;
 #else /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 #define SYSTEM_SPECIFIC_GLOBALS \
-    int created_dir;\
-    int renamed_fullpath;\
-    size_t fnlen;\
+    int created_dir, renamed_fullpath, fnlen;\
     unsigned nLabelDrive;\
     char lastRootPath[4];\
     int lastVolOldFAT, lastVolLocTim;\
     char *rootpath, *buildpathHPFS, *buildpathFAT, *endHPFS, *endFAT;\
     ZCONST char *wildname;\
     char *dirname, matchname[FILNAMSIZ];\
-    size_t dirnamelen;\
-    size_t rootlen;\
-    int have_dirname, notfirstcall;\
+    int rootlen, have_dirname, dirnamelen, notfirstcall;\
     zvoid *wild_dir;
 #endif /* ?(defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 

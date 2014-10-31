@@ -453,9 +453,9 @@ typedef struct Globals {
     uch *inptr_leftover;
 
 #  ifdef VMS_TEXT_CONV
-    unsigned VMS_line_length; /* so native VMS variable-length text files */
-    int      VMS_line_state;  /*  are readable on other platforms */
-    int      VMS_line_pad;
+    extent VMS_line_length;     /* For conversion of VMS variable-length- */
+    int    VMS_line_state;      /* record text files on non-VMS systems. */
+    int    VMS_line_pad;
 #  endif
 
 #  if (defined(SFX) && defined(CHEAP_SFX_AUTORUN))

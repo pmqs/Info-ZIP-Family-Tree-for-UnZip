@@ -3827,6 +3827,7 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
     ulg eb_ucsize;
     uch *eb_ucptr;
     int r;
+    ush eb_compr_method;
 
     if (compr_offset < 4)                /* field is not compressed: */
         return PK_OK;                    /* do nothing and signal OK */
@@ -3835,6 +3836,14 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
         ((eb_ucsize = makelong(eb+(EB_HEADSIZE+EB_UCSIZE_P))) > 0L &&
          eb_size <= (long)(compr_offset + EB_CMPRHEADLEN)))
         return IZ_EF_TRUNC;               /* no compressed data! */
+
+    /* 2014-11-03 Michal Zalewski, SMS.
+     * For STORE method, compressed and uncompressed sizes must agree.
+     * http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=450
+     */
+    eb_compr_method = makeword( eb + (EB_HEADSIZE + compr_offset));
+    if ((eb_compr_method == STORED) && (eb_size - compr_offset != eb_ucsize))
+        return PK_ERR;
 
     if (
 #ifdef INT_16BIT
@@ -4510,7 +4519,7 @@ char *fnfilter(raw, space, size)
 # endif /* ?HAVE_WORKING_ISPRINT */
             } else {
 # ifdef _MBCS
-                unsigned i = CLEN(r);
+                extent i = CLEN(r);
                 if (se != NULL && (s > (space + (size-i-2)))) {
                     have_overflow = TRUE;
                     break;
@@ -4710,7 +4719,7 @@ __GDEF
 #endif
 
     G.inptr = (uch *)bstrm.next_in;
-    G.incnt = (G.inbuf + INBUFSIZ) - G.inptr;  /* reset for other routines */
+    G.incnt = (int)((G.inbuf + INBUFSIZ) - G.inptr);  /* Reset for others. */
 
 uzbunzip_cleanup_exit:
     err = BZ2_bzDecompressEnd(&bstrm);
