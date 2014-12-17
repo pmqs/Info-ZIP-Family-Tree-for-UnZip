@@ -205,16 +205,21 @@ int echo(opt)
      * to restore the original state when called with opt < 0 (as by,
      * say, an exit handler, to avoid leaving the terminal in a noecho
      * state if the user aborts (Ctrl/C) at a password prompt).
+     *
+     * 2014-12-26 SMS.
+     * Moved echo_orig from local static storage into the global
+     * structure.
      */
 
     short           DevChan;
     short           iosb[4];
     int             status;
     unsigned int    ttmode[2];          /* space for 8 bytes */
-    static int      echo_orig = -1;     /* Original echo state. */
     int             ret_status = 0;     /* Status value to return. */
 
-    if ((opt < 0) && (echo_orig < 0))
+    GETGLOBALS();
+
+    if ((opt < 0) && (G.echo_orig < 0))
     {
         /* Final call, but no original echo state to restore.
          * Return immediately with success status.
@@ -254,12 +259,12 @@ int echo(opt)
         /* Final (restore) call.  Replace (negative) opt value with the
          * (known) orginal echo stste.
          */
-        opt = echo_orig;
+        opt = G.echo_orig;
     }
-    else if (echo_orig < 0)
+    else if (G.echo_orig < 0)
     {
         /* On the first (non-restore) call, save the original echo state. */
-        echo_orig = ((ttmode[ 1]& TT$M_NOECHO) ? 0 : 1);
+        G.echo_orig = ((ttmode[ 1]& TT$M_NOECHO) ? 0 : 1);
     }
 
     /* modify mode buffer to be either NOECHO or ECHO

@@ -368,8 +368,10 @@ ZCONST char Far TruncNTSD[] =
  " compressed WinNT security data missing (%ld bytes)%s";
 
 #ifndef SFX
-   static ZCONST char Far InconsistEFlength[] = "bad extra-field entry:\n \
+   static ZCONST char Far InconsistEFlength[] = "bad extra-field entry:\n\
      EF block length (%ld bytes) exceeds remaining EF data (%ld bytes)\n";
+   static ZCONST char Far TooSmallEFlength[] = "bad extra-field entry:\n\
+     EF block length (%u bytes) invalid (< %d)\n";
    static ZCONST char Far InvalidComprDataEAs[] =
      " invalid compressed data for EAs\n";
 # if defined(WIN32) && defined(NTSD_EAS)
@@ -808,7 +810,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 
         } /* end while-loop (adding files to current block) */
 
-        /* save position in central directory so can come back later */
+        /* Save position in central directory so can come back later. */
         cd_bufstart = G.cur_zipfile_bufstart;
         cd_inptr = G.inptr;
         cd_incnt = G.incnt;
@@ -2935,7 +2937,9 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
     zusz_t bytes_put_out;
 
 #ifdef IZ_CRYPT_AES_WG
-    zoff_t g_csize_adj = 0;             /* Temporary adjustment to G.csize. */
+    zoff_t g_csize_adj;                 /* Temporary adjustment to G.csize. */
+    int g_incnt_adj;                    /* Temporary adjustment to G.incnt. */
+
     int aes_mac_mismatch;
     ush temp_compression_method;
     /* AES Message Authentication Code storage.  Note that we're in
@@ -3301,7 +3305,19 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                  * trying to read the MAC data.
                  */
                 g_csize_adj = MAC_LENGTH( G.pInfo->cmpr_mode_aes);
+                g_incnt_adj = g_csize_adj;
                 G.csize -= g_csize_adj;
+
+                /* If data have already been passed from G.csize to
+                 * G.incnt, then shift the excess adjustment from
+                 * G.csize to G.incnt.
+                 */
+                if (G.csize < 0)
+                {
+                    g_incnt_adj = -G.csize;
+                    G.incnt += G.csize;
+                    G.csize = 0;
+                }
             }
 #  endif /* def IZ_CRYPT_AES_WG */
 
@@ -3354,7 +3370,19 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                  * trying to read the MAC data.
                  */
                 g_csize_adj = MAC_LENGTH( G.pInfo->cmpr_mode_aes);
+                g_incnt_adj = g_csize_adj;
                 G.csize -= g_csize_adj;
+
+                /* If data have already been passed from G.csize to
+                 * G.incnt, then shift the excess adjustment from
+                 * G.csize to G.incnt.
+                 */
+                if (G.csize < 0)
+                {
+                    g_incnt_adj = -G.csize;
+                    G.incnt += G.csize;
+                    G.csize = 0;
+                }
             }
 #  endif /* def IZ_CRYPT_AES_WG */
 
@@ -3407,7 +3435,19 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                  * trying to read the MAC data.
                  */
                 g_csize_adj = MAC_LENGTH( G.pInfo->cmpr_mode_aes);
+                g_incnt_adj = g_csize_adj;
                 G.csize -= g_csize_adj;
+
+                /* If data have already been passed from G.csize to
+                 * G.incnt, then shift the excess adjustment from
+                 * G.csize to G.incnt.
+                 */
+                if (G.csize < 0)
+                {
+                    g_incnt_adj = -G.csize;
+                    G.incnt += G.csize;
+                    G.csize = 0;
+                }
             }
 #  endif /* def IZ_CRYPT_AES_WG */
 
@@ -3444,17 +3484,15 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
     } /* end switch (compression method) */
 
 #ifdef IZ_CRYPT_AES_WG
-    if (g_csize_adj != 0)
-    {
-        /* Bump G.csize back up, so that NEXTBYTE doesn't quit
-         * prematurely while collecting the file MAC data.
-         */
-        G.csize += g_csize_adj;
-    }
-
     if (G.lrec.compression_method == AESENCRED)
     {
         int i;
+
+        /* Adjust G.csize and/or G.incnt back up, so that NEXTBYTE
+         * doesn't quit prematurely while collecting the file MAC data.
+         */
+        G.csize += g_csize_adj;
+        G.incnt += g_incnt_adj;
 
         /* Save the Message Authorization Code from the file data. */
         for (i = 0; i < MAC_LENGTH( G.pInfo->cmpr_mode_aes); i++)
@@ -3465,6 +3503,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 break;
             aes_wg_mac_file[ i] = uichar;
         }
+
         /* Get the calculated MAC from the encryption package. */
         i = fcrypt_end( aes_wg_mac_calc, G.zcx);
         /* Verify MAC match.  Record result. */
@@ -3616,13 +3655,24 @@ static int TestExtraField(__G__ ef, ef_len)
         eb_id = makeword(ef);
         eb_len = (unsigned)makeword(ef+EB_LEN);
 
-        if (eb_len > (ef_len - EB_HEADSIZE)) {
+        if (eb_len > (ef_len - EB_HEADSIZE))
+        {
            /* Discovered some extra field inconsistency! */
             if (uO.qflag)
                 Info(slide, 1, ((char *)slide, "%-22s ",
                   FnFilter1(G.filename)));
             Info(slide, 1, ((char *)slide, LoadFarString(InconsistEFlength),
               eb_len, (ef_len - EB_HEADSIZE)));
+            return PK_ERR;
+        }
+        else if (eb_len < EB_HEADSIZE)
+        {
+            /* Extra block length smaller than header length. */
+            if (uO.qflag)
+                Info(slide, 1, ((char *)slide, "%-22s ",
+                  FnFilter1(G.filename)));
+            Info(slide, 1, ((char *)slide, LoadFarString(TooSmallEFlength),
+              eb_len, EB_HEADSIZE));
             return PK_ERR;
         }
 
@@ -3832,10 +3882,17 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
     if (compr_offset < 4)                /* field is not compressed: */
         return PK_OK;                    /* do nothing and signal OK */
 
+    /* Return no/bad-data error status if any problem is found:
+     *    1. eb_size is too small to hold the uncompressed size
+     *       (eb_ucsize).  (Else extract eb_ucsize.)
+     *    2. eb_ucsize is zero (invalid).  2014-12-04 SMS.  (oCERT.org report.)
+     *    3. eb_ucsize is positive, but eb_size is too small to hold
+     *       the compressed data header.
+     */
     if ((eb_size < (EB_UCSIZE_P + 4)) ||
-        ((eb_ucsize = makelong(eb+(EB_HEADSIZE+EB_UCSIZE_P))) > 0L &&
-         eb_size <= (long)(compr_offset + EB_CMPRHEADLEN)))
-        return IZ_EF_TRUNC;               /* no compressed data! */
+     ((eb_ucsize = makelong( eb+ (EB_HEADSIZE+ EB_UCSIZE_P))) == 0L) ||
+     ((eb_ucsize > 0L) && (eb_size <= (compr_offset + EB_CMPRHEADLEN))))
+        return IZ_EF_TRUNC;             /* no/bad compressed data! */
 
     /* 2014-11-03 Michal Zalewski, SMS.
      * For STORE method, compressed and uncompressed sizes must agree.
@@ -4935,6 +4992,9 @@ __GDEF
 uzlzma_cleanup_exit:
 
     LzmaDec_Free( &G.state_lzma, &G.g_Alloc);
+
+    /* Advance the global input pointer to past the used data. */
+    G.inptr = next_in+ in_buf_size_len;
 
     return sts;
 }

@@ -2,7 +2,7 @@
 #
 #    UnZip 6.10 for VMS -- MMS (or MMK) Source Description File.
 #
-#    Last revised:  2014-10-20
+#    Last revised:  2014-11-22
 #
 #----------------------------------------------------------------------
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
@@ -383,12 +383,12 @@ NON_VAX_CMPL = 1
 	   create /directory $(BZ2DIR_BIN)
 .ELSE                                                           # BUILD_BZIP2
 	@ @[.VMS]FIND_BZIP2_LIB.COM $(IZ_BZIP2) $(SEEK_BZ) $(BZ2_OLB) lib_bzip2
-	@ no_lib_bzip2 = (f$trnlnm( "lib_bzip2") .eqs. "")
-	@ if (no_lib_bzip2) then -
+	@ no_lib_bzip2_dcl_sym = (f$trnlnm( "lib_bzip2") .eqs. "")
+	@ if (no_lib_bzip2_dcl_sym) then -
 	   write sys$output "   Can not find BZIP2 object library."
-	@ if (no_lib_bzip2) then -
+	@ if (no_lib_bzip2_dcl_sym) then -
 	   write sys$output ""
-	@ if (no_lib_bzip2) then -
+	@ if (no_lib_bzip2_dcl_sym) then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 	@ write sys$output "   BZIP2 dir: ''f$trnlnm( "lib_bzip2")'"
 .ENDIF                                                          # BUILD_BZIP2
@@ -397,12 +397,12 @@ NON_VAX_CMPL = 1
 .ENDIF                                                      # IZ_BZIP2
 .IFDEF IZ_ZLIB                                              # IZ_ZLIB
 	@ @[.VMS]FIND_BZIP2_LIB.COM $(IZ_ZLIB) $(SEEK_BZ) LIBZ.OLB lib_zlib
-	@ no_lib_zlib = (f$trnlnm( "lib_zlib") .eqs. "")
-	@ if (no_lib_zlib) then -
+	@ no_lib_zlib_dcl_sym = (f$trnlnm( "lib_zlib") .eqs. "")
+	@ if (no_lib_zlib_dcl_sym) then -
 	   write sys$output "   Can not find ZLIB object library."
-	@ if (no_lib_zlib) then -
+	@ if (no_lib_zlib_dcl_sym) then -
 	   write sys$output ""
-	@ if (no_lib_zlib) then -
+	@ if (no_lib_zlib_dcl_sym) then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 	@ write sys$output "   ZLIB dir:  ''f$trnlnm( "lib_zlib")'"
 	@ write sys$output ""
@@ -418,13 +418,13 @@ NON_VAX_CMPL = 1
 	@ write sys$output ""
 	@ write sys$output "   Verifying large-file support..."
 	@ @[.VMS]CHECK_LARGE.COM $(DEST) large_ok
-	@ no_large = (f$trnlnm( "large_ok") .eqs. "")
-	@ if (no_large) then -
+	@ no_large_dcl_sym = (f$trnlnm( "large_ok") .eqs. "")
+	@ if (no_large_dcl_sym) then -
 	   write sys$output -
 	    "   Large-file support not available with this VMS/CRTL version."
-	@ if (no_large) then -
+	@ if (no_large_dcl_sym) then -
 	   write sys$output "   Add ""/MACRO = NOLARGE=1""."
-	@ if (no_large) then -
+	@ if (no_large_dcl_sym) then -
 	   I_WILL_DIE_NOW.  /$$$$INVALID$$$$
 	@ write sys$output "   Large-file support ok."
 	@ write sys$output ""

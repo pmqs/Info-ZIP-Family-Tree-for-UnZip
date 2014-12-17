@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2003-May-08 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -177,6 +177,9 @@ Uz_Globs *globalsCtor()
 #endif
 #if (!defined(NO_TIMESTAMPS))
     uO.D_flag = 1;  /* Default to '-D', no restoration of dir timestamps. */
+#endif
+#ifdef VMS
+    G.echo_orig = -1;   /* Original terminal echo state (-1: unknown). */
 #endif
 
     uO.lflag=(-1);

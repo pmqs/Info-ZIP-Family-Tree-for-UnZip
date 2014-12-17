@@ -185,6 +185,8 @@ static ZCONST char Far UFilenameTooLongTrunc[] =
  "warning:  Converted unicode filename too long--truncating.\n";
 #endif /* def UNICODE_SUPPORT */
 
+static ZCONST char Far ExtraFieldCorrupt[] =
+ "warning:  extra field (type: 0x%04x) corrupt.  Continuing...\n";
 static ZCONST char Far ExtraFieldTooLong[] =
  "warning:  extra field too long (%d).  Ignoring...\n";
 static ZCONST char Far DiskFullMsg[] =
@@ -2965,10 +2967,34 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             seek_zipf(__G__ G.cur_zipfile_bufstart - G.extra_bytes +
                       (G.inptr-G.inbuf) + length);
         } else {
-            if (readbuf(__G__ (char *)G.extra_field, length) == 0)
+            /* 2014-11-13 pstodulk, SMS.
+             * http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=282
+             * Faulty archive data may cause use of unset data in the
+             * G.extra_field buffer.
+             */
+            unsigned int len_rb;
+
+            if ((len_rb = readbuf(__G__ (char *)G.extra_field, length)) == 0)
                 return PK_EOF;
-            /* Looks like here is where extra fields are read */
-            getZip64Data(__G__ G.extra_field, length);
+            if (len_rb < length)
+            {
+                /* Clear any unfilled bytes in the buffer,
+                 * and pretend that we got all that we requested.
+                 */
+                memset( (char *)G.extra_field+ len_rb, 0, (length- len_rb));
+                length = len_rb;
+            }
+            /* Looks like here is where extra fields are read. */
+            /* 2014-12-17 SMS.  (oCERT.org report.)
+             * Added test to detect (and message to notify user of)
+             * bad Zip64 (EF_PKSZ64) extra field data.
+             */
+            if (getZip64Data(__G__ G.extra_field, length) != PK_COOL)
+            {
+                Info(slide, 0x401, ((char *)slide,
+                 LoadFarString( ExtraFieldCorrupt), EF_PKSZ64));
+                error = PK_WARN;
+            }
 #ifdef UNICODE_SUPPORT
             /* 2013-02-11 SMS.
              * Free old G.unipath_filename storage, if not already

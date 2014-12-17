@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-10-10
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-11-14
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -1189,8 +1189,8 @@ $(PROD)/flags: unix/configure
          "LIST='$(LIST)'" \
          "CC='$(CC)'" \
          "CFLAGS='$(LOCAL_UNZIP)'" \
-         "LFLAGS1='$(LFLAGS1)'" \
-         "LFLAGS2='$(LFLAGS2)'" \
+         "LF1='$(LF1)'" \
+         "LF2='$(LF2)'" \
          "NO_AES_WG='$(NO_AES_WG)'" \
          "IZ_BZIP2='$(IZ_BZIP2)'" \
          "NO_IZ_BZIP2='$(NO_IZ_BZIP2)'" \

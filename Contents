@@ -17,6 +17,7 @@ ToDo            List of new features/fixes under consideration
 unzip610a.ann   Notes on the UnZip 6.10a beta release
 unzip610b.ann   Notes on the UnZip 6.10b beta release
 unzip610c.ann   Notes on the UnZip 6.10c beta release
+zip-comment.txt Source kit archive comment
 proginfo/       Programming docs, additional technical info, contributor list
 
    User Program Documentation ("man"/help formatted output)

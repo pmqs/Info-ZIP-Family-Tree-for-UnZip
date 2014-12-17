@@ -570,6 +570,9 @@ Features added (or removed):
    (extract.c, fileio.c, globals.h, process.c, unzpriv.h,
    win32/w32cfg.h, win32/win32.c, windll/windll.c, zipinfo.c) [SMS]
 
+6.10c13 (17 Dec 2014):
+ - No news.
+
 
 Bugs fixed:
 
@@ -1540,3 +1543,20 @@ Bugs fixed:
 6.10c12 (11 Nov 2014):
  - No news.
 
+6.10c13 (26 Dec 2014):
+ - Fixed some buffer-overflow problems reported by oCERT (oCERT.org),
+   involving corrupt/malicious archives.  Added some warning messages
+   where corruption was detected.  (extract.c, fileio.c, process.c)
+   [SMS]
+ - Unix builder was using the wrong linker flags variable names, which
+   could cause user-specified values to be ignored.  (unix/Makefile)
+   [SMS]
+ - VMS MMS/MMK builder used some DCL symbols which could be
+   (mis-)interpreted as MMS macros, causing various build problems.
+   These now have names ending in "_dcl_sym", which sould avoid such
+   collisions.  (vms/descrip_src.mms) [SMS]
+ - UnZip could erroneously report "bad AES_WG MAC" for valid data (when
+   AES_WG encryption was used).  (extract.c) [SMS]
+ - Code tidying.  Moved a VMS-specific variable (terminal echo state)
+   from local static storage into the (dynamic) global data structure.
+   (globals.c, globals.h, ttyio.c) [SMS]

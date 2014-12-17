@@ -447,6 +447,7 @@ typedef struct Globals {
 
 #  ifdef VMS
     FILE *msgfp;                /* Message/prompt output file. */
+    int echo_orig;              /* Original terminal echo state. */
 #  endif /* def VMS */
 
     int incnt_leftover;       /* so improved NEXTBYTE does not waste input */
