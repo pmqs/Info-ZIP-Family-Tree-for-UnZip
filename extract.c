@@ -124,7 +124,7 @@ static int extract_or_test_member OF((__GPRO));
 #ifndef SFX
    static int TestExtraField OF((__GPRO__ uch *ef, long ef_len));
    static int test_compr_eb OF((__GPRO__ uch *eb, long eb_size,
-        unsigned compr_offset,
+        long compr_offset,
         int (*test_uc_ebdata)(__GPRO__ uch *eb, long eb_size,
                               uch *eb_ucptr, ulg eb_ucsize)));
 #endif
@@ -371,7 +371,7 @@ ZCONST char Far TruncNTSD[] =
    static ZCONST char Far InconsistEFlength[] = "bad extra-field entry:\n\
      EF block length (%ld bytes) exceeds remaining EF data (%ld bytes)\n";
    static ZCONST char Far TooSmallEFlength[] = "bad extra-field entry:\n\
-     EF block length (%u bytes) invalid (< %d)\n";
+     EF block length (%lu bytes) invalid (< %d)\n";
    static ZCONST char Far InvalidComprDataEAs[] =
      " invalid compressed data for EAs\n";
 # if defined(WIN32) && defined(NTSD_EAS)
@@ -3636,6 +3636,8 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
  * catch underflow of ef_len caused by corrupt/malicious
  * data.  (32-bit is adequate.  Used "long" to
  * accommodate any systems with 16-bit "int".)
+ * 2015-01-01 SMS.
+ * And eb_cmpr_offs.  See also test_compr_eb():compr_offset.
  */
 
 static int TestExtraField(__G__ ef, ef_len)
@@ -3645,7 +3647,7 @@ static int TestExtraField(__G__ ef, ef_len)
 {
     ush eb_id;
     long eb_len;
-    unsigned eb_cmpr_offs = 0;
+    long eb_cmpr_offs = 0;
     int r;
 
     /* we know the regular compressed file data tested out OK, or else we
@@ -3862,7 +3864,7 @@ static int test_compr_eb(
     __GPRO__
     uch *eb,
     long eb_size,
-    unsigned compr_offset,
+    long compr_offset,
     int (*test_uc_ebdata)(__GPRO__ uch *eb, long eb_size,
                           uch *eb_ucptr, ulg eb_ucsize))
 #else /* !PROTO */
@@ -3870,7 +3872,7 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
     __GDEF
     uch *eb;
     long eb_size;
-    unsigned compr_offset;
+    long compr_offset;
     int (*test_uc_ebdata)();
 #endif /* ?PROTO */
 {

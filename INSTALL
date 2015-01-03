@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2014-11-08
+   UnZip version 6.10.  Revised: 2015-01-03
 
 ------------------------------------------------------------------------
 
@@ -378,6 +378,96 @@ directory. For example:
 
 where "../iz_bzip2" is a real bzip2 directory or a link to one.
 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Basic Build Customization
+   -------------------------
+
+   One way to customize a "generic" build is to specify compiler and
+linker options other than the defaults.  This can be done by specifying
+values for some "make" macros in the "make" command line, such as the
+following:
+
+      CFLAGS_OPT        C compiler options related to optimization.
+      LOCAL_UNZIP       Ordinary C compiler options.
+      LFLAGS1           Linker options (early in the command).
+      LFLAGS2           Linker options (late in the command).
+
+   For example, to build executables for debugging, we might wish to use
+compiler options like "-g -O0" instead of whatever the "unix/configure"
+script might select, we might wish to link the executables without the
+default "-s" (strip) option, and we might wish to disable the usual
+signal handlers, so that we will get a "core" dump file in the case of a
+segmentation fault or similar run-time disaster.
+
+   We can specify a value for CFLAGS_OPT to override the usual compiler
+optimization options, for LFLAGS2 to override the usual "-s" option, and
+for LOCAL_UNZIP to define the C macro NO_EXCEPT_SIGNALS to disable the
+signal handler.  (See unix/configure and unix/Makefile for more details
+on these "make" macros.  Look for NO_EXCEPT_SIGNALS in unzip.c, and see
+"C Macros to Control UnZip Behavior", below.)  The resulting command
+might look like the following:
+
+      make -f unix/Makefile CC=cc PROD=cc_dbg CFLAGS_OPT='-g -O0' \
+       LOCAL_UNZIP=-DNO_EXCEPT_SIGNALS LFLAGS2=-L. generic
+
+   We specify "PROD=cc_dbg" to keep these debug objects and executables
+separate from the usual ones.  It's difficult to specify a null option
+for LFLAGS2 (to override the default "-s"), but we can specify a
+non-null option which has no real effect.  Here, "-L." overrides the
+default "-s", but does nothing else.
+
+   Note that when using "make generic", the "unix/configure" script
+stores various build options ("make" macro definitions) in a (text)
+file, "flags", in the main destination directory, "$(PROD)" (default:
+".").  When building with different options in a particular destination
+directory, the user must first delete the old "$(PROD)/flags" file.
+Normally, the whole destination directory should be cleaned out, and the
+"make" target "clean" will do that.  For example, before doing:
+
+      make -f unix/Makefile CC=cc PROD=cc_dbg CFLAGS_OPT='-g -O0' \
+       LOCAL_UNZIP=-DNO_EXCEPT_SIGNALS LFLAGS2=-L. generic
+
+do:
+
+      make -f unix/Makefile CC=cc PROD=cc_dbg CFLAGS_OPT='-g -O0' \
+       LOCAL_UNZIP=-DNO_EXCEPT_SIGNALS LFLAGS2=-L. clean
+
+or (because the "clean" target needs less information than an actual
+build):
+
+      make -f unix/Makefile PROD=cc_dbg clean
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+   Other Build Customization
+   -------------------------
+
+   In some more complex situations, the "unix/configure" script may not
+set all the build options as desired.  One way to work around problems
+with "make generic" is to use a two-step procedure.  First, instead of
+doing "make generic", do "make config_flags".  For example:
+
+      make -f unix/Makefile [other-options ...] clean
+      make -f unix/Makefile [other-options ...] config_flags
+
+   This should run the "unix/configure" script, which generates the
+build options file, "$(PROD)/flags" (described in the previous section),
+and then stop.  This "flags" file contains the "make" macros which will
+be used in the second step.  This file can be edited to make final
+adjustments to compile options, link options, and so on.
+
+   When the new "flags" has been changed as desired, the second step is
+to complete the build using the "generic" target.  For example:
+
+      make -f unix/Makefile [other-options ...] generic
+
+This should do the build using the changed data in the edited "flags"
+file.
+
+   Of course, it's also possible to edit "unix/configure" and/or
+"unix/Makefile", but normally that's not required.
+
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
    UnZipSFX Considerations
@@ -407,34 +497,6 @@ following:
       make -f unix/Makefile CC=gcc \
        LOCAL_UNZIP='-DCRYPT_AES_WG_SFX -DLZMA_SFX -DPPMD_SFX' \
        generic
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-   Helping "make generic"
-   ----------------------
-
-   In some situations, the "unix/configure" script may not set all the
-build options as desired.  One way to work around problems with "make
-generic" is to use a two-step procedure.  First, instead of doing "make
-generic", do "make config_flags".  For example:
-
-      make -f unix/Makefile [other-options ...] config_flags
-
-This should run the "unix/configure" script, which generates a "flags"
-(text) file in the main destination directory ("$(PROD)", default: ".").
-The file "flags" contains all the "make" macros which will be used in
-the second step.  This file can be edited to make final adjustments to
-compile options, link options, and so on.
-
-   When "flags" has been changed as desired, the second step is to build
-using the "generic" target.  For example:
-
-      make -f unix/Makefile [other-options ...] generic
-
-This should do the build using the changed "flags" file.
-
-   Of course, it's also possible to edit "unix/configure" and/or
-"unix/Makefile", but normally that's not required.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -489,9 +551,9 @@ as instructed.  The comments in unix/Makefile may offer some useful
 information for building on various target systems.
 
    Use of "make" targets other than "generic" requires some care,
-because other targets typically do not use the unix/configure script (or
-its intermediate "flags" file), and this may cause programs to be built
-without some expected features enabled.
+because other targets typically do not use the "unix/configure" script
+(or its intermediate "flags" file), and this may cause programs to be
+built without some expected features enabled.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -500,8 +562,8 @@ without some expected features enabled.
 
 Macintosh (Mac OS X)
    On Mac OS X, use the Unix build procedure, described above.  When
-using Xcode, the optional command-line tools must be installed.  For
-pre-Mac-OS-X Macintosh, see below for old infomation.
+   using Xcode, the optional command-line tools must be installed.  For
+   pre-Mac-OS-X Macintosh, see below for old infomation.
 
 MS-DOS
    See the msdos\Contents file for notes regarding which makefile(s) to
@@ -845,7 +907,7 @@ Human68K, TOPS-20, AOS/VS, etc.
    Post-Installation
    -----------------
 
-   Many operating systems require a timezone variable to be set
+   Some operating systems may require a timezone variable to be set
 correctly (often "TZ").  Unix and VMS generally do so by default.
 Windows does, if set up properly.  Other operating systems may not.  See
 the discussion of the -f and -u options in the UnZip man page (or
@@ -1032,6 +1094,15 @@ NO_DEFLATE_SFX
    support can be disabled to reduce the size of the UnZipSFX
    executable.  (Currently, Deflate support is always enabled in UnZip
    itself.)
+
+NO_EXCEPT_SIGNALS
+   Disable the normal signal handler.  By default, UnZip has a signal
+   handler which emits an error message in the event of a program fault
+   like a bus error, segmentation fault, ACCVIO, and so on.  On a Unix
+   system, this avoids creating a "core" dump file in these cases.  When
+   debugging, it can be more useful to disable the default signal
+   handler, and let the debugger handle these faults instead (or just
+   create a "core" file for later analysis).
 
 NO_SFX_EXDIR
    Disable the "-d <extract_dir>" option in UnZipSFX.  Since UnZip 5.5,

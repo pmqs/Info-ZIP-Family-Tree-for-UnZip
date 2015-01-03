@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2014-11-14
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2015-01-03
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -23,7 +23,7 @@
 # "make -f unix/Makefile help"            Limited advice on which targets to
 #                                         try if problems occur.
 #
-# CF are flags for the C compiler.  LF are flags for the linker.  LF2
+# CF are flags for the C compiler.  LF1 are flags for the linker.  LF2
 # are more flags for the linker, if they need to be at the end of the
 # line instead of at the beginning (for example, some libraries).
 # LOCAL_UNZIP is a "make" macro that can be used to add default C flags
@@ -1189,8 +1189,8 @@ $(PROD)/flags: unix/configure
          "LIST='$(LIST)'" \
          "CC='$(CC)'" \
          "CFLAGS='$(LOCAL_UNZIP)'" \
-         "LF1='$(LF1)'" \
-         "LF2='$(LF2)'" \
+         "LFLAGS1='$(LFLAGS1)'" \
+         "LFLAGS2='$(LFLAGS2)'" \
          "NO_AES_WG='$(NO_AES_WG)'" \
          "IZ_BZIP2='$(IZ_BZIP2)'" \
          "NO_IZ_BZIP2='$(NO_IZ_BZIP2)'" \
@@ -1235,8 +1235,8 @@ clean:
           rm -f "$(PROD)"/*.o "$(PROD)"/*.a $(UNZIP_PPGMS); \
           echo "rm -f \"$(PROD)\"/flags \"$(PROD)\"/flags_bz"; \
           rm -f "$(PROD)"/flags "$(PROD)"/flags_bz; \
-          echo "rm -f $(PROD)/manout"; \
-          rm -rf "$(PROD)"/manout; \
+          echo "rm -f \"$(PROD)\"/*.dSYM \"$(PROD)\"/manout"; \
+          rm -rf "$(PROD)"/*.dSYM "$(PROD)"/manout; \
         fi
 #       # Remove empty $(PROD) directory.
 	if [ -d "$(PROD)" ]; then \

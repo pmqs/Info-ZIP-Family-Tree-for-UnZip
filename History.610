@@ -1560,3 +1560,17 @@ Bugs fixed:
  - Code tidying.  Moved a VMS-specific variable (terminal echo state)
    from local static storage into the (dynamic) global data structure.
    (globals.c, globals.h, ttyio.c) [SMS]
+
+6.10c14 (03 Jan 2015):
+ - Removed the erroneous "fix" made to unix/Makefile in 6.10c13.  Fixed
+   an actual error in a comment.  Added '"$(PROD)"/*.dSYM' to the list
+   of files removed by the "clean" target (for Mac OS X).
+   (unix/Makefile) [SMS]
+ - Minor code changes to clear some compiler complaints.  (extract.c)
+   [SMS]
+ - Limited to VMS a change intended to fix a message format problem on
+   VMS.  It was enabled everywhere, but could cause spurious blank lines
+   on non-VMS systems.  (fileio.c)  [SMS]
+ _ Added more details to documentation on build customization.
+   (INSTALL) [SMS]
+ - Advanced copyright dates in messages to 2015.  (unzip.c) [SMS]

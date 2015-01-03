@@ -1743,7 +1743,6 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
 #ifdef VMS
     /* Save the output file for the prompt function. */
     ((Uz_Globs *)pG)->msgfp = outfp;
-#endif /* def VMS */
 
     /* 2011-05-07 SMS.
      * VMS needs to handle toggling between stdout and stderr in its own
@@ -1758,6 +1757,14 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
      * This closes the old stdout line properly, allowing the new error
      * message to appear on its own line, with no spurious blank lines
      * added.  This method seems to work on UNIX, too.
+     *
+     * 2014-12-31 SMS.
+     * Actually, on UNIX, it can add an extra (excessive) blank line, so
+     * back to VMS-only.  For example, after:
+     *       replace xxx.xxx? [y]es, [n]o, [A]ll, [N]one, [r]ename: r
+     *       new name: yyy.yyy
+     *
+     *         inflating: yyy.yyy
      */
 
     /* When outfp changes, "\n"-terminate any pending line. */
@@ -1770,6 +1777,7 @@ int UZ_EXP UzpMessagePrnt(pG, buf, size, flag)
         }
         ((Uz_Globs *)pG)->outfp_prev = outfp;
     }
+#endif /* def VMS */
 
 #ifdef QUERY_TRNEWLN
     /* some systems require termination of query prompts with '\n' to force

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -710,22 +710,22 @@ static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
- Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip /license\n";
+ Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
 #   else /* def VMSCLI */
     static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
- Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip --license\n";
+ Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
 #  else /* def COPYRIGHT_CLEAN */       /* Smith copyright, not maintainer. */
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
- Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip /license\n";
+ Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
 #   else /* def VMSCLI */
 static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
- Copyright (c) 1990-2014 Info-ZIP.  For software license: unzip --license\n";
+ Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
 #  endif /* def COPYRIGHT_CLEAN [else] */
 #  define UnzipUsageLine1v       UnzipUsageLine1
@@ -3401,7 +3401,7 @@ static void show_license(__G)
 
     /* license array */
     static ZCONST char *text[] = {
-  "Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.",
+  "Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.",
   "",
   "This is version 2009-Jan-02 of the Info-ZIP license.",
   "",
