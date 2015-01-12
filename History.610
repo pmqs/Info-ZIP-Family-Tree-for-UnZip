@@ -573,6 +573,27 @@ Features added (or removed):
 6.10c13 (17 Dec 2014):
  - No news.
 
+6.10c14 (03 Jan 2015):
+ - No news.
+
+6.10c15 (12 Jan 2015):
+ - Included public-domain code from Peter Backes for the (obsolete)
+   Reduce compression method.  (Some minor changes were made to clear
+   some diagnostics from modern compilers, and to accommodate inclusion
+   by unreduce.c.)  To enable Unreduce support using the public-domain
+   code, define the C macro USE_UNREDUCE_PUBLIC.  To enable Unreduce
+   support using the copyrighted Unreduce code, define the C macro
+   USE_UNREDUCE_SMITH (or, for compatibility with old code and
+   documentation, USE_SMITH_CODE), and supply the source file
+   unreduce_full.c.  See INSTALL for details.  The C macro 
+   COPYRIGHT_CLEAN has been removed from the code and from the "UnZip
+   special compilation options" ("-v") report.  The new USE_UNREDUCE_xxx
+   macros appear instead.
+   http://sourceforge.net/p/infozip/patches/18/
+   (api.c, COPYING.OLD, expand.c (new), extract.c, INSTALL,
+   unix/Makefile, unreduce.c, unzip.c, unzpriv.h, vms/descrip_deps.mms,
+   vms/descrip_mkdeps.mms) [Peter Backes, SMS]
+
 
 Bugs fixed:
 
@@ -1574,3 +1595,7 @@ Bugs fixed:
  _ Added more details to documentation on build customization.
    (INSTALL) [SMS]
  - Advanced copyright dates in messages to 2015.  (unzip.c) [SMS]
+
+6.10c15 (10 Jan 2015)
+ - Spelling changes.  (COPYING.OLD, tandem/README) [SMS]
+ - Removed some dead code.  (unzip.c) [SMS]

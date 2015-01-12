@@ -1,6 +1,6 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2015-01-03
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2015-01-09
 #
 # Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
 #
@@ -719,7 +719,7 @@ $(PROD)/ttyio.o:      ttyio.c     $(H_UNZIP) crypt.h ttyio.h zip.h
 $(PROD)/ubz2err.o:    ubz2err.c   $(H_UNZIP)
 	$(CC) -c $(CF) -o $@ ubz2err.c
 
-$(PROD)/unreduce.o:   unreduce.c  $(H_UNZIP)
+$(PROD)/unreduce.o:   unreduce.c  $(H_UNZIP) expand.c
 	$(CC) -c $(CF) -o $@ unreduce.c
 
 $(PROD)/unshrink.o:   unshrink.c  $(H_UNZIP)
@@ -766,7 +766,7 @@ $(PROD)/ttyio_l.o:    ttyio.c     $(H_UNZIPL) crypt.h ttyio.h zip.h
 $(PROD)/ubz2err_l.o:  ubz2err.c   $(H_UNZIPL)
 	$(CC) -c $(CF) -DDLL -o $@ ubz2err.c
 
-$(PROD)/unreduce_l.o: unreduce.c  $(H_UNZIPL)
+$(PROD)/unreduce_l.o: unreduce.c  $(H_UNZIPL) expand.c
 	$(CC) -c $(CF) -DDLL -o $@ unreduce.c
 
 $(PROD)/unshrink_l.o: unshrink.c  $(H_UNZIPL)

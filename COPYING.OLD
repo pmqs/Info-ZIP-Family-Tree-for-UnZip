@@ -2,7 +2,7 @@ __________________________________________________________________________
 
   This is the Info-ZIP file COPYING.OLD (for UnZip)
   Last content update: 17 Jul 2000
-  Last edit:           28 Jan 2013
+  Last edit:           09 Jan 2015
 __________________________________________________________________________
 
    FIRST NOTE:
@@ -56,7 +56,7 @@ __________________________________________________________________________
    filename-mapping, text translation, ...; etc.  As far as we can
    tell, only the core code of the Reduce method remained substantially
    similar to Mr. Smith's original source.  As of UnZip 5.42, the complete
-   core code is now covered by the Info-ZIP Licence.  Therefore, support
+   core code is now covered by the Info-ZIP License.  Therefore, support
    for the Reduce method has been removed.
    The drop of the Reduce method should only affect some test archives.
    Reduce was never used in any publicly distributed Zip program.

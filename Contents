@@ -55,6 +55,7 @@ crypt.c         Traditional zip encryption
 crypt.h         Header file for crypt.c
 ebcdic.h        Static lookup table for ASCII <-> EBCDIC translation
 envargs.c       Read options from environment variables
+expand.c        Reduce compression (methods 2-5), Peter Backes (public domain)
 explode.c       Implode compression (method 6)
 extract.c       High-level extraction and decryption code
 fileio.c        File I/O, password, various utilities
@@ -72,7 +73,7 @@ timezone.h      Header file for timezone.c
 ttyio.c         Terminal I/O: echo, size; password, pager
 ttyio.h         Header file for ttyio.c
 ubz2err.c       Callback handler for fatal bzip2 errors (bzip2 support)
-unreduce.c      Reduce compression (methods 2-5), stub only
+unreduce.c      Reduce compression (methods 2-5), wrapper
 unshrink.c      Shrink compression (method 1)
 unzip.c         UnZip main(), usage and options code
 unzip.h         Public part of main UnZip header file

@@ -259,11 +259,10 @@ char *UzpFeatures()
 # ifdef PPMD_SUPPORT
     strcat( featurelist, ",ppmd");
 # endif
-    strcat( featurelist, ";");
-
-# ifdef COPYRIGHT_CLEAN
-    strcat( featurelist, "copyright_clean;");
+# if defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH)
+    strcat( featurelist, ",unreduce;");
 # endif
+    strcat( featurelist, ";");
 
 # ifdef IZ_CRYPT_ANY
 
@@ -387,6 +386,13 @@ char *UzpFeatures()
 
 # ifdef USE_EF_UT_TIME
     strcat( featurelist, "use_ef_ut_time;");
+# endif
+
+# ifdef USE_UNREDUCE_PUBLIC
+    strcat( featurelist, "use_unreduce_public;");
+# endif
+# ifdef USE_UNREDUCE_SMITH
+    strcat( featurelist, "use_unreduce_smith;");
 # endif
 
 # ifdef USE_VFAT

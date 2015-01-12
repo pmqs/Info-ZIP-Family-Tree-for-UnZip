@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -363,7 +363,7 @@ static ZCONST char Far efTandem[] = "Tandem NSK";
 static ZCONST char Far efTheos[] = "Theos";
 static ZCONST char Far efAES[] = "AES_WG encrypt";
 static ZCONST char Far efJavaCAFE[] = "Java CAFE";
-static ZCONST char Far efLHdrExtn[] = "Local Hdr Ext'n";
+static ZCONST char Far efStream[] = "Ext'd Lcl Hdr (stream)";
 static ZCONST char Far efUnknown[] = "unknown";
 
 static ZCONST char Far OS2EAs[] = ".\n\
@@ -435,9 +435,9 @@ static ZCONST char Far MD5data[] = ".\n\
 static ZCONST char Far First20[] = ".  The first\n    20 are:  ";
 static ZCONST char Far ColonIndent[] = ":\n   ";
 static ZCONST char Far efFormat[] = " %02x";
-static ZCONST char Far efLHdrExtnBitMap[] = "  Bit map:";
-static ZCONST char Far efLHdrExtnBitMapByte[] = " %02x";
-static ZCONST char Far efLHdrExtnBitMapEol[] = "\n";
+static ZCONST char Far efStreamBitMap[] = "  Bit map:";
+static ZCONST char Far efStreamBitMapByte[] = " %02x";
+static ZCONST char Far efStreamBitMapEol[] = "\n";
 
 static ZCONST char Far AesExtraField[] = ".\n\
     Vers: %s, Vend ID: %c%c, Mode: %s, Cmpr mthd: %s";
@@ -1785,7 +1785,8 @@ static int zi_long(__G__ pEndprev, error_in_archive)
 
         Info(slide, 0, ((char *)slide, LoadFarString(ExtraFields)));
 
-        while (ef_len >= EB_HEADSIZE) {
+        while (ef_len >= EB_HEADSIZE)
+        {
             eb_id = makeword(&ef_ptr[EB_ID]);
             eb_len = makeword(&ef_ptr[EB_LEN]);
             ef_ptr += EB_HEADSIZE;
@@ -1916,8 +1917,8 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                 case EF_JAVA:
                     ef_fieldname = efJavaCAFE;
                     break;
-                case EF_LHDREXTN:
-                    ef_fieldname = efLHdrExtn;
+                case EF_STREAM:
+                    ef_fieldname = efStream;
                     break;
                 default:
                     ef_fieldname = efUnknown;
@@ -2268,92 +2269,94 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                           md5));
                         break;
                     }   /* else: fall through !! */
-                case EF_LHDREXTN:
-                {
-                  long eb_ndx = 0;
-                  int eb_state = -1;
-                  uch bit_mask;
-                  unsigned hnum = (unsigned)-1;
-                  unsigned hver;
-
-                  Info( slide, 0, ((char *)slide,
-                   LoadFarString( efLHdrExtnBitMap)));
-                  while (eb_ndx < eb_len)
-                  {
-                    switch (eb_state)
+                    break;
+                case EF_STREAM: /* (Not expected in the central directory.) */
                     {
-                      case -1:          /* Seeking end of bit mask. */
-                        Info( slide, 0, ((char *)slide,
-                         LoadFarString( efLHdrExtnBitMapByte),
-                         *(ef_ptr+ eb_ndx)));
-                        if ((*(ef_ptr+ eb_ndx)& 0x80) == 0)
+                      long eb_ndx = 0;
+                      int eb_state = -1;
+                      uch bit_mask;
+                      unsigned hnum = (unsigned)-1;
+                      unsigned hver;
+
+                      Info( slide, 0, ((char *)slide,
+                       LoadFarString( efStreamBitMap)));
+                      while (eb_ndx < eb_len)
+                      {
+                        switch (eb_state)
                         {
-                          eb_state = 1;
-                          eb_ndx++;
-                          bit_mask = *ef_ptr;
-                          Info( slide, 0, ((char *)slide,
-                           LoadFarString( efLHdrExtnBitMapEol)));
-                        }
-                        break;
-                      case 0:           /* bit_mask[ 0]. */
-                        if (bit_mask& 0x01)
-                        { /* Version Made By. */
-                          if (eb_ndx+ 2 <= eb_len)
-                          {
-                            hver = *(ef_ptr+ eb_ndx);
-                            hnum = *(ef_ptr+ eb_ndx+ 1);
-                            zi_vers_made_by( __G__ 1, hnum, hver);
-                            eb_ndx += 2;
-                          }
-                          else
-                            break;
-                        }
-                        if (bit_mask& 0x02)
-                        { /* Internal File Atributes. */
-                          if (eb_ndx+ 2 <= eb_len)
-                          {
-                            iattr = makeword( ef_ptr+ eb_ndx);
-                            zi_long_intern_attr( __G__ 1, iattr);
-                            eb_ndx += 2;
-                          }
-                          else
-                            break;
-                        }
-                        if (bit_mask& 0x04)
-                        { /* External File Atributes. */
-                          if (eb_ndx+ 4 <= eb_len)
-                          {
-                            xattr = makelong( ef_ptr+ eb_ndx);
-                            if (hnum != (unsigned)-1)
-                            { /* Must know host type for ext attr. */
-                              zi_long_extern_attr( __G__ 1, hnum, xattr);
-                            }
-                            eb_ndx += 4;
-                          }
-                          else
-                            break;
-                        }
-                        if (bit_mask& 0x08)
-                        {
-                          if (eb_ndx+ 2 <= eb_len)
-                          {
-                            fc_len = makeword( ef_ptr+ eb_ndx);
-                            eb_ndx += 2;
-                            if (eb_ndx+ (long)fc_len <= eb_len)
+                          case -1:          /* Seeking end of bit mask. */
+                            Info( slide, 0, ((char *)slide,
+                             LoadFarString( efStreamBitMapByte),
+                             *(ef_ptr+ eb_ndx)));
+                            if ((*(ef_ptr+ eb_ndx)& EB_STREAM_EOB) == 0)
                             {
-                              eb_ndx += fc_len;
+                              eb_state = 1;
+                              eb_ndx++;
+                              bit_mask = *ef_ptr;
+                              Info( slide, 0, ((char *)slide,
+                               LoadFarString( efStreamBitMapEol)));
                             }
-                            else
-                              break;
-                          }
-                          else
                             break;
-                        }
-                      default:
-                        break;
-                    } /* switch (eb_state) */
-                  } /* while (eb_ndx < eb_len) */
-                } /* case EF_LHDREXTN */
+                          case 0:           /* bit_mask[ 0]. */
+                            if (bit_mask& (1 << 0))
+                            { /* Version Made By. */
+                              if (eb_ndx+ 2 <= eb_len)
+                              {
+                                hver = *(ef_ptr+ eb_ndx);
+                                hnum = *(ef_ptr+ eb_ndx+ 1);
+                                zi_vers_made_by( __G__ 1, hnum, hver);
+                                eb_ndx += 2;
+                              }
+                              else
+                                break;
+                            }
+                            if (bit_mask& (1 << 1))
+                            { /* Internal File Atributes. */
+                              if (eb_ndx+ 2 <= eb_len)
+                              {
+                                iattr = makeword( ef_ptr+ eb_ndx);
+                                zi_long_intern_attr( __G__ 1, iattr);
+                                eb_ndx += 2;
+                              }
+                              else
+                                break;
+                            }
+                            if (bit_mask& (1 << 2))
+                            { /* External File Atributes. */
+                              if (eb_ndx+ 4 <= eb_len)
+                              {
+                                xattr = makelong( ef_ptr+ eb_ndx);
+                                if (hnum != (unsigned)-1)
+                                { /* Must know host type for ext attr. */
+                                  zi_long_extern_attr( __G__ 1, hnum, xattr);
+                                }
+                                eb_ndx += 4;
+                              }
+                              else
+                                break;
+                            }
+                            if (bit_mask& (1 << 3))
+                            {
+                              if (eb_ndx+ 2 <= eb_len)
+                              {
+                                fc_len = makeword( ef_ptr+ eb_ndx);
+                                eb_ndx += 2;
+                                if (eb_ndx+ (long)fc_len <= eb_len)
+                                {
+                                  eb_ndx += fc_len;
+                                }
+                                else
+                                  break;
+                              }
+                              else
+                                break;
+                            }
+                        default:
+                            break;
+                        } /* switch (eb_state) */
+                      } /* while (eb_ndx < eb_len) */
+                    } /* case EF_STREAM */
+                    break;
 
                 default:
 ef_default_display:

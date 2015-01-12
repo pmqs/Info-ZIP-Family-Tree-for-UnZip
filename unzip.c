@@ -481,10 +481,6 @@ static ZCONST char Far AsmInflateCodes[] =
 static ZCONST char Far Check_Versions[] =
  "CHECK_VERSIONS       (Check VMS versions, build v. run-time)";
 #  endif
-#  ifdef COPYRIGHT_CLEAN
-static ZCONST char Far Copyright_Clean[] =
- "COPYRIGHT_CLEAN      (PKZIP 0.9x unreducing method not supported)";
-#  endif
 #  ifdef DEBUG
 static ZCONST char Far UDebug[] = "DEBUG";
 #  endif
@@ -493,7 +489,7 @@ static ZCONST char Far DebugTime[] = "DEBUG_TIME";
 #  endif
 #  ifdef DEFLATE64_SUPPORT
 static ZCONST char Far Deflate64_Sup[] =
- "DEFLATE64_SUPPORT    (PKZIP 4.x Deflate64(tm) supported)";
+ "DEFLATE64_SUPPORT    (PKZIP 4.x Deflate64(tm) compression)";
 #  endif
 #  ifdef DLL
 static ZCONST char Far Dll[] =
@@ -512,7 +508,7 @@ static ZCONST char Far ux_Uid_Gid[] =
 #  endif
 #  ifdef LZW_CLEAN
 static ZCONST char Far LZW_Clean[] =
- "LZW_CLEAN            (PKZIP/Zip 1.x unshrink method not supported)";
+ "LZW_CLEAN            (PKZIP/Zip 1.x Shrink compression not supported)";
 #  endif
 #  ifndef MORE
 static ZCONST char Far No_More[] =
@@ -573,11 +569,16 @@ static ZCONST char Far Use_EF_UT_time[] =
 #  endif
 #  ifndef LZW_CLEAN
 static ZCONST char Far Unshrink_Sup[] =
- "UNSHRINK_SUPPORT     (PKZIP/Zip 1.x unshrinking method supported)";
+ "UNSHRINK_SUPPORT     (PKZIP/Zip 1.x Shrink compression)";
 #  endif
-#  ifndef COPYRIGHT_CLEAN
-static ZCONST char Far Use_Smith_Code[] =
- "USE_SMITH_CODE       (PKZIP 0.9x unreducing method supported)";
+#  ifdef USE_UNREDUCE_PUBLIC
+static ZCONST char Far Use_Unreduce[] =
+ "USE_UNREDUCE_PUBLIC  (PKZIP 0.9x Reduce compression, public-domain)";
+#  else
+#   ifdef USE_UNREDUCE_SMITH
+static ZCONST char Far Use_Unreduce[] =
+ "USE_UNREDUCE_SMITH   (PKZIP 0.9x Reduce compression, (c) S. H. Smith)";
+#   endif
 #  endif
 #  ifdef UNICODE_SUPPORT
 #   ifdef UTF8_MAYBE_NATIVE
@@ -705,7 +706,7 @@ static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 # ifndef SFX
-#  ifdef COPYRIGHT_CLEAN                /* Maintainer, not Smith copyright. */
+#  ifndef USE_UNREDUCE_SMITH            /* Maintainer, not Smith copyright. */
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
@@ -716,7 +717,7 @@ UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
-#  else /* def COPYRIGHT_CLEAN */       /* Smith copyright, not maintainer. */
+#  else /* ndef USE_UNREDUCE_SMITH */   /* Smith copyright, not maintainer. */
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
@@ -727,7 +728,7 @@ static ZCONST char Far UnzipUsageLine1[] = "\
 UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
-#  endif /* def COPYRIGHT_CLEAN [else] */
+#  endif /* ndef USE_UNREDUCE_SMITH [else] */
 #  define UnzipUsageLine1v       UnzipUsageLine1
 
 static ZCONST char Far UnzipUsageLine2v[] = "\
@@ -1208,33 +1209,6 @@ int unzip(__G__ argc, argv)
     }
 # endif /* def IZ_CRYPT_AES_WG */
 
-# ifdef DEBUG
-    /* 2004-11-30 SMS.
-       Test the NEXTBYTE macro for proper operation.
-    */
-    {
-        int test_char;
-        static uch test_buf[2] = { 'a', 'b' };
-
-        G.inptr = test_buf;
-        G.incnt = 1;
-
-        test_char = NEXTBYTE;           /* Should get 'a'. */
-        if (test_char == 'a')
-        {
-            test_char = NEXTBYTE;       /* Should get EOF, not 'b'. */
-        }
-        if (test_char != EOF)
-        {
-            Info(slide, 0x401, ((char *)slide,
- "NEXTBYTE macro failed.  Try compiling with ALT_NEXTBYTE defined?"));
-
-            retcode = PK_COMPERR;
-            goto cleanup_and_exit;
-        }
-    }
-# endif /* DEBUG */
-
 /*---------------------------------------------------------------------------
     First figure out if we're running in UnZip mode or ZipInfo mode, and put
     the appropriate environment-variable options into the queue.  Then rip
@@ -1420,124 +1394,11 @@ int unzip(__G__ argc, argv)
     }
 # endif /* DOS_FLX_H68_NLM_OS2_W32 */
 
-# if 0
-/* G.wildzipfn now set in command line switch as first non-option argument */
-#  ifndef SFX
-    G.wildzipfn = *argv++;
-#  endif
-# endif
-
-# if (defined(SFX) && !defined(SFX_EXDIR)) /* only check for -x */
-
-#  if 0
-    /* all this should be done in the options call now */
-
-
-    G.filespecs = argc;
-    G.xfilespecs = 0;
-
-    if (argc > 0) {
-        char **pp = argv-1;
-
-        G.pfnames = argv;
-        while (*++pp)
-            if (strcmp(*pp, "-x") == 0) {
-                if (pp > argv) {
-                    *pp = 0;              /* terminate G.pfnames */
-                    G.filespecs = pp - G.pfnames;
-                } else {
-                    G.pfnames = (char **)fnames;  /* defaults */
-                    G.filespecs = 0;
-                }
-                G.pxnames = pp + 1;      /* excluded-names ptr: _after_ -x */
-                G.xfilespecs = argc - G.filespecs - 1;
-                break;                    /* skip rest of args */
-            }
-        G.process_all_files = FALSE;
-    } else
-        G.process_all_files = TRUE;      /* for speed */
-#  endif
-
-# else /* !SFX || SFX_EXDIR */             /* check for -x or -d */
-
-#  if 0
-    /* all this should be done in the options call now */
-
-    G.filespecs = argc;
-    G.xfilespecs = 0;
-
-    if (argc > 0) {
-        int in_files=FALSE, in_xfiles=FALSE;
-        char **pp = argv-1;
-
-        G.process_all_files = FALSE;
-        G.pfnames = argv;
-        while (*++pp) {
-            Trace((stderr, "pp - argv = %d\n", pp-argv));
-#   ifdef CMS_MVS
-            if (!uO.exdir && STRNICMP(*pp, "-d", 2) == 0) {
-#   else
-            if (!uO.exdir && strncmp(*pp, "-d", 2) == 0) {
-#   endif
-                int firstarg = (pp == argv);
-
-                uO.exdir = (*pp) + 2;
-                if (in_files) {      /* ... zipfile ... -d exdir ... */
-                    *pp = (char *)NULL;         /* terminate G.pfnames */
-                    G.filespecs = pp - G.pfnames;
-                    in_files = FALSE;
-                } else if (in_xfiles) {
-                    *pp = (char *)NULL;         /* terminate G.pxnames */
-                    G.xfilespecs = pp - G.pxnames;
-                    /* "... -x xlist -d exdir":  nothing left */
-                }
-                /* first check for "-dexdir", then for "-d exdir" */
-                if (*uO.exdir == '\0') {
-                    if (*++pp)
-                        uO.exdir = *pp;
-                    else {
-                        Info(slide, 0x401, ((char *)slide,
-                          LoadFarString(MustGiveExdir)));
-                        /* don't extract here by accident */
-                        retcode = PK_PARAM;
-                        goto cleanup_and_exit;
-                    }
-                }
-                if (firstarg) { /* ... zipfile -d exdir ... */
-                    if (pp[1]) {
-                        G.pfnames = pp + 1;  /* argv+2 */
-                        G.filespecs = argc - (G.pfnames-argv);  /* for now... */
-                    } else {
-                        G.process_all_files = TRUE;
-                        G.pfnames = (char **)fnames;  /* GRR: necessary? */
-                        G.filespecs = 0;     /* GRR: necessary? */
-                        break;
-                    }
-                }
-            } else if (!in_xfiles) {
-                if (strcmp(*pp, "-x") == 0) {
-                    in_xfiles = TRUE;
-                    if (pp == G.pfnames) {
-                        G.pfnames = (char **)fnames;  /* defaults */
-                        G.filespecs = 0;
-                    } else if (in_files) {
-                        *pp = 0;                   /* terminate G.pfnames */
-                        G.filespecs = pp - G.pfnames;  /* adjust count */
-                        in_files = FALSE;
-                    }
-                    G.pxnames = pp + 1; /* excluded-names ptr starts after -x */
-                    G.xfilespecs = argc - (G.pxnames-argv);  /* anything left */
-                } else
-                    in_files = TRUE;
-            }
-        }
-    } else
-        G.process_all_files = TRUE;      /* for speed */
-#  endif  /* 0 */
-
-    if (uO.exdir != (char *)NULL && !G.extract_flag)    /* -d ignored */
+# if !defined( SFX) || defined( SFX_EXDIR)
+    if (uO.exdir != (char *)NULL && !G.extract_flag)
+        /* Have "-d exdir", but not actually extracting, so -d is ignored. */
         Info(slide, 0x401, ((char *)slide, LoadFarString(NotExtracting)));
-# endif /* ?(SFX && !SFX_EXDIR) */
+# endif /* !defined( SFX) || defined( SFX_EXDIR) */
 
 # ifdef UNICODE_SUPPORT
     /* set Unicode-escape-all if option -U used */
@@ -1561,7 +1422,6 @@ int unzip(__G__ argc, argv)
 #  endif
 # endif /* def KFLAG */
 
-
 /*---------------------------------------------------------------------------
     Okey dokey, we have everything we need to get started.  Let's roll.
   ---------------------------------------------------------------------------*/
@@ -1580,36 +1440,9 @@ cleanup_and_exit:
     }
 # endif
 
-# if 0
-  /* 2012-12-11 SMS.
-   * Disabled call of free_G_buffers() from
-   * process.c:process_zipfiles(), so now DESTROYGLOBALS() should do all
-   * the work (if any).
-   *
-   * On the other hand, the revised/reallocated argv[] is known only
-   * locally, so we should free it.
-   */
-  /* 2012-12-10 SMS.
-   * This code appears to be goofy/redundant.
-   * Normally, process.c:process_zipfiles()
-   * calls process.c:free_G_buffers(), which, "#ifdef MALLOC_WORK",
-   * frees G.area.Slide, just like here.  (With REENTRANT defined,
-   * DESTROYGLOBALS() includes at least one call to free_G_buffers(), so
-   * the "!defined(REENTRANT)" condition makes some sense, but why free
-   * this stuff and not anything else, if not REENTRANT?)
-   */
-# if defined(MALLOC_WORK) && !defined(REENTRANT)
-    if (G.area.Slide != (uch *)NULL) {
-        izu_free(G.area.Slide);
-        G.area.Slide = (uch *)NULL;
-    }
-# endif /* defined(MALLOC_WORK) && !defined(REENTRANT) */
-# endif /* 0 */
-
 # ifdef REENTRANT
     free_args( argv);
 # endif /* def REENTRANT */
-
 
 # if (defined(MSDOS) && !defined(SFX) && !defined(WINDLL))
     if (retcode != PK_OK)
@@ -1618,8 +1451,6 @@ cleanup_and_exit:
     return(retcode);
 
 } /* end main()/unzip() */
-
-
 
 
 
@@ -2693,26 +2524,6 @@ int uz_opts(__G__ pargc, pargv)
                 }
                 in_xfiles_count++;
                 value = NULL;           /* In use.  Don't free it. */
-
-# if 0
-#  ifdef SFX
-                /* now get -x list one entry at a time */
-
-
-
-                /* when 'x' is the only option in this argument, and the
-                 * next arg is not an option, assume this initiates an
-                 * exclusion list (-x xlist):  terminate option-scanning
-                 * and leave uz_opts with argv still pointing to "-x";
-                 * the xlist is processed later
-                 */
-                if (s - argv[0] == 2 && *s == '\0' &&
-                    argc > 1 && argv[1][0] != '-') {
-                    /* break out of nested loops without "++argv;--argc" */
-                    goto opts_done;
-                }
-#  endif /* def SFX */
-# endif /* 0 */
                 break;
 # if defined(RESTORE_UIDGID) || defined(RESTORE_ACL)
             case ('X'):   /* restore owner/group (more?) info (need privs?) */
@@ -2969,22 +2780,6 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* defined( SFX) && defined( DIAG_SFX) */
     }
 
-#if 0 /* Duplicate below. */
-# ifdef SFX
-    /* print our banner unless we're being fairly quiet */
-    if (uO.qflag < 2)
-        Info(slide, (uzo_err ? 1 : 0),
-         ((char *)slide, LoadFarString(UnzipSFXBanner),
-         UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-         LoadFarStringSmall(VersionDate)));
-#  ifdef BETA
-    /* always print the beta warning:  no unauthorized distribution!! */
-    Info(slide, (uzo_err ? 1 : 0),
-     ((char *)slide, LoadFarString(BetaVersion), "\n", "SFX"));
-#  endif /* def BETA */
-# endif /* def SFX */
-#endif /* 0  Duplicate below. */
-
     if (uO.cflag || uO.tflag || uO.vflag || uO.zflag
 # ifdef TIMESTAMP
                                                      || uO.T_flag
@@ -2993,12 +2788,6 @@ int uz_opts(__G__ pargc, pargv)
         G.extract_flag = FALSE;
     else
         G.extract_flag = TRUE;
-
-# if 0
-#  ifdef SFX
-opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
-#  endif /* def SFX */
-# endif /* 0 */
 
     if (showhelp > 0) {         /* just print help message and quit */
         *pargc = -1;
@@ -3770,19 +3559,6 @@ static void show_options(__G)
     char val_type[5];
     char neg[2];
 
-#if 0
-  struct option_struct {
-  int option_group;         /* either UZO for UnZip or ZIO for ZipInfo syntax */
-  char Far *shortopt;       /* pointer to short option string */
-  char Far *longopt;        /* pointer to long option string */
-  int  value_type;          /* from above */
-  int  negatable;           /* from above */
-  unsigned long option_ID;  /* value returned by get_option when this option
-                               is found */
-  char Far *name;           /* optional string for option returned on some
-                               errors */
-#endif /* 0 */
-
     sprintf(optiontext, "%s\n\n%s\n%s",
       "Available options on this system",
       "UNZ = UnZip option, INF = ZipInfo option",
@@ -3934,11 +3710,6 @@ static void show_version_info(__G)
           LoadFarStringSmall(Check_Versions)));
         ++numopts;
 #  endif
-#  ifdef COPYRIGHT_CLEAN
-        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
-          LoadFarStringSmall(Copyright_Clean)));
-        ++numopts;
-#  endif
 #  ifdef DEBUG
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(UDebug)));
@@ -4049,11 +3820,6 @@ static void show_version_info(__G)
           LoadFarStringSmall(Use_EF_UT_time)));
         ++numopts;
 #  endif
-#  ifndef COPYRIGHT_CLEAN
-        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
-          LoadFarStringSmall(Use_Smith_Code)));
-        ++numopts;
-#  endif
 #  ifndef LZW_CLEAN
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(Unshrink_Sup)));
@@ -4148,6 +3914,11 @@ static void show_version_info(__G)
          (char *)(slide+256)));
         ++numopts;
 #  endif /* def PPMD_SUPPORT */
+#  if defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH)
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(Use_Unreduce)));
+        ++numopts;
+#  endif
 #  ifdef VMS_TEXT_CONV
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(VmsTextConv)));
@@ -5659,17 +5430,6 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
           break;
         }
       }
-
-#if 0
-    /* argument file code left out
-       so for now let filenames start with @
-    */
-
-    } else if (allow_arg_files && arg[0] == '@') {
-      /* arg file */
-      oERR(PK_PARMS, no_arg_files_err);
-#endif /* 0 */
-
     } else {
       /* non-option */
       if (enable_permute) {

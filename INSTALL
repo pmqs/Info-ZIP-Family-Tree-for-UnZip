@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2015-01-03
+   UnZip version 6.10.  Revised: 2015-01-09
 
 ------------------------------------------------------------------------
 
@@ -978,20 +978,6 @@ CHEAP_SFX_AUTORUN
    with the "-d <extract_dir>" command line option, therefore
    CHEAP_SFX_AUTORUN implicitly sets the NO_SFX_EXDIR option (below).
 
-COPYRIGHT_CLEAN   (now default)
-USE_SMITH_CODE
-   The last chunk of code in UnZip that was blatantly derived from Sam
-   Smith's unzip 2.0 (as in, "substantially similar") is in unreduce.c.
-   Because the Reduce compression method was only used by very early
-   PKZIP beta versions (0.9x), support for it is now omitted by default
-   (COPYRIGHT_CLEAN).  To include support for Reduce compression, define
-   the C macro USE_SMITH_CODE, and replace the stub unreduce.c source
-   module with the separately distributed full source code module.  Note
-   that this subjects your UnZip to any and all restrictions in Smith's
-   copyright.  See the UnZip COPYING.OLD file for details.  The source
-   code module unreduce.c is supplied in:
-   ftp://ftp.info-zip.org/pub/infozip/src/unreduce_full.zip
-
 IZ_CRYPT_AES_WG   (requires additional external code distribution)
    Enable WinZip/Gladman AES (strong) encryption support.  Currently,
    this support is integrated in the Make procedures of MSDOS 32-bit
@@ -1148,6 +1134,23 @@ UNIXBACKUP   (default on OS/2, Unix, Windows)
    files may be overwritten without notice, even if the -n option is given.
    On target ports where UNIXBACKUP is enabled by default, the negated
    option, NO_UNIXBACKUP, may be used to disable this feature.
+
+USE_UNREDUCE_PUBLIC
+USE_UNREDUCE_SMITH
+   The Reduce compression method is now obsolete.  It was used by very
+   early PKZIP beta versions (0.9x).  By default, support for it is not
+   included in UnZip.  If desired, Unreduce support can be provided
+   using either the original, copyrighted code from Samuel H. Smith, or
+   some newer, public-domain code from Peter Backes. 
+   USE_UNREDUCE_PUBLIC enables Unreduce support using the public-domain
+   code.  USE_UNREDUCE_SMITH enables Unreduce support using the
+   copyrighted code.  The public-domain Unreduce source module
+   (expand.c) is included in the UnZip source kit.  The copyrighted
+   source module (unreduce_full.c) is available separately in:
+   ftp://ftp.info-zip.org/pub/infozip/src/unreduce_full.zip
+   Note that using the copyrighted code subjects your UnZip to any and
+   all restrictions in Smith's copyright.  See the UnZip COPYING.OLD
+   file for details.
 
 VMS_TEXT_CONV   (default everywhere except VMS)
 NO_VMS_TEXT_CONV

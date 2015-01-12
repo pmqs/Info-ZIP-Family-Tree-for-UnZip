@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1173,7 +1173,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 # define UNKN_SHR  FALSE        /* Shrink (1) allowed. */
 #endif
 
-#ifdef COPYRIGHT_CLEAN          /* Reduce (2-5) not allowed. */
+#if !defined( USE_UNREDUCE_PUBLIC) && !defined( USE_UNREDUCE_SMITH)
+                                /* Reduce (2-5) not allowed. */
 # define UNKN_RED (G.crec.compression_method >= REDUCED1 && \
                       G.crec.compression_method <= REDUCED4)
 #else
@@ -1593,6 +1594,58 @@ static int extract_or_test_entrylist(__G__ numchunk,
                 continue;   /* go on */
             }
         }
+
+#ifdef USE_EF_STREAM
+
+        /* Process any EF_STREAM extra block.
+         * Proof of concept.  Currently not actually used for anything.
+         */
+#define EF_STREAM_BM_SIZE 2     /* We currently expect only one, actually. */
+        {
+            uch bitmap[ EF_STREAM_BM_SIZE];
+            ext_local_file_hdr xlhdr;
+            char *cmnt;
+            int btmp_siz = EF_STREAM_BM_SIZE;
+            int sts;
+
+            sts = ef_scan_for_stream( G.extra_field,
+                                      G.lrec.extra_field_length,
+                                      &btmp_siz,
+                                      &bitmap[ 0],
+                                      &xlhdr,
+                                      &cmnt);
+
+            if (sts >= 0)
+            {
+                fprintf( stderr, "    e_s_f_s() = %d.\n", sts);
+                fprintf( stderr, "     btmp_len = %d.\n", btmp_siz);
+                fprintf( stderr, "     bitmap[ 0] = %02x .\n", bitmap[ 0]);
+
+                fprintf( stderr,
+                 "     xlhdr.version_made_by[ 0, 1] = %02x %02x.\n",
+                 xlhdr.version_made_by[ 0], xlhdr.version_made_by[ 1]);
+
+                fprintf( stderr,
+                 "     xlhdr.internal_file_attributes = %04x .\n",
+                 xlhdr.internal_file_attributes);
+
+                fprintf( stderr,
+                 "     xlhdr.external_file_attributes = %08x .\n",
+                 xlhdr.external_file_attributes);
+
+                fprintf( stderr, "     xlhdr.file_comment_length = %d.\n",
+                 xlhdr.file_comment_length);
+
+                fprintf( stderr, "     cmnt = %08x .\n", cmnt);
+                if (cmnt != NULL)
+                {
+                  fprintf( stderr,
+                   "     cmnt: >%*s<.\n", xlhdr.file_comment_length, cmnt);
+                }
+            }
+        }
+#endif /* def USE_EF_STREAM */
+
 #ifndef SFX
         /* Filename consistency checks must come after reading in the local
          * extra field, so that a UTF-8 entry name e.f. block has already
@@ -3145,7 +3198,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             break;
 #endif /* !LZW_CLEAN */
 
-#ifndef COPYRIGHT_CLEAN
+#if defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH)
         case REDUCED1:
         case REDUCED2:
         case REDUCED3:
@@ -3169,7 +3222,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
                 error = r;
             }
             break;
-#endif /* !COPYRIGHT_CLEAN */
+#endif /* defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH) */
 
 #ifndef SFX                     /* Implode should have its own macro. */
         case IMPLODED:

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1236,18 +1236,28 @@ void izu_md_check( void);
 #  undef TIMESTAMP
 #endif
 
+/* Accommodate old macro: USE_SMITH_CODE. */
+#if defined( USE_SMITH_CODE) && !defined( USE_UNREDUCE_SMITH)
+# define USE_UNREDUCE_SMITH
+#endif
+
+/* Disallow USE_UNREDUCE_PUBLIC and USE_UNREDUCE_SMITH together. */
+#if defined( USE_UNREDUCE_PUBLIC) && defined( USE_UNREDUCE_SMITH)
+ /* Indent to accommodate old compilers. */
+ # error USE_UNREDUCE_PUBLIC USE_UNREDUCE_SMITH both defined.
+#endif
+
 /* For SFX, disable Reduce and Shrink compression methods. */
 #ifdef SFX
-# ifndef COPYRIGHT_CLEAN
-#  define COPYRIGHT_CLEAN       /* Disable Reduce. */
+# ifdef USE_UNREDUCE_PUBLIC
+#  undef USE_UNREDUCE_PUBLIC    /* Disable public-domain Reduce. */
+# endif
+# ifdef USE_UNREDUCE_SMITH
+#  undef USE_UNREDUCE_SMITH     /* Disable Smith copyrighted Reduce. */
 # endif
 # ifndef LZW_CLEAN
 #  define LZW_CLEAN             /* Disable Shrink. */
 # endif
-#endif
-
-#if (!defined(COPYRIGHT_CLEAN) && !defined(USE_SMITH_CODE))
-#  define COPYRIGHT_CLEAN
 #endif
 
 /* The LZW patent is expired worldwide since 2004-Jul-07, so
@@ -2108,7 +2118,7 @@ struct file_list {
 #define EF_UNICOMNT  0x6375    /* Info-ZIP Unicode Comment ("uc") */
 #define EF_BEOS      0x6542    /* BeOS ("Be") */
 #define EF_THEOS     0x6854    /* Jean-Michel Dubois Theos "Th" */
-#define EF_LHDREXTN  0x6c65    /* Local header extension ("el") */ 
+#define EF_STREAM    0x6c78    /* Extended Local Header (Stream) ("xl") */
 #define EF_UNIPATH   0x7075    /* Info-ZIP Unicode Path ("up") */
 #define EF_ASIUNIX   0x756e    /* ASi Unix ("nu") */
 #define EF_IZUNIX2   0x7855    /* Info-ZIP second Unix[2] ("Ux") */
@@ -2128,7 +2138,7 @@ struct file_list {
 #define EB_ID             0    /* offset of block ID in header */
 #define EB_LEN            2    /* offset of data length field in header */
 #define EB_UCSIZE_P       0    /* offset of ucsize field in compr. data */
-#define EB_CMPRHEADLEN    6    /* lenght of compression header */
+#define EB_CMPRHEADLEN    6    /* length of compression header */
 
 #define EB_UX_MINLEN      8    /* minimal "UX" field contains atime, mtime */
 #define EB_UX_FULLSIZE    12   /* full "UX" field (atime, mtime, uid, gid) */
@@ -2179,6 +2189,7 @@ struct file_list {
 #define EB_IZVMS_BC00     1    /*  0byte -> 0bit compression */
 #define EB_IZVMS_BCDEFL   2    /*  Deflated */
 
+#define EB_STREAM_EOB     0x80 /* Stream EF End-of-bitmap flag. */
 
 /*---------------------------------------------------------------------------
     True sizes of the various headers (excluding their 4-byte signatures),
@@ -2541,7 +2552,7 @@ typedef struct VMStimbuf {
    Please note that the structure members are now reordered by size
    (top-down), to prevent internal padding and optimize memory usage!
  */
-   typedef struct local_file_header {                 /* LOCAL */
+   typedef struct local_file_header {                   /* LOCAL */
        zusz_t csize;
        zusz_t ucsize;
        ulg last_mod_dos_datetime;
@@ -2553,7 +2564,15 @@ typedef struct VMStimbuf {
        ush extra_field_length;
    } local_file_hdr;
 
-   typedef struct central_directory_file_header {     /* CENTRAL */
+   typedef struct ext_local_file_header {               /* EXT. LOCAL (strm) */
+       ulg external_file_attributes;
+       zuvl_t disk_number_start;
+       ush file_comment_length;
+       ush internal_file_attributes;
+       uch version_made_by[2];
+   } ext_local_file_hdr;
+
+   typedef struct central_directory_file_header {       /* CENTRAL */
        zusz_t csize;
        zusz_t ucsize;
        zusz_t relative_offset_local_header;
@@ -2571,7 +2590,7 @@ typedef struct VMStimbuf {
        ush file_comment_length;
    } cdir_file_hdr;
 
-   typedef struct end_central_dir_record {            /* END CENTRAL */
+   typedef struct end_central_dir_record {              /* END CENTRAL */
        zusz_t size_central_directory;
        zusz_t offset_start_central_directory;
        zucn_t num_entries_centrl_dir_ths_disk;
@@ -2686,6 +2705,14 @@ int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, long ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
                                      iztimes *z_utim, ulg *z_uidgid));
+
+#ifdef USE_EF_STREAM
+unsigned ef_scan_for_stream      OF((ZCONST uch *ef_ptr, long ef_len,
+                                     int *btmp_siz, uch *btmp,
+                                     ext_local_file_hdr *xlhdr,
+                                     char **cmnt));
+#endif /* def USE_EF_STREAM */
+
 #ifdef IZ_CRYPT_AES_WG
 int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
                                      ush *vers, ush *vend,
@@ -2845,11 +2872,9 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
    int    inflate_free           OF((__GPRO));                  /* inflate.c */
 #endif /* ?USE_ZLIB */
 #if (!defined(SFX) && !defined(FUNZIP))
-#ifndef COPYRIGHT_CLEAN
+#if defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH)
    int    unreduce               OF((__GPRO));                 /* unreduce.c */
-/* static void  LoadFollowers    OF((__GPRO__ f_array *follower, uch *Slen));
-                                                                * unreduce.c */
-#endif /* !COPYRIGHT_CLEAN */
+#endif /* defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH) */
 #ifndef LZW_CLEAN
    int    unshrink               OF((__GPRO));                 /* unshrink.c */
 /* static void  partial_clear    OF((__GPRO));                  * unshrink.c */

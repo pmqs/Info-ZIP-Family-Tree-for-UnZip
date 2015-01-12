@@ -89,7 +89,7 @@ Stage 2 - (optional) retrieve source code (requires UNZIP on Tandem)
 - restore relevant files by running DOIT
 - replace references to $T with a collector on your system
 - replace references to SUPER.DAVES with whatever user id you use
-- to compile run MAKE (compiles, accelerates, licences)
+- to compile run MAKE (compiles, accelerates, licenses)
 - NOTE:  Always run the accelerated object on TNS/R systems, otherwise
          it runs extremely slow.
 

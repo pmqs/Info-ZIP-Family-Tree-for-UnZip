@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -25,6 +25,7 @@
              process_local_file_hdr()
              getZip64Data()
              ef_scan_for_izux()
+             ef_scan_for_stream()
              getRISCOSexfield()
 
   ---------------------------------------------------------------------------*/
@@ -3596,3 +3597,178 @@ zvoid *getRISCOSexfield(ef_buf, ef_len)
 }
 
 #endif /* (RISCOS || ACORN_FTYPE_NFS) */
+
+
+#ifdef USE_EF_STREAM
+
+/*********************************/
+/* Function ef_scan_for_stream() */
+/*********************************/
+
+/* 2015-01-08 SMS.  New.
+ *
+ * Returns value -1 if EF_STREAM not found, 0 if EF_STREAM found and
+ * valid, positive if error.
+ * Returns bitmap in user's btmp[ *btmp_siz] array.
+ * Returns bitmap length in user's btmp_siz.
+ * Returns data in user's xlhdr structure.
+ * Returns comment pointer in user's cmnt pointer (not NUL-terminated,
+ * but length is in xlhdr.file_comment_length).  cmnt may be NULL, if
+ * the user is not interested.
+ */
+unsigned ef_scan_for_stream( ef_ptr, ef_len, btmp_siz, btmp, xlhdr, cmnt)
+    ZCONST uch *ef_ptr;                 /* Buffer containing extra field. */
+    long ef_len;                        /* Total length of extra field. */
+    int *btmp_siz;                      /* Size of bitmap array. */
+    uch *btmp;                          /* Bitmap (array). */
+    ext_local_file_hdr *xlhdr;          /* Extended local header data. */
+    char **cmnt;                        /* File comment. */
+{
+  unsigned eb_id;
+  long eb_len;
+  uch bitmap;
+  int bitmap_byte_max = 0;
+  int bitmap_byte;
+  int data_byte;
+  unsigned sts = -1;
+
+/*---------------------------------------------------------------------------
+    This function scans the extra field for EF_STREAM.
+  ---------------------------------------------------------------------------*/
+
+  if ((ef_len == 0) || (ef_ptr == NULL))
+    return sts;
+
+  TTrace((stderr,
+   "\nef_scan_for_stream: scanning extra field of length %ld\n", ef_len));
+
+  while (ef_len >= EB_HEADSIZE)
+  {
+    eb_id = makeword( ef_ptr+ EB_ID);
+    eb_len = makeword( ef_ptr+ EB_LEN);
+    ef_ptr += EB_HEADSIZE;
+    ef_len -= EB_HEADSIZE;
+
+    if (eb_len > ef_len)
+    {
+      /* Discovered some extra field inconsistency! */
+      TTrace((stderr,
+       "ef_scan_for_stream: block length %ld > rest ef_size %ld\n",
+       eb_len, ef_len));
+      sts = 1;
+      break;
+    }
+
+    if (eb_id == EF_STREAM)
+    {
+      sts = 0;                                  /* Indicate EF_STREAM found. */
+      if (cmnt != NULL)
+      {
+        *cmnt = NULL;                           /* Clear comment pointer. */
+      }
+      xlhdr->file_comment_length = 0;           /* Clear comment length. */
+
+      /* Loop through (and save) the bitmap bytes. */
+      data_byte = 0;
+      do
+      {
+        if (bitmap_byte_max >= eb_len)          /* Stay within the block. */
+        {
+          /* Out of data before end-of-bitmap. */
+          TTrace((stderr,
+           "ef_scan_for_stream: No end-of-bitmap.\n"));
+          sts = 2;
+          break;
+        }
+
+        /* If the user has space for another, then return a bitmap byte. */
+        bitmap = *(ef_ptr+ (data_byte++));
+        if (bitmap_byte_max < *btmp_siz)
+        {
+          btmp[ bitmap_byte_max++] = bitmap;
+        }
+      } while ((bitmap& EB_STREAM_EOB) != 0);   /* Loop while more bitmap. */
+      *btmp_siz = bitmap_byte_max;              /* Return bitmap length. */
+
+      /* Loop through bitmap bytes.  Stay within the extra block. */
+      for (bitmap_byte = 0; bitmap_byte < bitmap_byte_max; bitmap_byte++)
+      {
+        bitmap = btmp[ bitmap_byte];            /* Next bitmap byte. */
+        switch (bitmap_byte)
+        {
+          case 0:
+            if (bitmap& (1 << 0))               /* Version made by. */
+            {
+              if (data_byte+ 2 > eb_len)        /* Missing data. */
+              {
+                sts = 3;
+                break;
+              }
+              xlhdr->version_made_by[ 0] = (ef_ptr+ data_byte)[ 0];
+              xlhdr->version_made_by[ 1] = (ef_ptr+ data_byte)[ 1];
+              data_byte += 2;
+            }
+
+            if (bitmap& (1 << 1))               /* Internal file attributes. */
+            {
+              if (data_byte+ 2 > eb_len)        /* Missing data. */
+              {
+                sts = 4;
+                break;
+              }
+              xlhdr->internal_file_attributes = makeword( ef_ptr+ data_byte);
+              data_byte += 2;
+            }
+
+            if (bitmap& (1 << 2))               /* External file attributes. */
+            {
+              if (data_byte+ 4 > eb_len)        /* Missing data. */
+              {
+                sts = 5;
+                break;
+              }
+              xlhdr->external_file_attributes = makelong( ef_ptr+ data_byte);
+              data_byte += 4;
+            }
+
+            if (bitmap& (1 << 3))               /* File comment. */
+            {
+              if (data_byte+ 2 > eb_len)        /* Missing data. */
+              {
+                sts = 6;
+                break;
+              }
+              xlhdr->file_comment_length = makeword( ef_ptr+ data_byte);
+              data_byte += 2;
+              if (xlhdr->file_comment_length > 0)
+              {
+                if (data_byte+ xlhdr->file_comment_length >
+                 eb_len)                        /* Missing data. */
+                {
+                  sts = 7;
+                  break;
+                }
+                if (cmnt != NULL)
+                {                               /* Set comment pointer. */
+                  *cmnt = (char *)(ef_ptr+ data_byte);
+                }
+                data_byte += xlhdr->file_comment_length;
+              }
+            }
+
+          default:                              /* Past known bits. */
+            break;
+        } /* switch */
+        bitmap_byte++;                          /* Next bitmap index. */
+      } /* for */
+    } /* if (eb_id == EF_STREAM) */
+
+    /* Advance to the next extra field block. */
+    ef_ptr += eb_len;
+    ef_len -= eb_len;
+  } /* while */
+
+  return sts;
+}
+
+#endif /* def USE_EF_STREAM */

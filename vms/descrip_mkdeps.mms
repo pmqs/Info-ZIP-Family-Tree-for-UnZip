@@ -2,10 +2,10 @@
 #
 #    UnZip 6.10 for VMS -- MMS Dependency Description File.
 #
-#    Last revised:  2014-10-19
+#    Last revised:  2015-01-09
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -18,7 +18,7 @@
 #    is not specified.  Typical usage:
 #
 #    $ L_U = "CRYPT_AES_WG_SFX, BZIP2_SFX, USE_OWN_CRCTAB,"+ -
-#       " LZMA_SFX, PPMD_SFX, API_DOC, MEMDIAG"
+#       " LZMA_SFX, PPMD_SFX, API_DOC, MEMDIAG, USE_UNREDUCE_PUBLIC"
 #    $ MMS /EXTEND /DESCRIP = [.VMS]DESCRIP_MKDEPS.MMS /SKIP -
 #       /MACRO = (AES_WG=1, IZ_BZIP2=iz_bzip2, IZ_ZLIB=iz_zlib, -
 #       LIBUNZIP=1, "LOCAL_UNZIP=''L_U'")
