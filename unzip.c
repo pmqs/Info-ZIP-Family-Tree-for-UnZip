@@ -108,11 +108,10 @@ static int setsignalhandler OF((__GPRO__ savsigs_info **p_savedhandler_chain,
                                 int signal_type, void (*newhandler)(int)));
 # endif
 
-static void  show_license       OF((__GPRO));
 # ifndef SFX
 static void  help_extended      OF((__GPRO));
-static void  show_options       OF((__GPRO));
 # endif /* ndef SFX */
+
 # if !defined( SFX) || defined( DIAG_SFX)
 static void  show_version_info  OF((__GPRO));
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
@@ -375,7 +374,7 @@ static ZCONST char Far ZipInfoExample[] = "*, ?, [] (e.g., \"[a-j]*.zip\")";
 #  endif
 
 static ZCONST char Far ZipInfoUsageLine1[] = "\
-ZipInfo %d.%d%d%s of %s, by Greg Roelofs and the Info-ZIP group.\n\
+ZipInfo %d.%d%d%s (%s) by Info-ZIP.  Maintainer: <Apply Within>\n\
 \n\
 List name, date/time, attribute, size, compression method, etc., about files\n\
 in list (excluding those in xlist) contained in the specified .zip archive(s).\
@@ -415,7 +414,7 @@ ZCONST char Far BetaVersion[] = "%s\
 static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 #  endif /* ndef VMSCLI */
 ZCONST char Far UnzipSFXBanner[] =
-     "UnZipSFX %d.%d%d%s of %s, by Info-ZIP (http://www.info-zip.org).\n";
+     "UnZipSFX %d.%d%d%s (%s) by Info-ZIP (http://www.info-zip.org).\n";
 #  ifdef SFX_EXDIR
 static ZCONST char Far UnzipSFXOpts[] =
    "Valid options are -cfptuz; modifiers are -abCdjLnoPq%sV%s.\n";
@@ -469,6 +468,10 @@ static ZCONST char Far AppleXATTR[] =
 #   endif /* def APPLE_XATTR */
 #  endif /* defined( UNIX) && defined( __APPLE__) */
 
+#  ifdef ARCHIVE_STDIN
+static ZCONST char Far ArchiveStdin[] =
+ "ARCHIVE_STDIN        (Allow streaming archive from stdin)";
+#  endif
 #  ifdef ASM_CRC
 static ZCONST char Far AsmCRC[] =
  "ASM_CRC              (Assembly code used for CRC calculation)";
@@ -497,6 +500,10 @@ static ZCONST char Far Dll[] =
 #  endif
 #  ifdef DOSWILD
 static ZCONST char Far DosWild[] = "DOSWILD";
+#  endif
+#  ifdef EXDIR_RENAME
+static ZCONST char Far ExdirRename[] =
+ "EXDIR_RENAME         (\"-d exdir\" applied to user-spec'd rename)";
 #  endif
 #  ifdef ICONV_MAPPING
 static ZCONST char Far Iconv[] =
@@ -710,22 +717,22 @@ static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
+UnZip %d.%d%d%s (%s) by Info-ZIP.  Maintainer: <Apply Within>\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
 #   else /* def VMSCLI */
     static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintainer: <Apply Within>\n\
+UnZip %d.%d%d%s (%s) by Info-ZIP.  Maintainer: <Apply Within>\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
 #  else /* ndef USE_UNREDUCE_SMITH */   /* Smith copyright, not maintainer. */
 #   ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
+UnZip %d.%d%d%s (%s) by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
 #   else /* def VMSCLI */
 static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
+UnZip %d.%d%d%s (%s) by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
 #   endif /* def VMSCLI [else] */
 #  endif /* ndef USE_UNREDUCE_SMITH [else] */
@@ -1591,7 +1598,7 @@ static struct option_struct far options[] = {
     {UZO, "h",  "help",            o_NO_VALUE,       o_NOT_NEGATABLE,
        'h',  "help"},
     {UZO, "hh", "long-help",       o_NO_VALUE,       o_NOT_NEGATABLE,
-       o_hh,  "long help"},
+       o_hh, "long help"},
 # ifdef MACOS
     {UZO, "i",  "no-mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
        'i',  "ignore filenames stored in Mac ef"},
@@ -1634,7 +1641,7 @@ static struct option_struct far options[] = {
 # endif
 # ifndef SFX
     {UZO, "l",  "list",            o_NO_VALUE,       o_NEGATABLE,
-        'l',  "list archive members"},
+        'l', "list archive members"},
 # endif
 # ifndef CMS_MVS
     {UZO, "L",  "lowercase-names", o_NO_VALUE,       o_NEGATABLE,
@@ -1712,7 +1719,7 @@ static struct option_struct far options[] = {
     {UZO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
        'v',  "verbose"},
     {UZO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
-       o_ve,  "version"},
+       o_ve, "version"},
 # endif
 # ifndef CMS_MVS
     {UZO, "V",  "keep-versions",  o_NO_VALUE,       o_NEGATABLE,
@@ -1778,6 +1785,8 @@ static struct option_struct far options[] = {
 #  endif
     {ZIO, "l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
        'l',  "long list"},
+    {ZIO, "",   "license",         o_NO_VALUE,   o_NOT_NEGATABLE,
+       o_LI, "Info-ZIP license"},
     {ZIO, "m",  "medium-list",     o_NO_VALUE,       o_NEGATABLE,
        'm',  "medium list"},
 #  ifdef MORE
@@ -1810,6 +1819,8 @@ static struct option_struct far options[] = {
 #  endif
     {ZIO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
        'v',  "very detailed list"},
+    {ZIO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
+       o_ve, "version"},
 #  ifdef WILD_STOP_AT_DIR
     {ZIO, "W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
        'W',  "wildcard * doesn't span /"},
@@ -3131,11 +3142,11 @@ int usage(__G__ u_err)   /* return PK-type error code */
           LoadFarStringSmall(ZipInfoUsageLine4)));
 #   ifdef VMS
         Info(slide, flag, ((char *)slide, "\n\
-You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
+  (Must quote upper-case options and names, unless SET PROC/PARSE=EXTEND.)\
 \n"));
 #   endif
 
-#  endif /* !NO_ZIPINFO */
+#  endif /* ndef NO_ZIPINFO */
 
     } else {   /* UnZip mode */
 
@@ -3183,7 +3194,7 @@ You must quote non-lowercase options and filespecs, unless SET PROC/PARSE=EXT.\
 
 
 /* Print license to stdout. */
-static void show_license(__G)
+void show_license(__G)
     __GDEF
 {
     extent i;             /* counter for license array */
@@ -3547,7 +3558,7 @@ static void help_extended(__G)
 
 
 /* Print available options. */
-static void show_options(__G)
+void show_options(__G)
     __GDEF
 {
     extent i;
@@ -3700,6 +3711,11 @@ static void show_version_info(__G)
           LoadFarStringSmall(AsmCRC)));
         ++numopts;
 #  endif
+#  ifdef ARCHIVE_STDIN
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(ArchiveStdin)));
+        ++numopts;
+#  endif
 #  ifdef ASM_INFLATECODES
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(AsmInflateCodes)));
@@ -3728,6 +3744,11 @@ static void show_version_info(__G)
 #  ifdef DOSWILD
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(DosWild)));
+        ++numopts;
+#  endif
+#  ifdef EXDIR_RENAME
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(ExdirRename)));
         ++numopts;
 #  endif
 #  ifdef ICONV_MAPPING
@@ -5578,8 +5599,8 @@ int arg;
 
   if (G.filename != NULL)
   { /* Repeat the extraction message (to the extent possible). */
-    fprintf( stderr, ExtractMsg,
-     ((G.extract_msg_str == NULL) ? "????" : G.extract_msg_str),
+    fprintf( stderr, ActionMsg,
+     ((G.action_msg_str == NULL) ? "????" : G.action_msg_str),
      FnFilter1( G.filename), "", "");
   }
 

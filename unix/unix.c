@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -114,9 +114,6 @@ typedef struct {
 } RO_extra_block;
 
 #endif /* ACORN_FTYPE_NFS */
-
-/* static int created_dir;      */      /* used in mapname(), checkdir() */
-/* static int renamed_fullpath; */      /* ditto */
 
 
 /*****************************/
@@ -554,8 +551,13 @@ int mapname(__G__ renamed)
 
     G.created_dir = FALSE;      /* not yet */
 
-    /* user gave full pathname:  don't prepend rootpath */
-    G.renamed_fullpath = (renamed && (*G.filename == '/'));
+#ifdef EXDIR_RENAME
+    /* If user gave absolute file-system path, don't prepend rootpath. */
+    G.exdir_renamed = (renamed && (*G.filename == '/'));
+#else /* def EXDIR_RENAME */
+    /* If user gave file-system path, don't prepend rootpath. */
+    G.exdir_renamed = renamed;
+#endif /* def EXDIR_RENAME [else] */
 
     if (checkdir(__G__ (char *)NULL, INIT) == MPN_NOMEM)
         return MPN_NOMEM;       /* initialize path buffer, unless no memory */
@@ -682,10 +684,10 @@ int mapname(__G__ renamed)
         checkdir(__G__ G.filename, GETPATH);
         if (G.created_dir) {
             if (QCOND2) {
-                Info( slide, 0, ((char *)slide, ExtractMsg, "creat",
+                Info( slide, 0, ((char *)slide, ActionMsg, "creat",
                   FnFilter1( G.filename), "", "\n"));
 #ifdef ENABLE_USER_PROGRESS
-                G.extract_msg_str = "creat";
+                G.action_msg_str = "creat";
 #endif /* def ENABLE_USER_PROGRESS */
             }
 #ifndef NO_CHMOD
@@ -821,9 +823,6 @@ int checkdir(__G__ pathcomp, flag)
  *  MPN_NOMEM       - can't allocate memory for filename buffers
  */
 {
- /* static int rootlen = 0; */  /* length of rootpath */
- /* static char *rootpath;  */  /* user's "extract-to" directory */
- /* static char *buildpath; */  /* full path (so far) to extracted file */
 #ifdef SHORT_NAMES
     static char *end;           /* pointer to end of buildpath ('\0') */
 #endif /* def SHORT_NAMES */
@@ -957,8 +956,8 @@ int checkdir(__G__ pathcomp, flag)
 
 /*---------------------------------------------------------------------------
     INIT:  allocate and initialize buffer space for the file currently being
-    extracted.  If file was renamed with an absolute path, don't prepend the
-    extract-to path.
+    extracted.  If file was renamed (formerly: with an absolute path), don't
+    prepend the extract-to path.
   ---------------------------------------------------------------------------*/
 
 /* GRR:  for VMS and TOPS-20, add up to 13 to strlen */
@@ -973,7 +972,8 @@ int checkdir(__G__ pathcomp, flag)
 #endif
             == (char *)NULL)
             return MPN_NOMEM;
-        if ((G.rootlen > 0) && !G.renamed_fullpath) {
+        if ((G.rootlen > 0) && !G.exdir_renamed)
+        {
             strcpy(G.buildpath, G.rootpath);
             G.end = G.buildpath + G.rootlen;
         } else {
@@ -2451,8 +2451,16 @@ void charset_to_intern(char *string, char *from_charset)
     if (d)
     {
         memset( buf, 0, buflen);
-        if(iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1)
+
+        /* 2015-02-12 William Robinet, SMS.  CVE-2015-1315.
+         * Added FILNAMSIZ check to avoid buffer overflow.  Better would
+         * be to pass in an actual destination buffer size.
+         */
+        if ((iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1) &&
+         (strlen(buf) < FILNAMSIZ))
+        {
             strncpy(string, buf, buflen);
+        }
         izu_free(buf);
     }
     iconv_close(cd);
@@ -2473,6 +2481,7 @@ void charset_to_intern(char *string, char *from_charset)
  * and store that result at "ad_name".  ("ad_name" may overlap "path".)
  * Return value: 0: Not an AppleDouble path.
  *               1: AppleDouble path detected/modified.
+ *              -1: Sequestration directory, not to be recreated.
  */
 int revert_apl_dbl_path( char *path, char *ad_name)
 {

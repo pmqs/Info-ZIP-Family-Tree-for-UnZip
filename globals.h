@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -220,6 +220,8 @@ typedef struct Globals {
     int noargs;           /* did true command line have *any* arguments? */
     unsigned filespecs;   /* number of real file specifications to be matched */
     unsigned xfilespecs;  /* number of excluded filespecs to be matched */
+    char *fn_matched;     /* Name list matches. */
+    char *xn_matched;     /* Excluded (-x) name list matches. */
     int process_all_files;
     int overwrite_mode;   /* 0 - query, 1 - always, 2 - never */
     int create_dirs;      /* used by main(), mapname(), checkdir() */
@@ -240,6 +242,9 @@ typedef struct Globals {
     char ad_filename[ FILNAMSIZ];       /* AppleDouble "/rsrc" file name. */
     char pq_filename[ FILNAMSIZ];       /* Previous query file name. */
     char pr_filename[ FILNAMSIZ];       /* Previous rename file name. */
+    int apl_dbl;                /* Include/exclude name processing. */
+    int do_this_prev;           /* Include/exclude name processing. */
+    int seeking_apl_dbl;        /* Include/exclude name processing. */
 #  endif /* defined( UNIX) && defined( __APPLE__) */
 
 #  ifdef DLL
@@ -296,7 +301,7 @@ typedef struct Globals {
 
 # ifdef FUNZIP
     FILE      *in;                  /* file descriptor of compressed stream */
-# endif
+# endif /* def FUNZIP */
     uch       *inbuf;               /* input buffer (any size is OK) */
     uch       *inptr;               /* pointer into input buffer */
     int       incnt;
@@ -313,6 +318,7 @@ typedef struct Globals {
 #  else
     int       zipfd;                /* zipfile file handle */
 #  endif
+    int       zipstdin;             /* Archive is stdin. */
     zoff_t    ziplen;
     zoff_t    cur_zipfile_bufstart; /* extract_or_test, readbuf, ReadByte */
     zoff_t    extra_bytes;          /* used in unzip.c, misc.c */
@@ -351,7 +357,8 @@ typedef struct Globals {
 #  ifndef VMS                      /* if SMALL_MEM, outbuf2 is initialized in */
     uch      *outbuf2;             /*  process_zipfiles() (never changes); */
 #  endif                           /*  else malloc'd ONLY if unshrink and -a */
-# endif /* !FUNZIP */
+# endif /* def FUNZIP */
+    FILE     *query_fp;            /* Interactive query file (stdin?). */
     uch      *outptr;
     ulg      outcnt;               /* number of chars stored in outbuf */
 # ifndef FUNZIP
@@ -391,7 +398,7 @@ typedef struct Globals {
 
     char *key;         /* crypt static: decryption password or NULL */
     int nopwd;         /* crypt static */
-# endif /* !FUNZIP */
+# endif /* ndef FUNZIP */
     z_uint4 keys[3];   /* crypt static: keys defining pseudo-random sequence */
 
 # if (!defined(DOS_FLX_H68_NLM_OS2_W32) && !defined(AMIGA) && !defined(RISCOS))
@@ -489,8 +496,8 @@ typedef struct Globals {
     CByteInToLook szios;        /* 7-Zip-like I/O structure. */
 #  endif /* def PPMD_SUPPORT */
 
-#  ifdef ENABLE_USER_PROGRESS	        
-    ZCONST char *extract_msg_str;       /* Mthd str used with ExtractMsg[]. */
+#  ifdef ENABLE_USER_PROGRESS
+    ZCONST char *action_msg_str;        /* Mthd str used with ActionMsg[]. */
 #  endif /* def ENABLE_USER_PROGRESS */
 
 # endif /* ndef FUNZIP */

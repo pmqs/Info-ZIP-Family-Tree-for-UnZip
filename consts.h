@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2001 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2000-Apr-09 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -38,8 +38,13 @@ ZCONST char Far FilenameNotMatched[] = "caution: filename not matched:  %s\n";
 ZCONST char Far ExclFilenameNotMatched[] =
   "caution: excluded filename not matched:  %s\n";
 
-ZCONST char Far ExtractMsg[] =
+ZCONST char Far ActionMsg[] =
   "%8sing: %-22s  %s%s";
+
+#if (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE))
+ZCONST char Far ActionMsgw[] =
+  "%8sing: %-22S  %s%s";
+#endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 
 #ifdef VMS
   ZCONST char Far ReportMsg[] = "\

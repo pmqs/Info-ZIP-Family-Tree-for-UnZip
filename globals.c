@@ -197,6 +197,8 @@ Uz_Globs *globalsCtor()
     G.decr_passwd = UzpPassword;
 #endif /* !FUNZIP */
 
+    G.query_fp = stdin;         /* Change to terminal if streaming archive. */
+
 #if (!defined(DOS_FLX_H68_NLM_OS2_W32) && !defined(AMIGA) && !defined(RISCOS))
 #if (!defined(MACOS) && !defined(ATARI) && !defined(VMS))
     G.echofd = -1;

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -239,7 +239,8 @@ typedef struct stat z_stat;
 # endif /* def KFLAG [else] */
 
 # define SYSTEM_SPECIFIC_GLOBALS \
-    int created_dir, renamed_fullpath;\
+    int created_dir;\
+    int exdir_renamed;\
     char *rootpath, *buildpath, *end;\
     ZCONST char *wildname;\
     char *dirname, matchname[FILNAMSIZ];\
@@ -285,5 +286,21 @@ typedef struct stat z_stat;
 #  endif /* ndef ICONV_ARG2 */
 
 # endif /* def ICONV_MAPPING */
+
+
+/* Allow archive from stdin (ARCHIVE_STDIN, USE_EF_STREAM). */
+
+#ifndef NO_ARCHIVE_STDIN
+#  ifndef ARCHIVE_STDIN
+#    define ARCHIVE_STDIN
+#  endif /* ndef ARCHIVE_STDIN */
+#endif /* ndef NO_ARCHIVE_STDIN */
+
+/* ARCHIVE_STDIN normally implies USE_EF_STREAM. */
+#ifndef NO_USE_EF_STREAM
+#  if defined( ARCHIVE_STDIN) && !defined( USE_EF_STREAM)
+#    define USE_EF_STREAM
+#  endif /* defined( ARCHIVE_STDIN) && !defined( USE_EF_STREAM) */
+#endif /* ndef NO_USE_EF_STREAM */
 
 #endif /* ndef __unxcfg_h */

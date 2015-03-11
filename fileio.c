@@ -263,11 +263,24 @@ int open_input_file(__G)    /* return 1 if open failed */
 #  ifdef CMS_MVS
     G.zipfd = vmmvs_open_infile(__G);
 #  else /* def CMS_MVS */
+    if (G.zipstdin)
+    {
+        /* Archive is stdin.  No need to open it. */
 #   ifdef USE_STRM_INPUT
-    G.zipfd = fopen(G.zipfn, FOPR);
+        G.zipfd = stdin;
 #   else /* def USE_STRM_INPUT */
-    G.zipfd = open(G.zipfn, O_RDONLY | O_BINARY);
+        G.zipfd = STDIN_FILENO;
 #   endif /* def USE_STRM_INPUT */
+    }
+    else
+    {
+        /* Archive is plain file (we hope). */
+#   ifdef USE_STRM_INPUT
+        G.zipfd = fopen(G.zipfn, FOPR);
+#   else /* def USE_STRM_INPUT */
+        G.zipfd = open(G.zipfn, O_RDONLY | O_BINARY);
+#   endif /* def USE_STRM_INPUT */
+    }
 #  endif /* def CMS_MVS [else] */
 # endif /* def MACOS [else] */
 #endif /* def VMS [else] */
@@ -926,7 +939,7 @@ int fgets_ans( __G)
     int ret;
     char waste[ 8];
 
-    ans = fgets( G.answerbuf, sizeof( G.answerbuf), stdin);
+    ans = fgets( G.answerbuf, sizeof( G.answerbuf), G.query_fp);
     if (ans == NULL)
     {   /* Error or end-of-file. */
         ret = -1;                       /* Failure code. */
@@ -938,7 +951,7 @@ int fgets_ans( __G)
         /* Read any remaining chars on line, leaving G.answerbuf intact. */
         while ((ans != NULL) && (ans[ strlen( ans)- 1] != '\n'))
         {
-            ans = fgets( waste, sizeof( waste), stdin);
+            ans = fgets( waste, sizeof( waste), G.query_fp);
         }
     }
     return ret;

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -2096,7 +2096,7 @@ UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
         /* ZipInfo Usage guide. */
 
         Info(slide, flag, ((char *)slide, "\
-ZipInfo %d.%d%d%s %s, by Newtware and the fine folks at Info-ZIP.\n\n",
+ZipInfo %d.%d%d%s %s, by Info-ZIP.  Maintainer: <Apply Within>\n\n",
           ZI_MAJORVER, ZI_MINORVER,
           UZ_PATCHLEVEL, UZ_BETALEVEL, UZ_VERSION_DATE));
 

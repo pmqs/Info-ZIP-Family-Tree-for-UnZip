@@ -2,10 +2,10 @@
 #
 #    UnZip 6.10 for VMS -- MMS (or MMK) Description File.
 #
-#    Last revised:  2014-11-10
+#    Last revised:  2015-01-21
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2001-2014 Info-ZIP.  All rights reserved.
+# Copyright (c) 2001-2015 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -377,13 +377,13 @@ CLEAN_OLB :
 # CLEAN_TEST target.  Delete the test directories, [.test_dir_*...].
 
 CLEAN_TEST :
-	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
+	if (f$search( "[.test_dir_*...]*.*;*") .nes. "") then -
 	 set protection = w:d [.test_dir_*...]*.*;*
 	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
 	 set protection = w:d test_dir_*.DIR;*
-	if (f$search( "[.test_dir_*.*]*.*") .nes. "") then -
+	if (f$search( "[.test_dir_*.*]*.*;*") .nes. "") then -
 	 delete /noconfirm [.test_dir_*.*]*.*;*
-	if (f$search( "[.test_dir_*]*.*") .nes. "") then -
+	if (f$search( "[.test_dir_*]*.*;*") .nes. "") then -
 	 delete /noconfirm [.test_dir_*]*.*;*
 	if (f$search( "test_dir_*.DIR;*") .nes. "") then -
 	 delete /noconfirm test_dir_*.DIR;*
@@ -630,7 +630,7 @@ $(UNZIP) : [.$(DEST)]UNZIP.OBJ \
 # CLI UnZip executable.
 
 $(UNZIP_CLI) : [.$(DEST)]UNZIPCLI.OBJ \
-                $(LIB_UNZIP_CLI) $(LIB_BZ2_DEP) \
+                $(LIB_UNZIP_CLI) $(LIB_UNZIP) $(LIB_BZ2_DEP) \
                 $(OPT_FILE) $(OPT_ID)
 	$(LINK) $(LINKFLAGS) $(MMS$SOURCE), -
 	 $(LIB_UNZIP_CLI) /library, -

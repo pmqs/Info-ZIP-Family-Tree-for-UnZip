@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2012 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -51,8 +51,9 @@
 # define UMASK_VAL
 #endif /* def KFLAG [else] */
 
-#define SYSTEM_SPECIFIC_GLOBALS \
-    int created_dir, renamed_fullpath;\
+# define SYSTEM_SPECIFIC_GLOBALS \
+    int created_dir;\
+    int exdir_renamed;\
     char *rootpath, *buildpath, *end;\
     ZCONST char *wildname;\
     char *dirname, matchname[FILNAMSIZ];\
@@ -60,7 +61,7 @@
     zvoid *wild_dir; \
     UMASK_VAL
 
-/* created_dir, and renamed_fullpath are used by both mapname() and    */
+/* created_dir, and exdir_renamed are used by both mapname() and       */
 /*    checkdir().                                                      */
 /* rootlen, rootpath, buildpath and end are used by checkdir().        */
 /* wild_dir, dirname, wildname, matchname[], dirnamelen, have_dirname, */

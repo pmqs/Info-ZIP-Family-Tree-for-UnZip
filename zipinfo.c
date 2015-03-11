@@ -650,6 +650,9 @@ int zi_opts(__G__ pargc, pargv)
                     else
                         uO.lflag = 5;
                     break;
+                case (o_LI):    /* show license */
+                    showhelp = -1;
+                    break;
                 case 'm':      /* medium form of "ls -l" type listing */
                     if (negative)
                         uO.lflag = -2;
@@ -688,7 +691,12 @@ int zi_opts(__G__ pargc, pargv)
                     *pargc = -1;
                     showhelp = -3;
                     break;
-#endif
+
+                case (o_so):   /* show processed command line and exit */
+                    *pargc = -1;
+                    showhelp = -2;
+                    break;
+#endif /* ndef SFX */
                 case 't':      /* totals line */
                     if (negative)
                         tflag_2v = tflag_slm = FALSE;
@@ -718,6 +726,18 @@ int zi_opts(__G__ pargc, pargv)
                     else
                         uO.lflag = 10;
                     break;
+#ifndef SFX
+            case (o_ve):   /* version */
+                if (negative) {
+                    uO.vflag = IZ_MAX( (uO.vflag- negative), 0);
+                    negative = 0;
+                } else if (uO.vflag)
+                    ++uO.vflag;
+                else
+                    uO.vflag = 2;
+                break;
+#endif /* ndef SFX */
+
 #ifdef WILD_STOP_AT_DIR
                 case ('W'):    /* Wildcard interpretation (stop at '/'?) */
                     if (negative)
@@ -822,9 +842,32 @@ int zi_opts(__G__ pargc, pargv)
 
     } /* get_option() */
 
-    if (showhelp == -3) {
+
+    if (showhelp == -1)
+    {
+      *pargc = -1;              /* Tell caller to exit. */
+      show_license(__G);
+      return PK_OK;
+    }
+
+    if (showhelp == -2)
+    {
+      *pargc = -1;              /* Tell caller to exit. */
+      show_options(__G);
+      return PK_OK;
+    }
+
+    if (showhelp == -3)
+    {
+      *pargc = -1;              /* Tell caller to exit. */
       show_commandline( args);
       return PK_OK;
+    }
+
+    if (uO.vflag > 0)
+    {
+      *pargc = -1;              /* Tell caller to exit. */
+      return USAGE(0);
     }
 
     /* convert files and xfiles lists to arrays */
@@ -1226,7 +1269,7 @@ int zipinform(__G)   /* return PK-type error code */
 
     if ((error_in_archive <= PK_WARN) && uO.tflag) {
         char *sgn = "";
-        int cfactor = ratio(tot_ucsize, tot_csize);
+        int cfactor = compr_fract(tot_ucsize, tot_csize);
 
         if (cfactor < 0) {
             sgn = "-";
@@ -2727,7 +2770,7 @@ static int zi_short(__G)   /* return PK-type error code */
         if (G.crec.general_purpose_bit_flag & 1)
             csiz -= 12;    /* if encrypted, don't count encryption header */
         Info(slide, 0, ((char *)slide, "%3d%%",
-          (ratio(G.crec.ucsize,csiz)+5)/10));
+          (compr_fract(G.crec.ucsize,csiz)+5)/10));
     } else if (uO.lflag == 5)
         Info(slide, 0, ((char *)slide, " %s",
           FmZofft(G.crec.csize, "8", "u")));

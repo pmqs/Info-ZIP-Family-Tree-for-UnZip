@@ -585,7 +585,7 @@ Features added (or removed):
    support using the copyrighted Unreduce code, define the C macro
    USE_UNREDUCE_SMITH (or, for compatibility with old code and
    documentation, USE_SMITH_CODE), and supply the source file
-   unreduce_full.c.  See INSTALL for details.  The C macro 
+   unreduce_full.c.  See INSTALL for details.  The C macro
    COPYRIGHT_CLEAN has been removed from the code and from the "UnZip
    special compilation options" ("-v") report.  The new USE_UNREDUCE_xxx
    macros appear instead.
@@ -593,6 +593,37 @@ Features added (or removed):
    (api.c, COPYING.OLD, expand.c (new), extract.c, INSTALL,
    unix/Makefile, unreduce.c, unzip.c, unzpriv.h, vms/descrip_deps.mms,
    vms/descrip_mkdeps.mms) [Peter Backes, SMS]
+
+6.10c16 (11 Mar 2015):
+ - Changed the ZipInfo version numbering to use the same value as the
+   the corresponding UnZip version.  So, what would have been ZipInfo
+   version 3.10 will instead be designated version 6.10 (like UnZip).
+   (unzvers.h) [SMS]
+ - Added tentative, experimental-grade support for streaming input
+   archives on Unix systems.  The C macro USE_EF_STREAM is now defined
+   by default to enable support for the new Zip "xl" (0x6c78) streaming
+   extra field.  Define ARCHIVE_STDIN to enable support for streaming
+   input archives.  Extensive refactoring of extract.c could have
+   introduced new defects.  Some accommodation was attempted for
+   Windows, but not tested. (extract.c, fileio.c, globals.c, globals.h,
+   process.c, unix/unix.c, unix/unxcfg.h, unzip.c, unzpriv.h) [SMS]
+ - Changed behavior on non-VMS systems for the "rename" option in
+   interactive file-system conflict resolution queries ("replace XXX ?
+   [y]es, [n]o, [A]ll, [N]one, [r]ename:").  Previously, the "-d exdir"
+   extraction directory could be added to a user-specified file-system
+   path which was a relative path (but not to an absolute path).  This
+   was confusing, because the path name shown in the query already
+   included this directory, so a reasonable copy+paste operation could
+   result in the extraction directory being added a second time.  Now,
+   the "-d exdir" extraction directory is added to an archive path (when
+   it is transformed to a file-system path), and not to a path which is
+   already a file-system path (like a "rename" path).  Define the C
+   macro EXDIR_RENAME to restore the old behavior.  Not yet changed on
+   obsolete systems, pending user requests (and testing on popular
+   systems).  Added a space before the "?" in the query message to help
+   with copy+paste activity.  (atari/ataricfg.h (new), beos/beocfg.h,
+   beos/beos.c, unix/unxcfg.h, unix/unix.c, unzip.c, unzpriv.h,
+   win32/win32.c, win32/w32cfg.h) [SMS]  
 
 
 Bugs fixed:
@@ -1559,16 +1590,16 @@ Bugs fixed:
    (zipinfo.c) [Wojtek Michalski]
  - A corrupt (or crafted) archive could cause memory access problems.
    Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=450
-   (extract.c) [Michal Zalewski, SMS]
+   CVE-2014-9636.  (extract.c) [Michal Zalewski, SMS]
 
 6.10c12 (11 Nov 2014):
  - No news.
 
 6.10c13 (26 Dec 2014):
  - Fixed some buffer-overflow problems reported by oCERT (oCERT.org),
-   involving corrupt/malicious archives.  Added some warning messages
-   where corruption was detected.  (extract.c, fileio.c, process.c)
-   [SMS]
+   involving corrupt/malicious archives.  CVE-2014-8139, CVE-2014-8140,
+   and CVE-2014-8141.  Added some warning messages where corruption was
+   detected.  (extract.c, fileio.c, process.c) [SMS]
  - Unix builder was using the wrong linker flags variable names, which
    could cause user-specified values to be ignored.  (unix/Makefile)
    [SMS]
@@ -1599,3 +1630,39 @@ Bugs fixed:
 6.10c15 (10 Jan 2015)
  - Spelling changes.  (COPYING.OLD, tandem/README) [SMS]
  - Removed some dead code.  (unzip.c) [SMS]
+
+6.10c16 (11 Mar 2015)
+ - VMS MMS/MMK builder problems:
+    - Faulty CLEAN_TEST rule could cause failure to remove all test
+      files/directories.
+    - Missing dependency caused failure to rebuild UNZIP_CLI.EXE when
+      UNZIP.OLB changed.
+   (vms/descrip.mms) [SMS]
+ - Re-fixed a bad "fix" from 6.10c13 for one of the buffer-overflow
+   problems reported by oCERT (oCERT.org), CVE-2014-8139.  Symptom was a
+   spurious error message like, "bad extra-field entry: EF block length
+   (0 bytes) invalid (< 4)".
+   Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=454
+   (extract.c, unzpriv.h) [SMS]
+ - Fixed a buffer-overflow problem reported by William Robinet, in
+   ICONV_MAPPING character-set conversion on BeOS and Unix systems.
+   CVE-2015-1315.  (beos/beos.c, unix/unix.c) [William Robinet, SMS]
+ - Fixed a buffer-overflow problem reported by William Robinet, in
+   listings ("unzip -l[l]") with unrealistic compression ratios.  Also,
+   the overflow occurred even in short-format (-l) listings although the
+   string involved was actually used only in long-format (-ll) listings.
+   (list.c, unzpriv.h, zipinfo.c) [William Robinet, SMS]
+ - ZipInfo mode (-Z) did not allow diagnostic/info options: --license,
+   -so/--show_options, --version, and some program identification
+   information was obsolete.  (unzip.c, unzpriv.h, vms/cmdline.c,
+   zipinfo.c) [SMS]
+ - Changed behavior on Windows systems with Unicode support enabled
+   (NO_UNICODE_SUPPORT not defined).  Previously, action messages
+   ("extracting:", "inflating:", and so on) showed the archive member
+   path/name, not the destination file-system path/name, as was done
+   when Unicode support was disabled (or on non-Windows systems).
+   Similarly, the wrong name could be shown in interactive file-system
+   conflict resolution queries, as described in the Features section,
+   above.  Some related code reorganization changed some variable names
+   in non-Windows-specific modules.  (consts.h, extract.c, globals.h,
+   unix/unix.c, unzip.c, unzpriv.h, vms/vms.c) [SMS]

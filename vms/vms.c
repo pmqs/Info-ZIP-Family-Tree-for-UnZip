@@ -4966,10 +4966,10 @@ int mapname(__G__ renamed)
         if (created_dir) {
             if (QCOND2)
             {
-                Info( slide, 0, ((char *)slide, ExtractMsg, "creat",
+                Info( slide, 0, ((char *)slide, ActionMsg, "creat",
                   FnFilter1( G.filename), "", "\n"));
 #ifdef ENABLE_USER_PROGRESS
-                G.extract_msg_str = "creat";
+                G.action_msg_str = "creat";
 #endif /* def ENABLE_USER_PROGRESS */
             }
             /* set dir time (note trailing '/') */

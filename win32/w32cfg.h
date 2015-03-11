@@ -353,7 +353,7 @@
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
 #define SYSTEM_SPECIFIC_GLOBALS \
     int created_dir;\
-    int renamed_fullpath;\
+    int exdir_renamed;\
     size_t fnlen;\
     unsigned nLabelDrive;\
     char lastRootPath[4];\
@@ -369,10 +369,10 @@
     size_t rootlen;\
     int have_dirname, notfirstcall;\
     zvoid *wild_dir;
-#else /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+#else /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
 #define SYSTEM_SPECIFIC_GLOBALS \
     int created_dir;\
-    int renamed_fullpath;\
+    int exdir_renamed;\
     size_t fnlen;\
     unsigned nLabelDrive;\
     char lastRootPath[4];\
@@ -384,16 +384,17 @@
     size_t rootlen;\
     int have_dirname, notfirstcall;\
     zvoid *wild_dir;
-#endif /* ?(defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
+#endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) [else] */
 
-/* created_dir, renamed_fullpath, fnlen, and nLabelDrive are used by   */
-/*    both mapname() and checkdir().                                   */
-/* lastRootPath, lastVolOldFAT and lastVolLocTim are used by           */
-/*    IsVolumeOldFAT() and NTQueryVolInfo().                           */
-/* rootlen, rootpath, buildpathHPFS, buildpathFAT, endHPFS, and endFAT */
-/*    are used by checkdir().                                          */
-/* wild_dir, dirname, wildname, matchname[], dirnamelen, have_dirname, */
-/*    and notfirstcall are used by do_wild().                          */
+/* created_dir, exdir_renamed, fnlen, and nLabelDrive are used by
+ * mapname() and checkdir().
+ * lastRootPath, lastVolOldFAT and lastVolLocTim are used by
+ * IsVolumeOldFAT() and NTQueryVolInfo().
+ * rootlen, rootpath, buildpathHPFS, buildpathFAT, endHPFS, and endFAT
+ * are used by checkdir().
+ * wild_dir, dirname, wildname, matchname[], dirnamelen, have_dirname,
+ * and notfirstcall are used by do_wild().
+ */
 
 /* This replacement for C-RTL-supplied getch() (or similar) functionality
  * avoids leaving unabsorbed LFs in the keyboard buffer under Windows95,

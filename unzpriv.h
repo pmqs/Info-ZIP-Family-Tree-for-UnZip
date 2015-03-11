@@ -378,24 +378,7 @@
   ---------------------------------------------------------------------------*/
 
 #ifdef ATARI
-#  include <time.h>
-#  include <stat.h>
-#  include <fcntl.h>
-#  include <limits.h>
-#  define SYMLINKS
-#  define EXE_EXTENSION  ".tos"
-#  ifndef DATE_FORMAT
-#    define DATE_FORMAT  DF_DMY
-#  endif
-#  define DIR_END        '/'
-#  define INT_SPRINTF
-#  define timezone      _timezone
-#  define lenEOL        2
-#  define PutNativeEOL  {*q++ = native(CR); *q++ = native(LF);}
-#  undef SHORT_NAMES
-#  if (!defined(NOTIMESTAMP) && !defined(TIMESTAMP))
-#    define TIMESTAMP
-#  endif
+# include "atari/ataricfg.h"
 #endif
 
 /*---------------------------------------------------------------------------
@@ -1544,6 +1527,10 @@ void izu_md_check( void);
 #  define SEEK_END  2
 #endif
 
+#ifndef STDIN_FILENO
+# define STDIN_FILENO 0
+#endif
+
 #if (!defined(S_IEXEC) && defined(S_IXUSR))
 #  define S_IEXEC   S_IXUSR
 #endif
@@ -1940,16 +1927,26 @@ struct file_list {
 #endif
 #define DOSTIME_2038_01_18 ((ulg)0x74320000L)
 
+/* Second-try (and third-try?) suffix(es) for non-wildcard archive names.
+ * Mixed-case possibilities like ".Zip" are not covered.  
+ * VMS handles this whole thing differently, using a default file spec.
+ * FlexOS may be case-sensitive, but per-medium, which is too
+ * complicated for our simple scheme.
+ * Mac OS X (UNIX) could also be case-sensitive per-medium, but we'll
+ * try ZSUFX2 there, too.
+ */
 #ifdef QDOS
 #  define ZSUFX         "_zip"
-#  define ALT_ZSUFX     ".zip"
+#  define ZSUFX2        ".zip"
 #else
 #  ifdef RISCOS
 #    define ZSUFX       "/zip"
 #  else
 #    define ZSUFX       ".zip"
+#    ifdef UNIX                 /* File systems known(?) case-sensitive. */
+#      define ZSUFX2    ".ZIP"
+#    endif
 #  endif
-#  define ALT_ZSUFX     ".ZIP"   /* Unix-only so far (only case-sensitive fs) */
 #endif
 
 #define CENTRAL_HDR_SIG   "\001\002"   /* the infamous "PK" signature bytes, */
@@ -2178,6 +2175,8 @@ struct file_list {
 #define EB_NTSD_VERSION   4    /* offset of NTSD version byte */
 #define EB_NTSD_MAX_VER   (0)  /* maximum version # we know how to handle */
 
+#define EB_PKVMS_MINLEN   4    /* minimum data length of PKVMS extra block */
+
 #define EB_ASI_CRC32      0    /* offset of ASI Unix field's crc32 checksum */
 #define EB_ASI_MODE       4    /* offset of ASI Unix permission mode field */
 
@@ -2188,7 +2187,8 @@ struct file_list {
 #define EB_IZVMS_BCSTOR   0    /*  Stored */
 #define EB_IZVMS_BC00     1    /*  0byte -> 0bit compression */
 #define EB_IZVMS_BCDEFL   2    /*  Deflated */
-
+				
+#define EF_STREAM_BM_SIZE 2    /* Stream EF bitmap size (max). */
 #define EB_STREAM_EOB     0x80 /* Stream EF End-of-bitmap flag. */
 
 /*---------------------------------------------------------------------------
@@ -2685,6 +2685,11 @@ int insert_arg OF((__GPRO__ char ***args, ZCONST char *arg, int insert_at,
 void show_env OF(( __GPRO__ int non_null_only));
 #endif /* def VMSCLI */
 
+void show_license OF((__GPRO));
+#ifndef SFX
+void show_options OF((__GPRO));
+#endif /* ndef SFX */
+
 /*---------------------------------------------------------------------------
     Functions in process.c (main driver routines):
   ---------------------------------------------------------------------------*/
@@ -2694,6 +2699,7 @@ void     free_G_buffers          OF((__GPRO));
 /* static int    do_seekable     OF((__GPRO__ int lastchance)); */
 /* static int    find_ecrec      OF((__GPRO__ long searchlen)); */
 /* static int    process_central_comment OF((__GPRO)); */
+int      process_file_hdr        OF((__GPRO));
 int      process_cdir_file_hdr   OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
 int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
@@ -2705,13 +2711,6 @@ int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
 unsigned ef_scan_for_izux        OF((ZCONST uch *ef_buf, long ef_len,
                                      int ef_is_c, ulg dos_mdatetime,
                                      iztimes *z_utim, ulg *z_uidgid));
-
-#ifdef USE_EF_STREAM
-unsigned ef_scan_for_stream      OF((ZCONST uch *ef_ptr, long ef_len,
-                                     int *btmp_siz, uch *btmp,
-                                     ext_local_file_hdr *xlhdr,
-                                     char **cmnt));
-#endif /* def USE_EF_STREAM */
 
 #ifdef IZ_CRYPT_AES_WG
 int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
@@ -2748,7 +2747,7 @@ int      list_files              OF((__GPRO));
    int   get_time_stamp          OF((__GPRO__  time_t *last_modtime,
                                      ulg *nmember));
 #endif
-int      ratio                   OF((zusz_t uc, zusz_t c));
+int      compr_fract             OF((zusz_t uc, zusz_t c));
 void     fnprint                 OF((__GPRO));
 
 #endif /* !SFX */
@@ -2834,6 +2833,11 @@ char    *fzofft               OF((__GPRO__ zoff_t val,
   ---------------------------------------------------------------------------*/
 
 int    extract_or_test_files     OF((__GPRO));
+
+#ifdef ARCHIVE_STDIN
+int    extract_or_test_stream    OF((__GPRO));
+#endif /* def ARCHIVE_STDIN */
+
 #ifndef SFX
   unsigned find_compr_idx        OF((unsigned compr_methodnum));
 #endif
@@ -3540,7 +3544,10 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
    extern ZCONST char Far  FilenameNotMatched[];
    extern ZCONST char Far  ExclFilenameNotMatched[];
    extern ZCONST char Far  ReportMsg[];
-   extern ZCONST char Far  ExtractMsg[];
+   extern ZCONST char Far  ActionMsg[];
+#if (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE))
+   extern ZCONST char Far  ActionMsgw[];
+#endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 
 #ifndef SFX
    extern ZCONST char Far  Zipnfo[];

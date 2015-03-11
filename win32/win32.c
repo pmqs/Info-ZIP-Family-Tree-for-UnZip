@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -218,11 +218,6 @@ typedef struct {
 } RO_extra_block;
 
 # endif /* ACORN_FTYPE_NFS */
-
-/* static int created_dir;      */     /* used by mapname(), checkdir() */
-/* static int renamed_fullpath; */     /* ditto */
-/* static int fnlen;            */     /* ditto */
-/* static unsigned nLabelDrive; */     /* ditto */
 
 
 # ifdef SFX
@@ -2140,7 +2135,7 @@ static int NTQueryVolInfoW(__GPRO__ const wchar_t *namew)
     DWORD volSerNo, maxCompLen, fileSysFlags;
 
     if ((!wcsncmp(namew, L"//", 2) || !wcsncmp(namew, L"\\\\", 2)) &&
-        (namew[2] != '\0' && namew[2] != '/' && namew[2] != '\\')) {
+        (namew[2] != L'\0' && namew[2] != L'/' && namew[2] != L'\\')) {
         /* GetFullPathname() and GetVolumeInformation() do not work
          * on UNC names. For now, we return "error".
          * **FIXME**: check if UNC name is mapped to a drive letter
@@ -2148,7 +2143,7 @@ static int NTQueryVolInfoW(__GPRO__ const wchar_t *namew)
          */
         return FALSE;
     }
-    if (iswalpha(namew[0]) && (namew[1] == ':'))
+    if (iswalpha(namew[0]) && (namew[1] == L':'))
         tmp0w = (wchar_t *)namew;
     else
     {
@@ -2158,15 +2153,15 @@ static int NTQueryVolInfoW(__GPRO__ const wchar_t *namew)
     }
     if (wcsncmp(G.lastRootPathw, tmp0w, 2) != 0) {
         /* For speed, we skip repeated queries for the same device */
-        wcsncpy(G.lastRootPathw, tmp0w, 2); /* Build the root path name, */
-        G.lastRootPathw[2] = '/';           /* e.g. "A:/"                */
-        G.lastRootPathw[3] = '\0';
+        wcsncpy(G.lastRootPathw, tmp0w, 2);     /* Build the root path name, */
+        G.lastRootPathw[2] = L'/';              /* e.g. "A:/"                */
+        G.lastRootPathw[3] = L'\0';
 
         if (!GetVolumeInformationW(G.lastRootPathw,
               tmp1w, (DWORD)MAX_PATH,
               &volSerNo, &maxCompLen, &fileSysFlags,
               tmp2w, (DWORD)MAX_PATH)) {
-            G.lastRootPathw[0] = '\0';
+            G.lastRootPathw[0] = L'\0';
             return FALSE;
         }
 
@@ -2423,10 +2418,19 @@ int mapname(__G__ renamed)
     G.create_dirs = (!uO.fflag || renamed);
 
     G.created_dir = FALSE;      /* not yet */
-    G.renamed_fullpath = FALSE;
     G.fnlen = strlen(G.filename);
+    pathcomp[ 0] = '\0';
 
-    if (renamed) {
+# ifdef EXDIR_RENAME
+    /* If user gave absolute file-system path, don't prepend rootpath. */
+    G.exdir_renamed = FALSE;    /* Pending detection of an absolute path. */
+# else /* def EXDIR_RENAME */
+    /* If user gave file-system path, don't prepend rootpath. */
+    G.exdir_renamed = renamed;
+# endif /* def EXDIR_RENAME [else] */
+
+    if (renamed)
+    {
         cp = G.filename;                /* Point to start of renamed name. */
         if (*cp) do {
             if (*cp == '\\')            /* Convert backslashes to slashes. */
@@ -2434,13 +2438,22 @@ int mapname(__G__ renamed)
         } while (*PREINCSTR(cp));
         cp = G.filename;
         /* use temporary rootpath if user gave full pathname */
-        if (G.filename[0] == '/') {
-            G.renamed_fullpath = TRUE;
+        if (G.filename[0] == '/')
+        {
+#ifdef EXDIR_RENAME
+            /* User gave absolute file-syst path, so don't prepend rootpath. */
+            G.exdir_renamed = TRUE;     /* Leading slash. */
+#endif /* def EXDIR_RENAME */
             pathcomp[0] = '/';          /* Copy the '/', and NUL-terminate. */
             pathcomp[1] = '\0';
             ++cp;
-        } else if (isalpha((uch)G.filename[0]) && G.filename[1] == ':') {
-            G.renamed_fullpath = TRUE;
+        }
+        else if (isalpha((uch)G.filename[0]) && G.filename[1] == ':')
+        {
+#ifdef EXDIR_RENAME
+            /* User gave absolute file-syst path, so don't prepend rootpath. */
+            G.exdir_renamed = TRUE;     /* Leading drive letter. */
+#endif /* def EXDIR_RENAME */
             pp = pathcomp;
             *pp++ = *cp++;              /* Copy the "d:" (+ '/', possibly). */
             *pp++ = *cp++;
@@ -2450,7 +2463,7 @@ int mapname(__G__ renamed)
         }
     }
 
-    /* pathcomp is ignored unless renamed_fullpath is TRUE: */
+    /* pathcomp is ignored unless G.exdir_renamed is TRUE: */
     if ((error = checkdir(__G__ pathcomp, INIT)) != 0)  /* init path buffer */
         return error;           /* ...unless no mem or vol label on hard disk */
 
@@ -2727,38 +2740,55 @@ int mapnamew(__G__ renamed)
     G.create_dirs = (!uO.fflag || renamed);
 
     G.created_dir = FALSE;      /* not yet */
-    G.renamed_fullpath = FALSE;
     G.fnlen = wcslen(G.unipath_widefilename);
+    pathcompw[ 0] = L'\0';
 
-    if (renamed) {
+#ifdef EXDIR_RENAME
+    /* If user gave absolute file-system path, don't prepend rootpath. */
+    G.exdir_renamed = FALSE;    /* Pending detection of an absolute path. */
+#else /* def EXDIR_RENAME */
+    /* If user gave file-system path, don't prepend rootpath. */
+    G.exdir_renamed = renamed;
+#endif /* def EXDIR_RENAME [else] */
+
+    if (renamed)
+    {
         cpw = G.unipath_widefilename;   /* Point to start of renamed name. */
         if (*cpw) do {
-            if (*cpw == '\\')           /* Convert backslashes to slashes. */
-                *cpw = '/';
+            if (*cpw == L'\\')          /* Convert backslashes to slashes. */
+                *cpw = L'/';
         } while (*(++cpw));
         cpw = G.unipath_widefilename;
         /* use temporary rootpath if user gave full pathname */
-        if (G.unipath_widefilename[0] == '/') {
-            G.renamed_fullpath = TRUE;
-            pathcompw[0] = '/';         /* Copy the '/', and NUL-terminate. */
-            pathcompw[1] = '\0';
+        if (G.unipath_widefilename[0] == L'/')
+        {
+#ifdef EXDIR_RENAME
+            G.exdir_renamed = TRUE;     /* Leading slash. */
+#endif /* def EXDIR_RENAME */
+            pathcompw[0] = L'/';        /* Copy the '/', and NUL-terminate. */
+            pathcompw[1] = L'\0';
             ++cpw;
-        } else if (iswalpha(G.unipath_widefilename[0]) && G.unipath_widefilename[1] == ':') {
-            G.renamed_fullpath = TRUE;
+        }
+        else if (iswalpha(G.unipath_widefilename[0]) &&
+         G.unipath_widefilename[1] == L':')
+        {
+#ifdef EXDIR_RENAME
+            G.exdir_renamed = TRUE;     /* Leading drive letter. */
+#endif /* def EXDIR_RENAME */
             ppw = pathcompw;
             *ppw++ = *cpw++;            /* Copy the "d:" (+ '/', possibly). */
             *ppw++ = *cpw++;
-            if (*cpw == '/')
+            if (*cpw == L'/')
                 *ppw++ = *cpw++;        /* Otherwise add "./"? */
-            *ppw = '\0';
+            *ppw = L'\0';
         }
     }
 
-    /* pathcomp is ignored unless renamed_fullpath is TRUE: */
+    /* pathcompw is ignored unless G.exdir_renamed is TRUE: */
     if ((error = checkdirw(__G__ pathcompw, INIT)) != 0) /* init path buffer */
         return error;           /* ...unless no mem or vol label on hard disk */
 
-    *pathcompw = '\0';          /* initialize translation buffer */
+    *pathcompw = L'\0';         /* initialize translation buffer */
     ppw = pathcompw;            /* point to translation buffer */
     if (!renamed) {             /* cp already set if renamed */
         cpw = G.unipath_jdir_widefilename;  /* Beginning of non-junked path. */
@@ -2787,19 +2817,19 @@ int mapnamew(__G__ renamed)
     for (; (workchw = *cpw) != 0; cpw++) {
 
         switch (workchw) {
-            case '/':                   /* Can assume -j flag not given. */
-                *ppw = '\0';
+            case L'/':                  /* Can assume -j flag not given. */
+                *ppw = L'\0';
                 maskDOSdevicew(__G__ pathcompw);
                 if (wcscmp(pathcompw, L".") == 0) {
                     /* Don't bother appending "./" to the path. */
-                    *pathcompw = '\0';
+                    *pathcompw = L'\0';
                 } else if (!uO.ddotflag && wcscmp(pathcompw, L"..") == 0) {
                     /* "../" dir traversal detected.  Skip over it. */
-                    *pathcompw = '\0';
+                    *pathcompw = L'\0';
                     killed_ddot = TRUE;         /* Set "show message" flag. */
                 }
                 /* When path component is not empty, append it now. */
-                if (*pathcompw != '\0' &&
+                if (*pathcompw != L'\0' &&
                     ((error = checkdirw(__G__ pathcompw, APPEND_DIR))
                      & MPN_MASK) > MPN_INF_TRUNC)
                     return error;
@@ -2807,28 +2837,28 @@ int mapnamew(__G__ renamed)
                 lastsemiw = (wchar_t *)NULL; /* Leave dir semi-colons alone. */
                 break;
 
-            case ':':             /* drive spec not stored, so no colon allowed */
-            case '\\':            /* '\\' may come as normal filename char (not */
-            case '<':             /*  dir sep char!) from unix-like file system */
-            case '>':             /* no redirection symbols allowed either */
-            case '|':             /* no pipe signs allowed */
-            case '"':             /* no double quotes allowed */
-            case '?':             /* no wildcards allowed */
-            case '*':
-                *ppw++ = '_';     /* these rules apply equally to FAT and NTFS */
+            case L':':          /* drive spec not stored, so no colon allowed */
+            case L'\\':         /* '\\' may come as normal filename char (not */
+            case L'<':          /*  dir sep char!) from unix-like file system */
+            case L'>':          /* no redirection symbols allowed either */
+            case L'|':          /* no pipe signs allowed */
+            case L'"':          /* no double quotes allowed */
+            case L'?':          /* no wildcards allowed */
+            case L'*':
+                *ppw++ = L'_';  /* these rules apply equally to FAT and NTFS */
                 break;
-            case ';':             /* start of VMS version? */
-                lastsemiw = ppw;  /* remove VMS version later... */
-                *ppw++ = ';';     /*  but keep semicolon for now */
+            case L';':                  /* start of VMS version? */
+                lastsemiw = ppw;        /* remove VMS version later... */
+                *ppw++ = L';';          /*  but keep semicolon for now */
                 break;
 
 
-            case ' ':             /* keep spaces unless specifically */
+            case L' ':          /* keep spaces unless specifically */
                 /* NT cannot create filenames with spaces on FAT volumes */
                 if (uO.sflag || IsVolumeOldFATw(__G__ G.unipath_widefilename))
-                    *ppw++ = '_';
+                    *ppw++ = L'_';
                 else
-                    *ppw++ = ' ';
+                    *ppw++ = L' ';
                 break;
 
             default:
@@ -2855,7 +2885,7 @@ int mapnamew(__G__ renamed)
     fore exiting.
   ---------------------------------------------------------------------------*/
 
-    if ((G.unipath_widefilename[wcslen(G.unipath_widefilename) - 1] == '/')
+    if ((G.unipath_widefilename[wcslen(G.unipath_widefilename) - 1] == L'/')
 #  ifdef SYMLINKS
      /* Process a symlink as a file, even if it looks like a directory.
       * (Which a Windows directory symlink might do.)
@@ -2900,24 +2930,23 @@ int mapnamew(__G__ renamed)
         /* dir existed already; don't look for data to extract */
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
     }
-
-    *ppw = '\0';                   /* done with pathcomp:  terminate it */
+    *ppw = L'\0';               /* pathcompw is complete, so terminate it. */
 
     /* If not saving them, remove a VMS version number (ending: ";###"). */
     if (lastsemiw &&
      ((uO.V_flag < 0) || ((uO.V_flag == 0) && (G.pInfo->hostnum == VMS_)))) {
         ppw = lastsemiw + 1;      /* semi-colon was kept:  expect #'s after */
-        if (*ppw != '\0') {       /* At least one digit is required. */
+        if (*ppw != L'\0') {      /* At least one digit is required. */
             while (iswdigit(*ppw))
                 ++ppw;
-            if (*ppw == '\0')     /* only digits between ';' and end:  nuke */
-                *lastsemiw = '\0';
+            if (*ppw == L'\0')    /* only digits between ';' and end:  nuke */
+                *lastsemiw = L'\0';
         }
     }
 
     maskDOSdevicew(__G__ pathcompw);
 
-    if (*pathcompw == '\0') {
+    if (*pathcompw == L'\0') {
         Info(slide, 1, ((char *)slide, "mapname(2): conversion of %s failed\n",
           FnFilter1(G.filename)));
         return (error & ~MPN_MASK) | MPN_ERR_SKIP;
@@ -3053,7 +3082,7 @@ static void maskDOSdevicew(__G__ pathcompw)
          */
         for (i = wcslen(pathcompw) + 1; i > 0; --i)
             pathcompw[i] = pathcompw[i - 1];
-        pathcompw[0] = '_';
+        pathcompw[0] = L'_';
     }
 } /* end function maskDOSdevicew() */
 
@@ -3081,16 +3110,16 @@ static void map2fat(pathcomp, pEndFAT)
      */
     while ((workch = (uch)*ppc++) != 0) {
         switch (workch) {
-            case '[':
-            case ']':
-            case '+':
-            case ',':
-            case ';':
-            case '=':
+            case L'[':
+            case L']':
+            case L'+':
+            case L',':
+            case L';':
+            case L'=':
                 *pEnd++ = '_';      /* convert brackets to underscores */
                 break;
 
-            case '.':
+            case L'.':
                 if (pEnd == *pEndFAT) {   /* nothing appended yet... */
                     if (*ppc == '\0')     /* don't bother appending a */
                         break;            /*  "./" component to the path */
@@ -3181,29 +3210,29 @@ static void map2fatw(pathcompw, pEndFATw)
      */
     while ((workchw = *ppcw++) != 0) {
         switch (workchw) {
-            case '[':
-            case ']':
-            case '+':
-            case ',':
-            case ';':
-            case '=':
-                *pEndw++ = '_';      /* convert brackets to underscores */
+            case L'[':
+            case L']':
+            case L'+':
+            case L',':
+            case L';':
+            case L'=':
+                *pEndw++ = L'_';        /* Convert brackets to underscores. */
                 break;
 
-            case '.':
-                if (pEndw == *pEndFATw) {   /* nothing appended yet... */
-                    if (*ppcw == '\0')     /* don't bother appending a */
+            case L'.':
+                if (pEndw == *pEndFATw) { /* nothing appended yet... */
+                    if (*ppcw == L'\0')   /* don't bother appending a */
                         break;            /*  "./" component to the path */
-                    else if (*ppcw == '.' && ppcw[1] == '\0') {   /* "../" */
-                        *pEndw++ = '.';    /*  add first dot, */
-                        *pEndw++ = '.';    /*  add second dot, and */
-                        ++ppcw;            /*  skip over to pathcomp's end */
+                    else if (*ppcw == L'.' && ppcw[1] == L'\0') {   /* "../" */
+                        *pEndw++ = L'.';    /*  add first dot, */
+                        *pEndw++ = L'.';    /*  add second dot, and */
+                        ++ppcw;             /*  skip over to pathcomp's end */
                     } else {              /* FAT doesn't allow null filename */
-                        *pEndw++ = '_';    /*  bodies, so map .exrc -> _exrc */
+                        *pEndw++ = L'_';  /*  bodies, so map .exrc -> _exrc */
                     }                     /*  (_.exr would keep max 3 chars) */
                 } else {                  /* found dot within path component */
-                    last_dotw = pEndw;      /*  point at last dot so far... */
-                    *pEndw++ = '_';        /*  convert to underscore for now */
+                    last_dotw = pEndw;    /*  point at last dot so far... */
+                    *pEndw++ = L'_';      /*  convert to underscore for now */
                 }
                 break;
 
@@ -3213,7 +3242,7 @@ static void map2fatw(pathcompw, pEndFATw)
         } /* end switch */
     } /* end while loop */
 
-    *pEndw = '\0';                 /* terminate buildpathFAT */
+    *pEndw = L'\0';             /* Terminate buildpathFAT. */
 
     /* NOTE:  keep in mind that pEnd points to the end of the path
      * component, and *pEndFAT still points to the *beginning* of it...
@@ -3233,13 +3262,13 @@ static void map2fatw(pathcompw, pEndFATw)
             /* no underscore; or converting underscore to dot would save less
                chars than leaving everything in the basename */
             *pEndFATw += 8;        /* truncate at 8 chars */
-            **pEndFATw = '\0';
+            **pEndFATw = L'\0';
         } else
             *pEndFATw = pEndw;      /* whole thing fits into 8 chars or less */
     }
 
     if (last_dotw != NULL) {       /* one dot is OK: */
-        *last_dotw = '.';          /* put it back in */
+        *last_dotw = L'.';         /* put it back in */
 
         if ((last_dotw - pBeginw) > 8) {
             wchar_t *pw, *qw;
@@ -3247,18 +3276,18 @@ static void map2fatw(pathcompw, pEndFATw)
 
             pw = last_dotw;
             qw = last_dotw = pBeginw + 8;
-            for (i = 0;  (i < 4) && *pw;  ++i)  /* too many chars in basename: */
-                *qw++ = *pw++;                   /*  shift .ext left and trun- */
-            *qw = '\0';                         /*  cate/terminate it */
+            for (i = 0;  (i < 4) && *pw;  ++i)  /* too many chrs in basename: */
+                *qw++ = *pw++;                  /*  shift .ext left and       */
+            *qw = L'\0';                        /*  truncate/terminate it.    */
             *pEndFATw = qw;
-        } else if ((pEndw - last_dotw) > 4) {    /* too many chars in extension */
+        } else if ((pEndw - last_dotw) > 4) {   /* too many chars in .ext. */
             *pEndFATw = last_dotw + 4;
-            **pEndFATw = '\0';
+            **pEndFATw = L'\0';
         } else
-            *pEndFATw = pEndw;   /* filename is fine; point at terminating zero */
+            *pEndFATw = pEndw;  /* Filename is ok.  Point at terminating NUL. */
 
-        if ((last_dotw - pBeginw) > 0 && last_dotw[-1] == ' ')
-            last_dotw[-1] = '_';                /* NO blank in front of '.'! */
+        if ((last_dotw - pBeginw) > 0 && last_dotw[-1] == L' ')
+            last_dotw[-1] = L'_';               /* NO blank in front of '.'! */
     }
 } /* end function map2fatw() */
 
@@ -3308,11 +3337,11 @@ int checkdir(__G__ pathcomp, flag)
         int too_long = FALSE;
 
         Trace((stderr, "appending dir segment [%s]\n", FnFilter1(pathcomp)));
-        while ((*G.endHPFS = *p++) != '\0')     /* copy to HPFS filename */
+        while ((*G.endHPFS = *p++) != L'\0')    /* copy to HPFS filename */
             ++G.endHPFS;
         if (!IsVolumeOldFAT(__G__ G.buildpathHPFS)) {
             p = pathcomp;
-            while ((*G.endFAT = *p++) != '\0')  /* copy to FAT filename, too */
+            while ((*G.endFAT = *p++) != L'\0') /* copy to FAT filename, too */
                 ++G.endFAT;
         } else
             map2fat(pathcomp, &G.endFAT);   /* map into FAT fn, update endFAT */
@@ -3495,8 +3524,8 @@ int checkdir(__G__ pathcomp, flag)
 
 /*---------------------------------------------------------------------------
     INIT:  allocate and initialize buffer space for the file currently being
-    extracted.  If file was renamed with an absolute path, don't prepend the
-    extract-to path.
+    extracted.  If file was renamed (formerly: with an absolute path), don't
+    prepend the extract-to path.
   ---------------------------------------------------------------------------*/
 
     if (FUNCTION == INIT) {
@@ -3521,9 +3550,9 @@ int checkdir(__G__ pathcomp, flag)
         }
         if (G.pInfo->vollabel) { /* use root or renamed path, but don't store */
 /* GRR:  for network drives, do strchr() and return IZ_VOL_LABEL if not [1] */
-            if (G.renamed_fullpath && pathcomp[1] == ':')
+            if (G.exdir_renamed && pathcomp[1] == ':')
                 *G.buildpathHPFS = (char)ToLower(*pathcomp);
-            else if (!G.renamed_fullpath && G.rootlen > 1 &&
+            else if (!G.exdir_renamed && G.rootlen > 1 &&
                      G.rootpath[1] == ':')
                 *G.buildpathHPFS = (char)ToLower(*G.rootpath);
             else {
@@ -3545,7 +3574,7 @@ int checkdir(__G__ pathcomp, flag)
                 return MPN_VOL_LABEL;  /* skipping with message */
             }
             *G.buildpathHPFS = '\0';
-        } else if (G.renamed_fullpath) /* pathcomp = valid data */
+        } else if (G.exdir_renamed)     /* pathcomp has valid data. */
             strcpy(G.buildpathHPFS, pathcomp);
         else if (G.rootlen > 0)
             strcpy(G.buildpathHPFS, G.rootpath);
@@ -3705,11 +3734,11 @@ int checkdirw(__G__ pathcompw, flag)
            not work well on this port */
         char *fn = wchar_to_local_string(G.unipath_widefilename, G.unicode_escape_all);
 
-        while ((*G.endHPFSw = *pw++) != '\0')     /* copy to HPFS filename */
+        while ((*G.endHPFSw = *pw++) != L'\0')    /* copy to HPFS filename */
             ++G.endHPFSw;
         if (!IsVolumeOldFATw(__G__ G.buildpathHPFSw)) {
             pw = pathcompw;
-            while ((*G.endFATw = *pw++) != '\0')  /* copy to FAT filename, too */
+            while ((*G.endFATw = *pw++) != L'\0') /* copy to FAT filename, too */
                 ++G.endFATw;
         } else
             map2fatw(pathcompw, &G.endFATw);   /* map into FAT fn, update endFAT */
@@ -3835,9 +3864,9 @@ int checkdirw(__G__ pathcompw, flag)
             /* no room for filenames:  fatal */
             return MPN_ERR_TOOLONG;
         }
-        *G.endHPFSw++ = '/';
-        *G.endFATw++ = '/';
-        *G.endHPFSw = *G.endFATw = '\0';
+        *G.endHPFSw++ = L'/';
+        *G.endFATw++ = L'/';
+        *G.endHPFSw = *G.endFATw = L'\0';
         Trace((stderr, "buildpathHPFS now = [%s]\nbuildpathFAT now =  [%s]\n",
           FnFilter1(buildpathHPFS), FnFilter2(buildpathFAT)));
         izu_free(buildpathHPFS);
@@ -3893,7 +3922,7 @@ int checkdirw(__G__ pathcompw, flag)
          * hold the complete combined name, so there is no need to check
          * for OS filename size limit overflow within the copy loop.
          */
-        while ((*G.endHPFSw = *pw++) != '\0') {   /* copy to HPFS filename */
+        while ((*G.endHPFSw = *pw++) != L'\0') {  /* copy to HPFS filename */
             ++G.endHPFSw;
         }
         /* Now, check for OS filename size overflow.  When detected, the
@@ -3901,7 +3930,7 @@ int checkdirw(__G__ pathcompw, flag)
          */
         if ((G.endHPFSw-G.buildpathHPFSw) >= FILNAMSIZ) {
             char *buildpathHPFS;
-            G.buildpathHPFSw[FILNAMSIZ-1] = '\0';
+            G.buildpathHPFSw[FILNAMSIZ-1] = L'\0';
             buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
             Info(slide, 1, ((char *)slide,
               "checkdir(2) warning: path too long; truncating\n\
@@ -3920,7 +3949,7 @@ int checkdirw(__G__ pathcompw, flag)
         if (G.pInfo->vollabel || !IsVolumeOldFATw(__G__ G.buildpathHPFSw)) {
             /* copy to FAT filename, too */
             pw = pathcompw;
-            while ((*G.endFATw = *pw++) != '\0')
+            while ((*G.endFATw = *pw++) != L'\0')
                 ++G.endFATw;
         } else
             /* map into FAT fn, update endFAT */
@@ -3934,7 +3963,7 @@ int checkdirw(__G__ pathcompw, flag)
          * has already happened.
          */
         if ((G.endFATw-G.buildpathFATw) >= FILNAMSIZ)
-            G.buildpathFATw[FILNAMSIZ-1] = '\0';
+            G.buildpathFATw[FILNAMSIZ-1] = L'\0';
 #  ifdef Tracing
         {
           char *buildpathHPFS = wchar_to_local_string(G.buildpathHPFSw, G.unicode_escape_all);
@@ -3953,8 +3982,8 @@ int checkdirw(__G__ pathcompw, flag)
 
 /*---------------------------------------------------------------------------
     INIT:  allocate and initialize buffer space for the file currently being
-    extracted.  If file was renamed with an absolute path, don't prepend the
-    extract-to path.
+    extracted.  If file was renamed (formerly: with an absolute path), don't
+    prepend the extract-to path.
   ---------------------------------------------------------------------------*/
 
     if (FUNCTION == INIT) {
@@ -3969,10 +3998,10 @@ int checkdirw(__G__ pathcompw, flag)
         }
         if (G.pInfo->vollabel) { /* use root or renamed path, but don't store */
 /* GRR:  for network drives, do strchr() and return IZ_VOL_LABEL if not [1] */
-            if (G.renamed_fullpath && pathcompw[1] == ':')
+            if (G.exdir_renamed && pathcompw[1] == L':')
                 *G.buildpathHPFSw = (wchar_t)towlower(*pathcompw);
-            else if (!G.renamed_fullpath && G.rootlen > 1 &&
-                     G.rootpathw[1] == ':')
+            else if (!G.exdir_renamed && G.rootlen > 1 &&
+                     G.rootpathw[1] == L':')
                 *G.buildpathHPFSw = (wchar_t)towlower(*G.rootpathw);
             else {
                 wchar_t tmpNw[MAX_PATH], *tmpPw;
@@ -3991,16 +4020,16 @@ int checkdirw(__G__ pathcompw, flag)
                 izu_free(G.buildpathFATw);
                 return MPN_VOL_LABEL;  /* skipping with message */
             }
-            *G.buildpathHPFSw = '\0';
-        } else if (G.renamed_fullpath) /* pathcomp = valid data */
+            *G.buildpathHPFSw = L'\0';
+        } else if (G.exdir_renamed)     /* pathcomp has valid data. */
             wcscpy(G.buildpathHPFSw, pathcompw);
         else if (G.rootlen > 0)
             wcscpy(G.buildpathHPFSw, G.rootpathw);
         else
-            *G.buildpathHPFSw = '\0';
+            *G.buildpathHPFSw = L'\0';
         G.endHPFSw = G.buildpathHPFSw;
         G.endFATw = G.buildpathFATw;
-        while ((*G.endFATw = *G.endHPFSw) != '\0') {
+        while ((*G.endFATw = *G.endHPFSw) != L'\0') {
             ++G.endFATw;
             ++G.endHPFSw;
         }
@@ -4050,10 +4079,12 @@ int checkdirw(__G__ pathcompw, flag)
                 return MPN_NOMEM;
             }
             wcscpy(tmprootw, pathcompw);
-            if (iswalpha(tmprootw[0]) && tmprootw[1] == ':')
+            if (iswalpha(tmprootw[0]) && tmprootw[1] == L':')
                 has_drive = TRUE;   /* drive designator */
-            if (tmprootw[G.rootlen-1] == '/' || tmprootw[G.rootlen-1] == '\\') {
-                tmprootw[--G.rootlen] = '\0';
+            if (tmprootw[G.rootlen-1] == L'/' ||
+             tmprootw[G.rootlen-1] == L'\\')
+            {
+                tmprootw[--G.rootlen] = L'\0';
                 had_trailing_pathsep = TRUE;
             }
             if (has_drive && (G.rootlen == 2)) {
@@ -4090,9 +4121,9 @@ int checkdirw(__G__ pathcompw, flag)
                 }
             }
             if (add_dot)                    /* had just "x:", make "x:." */
-                tmprootw[G.rootlen++] = '.';
-            tmprootw[G.rootlen++] = '/';
-            tmprootw[G.rootlen] = '\0';
+                tmprootw[G.rootlen++] = L'.';
+            tmprootw[G.rootlen++] = L'/';
+            tmprootw[G.rootlen] = L'\0';
             if ((G.rootpathw = (wchar_t *)izu_realloc(
              tmprootw, (G.rootlen+1) * sizeof(wchar_t))) == NULL) {
                 izu_free(tmprootw);

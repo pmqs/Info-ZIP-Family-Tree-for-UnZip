@@ -13,40 +13,38 @@
 #ifndef __UNZVERS_H
 # define __UNZVERS_H
 
-/*
 # ifdef BETA
-#  undef BETA
+#  undef BETA                   /* Swap blocks.  Last of define/undef wins. */
 # endif
-*/
 
 # ifndef BETA
 #  define BETA                  /* Undefine BETA for public releases. */
 # endif
 
 # ifdef BETA
-#  define UZ_BETALEVEL      "c15 BETA"
-#  define UZ_VERSION_DATE   "13 Jan 2015"       /* Internal beta version. */
+#  define UZ_BETALEVEL      "c16s BETA"
+#  define UZ_VERSION_DATE   "2015-03-11"        /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "?? ??? 2015"       /* Official release version. */
+#  define UZ_VERSION_DATE   "2015-??-??"        /* Official release version. */
 #  define RELEASE
 # endif
 
-# define UZ_MAJORVER    6       /* UnZip */
+# define UZ_MAJORVER    6               /* UnZip */
 # define UZ_MINORVER    1
 
-# define ZI_MAJORVER    3       /* ZipInfo */
-# define ZI_MINORVER    1
+# define ZI_MAJORVER    UZ_MAJORVER     /* ZipInfo */
+# define ZI_MINORVER    UZ_MINORVER
 
 # define UZ_PATCHLEVEL  0
 
-# define UZ_VER_STRING  "6.10"          /* Keep in sync with Version numbers! */
+# define UZ_VER_STRING  "6.10c16s"      /* Keep in sync with Version numbers! */
 
 # ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"
 # endif
 
-/* these are obsolete but remain for backward compatibility: */
+/* The following are obsolete but remain for backward compatibility. */
 # if (defined(OS2) || defined(__OS2__))
 #  define D2_MAJORVER    UZ_MAJORVER    /* DLL for OS/2 */
 #  define D2_MINORVER    UZ_MINORVER
