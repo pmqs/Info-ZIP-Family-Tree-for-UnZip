@@ -1957,7 +1957,8 @@ int uz_opts(__G__ pargc, pargv)
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
-        if(option == o_BAD_ERR) {
+        if (option == o_BAD_ERR)
+        {
           FREE_NON_NULL( value);        /* Leaving early.  Free it. */
           UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return(PK_PARAM);
@@ -2130,7 +2131,7 @@ int uz_opts(__G__ pargc, pargv)
                 break;
 # ifdef MACOS
             case ('E'): /* -E [MacOS] display Mac e.f. when restoring */
-                if( negative ) {
+                if (negative) {
                     uO.E_flag = FALSE, negative = 0;
                 } else {
                     uO.E_flag = TRUE;
@@ -2165,7 +2166,7 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* ndef SFX */
 # ifdef MACOS
             case ('i'): /* -i [MacOS] ignore filenames stored in Mac ef */
-                if( negative ) {
+                if (negative) {
                     uO.i_flag = FALSE;
                 } else {
                     uO.i_flag = TRUE;
@@ -2220,7 +2221,7 @@ int uz_opts(__G__ pargc, pargv)
                 break;
 # ifdef J_FLAG
             case ('J'):    /* Junk AtheOS, BeOS or MacOS[X] file attributes */
-                if( negative ) {
+                if (negative) {
                     uO.J_flag = FALSE;
                 } else {
                     uO.J_flag = TRUE;
@@ -2229,28 +2230,28 @@ int uz_opts(__G__ pargc, pargv)
 # endif /* def J_FLAG */
 # if defined( UNIX) && defined( __APPLE__)
             case (o_Je):   /* Junk (all) extended attributes. */
-                if( negative ) {
+                if (negative) {
                     uO.Je_flag = FALSE;
                 } else {
                     uO.Je_flag = TRUE;
                 }
                 break;
             case (o_Jf):   /* Junk Finder info. */
-                if( negative ) {
+                if (negative) {
                     uO.Jf_flag = FALSE;
                 } else {
                     uO.Jf_flag = TRUE;
                 }
                 break;
             case (o_Jq):   /* Junk quarantine ("com.apple.quarantine") */
-                if( negative ) {
+                if (negative) {
                     uO.Jq_flag = FALSE;
                 } else {
                     uO.Jq_flag = TRUE;
                 }
                 break;
             case (o_Jr):   /* Junk Resource fork. */
-                if( negative ) {
+                if (negative) {
                     uO.Jr_flag = FALSE;
                 } else {
                     uO.Jr_flag = TRUE;

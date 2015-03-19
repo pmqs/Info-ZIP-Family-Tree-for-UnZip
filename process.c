@@ -464,8 +464,8 @@ static int open_and_test_input_file( __G__ lastchance C_MAYBE_EXE)
     }
 #endif /* def VMS */
 
-    if (open_input_file(__G))   /* This should never fail, given */
-    {                           /* the stat() test above, but... */
+    if (open_infile(__G__ OIF_PRIMARY))
+    { /* This should never fail, given the stat() test above, but... */
       return PK_NOZIP;
     }
 
@@ -478,7 +478,7 @@ static int open_and_test_input_file( __G__ lastchance C_MAYBE_EXE)
     if (G.ziplen == EOF)
     {
       Info(slide, 0x401, ((char *)slide, LoadFarString(ZipfileTooBig)));
-      CLOSE_INFILE();
+      CLOSE_INFILE( &G.zipfd);
       return IZ_ERRBF;
     }
 #endif /* DO_SAFECHECK_2GB */
@@ -1076,6 +1076,7 @@ static int extract_archive_seekable( __G__ lastchance)
 
     G.cur_zipfile_bufstart = 0;
     G.inptr = G.inbuf;
+    G.sgmnt_size = 0;   /* Init before ECREC for each archive in the list. */
 
 #if ((!defined(WINDLL) && !defined(SFX)) || !defined(NO_ZIPINFO))
 # if !defined(WINDLL) && !defined(SFX)
@@ -1106,7 +1107,7 @@ static int extract_archive_seekable( __G__ lastchance)
                                         IZ_MIN(G.ziplen, 66000L)))
          > PK_WARN )
     {
-        CLOSE_INFILE();
+        CLOSE_INFILE( &G.zipfd);
 
 #ifdef SFX
         ++lastchance;   /* avoid picky compiler warnings */
@@ -1125,7 +1126,7 @@ static int extract_archive_seekable( __G__ lastchance)
     }
 
     if ((uO.zflag > 0) && !uO.zipinfo_mode) { /* unzip: zflag = comment ONLY */
-        CLOSE_INFILE();
+        CLOSE_INFILE( &G.zipfd);
         return error_in_archive;
     }
 
@@ -1217,9 +1218,12 @@ static int extract_archive_seekable( __G__ lastchance)
             else
                 Info(slide, 0x401, ((char *)slide, LoadFarString(ZipfileEmpty),
                                     G.zipfn));
-            CLOSE_INFILE();
+            CLOSE_INFILE( &G.zipfd);
             return (error_in_archive > PK_WARN)? error_in_archive : PK_WARN;
         }
+
+        /* Set the segment number (needed for segmented archives). */
+        G.sgmnt_nr = G.ecrec.number_this_disk;
 
     /*-----------------------------------------------------------------------
         Compensate for missing or extra bytes, and seek to where the start
@@ -1230,12 +1234,12 @@ static int extract_archive_seekable( __G__ lastchance)
 
         error = seek_zipf(__G__ G.ecrec.offset_start_central_directory);
         if (error == PK_BADERR) {
-            CLOSE_INFILE();
+            CLOSE_INFILE( &G.zipfd);
             return PK_BADERR;
         }
 #ifdef OLD_SEEK_TEST
         if (error != PK_OK || readbuf(__G__ G.sig, 4) == 0) {
-            CLOSE_INFILE();
+            CLOSE_INFILE( &G.zipfd);
             return PK_ERR;  /* file may be locked, or possibly disk error(?) */
         }
         if (memcmp(G.sig, central_hdr_sig, 4))
@@ -1257,7 +1261,7 @@ static int extract_archive_seekable( __G__ lastchance)
                   Info(slide, 0x401, ((char *)slide,
                     LoadFarString(CentDirStartNotFound), G.zipfn,
                     LoadFarStringSmall(ReportMsg)));
-                CLOSE_INFILE();
+                CLOSE_INFILE( &G.zipfd);
                 return (error != PK_OK ? error : PK_BADERR);
             }
 #ifndef SFX
@@ -1273,9 +1277,13 @@ static int extract_archive_seekable( __G__ lastchance)
         or test member files as instructed, and close the zipfile.
       -----------------------------------------------------------------------*/
 
+        /* TODO: We need know offset against actual file!!!  If we are
+         * not in the same file as EOCDR, it will fail always.
+         */
+
         error = seek_zipf(__G__ G.ecrec.offset_start_central_directory);
         if (error != PK_OK) {
-            CLOSE_INFILE();
+            CLOSE_INFILE( &G.zipfd);
             return error;
         }
 
@@ -1321,7 +1329,7 @@ static int extract_archive_seekable( __G__ lastchance)
     } /* end if (!too_weird_to_continue) */
 #endif
 
-    CLOSE_INFILE();
+    CLOSE_INFILE( &G.zipfd);
 
 #ifdef TIMESTAMP
     if (uO.T_flag && !uO.zipinfo_mode && (nmember > 0L)) {

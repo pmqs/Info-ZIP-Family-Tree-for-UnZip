@@ -44,6 +44,7 @@
              conflict_queryw()
              set_dir_attribs()                  SET_DIR_ATTRIB
              extract_or_test_stream()           Entry - stream
+             close_segment()
              find_local_header()
              central_local_name_check()
              extract_or_test_entrylist()
@@ -4383,6 +4384,21 @@ int extract_or_test_stream( __G)        /* Return PK-type error code. */
 #endif /* def ARCHIVE_STDIN */
 
 
+/*******************************/
+/*  Function close_segment().  */
+/*******************************/
+static void close_segment(__G)
+{
+  if (G.zipfn_sgmnt != NULL)
+  {
+    izu_free(G.zipfn_sgmnt);
+    G.zipfn_sgmnt = NULL;
+  }
+  CLOSE_INFILE( &G.zipfd_sgmnt);
+
+} /* close_segment(). */
+
+
 /**********************************/
 /*  Function find_local_header()  */
 /**********************************/
@@ -4402,8 +4418,56 @@ static int find_local_header( __G__ perr_in_arch, filnum, pold_extra_bytes)
    * (either haven't yet read far enough, or (maybe) skipping backward),
    * then skip to the target position and reset readbuf().
    */
+  /*if(G.ecrec.number_this_disk != G.pInfo->diskstart) {*/
+  if (G.ecrec.number_this_disk > 0)
+  {
+    /* Open file (when it is segmented) even if it is a duplicate
+     * of the same fd, due to possible unwanted changes of G.zipfd
+     * and G.sgmnt_nr which were saved in extract_or_test_files().
+     */
+    if (!fd_is_valid(G.zipfd_sgmnt) || G.sgmnt_nr != G.pInfo->diskstart)
+    {
+      if (fd_is_valid(G.zipfd_sgmnt))
+        close_segment();                /* We need a different file. */
+
+      set_zipfn_sgmnt_name(G.pInfo->diskstart);
+      if (open_infile( __G__ OIF_SEGMENT))
+      {
+        /* TODO: ask for place/path of zipfile, see wild*!, ... */
+        /* Create new function for this all? */
+        izu_free(G.zipfn_sgmnt);
+        G.zipfn_sgmnt = NULL;
+        error = PK_NOZIP;
+        return error;
+      }
+      else
+      {
+        /* TODO: that's not best solution but for
+         * testing/alpha version is good enough now. */
+        G.zipfd = G.zipfd_sgmnt;
+        G.sgmnt_nr = G.pInfo->diskstart;
+      }
+      /* When we change file, we must refill buffer always!
+       * (Same method as in seek_zipf().)
+       */
+      G.cur_zipfile_bufstart = -1;
+    }
+    /* TODO: check better too -- Is G.extra_bytes important in
+     * segmented?  Otherwise bigger harakiri is here
+     * needed (here = whole request block below)
+     */
+    request = G.pInfo->offset;
+  }
+  else
+  {
+    request = G.pInfo->offset + G.extra_bytes;
+  }
+
   /* seek_zipf(__G__ pInfo->offset);  */
-  request = G.pInfo->offset + G.extra_bytes;
+  /* TODO: this code must be checked / verified better by someone else!
+   * I'm not sure about impact of changes what are here done for
+   * multi-disk support.
+   */
   inbuf_offset = request % INBUFSIZ;
   bufstart = request - inbuf_offset;
 
@@ -4415,7 +4479,7 @@ static int find_local_header( __G__ perr_in_arch, filnum, pold_extra_bytes)
   if (request < 0)
   {
     Info(slide, 0x401, ((char *)slide, LoadFarStringSmall(SeekMsg),
-     G.zipfn, LoadFarString(ReportMsg)));
+     1, G.zipfn, LoadFarString(ReportMsg)));
     *perr_in_arch = PK_ERR;
     if (filnum == 1 && G.extra_bytes != 0L)
     {
@@ -4907,9 +4971,11 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
 
 #ifdef DLL
         if ((G.statreportcb != NULL) &&
-            (*G.statreportcb)(__G__ UZ_ST_START_EXTRACT, G.zipfn,
-                              G.filename, NULL)) {
-            return IZ_CTRLC;        /* cancel operation by user request */
+         (*G.statreportcb)(__G__ UZ_ST_START_EXTRACT, G.zipfn,
+         G.filename, NULL))
+        {
+          close_segment();
+          return IZ_CTRLC;      /* Cancel operation by user request. */
         }
 #endif
 #ifdef MACOS  /* MacOS is no preemptive OS, thus call event-handling by hand */
@@ -4920,22 +4986,28 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
 #endif
         G.disk_full = 0;
 
-        if ((error = extract_or_test_member(__G)) != PK_COOL) {
+        if ((error = extract_or_test_member(__G)) != PK_COOL)
+        {
             if (error > error_in_archive)
                 error_in_archive = error;       /* ...and keep going */
+
+            if ((G.disk_full > 1)
 #ifdef DLL
-            if (G.disk_full > 1 || error_in_archive == IZ_CTRLC) {
-#else
-            if (G.disk_full > 1) {
+             || (error_in_archive == IZ_CTRLC)
 #endif
-                return error_in_archive;        /* (unless disk full) */
+             )
+            {
+              close_segment();
+              return error_in_archive;          /* (unless disk full) */
             }
         }
 #ifdef DLL
         if ((G.statreportcb != NULL) &&
-            (*G.statreportcb)(__G__ UZ_ST_FINISH_MEMBER, G.zipfn,
-                              G.filename, (zvoid *)&G.lrec.ucsize)) {
-            return IZ_CTRLC;        /* cancel operation by user request */
+         (*G.statreportcb)(__G__ UZ_ST_FINISH_MEMBER, G.zipfn,
+         G.filename, (zvoid *)&G.lrec.ucsize))
+        {
+          close_segment();
+          return IZ_CTRLC;          /* Cancel operation by user request. */
         }
 #endif
 #ifdef MACOS  /* MacOS is no preemptive OS, thus call event-handling by hand */
@@ -4943,6 +5015,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
 #endif
     } /* end for-loop (i:  files in current block) */
 
+    close_segment();
     return error_in_archive;
 
 } /* extract_or_test_entrylist(). */
@@ -5229,8 +5302,10 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
 # ifdef DLL
         if ((G.statreportcb != NULL) &&
             (*G.statreportcb)(__G__ UZ_ST_START_EXTRACT, G.zipfn,
-                              G.filename, NULL)) {
-            return IZ_CTRLC;        /* cancel operation by user request */
+                              G.filename, NULL))
+        {
+          close_segment();
+          return IZ_CTRLC;      /* Cancel operation by user request. */
         }
 # endif
 
@@ -5238,23 +5313,29 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
         if ((error = extract_or_test_member(__G)) != PK_COOL) {
             if (error > error_in_archive)
                 error_in_archive = error;       /* ...and keep going */
+
+            if ((G.disk_full > 1)
 # ifdef DLL
-            if (G.disk_full > 1 || error_in_archive == IZ_CTRLC) {
-# else
-            if (G.disk_full > 1) {
+             || (error_in_archive == IZ_CTRLC)
 # endif
-                return error_in_archive;        /* (unless disk full) */
+             )
+            {
+              close_segment();
+              return error_in_archive;          /* (unless disk full) */
             }
         }
 # ifdef DLL
         if ((G.statreportcb != NULL) &&
-            (*G.statreportcb)(__G__ UZ_ST_FINISH_MEMBER, G.zipfn,
-                              G.filename, (zvoid *)&G.lrec.ucsize)) {
-            return IZ_CTRLC;        /* cancel operation by user request */
+         (*G.statreportcb)(__G__ UZ_ST_FINISH_MEMBER, G.zipfn,
+         G.filename, (zvoid *)&G.lrec.ucsize))
+        {
+          close_segment();
+          return IZ_CTRLC;          /* Cancel operation by user request. */
         }
 # endif
     } /* end for-loop (i:  files in current block) */
 
+    close_segment();
     return error_in_archive;
 
 } /* extract_or_test_entrylistw(). */
@@ -5277,6 +5358,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     ulg blknum = 0L;
     int reached_end;
     int sts;
+    zuvl_t sgmnt_nr;
+    zipfd_t zipfd;
 #ifndef SFX
     int no_endsig_found;
 #endif
@@ -5520,6 +5603,12 @@ int extract_or_test_files(__G)    /* return PK-type error code */
         cd_inptr = G.inptr;
         cd_incnt = G.incnt;
 
+        /* Save the file descr/pointer and segment number, which are subject
+         * to change when the archive is segmented.
+         */
+        zipfd = G.zipfd;
+        sgmnt_nr = G.sgmnt_nr;
+
     /*-----------------------------------------------------------------------
         Second loop:  process files in current block, extracting or testing
         each one.
@@ -5545,6 +5634,10 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 #endif
                         error_in_archive);
         }
+        /* Restore the file descr/pointer and segment number. */
+        G.zipfd = zipfd;
+        G.sgmnt_nr = sgmnt_nr;
+
         if (error != PK_COOL) {
             if (error > error_in_archive)
                 error_in_archive = error;

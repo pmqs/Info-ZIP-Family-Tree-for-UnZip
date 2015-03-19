@@ -35,17 +35,24 @@
 /* Function vmmvs_open_infile() */
 /********************************/
 
-FILE *vmmvs_open_infile(__G)
+FILE *vmmvs_open_infile(__G__ fn)
    __GDEF
+   char *fn;
 {
    FILE *fzip;
 
-   G.tempfn = NULL;
+  fzip = fopen( fn, FOPR);
 
-   fzip = fopen(G.zipfn, FOPR);
+#ifdef CMS_MVS_INFILE_TMP
 
-#if 0
    /* Let's try it without the convert for a while -- RG Hartwig */
+
+   /* 2015-03-17 SMS.
+    * If ever re-enabled, this code will need changes to accommodate the
+    * additional archive segment file(s) (variable file name).
+    */
+
+   G.tempfn = NULL;
 
    if ((fzip = fopen(G.zipfn,"rb,recfm=fb")) == NULL) {
       size_t cnt;
@@ -82,7 +89,7 @@ FILE *vmmvs_open_infile(__G)
       G.ziplen = ftell(fzip);
    }
 
-#endif
+#endif /* def CMS_MVS_INFILE_TMP */
 
    return fzip;
 }
@@ -177,17 +184,23 @@ void close_outfile(__G)
 /* Function close_infile() */
 /***************************/
 
-void close_infile(__G)
-   __GDEF
+int close_infile(__G__ pfd)
+  __GDEF
+  zipfd_t *pfd;
 {
-   fclose(G.zipfd);
+  int sts;
 
-   /* If we're working from a temp file, erase it now */
-   if (G.tempfn)
-      remove(G.tempfn);
+  sts = fclose( *pfd);
+  *pfd = NULL;
 
+#ifdef CMS_MVS_INFILE_TMP
+  /* If we're working from a temp file, erase it now */
+  if (G.tempfn)
+    remove(G.tempfn);
+#endif /* def CMS_MVS_INFILE_TMP */
+
+  return sts;
 } /* end function close_infile() */
-
 
 
 /******************************/

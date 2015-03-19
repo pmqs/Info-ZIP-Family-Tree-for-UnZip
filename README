@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.10c (BETA)
-   Document date: 2015-01-02
+   Document date: 2015-03-18
 
 ------------------------------------------------------------------------
 
@@ -159,6 +159,17 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
      -mc/--member_counts.
    - "-v" report includes some raw hexadecimal values along with the old
      descriptions/interpretations.
+
+- Behavior change: Interactive queries to resolve file-system conflicts
+  ("replace XXX ? [y]es, [n]o, [A]ll, [N]one, [r]ename:") were buggy.
+  Previously, on some system types, the path/name shown in the query
+  could be an archive path/name, not a file-system path/name.  Also, a
+  "-d exdir" extraction directory could be added to a user-specified
+  "rename" path/name, which may already have included it.  Now, the
+  query should always show the file-system path/name which has the
+  conflict (including the effects of any "-d exdir" or "-j[=N]"
+  options), and a user-specified "rename" (file-system) path/name should
+  be used as-specified.
 
 - New -da/--auto-extract-dir option to specify a destination directory
   for extracted files which is derived from the base name of the

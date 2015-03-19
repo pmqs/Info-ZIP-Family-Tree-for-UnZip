@@ -33,7 +33,7 @@ ZCONST char Far VersionDate[] = UZ_VERSION_DATE; /* now defined in unzvers.h */
 ZCONST char Far CentSigMsg[] =
   "error:  expected central file header signature not found (file #%lu).\n";
 ZCONST char Far SeekMsg[] =
-  "error [%s]:  attempt to seek before beginning of zipfile\n%s";
+  "error [%s]:  attempt to seek before beginning of zipfile (%d)\n%s";
 ZCONST char Far FilenameNotMatched[] = "caution: filename not matched:  %s\n";
 ZCONST char Far ExclFilenameNotMatched[] =
   "caution: excluded filename not matched:  %s\n";

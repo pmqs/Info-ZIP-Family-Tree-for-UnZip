@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -41,6 +41,7 @@
              get_rms_defaults()
              get_rms_fileprot()
              name_only()
+             vms_sgmnt_name()
 
   ---------------------------------------------------------------------------*/
 
@@ -5553,6 +5554,58 @@ char *name_only( path)
     return result;
 }
 
+
+/* vms_sgmnt_name()
+ *
+ *    Derive an archive segment file spec from an archive primary file
+ *    spec and the desired segment number.  File specs are  VMS-style.
+ *    Returns sys$parse() status, with expanded file spec in user's
+ *    storage.
+ */
+int vms_sgmnt_name( char *fn_sgmnt, char *fn_primary, zuvl_t nr_sgmnt)
+{
+    int sts;
+    char sgmnt_type[ 16];
+
+    struct FAB fab;
+    struct NAMX_STRUCT nam;
+    char e_name[ NAMX_MAXRSS + 1];
+
+    fab = cc$rms_fab;                   /* Initialize FAB. */
+    nam = CC_RMS_NAMX;                  /* Initialize NAM[L]. */
+    fab.FAB_NAMX = &nam;                /* Point FAB to NAM[L]. */
+
+    /* Form a ".zXX;" type string and version from the segment number. */
+    sprintf( sgmnt_type, ".z%02u;", nr_sgmnt);
+
+    NAMX_DNA_FNA_SET( fab)
+
+    /* Use the primary archive name as the default file spec. */
+    FAB_OR_NAML( fab, nam).FAB_OR_NAML_DNA = fn_primary;
+    FAB_OR_NAML( fab, nam).FAB_OR_NAML_DNS = strlen( fn_primary);
+
+    /* Use the segment type and version as the normal file spec. */
+    FAB_OR_NAML( fab, nam).FAB_OR_NAML_FNA = sgmnt_type;
+    FAB_OR_NAML( fab, nam).FAB_OR_NAML_FNS = strlen( sgmnt_type);
+
+    nam.NAMX_ESA = e_name;
+    nam.NAMX_ESS = sizeof( e_name)- 1;
+
+    nam.NAMX_NOP = NAMX_M_SYNCHK;         /* Syntax-only analysis. */
+    sts = sys$parse( &fab);
+    if ((sts & STS$M_SUCCESS) == STS$K_SUCCESS)
+    {
+        /* Save (NUL-terminated) result in user's storage. */
+        e_name[ nam.NAMX_ESL] = '\0';
+        strncpy( fn_sgmnt, nam.NAMX_ESA, (nam.NAMX_ESL+ 1));
+    }
+    else
+    {
+        fn_sgmnt[0] = '\0';
+    }
+
+    return sts;
+} /* vms_sgmnt_name(). */
 
 
 /*

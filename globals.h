@@ -312,12 +312,13 @@ typedef struct Globals {
     int       zipeof;
     char      *argv0;               /* used for NT and EXE_EXTENSION */
     char      *wildzipfn;
-    char      *zipfn;    /* GRR:  WINDLL:  must nuke any malloc'd zipfn... */
-#  ifdef USE_STRM_INPUT
-    FILE      *zipfd;               /* zipfile file descriptor */
-#  else
-    int       zipfd;                /* zipfile file handle */
-#  endif
+    char      *zipfn;               /* zipfile path/name */
+    char      *zipfn_sgmnt;         /* zipfile segment path/name */
+    int       zipfn_sgmnt_size;     /* zipfile segment path/name size */
+    zuvl_t    sgmnt_nr;             /* zipfile segment number */
+    zoff_t    sgmnt_size;           /* zipfile segment size */
+    zipfd_t   zipfd;                /* zipfile primary file descr/pointer */
+    zipfd_t   zipfd_sgmnt;          /* zipfile segment file descr/pointer */
     int       zipstdin;             /* Archive is stdin. */
     zoff_t    ziplen;
     zoff_t    cur_zipfile_bufstart; /* extract_or_test, readbuf, ReadByte */
@@ -392,7 +393,8 @@ typedef struct Globals {
 #   endif /* defined( ICONV_MAPPING) && defined( MAX_CP_NAME) */
 #  endif /* def UNICODE_SUPPORT */
 
-#  ifdef CMS_MVS
+#  ifdef CMS_MVS_INFILE_TMP
+    /* 2015-03-17 SMS.  See note in zos/vmmvs.c. */
     char     *tempfn;              /* temp file used; erase on close */
 #  endif
 

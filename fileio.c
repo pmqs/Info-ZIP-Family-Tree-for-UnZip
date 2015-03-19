@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -156,6 +156,9 @@ static int disk_error OF((__GPRO));
 static ZCONST char Far CannotOpenZipfile[] =
   "error:  cannot open zipfile [ %s ]\n        %s\n";
 
+static ZCONST char Far NoSuchSegment[] =
+ "Bad archive segment value (%d > %d)";
+
 #if !defined(VMS) && !defined(AOS_VS) && !defined(CMS_MVS) && !defined(MACOS)
 # ifndef TANDEM
 #  if defined(ATH_BEO_THS_UNX) || defined(DOS_FLX_NLM_OS2_W32)
@@ -242,65 +245,249 @@ static ZCONST char SetxattrFailed[] =
 
 
 
-/******************************/
-/* Function open_input_file() */
-/******************************/
-
-int open_input_file(__G)    /* return 1 if open failed */
-    __GDEF
+/**************************/
+/* Function open_infile() */
+/**************************/
+int open_infile(__G__ which)
+  __GDEF
+  int which;            /* 0: Primary archive; 1: Segment archive. */
 {
-    /*
-     *  open the zipfile for reading and in BINARY mode to prevent cr/lf
-     *  translation, which would corrupt the bitstreams
-     */
+  /* Open an archive (zipfile) for reading and in BINARY mode to
+   * prevent CR/LF translation, which would corrupt the data.
+   * Return 0: success; 1: failure.
+   */
+
+  char *fn;
+  zipfd_t *pfd;
+
+  if (which == OIF_PRIMARY)
+  {
+    fn = G.zipfn;               /* Primary archive file name (".zip"). */
+    pfd = &G.zipfd;             /* Primary archive file descr/pointer. */
+  }
+  else
+  {
+    fn = G.zipfn_sgmnt;         /* Segment archive file name (".zXX"). */
+    pfd = &G.zipfd_sgmnt;       /* Segment archive file descr/pointer. */
+  }
 
 #ifdef VMS
-    G.zipfd = open(G.zipfn, O_RDONLY, 0, OPNZIP_RMS_ARGS);
+    *pfd = open( fn, O_RDONLY, 0, OPNZIP_RMS_ARGS);
 #else /* def VMS */
 # ifdef MACOS
-    G.zipfd = open(G.zipfn, 0);
+    *pfd = open( fn, 0);
 # else /* def MACOS */
 #  ifdef CMS_MVS
-    G.zipfd = vmmvs_open_infile(__G);
+    *pfd = vmmvs_open_infile(__G fn, pfd);
 #  else /* def CMS_MVS */
     if (G.zipstdin)
     {
         /* Archive is stdin.  No need to open it. */
 #   ifdef USE_STRM_INPUT
-        G.zipfd = stdin;
+        *pfd = stdin;
 #   else /* def USE_STRM_INPUT */
-        G.zipfd = STDIN_FILENO;
+        *pfd = STDIN_FILENO;
 #   endif /* def USE_STRM_INPUT */
     }
     else
     {
         /* Archive is plain file (we hope). */
 #   ifdef USE_STRM_INPUT
-        G.zipfd = fopen(G.zipfn, FOPR);
+        *pfd = fopen( fn, FOPR);
 #   else /* def USE_STRM_INPUT */
-        G.zipfd = open(G.zipfn, O_RDONLY | O_BINARY);
+        *pfd = open( fn, O_RDONLY | O_BINARY);
 #   endif /* def USE_STRM_INPUT */
     }
 #  endif /* def CMS_MVS [else] */
 # endif /* def MACOS [else] */
 #endif /* def VMS [else] */
 
-#ifdef USE_STRM_INPUT
-    if (G.zipfd == NULL)
-#else /* def USE_STRM_INPUT */
-    /* if (G.zipfd < 0) */  /* no good for Windows CE port */
-    if (G.zipfd == -1)
-#endif /* def USE_STRM_INPUT [else] */
+    if (!fd_is_valid( *pfd))
     {
         Info(slide, 0x401, ((char *)slide, LoadFarString(CannotOpenZipfile),
-          G.zipfn, strerror(errno)));
+          fn, strerror(errno)));
         return 1;
     }
     return 0;
 
-} /* end function open_input_file() */
+} /* open_infile(). */
 
 
+/***************************/
+/* Function close_infile() */
+/***************************/
+int close_infile( __G__ pfd)
+  __GDEF
+  zipfd_t *pfd;
+{
+  int sts;
+
+  if (fd_is_valid( *pfd))
+  {
+#ifdef USE_STRM_INPUT
+    sts = fclose( *pfd);
+    *pfd = NULL;
+#else /* def USE_STRM_INPUT */
+    sts = close( *pfd);
+    *pfd = -1;
+#endif /* def USE_STRM_INPUT [else] */
+  }
+
+  return sts;
+} /* close_infile(). */
+
+
+/***********************************/
+/* Function set_zipfn_sgmnt_name() */
+/***********************************/
+int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
+  __GDEF
+  zuvl_t sgmnt_nr;
+{
+  char *suffix;
+  int sufx_len;
+
+/* sizeof( ".z65535") == 8 should be safe. */
+#define SGMNT_NAME_BOOST 8
+
+  if (sgmnt_nr > G.ecrec.number_this_disk)
+  {
+    /* Segment number greater than (max?) central-dir disk number. */
+    Info(slide, 1, ((char *)slide, LoadFarString(NoSuchSegment),
+     sgmnt_nr, G.ecrec.number_this_disk));
+    return 1;
+  }
+
+  if (G.zipfn_sgmnt == NULL)
+  {
+    G.zipfn_sgmnt_size = strlen(G.zipfn)+ SGMNT_NAME_BOOST;
+    if ((G.zipfn_sgmnt = izu_malloc(G.zipfn_sgmnt_size)) == NULL)
+    {
+      G.zipfn_sgmnt_size = -1;
+      return 1;
+    }
+  }
+  else
+  {
+    if (G.zipfn_sgmnt_size < (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST)
+    {
+      G.zipfn_sgmnt_size = strlen(G.zipfn)+ SGMNT_NAME_BOOST;
+      izu_free(G.zipfn_sgmnt);
+      if ((G.zipfn_sgmnt = izu_malloc(G.zipfn_sgmnt_size)) == NULL)
+      {
+        G.zipfn_sgmnt_size = -1;
+        return 1;
+      }
+    }
+  }
+
+
+  if (sgmnt_nr == G.ecrec.number_this_disk)
+  {
+    zfstrcpy(G.zipfn_sgmnt, G.zipfn);
+    return 0;           /* Last segment.  Name already ".zip." */
+  }
+
+#ifdef VMS
+
+  /* A VMS archive file spec may include a version number (";nnn"),
+   * confusing any simple scheme (like the one below).  $PARSE can
+   * easily replace one file type with another (and null out the version
+   * number), so use it, instead.
+   */
+  vms_sgmnt_name( G.zipfn_sgmnt, G.zipfn, (sgmnt_nr+ 1)); 
+
+#else /* def VMS */
+
+  zfstrcpy(G.zipfn_sgmnt, G.zipfn);
+  /* Expect to find ".zXX" at the end of the segment file name. */
+  sufx_len = IZ_MAX( 0, ((int)strlen(G.zipfn_sgmnt)- 4));
+  suffix = G.zipfn_sgmnt+ sufx_len;
+
+  /* try find filename extension and set right position for add number */
+  if (zfstrcmp(suffix, ZSUFX) == 0)
+  {
+    suffix += 2;        /* Point to digits after ".z". */
+# ifdef ZSUFX2
+  }
+  else if (zfstrcmp(suffix, ZSUFX2) == 0)       /* Check alternate suffix. */
+  {
+    suffix[1] = 'z';    /* Should be always lowercase??? */
+    suffix += 2;        /* Point to digits after ".z". */
+# endif
+  }
+  else
+  {
+    zfstrcpy( (suffix+ sufx_len), ZSUFX);
+    suffix += sufx_len+ 2;
+  }
+  /* Insert the next segment number into the file name (G.zipfn_sgmnt). */
+  sprintf(suffix, "%02d", (sgmnt_nr+ 1));
+
+#endif /* def VMS [else] */
+
+  return 0;
+} /* set_zipfn_sgmnt_name(). */
+
+
+/********************************/
+/* Function open_infile_sgmnt() */
+/********************************/
+int open_infile_sgmnt(__G__ movement)
+  __GDEF
+  int movement;
+{
+  zipfd_t zipfd;
+  zipfd_t zipfd_sgmnt;
+
+  if (movement == 0)            /* Nothing to do. */
+    return 0;
+
+   zipfd = G.zipfd;
+   zipfd_sgmnt = G.zipfd_sgmnt;
+
+  /* Set the new segment file name. */
+  if (set_zipfn_sgmnt_name(G.sgmnt_nr+ movement))
+    return 1;
+
+  if (open_infile( __G OIF_SEGMENT))
+  {
+    /* TODO: ask for input and try it again */
+    /* error, load back old zipfn (it shouldn't be frequently) */
+    if (fd_is_valid(zipfd_sgmnt))
+    {
+      set_zipfn_sgmnt_name(G.sgmnt_nr);
+    }
+    else
+    {
+      /* Loading of central directory record probably??? */
+      izu_free(G.zipfn_sgmnt);
+      G.zipfn_sgmnt = NULL;
+    }
+
+    G.zipfd_sgmnt = zipfd_sgmnt;
+    return 1;
+  }
+
+  G.sgmnt_nr += movement;
+
+  /* close old file - yes, that's nasty solution */
+  /* Switch I/O to the new segment. */
+  G.zipfd = G.zipfd_sgmnt;
+  G.zipfd_sgmnt = zipfd;                /* Old G.zipfd. */
+  CLOSE_INFILE( &G.zipfd_sgmnt);
+  if (fd_is_valid(zipfd_sgmnt))         /* Old G.zipfd_sgmnt. */
+  {
+    G.zipfd_sgmnt = G.zipfd;
+  }
+  else
+  {
+    izu_free(G.zipfn_sgmnt);            /* We must clean it now. */
+    G.zipfn_sgmnt = NULL;
+  }
+
+  return 0;
+}
 
 
 #if !defined(VMS) && !defined(AOS_VS) && !defined(CMS_MVS) && !defined(MACOS)
@@ -707,11 +894,27 @@ unsigned readbuf(__G__ buf, size)   /* return number of bytes read into buf */
     unsigned n;
 
     n = size;
-    while (size) {
-        if (G.incnt <= 0) {
+    while (size)
+    {
+        if (G.incnt <= 0)
+        {
             if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
-                return (n-size);
-            else if (G.incnt < 0) {
+            {
+              /* read() got no data.  If the srchive is segmented, then
+               * try again with the next segment file.
+               */
+              /*if(fd_is_valid(G.zipfd_sgmnt)) {*/
+              if (G.ecrec.number_this_disk > 0)
+              {
+                if ((open_infile_sgmnt( 1) != 0) ||
+                 (G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
+                    return (n-size);    /* Return short retry size. */
+              } else
+                 return (n-size);       /* Return short size. */
+            }
+
+            if (G.incnt < 0)
+            {
                 /* another hack, but no real harm copying same thing twice */
                 (*G.message)((zvoid *)&G,
                   (uch *)LoadFarString(ReadError),  /* CANNOT use slide */
@@ -745,16 +948,33 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
 {
     if (G.mem_mode)
         return EOF;
-    if (G.csize <= 0) {
+    if (G.csize <= 0)
+    {
         G.csize--;             /* for tests done after exploding */
         G.incnt = 0;
         return EOF;
     }
-    if (G.incnt <= 0) {
-        if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0) {
-            return EOF;
-        } else if (G.incnt < 0) {  /* "fail" (abort, retry, ...) returns this */
-            /* another hack, but no real harm copying same thing twice */
+    if (G.incnt <= 0)
+    {
+        if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
+        {
+            /* read() got no data.  If the srchive is segmented, then
+             * try again with the next segment file.
+             */
+            /* if(fd_is_valid(G.zipfd_sgmnt)) { */
+            if (G.ecrec.number_this_disk > 0)
+            {
+              if ((open_infile_sgmnt( 1) != 0) ||
+               (G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
+                return EOF;
+            } else
+              return EOF;
+        }
+
+        if (G.incnt < 0)
+        {   /* "fail" (abort, retry, ...) returns this.
+             * another hack, but no real harm copying same thing twice.
+             */
             (*G.message)((zvoid *)&G,
               (uch *)LoadFarString(ReadError),
               (ulg)strlen(LoadFarString(ReadError)), 0x401);
@@ -879,53 +1099,146 @@ int seek_zipf(__G__ abs_offset)
  *  "proper offset" (i.e., if there were no extra bytes prepended);
  *  cur_zipfile_bufstart contains the corrected offset.
  *
- *  Since seek_zipf() is never used during decompression, it is safe to
- *  use the slide[] buffer for the error message.
+ *  Because seek_zipf() is never used during decompression, it is safe
+ *  to use the slide[] buffer for the error message.
  *
  * returns PK error codes:
  *  PK_BADERR if effective offset in zipfile is negative
  *  PK_EOF if seeking past end of zipfile
  *  PK_OK when seek was successful
  */
-    zoff_t request = abs_offset + G.extra_bytes;
-    zoff_t inbuf_offset = request % INBUFSIZ;
-    zoff_t bufstart = request - inbuf_offset;
 
-    if (request < 0) {
+/*     zoff_t request = abs_offset + G.extra_bytes; */
+/*     zoff_t inbuf_offset = request % INBUFSIZ; */
+/*     zoff_t bufstart = request - inbuf_offset; */
+
+  zoff_t request;
+  zoff_t inbuf_offset;
+  zoff_t bufstart;
+
+  request = abs_offset + G.extra_bytes;
+
+#if 0 /* Pre-segment-support. */
+  if (request < 0)
+  {
+    Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
+     2, G.zipfn, LoadFarString(ReportMsg)));
+    return PK_BADERR;
+  }
+#endif /* 0 */ /* Pre-segment-support. */
+
+  while (request < 0)
+  {
+    if (G.sgmnt_size == 0)
+    {
+      if ((G.sgmnt_nr == 0) || open_infile_sgmnt(-1))
+      {
         Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
-             G.zipfn, LoadFarString(ReportMsg)));
-        return(PK_BADERR);
-    } else if (bufstart != G.cur_zipfile_bufstart) {
-        Trace((stderr,
-          "fpos_zip: abs_offset = %s, G.extra_bytes = %s\n",
-          FmZofft(abs_offset, NULL, NULL),
-          FmZofft(G.extra_bytes, NULL, NULL)));
+         3, G.zipfn, LoadFarString(ReportMsg)));
+        return PK_BADERR;
+      }
+      /* Get the new segment size, and calculate the new offset.
+       * This is where G.sgmnt_size gets a real (non-zero) value.
+       */
 #ifdef USE_STRM_INPUT
-        zfseeko(G.zipfd, bufstart, SEEK_SET);
-        G.cur_zipfile_bufstart = zftello(G.zipfd);
+      zfseeko(G.zipfd, 0, SEEK_END);
+      G.sgmnt_size = zftello(G.zipfd);
 #else /* def USE_STRM_INPUT */
-        G.cur_zipfile_bufstart = zlseek(G.zipfd, bufstart, SEEK_SET);
-#endif /* def USE_STRM_INPUT [else] */
-        Trace((stderr,
-          "       request = %s, (abs+extra) = %s, inbuf_offset = %s\n",
-          FmZofft(request, NULL, NULL),
-          FmZofft((abs_offset+G.extra_bytes), NULL, NULL),
-          FmZofft(inbuf_offset, NULL, NULL)));
-        Trace((stderr, "       bufstart = %s, cur_zipfile_bufstart = %s\n",
-          FmZofft(bufstart, NULL, NULL),
-          FmZofft(G.cur_zipfile_bufstart, NULL, NULL)));
-        if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) <= 0)
-            return(PK_EOF);
-        G.incnt -= (int)inbuf_offset;
-        G.inptr = G.inbuf + (int)inbuf_offset;
-    } else {
-        G.incnt += (int)(G.inptr- G.inbuf) - (int)inbuf_offset;
-        G.inptr = G.inbuf + (int)inbuf_offset;
+      G.sgmnt_size = zlseek(G.zipfd, 0, SEEK_END);
+#endif /* USE_STRM_INPUT */
+      request += G.sgmnt_size;
     }
-    return(PK_OK);
-} /* end function seek_zipf() */
+    else
+    {
+      /* SMSd.  Can we trust that all segments have the same size? */
+      /* We know segment size(s?), so we can calculate against
+       * abs_offset and sgmnt_nr, and open the segment file which we
+       * actually need.
+       */
+      unsigned int tmp_disk = G.ecrec.number_this_disk;
 
+      while (request < 0)
+      {
+        tmp_disk--;
+        request += G.sgmnt_size;
+      }
+      /* for same as actual disk (movement == 0) return 0  */
+      if (open_infile_sgmnt(tmp_disk - G.sgmnt_nr))
+      {
+          Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
+           4, G.zipfn, LoadFarString(ReportMsg)));
+          return PK_BADERR;
+      }
+    }
+    /* In both cases we need to refill buffer, so set
+     * G.cur_zipfile_bufstart negative (so that bufstart !=
+     * G.cur_zipfile_bufstart, below).
+     */
+    G.cur_zipfile_bufstart = -1;
+  }
 
+  inbuf_offset = request % INBUFSIZ;
+  bufstart = request - inbuf_offset;
+
+  if (bufstart != G.cur_zipfile_bufstart)
+  {
+    Trace((stderr,
+     "fpos_zip: abs_offset = %s, G.extra_bytes = %s\n",
+     FmZofft(abs_offset, NULL, NULL),
+     FmZofft(G.extra_bytes, NULL, NULL)));
+
+#ifdef USE_STRM_INPUT
+    zfseeko(G.zipfd, bufstart, SEEK_SET);
+    G.cur_zipfile_bufstart = zftello(G.zipfd);
+#else /* def USE_STRM_INPUT */
+    G.cur_zipfile_bufstart = zlseek(G.zipfd, bufstart, SEEK_SET);
+#endif /* def USE_STRM_INPUT [else] */
+
+    Trace((stderr,
+     "       request = %s, (abs+extra) = %s, inbuf_offset = %s\n",
+     FmZofft(request, NULL, NULL),
+     FmZofft((abs_offset+G.extra_bytes), NULL, NULL),
+     FmZofft(inbuf_offset, NULL, NULL)));
+    Trace((stderr, "       bufstart = %s, cur_zipfile_bufstart = %s\n",
+     FmZofft(bufstart, NULL, NULL),
+     FmZofft(G.cur_zipfile_bufstart, NULL, NULL)));
+
+    if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) < INBUFSIZ)
+    {
+      /* If we're not at the end of file, then we need move to the
+       * next segment file.
+       * TODO: Check if EOF, instead?
+       */ 
+      if (G.ecrec.number_this_disk != G.sgmnt_nr)
+      {
+        int tmp;
+
+        if (open_infile_sgmnt(1))
+          return PK_EOF; /*TODO: Add some new return code? */
+
+        /* append rest of data to buffer - it's important when we are only
+         * few bytes before EOF and want read CDR! Now it's more safe.
+         * Only some disk error could be wrong for us in that case.
+         */
+        tmp = read(G.zipfd, (char *)(G.inbuf+ G.incnt), (INBUFSIZ- G.incnt));
+        if (tmp <= 0)
+          return PK_EOF;
+
+        G.incnt += tmp;
+      }
+      else if (G.incnt <= 0)
+        return PK_EOF;
+    }
+    G.incnt -= (int)inbuf_offset;
+    G.inptr = G.inbuf + (int)inbuf_offset;
+  }
+  else
+  {
+    G.incnt += (int)(G.inptr- G.inbuf) - (int)inbuf_offset;
+    G.inptr = G.inbuf + (int)inbuf_offset;
+  }
+    return PK_OK;
+} /* seek_zipf(). */
 
 
 /************************/

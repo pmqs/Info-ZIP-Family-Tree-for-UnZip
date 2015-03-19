@@ -600,7 +600,8 @@ int zi_opts(__G__ pargc, pargv)
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
-        if(option == o_BAD_ERR) {
+        if (option == o_BAD_ERR)
+        {
           FREE_NON_NULL( value);        /* Leaving early.  Free it. */
           UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return(PK_PARAM);

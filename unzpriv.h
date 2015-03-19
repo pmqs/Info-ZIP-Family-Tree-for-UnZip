@@ -659,7 +659,6 @@
 
 #ifdef CMS_MVS
 #  include "vmmvs.h"
-#  define CLOSE_INFILE()  close_infile(__G)
 #endif
 
 /*---------------------------------------------------------------------------
@@ -898,7 +897,7 @@ void izu_md_check( void);
 #  define DATE_SEPCHAR  '-'
 #endif
 #ifndef CLOSE_INFILE
-#  define CLOSE_INFILE()  close(G.zipfd)
+#  define CLOSE_INFILE( pfd)  close_infile(__G__ pfd)
 #endif
 #ifndef RETURN
 #  define RETURN        return  /* only used in main() */
@@ -2019,6 +2018,10 @@ struct file_list {
 #define GETPATH           4    /* retrieve the complete path and free it */
 #define END               5    /* free root path prior to exiting program */
 
+/* Input archive file options for fileio.c:open_infile(). */
+#define OIF_PRIMARY     0       /* Primary archive (".zip") file. */
+#define OIF_SEGMENT     1       /* Segment archive (".zXX") file. */
+
 /* version_made_by codes (central dir):  make sure these */
 /*  are not defined on their respective systems!! */
 #define FS_FAT_           0    /* filesystem used by MS-DOS, OS/2, Win32 */
@@ -2356,6 +2359,13 @@ struct file_list {
      typedef unsigned int    gid_t;
 # endif
 #endif
+
+    /* Archive file descriptor/pointer. */
+#ifdef USE_STRM_INPUT
+    typedef FILE *zipfd_t;              /* Stdio file pointer. */
+#else /* def USE_STRM_INPUT */
+    typedef int   zipfd_t;              /* UNIX I/O file descriptor. */
+#endif /* def USE_STRM_INPUT */
 
 #if (defined(GOT_UTIMBUF) || defined(sgi) || defined(ATARI))
    typedef struct utimbuf ztimbuf;
@@ -2756,9 +2766,10 @@ void     fnprint                 OF((__GPRO));
     Functions in fileio.c:
   ---------------------------------------------------------------------------*/
 
-
-int      open_input_file      OF((__GPRO));
+int      close_infile         OF((__GPRO__ zipfd_t *pfd));
+int      open_infile          OF((__GPRO__ int which));
 int      open_outfile         OF((__GPRO));                    /* also vms.c */
+int      set_zipfn_sgmnt_name OF((__GPRO__ zuvl_t sgmnt_nr));
 void     undefer_input        OF((__GPRO));
 void     defer_leftover_input OF((__GPRO));
 unsigned readbuf              OF((__GPRO__ char *buf, register unsigned len));
@@ -2984,8 +2995,10 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 
 #ifdef CMS_MVS
    extent getVMMVSexfield     OF((char *type, uch *ef_block, unsigned datalen));
-   FILE  *vmmvs_open_infile   OF((__GPRO));                       /* vmmvs.c */
+   FILE  *vmmvs_open_infile   OF((__GPRO__ char *fn));            /* vmmvs.c */
+#if 0
    void   close_infile        OF((__GPRO));                       /* vmmvs.c */
+#endif /* 0 */
 #endif
 
 /*---------------------------------------------------------------------------
@@ -3023,6 +3036,9 @@ int    huft_build                OF((__GPRO__ ZCONST unsigned *b, unsigned n,
 # ifdef ENABLE_USER_PROGRESS
    int    establish_ctrl_t    OF((void ctrl_t_ast()));              /* vms.c */
 # endif /* def ENABLE_USER_PROGRESS */
+   int vms_sgmnt_name         OF((char *fn_sgmnt,                   /* vms.c */
+                                  char *fn_primary,
+                                  zuvl_t nr_sgmnt));
 #endif /* def VMS */
 
 /*---------------------------------------------------------------------------
@@ -3179,13 +3195,20 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
    /* ``Replace'' the unbuffered UNIX style I/O function with similar
     * standard C functions from <stdio.h>.
     */
-#  define read(fd,buf,n) fread((buf),1,(n),(FILE *)(fd))
-#  ifdef zlseek
-#    undef zlseek
-#  endif
-#  define zlseek(fd,o,w) zfseeko((FILE *)(fd),(o),(w))
-#  define close(fd) fclose((FILE *)(fd))
-#endif /* USE_STRM_INPUT */
+# define read(fd,buf,n) fread((buf),1,(n),(FILE *)(fd))
+# ifdef zlseek
+#  undef zlseek
+# endif
+# define zlseek(fd,o,w) zfseeko((FILE *)(fd),(o),(w))
+# define close(fd) fclose((FILE *)(fd))
+# define fd_is_valid(fd) (fd != NULL)
+#else /* def USE_STRM_INPUT */
+# ifdef _WIN32_WCE                      /* Really necessary? */
+#  define fd_is_valid(fd) (fd != -1)
+# else /* def _WIN32_WCE [else] */
+#  define fd_is_valid(fd) (fd >= 0)
+# endif /* def _WIN32_WCE [else] */
+#endif /* def USE_STRM_INPUT [else] */
 
 /* The return value of the Info() "macro function" is never checked in
  * UnZip. Otherwise, to get the same behaviour as for (*G.message)(), the
