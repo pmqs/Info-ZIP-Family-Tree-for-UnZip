@@ -1484,7 +1484,8 @@ static int extract_archive( __G__ lastchance)   /* Return PK-type error code. */
 
 # define ANS ((char *)(slide + (extent)(WSIZE>> 1)))
 
-static int check_auto_dest_dir()
+static int check_auto_dest_dir( __G)
+  __GDEF
 {
   int error_auto_dest = 0;
 
@@ -2017,7 +2018,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
             want_blank = 1;
 
         /* Check auto destination directory. */
-        if (check_auto_dest_dir() != 0)
+        if (check_auto_dest_dir( __G) != 0)
         {
             /* Bad auto dest dir.  Don't process archive. */
             error = IZ_BADDEST;

@@ -195,6 +195,9 @@ Uz_Globs *globalsCtor()
     G.mpause = UzpMorePause;
 #endif
     G.decr_passwd = UzpPassword;
+    G.zipfn_sgmnt = NULL;               /* Archive segment name */
+    G.zipfn_sgmnt_size = 0;             /* Archive segment size */
+    G.zipfd_sgmnt = ZIPFD_INVALID;      /* Archive segment file descr/pntr */
 #endif /* !FUNZIP */
 
     G.query_fp = stdin;         /* Change to terminal if streaming archive. */

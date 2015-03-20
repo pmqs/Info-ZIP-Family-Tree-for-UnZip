@@ -278,7 +278,7 @@ int open_infile(__G__ which)
     *pfd = open( fn, 0);
 # else /* def MACOS */
 #  ifdef CMS_MVS
-    *pfd = vmmvs_open_infile(__G fn, pfd);
+    *pfd = vmmvs_open_infile(__G__ fn, pfd);
 #  else /* def CMS_MVS */
     if (G.zipstdin)
     {
@@ -320,17 +320,16 @@ int close_infile( __G__ pfd)
   __GDEF
   zipfd_t *pfd;
 {
-  int sts;
+  int sts = 0;
 
   if (fd_is_valid( *pfd))
   {
 #ifdef USE_STRM_INPUT
     sts = fclose( *pfd);
-    *pfd = NULL;
 #else /* def USE_STRM_INPUT */
     sts = close( *pfd);
-    *pfd = -1;
 #endif /* def USE_STRM_INPUT [else] */
+    *pfd = ZIPFD_INVALID;
   }
 
   return sts;
@@ -360,7 +359,7 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
 
   if (G.zipfn_sgmnt == NULL)
   {
-    G.zipfn_sgmnt_size = strlen(G.zipfn)+ SGMNT_NAME_BOOST;
+    G.zipfn_sgmnt_size = (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST;
     if ((G.zipfn_sgmnt = izu_malloc(G.zipfn_sgmnt_size)) == NULL)
     {
       G.zipfn_sgmnt_size = -1;
@@ -371,7 +370,7 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
   {
     if (G.zipfn_sgmnt_size < (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST)
     {
-      G.zipfn_sgmnt_size = strlen(G.zipfn)+ SGMNT_NAME_BOOST;
+      G.zipfn_sgmnt_size = (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST;
       izu_free(G.zipfn_sgmnt);
       if ((G.zipfn_sgmnt = izu_malloc(G.zipfn_sgmnt_size)) == NULL)
       {
@@ -447,16 +446,16 @@ int open_infile_sgmnt(__G__ movement)
    zipfd_sgmnt = G.zipfd_sgmnt;
 
   /* Set the new segment file name. */
-  if (set_zipfn_sgmnt_name(G.sgmnt_nr+ movement))
+  if (set_zipfn_sgmnt_name( __G__ G.sgmnt_nr+ movement))
     return 1;
 
-  if (open_infile( __G OIF_SEGMENT))
+  if (open_infile( __G__ OIF_SEGMENT))
   {
     /* TODO: ask for input and try it again */
     /* error, load back old zipfn (it shouldn't be frequently) */
     if (fd_is_valid(zipfd_sgmnt))
     {
-      set_zipfn_sgmnt_name(G.sgmnt_nr);
+      set_zipfn_sgmnt_name( __G__ G.sgmnt_nr);
     }
     else
     {
@@ -906,7 +905,7 @@ unsigned readbuf(__G__ buf, size)   /* return number of bytes read into buf */
               /*if(fd_is_valid(G.zipfd_sgmnt)) {*/
               if (G.ecrec.number_this_disk > 0)
               {
-                if ((open_infile_sgmnt( 1) != 0) ||
+                if ((open_infile_sgmnt( __G__ 1) != 0) ||
                  (G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
                     return (n-size);    /* Return short retry size. */
               } else
@@ -964,7 +963,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
             /* if(fd_is_valid(G.zipfd_sgmnt)) { */
             if (G.ecrec.number_this_disk > 0)
             {
-              if ((open_infile_sgmnt( 1) != 0) ||
+              if ((open_infile_sgmnt( __G__ 1) != 0) ||
                (G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
                 return EOF;
             } else
@@ -1122,7 +1121,7 @@ int seek_zipf(__G__ abs_offset)
   if (request < 0)
   {
     Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
-     2, G.zipfn, LoadFarString(ReportMsg)));
+     G.zipfn, 11, LoadFarString(ReportMsg)));
     return PK_BADERR;
   }
 #endif /* 0 */ /* Pre-segment-support. */
@@ -1131,10 +1130,10 @@ int seek_zipf(__G__ abs_offset)
   {
     if (G.sgmnt_size == 0)
     {
-      if ((G.sgmnt_nr == 0) || open_infile_sgmnt(-1))
+      if ((G.sgmnt_nr == 0) || open_infile_sgmnt( __G__ -1))
       {
         Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
-         3, G.zipfn, LoadFarString(ReportMsg)));
+         G.zipfn, 12, LoadFarString(ReportMsg)));
         return PK_BADERR;
       }
       /* Get the new segment size, and calculate the new offset.
@@ -1163,10 +1162,10 @@ int seek_zipf(__G__ abs_offset)
         request += G.sgmnt_size;
       }
       /* for same as actual disk (movement == 0) return 0  */
-      if (open_infile_sgmnt(tmp_disk - G.sgmnt_nr))
+      if (open_infile_sgmnt( __G__ (tmp_disk- G.sgmnt_nr)))
       {
           Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
-           4, G.zipfn, LoadFarString(ReportMsg)));
+           G.zipfn, 13, LoadFarString(ReportMsg)));
           return PK_BADERR;
       }
     }
@@ -1213,7 +1212,7 @@ int seek_zipf(__G__ abs_offset)
       {
         int tmp;
 
-        if (open_infile_sgmnt(1))
+        if (open_infile_sgmnt( __G__ 1))
           return PK_EOF; /*TODO: Add some new return code? */
 
         /* append rest of data to buffer - it's important when we are only

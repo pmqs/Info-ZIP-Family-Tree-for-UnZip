@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -327,11 +327,11 @@ unsigned zfwrite(buf, item_size, nb)
  * Here, writing salt and password verification.
  */
 void aes_crypthead( OFT( ZCONST uch *)salt,
-                    OFT( uch) salt_len,
+                    OFT( int) salt_len,
                     OFT( ZCONST uch *)pwd_verifier)
 #  ifdef NO_PROTO
     ZCONST uch *salt;
-    uch salt_len;
+    int salt_len;
     ZCONST uch *pwd_verifier;
 #  endif /* def NO_PROTO */
 {
@@ -572,7 +572,7 @@ int zipcloak(z, passwd)
 #   ifdef IZ_CRYPT_AES_WG
 #    define HEAD_LEN head_len   /* Variable header length. */
     int head_len;               /* Variable encryption header length. */
-    uch salt_len = 0;           /* AES salt length.  (Init'd to hush cmplr.) */
+    int salt_len = 0;           /* AES salt length.  (Init'd to hush cmplr.) */
 #   else /* def IZ_CRYPT_AES_WG */
 #    define HEAD_LEN RAND_HEAD_LEN      /* Constant trad. header length. */
 #   endif /* def IZ_CRYPT_AES_WG [else] */

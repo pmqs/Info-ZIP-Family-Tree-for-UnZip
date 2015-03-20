@@ -60,9 +60,12 @@ the future.
 
       #include <limits.h> instead of "limits.h" in aes.h.
 
+      Changing some "long" types to "int" or "sha1_32t" in hmac.c and
+      hmac.h to accommodate systems (like Mac OS X on Intel) where a
+      64-bit "long" type caused bad results.
+
 Comments in the code identify the changes.  (Look for "Info-ZIP".)  The
-original files are preserved in an "original_files" subdirectory, for
-reference.
+original files are preserved in an "orig" subdirectory, for reference.
 
    The name "IZ_AES_WG" (Info-ZIP AES WinZip/Gladman) is used by
 Info-ZIP to identify our implementation of WinZip AES encryption of Zip
@@ -97,7 +100,7 @@ however, different UnZip and Zip versions may need particular IZ_AES_WG
 kit versions, so, before downloading a particular IZ_AES_WG source kit,
 it would be best to consult the INSTALL files in the UnZip and Zip
 source kits, and the the Version History section of the current version
-of this document: 
+of this document:
 
       ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
 
@@ -116,7 +119,7 @@ legally allowed to download and use this encryption software.
 
    Note that many of the servers that distribute Info-ZIP software are
 situated in the United States.  See the latest version of file
-USexport_AES_WG.msg for information regarding export from the US. 
+USexport_AES_WG.msg for information regarding export from the US.
 Downloads of Info-ZIP encryption software are subject to the limitations
 noted.
 
@@ -142,21 +145,26 @@ it.
       IZ_AES_WG Version History
       -------------------------
 
+      1.4  2015-03-23  Changed "long" types to "int" for counters, and
+                       to "sha1_32t" for apparent 32-bit byte groups,
+                       where a 64-bit "long" type caused bad results (on
+                       Mac OS X, Intel).  (hmac.c, hmac.h) [SMS]
       1.3  2013-11-18  Renamed USexport.msg to USexport_AES_WG.msg to
                        distinguish it from the Traditional encryption
-                       notice, USexport.msg.
+                       notice, USexport.msg.  [SMS]
       1.2  2013-04-12  Avoid <sys/isa_defs.h> on __sun systems with
-                       __sparc defined (for SunOS 4.x).
+                       __sparc defined (for SunOS 4.x).  (brg_endian.h)
+                       [SMS]
       1.1  2012-12-31  #include <limits.h> instead of "limits.h" in
-                       aes.h (for VAX C).  (SMS)
-      1.0  2011-07-07  Minor documentation changes.  (SMS, EG)
+                       aes.h (for VAX C).  [SMS]
+      1.0  2011-07-07  Minor documentation changes.  [SMS, EG]
                        Compatible with UnZip 6.10 and Zip 3.1.
                        US Department of Commerce BIS notified.
-      0.5  2011-07-07  Minor documentation changes.  (SMS, EG)
+      0.5  2011-07-07  Minor documentation changes.  [SMS, EG]
                        Compatible with UnZip 6.10 and Zip 3.1.
-      0.4  2011-06-25  Minor documentation changes.  (SMS, EG)
+      0.4  2011-06-25  Minor documentation changes.  [SMS, EG]
                        Compatible with UnZip 6.10 and Zip 3.1.
-      0.3  2011-06-22  Initial beta version.  (SMS, EG)
-      0.2  2011-06-20  Minor documentation updates.  (EG)
-      0.1  2011-06-17  Initial alpha version.  (SMS)
+      0.3  2011-06-22  Initial beta version.  [SMS, EG]
+      0.2  2011-06-20  Minor documentation updates.  [EG]
+      0.1  2011-06-17  Initial alpha version.  [SMS]
 

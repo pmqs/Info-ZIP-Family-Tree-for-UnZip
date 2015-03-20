@@ -608,13 +608,19 @@ Features added (or removed):
    Windows, but not tested. (extract.c, fileio.c, globals.c, globals.h,
    process.c, unix/unix.c, unix/unxcfg.h, unzip.c, unzpriv.h) [SMS]
  - Added tentative, experimental-grade support for segmented
-   (multi-part) archives.  Patch contributed by pstodulk.
+   (multi-part) archives.  Patch contributed by Petr Stodulka.
    Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=4&t=455
    Currently, only multiple segment files on one volume ("split"
    archive), with name extensions ".z01", ".z02", ..., ".zip" are
    supported; multiple volumes ("spanned" archive) are not.
    (extract.c, fileio.c, globals.c, globals.h, process.c, unzip.c,
-   unzpriv.h, vms/vms.c, zipinfo.c, zos/vmmvs.c) [pstodulk, SMS]
+   unzpriv.h, vms/vms.c, zipinfo.c, zos/vmmvs.c) [Petr Stodulka, SMS]
+
+6.10c17 (18 Mar 2015)
+ - No news.
+
+6.10c18 (20 Mar 2015):
+ - No news.
 
 
 Bugs fixed:
@@ -1674,3 +1680,18 @@ Bugs fixed:
    reorganization changed some variable names in non-Windows-specific
    modules.  (consts.h, extract.c, globals.h, unix/unix.c, unzip.c,
    unzpriv.h, vms/vms.c) [SMS] 
+
+6.10c17 (18 Mar 2015)
+ - Added a type cast to clear a compiler complaint.  (fileio.c) [SMS]
+ - Changed an archive size variable type from z_uint4 to zoff_t for
+   better agreement with run-time seek/tell functions. (globals.h) [SMS]
+
+6.10c18 (18 Mar 2015)
+ - Repaired damage to REENTRANT-sensitive code (such as the Windows DLL)
+   in versions 6.10c16 and 6.10c17.  (extract.c, fileio.c, process.c)
+   [SMS]
+ - Missing initialization of some variables related to segmented
+   archives could cause spurious error messages: "error:  Unexpected
+   end-of-file reading XXX.zip."  (globals.c, unzpriv.h) [Petr Stodulka,
+   SMS]
+  

@@ -1438,7 +1438,7 @@ static int extract_dest_dir( __G)       /* Return PK-type error code. */
 # define UNKN_PPMD TRUE         /* PPMd (98) unknown */
 #endif
 
-#ifdef USE_WAVP
+#ifdef WAVP_SUPPORT
 # define UNKN_WAVP (G.crec.compression_method != WAVPACKED)
 #else
 # define UNKN_WAVP TRUE         /* WavPack (97) unknown */
@@ -2162,6 +2162,7 @@ static int extract_test_trailer(__G__ n_fil, n_bad_pwd, n_skip, err_in_arch)
 #endif
 
 void action_msg( __G__ action, flag)
+  __GDEF
   char *action;
   int flag;                             /* 0: Name only; 1: Name + [type]. */
 {
@@ -2279,7 +2280,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
         if (!uO.qflag)
         {
-            action_msg( "test", 0);
+            action_msg( __G__ "test", 0);
         }
     } else {
 #ifdef DLL
@@ -2371,12 +2372,12 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #ifdef SYMLINKS
                 if (G.symlnk)   /* can also be deflated, but rarer... */
                 {
-                    action_msg( "link", 0);
+                    action_msg( __G__ "link", 0);
                 }
                 else
 #endif /* SYMLINKS */
                 {
-                    action_msg( "extract", 1);
+                    action_msg( __G__ "extract", 1);
 #ifdef ENABLE_USER_PROGRESS
                     G.action_msg_str = "extract";
 #endif /* def ENABLE_USER_PROGRESS */
@@ -2425,7 +2426,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( LoadFarStringSmall(Unshrink), 1);
+                action_msg( __G__ LoadFarStringSmall(Unshrink), 1);
               }
             }
             if ((r = unshrink(__G)) != PK_COOL) {
@@ -2461,7 +2462,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( "unreduc", 1);
+                action_msg( __G__ "unreduc", 1);
               }
             }
             if ((r = unreduce(__G)) != PK_COOL) {
@@ -2480,7 +2481,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( "explod", 1);
+                action_msg( __G__ "explod", 1);
               }
             }
             if ((r = explode(__G)) != 0) {
@@ -2540,7 +2541,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( "inflat", 1);
+                action_msg( __G__ "inflat", 1);
               }
             }
 
@@ -2581,7 +2582,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( "bunzipp", 1);
+                action_msg( __G__ "bunzipp", 1);
               }
             }
 
@@ -2617,7 +2618,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( "unLZMA", 1);
+                action_msg( __G__ "unLZMA", 1);
               }
             }
 
@@ -2653,7 +2654,7 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
 #endif /* def ENABLE_USER_PROGRESS */
               if (QCOND2)
               {
-                action_msg( "unPPMd", 1);
+                action_msg( __G__ "unPPMd", 1);
               }
             }
 
@@ -4114,7 +4115,7 @@ int extract_or_test_stream( __G)        /* Return PK-type error code. */
         /* Set the Java CAFE flag by the first extra field found. */
         if (uO.java_cafe == 0)
         {
-          ef_scan_for_cafe( G.extra_field,
+          ef_scan_for_cafe( __G__ G.extra_field,
            (long)G.lrec.extra_field_length);
         }
       } /* if (error == PK_OK) */
@@ -4375,7 +4376,7 @@ int extract_or_test_stream( __G)        /* Return PK-type error code. */
   if (error > error_in_archive)
       error_in_archive = error;
 
-  error_in_archive = extract_test_trailer( (ulg)members_processed,
+  error_in_archive = extract_test_trailer( __G__ (ulg)members_processed,
    num_bad_pwd, num_skipped, error_in_archive);
 
   return error;
@@ -4388,6 +4389,7 @@ int extract_or_test_stream( __G)        /* Return PK-type error code. */
 /*  Function close_segment().  */
 /*******************************/
 static void close_segment(__G)
+  __GDEF
 {
   if (G.zipfn_sgmnt != NULL)
   {
@@ -4428,9 +4430,9 @@ static int find_local_header( __G__ perr_in_arch, filnum, pold_extra_bytes)
     if (!fd_is_valid(G.zipfd_sgmnt) || G.sgmnt_nr != G.pInfo->diskstart)
     {
       if (fd_is_valid(G.zipfd_sgmnt))
-        close_segment();                /* We need a different file. */
+        close_segment( __G);            /* We need a different file. */
 
-      set_zipfn_sgmnt_name(G.pInfo->diskstart);
+      set_zipfn_sgmnt_name( __G__ G.pInfo->diskstart);
       if (open_infile( __G__ OIF_SEGMENT))
       {
         /* TODO: ask for place/path of zipfile, see wild*!, ... */
@@ -4479,7 +4481,7 @@ static int find_local_header( __G__ perr_in_arch, filnum, pold_extra_bytes)
   if (request < 0)
   {
     Info(slide, 0x401, ((char *)slide, LoadFarStringSmall(SeekMsg),
-     1, G.zipfn, LoadFarString(ReportMsg)));
+     G.zipfn, 1, LoadFarString(ReportMsg)));
     *perr_in_arch = PK_ERR;
     if (filnum == 1 && G.extra_bytes != 0L)
     {
@@ -4502,7 +4504,7 @@ static int find_local_header( __G__ perr_in_arch, filnum, pold_extra_bytes)
          "debug: recompensated request still < 0\n"));
          Info(slide, 0x401, ((char *)slide,
          LoadFarStringSmall(SeekMsg),
-         G.zipfn, LoadFarString(ReportMsg)));
+         G.zipfn, 2, LoadFarString(ReportMsg)));
         error = *perr_in_arch = PK_BADERR;      /* Error.  Skip this member. */
       }
     }
@@ -4706,7 +4708,8 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
 #endif
 
         /* Find the local header for this member. */
-        error = find_local_header( &error_in_archive,
+        error = find_local_header( __G__
+                                   &error_in_archive,
                                    *pfilnum,
                                    pold_extra_bytes);
 
@@ -4974,7 +4977,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
          (*G.statreportcb)(__G__ UZ_ST_START_EXTRACT, G.zipfn,
          G.filename, NULL))
         {
-          close_segment();
+          close_segment( __G);
           return IZ_CTRLC;      /* Cancel operation by user request. */
         }
 #endif
@@ -4997,7 +5000,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
 #endif
              )
             {
-              close_segment();
+              close_segment( __G);
               return error_in_archive;          /* (unless disk full) */
             }
         }
@@ -5006,7 +5009,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
          (*G.statreportcb)(__G__ UZ_ST_FINISH_MEMBER, G.zipfn,
          G.filename, (zvoid *)&G.lrec.ucsize))
         {
-          close_segment();
+          close_segment( __G);
           return IZ_CTRLC;          /* Cancel operation by user request. */
         }
 #endif
@@ -5015,7 +5018,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
 #endif
     } /* end for-loop (i:  files in current block) */
 
-    close_segment();
+    close_segment( __G);
     return error_in_archive;
 
 } /* extract_or_test_entrylist(). */
@@ -5064,7 +5067,8 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
 # endif
 
         /* Find the local header for this member. */
-        error = find_local_header( &error_in_archive,
+        error = find_local_header( __G__
+                                   &error_in_archive,
                                    *pfilnum,
                                    pold_extra_bytes);
 
@@ -5304,7 +5308,7 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
             (*G.statreportcb)(__G__ UZ_ST_START_EXTRACT, G.zipfn,
                               G.filename, NULL))
         {
-          close_segment();
+          close_segment( __G);
           return IZ_CTRLC;      /* Cancel operation by user request. */
         }
 # endif
@@ -5320,7 +5324,7 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
 # endif
              )
             {
-              close_segment();
+              close_segment( __G);
               return error_in_archive;          /* (unless disk full) */
             }
         }
@@ -5329,13 +5333,13 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
          (*G.statreportcb)(__G__ UZ_ST_FINISH_MEMBER, G.zipfn,
          G.filename, (zvoid *)&G.lrec.ucsize))
         {
-          close_segment();
+          close_segment( __G);
           return IZ_CTRLC;          /* Cancel operation by user request. */
         }
 # endif
     } /* end for-loop (i:  files in current block) */
 
-    close_segment();
+    close_segment( __G);
     return error_in_archive;
 
 } /* extract_or_test_entrylistw(). */
@@ -5542,7 +5546,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
             else if (uO.java_cafe == 0)
             {
                 /* Set the Java CAFE flag by the first extra field found. */
-                ef_scan_for_cafe( G.extra_field,
+                ef_scan_for_cafe( __G__ G.extra_field,
                  (long)G.crec.extra_field_length);
             }
 
@@ -5767,7 +5771,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     }
 #endif /* ndef SFX */
 
-    error_in_archive = extract_test_trailer( filnum,
+    error_in_archive = extract_test_trailer( __G__ filnum,
      num_bad_pwd, num_skipped, error_in_archive);
 
     return error_in_archive;
@@ -6658,7 +6662,7 @@ uzlzma_cleanup_exit:
 
     /* Advance the global input pointer to past the used data. */
     G.inptr = next_in+ in_buf_size_len;
-    G.incnt = avail_in;
+    G.incnt = (int)avail_in;
 
     return sts;
 } /* UZlzma(). */

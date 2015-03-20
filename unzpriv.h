@@ -3202,12 +3202,14 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 # define zlseek(fd,o,w) zfseeko((FILE *)(fd),(o),(w))
 # define close(fd) fclose((FILE *)(fd))
 # define fd_is_valid(fd) (fd != NULL)
+# define ZIPFD_INVALID NULL
 #else /* def USE_STRM_INPUT */
 # ifdef _WIN32_WCE                      /* Really necessary? */
 #  define fd_is_valid(fd) (fd != -1)
 # else /* def _WIN32_WCE [else] */
 #  define fd_is_valid(fd) (fd >= 0)
 # endif /* def _WIN32_WCE [else] */
+# define ZIPFD_INVALID (-1)
 #endif /* def USE_STRM_INPUT [else] */
 
 /* The return value of the Info() "macro function" is never checked in
