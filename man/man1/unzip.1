@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,7 @@
 .\" unzip.1 by Greg Roelofs, Fulvio Marino, Jim van Zandt and others.
 .\"
 .\" =========================================================================
-.TH UNZIP 1L "10 Oct 2014 (v6.10)" "Info-ZIP"
+.TH UNZIP 1L "17 Apr 2015 (v6.1)" "Info-ZIP"
 .\" =========================================================================
 .\"
 .\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
@@ -52,7 +52,7 @@ archives created by PKWARE's \fIPKZIP\fP and \fIPKUNZIP\fP programs
 default behaviors differ.  Nowadays, many other programs are available
 which work with ZIP archives.
 .PP
-Note: Beginning with \fIUnZip\fP version 6.10, the old command-line
+Note: Beginning with \fIUnZip\fP version 6.1, the old command-line
 parser has been replaced by one like the one used in \fIZip\fP (version
 3.0 and later).  One significant change is that \fIoption negation now
 uses a TRAILING hyphen ("\-")\fP, so, for example, \fB\-B\-\fP negates
@@ -173,7 +173,7 @@ options are interpreted as \fIZipInfo\fP options.  See the \fBzipinfo\fP
 manual page for a description of those options.
 .\" --------------------------------------------------------------------
 .SH OPTIONS (Primary Mode)
-Options in this group (\fB\-c \-f \-h \-l \-p \-T \-t \-u \-v \-z\fP)
+Options in this group (\fB\-c \-f \-h \-l \-p \-T \-t \-u \-v \-vq \-z\fP)
 specify the primary mode of operation of \fIUnZip\fP.  Only one of these
 primary mode options may be specified.
 .PP
@@ -351,6 +351,14 @@ environment variables.
 Currently, \fB\-\-version\fP is implemented as a synonym for
 \fB\-v\fP/\fB\-\-verbose\fP, so, for proper operation, it must be
 specified with no other options.
+.PP
+.PD 0
+.B \-vq
+.TP
+.PD
+.B \-\-quick-version
+.br
+Primary mode.  Display a brief (one-line) program version report.
 .PP
 .PD 0
 .B \-z
@@ -541,12 +549,12 @@ works only on systems that support setting timestamps for directories
 systems, \fB\-D\-\fP has no effect.
 .IP
 [Non-VMS] Timestamp restoration behavior changed between \fIUnZip\fP
-versions 6.00 and 6.10.  The following table shows the effects of
+versions 6.00 and 6.1.  The following table shows the effects of
 various \fB\-D\fP options for both versions.
 .IP
 .EX
        UnZip version      |
-      6.00    |   6.10    | Restore timestamps on:
+      6.00    |    6.1    | Restore timestamps on:
    -----------+-----------+------------------------
        -DD    |    -D     | Nothing.
        -D     | (default) | Files, not directories.
@@ -805,7 +813,7 @@ protection is applied to the UIC-based (SOGW) protections.
 .IP
 With \-k, the archived permissions are restored without regard to the
 Unix umask or VMS default protection.  (This was the default behavior in
-\fIUnZip\fP versions before 6.10.)
+\fIUnZip\fP versions before 6.1.)
 .IP
 With \-k\-, the archived permissions are ignored, so only the Unix umask
 or VMS default protection is effective.  (On VMS, directories are always
@@ -1114,11 +1122,11 @@ are stripped, but this option allows them to be retained.  (On file
 systems that limit filenames to particularly short lengths, the version
 numbers may be truncated or stripped regardless of this option.)
 .IP
-[Non-VMS] Note that before \fIUnZip\fP version 6.10, on a non-VMS
+[Non-VMS] Note that before \fIUnZip\fP version 6.1, on a non-VMS
 system, a file with a name like "\fCfred;123\fR" would, by default, be
 extracted as "\fCfred\fR", even if the file did not originate on a VMS
 system (so that "\fC;123\fR" was probably not really a VMS version
-number).  Beginning with UnZip version 6.10, the default behavior is to
+number).  Beginning with UnZip version 6.1, the default behavior is to
 strip VMS version numbers only from files which were archived on a VMS
 system.  To restore the old behavior, and always strip apparent VMS
 version numbers, explicitly negate the option: \fB\-V\-\fP.
@@ -1149,6 +1157,14 @@ and a detailed listing is generated.
 .PD
 Primary Mode.  Display the program version, build options, and relevant
 environment variables.  For details, see Primary Mode options.
+.PP
+.PD 0
+.B \-vq
+.TP
+.PD
+.B \-\-quick-version
+.br
+Primary mode.  Display a brief (one-line) program version report.
 .PP
 .PD 0
 .B \-W
@@ -1428,7 +1444,7 @@ code for Traditional encryption is included in the source kits, and
 support for Traditional encryption is enabled by default.  (Build-time C
 macros: IZ_CRYPT_TRAD, NO_CRYPT.)
 .PP
-Beginning with \fIUnZip\fP version 6.10 and \fIZip\fP version 3.1,
+Beginning with \fIUnZip\fP version 6.1 and \fIZip\fP version 3.1,
 these programs also offer a stronger, Advanced Encryption Standard (AES)
 encryption method, which we call AES WinZip/Gladman (AES_WG)
 encryption.  (The encryption code was supplied by Brian Gladman, and the

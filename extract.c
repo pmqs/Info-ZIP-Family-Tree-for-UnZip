@@ -4153,8 +4153,11 @@ int extract_or_test_stream( __G)        /* Return PK-type error code. */
             undefer_input(__G);         /* Re-adjust input counts, pointers. */
           }
         }
+        else
+        {
+          members_processed++;
+        }
 
-        members_processed++;
         if (error == PK_OK)
         {
           if (store_info(__G) != 0)
@@ -4172,13 +4175,6 @@ int extract_or_test_stream( __G)        /* Return PK-type error code. */
            * AppleDouble next, iff this one was normal.
            */
           G.seeking_apl_dbl = !G.apl_dbl;
-        }
-        else
-        {
-          /* No special AppleDouble processing.  Treat each member
-           * independently.
-           */
-          G.seeking_apl_dbl = 0;
         }
 # endif /* defined( UNIX) && defined( __APPLE__) */
 
@@ -4803,17 +4799,20 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
               if (bitmap[ 0]& (1 << 0))         /* Version made by. */
               {
                 G.pInfo->hostver = xlhdr.version_made_by[ 0];
-                G.pInfo->hostnum = IZ_MIN( xlhdr.version_made_by[ 1], NUM_HOSTS);
+                G.pInfo->hostnum =
+                 IZ_MIN( xlhdr.version_made_by[ 1], NUM_HOSTS);
               }
 
               if (bitmap[ 0]& (1 << 1))         /* Internal file attributes. */
               {
-                G.crec.internal_file_attributes = xlhdr.internal_file_attributes;
+                G.crec.internal_file_attributes =
+                 xlhdr.internal_file_attributes;
               }
 
               if (bitmap[ 0]& (1 << 2))         /* External file attributes. */
               {
-                G.crec.external_file_attributes = xlhdr.external_file_attributes;
+                G.crec.external_file_attributes =
+                 xlhdr.external_file_attributes;
               }
 
 #ifdef FUTURE
@@ -4950,6 +4949,9 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
         }
 
 #if defined( UNIX) && defined( __APPLE__)
+        /* Set do_this_prev, for possible use with the next (AD?) file. */
+        G.do_this_prev = (G.apple_double == 0);
+
         /* If we are doing special AppleDouble file processing, and the
          * user renamed the main file, then act accordingly.
          */
@@ -5576,6 +5578,11 @@ int extract_or_test_files(__G)    /* return PK-type error code */
              */
             do_this_file = match_include_exclude( __G);
 
+# if defined( UNIX) && defined( __APPLE__)
+            G.do_this_prev = do_this_file;
+            G.seeking_apl_dbl = 0;
+# endif /* defined( UNIX) && defined( __APPLE__) */
+
             members_processed++;
             if (do_this_file > 0)
             {
@@ -5586,18 +5593,13 @@ int extract_or_test_files(__G)    /* return PK-type error code */
             }
 
 #if defined( UNIX) && defined( __APPLE__)
-            /* Save do_this_file, for possible use with the next (AD?) file. */
-            G.do_this_prev = do_this_file;
             if ((!uO.J_flag) && G.exdir_attr_ok)
-                /* Using integrated AppleDouble processing.  Look for an
-                 * AppleDouble next, iff this one was normal.
-                 */
-                G.seeking_apl_dbl = !G.apl_dbl;
-            else
-                /* No special AppleDouble processing.  Treat each member
-                 * independently.
-                 */
-                G.seeking_apl_dbl = 0;
+            {
+              /* Using integrated AppleDouble processing.  Look for an
+               * AppleDouble next, iff this one was normal.
+               */
+              G.seeking_apl_dbl = !G.apl_dbl;
+            }
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
         } /* end while-loop (adding files to current block) */

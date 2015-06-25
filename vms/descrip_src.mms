@@ -1,11 +1,11 @@
 # DESCRIP_SRC.MMS
 #
-#    UnZip 6.10 for VMS -- MMS (or MMK) Source Description File.
+#    UnZip 6.1 for VMS -- MMS (or MMK) Source Description File.
 #
-#    Last revised:  2014-11-22
+#    Last revised:  2015-05-18
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -29,6 +29,7 @@ $$$$ THIS DESCRIPTION FILE IS NOT INTENDED TO BE USED THIS WAY.
 ALPHA_X_ALPHA = 1
 IA64_X_IA64 = 1
 VAX_X_VAX = 1
+X86_64_X_X86_64 = 1
 .IFDEF $(MMS$ARCH_NAME)_X_ALPHA     # $(MMS$ARCH_NAME)_X_ALPHA
 __ALPHA__ = 1
 .ENDIF                              # $(MMS$ARCH_NAME)_X_ALPHA
@@ -38,6 +39,9 @@ __IA64__ = 1
 .IFDEF $(MMS$ARCH_NAME)_X_VAX       # $(MMS$ARCH_NAME)_X_VAX
 __VAX__ = 1
 .ENDIF                              # $(MMS$ARCH_NAME)_X_VAX
+.IFDEF $(MMS$ARCH_NAME)_X_X86_64    # $(MMS$ARCH_NAME)_X_X86_64
+__X86_64__ = 1
+.ENDIF                              # $(MMS$ARCH_NAME)_X_X86_64
 .ENDIF                          # __MMK__
 
 # Combine command-line VAX C compiler macros.
@@ -73,8 +77,13 @@ DESTM = VAX
 .ENDIF                                          # GNUC
 .ENDIF                                      # VAXC_OR_FORCE_VAXC
 .ELSE                                   # __VAX__
+.IFDEF __X86_64__                           # __X86_64__
+DECC = 1
+DESTM = X86_64
+.ELSE                                       # __X86_64__
 DESTM = UNK
 UNK_DEST = 1
+.ENDIF                                      # __X86_64__
 .ENDIF                                  # __VAX__
 .ENDIF                              # __IA64__
 .ENDIF                          # __ALPHA__

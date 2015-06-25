@@ -25,7 +25,7 @@
  */
 #if 0
 #define module_name VMS_UNZIP_CMDLINE
-#define module_ident "02-015"
+#define module_ident "02-018"
 #endif /* 0 */
 
 /*
@@ -44,7 +44,9 @@
 **
 **  Modified by:
 **
-**      02-017          S. Schweda              06-Oct-2012 17:00
+**      02-018          S. Schweda              18-Apr-2015
+**              Added /VERBOSE = BRIEF.
+**      02-017          S. Schweda              06-Oct-2012
 **              Added /DECIMAL_TIME, /[NO]JAR, /JUNK_DIRS=n,
 **              /MATCH (replacing /CASE_MATCH).  Restored and deprecated
 **              /[NO]CASE_INSENSITIVE.  Changed /NAMES = [NO]LOWERCASE
@@ -281,10 +283,11 @@ $DESCRIPTOR(cli_decimal_time,   "DECIMAL_TIME");        /* -Z -T */
 $DESCRIPTOR(cli_times,          "TIMES");               /* -Z -T */
 $DESCRIPTOR(cli_totals,         "TOTALS");              /* -Z -t */
 $DESCRIPTOR(cli_noverbose,      "NOVERBOSE");           /* -v-, -Z -v- */
-$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v, -Z -v */
-$DESCRIPTOR(cli_verbose_normal, "VERBOSE.NORMAL");      /* -v, -Z -v */
-$DESCRIPTOR(cli_verbose_more,   "VERBOSE.MORE");        /* -vv, -Z -vv */
+$DESCRIPTOR(cli_verbose,        "VERBOSE");             /* -v, -Z -v, -vq */
+$DESCRIPTOR(cli_verbose_brief,  "VERBOSE.BRIEF");       /* -vq */
 $DESCRIPTOR(cli_verbose_command, "VERBOSE.COMMAND");    /* (none) */
+$DESCRIPTOR(cli_verbose_more,   "VERBOSE.MORE");        /* -vv, -Z -vv */
+$DESCRIPTOR(cli_verbose_normal, "VERBOSE.NORMAL");      /* -v, -Z -v */
 
 $DESCRIPTOR(cli_yyz,            "YYZ_UNZIP");
 
@@ -1351,13 +1354,14 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
         }
 
         /*
-         * Verbose/version ("-v" report).
+         * Verbose/version ("-v" or "-vq" report).
          * Clear any existing "-v" options with "-v-v-", then add
          * the desired "v" value.
          */
 #define OPT_V   "-v-v-v"        /* "-v"  Verbose (normal). */
-#define OPT_VV  "-v-v-vv"       /* "-vv" Verbose (more). */
 #define OPT_VN  "-v-v-"         /* ""    Normal extract (default). */
+#define OPT_VQ  "-vq"           /* "-vq" Verbose (brief). */
+#define OPT_VV  "-v-v-vv"       /* "-vv" Verbose (more). */
 
         status = cli$present( &cli_noverbose);
         if (status & 1)
@@ -1366,36 +1370,36 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
             ADD_ARG( OPT_VN);
         }
 
-        status = cli$present( &cli_verbose_normal);
-        if ((status & 1) || (status == CLI$_NEGATED))
+        /* Note that if more than one of the following options is
+         * specified, the maximum one is used.  CLD rules may be more
+         * restrictive.
+         */
+        status = cli$present( &cli_verbose);
+        if (status & 1)
         {
-            if (status == CLI$_NEGATED)
+            int i;
+            char *opt = NULL;
+
+            if ((status = cli$present( &cli_verbose_brief)) & 1)
             {
-                /* /NOVERBOSE (?) */
-                opt = OPT_VN;
+                /* /VERBOSE = BRIEF */
+                opt = OPT_VQ;
             }
-            else
+            if ((status = cli$present( &cli_verbose_normal)) & 1)
             {
-                /* /VERBOSE = NORMAL */
+                /* /VERBOSE [ = NORMAL ] */
                 opt = OPT_V;
             }
-            ADD_ARG( opt);
-        }
-
-        status = cli$present( &cli_verbose_more);
-        if ((status & 1) || (status == CLI$_NEGATED))
-        {
-            if (status == CLI$_NEGATED)
-            {
-                /* /NOVERBOSE (?) */
-                opt = OPT_VN;
-            }
-            else
+            if ((status = cli$present( &cli_verbose_more)) & 1)
             {
                 /* /VERBOSE = MORE */
                 opt = OPT_VV;
             }
+
+            if (opt != NULL)
+            {
             ADD_ARG( opt);
+            }
         }
 
         /*
@@ -1969,7 +1973,7 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 
     /* UnZipSFX Usage Guide. */
 
-    extern ZCONST char UnzipSFXBanner[];
+    extern ZCONST char UnzipBanner[];
 #  ifdef BETA
     extern ZCONST char BetaVersion[];
 #  endif
@@ -1980,8 +1984,11 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 
     flag = (error? 1 : 0);
 
-    Info(slide, flag, ((char *)slide, UnzipSFXBanner,
-     UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL, UZ_VERSION_DATE));
+    Info(slide, flag, ((char *)slide, UnzipBanner,
+     "UnZip",
+     UzpVersionStr(),
+     UZ_VERSION_DATE,
+     UZ_VERSION_DATE));
 
     Info(slide, flag, ((char *)slide, "\
 \n\
@@ -2145,8 +2152,7 @@ Quote member names if /MATCH=CASE=SENSITIVE (default).\n\
         /* Normal UnZip Usage Guide. */
 
         Info(slide, flag, ((char *)slide, UnzipUsageLine1,
-          UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          UZ_VERSION_DATE));
+          UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER));
 
 #  ifdef BETA
         Info(slide, flag, ((char *)slide, BetaVersion, "", ""));

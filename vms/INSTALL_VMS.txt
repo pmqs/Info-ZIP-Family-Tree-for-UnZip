@@ -1,7 +1,7 @@
       INSTALL_VMS.txt -- UnZip Installation Supplement for VMS (OpenVMS)
       ==================================================================
 
-   UnZip version 6.10.  Revised: 2014-10-20.
+   UnZip version 6.1.  Revised: 2015-06-10.
 
 ------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ does not support.
 Alpha systems with VMS V7.2 or later (and with a sufficiently new C
 compiler), and on all IA64 systems.  Large-file support is not available
 on VAX.  By default, the builders will enable large-file support where
-it is available.  (Note that UnZip versions before 6.10c (BETA) required
+it is available.  (Note that UnZip versions before 6.1c (BETA) required
 the user to request large-file support explicitly.  Now it must be
 disabled explicitly, if it's not desired.)
 
@@ -225,8 +225,9 @@ like these:
          MMS /DESC = [.vms] /MACRO = ("CCOPTS=/NAMES=AS_IS", -
           IZ_BZIP2=IZ_BZIP2_106)
 
-      The %CC-I-UNKNOWNPRAGMA complaints are still emitted, but the link
-      (and the program) should work.
+      The compiler will still emit the %CC-I-UNKNOWNPRAGMA complaints,
+      and MMS may emit %MMS-W-GWKACTNOUPD complaints (or, with MMK:
+      %MMK-I-ACTNOUPD), but the link (and the program) should work.
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -234,8 +235,11 @@ like these:
    ---------------------------------
 
    The optional LZMA and PPMd compression methods (new in UnZip version
-6.10) are enabled by default, and the required source code is included
-in the UnZip source kit.
+6.1) are enabled by default, and the required source code is included
+in the UnZip source kit.  The code used to implement these compression
+methods is generally written to newer C language standards than the base
+Info-ZIP code, so some very old compilers may be unable to build UnZip
+if these features are enabled.
 
    To disable LZMA and/or PPMd compression, add the appropriate option
 to the builder command line.  For example:
@@ -258,6 +262,10 @@ line.  For example:
          @ [.vms]build_unzip AES_WG
       or:
          MMS /DESC = [.vms] /MACRO = (AES_WG=1)
+
+   The code used to implement AES_WG encryption is generally written to
+newer C language standards than the base Info-ZIP code, so some very old
+compilers may be unable to build UnZip if this feature is enabled.
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 

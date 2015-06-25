@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,7 @@
 .\" unzipsfx.1 by Greg Roelofs
 .\"
 .\" =========================================================================
-.TH UNZIPSFX 1L "06 Nov 2013 (v6.10)" "Info-ZIP"
+.TH UNZIPSFX 1L "15 Apr 2015 (v6.1)" "Info-ZIP"
 .\" =========================================================================
 .\"
 .\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
@@ -336,12 +336,12 @@ works only on systems that support setting timestamps for directories
 systems, \fB\-D\-\fP has no effect.
 .IP
 [Non-VMS] Timestamp restoration behavior changed between UnZip versions
-6.00 and 6.10.  The following table shows the effects of various
+6.00 and 6.1.  The following table shows the effects of various
 \fB\-D\fP options for both versions.
 .IP
 .EX
        UnZip version      |
-      6.00    |   6.10    | Restore timestamps on:
+      6.00    |    6.1    | Restore timestamps on:
    -----------+-----------+------------------------
        -DD    |    -D     | Nothing.
        -D     | (default) | Files, not directories.
@@ -466,7 +466,7 @@ protection is applied to the UIC-based (SOGW) protections.
 .IP
 With \-k, the archived permissions are restored without regard to the
 Unix umask or VMS default protection.  (This was the default behavior in
-UnZip versions before 6.10.)
+UnZip versions before 6.1.)
 .IP
 With \-k\-, the archived permissions are ignored, so only the Unix umask
 or VMS default protection is effective.  (On VMS, directories are always
@@ -720,11 +720,11 @@ are stripped, but this option allows them to be retained.  (On file
 systems that limit filenames to particularly short lengths, the version
 numbers may be truncated or stripped regardless of this option.)
 .IP
-[Non-VMS] Note that before UnZip version 6.10, on a non-VMS system, a
+[Non-VMS] Note that before UnZip version 6.1, on a non-VMS system, a
 file with a name like "\fCfred;123\fR" would, by default, be extracted
 as "\fCfred\fR", even if the file did not originate on a VMS system (so
 that "\fC;123\fR" was probably not really a VMS version number).
-Beginning with UnZip version 6.10, the default behavior is to strip VMS
+Beginning with UnZip version 6.1, the default behavior is to strip VMS
 version numbers only from files which were archived on a VMS system.  To
 restore the old behavior, and always strip apparent VMS version numbers,
 explicitly negate the option: \fB\-V\-\fP.

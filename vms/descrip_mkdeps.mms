@@ -1,8 +1,8 @@
 # DESCRIP_MKDEPS.MMS
 #
-#    UnZip 6.10 for VMS -- MMS Dependency Description File.
+#    UnZip 6.1 for VMS -- MMS Dependency Description File.
 #
-#    Last revised:  2015-01-09
+#    Last revised:  2015-04-15
 #
 #----------------------------------------------------------------------
 # Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.

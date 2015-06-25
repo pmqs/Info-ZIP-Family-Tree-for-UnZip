@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.10.  Revised: 2015-01-09
+   UnZip version 6.1.  Revised: 2015-06-10
 
 ------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ user-selected options.
 
    For Macintosh Mac OS X, follow the Unix procedures.
 
-   For VMS instructions, see [.vms]INSTALL_VMS.txt.
+   For VMS instructions, see also [.vms]INSTALL_VMS.txt.
 
    For Windows, using Cygwin or MinGW, follow the Unix procedures.  (For
    Windows using native tools, see the Windows section below.)
@@ -157,7 +157,7 @@ bzip2 compression, or to download a different bzip2 source kit:
 
       http://www.bzip.org/
 
-   The UnZip builders for Unix, VMS, and Windows wiil, by default, use
+   The UnZip builders for Unix, VMS, and Windows will, by default, use
 the bzip2 source kit which is included in the UnZip source kit to create
 the required bzip2 object library.  The Unix and VMS builders can also
 use an existing bzip2 object library, which could be supplied by the
@@ -170,6 +170,22 @@ OS-specific build document.
 sources only in the "bzip2" subdirectory of the main UnZip directory.
 Existing bzip2 kits in other directory trees should be safe from damage
 by UnZip builders.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+      Optional Compression and Encryption Methods
+      -------------------------------------------
+
+   Beginning with UnZip version 6.10c (beta), support for optional
+compression methods bzip2, LZMA, and PPMd is enabled by default.  The
+code used to implement these compression methods and the code in the
+optional source kit for AES_WG encryption are generally written to newer
+C language standards than the base Info-ZIP code, so some very old
+compilers may be unable to build UnZip if these features are enabled. 
+In other cases, some special build options must be specified to get a
+particular feature to work properly.  The build instructions below (and
+in other, system-specific, supplementary documents) show how to disable
+these optional features and/or how work around specific build problems.
 
 ------------------------------------------------------------------------
 
@@ -561,9 +577,12 @@ built without some expected features enabled.
    ---------------------------------------------------
 
 Macintosh (Mac OS X)
-   On Mac OS X, use the Unix build procedure, described above.  When
-   using Xcode, the optional command-line tools must be installed.  For
-   pre-Mac-OS-X Macintosh, see below for old infomation.
+   On Mac OS X, use the Unix build procedure, described above.  Our
+   testing has been done using the Command Line Tools for Xcode.  (In
+   some Xcode versions, the Command Line Tools may not be enabled by
+   default.)  Currently, installing the (separate, much smaller) Command
+   Line Tools package (without the whole Xcode package) is all that is
+   needed.  For pre-Mac-OS-X Macintosh, see below for old infomation.
 
 MS-DOS
    See the msdos\Contents file for notes regarding which makefile(s) to
@@ -1375,7 +1394,7 @@ UNICODE_SUPPORT
       used now to the equivalent wide character calls.  All internal
       string handling and text output needs to be ported to use wchar_t
       character storage, which for the most part requires just proper
-      type updating.  This capability could be included in UnZip 6.10.
+      type updating.  This capability could be included in UnZip 6.1.
 
    Beginning with version 6.10b (beta), UnZip includes full wide
    character support of UTF-8 paths on Windows NT and later.  On these
@@ -1383,7 +1402,7 @@ UNICODE_SUPPORT
    paths used to recreate the Unicode paths on the file system.  Still
    not implemented on Windows are language-dependent messages,
    wide-character console input and output, and wide character list
-   support.  These may be implemented in UnZip 6.10.
+   support.  These may be implemented in UnZip 6.1.
 
    On current GNU/Linux and similar systems, UnZip now supports UTF-8
    names and patterns on the command line as well as display of UTF-8

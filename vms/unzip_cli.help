@@ -6,7 +6,7 @@
 .!  Date:       12 Jul 94 (orig. UNZIP.RNH, 23 Oct 91)
 .!
 .!----------------------------------------------------------------------
-.! Copyright (c) 1991-2014 Info-ZIP.  All rights reserved.
+.! Copyright (c) 1991-2015 Info-ZIP.  All rights reserved.
 .!
 .! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 .! contents of which are also included in zip.h) for terms of use.  If,
@@ -859,11 +859,11 @@ this option allows them to be retained.  (On file systems that limit
 filenames to particularly short lengths, the version numbers may be
 truncated or stripped regardless of this option.)
 
-[Non-VMS] Note that before UnZip version 6.10, on a non-VMS system, a
+[Non-VMS] Note that before UnZip version 6.1, on a non-VMS system, a
 file with a name like "fred;123" would, by default, be extracted as
 "fred", even if the file did not originate on a VMS system (so that
 ";123" was probably not really a VMS version number).  Beginning with
-UnZip version 6.10, the default behavior is to strip VMS version numbers
+UnZip version 6.1, the default behavior is to strip VMS version numbers
 only from files which were archived on a VMS system.  To restore the old
 behavior, and always strip apparent VMS version numbers, explicitly
 negate the option: "-V-".
@@ -927,7 +927,7 @@ Traditional encryption is included in the source kits, and support for
 Traditional encryption is enabled by default.  (Build-time C macro:
 CRYPT_TRAD.)
 
-Beginning with UnZip version 6.10 and Zip version 3.1,
+Beginning with UnZip version 6.1 and Zip version 3.1,
 these programs also offer a stronger, Advanced Encryption Standard (AES)
 encryption method, which we call AES WinZip/Gladman (AES_WG)
 encryption.  (The encryption code was supplied by Brian Gladman, and the

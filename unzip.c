@@ -112,10 +112,6 @@ static int setsignalhandler OF((__GPRO__ savsigs_info **p_savedhandler_chain,
 static void  help_extended      OF((__GPRO));
 # endif /* ndef SFX */
 
-# if !defined( SFX) || defined( DIAG_SFX)
-static void  show_version_info  OF((__GPRO));
-# endif /* !defined( SFX) || defined( DIAG_SFX) */
-
 # ifdef ENABLE_USER_PROGRESS
 #  ifdef VMS
 #   define USER_PROGRESS_CLASS extern
@@ -374,7 +370,7 @@ static ZCONST char Far ZipInfoExample[] = "*, ?, [] (e.g., \"[a-j]*.zip\")";
 #  endif
 
 static ZCONST char Far ZipInfoUsageLine1[] = "\
-ZipInfo %d.%d%d%s (%s) by Info-ZIP.  Maintainer: <Apply Within>\n\
+ZipInfo %s (%s) by Info-ZIP.  Maintainer: %s\n\
 \n\
 List name, date/time, attribute, size, compression method, etc., about files\n\
 in list (excluding those in xlist) contained in the specified .zip archive(s).\
@@ -409,12 +405,13 @@ ZCONST char Far BetaVersion[] = "%s\
         THIS IS STILL A BETA VERSION OF UNZIP%s -- DO NOT DISTRIBUTE.\n\n";
 # endif
 
-# ifdef SFX
-#  ifndef VMSCLI
+# ifndef VMSCLI
 static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
-#  endif /* ndef VMSCLI */
-ZCONST char Far UnzipSFXBanner[] =
-     "UnZipSFX %d.%d%d%s (%s) by Info-ZIP (http://www.info-zip.org).\n";
+# endif /* ndef VMSCLI */
+ZCONST char Far UnzipBanner[] =
+ "%s %s (%s)  (c)%4.4s Info-ZIP  http://info-zip.org\n";
+
+# ifdef SFX
 #  ifdef SFX_EXDIR
 static ZCONST char Far UnzipSFXOpts[] =
    "Valid options are -cfptuz; modifiers are -abCdjLnoPq%sV%s.\n";
@@ -483,6 +480,10 @@ static ZCONST char Far AsmInflateCodes[] =
 #  ifdef CHECK_VERSIONS
 static ZCONST char Far Check_Versions[] =
  "CHECK_VERSIONS       (Check VMS versions, build v. run-time)";
+#  endif
+#  if defined( _MSC_VER) && defined( _DEBUG)
+static ZCONST char Far WinDebug[] =
+ "_DEBUG               (Windows Debug configuration)";
 #  endif
 #  ifdef DEBUG
 static ZCONST char Far UDebug[] = "DEBUG";
@@ -584,7 +585,9 @@ static ZCONST char Far Use_Unreduce[] =
 #  else
 #   ifdef USE_UNREDUCE_SMITH
 static ZCONST char Far Use_Unreduce[] =
- "USE_UNREDUCE_SMITH   (PKZIP 0.9x Reduce compression, (c) S. H. Smith)";
+ "USE_UNREDUCE_SMITH   (PKZIP 0.9x Reduce compression, proprietary)";
+static ZCONST char Far Use_UnreduceSc[] =
+ "                     (UnReduce copyright (c) 1989 by S. H. Smith.)";
 #   endif
 #  endif
 #  ifdef UNICODE_SUPPORT
@@ -677,8 +680,8 @@ static ZCONST char Far AesWgEncryptionNotice2[] =
         This executable includes 256-bit AES strong encryption and may be\n\
         subject to export restrictions in many countries, including the USA.\n";
 
-    static ZCONST char Far AesWgDecryption[] =
-"        IZ_CRYPT_AES_WG      (AES encryption (WinZip/Gladman), ver %d.%d%s)\n";
+    static ZCONST char Far AesWgDecryption[] = "      \
+  IZ_CRYPT_AES_WG      (AES encryption (IZ WinZip/Gladman), ver %d.%d%s)\n";
 #  endif
 #  ifdef IZ_CRYPT_ANY
 #   ifdef IZ_CRYPT_TRAD
@@ -713,29 +716,16 @@ static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 # ifndef SFX
-#  ifndef USE_UNREDUCE_SMITH            /* Maintainer, not Smith copyright. */
-#   ifdef VMSCLI
+#  ifdef VMSCLI
     /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s (%s) by Info-ZIP.  Maintainer: <Apply Within>\n\
+UnZip %s (%s) by Info-ZIP.  Maintainer: %s\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
-#   else /* def VMSCLI */
+#  else /* def VMSCLI */
     static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s (%s) by Info-ZIP.  Maintainer: <Apply Within>\n\
+UnZip %s (%s) by Info-ZIP.  Maintainer: %s\n\
  Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
-#   endif /* def VMSCLI [else] */
-#  else /* ndef USE_UNREDUCE_SMITH */   /* Smith copyright, not maintainer. */
-#   ifdef VMSCLI
-    /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
-ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s (%s) by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
- Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
-#   else /* def VMSCLI */
-static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s (%s) by Info-ZIP.  UnReduce (c) 1989 by S. H. Smith.\n\
- Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
-#   endif /* def VMSCLI [else] */
-#  endif /* ndef USE_UNREDUCE_SMITH [else] */
+#  endif /* def VMSCLI [else] */
 #  define UnzipUsageLine1v       UnzipUsageLine1
 
 static ZCONST char Far UnzipUsageLine2v[] = "\
@@ -1587,7 +1577,7 @@ static struct option_struct far options[] = {
        'e',  "extract (not used?)"},
 # ifdef MACOS
     {UZO, "E",  "mac-efs",         o_NO_VALUE,       o_NEGATABLE,
-       'E',  "display Mac e.f. when restoring"},
+       'E',  "show Mac e.f. when restoring"},
 # endif
     {UZO, "f",  "freshen",         o_NO_VALUE,       o_NEGATABLE,
        'f',  "freshen (extract only newer files)"},
@@ -1720,6 +1710,10 @@ static struct option_struct far options[] = {
        'v',  "verbose"},
     {UZO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
        o_ve, "version"},
+    {UZO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
+       o_ve, "version"},
+    {UZO, "vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
+       o_vq, "show brief/quick version"},
 # endif
 # ifndef CMS_MVS
     {UZO, "V",  "keep-versions",  o_NO_VALUE,       o_NEGATABLE,
@@ -1740,7 +1734,7 @@ static struct option_struct far options[] = {
        'Y',  "VMS treat .nnn as ;nnn version"},
 # endif
     {UZO, "z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
-       'z',  "display zipfile comment"},
+       'z',  "show zipfile comment"},
 # if !defined( SFX) && !defined( NO_ZIPINFO)
     {UZO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NOT_NEGATABLE,
        'Z',  "ZipInfo mode (must be first option)"},
@@ -1821,6 +1815,8 @@ static struct option_struct far options[] = {
        'v',  "very detailed list"},
     {ZIO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
        o_ve, "version"},
+    {ZIO, "vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
+       o_vq, "show brief/quick version"},
 #  ifdef WILD_STOP_AT_DIR
     {ZIO, "W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
        'W',  "wildcard * doesn't span /"},
@@ -2478,13 +2474,24 @@ int uz_opts(__G__ pargc, pargv)
 # if !defined( SFX) || defined( DIAG_SFX)
             case ('v'):    /* verbose */
             case (o_ve):   /* version */
-                if (negative) {
+                if (negative)
+                {
                     uO.vflag = IZ_MAX( (uO.vflag- negative), 0);
                     negative = 0;
-                } else if (uO.vflag)
+                }
+                else if (uO.vflag)
+                {
                     ++uO.vflag;
+                }
                 else
+                {
                     uO.vflag = 2;
+                }
+                break;
+
+            case (o_vq):   /* brief version */
+                uO.vflag = 3;
+                uO.qflag = 4;
                 break;
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 # ifndef CMS_MVS
@@ -2878,9 +2885,8 @@ int uz_opts(__G__ pargc, pargv)
     /* print our banner unless we're being fairly quiet */
     if (uO.qflag < 2)
         Info(slide, (uzo_err ? 1 : 0),
-         ((char *)slide, LoadFarString(UnzipSFXBanner),
-         UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-         LoadFarStringSmall(VersionDate)));
+         ((char *)slide, LoadFarString( UnzipBanner),
+         "UnZipSFX", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
 #  ifdef BETA
     /* always print the beta warning:  no unauthorized distribution!! */
     Info(slide, (uzo_err ? 1 : 0),
@@ -3086,9 +3092,8 @@ int usage(__G__ u_err)   /* return PK-type error code */
 {
     int flag = (u_err? 1 : 0);
 
-    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXBanner),
-      UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-      LoadFarStringSmall(VersionDate)));
+    Info(slide, flag, ((char *)slide, LoadFarString( UnzipBanner),
+     "UnZipSFX", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
     Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOpts),
       SFXOPT1, LOCAL));
 #  ifdef VMS
@@ -3134,13 +3139,12 @@ int usage(__G__ u_err)   /* return PK-type error code */
 
 #  ifndef NO_ZIPINFO
 
-        Info(slide, flag, ((char *)slide, LoadFarString(ZipInfoUsageLine1),
-          ZI_MAJORVER, ZI_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          LoadFarStringSmall(VersionDate),
-          LoadFarStringSmall2(ZipInfoExample), QUOTS,QUOTS));
+        Info(slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine1),
+         UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER,
+         LoadFarStringSmall2( ZipInfoExample), QUOTS,QUOTS));
         Info(slide, flag, ((char *)slide, LoadFarString(ZipInfoUsageLine2)));
         Info(slide, flag, ((char *)slide, LoadFarString(ZipInfoUsageLine3),
-          LoadFarStringSmall(ZipInfoUsageLine4)));
+         LoadFarStringSmall(ZipInfoUsageLine4)));
 #   ifdef VMS
         Info(slide, flag, ((char *)slide, "\n\
   (Must quote upper-case options and names, unless SET PROC/PARSE=EXTEND.)\
@@ -3151,9 +3155,8 @@ int usage(__G__ u_err)   /* return PK-type error code */
 
     } else {   /* UnZip mode */
 
-        Info(slide, flag, ((char *)slide, LoadFarString(UnzipUsageLine1),
-          UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          LoadFarStringSmall(VersionDate)));
+        Info(slide, flag, ((char *)slide, LoadFarString( UnzipUsageLine1),
+         UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER));
 #  ifdef BETA
         Info(slide, flag, ((char *)slide, LoadFarString(BetaVersion), "", ""));
 #  endif
@@ -3316,7 +3319,7 @@ static void help_extended(__G)
   "Below, MacOS refers to Mac OS before Mac OS X.  Mac OS X is a Unix-based",
   "port and is referred to as MacOSX.",
   "",
-  "UnZip 6.10 uses a new command parser which supports long options.  Short",
+  "UnZip 6.1 uses a new command parser which supports long options.  Short",
   "options begin with a single dash (-h), while long options start with two",
   "(--help).  Long options can be abbreviated until uniqueness is lost.",
   "",
@@ -3445,11 +3448,10 @@ static void help_extended(__G)
   "  archive.  Exclude and include lists end at next option or end of line.",
   "    unzip archive -x pattern pattern ...",
   "",
-  "Multi-part (split) archives (archives created as a set of split files):",
-  "  Currently split archives are not readable by UnZip.  A workaround is",
-  "  to use zip to convert the split archive to a single-file archive and",
-  "  use UnZip on that.  See the manual page for Zip 3.0 or later.",
-  "  Split support should be added to UnZip 6.10 before release.",
+  "Segmented (split) archives (archives created as a set of split files):",
+  "  Currently, all archive segments must be files on a single volume, with",
+  "  name extensions \".z01\", \".z02\", and so on, with the last segment"
+  "  \".zip.\"",
   "",
   "Streaming (piping into UnZip):",
   "  Currently UnZip does not support streaming.  The FUnZip utility can be",
@@ -3667,25 +3669,51 @@ extern char *getenv();
 #  endif
 # endif /* ndef SFX */
 
+
+char *UZ_EXP UzpVersionStr( OFT( void))
+{
+  static char vs[ 32] = "";
+  char pl_sufx[ 8] = "";
+  char *bt_sufx = "";
+
+  if (*vs == '\0')
+  {
+    if (UZ_PATCHLEVEL != 0)
+    {
+      sprintf( pl_sufx, ".%d", UZ_PATCHLEVEL);
+    }
+    if ((UZ_BETALEVEL != NULL) && (strcmp( UZ_BETALEVEL, "")))
+    {
+      bt_sufx = UZ_BETALEVEL;
+    }
+    sprintf( vs, "%d.%d%s%s", UZ_MAJORVER, UZ_MINORVER, pl_sufx, bt_sufx);
+  }
+
+  return vs;
+}
+
+
 # if !defined( SFX) || defined( DIAG_SFX)
 
 /********************************/
 /* Function show_version_info() */
 /********************************/
 
-static void show_version_info(__G)
+void show_version_info(__G)
     __GDEF
 {
-    if (uO.qflag > 3)                           /* "unzip -vqqqq" */
-        Info(slide, 0, ((char *)slide, "%d\n",
-          (UZ_MAJORVER*100 + UZ_MINORVER*10 + UZ_PATCHLEVEL)));
-    else {
+    if (uO.qflag > 3)                           /* "-qqqqvv" or "-vq" */
+    {
+        Info(slide, 0, ((char *)slide, LoadFarString( UnzipBanner),
+         "UnZip", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
+    }
+    else
+    {
         int numopts = 0;
 
 #  ifndef SFX
-        Info(slide, 0, ((char *)slide, LoadFarString(UnzipUsageLine1v),
-          UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, UZ_BETALEVEL,
-          LoadFarStringSmall(VersionDate)));
+        Info(slide, 0, ((char *)slide, LoadFarString( UnzipUsageLine1v),
+         UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER));
         Info(slide, 0, ((char *)slide,
           LoadFarString(UnzipUsageLine2v)));
         version(__G);
@@ -3725,6 +3753,11 @@ static void show_version_info(__G)
 #  ifdef CHECK_VERSIONS
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(Check_Versions)));
+        ++numopts;
+#  endif
+#  if defined( _MSC_VER) && defined( _DEBUG)
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(WinDebug)));
         ++numopts;
 #  endif
 #  ifdef DEBUG
@@ -3939,6 +3972,10 @@ static void show_version_info(__G)
 #  if defined( USE_UNREDUCE_PUBLIC) || defined( USE_UNREDUCE_SMITH)
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
           LoadFarStringSmall(Use_Unreduce)));
+#   ifdef USE_UNREDUCE_SMITH
+        Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
+          LoadFarStringSmall(Use_UnreduceSc)));
+#   endif
         ++numopts;
 #  endif
 #  ifdef VMS_TEXT_CONV
@@ -4066,7 +4103,7 @@ static void show_version_info(__G)
  */
 
 /* For now stay with multi-byte characters.  May support wide characters
-   in Zip 3.1 and UnZip 6.10.
+   in Zip 3.1 and UnZip 6.1.
  */
 
 /* multibyte character set support
@@ -5545,18 +5582,11 @@ int arg;
     not_first = 1;
     /* Host name.  (Trim off any domain info.  (Needed on Tru64.)) */
     uname( &u_p_utsname);
-    if (u_p_utsname.nodename == NULL)
-    {
-      *u_p_nodename = '\0';
-    }
-    else
-    {
-      strncpy( u_p_nodename, u_p_utsname.nodename, (U_P_NODENAME_LEN- 8));
-      u_p_nodename[ 24] = '\0';
-      cp = strchr( u_p_nodename, '.');
-      if (cp != NULL)
-        *cp = '\0';
-    }
+    strncpy( u_p_nodename, u_p_utsname.nodename, (U_P_NODENAME_LEN- 8));
+    u_p_nodename[ 24] = '\0';
+    cp = strchr( u_p_nodename, '.');
+    if (cp != NULL)
+      *cp = '\0';
 
     /* Terminal name.  (Trim off any leading "/dev/"). */
     tty_name = ttyname( 0);
@@ -5598,7 +5628,7 @@ int arg;
     fprintf( stderr, "   Archive: %s\n", G.zipfn);
   }
 
-  if (G.filename != NULL)
+  if (*G.filename != '\0')
   { /* Repeat the extraction message (to the extent possible). */
     fprintf( stderr, ActionMsg,
      ((G.action_msg_str == NULL) ? "????" : G.action_msg_str),

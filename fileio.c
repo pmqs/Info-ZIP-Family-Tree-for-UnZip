@@ -394,7 +394,7 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
    * easily replace one file type with another (and null out the version
    * number), so use it, instead.
    */
-  vms_sgmnt_name( G.zipfn_sgmnt, G.zipfn, (sgmnt_nr+ 1)); 
+  vms_sgmnt_name( G.zipfn_sgmnt, G.zipfn, (sgmnt_nr+ 1));
 
 #else /* def VMS */
 
@@ -1114,6 +1114,21 @@ int seek_zipf(__G__ abs_offset)
   zoff_t request;
   zoff_t inbuf_offset;
   zoff_t bufstart;
+  int sgmnt_movement = G.ecrec.number_this_disk - G.sgmnt_nr;
+  /* If request < 0, then we will move between segment files if
+   * archive is segmented and in that case we need start always
+   * from last file. So set right movement against actual segment.
+   * !! Do not set G.sgmnt_ns variable directly !! Now it could be done
+   * safely if request < 0 and it's more effective solution for loop,
+   * however it's not clean and it can be source of troubles in future,
+   * when code will be modified again.
+   * if(request < 0)
+   *   G.sgmnt_nr = G.ecrec.number_this_disk;
+   * .....
+   * .. in loop ..
+   * if ((G.sgmnt_nr == 0) || open_infile_sgmnt( __G__ -1))
+   * ....
+   * */
 
   request = abs_offset + G.extra_bytes;
 
@@ -1125,53 +1140,32 @@ int seek_zipf(__G__ abs_offset)
     return PK_BADERR;
   }
 #endif /* 0 */ /* Pre-segment-support. */
-
   while (request < 0)
   {
-    if (G.sgmnt_size == 0)
+    if ((G.sgmnt_nr == 0) || open_infile_sgmnt( __G__ sgmnt_movement))
     {
-      if ((G.sgmnt_nr == 0) || open_infile_sgmnt( __G__ -1))
-      {
-        Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
-         G.zipfn, 12, LoadFarString(ReportMsg)));
-        return PK_BADERR;
-      }
-      /* Get the new segment size, and calculate the new offset.
-       * This is where G.sgmnt_size gets a real (non-zero) value.
-       */
+      Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
+       G.zipfn, 12, LoadFarString(ReportMsg)));
+      return PK_BADERR;
+    }
+    /* Get the new segment size, and calculate the new offset.
+     * This is where G.sgmnt_size gets a real (non-zero) value.
+     */
 #ifdef USE_STRM_INPUT
-      zfseeko(G.zipfd, 0, SEEK_END);
-      G.sgmnt_size = zftello(G.zipfd);
+    zfseeko(G.zipfd, 0, SEEK_END);
+    request += zftello(G.zipfd);
 #else /* def USE_STRM_INPUT */
-      G.sgmnt_size = zlseek(G.zipfd, 0, SEEK_END);
+    request += zlseek(G.zipfd, 0, SEEK_END);
 #endif /* USE_STRM_INPUT */
-      request += G.sgmnt_size;
-    }
-    else
-    {
-      /* SMSd.  Can we trust that all segments have the same size? */
-      /* We know segment size(s?), so we can calculate against
-       * abs_offset and sgmnt_nr, and open the segment file which we
-       * actually need.
-       */
-      unsigned int tmp_disk = G.ecrec.number_this_disk;
 
-      while (request < 0)
-      {
-        tmp_disk--;
-        request += G.sgmnt_size;
-      }
-      /* for same as actual disk (movement == 0) return 0  */
-      if (open_infile_sgmnt( __G__ (tmp_disk- G.sgmnt_nr)))
-      {
-          Info(slide, 1, ((char *)slide, LoadFarStringSmall(SeekMsg),
-           G.zipfn, 13, LoadFarString(ReportMsg)));
-          return PK_BADERR;
-      }
-    }
-    /* In both cases we need to refill buffer, so set
-     * G.cur_zipfile_bufstart negative (so that bufstart !=
-     * G.cur_zipfile_bufstart, below).
+    /* now it should be always -1
+     * Not all segmented files have same size! So we must go file by file
+     * and work with real sizes.
+     */
+    sgmnt_movement = -1;
+
+    /* We need to refill buffer, so set G.cur_zipfile_bufstart to negative
+     * value (so that bufstart != G.cur_zipfile_bufstart, below).
      */
     G.cur_zipfile_bufstart = -1;
   }
@@ -1207,7 +1201,7 @@ int seek_zipf(__G__ abs_offset)
       /* If we're not at the end of file, then we need move to the
        * next segment file.
        * TODO: Check if EOF, instead?
-       */ 
+       */
       if (G.ecrec.number_this_disk != G.sgmnt_nr)
       {
         int tmp;
@@ -1566,10 +1560,10 @@ static int partflush(__G__ rawbuf, size, unshrink)
                              * Add more code here to inhibit setting
                              * selected extended attributes.
                              */
-#   define XATTR_QTR "com.apple.quarantine"
+#   define XATTR_QTN "com.apple.quarantine"
 
                             if ((!uO.Jq_flag) ||
-                             (strcmp( attr_ptr, XATTR_QTR) != 0))
+                             (strcmp( attr_ptr, XATTR_QTN) != 0))
                             {
                                 sts = setxattr(
                                  G.filename,            /* Real file name. */
@@ -1589,7 +1583,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
                             /* Advance index to the next align:4 value. */
                             ndx = (ndx+ attr_size+ 3)& 0xfffffffc;
                         }
-                    } 
+                    }
 #  endif /* def APPLE_XATTR */
 
                     /* Restore name suffix ("/rsrc"). */
@@ -1824,7 +1818,7 @@ static int partflush(__G__ rawbuf, size, unshrink)
 
 /* 2012-11-25 SMS.  (OUSPG report.)
  * Changed eb_len and ef_len from unsigned to signed, to catch underflow
- * of ef_len caused by corrupt/malicious data.  (32-bit is adequate. 
+ * of ef_len caused by corrupt/malicious data.  (32-bit is adequate.
  * Used "long" to accommodate any systems with 16-bit "int".)
  */
 

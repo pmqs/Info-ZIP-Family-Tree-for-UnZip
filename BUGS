@@ -22,7 +22,7 @@ Bogus bugs (not our fault!):
  tion, "which -a unzip" will show *all* copies of "unzip" in your path.)
 
 
-Modern Bugs (UnZip 6.10):
+Modern Bugs (UnZip 6.1):
 ------------------------
 
  - unix/zipgrep shell script has only limited support for long options

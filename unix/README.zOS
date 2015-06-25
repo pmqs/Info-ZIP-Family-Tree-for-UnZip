@@ -1,4 +1,4 @@
-unix/README.zOS - UnZip 6.10                                        09 Sept 2011
+unix/README.zOS - UnZip 6.1                             09 Sept 2011
 
  Copyright (c) 2011 Info-ZIP.  All rights reserved.
 
@@ -166,9 +166,9 @@ follows:
 +----------------------------------------------------------------------------+
 | Overview of Changes for z/OS UNIX port                                     |
 +----------------------------------------------------------------------------+
-UNZIP 6.10 changes by Al Dunsmuir (09 Sept 2011)
+UNZIP 6.1 changes by Al Dunsmuir (09 Sept 2011)
 
-The z/OS UNIX port is based on (and replaces) the original updated UNZIP 6.10
+The z/OS UNIX port is based on (and replaces) the original updated UNZIP 6.1
 "OS/390" port by Bob Woodside.
 
 - Replaced make target for _.o files by providing standard file-pattern rules

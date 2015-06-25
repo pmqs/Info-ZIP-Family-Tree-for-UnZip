@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,7 @@
 .\" zipinfo.1 by Greg Roelofs and others.
 .\"
 .\" =========================================================================
-.TH ZIPINFO 1L "06 Nov 2013 (v3.1)" "Info-ZIP"
+.TH ZIPINFO 1L "17 Apr 2015 (v6.1)" "Info-ZIP"
 .\" =========================================================================
 .\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
 .\" Must follow ".TH"; otherwise macros get redefined.
@@ -302,6 +302,25 @@ is suspected of damaging extracted filenames.
 \fB\-UU\fP disables the recognition of UTF-8 encoded filenames.  The
 handling of filename codings within \fIZipInfo\fP falls back to the
 behavior of pre-Unicode versions.
+.PP
+.PD 0
+.B \-\-version
+.TP
+.PD
+When used alone, display the program version, and usage.  See also
+Primary Format option \fB\-v\fP.
+.IP
+Currently, \fB\-\-version\fP is implemented as a synonym for
+\fB\-v\fP/\fB\-\-verbose\fP, so, for proper operation, it must be
+specified with no other options.
+.PP
+.PD 0
+.B \-vq
+.TP
+.PD
+.B \-\-quick-version
+.br
+Primary mode.  Display a brief (one-line) program version report.
 .PP
 .PD 0
 .B \-W

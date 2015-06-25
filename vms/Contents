@@ -1,5 +1,5 @@
-      Contents of the UnZip 6.10 Source Archive "vms" directory
-      ---------------------------------------------------------
+      Contents of the UnZip 6.1 Source Archive "vms" Directory
+      --------------------------------------------------------
 
 build_unzip.com     DCL script to build UnZip (and friends)
 bzlib.h             VMS wrapper header file for the bzip2 library definitions

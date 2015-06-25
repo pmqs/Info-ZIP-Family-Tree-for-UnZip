@@ -1076,7 +1076,6 @@ static int extract_archive_seekable( __G__ lastchance)
 
     G.cur_zipfile_bufstart = 0;
     G.inptr = G.inbuf;
-    G.sgmnt_size = 0;   /* Init before ECREC for each archive in the list. */
 
 #if ((!defined(WINDLL) && !defined(SFX)) || !defined(NO_ZIPINFO))
 # if !defined(WINDLL) && !defined(SFX)
@@ -1142,8 +1141,6 @@ static int extract_archive_seekable( __G__ lastchance)
 #ifdef NO_MULTIPART
     error = !uO.zipinfo_mode && (G.ecrec.number_this_disk == 1) &&
             (G.ecrec.num_disk_start_cdir == 1);
-#else
-    error = !uO.zipinfo_mode && (G.ecrec.number_this_disk != 0);
 #endif
 
 #ifndef SFX
@@ -1180,8 +1177,8 @@ static int extract_archive_seekable( __G__ lastchance)
             error_in_archive = PK_WARN;
         }
 #endif /* ndef SFX */
-        if ((G.extra_bytes = G.real_ecrec_offset-G.expect_ecrec_offset) <
-            (zoff_t)0)
+        if (((G.extra_bytes = G.real_ecrec_offset-G.expect_ecrec_offset) <
+         (zoff_t)0) && (G.ecrec.number_this_disk == 0))
         {
             Info(slide, 0x401, ((char *)slide, LoadFarString(MissingBytes),
               G.zipfn, FmZofft((-G.extra_bytes), NULL, NULL)));
@@ -1276,10 +1273,6 @@ static int extract_archive_seekable( __G__ lastchance)
         have just read the first entry's signature bytes; then list, extract
         or test member files as instructed, and close the zipfile.
       -----------------------------------------------------------------------*/
-
-        /* TODO: We need know offset against actual file!!!  If we are
-         * not in the same file as EOCDR, it will fail always.
-         */
 
         error = seek_zipf(__G__ G.ecrec.offset_start_central_directory);
         if (error != PK_OK) {
@@ -1472,7 +1465,7 @@ static int extract_archive( __G__ lastchance)   /* Return PK-type error code. */
     }
   }
 
-  return error;    
+  return error;
 } /* extract_archive() */
 
 
@@ -1552,7 +1545,7 @@ static int check_auto_dest_dir( __G)
           }
         }
       } /* (Else, retry the same name.) */
-            
+
       if ((auto_exdir_state > 0) && (auto_exdir_state < 4))
       {
 #  ifdef VMS

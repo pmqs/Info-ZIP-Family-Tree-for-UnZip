@@ -1,8 +1,8 @@
 	Module		VMS_UNZIP_CLD
-	Ident		"03-006"
+	Ident		"03-007"
 
 !-----------------------------------------------------------------------
-! Copyright (c) 2001-2014 Info-ZIP.  All rights reserved.
+! Copyright (c) 2001-2015 Info-ZIP.  All rights reserved.
 !
 ! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 ! contents of which are also included in zip.h) for terms of use.  If,
@@ -97,8 +97,9 @@ Define	Verb		UNZIP
 	DisAllow	TEXT.NONE and TEXT.ALL
 	DisAllow	TEXT.NONE and TEXT.STMLF
 	DisAllow	(neg TEXT) and TEXT.STMLF
-	DisAllow	NOVERBOSE and (VERBOSE.NORMAL or VERBOSE.MORE)
-	DisAllow	VERBOSE.MORE and VERBOSE.NORMAL
+	DisAllow	NOVERBOSE and
+			 (VERBOSE.BRIEF or VERBOSE.MORE or VERBOSE.NORMAL)
+	DisAllow	any2( VERBOSE.BRIEF, VERBOSE.MORE, VERBOSE.NORMAL)
 	DisAllow	ZIPINFO and HELP
 
 Define	Type		AUTO_DIR_KEYWORDS
@@ -165,9 +166,10 @@ Define	Type		FULL_MODIFIER
 	Keyword		DIAGNOSTICS
 
 Define	Type		VERBOSE_OPTS
-	Keyword		NORMAL, DEFAULT
-	Keyword		MORE
+	Keyword		BRIEF
 	Keyword		COMMAND
+	Keyword		MORE
+	Keyword		NORMAL, DEFAULT
 
 Define Syntax INFORMATION
 	Parameter	P1, Label=ZIPFILE, Prompt="Zip file"
@@ -196,7 +198,9 @@ Define Syntax INFORMATION
 
 	DisAllow	DECIMAL_TIME and (neg TIMES)
 	DisAllow	(neg DECIMAL_TIME) and TIMES
-	DisAllow	NOVERBOSE and VERBOSE.NORMAL
+	DisAllow	NOVERBOSE and
+			 (VERBOSE.BRIEF or VERBOSE.MORE or VERBOSE.NORMAL)
+	DisAllow	any2( VERBOSE.BRIEF, VERBOSE.MORE, VERBOSE.NORMAL)
 	DisAllow	ONE_LINE and SHORT
 	DisAllow	ONE_LINE and MEDIUM
 	DisAllow	ONE_LINE and LONG

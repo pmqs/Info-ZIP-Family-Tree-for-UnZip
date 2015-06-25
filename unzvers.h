@@ -22,11 +22,11 @@
 # endif
 
 # ifdef BETA
-#  define UZ_BETALEVEL      "c18 BETA"
-#  define UZ_VERSION_DATE   "2015-03-28"        /* Internal beta version. */
+#  define UZ_BETALEVEL      "c19-BETA"
+#  define UZ_VERSION_DATE   "2015-04-15"        /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "2015-??-??"        /* Official release version. */
+#  define UZ_VERSION_DATE   "2015-XX-XX"        /* Official release version. */
 #  define RELEASE
 # endif
 
@@ -38,7 +38,7 @@
 
 # define UZ_PATCHLEVEL  0
 
-# define UZ_VER_STRING  "6.10c18"       /* Keep in sync with Version numbers! */
+# define UZ_VER_STRING  "6.1c19"        /* Sync with Version numbers! */
 
 # ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"

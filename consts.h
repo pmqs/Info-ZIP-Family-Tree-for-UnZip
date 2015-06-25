@@ -23,8 +23,6 @@ ZCONST unsigned near mask_bits[17] = {
     0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff
 };
 
-ZCONST char Far VersionDate[] = UZ_VERSION_DATE; /* now defined in unzvers.h */
-
 #ifndef SFX
    ZCONST char Far EndSigMsg[] =
    "\nnote:  didn't find end-of-central-dir signature at end of central dir.\n";

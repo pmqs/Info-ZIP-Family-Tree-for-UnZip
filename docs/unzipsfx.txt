@@ -258,11 +258,11 @@ OPTIONS (Ordinary)
               On  other systems, -D- has no effect.
 
               [Non-VMS]  Timestamp  restoration behavior changed between UnZip
-              versions 6.00 and 6.10.  The following table shows  the  effects
-              of various -D options for both versions.
+              versions 6.00 and 6.1.  The following table shows the effects of
+              various -D options for both versions.
 
                          UnZip version      |
-                        6.00    |   6.10    | Restore timestamps on:
+                        6.00    |    6.1    | Restore timestamps on:
                      -----------+-----------+------------------------
                          -DD    |    -D     | Nothing.
                          -D     | (default) | Files, not directories.
@@ -356,7 +356,7 @@ OPTIONS (Ordinary)
 
               With -k, the archived permissions are restored without regard to
               the Unix umask or VMS default protection.  (This was the default
-              behavior in UnZip versions before 6.10.)
+              behavior in UnZip versions before 6.1.)
 
               With -k-, the archived permissions are ignored, so only the Unix
               umask or VMS default protection is effective.  (On VMS, directo-
@@ -550,12 +550,12 @@ OPTIONS (Ordinary)
               short lengths, the version numbers may be truncated or  stripped
               regardless of this option.)
 
-              [Non-VMS] Note that before UnZip version 6.10, on a non-VMS sys-
+              [Non-VMS]  Note that before UnZip version 6.1, on a non-VMS sys-
               tem, a file with a name like "fred;123" would,  by  default,  be
               extracted as "fred", even if the file did not originate on a VMS
               system (so that ";123" was probably not  really  a  VMS  version
-              number).   Beginning with UnZip version 6.10, the default behav-
-              ior is to strip VMS version numbers only from files  which  were
+              number).  Beginning with UnZip version 6.1, the default behavior
+              is to strip VMS version  numbers  only  from  files  which  were
               archived  on  a  VMS  system.   To restore the old behavior, and
               always strip apparent VMS version numbers, explicitly negate the
               option: -V-.
@@ -923,4 +923,4 @@ AUTHORS
        essary to create UnZipSFX.  See unzip(1L) for the current list of Info-
        ZIP authors.
 
-Info-ZIP                      06 Nov 2013 (v6.10)                 UNZIPSFX(1L)
+Info-ZIP                      15 Apr 2015 (v6.1)                  UNZIPSFX(1L)

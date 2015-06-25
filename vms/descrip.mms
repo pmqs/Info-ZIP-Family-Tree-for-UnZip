@@ -1,8 +1,8 @@
 # DESCRIP.MMS
 #
-#    UnZip 6.10 for VMS -- MMS (or MMK) Description File.
+#    UnZip 6.1 for VMS -- MMS (or MMK) Description File.
 #
-#    Last revised:  2015-01-21
+#    Last revised:  2015-04-15
 #
 #----------------------------------------------------------------------
 # Copyright (c) 2001-2015 Info-ZIP.  All rights reserved.

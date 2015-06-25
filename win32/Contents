@@ -1,5 +1,5 @@
-      Contents of the UnZip 6.10 Source Archive "win32" Directory
-      -----------------------------------------------------------
+      Contents of the UnZip 6.1 Source Archive "win32" Directory
+      ----------------------------------------------------------
 
 Contents            This file
 crc_i386.asm        32-bit Intel-assembler version of CRC routine
@@ -59,7 +59,7 @@ than the assembler routines provide.  This has not been tested lately,
 however.
 
    Many of the "make" files and other builders here are now obsolete. 
-They may not have been updated for UnZip 6.10, and may not support its
+They may not have been updated for UnZip 6.1, and may not support its
 new optional features.  The Unix builders should support the Cygwin and
 MinGW environments.  The "vc10\" builders for Visual C++ 2010 should
 work.  See INSTALL for more information.

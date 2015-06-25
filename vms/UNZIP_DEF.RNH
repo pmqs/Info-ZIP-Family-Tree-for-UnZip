@@ -6,7 +6,7 @@
 .!  Date:       October 23, 1991
 .!
 .!----------------------------------------------------------------------
-.! Copyright (c) 1991-2013 Info-ZIP.  All rights reserved.
+.! Copyright (c) 1991-2015 Info-ZIP.  All rights reserved.
 .!
 .! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 .! contents of which are also included in zip.h) for terms of use.  If,
@@ -93,7 +93,7 @@ Format
   unzip -Z [ zipinfo_options ] [ file[.zip] ] [ member ... ]
 .end literal
 .sk
-Note: Beginning with UnZip version 6.10, the old command-line parser has
+Note: Beginning with UnZip version 6.1, the old command-line parser has
 been replaced by one like the one used in Zip.  One significant change
 is that option negation now uses a TRAILING hyphen ("-"), so, for
 example, -B- negates the -B option.  This change was made because a
@@ -524,12 +524,12 @@ support setting timestamps for directories (currently ATheOS, BeOS,
 MacOS, OS/2, Unix, VMS, Win32).  On  other systems, -D- has no effect.
 .sk
 [Non-VMS] Timestamp restoration behavior changed between UnZip versions
-6.00 and 6.10.  The following table shows the effects of various -D
+6.00 and 6.1.  The following table shows the effects of various -D
 options for both versions.
 .sk
 .literal
        UnZip version      |
-      6.00    |   6.10    | Restore timestamps on:
+      6.00    |    6.1    | Restore timestamps on:
    -----------+-----------+------------------------
        -DD    |    -D     | Nothing.
        -D     | (default) | Files, not directories.
@@ -696,7 +696,7 @@ protection is applied to the UIC-based (SOGW) protections.
 .sk
 With -k, the archived permissions are restored without regard to the
 Unix umask or VMS default protection.  (This was the default behavior in
-UnZip versions before 6.10.)
+UnZip versions before 6.1.)
 .sk
 With -k-, the archived permissions are ignored, so only the Unix umask
 or VMS default protection is effective.  (On VMS, directories are always
@@ -1030,11 +1030,11 @@ this option allows them to be retained.  (On file systems that limit
 filenames to particularly short lengths, the version numbers may be
 truncated or stripped regardless of this option.)
 .sk
-[Non-VMS] Note that before UnZip version 6.10, on a non-VMS system, a
+[Non-VMS] Note that before UnZip version 6.1, on a non-VMS system, a
 file with a name like "fred;123" would, by default, be extracted as
 "fred", even if the file did not originate on a VMS system (so that
 ";123" was probably not really a VMS version number).  Beginning with
-UnZip version 6.10, the default behavior is to strip VMS version numbers
+UnZip version 6.1, the default behavior is to strip VMS version numbers
 only from files which were archived on a VMS system.  To restore the old
 behavior, and always strip apparent VMS version numbers, explicitly
 negate the option: "-V-".
@@ -1340,7 +1340,7 @@ Traditional encryption is included in the source kits, and support for
 Traditional encryption is enabled by default.  (Build-time C macro:
 CRYPT_TRAD.)
 .sk
-Beginning with UnZip version 6.10 and Zip version 3.1,
+Beginning with UnZip version 6.1 and Zip version 3.1,
 these programs also offer a stronger, Advanced Encryption Standard (AES)
 encryption method, which we call AES WinZip/Gladman (AES_WG)
 encryption.  (The encryption code was supplied by Brian Gladman, and the

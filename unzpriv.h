@@ -1611,7 +1611,8 @@ void izu_md_check( void);
 #define o_sc    0x10b   /* -sc: Show command line (and exit). */
 #define o_si    0x10c   /* -si: Show process ID. */
 #define o_so    0x10d   /* -so: Show options. */
-#define o_ve    0x10e   /* -version: Show program version/option info. */
+#define o_ve    0x10e   /* -ve/--version: Show program version/option info. */
+#define o_vq    0x10f   /* -vq/--quick-version: Show brief pgm version info. */
 
 /* options array is set in unzip.c */
 struct option_struct {
@@ -2662,11 +2663,11 @@ typedef struct _APIDocStruct {
   ---------------------------------------------------------------------------*/
 
 #ifndef WINDLL
-   int    MAIN                   OF((int argc, char **argv));
+   int    MAIN                  OF((int argc, char **argv));
 #endif /* ndef WINDLL */
-   int    unzip                  OF((__GPRO__ int argc, char **argv));
-   int    uz_opts                OF((__GPRO__ int *pargc, char ***pargv));
-   int    usage                  OF((__GPRO__ int error));
+   int    unzip                 OF((__GPRO__ int argc, char **argv));
+   int    uz_opts               OF((__GPRO__ int *pargc, char ***pargv));
+   int    usage                 OF((__GPRO__ int error));
 
 /* Command-line option function prototypes. */
 
@@ -2695,10 +2696,13 @@ int insert_arg OF((__GPRO__ char ***args, ZCONST char *arg, int insert_at,
 void show_env OF(( __GPRO__ int non_null_only));
 #endif /* def VMSCLI */
 
-void show_license OF((__GPRO));
+void show_license               OF((__GPRO));
 #ifndef SFX
-void show_options OF((__GPRO));
+void show_options               OF((__GPRO));
 #endif /* ndef SFX */
+#if !defined( SFX) || defined( DIAG_SFX)
+void show_version_info          OF((__GPRO));
+#endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 /*---------------------------------------------------------------------------
     Functions in process.c (main driver routines):
@@ -3546,6 +3550,8 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 /*  Global constants  */
 /**********************/
 
+#define UNZIP_MAINTAINER "Steven M. Schweda"
+
    extern ZCONST unsigned near mask_bits[17];
 
 #ifdef EBCDIC
@@ -3560,7 +3566,6 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
    extern ZCONST uch Far oem2iso_850[];
 #endif
 
-   extern ZCONST char Far  VersionDate[];
    extern ZCONST char Far  CentSigMsg[];
 #ifndef SFX
    extern ZCONST char Far  EndSigMsg[];

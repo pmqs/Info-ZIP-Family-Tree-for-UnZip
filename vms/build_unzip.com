@@ -1,11 +1,11 @@
 $! BUILD_UNZIP.COM
 $!
-$!     UnZip 6.10 for VMS -- DCL Build procedure.
+$!     UnZip 6.1 for VMS -- DCL Build procedure.
 $!
-$!     Last revised:  2014-10-20  SMS.
+$!     Last revised:  2015-05-18  SMS.
 $!
 $!----------------------------------------------------------------------
-$! Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
+$! Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.
 $!
 $! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 $! contents of which are also included in zip.h) for terms of use.  If,
@@ -18,7 +18,7 @@ $!     - Suppress C compilation (re-link): "NOCOMPILE"
 $!     - Suppress linking executables: "NOLINK"
 $!     - Suppress help file processing: "NOHELP"
 $!     - Suppress message file processing: "NOMSG"
-$!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.10.)
+$!     - Define DCL symbols: "SYMBOLS"  (Was default before UnZip 6.1.)
 $!     - Select compiler environment: "VAXC", "DECC", "GNUC"
 $!     - Disable AES_WG encryption support: "NOAES_WG"
 $!       By default, the SFX programs are built without AES_WG support.
@@ -437,23 +437,13 @@ $ endif
 $!
 $! Build.
 $!
-$! Sense the host architecture (Alpha, Itanium, or VAX).
+$! Sense the host architecture (Alpha, Itanium, VAX, or x86_64).
 $!
 $ if (f$getsyi( "HW_MODEL") .lt. 1024)
 $ then
 $     arch = "VAX"
 $ else
-$     if (f$getsyi( "ARCH_TYPE") .eq. 2)
-$     then
-$         arch = "ALPHA"
-$     else
-$         if (f$getsyi( "ARCH_TYPE") .eq. 3)
-$         then
-$             arch = "IA64"
-$         else
-$             arch = "unknown_arch"
-$         endif
-$     endif
+$     arch = f$edit( f$getsyi( "ARCH_NAME"), "UPCASE")
 $ endif
 $!
 $ destl = ""

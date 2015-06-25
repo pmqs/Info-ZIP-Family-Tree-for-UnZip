@@ -1,13 +1,13 @@
-UnZip 6.10c
+UnZip 6.1c
 
-Announcement for UnZip Beta 6.10c, >>25 Feb 2014.  This is a beta
-release.  Changes may be made before UnZip 6.10 is released.  See the
+Announcement for UnZip Beta 6.1c, >>15 Apr 2015.  This is a beta
+release.  Changes may be made before UnZip 6.1 is released.  See the
 file History.610 for details of changes in this beta release.
 
 Complaints and suggestions regarding this beta release can help to
 improve the next full release.
 
-Quick list of major changes in UnZip 6.10c (See INSTALL and README for
+Quick list of major changes in UnZip 6.1c (See INSTALL and README for
 details):
 
 - New command-line parser (like that in Zip 3.0) allows long ("--xxx")

@@ -729,13 +729,24 @@ int zi_opts(__G__ pargc, pargv)
                     break;
 #ifndef SFX
             case (o_ve):   /* version */
-                if (negative) {
+                if (negative)
+                {
                     uO.vflag = IZ_MAX( (uO.vflag- negative), 0);
                     negative = 0;
-                } else if (uO.vflag)
+                }
+                else if (uO.vflag)
+                {
                     ++uO.vflag;
+                }
                 else
+                {
                     uO.vflag = 2;
+                }
+                break;
+
+            case (o_vq):   /* brief version */
+                uO.vflag = 3;
+                uO.qflag = 4;
                 break;
 #endif /* ndef SFX */
 
@@ -867,8 +878,17 @@ int zi_opts(__G__ pargc, pargv)
 
     if (uO.vflag > 0)
     {
-      *pargc = -1;              /* Tell caller to exit. */
-      return USAGE(0);
+      if (uO.qflag > 3)
+      {
+          show_version_info(__G);       /* Show brief (UnZip) version. */
+          *pargc = -1;                  /* Tell caller to exit. */
+          return PK_OK;
+      }
+      else
+      {
+          *pargc = -1;                  /* Tell caller to exit. */
+          return USAGE(0);
+      }
     }
 
     /* convert files and xfiles lists to arrays */

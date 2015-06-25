@@ -1,5 +1,5 @@
-      Contents of the UnZip 6.10 Source Archive "wrap" Directory
-      ----------------------------------------------------------
+      Contents of the UnZip 6.1 Source Archive "wrap" Directory
+      ---------------------------------------------------------
 
 aescrypt.c          Wrapper for "aes_wg/aescrypt.c"
 aeskey.c            Wrapper for "aes_wg/aeskey.c"

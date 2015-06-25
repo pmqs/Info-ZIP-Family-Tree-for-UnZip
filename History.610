@@ -1,6 +1,6 @@
-UnZip, version 6.10c, ?? ??? 2014
+UnZip, version 6.1c, ?? ??? 2014
 
-These changes occurred in beta versions 6.10a through 6.10c.
+These changes occurred in beta versions 6.10a through 6.1c.
 
 Features added (or removed):
 
@@ -1688,10 +1688,33 @@ Bugs fixed:
 
 6.10c18 (18 Mar 2015)
  - Repaired damage to REENTRANT-sensitive code (such as the Windows DLL)
-   in versions 6.10c16 and 6.10c17.  (extract.c, fileio.c, process.c)
-   [SMS]
+   beginning in version 6.10c16.  (extract.c, fileio.c, process.c) [SMS]
  - Missing initialization of some variables related to segmented
    archives could cause spurious error messages: "error:  Unexpected
    end-of-file reading XXX.zip."  (globals.c, unzpriv.h) [Petr Stodulka,
    SMS]
-  
+
+6.1c19 (26 Jun 2015)
+ - Changed the displayed program version number to omit the PATCH_LEVEL
+   digit when it's zero, so, henceforth, UnZip version 6.1 will
+   generally be called version "6.1", not "6.10".  Added
+   -vq/--quick-version (/VERBOSE=BRIEF) option to provide a brief
+   (one-line) program version report.  (BUGS, Contents, INSTALL, README,
+   unzip.c, unzip.h, unzip610c.ann, unzpriv.h, unzvers.h, zipinfo.c,
+   docs/Contents, docs/unzip.txt, docs/unzipsfx.txt, docs/zipinfo.txt,
+   libiz/Contents, man/Contents, man/man1/Contents, man/man1/unzip.1,
+   man/man1/unzipsfx.1, man/man1/zipinfo.1, unix/Contents,
+   unix/README.zOS, vms/build_unzip.com, vms/cmdline.c, vms/Contents,
+   vms/descrip.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms,
+   vms/INSTALL_VMS.txt, vms/unzip_cli.help, vms/UNZIP_DEF.RNH,
+   vms/unz_cli.cld, win32/Contents, windll/Contents, wrap/Contents)
+   [SMS]
+ - Repaired damage to AppleDouble extraction in the non-stream case,
+   beginning in 6.10c16.  (extract.c)  [SMS]
+ - The "files tested" count in the error-summary trailer could be wrong
+   for a streamed archive, when a list of archive members was specified.
+   (extract.c)  [SMS]
+ - Removed the now-spurious warning, "zipfile claims to be last disk of
+   a multi-part archive [...]".  Improved handling of segmented archives
+   where the segment size varied.  (fileio.c, globals.h, process.c)
+   [Petr Stodulka, SMS]

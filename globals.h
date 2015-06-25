@@ -316,7 +316,6 @@ typedef struct Globals {
     char      *zipfn_sgmnt;         /* zipfile segment path/name */
     int       zipfn_sgmnt_size;     /* zipfile segment path/name size */
     zuvl_t    sgmnt_nr;             /* zipfile segment number */
-    zoff_t    sgmnt_size;           /* zipfile segment size */
     zipfd_t   zipfd;                /* zipfile primary file descr/pointer */
     zipfd_t   zipfd_sgmnt;          /* zipfile segment file descr/pointer */
     int       zipstdin;             /* Archive is stdin. */
