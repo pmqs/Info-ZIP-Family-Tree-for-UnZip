@@ -69,7 +69,7 @@
 
 #define USE_STRM_INPUT
 #define USE_FWRITE
-#define NO_USER_PROGRESS 
+#define NO_USER_PROGRESS
 
 #define PATH_MAX 128
 

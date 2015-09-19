@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.1.  Revised: 2015-06-10
+   UnZip version 6.1.  Revised: 2015-11-13
 
 ------------------------------------------------------------------------
 
@@ -70,12 +70,12 @@ This should create an "unzip61" directory which contains the UnZip
 source kit, and that is where the rest of the work is done.
 
    Some unzip programs, such as the Extraction Wizard ("Extract
-Compressed (Zipped) Folders") in Windows, may want to add another add
-another "unzip61" directory above the top-level directory in the Zip
-archive.  This extra, top-level directory is not needed, and probably
-makes finding the archive's top-level directory harder.  (With the
-Windows Extraction Wizard, this extra directory can easily be deleted
-manually from the default destination path before letting the extraction
+Compressed (Zipped) Folders") in Windows, may want to add another
+"unzip61" directory above the top-level directory in the Zip archive.
+This extra, top-level directory is not needed, and probably makes
+finding the archive's top-level directory harder.  (With the Windows
+Extraction Wizard, this extra directory can easily be deleted manually
+from the default destination path before letting the extraction
 proceed.)  Many of the instructions below assume that you're in the
 archive's main (top-level) directory, that is, the directory which
 contains this INSTALL file (and many other UnZip files and directories).
@@ -181,7 +181,7 @@ compression methods bzip2, LZMA, and PPMd is enabled by default.  The
 code used to implement these compression methods and the code in the
 optional source kit for AES_WG encryption are generally written to newer
 C language standards than the base Info-ZIP code, so some very old
-compilers may be unable to build UnZip if these features are enabled. 
+compilers may be unable to build UnZip if these features are enabled.
 In other cases, some special build options must be specified to get a
 particular feature to work properly.  The build instructions below (and
 in other, system-specific, supplementary documents) show how to disable
@@ -1078,14 +1078,8 @@ UNSHRINK_SUPPORT   (now default, as of January 2005)
    was used by PKZIP 1.0 and 1.1, and Zip 1.0 and 1.1. All newer
    archives use only the deflation method.)
 
-MULT_VOLUME   (experimental for 5.5x, do NOT use in production versions!)
-NO_MULT_VOLUME   (default)
-   The macro MULT_VOLUME is used to flag code portions needed for
-   support of multi-volume archives.  For now, this flag MUST NOT be
-   used to build a production version of UnZip. This flag has been
-   introduced to allow integration of experimental code for multi-volume
-   support in the master source tree.  This feature will become a
-   default option in the future 6.1 release of UnZip (with any luck).
+NO_BUILD_DATE
+   Omit the build date from the "Compiled with" line in the "-v" report.
 
 NO_CRYPT
    Disable all encryption support in all programs.
@@ -1125,10 +1119,11 @@ NO_ZIPINFO
 NOTIMESTAMP
    Disable the -T option, which basically does exactly what Zip's -go
    options do.  That is, set the timestamp of the archive to that of the
-   newest file in the archive without rewriting the archive. Unlike Zip,
-   however, UnZip supports wildcard specifications for the archive name.
-   For example, "unzip -T *.zip" will set the dates of all zipfiles in
-   the current directory.  (UnZip's option is also much faster.)
+   newest file in the archive without rewriting the archive.  UnZip
+   supports wildcard specifications for the archive name, which Zip may
+   not.  For example, "unzip -T *.zip" will set the dates of all
+   zipfiles in the current directory.  (UnZip's option is also much
+   faster.)
 
 OS2_EAS
    List the sizes of OS/2 EAs and ACLs for each file as two extra
@@ -1160,7 +1155,7 @@ USE_UNREDUCE_SMITH
    early PKZIP beta versions (0.9x).  By default, support for it is not
    included in UnZip.  If desired, Unreduce support can be provided
    using either the original, copyrighted code from Samuel H. Smith, or
-   some newer, public-domain code from Peter Backes. 
+   some newer, public-domain code from Peter Backes.
    USE_UNREDUCE_PUBLIC enables Unreduce support using the public-domain
    code.  USE_UNREDUCE_SMITH enables Unreduce support using the
    copyrighted code.  The public-domain Unreduce source module
@@ -1471,24 +1466,28 @@ re-link the programs.  On AIX, "-O2" seems to work.  On HP-UX, "-O1"
 seems to work.  For example:
 
     make -f unix/Makefile [options] CC=gcc generic          # Build.
-    make -f unix/Makefile test_ppmd                         # Test.
+    make -f unix/Makefile [options] test_ppmd               # Test.
     gcc -c -O1 szip/Ppmd8.c                                 # (Or "-O2"?)
     make -f unix/Makefile [options] CC=gcc generic          # Re-link.
-    make -f unix/Makefile test_ppmd                         # Re-test.
+    make -f unix/Makefile [options] test_ppmd               # Re-test.
 
-If "PROD=subdir" is used with "make", then add a suitable "-o" option to
-the compiler command.  For example:
+   Note that most "make" options are harmless but not required for the
+"test_ppmd" target (like "CC=gcc", above), but the "PROD=subdir" option,
+if it's used in the original "make" command, must also be specified for
+the "test_ppmd" target.  Also, if "PROD=subdir" is used with "make",
+then add a suitable "-o" option to the compiler command.  For example:
 
     make -f unix/Makefile [options] CC=gcc PROD=pd generic
-    make -f unix/Makefile PROD=pd test_ppmd
+    make -f unix/Makefile [options] PROD=pd test_ppmd
     gcc -c -O1 -o pd/Ppmd8.o szip/Ppmd8.c
     [...]
 
-Other compilers (AIX xlC?) may need some other optimization setting.  In
-any case, re-run the test after re-building UnZip, to verify that the
-program is behving properly.
+   Other compilers (AIX xlC?) may need some other optimization setting.
+In any case, re-run the test after re-building UnZip, to verify that the
+program is behaving properly.
 
    We would be grateful to receive reports describing environments where
-this problem occurs.
+this problem occurs, or GCC versions which work correctly in the
+environments where trouble was expected.
 
 ------------------------------------------------------------------------

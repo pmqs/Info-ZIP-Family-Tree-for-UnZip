@@ -17,6 +17,8 @@ ToDo            List of new features/fixes under consideration
 unzip610a.ann   Notes on the UnZip 6.10a beta release
 unzip610b.ann   Notes on the UnZip 6.10b beta release
 unzip610c.ann   Notes on the UnZip 6.1c beta release
+USexport_aes_wg.msg  US Dept. of Commerce BIS TSU notification: AES_WG
+USexport_zcrypt.msg  US Dept. of Commerce BIS TSU notification: ZCRYPT
 zip-comment.txt Source kit archive comment
 proginfo/       Programming docs, additional technical info, contributor list
 

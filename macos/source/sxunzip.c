@@ -123,7 +123,9 @@ static char UnZipVersionLocal[50];
 
 memset(UnZipVersionLocal,0,sizeof(UnZipVersionLocal));
 
+#ifndef NO_BUILD_DATE
 sprintf(UnZipVersionLocal, "[%s %s]", __DATE__, __TIME__);
+#endif
 
 return UnZipVersionLocal;
 }

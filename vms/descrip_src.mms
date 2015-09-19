@@ -119,7 +119,7 @@ CHECK_AES_WG = 1
 # Alpha, the .FIRST rule will detect incompatibility (before VMS V7.2).
 
 # Targets which can bypass the AES_WG test and, on Alpha, the (slow)
-# large-file test. 
+# large-file test.
 # (Not "" or ALL.  Could add help- and message-related.)
 
 TRGT_CLEAN = 1

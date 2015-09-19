@@ -536,7 +536,7 @@ int get_rms_fileprot( void)
     sts = sys$setdfprot( 0, &defprot);
     if ((sts & STS$M_SEVERITY) == STS$K_SUCCESS)
     {
-        /* V: Start bit.  S: Size (bits). */
+        /* V: Start bit.  S: Size (bits).  0 = access allowed. */
         sysdef = defprot& ((1<< XAB$S_SYS)- 1)<< XAB$V_SYS;
         owndef = defprot& ((1<< XAB$S_OWN)- 1)<< XAB$V_OWN;
         grpdef = defprot& ((1<< XAB$S_GRP)- 1)<< XAB$V_GRP;
@@ -2519,7 +2519,7 @@ static int _flush_stream(__G__ rawbuf, size, final_flag)
                 if ( eol_off >= size )
                 {
                     /* 2012-09-19 SMS.
-                     * No EOL found (at EOF?).  See note below. 
+                     * No EOL found (at EOF?).  See note below.
                      * Previously, the following memcpy() was not being
                      * done in this case, either, causing loss of data
                      * at the end of a last line with no line ending.
@@ -4125,8 +4125,8 @@ int mapattr(__G)
     __GDEF
 {
     ulg tmp = G.crec.external_file_attributes;
-    ulg theprot;
-    unsigned uxattr;
+    unsigned vmsprot;           /* VMS protections.  (0 = access ok.) */
+    unsigned uxattr;            /* UNIX permissions.  (1 = access ok.) */
 
     /* IM: The only field of XABPRO we need to set here is */
     /*     file protection, so we need not to change type */
@@ -4215,16 +4215,16 @@ int mapattr(__G)
                   G.pInfo->symlink = S_ISLNK(uxattr) &&
                                      SYMLINK_HOST(G.pInfo->hostnum);
 #endif /* def SYMLINKS */
-                  theprot  = (unix_to_vms[uxattr & 07] << XAB$V_WLD)
+                  vmsprot  = (unix_to_vms[uxattr & 07] << XAB$V_WLD)
                            | (unix_to_vms[(uxattr>>3) & 07] << XAB$V_GRP)
                            | (unix_to_vms[(uxattr>>6) & 07] << XAB$V_OWN);
                   if ( uxattr & 0x4000 )
                       /* Directory -- set D bits */
-                      theprot |= (XAB$M_NODEL << XAB$V_SYS)
+                      vmsprot |= (XAB$M_NODEL << XAB$V_SYS)
                               | (XAB$M_NODEL << XAB$V_OWN)
                               | (XAB$M_NODEL << XAB$V_GRP)
                               | (XAB$M_NODEL << XAB$V_WLD);
-                  G.pInfo->file_attr = theprot;
+                  G.pInfo->file_attr = vmsprot;
                   break;
               }
             }
@@ -4279,7 +4279,10 @@ int mapattr(__G)
                 if (fnlen > 0 && G.filename[fnlen-1] == '/')
                     tmp |= 0x10;
             }
-            tmp = !(tmp & 1) << 1  |  (tmp & 0x10) >> 4;
+
+            /* read-only bit --> write perms; subdir bit --> dir exec bit */
+            uxattr = !(tmp & 1) << 1  |  (tmp & 0x10) >> 4;
+
             if ((uxattr & 0700) == (unsigned)(0400 | tmp<<6)) {
                 /* keep previous G.pInfo->file_attr setting, when its "owner"
                  * part appears to be consistent with DOS attribute flags!
@@ -4292,14 +4295,14 @@ int mapattr(__G)
                                    (G.pInfo->hostnum == FS_FAT_);
 #endif /* def SYMLINKS */
             }
-            theprot = defprot;
+            vmsprot = defprot;
             if ( tmp & 1 )   /* Test read-only bit */
             {   /* Bit is set -- set bits in all fields */
                 tmp = XAB$M_NOWRITE | XAB$M_NODEL;
-                theprot |= (tmp << XAB$V_SYS) | (tmp << XAB$V_OWN) |
+                vmsprot |= (tmp << XAB$V_SYS) | (tmp << XAB$V_OWN) |
                            (tmp << XAB$V_GRP) | (tmp << XAB$V_WLD);
             }
-            G.pInfo->file_attr = theprot;
+            G.pInfo->file_attr = vmsprot;
             break;
     } /* end switch (host-OS-created-by) */
 
@@ -4375,7 +4378,7 @@ int dest_struct_level( char *path)
     struct dsc$descriptor_s dev_descr =
      { 0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0 };
 
-    /* Get the device name from the path argument, if supplied. 
+    /* Get the device name from the path argument, if supplied.
      * Otherwise (NULL), use what's already in dest_dev.
      */
     if (path != NULL)
@@ -5693,7 +5696,7 @@ int vms_status( int err)
      *                                ^^
      *
      * UnZip versions before 6.00 (before an official Facility code was
-     * assigned) used 0x7FFF instead of the official Facility code. 
+     * assigned) used 0x7FFF instead of the official Facility code.
      * Define CTL_FAC_IZ_UZP as 0x7FFF (and/or MSG_FAC_SPEC) to get the
      * old behavior.  (See above.)
      */
@@ -6051,7 +6054,7 @@ void version(__G)
       "",
 # endif /* def VMS_VERSION [else] */
 
-# ifdef __DATE__
+# if defined( __DATE__) && !defined( NO_BUILD_DATE)
       " on ", __DATE__
 # else
       "", ""

@@ -1,6 +1,6 @@
 UnZip 6.1c
 
-Announcement for UnZip Beta 6.1c, >>15 Apr 2015.  This is a beta
+Announcement for UnZip Beta 6.1c, >>16 Mar 2016.  This is a beta
 release.  Changes may be made before UnZip 6.1 is released.  See the
 file History.610 for details of changes in this beta release.
 
@@ -34,7 +34,7 @@ details):
   will now, by default, be extracted on a non-VMS system as "fred;123",
   not "fred".
 - New -da/--auto-extract-dir option specifies extraction into a
-  subdirectory whose name is derived from the base name of the archive. 
+  subdirectory whose name is derived from the base name of the archive.
   So, for example, "unzip -da fred.zip" would extract files into
   subdirectory "fred" ("[.fred]" on VMS).  This avoids cluttering the
   current directory with files if the archive structure lacks a
@@ -95,7 +95,7 @@ details):
   /[NO]AUTO_DIRECTORY[=REUSE] (-da/--auto-extract-dir) option controls
   automatic extraction destination subdirectory.
 - New builders for Microsoft Visual Studio (Visual C++) 2010 have more
-  options, fewer projects.  (Service Pack 1 may be needed for VS 2010. 
+  options, fewer projects.  (Service Pack 1 may be needed for VS 2010.
   VS 2012 (and newer?) should be compatible.)
 - Windows DLL now offers a command-line (argc, argv[]) interface which
   should be more stable than the old binary structure interface.  See

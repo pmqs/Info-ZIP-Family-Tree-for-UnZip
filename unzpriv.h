@@ -1928,7 +1928,7 @@ struct file_list {
 #define DOSTIME_2038_01_18 ((ulg)0x74320000L)
 
 /* Second-try (and third-try?) suffix(es) for non-wildcard archive names.
- * Mixed-case possibilities like ".Zip" are not covered.  
+ * Mixed-case possibilities like ".Zip" are not covered.
  * VMS handles this whole thing differently, using a default file spec.
  * FlexOS may be case-sensitive, but per-medium, which is too
  * complicated for our simple scheme.

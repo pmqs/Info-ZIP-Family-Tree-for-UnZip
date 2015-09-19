@@ -770,7 +770,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
          */
 #define OPT_DA  "-da"           /* "-da" Use auto destination dir. */
 #define OPT_DAN "-da-"          /* ""    Normal destination dir (default). */
-#define OPT_DAR "-da=reuse"     /* "-da=reuse" Allow existing auto dest dir. */ 
+#define OPT_DAR "-da=reuse"     /* "-da=reuse" Allow existing auto dest dir. */
 
         status = cli$present( &cli_auto_dir);
         if ((status & 1) || (status == CLI$_NEGATED))

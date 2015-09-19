@@ -144,12 +144,12 @@ static int UZppmd OF((__GPRO));
 /*******************************/
 
 static ZCONST char Far VersionMsg[] =
-  "   skipping: %-22s  need %s compat. v%u.%u (can do v%u.%u)\n";
+  "   skipping: %-22s   need %s compat. v%u.%u (can do v%u.%u)\n";
 static ZCONST char Far ComprMsgNum[] =
-  "   skipping: %-22s  unsupported compression method %u\n";
+  "   skipping: %-22s   unsupported compression method: %u\n";
 #ifndef SFX
    static ZCONST char Far ComprMsgName[] =
-     "   skipping: %-22s  `%s' method not supported\n";
+     "   skipping: %-22s   unsupported compression method: %s\n";
    static ZCONST char Far CmprNone[]       = "store";
    static ZCONST char Far CmprShrink[]     = "shrink";
    static ZCONST char Far CmprReduce[]     = "reduce";
@@ -157,15 +157,15 @@ static ZCONST char Far ComprMsgNum[] =
    static ZCONST char Far CmprTokenize[]   = "tokenize";
    static ZCONST char Far CmprDeflate[]    = "deflate";
    static ZCONST char Far CmprDeflat64[]   = "deflate64";
-   static ZCONST char Far CmprDCLImplode[] = "DCL implode";
+   static ZCONST char Far CmprDCLImplode[] = "DCL_implode";
    static ZCONST char Far CmprBzip[]       = "bzip2";
    static ZCONST char Far CmprLZMA[]       = "LZMA";
-   static ZCONST char Far CmprIBMTerse[]   = "IBM/Terse";
-   static ZCONST char Far CmprIBMLZ77[]    = "IBM LZ77";
+   static ZCONST char Far CmprIBMTerse[]   = "IBM_Terse";
+   static ZCONST char Far CmprIBMLZ77[]    = "IBM_LZ77";
    static ZCONST char Far CmprJPEG[]       = "JPEG";
    static ZCONST char Far CmprWavPack[]    = "WavPack";
    static ZCONST char Far CmprPPMd[]       = "PPMd";
-   static ZCONST char Far CmprAES[]        = "AES_WG encr";
+   static ZCONST char Far CmprAES[]        = "AES_WG(encr)";
    static ZCONST char Far *ComprNames[NUM_METHODS] = {
      CmprNone, CmprShrink, CmprReduce, CmprReduce, CmprReduce, CmprReduce,
      CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode,
@@ -354,8 +354,9 @@ static ZCONST char Far Inflate[] = "inflate";
      "warning:  %s is probably truncated\n";
 #endif
 
-static ZCONST char Far FileUnknownCompMethod[] =
-  "%s:  unknown compression method\n";
+static ZCONST char Far UnknownCmprMthdFile[] =
+  "%s:  unknown compression method: %d\n";
+
 static ZCONST char Far BadCRC[] = " bad CRC %08lx  (should be %08lx)\n";
 
 /* TruncEAs[] also used in os2/os2.c:[close_outfile(), mapname()]. */
@@ -381,7 +382,7 @@ ZCONST char Far TruncNTSD[] =
    static ZCONST char Far UnsuppNTSDVersEAs[] =
      " unsupported NTSD EAs version %d\n";
    static ZCONST char Far BadCRC_EAs[] = " bad CRC for extended attributes\n";
-   static ZCONST char Far UnknComprMethodEAs[] =
+   static ZCONST char Far UnknownCmprMthdEA[] =
      " unknown compression method for EAs (%u)\n";
    static ZCONST char Far NotEnoughMemEAs[] =
      " out of memory while inflating EAs\n";
@@ -950,7 +951,7 @@ static int TestExtraField(__G__ ef_buf, ef_len)
                                      LoadFarString(BadCRC_EAs)));
                                 else
                                     Info(slide, 1, ((char *)slide,
-                                     LoadFarString(UnknComprMethodEAs), m));
+                                     LoadFarString(UnknownCmprMthdEA), m));
                             }
                             break;
                     }
@@ -1008,7 +1009,7 @@ static int TestExtraField(__G__ ef_buf, ef_len)
                                      LoadFarString(BadCRC_EAs)));
                                 else
                                     Info(slide, 1, ((char *)slide,
-                                     LoadFarString(UnknComprMethodEAs), m));
+                                     LoadFarString(UnknownCmprMthdEA), m));
                             }
                             break;
                     }
@@ -1376,86 +1377,130 @@ static int extract_dest_dir( __G)       /* Return PK-type error code. */
  * Store (0) is always allowed.
  * Currently, Implode (6) is allowed for non-SFX.
  */
-#ifdef LZW_CLEAN                /* Shrink (1) not allowed. */
-# define UNKN_SHR (G.crec.compression_method == SHRUNK)
+#ifdef LZW_CLEAN                        /* Shrink (1) not allowed. */
+# define UNKN_SHR( mthd) (mthd == SHRUNK)
 #else
-# define UNKN_SHR  FALSE        /* Shrink (1) allowed. */
+# define UNKN_SHR( mthd) FALSE          /* Shrink (1) allowed. */
 #endif
 
 #if !defined( USE_UNREDUCE_PUBLIC) && !defined( USE_UNREDUCE_SMITH)
-                                /* Reduce (2-5) not allowed. */
-# define UNKN_RED (G.crec.compression_method >= REDUCED1 && \
-                      G.crec.compression_method <= REDUCED4)
+                                        /* Reduce (2-5) not allowed. */
+# define UNKN_RED( mthd) (mthd >= REDUCED1 && mthd <= REDUCED4)
 #else
-# define UNKN_RED  FALSE        /* Reduce (2-5) allowed. */
+# define UNKN_RED( mthd) FALSE          /* Reduce (2-5) allowed. */
 #endif
 
-#ifdef SFX                      /* Implode should have its own macro. */
-# define UNKN_IMPL (G.crec.compression_method == IMPLODED)
+#ifdef SFX                              /* Implode should have its own macro. */
+# define UNKN_IMPL( mthd) (mthd == IMPLODED)
 #else
-# define UNKN_IMPL FALSE        /* Implode (6) allowed. */
+# define UNKN_IMPL( mthd) FALSE         /* Implode (6) allowed. */
 #endif
 
-                                /* Tokenize (7) not allowed. */
-#define UNKN_TOKN (G.crec.compression_method == TOKENIZED)
+                                        /* Tokenize (7) not allowed. */
+#define UNKN_TOKN( mthd) (mthd == TOKENIZED)
 
 #ifdef DEFLATE_SUPPORT
-# define UNKN_DEFL FALSE        /* Deflate (8) allowed. */
+# define UNKN_DEFL( mthd) FALSE         /* Deflate (8) allowed. */
 #else
-# define UNKN_DEFL (G.crec.compression_method == DEFLATED)
+# define UNKN_DEFL( mthd) (mthd == DEFLATED)
 #endif
 
 #if defined( DEFLATE_SUPPORT) && defined( DEFLATE64_SUPPORT)
-# define UNKN_DEFL64 FALSE      /* Deflate64 (9) allowed. */
+# define UNKN_DEFL64( mthd) FALSE       /* Deflate64 (9) allowed. */
 #else
-# define UNKN_DEFL64 (G.crec.compression_method == ENHDEFLATED)
+# define UNKN_DEFL64( mthd) (mthd == ENHDEFLATED)
 #endif
 
 /* Assume that compression methods above Deflate64 (ENHDEFLATED = 9) are
  * not allowed, unless an UNKN_xxxx exception is false.
  */
 #ifdef IZ_CRYPT_AES_WG
-# define UNKN_AES_WG (G.crec.compression_method != AESENCRED)
+# define UNKN_AES_WG( mthd) (mthd != AESENCRED)
 #else
-# define UNKN_AES_WG TRUE       /* AES_WG (99) unknown. */
+# define UNKN_AES_WG( mthd) TRUE        /* AES_WG (99) unknown. */
 #endif
 
 #ifdef BZIP2_SUPPORT
-# define UNKN_BZ2 (G.crec.compression_method != BZIPPED)
+# define UNKN_BZ2( mthd) (mthd != BZIPPED)
 #else
-# define UNKN_BZ2 TRUE          /* Bzip2 (12) unknown. */
+# define UNKN_BZ2( mthd) TRUE           /* Bzip2 (12) unknown. */
+#endif
+
+#ifdef JPEG_SUPPORT
+# define UNKN_JPEG( mthd) (mthd != JPEGED)
+#else
+# define UNKN_JPEG( mthd) TRUE          /* JPEG (96) unknown */
 #endif
 
 #ifdef LZMA_SUPPORT
-# define UNKN_LZMA (G.crec.compression_method != LZMAED)
+# define UNKN_LZMA( mthd) (mthd != LZMAED)
 #else
-# define UNKN_LZMA TRUE         /* LZMA (14) unknown */
+# define UNKN_LZMA( mthd) TRUE          /* LZMA (14) unknown */
 #endif
 
 #ifdef PPMD_SUPPORT
-# define UNKN_PPMD (G.crec.compression_method != PPMDED)
+# define UNKN_PPMD( mthd) (mthd != PPMDED)
 #else
-# define UNKN_PPMD TRUE         /* PPMd (98) unknown */
+# define UNKN_PPMD( mthd) TRUE          /* PPMd (98) unknown */
 #endif
 
 #ifdef WAVP_SUPPORT
-# define UNKN_WAVP (G.crec.compression_method != WAVPACKED)
+# define UNKN_WAVP( mthd) (mthd != WAVPACKED)
 #else
-# define UNKN_WAVP TRUE         /* WavPack (97) unknown */
+# define UNKN_WAVP( mthd) TRUE          /* WavPack (97) unknown */
 #endif
 
-#define UNKN_COMPR \
- ((UNKN_DEFL || UNKN_DEFL64 || UNKN_IMPL || UNKN_RED || \
- UNKN_SHR || UNKN_TOKN) || \
- ((G.crec.compression_method > ENHDEFLATED) && \
- UNKN_AES_WG && UNKN_BZ2 && UNKN_LZMA && UNKN_PPMD && UNKN_WAVP))
+
+/******************************/
+/*  Function unkn_cmpr_mthd() */
+/******************************/
+
+static int unkn_cmpr_mthd( __G)
+  __GDEF
+{
+  /* Return 0: supported compression method
+   *        1: unsupported compression method
+   */
+  ush mthd;
+  int sts;
+
+  mthd = G.crec.compression_method;
+
+#ifdef IZ_CRYPT_AES_WG
+  if (mthd == AESENCRED)
+  {
+    /* Scan the (central) extra field for an AES block. */
+    sts = ef_scan_for_aes( G.extra_field,
+                           G.crec.extra_field_length,
+                           NULL,                        /* AES version. */
+                           NULL,                        /* AES vendor. */
+                           NULL,                        /* AES mode. */
+                           &G.pInfo->cmpr_mthd_aes);    /* AES method. */
+    if (sts == 1)
+    {
+      /* Found a valid AES_WG extra block.  Use its compression method. */
+      mthd = G.pInfo->cmpr_mthd_aes;
+    }
+  }
+#endif /* def IZ_CRYPT_AES_WG */
+
+  sts = ((UNKN_DEFL( mthd) || UNKN_DEFL64( mthd) || UNKN_IMPL( mthd) ||
+   UNKN_RED( mthd) || UNKN_SHR( mthd) || UNKN_TOKN( mthd)) ||
+   ((mthd > ENHDEFLATED) &&
+   (UNKN_AES_WG( mthd) && UNKN_BZ2( mthd) && UNKN_JPEG( mthd) &&
+    UNKN_LZMA( mthd) && UNKN_PPMD( mthd) && UNKN_WAVP( mthd))));
+
+  return sts;
+}
+
 
 /* UNZVERS_SUPPORT macro: Version Needed to Extract. */
+
 #if defined(BZIP2_SUPPORT) && (UNZIP_VERSION < UNZIP_BZIP2_VERS)
-    int unzvers_support = (UNKN_BZ2 ? UNZIP_VERSION : UNZIP_BZIP2_VERS);
-#   define UNZVERS_SUPPORT  unzvers_support
+#  define UNZVERS_SUPPORT( mthd) \
+     (UNKN_BZ2( mthd) ? UNZIP_VERSION : UNZIP_BZIP2_VERS)
 #else
-#   define UNZVERS_SUPPORT  UNZIP_VERSION
+#  define UNZVERS_SUPPORT( mthd) UNZIP_VERSION
 #endif
 
 
@@ -1489,27 +1534,40 @@ static int store_info(__G)      /* Return 0 if ok, non-zero if skipping. */
     }
 
     /* First, complain about an unsupported compression method. */
-    if (UNKN_COMPR) {
+    if (unkn_cmpr_mthd( __G))
+    {
+#ifdef IZ_CRYPT_AES_WG
+        ush mthd;
+
+        if (G.crec.compression_method == AESENCRED)
+          mthd = G.pInfo->cmpr_mthd_aes;
+        else
+          mthd = G.crec.compression_method;
+
+# define MTHD mthd
+#else /* def IZ_CRYPT_AES_WG */
+# define MTHD G.crec.compression_method
+#endif /* def IZ_CRYPT_AES_WG [else] */
+
         if (!((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))) {
 #ifndef SFX
             unsigned cmpridx;
 
-            if ((cmpridx = find_compr_idx(G.crec.compression_method))
-                < NUM_METHODS)
+            if ((cmpridx = find_compr_idx( MTHD)) < NUM_METHODS)
                 Info(slide, 0x401, ((char *)slide, LoadFarString(ComprMsgName),
                   FnFilter1(G.filename),
                   LoadFarStringSmall(ComprNames[cmpridx])));
             else
 #endif
                 Info(slide, 0x401, ((char *)slide, LoadFarString(ComprMsgNum),
-                  FnFilter1(G.filename),
-                  G.crec.compression_method));
+                  FnFilter1(G.filename), MTHD));
         }
         return 1;
     }
 
     /* Second, complain about an insufficient version number. */
-    if (G.crec.version_needed_to_extract[1] == VMS_) {
+    if (G.crec.version_needed_to_extract[1] == VMS_)
+    {
         if (G.crec.version_needed_to_extract[0] > VMS_UNZIP_VERSION) {
             if (!((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2)))
                 Info(slide, 0x401, ((char *)slide, LoadFarString(VersionMsg),
@@ -1529,13 +1587,15 @@ static int store_info(__G)      /* Return 0 if ok, non-zero if skipping. */
         }
 #endif /* ndef VMS */
     /* usual file type:  don't need VMS to extract */
-    } else if (G.crec.version_needed_to_extract[0] > UNZVERS_SUPPORT) {
+    }
+    else if (G.crec.version_needed_to_extract[0] > UNZVERS_SUPPORT( MTHD))
+    {
         if (!((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2)))
             Info(slide, 0x401, ((char *)slide, LoadFarString(VersionMsg),
               FnFilter1(G.filename), "PK",
               G.crec.version_needed_to_extract[0] / 10,
               G.crec.version_needed_to_extract[0] % 10,
-              UNZVERS_SUPPORT / 10, UNZVERS_SUPPORT % 10));
+              UNZVERS_SUPPORT( MTHD) / 10, UNZVERS_SUPPORT( MTHD) % 10));
         return 4;
     }
 
@@ -1826,7 +1886,7 @@ int aes_wg_prep( __G__ temp_cmpr_mthd_p, temp_sto_size_decr_p )
     /* Extract info from an AES extra block, if there is one. */
     /* Set mode negative.  (Valid values are positive.) */
     G.pInfo->cmpr_mode_aes = -1;
-    /* Scan the extra field for an AES block. */
+    /* Scan the (local) extra field for an AES block. */
     ef_scan_for_aes( G.extra_field,
                      G.lrec.extra_field_length,
                      &G.pInfo->cmpr_vers_aes,   /* AES version. */
@@ -1986,7 +2046,7 @@ static int detect_apl_dbl( __G)
           if (*G.pr_filename != '\0')
           {
             /* The previous normal file had its name replaced, so
-             * replace the name of this AppleDouble file name, too. 
+             * replace the name of this AppleDouble file name, too.
              * Without extra effort, the "renamed" flag will be
              * misleadingly FALSE for mapname() later, but the
              * preceding normal file should have paved the way by
@@ -2206,7 +2266,7 @@ void action_msg( __G__ action, flag)
 /* Note that the names "temp_compression_method" and
  * "temp_stored_size_decr" are used for local variables (and the related
  * macros REAL_COMPRESSION_METHOD and REAL_STORED_SIZE_DECR are used) in
- * multiple functions. 
+ * multiple functions.
  */
 #ifdef IZ_CRYPT_AES_WG
 #  define REAL_COMPRESSION_METHOD temp_compression_method
@@ -2681,9 +2741,10 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
             break;
 #endif /* PPMD_SUPPORT */
 
-        default:   /* should never get to this point */
+        default:        /* Should never get here.  Bad unkn_cmpr_mthd()? */
             Info(slide, 0x401, ((char *)slide,
-              LoadFarString(FileUnknownCompMethod), FnFilter1(G.filename)));
+             LoadFarString(UnknownCmprMthdFile),
+             FnFilter1(G.filename), REAL_COMPRESSION_METHOD));
             /* close and delete file before return? */
             undefer_input(__G);
             return PK_WARN;
@@ -4718,8 +4779,9 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
             error_in_archive = error;   /* only PK_EOF defined */
             continue;   /* can still try next one */
         }
-        if ((error = do_string(__G__ G.lrec.filename_length, DS_FN_L)) !=
-             PK_COOL)
+
+        if ((error =
+         do_string(__G__ G.lrec.filename_length, DS_FN_L)) != PK_COOL)
         {
             if (error > error_in_archive)
                 error_in_archive = error;
@@ -4731,7 +4793,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
         }
 
         if ((error =
-             do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != 0)
+         do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != PK_COOL)
         {
             if (error > error_in_archive)
                 error_in_archive = error;
@@ -4850,6 +4912,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
         {
             continue;   /* Go on to the next member. */
         }
+
 #endif /* def IZ_CRYPT_AES_WG */
 
         if (REAL_COMPRESSION_METHOD == STORED)
@@ -4934,7 +4997,7 @@ static int extract_or_test_entrylist(__G__ mbr_ndx,
         {
           /* Skip this member.  We created a directory, or there was
            * some other member-terminal condition.
-           */ 
+           */
 #if defined( UNIX) && defined( __APPLE__)
           /* If we are doing special AppleDouble file processing, then
            * record the fact that we're skipping this member.
@@ -5104,8 +5167,8 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
                 error_in_archive = PK_WARN;
         }
 # endif /* # if !defined(SFX) && defined(UNICODE_SUPPORT) */
-        if ((error = do_string(__G__ G.lrec.filename_length, DS_FN_L)) !=
-             PK_COOL)
+        if ((error =
+         do_string(__G__ G.lrec.filename_length, DS_FN_L)) != PK_COOL)
         {
             if (error > error_in_archive)
                 error_in_archive = error;
@@ -5130,7 +5193,7 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
 # endif /* def DYNAMIC_WIDE_NAME [else] */
 
         if ((error =
-             do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != 0)
+         do_string(__G__ G.lrec.extra_field_length, EXTRA_FIELD)) != PK_COOL)
         {
             if (error > error_in_archive)
                 error_in_archive = error;
@@ -5301,7 +5364,7 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
         {
           /* Skip this member.  We created a directory, or there was
            * some other member-terminal condition.
-           */ 
+           */
           continue;
         }
 
@@ -5519,8 +5582,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
-            if ((error = do_string(__G__ G.crec.filename_length, DS_FN)) !=
-                 PK_COOL)
+            if ((error =
+             do_string(__G__ G.crec.filename_length, DS_FN)) != PK_COOL)
             {
                 if (error > error_in_archive)
                     error_in_archive = error;
@@ -5532,8 +5595,9 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     break;
                 }
             }
-            if ((error = do_string(__G__ G.crec.extra_field_length,
-                EXTRA_FIELD)) != 0)
+            if ((error =
+             do_string(__G__ G.crec.extra_field_length, EXTRA_FIELD)) !=
+             PK_COOL)
             {
                 if (error > error_in_archive)
                     error_in_archive = error;
@@ -5555,10 +5619,10 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 #ifdef AMIGA
             G.filenote_slot = mbr_ndx;
             if ((error = do_string(__G__ G.crec.file_comment_length,
-                                   uO.N_flag ? FILENOTE : SKIP)) != PK_COOL)
+             uO.N_flag ? FILENOTE : SKIP)) != PK_COOL)
 #else
-            if ((error = do_string(__G__ G.crec.file_comment_length, SKIP))
-                != PK_COOL)
+            if ((error =
+             do_string(__G__ G.crec.file_comment_length, SKIP)) != PK_COOL)
 #endif
             {
                 if (error > error_in_archive)

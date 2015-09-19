@@ -409,7 +409,7 @@ ZCONST char Far BetaVersion[] = "%s\
 static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 # endif /* ndef VMSCLI */
 ZCONST char Far UnzipBanner[] =
- "%s %s (%s)  (c)%4.4s Info-ZIP  http://info-zip.org\n";
+ "%s %s (%s)  (c) %4.4s Info-ZIP  http://info-zip.org\n";
 
 # ifdef SFX
 #  ifdef SFX_EXDIR
@@ -866,7 +866,7 @@ int MAIN(argc, argv)   /* return PK-type error code (except under VMS) */
  * Enable dump of memory leaks on program exit.
  */
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined( NO_IZ_DEBUG_ALLOC)
-    _CrtSetDbgFlag( 
+    _CrtSetDbgFlag(
      _CrtSetDbgFlag( _CRTDBG_REPORT_FLAG ) | _CRTDBG_LEAK_CHECK_DF);
 # endif
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -22,11 +22,11 @@
 # endif
 
 # ifdef BETA
-#  define UZ_BETALEVEL      "c19-BETA"
-#  define UZ_VERSION_DATE   "2015-04-15"        /* Internal beta version. */
+#  define UZ_BETALEVEL      "c20-BETA"
+#  define UZ_VERSION_DATE   "2016-03-16"        /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "2015-XX-XX"        /* Official release version. */
+#  define UZ_VERSION_DATE   "2016-XX-XX"        /* Official release version. */
 #  define RELEASE
 # endif
 
@@ -38,7 +38,7 @@
 
 # define UZ_PATCHLEVEL  0
 
-# define UZ_VER_STRING  "6.1c19"        /* Sync with Version numbers! */
+# define UZ_VER_STRING  "6.1c20"        /* Sync with Version numbers! */
 
 # ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"
@@ -77,15 +77,15 @@
  * any of the DLL/Library APIs, the corresponding compatibility level should
  * be synchronized with the current UnZip version numbers.
  */
-/* generic DLL API minimum compatible version*/
+/* generic DLL API minimum compatible version */
 # define UZ_GENAPI_COMP_MAJOR   6
 # define UZ_GENAPI_COMP_MINOR   1
 # define UZ_GENAPI_COMP_REVIS   0
-/* os2dll API minimum compatible version*/
+/* os2dll API minimum compatible version */
 # define UZ_OS2API_COMP_MAJOR   6
 # define UZ_OS2API_COMP_MINOR   1
 # define UZ_OS2API_COMP_REVIS   0
-/* windll API minimum compatible version*/
+/* windll API minimum compatible version */
 # define UZ_WINAPI_COMP_MAJOR   6
 # define UZ_WINAPI_COMP_MINOR   1
 # define UZ_WINAPI_COMP_REVIS   0

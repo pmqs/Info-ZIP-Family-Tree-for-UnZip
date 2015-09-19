@@ -806,7 +806,7 @@ processing.  Because wildcard characters normally match "/" directory
 separators (for exceptions, see the option \fB\-W\fP), this option may
 be used to exclude any files that are in subdirectories.  For example,
 "\fCunzip\ foo\ *.[ch]\ \-x\ */*\fR" would extract all C source files
-(*.c, *.h) in the main directory, but none in any subdirectories. 
+(*.c, *.h) in the main directory, but none in any subdirectories.
 Without the \fB\-x\fP option, all C source files in all directories in
 the archive would be extracted.
 .IP
@@ -816,7 +816,7 @@ archive member name.  To avoid any confusion between member names and
 command options, it's simplest to specify \fB\-x\fP (\fB\-\-exclude
 member\fP) and its member list as the \fIlast\fP items on a command
 line.  Alternatively, the special name "@" can be used to terminate the
-member list (and cause the program to resume scanning for options). 
+member list (and cause the program to resume scanning for options).
 That is, for example, the following two commands are equivalent:
 .EX
       example_sfx -b -x file1 file2 file3

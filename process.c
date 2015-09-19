@@ -3312,21 +3312,23 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 # endif
 
 /*---------------------------------------------------------------------------
-    This function scans the extra field for EF_TIME, EF_IZUNIX2, EF_IZUNIX, or
-    EF_PKUNIX blocks containing Unix-style time_t (GMT) values for the entry's
-    access, creation, and modification time.
-    If a valid block is found, the time stamps are copied to the iztimes
-    structure (provided the z_utim pointer is not NULL).
-    If a IZUNIX2 block is found or the IZUNIX block contains UID/GID fields,
-    and the z_uidgid array pointer is valid (!= NULL), the owner info is
-    transfered as well.
-    The presence of an EF_TIME or EF_IZUNIX2 block results in ignoring all
-    data from probably present obsolete EF_IZUNIX blocks.
-    If multiple blocks of the same type are found, only the information from
-    the last block is used.
-    The return value is a combination of the EF_TIME Flags field with an
-    additional flag bit indicating the presence of valid UID/GID info,
-    or 0 in case of failure.
+ *    This function scans the extra field for EF_TIME ("UT"), EF_IZUNIX2
+ * ("Ux"), EF_IZUNIX ("UX"), or EF_PKUNIX (0x000d) blocks containing
+ * Unix-style time_t (GMT) values for the entry's access, creation, and
+ * modification time.
+ *    If a valid block is found (and the z_utim pointer is not NULL),
+ * then the time stamps are copied to the iztimes structure.
+ *    If an IZUNIX2 ("Ux") block is found or the IZUNIX ("UX") block
+ * contains UID/GID fields, and the z_uidgid array pointer is not NULL,
+ * then the owner info is transfered as well.
+ *    The presence of an EF_TIME ("UT") or EF_IZUNIX2 ("Ux") block
+ * results in ignoring all data from probably present, obsolete
+ * EF_IZUNIX ("UX") blocks.
+ *    If multiple blocks of the same type are found, then only the
+ * information from the last block is used.
+ *    The return value is a combination of the EF_TIME ("UT") Flags
+ * field with an additional flag bit indicating the presence of valid
+ * UID/GID info, or 0 in case of failure.
   ---------------------------------------------------------------------------*/
 
     if (ef_len == 0 || ef_buf == NULL || (z_utim == 0 && z_uidgid == NULL))
@@ -3348,7 +3350,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
         }
 
         switch (eb_id) {
-          case EF_TIME:
+          case EF_TIME:         /* "UT" */
             flags &= ~0x0ff;    /* ignore previous IZUNIX or EF_TIME fields */
             have_new_type_eb = 1;
             if ( eb_len >= EB_UT_MINLEN && z_utim != NULL) {
@@ -3491,7 +3493,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
             }
             break;
 
-          case EF_IZUNIX2:
+          case EF_IZUNIX2:      /* "Ux" */
             if (have_new_type_eb == 0) {
                 flags &= ~0x0ff;        /* ignore any previous IZUNIX field */
                 have_new_type_eb = 1;
@@ -3507,7 +3509,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 # endif
             break;
 
-          case EF_IZUNIX3:
+          case EF_IZUNIX3:      /* "ux" */
             /* new 3rd generation Unix ef */
             have_new_type_eb = 2;
 
@@ -3563,8 +3565,8 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 # endif /* def IZ_HAVE_UXUIDGID */
             break;
 
-          case EF_IZUNIX:
-          case EF_PKUNIX:       /* PKUNIX e.f. layout is identical to IZUNIX */
+          case EF_IZUNIX:       /* "UX" */
+          case EF_PKUNIX:       /* 0x000d (Same layout as IZUNIX) */
             if (eb_len >= EB_UX_MINLEN) {
                 TTrace((stderr, "ef_scan_for_izux: found %s extra field\n",
                  (eb_id == EF_IZUNIX ? "IZUNIX" : "PKUNIX")));

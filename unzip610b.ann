@@ -13,7 +13,7 @@ Quick list of major changes in UnZip 6.10b:
 - Implement Windows full Unicode support.  This support should be
   automatic now on NT and later platforms.
 - Add -I and -O options for setting ISO and OEM character sets,
-  respectively, used by UnZip when doing character set translations. 
+  respectively, used by UnZip when doing character set translations.
   This support is based on the unzip60-alt-iconv-utf8 patch suggested in
   an Info-ZIP forum thread and uses the iconv library which must be
   available.  These options are enabled using the USE_ICONV_MAPPING

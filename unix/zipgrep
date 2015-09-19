@@ -85,10 +85,12 @@ while test $# -ne 0; do
 done
 
 if test $# = 0; then
-  echo usage: `basename "$0"` "[egrep_options] pattern zipfile [members...]"
-  echo Uses unzip and egrep to search the zip members for a string or pattern.
+  echo 'usage: '`basename "$0"`' [egrep_options] pattern zipfile [members...]'
+  echo 'Uses unzip and egrep to search the zip members for a string or pattern.'
+  echo 'Note: egrep, not grep, so pattern characters like "|" are special.'
   exit 1
 fi
+
 zipfile="$1"; shift
 
 opts=`echo "$opts" | sed -e 's/ //g' -e 's/-//g'`

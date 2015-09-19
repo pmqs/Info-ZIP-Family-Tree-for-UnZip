@@ -339,9 +339,13 @@ int close_infile( __G__ pfd)
 /***********************************/
 /* Function set_zipfn_sgmnt_name() */
 /***********************************/
+#ifdef PROTO
+int set_zipfn_sgmnt_name( __GPRO__ zuvl_t sgmnt_nr)
+#else /* def PROTO */
 int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
   __GDEF
   zuvl_t sgmnt_nr;
+#endif /* def PROTO [else] */
 {
   char *suffix;
   int sufx_len;
@@ -1114,7 +1118,7 @@ int seek_zipf(__G__ abs_offset)
   zoff_t request;
   zoff_t inbuf_offset;
   zoff_t bufstart;
-  int sgmnt_movement = G.ecrec.number_this_disk - G.sgmnt_nr;
+  int sgmnt_movement = G.ecrec.number_this_disk - G.sgmnt_nr - 1;
   /* If request < 0, then we will move between segment files if
    * archive is segmented and in that case we need start always
    * from last file. So set right movement against actual segment.
@@ -1148,9 +1152,7 @@ int seek_zipf(__G__ abs_offset)
        G.zipfn, 12, LoadFarString(ReportMsg)));
       return PK_BADERR;
     }
-    /* Get the new segment size, and calculate the new offset.
-     * This is where G.sgmnt_size gets a real (non-zero) value.
-     */
+    /* Get the new segment size, and calculate the new offset. */
 #ifdef USE_STRM_INPUT
     zfseeko(G.zipfd, 0, SEEK_END);
     request += zftello(G.zipfd);

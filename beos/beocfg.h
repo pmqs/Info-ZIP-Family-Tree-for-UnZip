@@ -73,14 +73,14 @@
 
 #ifdef ICONV_MAPPING
 
-# define MAX_CP_NAME 25 
-   
+# define MAX_CP_NAME 25
+
 # ifdef SETLOCALE
 #  undef SETLOCALE
 # endif
 # define SETLOCALE(category, locale) setlocale(category, locale)
 # include <locale.h>
-   
+
 # ifdef _ISO_INTERN
 #  undef _ISO_INTERN
 # endif

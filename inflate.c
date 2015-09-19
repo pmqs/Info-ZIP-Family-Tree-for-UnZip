@@ -1117,7 +1117,7 @@ unsigned bl, bd;        /* number of bits decoded by tl[] and td[] */
 #  else /* def SLIDE_MEMCPY */
           {
 #  endif /* def SLIDE_MEMCPY [else] */
-            /* Advancing copy, probably slower than memcpy(). 
+            /* Advancing copy, probably slower than memcpy().
              * (Possibly faster than memmove() on VMS Alpha?)
              * When w > d, this copies blocks of size w-d repeatedly.
              */

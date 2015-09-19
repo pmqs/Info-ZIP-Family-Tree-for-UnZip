@@ -74,7 +74,7 @@ and maintaining control over this process is essentially impossible.
 
    VMS V8.3 offers support for symbolic links (symlinks) on ODS5
 volumes.  In previous Zip and UnZip versions, the generic code for
-symlinks was disabled, and there was no VMS-specific code for symlinks. 
+symlinks was disabled, and there was no VMS-specific code for symlinks.
 Now, by default, Zip and UnZip attempt to support symlinks wherever the
 C headers and C run-time library include the functions needed for
 symlink support.  This means non-VAX systems with __CRTL_VER >=

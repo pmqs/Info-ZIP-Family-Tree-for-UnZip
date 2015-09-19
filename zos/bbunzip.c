@@ -12,18 +12,18 @@
 
   zos/bbunzip.c
 
-  This source file supports the compilation of the Infozip UNZIP utility.
-                                                              
+  This source file supports the compilation of the Info-ZIP UnZip utility.
+
   This enables the InfoZip source code to be used unmodified to build the
   utility.  A single compilation is performed, with each of the required C
-  header and source files #included.                          
+  header and source files #included.
 
   This greatly simplifies the compilation of the z/OS MVS UNZIP executable,
   and results in optimum performance by providing a cheap form of global
   program optimization.
 
   ---------------------------------------------------------------------------*/
-#pragma title ("BBUNZIP -- InfoZip UNZIP Utility") 
+#pragma title ("BBUNZIP -- Info-ZIP UnZip Utility")
 
 #pragma runopts(ENV(MVS),PLIST(MVS), TRAP(OFF), NOEXECOPS,             \
                 STACK(64K),                                            \
@@ -35,7 +35,7 @@
 #pragma csect(static, "IZ_WS")
 #pragma csect(test,   "IZ_TEST")
 
-#pragma comment( copyright , "1990-2014 Info-ZIP.  All rights reserved" ) 
+#pragma comment( copyright , "1990-2014 Info-ZIP.  All rights reserved" )
 
 #pragma subtitle( "Load module eye-catchers" )
 #pragma page()

@@ -377,7 +377,7 @@ LPDCL lpDCL;
      * What should these be with the new command-line parser (and no
      * fname[] array)?  process.c:free_G_buffers() would be willing to
      * use unzip.c:free_args() on these at clean-up time, but that's in
-     * the UnZip main program, not the DLL. 
+     * the UnZip main program, not the DLL.
      */
 #if 0
     G.pfnames = (char **)&fnames[0];    /* assign default file name vector */

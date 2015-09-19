@@ -2118,7 +2118,7 @@ void version(__G)
 #  endif /* Sun */
 # endif /* SGI */
 
-# ifdef __DATE__
+# if defined( __DATE__) && !defined( NO_BUILD_DATE)
       " on ", __DATE__
 # else
       "", ""

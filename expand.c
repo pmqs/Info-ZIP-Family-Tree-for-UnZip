@@ -1,20 +1,20 @@
 /* Info-ZIP version 1.0 */
 
-/* 
+/*
  * expand (unreduce)
  *
  * Written by Peter Backes, 2012
  * Public Domain
  *
- * This is a free replacement for "[t]he last chunk of code in UnZip 
+ * This is a free replacement for "[t]he last chunk of code in UnZip
  * that was blatantly derived from Sam Smith's unzip 2.0."  The reduce
  * algorithm was used only by PKZIP 0.90 and 0.92.  To enable unreducing
  * capability, define USE_UNREDUCE_PUBLIC (for example, by specifying
  * LOCAL_UNZIP=-DUSE_UNREDUCE_PUBLIC to the Makefile).
  *
- * reduce was rarely ever used, and, in fact, the PKZIP 0.90 and 0.92 
- * self-extracting distributions themselves (PKZ090.EXE and PKZ092.EXE) 
- * are the only easy to find files that actually make use of it.  So 
+ * reduce was rarely ever used, and, in fact, the PKZIP 0.90 and 0.92
+ * self-extracting distributions themselves (PKZ090.EXE and PKZ092.EXE)
+ * are the only easy to find files that actually make use of it.  So
  * this file might be handy only if you are into computer archeology and
  * old software archives.
  *
@@ -30,10 +30,10 @@
  *     NOTE: unreduce may or may not infinge or have been covered or
  *     be covered anytime in the future by patent restoration, by
  *     US patent 4,612,532, "Data compression apparatus and method,"
- *     inventor Bacon, assignee Telebyte Corportion, filed Jun. 19, 
+ *     inventor Bacon, assignee Telebyte Corportion, filed Jun. 19,
  *     1984, granted Sep. 16, 1986 (see compression-faq, section 7).
  *
- *     ALL LIABILITY FOR USE OF THIS CODE IN VIOLATION OF APPLICABLE 
+ *     ALL LIABILITY FOR USE OF THIS CODE IN VIOLATION OF APPLICABLE
  *     PATENT LAW IS HEREBY DISCLAIMED.
  *
  */
@@ -43,7 +43,7 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 
-/* extend most significant bit to the right, at most one char, set 
+/* extend most significant bit to the right, at most one char, set
  * least significant extended bit to 1
  */
 #define M_EXTR1C(j) (((j) | (j) >> 1) | ((j) | (j) >> 1) >> 2 \
@@ -53,7 +53,7 @@
 #define M_L2C(n) ((unsigned int)(05637042010L >> ((((n) % 11) - 1) * 3)) & 7)
 
 #define LMASK 0x0f1f3f7f
-/* function L(X): masks out the lower (8-CF) bits of X, where 
+/* function L(X): masks out the lower (8-CF) bits of X, where
  * CF = compression factor
  */
 #define M_L(cf,x) (LMASK >> ((cf-1)<<3)  &  (x))
@@ -94,7 +94,7 @@ int unreduce(__G)
 	/* get follower sets */
 	for (i = 0; i < sizeof *f_n / sizeof **f_n; i++) {
 		int m, j = 255 - i;
-		XREADBITS(M_L2C(sizeof **f_s / sizeof ***f_s) + 1, 
+		XREADBITS(M_L2C(sizeof **f_s / sizeof ***f_s) + 1,
 			(*f_n)[j],return PK_OK)
 		Trace((stderr, "N(%d) = %d, S(%d) = {", j, (*f_n)[j], j));
 		if ((*f_n)[j] > 32)
@@ -120,7 +120,7 @@ int unreduce(__G)
 				Trace((stderr, "1 => %d", lc));
 			} else {
 				XREADBITS(M_B((*f_n)[lc]), code, break)
-				Trace((stderr, "0 %d %d ", 
+				Trace((stderr, "0 %d %d ",
 					M_B((*f_n)[lc]), code));
 				if (code >= (*f_n)[lc])
 					break;
@@ -138,7 +138,7 @@ int unreduce(__G)
 				rest--;
 				Trace((stderr, "%d/%d", outpos, SWSIZE));
 				if (outpos == SWSIZE) {
-				 	if ((error = flush(__G__ slide, 
+				 	if ((error = flush(__G__ slide,
 							(ulg)SWSIZE, 0)))
 						return error;
 					outpos = 0;
@@ -158,7 +158,7 @@ int unreduce(__G)
 				slide[outpos++] = DLE;
 				rest--;
 				if (outpos == SWSIZE) {
-					if ((error = flush(__G__ slide, 
+					if ((error = flush(__G__ slide,
 							(ulg)SWSIZE, 0)))
 						return error;
 
@@ -188,7 +188,7 @@ int unreduce(__G)
 					while (outpos < SWSIZE)
 						slide[outpos++]
 							= slide[backptr++];
-					if ((error = flush(__G__ slide, 
+					if ((error = flush(__G__ slide,
 							(ulg)SWSIZE, 0)))
 						return error;
 					outpos = 0;
@@ -203,12 +203,12 @@ int unreduce(__G)
 				while (outpos < SWSIZE)
 					slide[outpos++]
 						= slide[backptr++];
-				if ((error = flush(__G__ slide, 
+				if ((error = flush(__G__ slide,
 						(ulg)SWSIZE, 0)))
 					return error;
 				outpos = 0;
 			}
-			while (len-- > 0) 
+			while (len-- > 0)
 				slide[outpos++]
 					= slide[backptr++];
 

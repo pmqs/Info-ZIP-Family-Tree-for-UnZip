@@ -285,7 +285,7 @@
      To print only the zipfile comment:
 
          mcr sys$disk:[]letters -z
- 
+
          mcr sys$disk:[]letters /comment
 
 2 Limitations

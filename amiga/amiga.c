@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1001,19 +1001,19 @@ void version(__G)
 # endif
 #endif
 
-#ifdef __DATE__
+#if defined( __DATE__) && !defined( NO_BUILD_DATE)
   sprintf(buf4," on %s",__DATE__);
 #else
-  strcpy(buf4," unknown date");
+  strcpy(buf4,"");
 #endif
 
-/******
-#ifdef __TIME__
+#if 0
+#if defined( __TIME__) && !defined( NO_BUILD_DATE)
   sprintf(buf5," at %s",__TIME__);
 #else
-  strcpy(buf5," unknown time");
+  strcpy(buf5,"");
 #endif
-******/
+#endif /* 0 */
 
 /* Print strings using "CompiledWith" mask defined in unzip.c (used by all).
  *  ("Compiled with %s%s for %s%s%s%s.")

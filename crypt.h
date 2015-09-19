@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -58,22 +58,26 @@
 #   include "aes_wg/fileenc.h"
 #  endif /* def IZ_CRYPT_AES_WG */
 
-#  ifndef CR_BETA
-#   define CR_BETA      /* This is a beta release. */
-#  endif
-
+/* Transpose the following blocks to select beta/non-beta release.
+ * (Last one wins.)
+ */
 #  ifdef CR_BETA
 #   undef CR_BETA       /* This is not a beta release. */
 #  endif
 
+#  ifndef CR_BETA
+#   define CR_BETA      /* This is a beta release. */
+#  endif
+
+
 #  define CR_MAJORVER        3
 #  define CR_MINORVER        0
 #  ifdef CR_BETA
-#   define CR_BETA_VER      "k BETA"
-#   define CR_VERSION_DATE  "01 Oct 2014"       /* Last real code change. */
+#   define CR_BETA_VER      "l BETA"
+#   define CR_VERSION_DATE  "24 Aug 2014"       /* Last real code change. */
 #  else
 #   define CR_BETA_VER      ""
-#   define CR_VERSION_DATE  "01 Oct 2014"       /* Last public release date. */
+#   define CR_VERSION_DATE  "24 Aug 2014"       /* Last public release date. */
 #   define CR_RELEASE
 #  endif
 
@@ -167,7 +171,8 @@ int zipcloak OF((struct zlist far *, ZCONST char *));
 int zipbare OF((struct zlist far *, ZCONST char *));
 #   else /* def UTIL */
 unsigned zfwrite OF((zvoid *, extent, extent));
-extern char *key;
+extern char *key;               /* Encryption key. */
+extern char *passwd;            /* Password before keyfile content added. */
 #   endif /* def UTIL [else] */
 #  endif /* def ZIP */
 

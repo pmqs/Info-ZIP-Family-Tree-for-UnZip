@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -939,7 +939,9 @@ char CompVer[10];
 sprintf(CompVer, "%x", __MWERKS__);
 #endif
 
+#if defined( __DATE__) && defined( __TIME__) && !defined( NO_BUILD_DATE)
     sprintf(DateTime,"%s  %s",__DATE__, __TIME__);
+#endif
 
     sprintf((char *)slide, LoadFarString(CompiledWith),
 
@@ -956,8 +958,7 @@ sprintf(CompVer, "%x", __MWERKS__);
       " PowerPC Processor",
 #endif
 
-#ifdef __DATE__
-
+#if defined( __DATE__) && defined( __TIME__) && !defined( NO_BUILD_DATE)
       "\n compile time: ", DateTime, ""
 #else
       "", "", ""

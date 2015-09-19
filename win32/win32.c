@@ -4313,7 +4313,7 @@ void version(__G)
       "\nWindows 9x or NT family", " (32-bit)",
 #   endif
 
-#   ifdef __DATE__
+#   if defined( __DATE__) && !defined( NO_BUILD_DATE)
       " on ", __DATE__
 #   else
       "", ""

@@ -1,4 +1,4 @@
-Using ZIP and UNZIP on VM/CMS  (August 11, 2011)
+Using Zip and UnZip on VM/CMS  (August 11, 2011)
 =============================
 
 
@@ -28,17 +28,17 @@ their level, etc.
 To restore them to executable MODULEs on CMS, do the following:
    1. Upload them to CMS with a Fixed record length with LRECL 1024.
 
-      Example, using CMS FTP client 
+      Example, using CMS FTP client
         At a CMS command prompt, type this:
           BINARY FIXED 1024
           GET unzip.cmo unzip.module.a
 
-      Example, using other FTP client to CMS user 191 disk 
+      Example, using other FTP client to CMS user 191 disk
         Note: CMS ID must be logged off during transfer
         At the sending system command prompt, type this:
-          BINARY         
+          BINARY
           QUOTE SITE FIX 1024
-          PUT unzip.cmo unzip.module   
+          PUT unzip.cmo unzip.module
 
       Example, using PCOMM terminal emulator IND$FILE transfer
         Note: CMS ID must be logged on to PCOMM terminal emulator session
@@ -58,17 +58,17 @@ To restore them to executable MODULEs on CMS, do the following:
 
    5. Upload the EXECs to CMS as text files (with ASCII-to-EBCDIC
       translation).
- 
-      Example, using CMS FTP client 
+
+      Example, using CMS FTP client
         At a CMS command prompt, type this:
           ASCII
           GET unzip.exec unzip.exec.a
 
-      Example, using other FTP client to CMS user 191 disk 
+      Example, using other FTP client to CMS user 191 disk
         Note: CMS ID must be logged off during transfer
         At the sending system command prompt, type this:
-          ASCII         
-          PUT unzip.exec unzip.exec   
+          ASCII
+          PUT unzip.exec unzip.exec
 
       Example, using PCOMM terminal emulator IND$FILE transfer
         Note: CMS ID must be logged on to PCOMM terminal emulator session
@@ -154,40 +154,40 @@ in a while.
     to CMS.  All the required files are plain text so they can
     be transferred with ASCII-to-EBCDIC translations.
 
- 2. Repeat step 1 with the zip file containing the UNZIP code.
-    Unzip the files to a different disk than the disk used for the ZIP
+ 2. Repeat step 1 with the zip file containing the UnZip code.
+    Unzip the files to a different disk than the disk used for the Zip
     code.
 
- 3. To compile the ZIP code, run the supplied CCZIP EXEC.
-    To compile the UNZIP code, run the supplied CCUNZIP EXEC.
+ 3. To compile the Zip code, run the supplied CCZIP EXEC.
+    To compile the UnZip code, run the supplied CCUNZIP EXEC.
 
 NOTE:
-Some of the ZIP and UNZIP source files have the same name.  It is
+Some of the Zip and UnZip source files have the same name.  It is
 recommended that you keep the source from each on separate disks and
 move the disk you are building from ahead of the other in the search
 order.
 
-For example, you may have a 192 disk with the ZIP source code and
-a 193 disk with the UNZIP source code.  To compile ZIP, access
+For example, you may have a 192 disk with the Zip source code and
+a 193 disk with the UnZip source code.  To compile Zip, access
 the 192 disk as B, then run CCZIP.  This will create the following
 modules:  ZIP, ZIPNOTE, ZIPSPLIT, ZIPCLOAK.
 
-To compile UNZIP, access 193 as B, then run CCUNZIP.  This will create
+To compile UnZip, access 193 as B, then run CCUNZIP.  This will create
 the following modules:  UNZIP, ZIPINFO (a copy of UNZIP).
 
 
 =========================================================================
 
 
-Using ZIP/UNZIP
+Using Zip/UnZip
 ---------------
 
-Documentation for the commands is in MANUAL NONAME (for ZIP) and in
+Documentation for the commands is in MANUAL NONAME (for Zip) and in
 UNZIP DOC UNZIP.  INFOZIP DOC describes the use of the -Z option of
-UNZIP.
+UnZip.
 
 The rest of this section explains special notes concerning the VM/CMS
-version of ZIP and UNZIP.
+version of Zip and UnZip.
 
 
 Filenames and directories
@@ -199,19 +199,19 @@ Filenames and directories
        (separate the three parts of the name with a period and use no
        spaces).  Example:  profile.exec.a
 
-       Unfortunately, this prevents you from using ZIP from
+       Unfortunately, this prevents you from using Zip from
        FILELIST.  To unzip a zip file, however, you can type something
        like this next to it in FILELIST:
           unzip /n -d c
 
        This will unzip the contents of the current file to a C-disk.
 
-    b. It is possible to use DD names with ZIP and UNZIP on CMS, though
+    b. It is possible to use DD names with Zip and UnZip on CMS, though
        it can be cumbersome.  Example:
           filedef out disk myzip zip a
           zip dd:out file1.txt file2.txt
 
-       While you can also use a DD name for the input files, ZIP
+       While you can also use a DD name for the input files, Zip
        currently does not correctly resolve the filename and will
        store something like "dd:in" inside the ZIP file.  A file stored
        in this manor cannot easily be unzipped, as "dd:in" is an invalid
@@ -223,7 +223,7 @@ Filenames and directories
        to unzip files onto a C-disk, you might type something like this:
           unzip myzip.zip -d c
 
-       Currently, ZIP uses the A-disk for work files.  When zipping
+       Currently, Zip uses the A-disk for work files.  When zipping
        large files, you may want to specify a larger disk for work files.
        This example will use a C-disk for work files.
           zip -b C myzip.zip.c test.dat.a
@@ -233,15 +233,15 @@ Filenames and directories
 
     a. Filemode letters are never stored into the zip file or take from
        a zip file.  Only the filename and filetype are used.
-       ZIP removes the filemode when storing the filename into the
-       zip file.  UNZIP assumes "A" for the filemode unless the -d
+       Zip removes the filemode when storing the filename into the
+       zip file.  UnZip assumes "A" for the filemode unless the -d
        option is used.
 
     b. When unzipping, any path names are removed from the fileid
        and the last two period-separated words are used as the
        filename and filetype.  These are truncated to a maximum of
        eight characters, if necessary.  If the filetype (extension)
-       is missing, then UNZIP uses "NONAME" for the filetype.
+       is missing, then UnzIp uses "NONAME" for the filetype.
        Any '(' or ')' characters are removed from the fileid.
 
     c. All files are created in upper-case.  Files in mixed-case
@@ -259,13 +259,13 @@ Filenames and directories
        necessary).  So, you can't do this:
           unzip -t *.zip
 
-    b. Wildcards CAN be used with UNZIP to select (or exclude) files
+    b. Wildcards CAN be used with UnZip to select (or exclude) files
        inside a zip file.  Examples:
           unzip myzip *.c          - Unzip all .c files.
           unzip myzip *.c -x z*.c  - Unzip all .c files but those
                                      starting with Z.
 
-    c. Wildcards cannot currently be used to select files with ZIP.
+    c. Wildcards cannot currently be used to select files with Zip.
        So, you can't do this:
           zip -a myzip *.exec
 
@@ -281,7 +281,7 @@ Filenames and directories
        being unzipped will always be the current system date/time.
 
     b. Existing files are assumed to be newer than files inside a zip
-       file when using the -f freshen option of UNZIP.  This will prevent
+       file when using the -f freshen option of UnZip.  This will prevent
        overwriting files that may be newer than the files inside the
        zip file, but also effectively prevents the -f option from working.
 
@@ -318,12 +318,12 @@ Filenames and directories
     the data can just be dumped into the zip file and the record
     format (RECFM) and logical record length (LRECL) can be stored
     in the extra data area of the zip file so they can be restored
-    when UNZIP is used.
+    when UnZip is used.
 
     Storing variable-length data is harder.  There is no place to put
     the record length data needed for each record of the file.  This
     data could be written to the zip file as the first two bytes of
-    each record and interpreted that way by UNZIP.  That would make
+    each record and interpreted that way by UnZip.  That would make
     the data unusable on systems other than CMS and MVS, though.
 
     Currently, there isn't a solution to this problem.  Each record is
@@ -345,7 +345,7 @@ Filenames and directories
     So, here's what we have...
 
     a. To store readable text data into a zip file that can be used
-       on other platforms, use the -a option with ZIP to convert the
+       on other platforms, use the -a option with Zip to convert the
        data to ASCII.  These files will unzip into variable-length
        files on CMS and should not contain binary data or corruption
        may occur.
@@ -353,49 +353,49 @@ Filenames and directories
     b. Files that were zipped on an ASCII-based system will be
        automatically translated to EBCDIC when unzipped.  To prevent
        this (to unzip binary data on CMS that was sent from an
-       ASCII-based system), use the -B option with UNZIP to force Binary
-       mode.  To zip binary files on CMS, use the -B option with ZIP to
+       ASCII-based system), use the -B option with UnZip to force Binary
+       mode.  To zip binary files on CMS, use the -B option with Zip to
        force Binary mode.  This will prevent any data conversions from
        taking place.
 
-    c. When using the ZIP program without specifying the "-a" or "-B"
-       option, ZIP defaults to "native" (EBCDIC) mode and tries to
+    c. When using the Zip program without specifying the "-a" or "-B"
+       option, Zip defaults to "native" (EBCDIC) mode and tries to
        preserve the file information (RECFM, LRECL, and BLKSIZE).  So
-       when you unzip a file zipped with ZIP under CMS or MVS, UNZIP
+       when you unzip a file zipped with Zip under CMS or MVS, UnZip
        restores the file info.  The output will be fixed-length if the
        original was fixed and variable-length if the original was
        variable.
 
-    If UNZIP gives a "write error (disk full?)"  message, you may be
+    If UnZip gives a "write error (disk full?)"  message, you may be
     trying to unzip a binary file that was zipped as a text file
     (without using the -B option)
 
 
     Summary
     -------
-    Here's how to ZIP the different types of files.
+    Here's how to zip the different types of files.
 
     RECFM F text
-       Use the -a option with ZIP to convert to ASCII for use with other
+       Use the -a option with Zip to convert to ASCII for use with other
        platforms or no options for use on EBCDIC systems only.
 
     RECFM V text
-       Use the -a option with ZIP to convert to ASCII for use with other
+       Use the -a option with Zip to convert to ASCII for use with other
        platforms or no options for use on EBCDIC systems only.
 
 
     RECFM F binary
-       Use the -B option with ZIP (upper-case "B").
+       Use the -B option with Zip (upper-case "B").
 
     RECFM V binary
-       Use the -B option with ZIP.  Can be zipped OK but the record
+       Use the -B option with Zip.  Can be zipped OK but the record
        structure is destroyed when unzipped.  This is OK for data files
        read as binary streams but not OK for files such as CMS MODULEs.
 
 
  6. Character Sets
 
-    If you are used to running UNZIP on systems like UNIX, DOS, OS/2 or
+    If you are used to running UnZip on systems like UNIX, DOS, OS/2 or
     Windows, you will may have some problems with differences in the
     character set.
 
@@ -407,7 +407,7 @@ Filenames and directories
     use a different EBCDIC code page, you may need to do some
     translation.
 
-    UNZIP translates ASCII text files to and from Open Systems EBCDIC
+    UnZip translates ASCII text files to and from Open Systems EBCDIC
     (IBM-1047), which may not be the EBCDIC that you are using.  For
     example, US EBCDIC (IBM-037) uses different character codes for
     square brackets.  In such cases, you can use the ICONV utility
@@ -415,29 +415,29 @@ Filenames and directories
     and IBM-1047.
 
     If your installation does not use IBM-1047 EBCDIC, messages from
-    UNZIP may look a little odd.  For example, in a US EBCDIC
+    UnZip may look a little odd.  For example, in a US EBCDIC
     installation, an opening square bracket will become an i-acute and a
     closing square bracket will become a u-grave.
 
-    The supplied ZIP and UNZIP EXECs attempt to correct this by setting
+    The supplied Zip and UnZip EXECs attempt to correct this by setting
     CMS INPUT and OUTPUT translations to adjust the display of left and
     right brackets.  You may need to change this if brackets don't
     display correctly on your system.
 
 
- 7. You can unzip using VM/CMS PIPELINES so unzip can be used as
+ 7. You can unzip using VM/CMS PIPELINES so UnZip can be used as
     a pipeline filter.  Example:
        'PIPE COMMAND UNZIP -p test.zip george.test | Count Lines | Cons'
 
 
 
 All bug reports or patches should go to zip-bugs via the web site contact
-form at http://www.info-zip.org/zip-bug.html; 
+form: http://www.info-zip.org/zip-bug.html
 
 If you'd like to keep up to date with our Zip and UnZip development, join
 the ranks of BETA testers, add your own thoughts and contributions, etc.,
-check out the new discussion forum available (courtesy of Hunter Goatley)
-at http://www.info-zip.org/phpBB3/index.php .
+check out the discussion forum available (courtesy of Hunter Goatley):
+http://www.info-zip.org/phpBB3/index.php
 
 -----------------------------------------------------------------------
 Revised (08/2011) by Al Dunsmuir

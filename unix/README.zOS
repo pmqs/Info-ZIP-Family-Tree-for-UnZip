@@ -31,7 +31,7 @@ Like the traditional z/OS MVS environment, the z/OS UNIX environment uses an
 EBCDIC-based character set by default.  The standard z/OS UNIX EBCDIC code page
 is IBM-1047, while the standard z/OS MVS EBCDIC code page is IBM-037.
 
-The z/OS UNIX port of InfoZIP UNZIP is a fairly straight-forward variation of 
+The z/OS UNIX port of InfoZIP UNZIP is a fairly straight-forward variation of
 the UNZIP generic unix port, using the EBCDIC character set.
 - The standard line termination character for EBCDIC POSIX text files is the
   Newline (NL, 0x15) character.
@@ -125,7 +125,7 @@ follows:
 * All object files and executables are built in the [UNZIP_ROOT] (unzip610)
   directory.  To remove these file in preparation for a new build, enter:
 
-    make -f unix/Makefile clean 
+    make -f unix/Makefile clean
 
   or
 
@@ -151,7 +151,7 @@ follows:
 
 * Optionally, InfoZIP UNZIP can be built with BZIP2 compression support, after
   one first obtains the bzip2 compression source code from www.bzip2.org, and
-  extract to the contained files to the ./bzip2 directory.    
+  extract to the contained files to the ./bzip2 directory.
 
     make -f unix/Makefile generic IZ_BZIP2=bzip2
 
@@ -175,7 +175,7 @@ The z/OS UNIX port is based on (and replaces) the original updated UNZIP 6.1
   that is supported by both make and gmake.
 
 - For each .o file for source files outside the zip tree root directory, an
-  explicit .c->.o build rule is provided.  
+  explicit .c->.o build rule is provided.
   - An initial iteration with file-pattern rules worked with z/OS make and
     gmake, but these were beyone what the AIX and Solaris make utilities were
     not able to handle.

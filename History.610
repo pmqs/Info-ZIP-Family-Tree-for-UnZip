@@ -165,7 +165,7 @@ Features added (or removed):
 
 6.10c02 (28 May 2011):
  - Add ef_scan_for_aes() and ef_strip_aes() for processing AES extra
-   fields. (crypt.c) [SMS]
+   fields.  (crypt.c) [SMS]
  - Update zipcloak() and zipbare() to support AES encryption and
    decryption.  (Technically a Zip update, but to common code).
    (crypt.c) [SMS]
@@ -537,7 +537,7 @@ Features added (or removed):
    vms/unzip_cli.help, vms/unz_cli.cld) [SMS, JBCarpen]
  - A Bzip2 source kit (version 1.0.6, modified for better VMS support)
    is now included in the kit.  (Old bzip2/descrbz2.mms removed.
-   bzip2/README_bz2.txt, bzip2/)  [SMS]
+   bzip2/README_bz2.txt, bzip2/) [SMS]
  - Changed Unix and VMS builders:
     - Enable bzip2, LZMA, and PPMd compression support by default.
     - On VMS, enable large-file support by default on Alpha and IA64
@@ -605,7 +605,7 @@ Features added (or removed):
    extra field.  Define ARCHIVE_STDIN to enable support for streaming
    input archives.  Extensive refactoring of extract.c could have
    introduced new defects.  Some accommodation was attempted for
-   Windows, but not tested. (extract.c, fileio.c, globals.c, globals.h,
+   Windows, but not tested.  (extract.c, fileio.c, globals.c, globals.h,
    process.c, unix/unix.c, unix/unxcfg.h, unzip.c, unzpriv.h) [SMS]
  - Added tentative, experimental-grade support for segmented
    (multi-part) archives.  Patch contributed by Petr Stodulka.
@@ -621,6 +621,35 @@ Features added (or removed):
 
 6.10c18 (20 Mar 2015):
  - No news.
+
+6.1c19 (26 Jun 2015)
+ - Changed the displayed program version number to omit the PATCH_LEVEL
+   digit when it's zero, so, henceforth, UnZip version 6.1 will
+   generally be called version "6.1", not "6.10".  Added
+   -vq/--quick-version (/VERBOSE=BRIEF) option to provide a brief
+   (one-line) program version report.  (BUGS, Contents, INSTALL, README,
+   unzip.c, unzip.h, unzip610c.ann, unzpriv.h, unzvers.h, zipinfo.c,
+   docs/Contents, docs/unzip.txt, docs/unzipsfx.txt, docs/zipinfo.txt,
+   libiz/Contents, man/Contents, man/man1/Contents, man/man1/unzip.1,
+   man/man1/unzipsfx.1, man/man1/zipinfo.1, unix/Contents,
+   unix/README.zOS, vms/build_unzip.com, vms/cmdline.c, vms/Contents,
+   vms/descrip.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms,
+   vms/INSTALL_VMS.txt, vms/unzip_cli.help, vms/UNZIP_DEF.RNH,
+   vms/unz_cli.cld, win32/Contents, windll/Contents, wrap/Contents)
+   [SMS]
+
+6.1c20 (20 Sep 2015):
+ - Defining the C macro NO_BUILD_DATE now suppresses the display of the
+   build date in the "-v" (/VERBOSE) report (for example, "Compiled with
+   [compiler version] on Jul 26 2015.").  Compiling with this macro
+   defined makes the build reproducible.  Forum topic:
+   http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=490
+   (acorn/acorn.c, amiga/amiga.c, aosvs/aosvs.c, atari/atari.c,
+   atheos/atheos.c, beos/beos.c, flexos/flexos.c, human68k/human68k.c,
+   macos/source/macos.c, macos/source/sxunzip.c, msdos/msdos.c,
+   netware/netware.c, os2/os2.c, qdos/qdos.c, tandem/tanunz.c,
+   theos/theos.c, tops20/tops20.c, unix/unix.c, vms/vms.c,
+   win32/win32.c, zos/vmmvs.c) [sanvila, SMS]
 
 
 Bugs fixed:
@@ -651,7 +680,7 @@ Bugs fixed:
    qdos/qdos.c, tandem/tanunz.c, unix/unix.c, vms/vms.c, win32/win32.c) [SMS]
  - Changed argc+1 to argc to work with new parser.  Removed CMS_MVS 'U'
    option. Changed u0.L_flag-negative to u0.L_flag-1 as negative is now
-   always 0 or 1. (unzip.c) [EG]
+   always 0 or 1.  (unzip.c) [EG]
 
 6.10a04 (05 Aug 2010):
  - Set minimum value of u0.X_flag to -1 instead of 0, allowing flag to take on
@@ -704,7 +733,7 @@ Bugs fixed:
    bit. When this bit is set, a verification checksum is in the first 3
    bytes of the external attributes.  In this case, only use last byte of
    external attributes by clearing other bytes in
-   G.crec.external_file_attributes. (process.c) [EG]
+   G.crec.external_file_attributes.  (process.c) [EG]
  - Add check for NO_UNICODE_SUPPORT.  Automatically set WIN32_WIDE on Windows
    if UNICODE_SUPPORT set.  Remove UNICODE_SUPPORT and WIN32_WIDE macros
    from project.  (win32/w32cfg.h, win32/vc6/unzip.dsp) [EG]
@@ -867,7 +896,7 @@ Bugs fixed:
  - Update Contents.  Add lzma.  (Contents) [SMS]
  - Minor changes to Contents.  (Contents) [EG]
  - Update crypt to version 3.0.  (crypt.h) [SMS]
- - Update VCC6 project to look for AES WG files in aes_wg.
+ - Update VCC6 project to look for AES_WG files in aes_wg.
    (win32/vc6/unzip.dsp) [EG]
  - Allow Total Disks (ecloc64_total_disks) to be 0, as some archive creator
    out there sets this to 0 incorrectly instead of 1.  However, probably
@@ -985,7 +1014,7 @@ Bugs fixed:
    and AR_BZ for each port.  Add test for DJGPP, CYGWIN.  Set build
    configuration for various targets:  msdos, os2, qdos, zos,  zvm.  Add
    "fix me" note for assembler CRC code.  Change some output error
-   messages to use ^^ prefix as in Zip.  Add "No AES WG encryption", "No
+   messages to use ^^ prefix as in Zip.  Add "No AES_WG encryption", "No
    LZMA compression", "No BZIP2 compression", and "ZLIB not used" messages
    as in Zip.  Error message updates similar to Zip.  Add comment
    describing HAVE_HEADER_H, HAVE_DIR_HEADER_H, NO_HEADER_H,
@@ -1572,7 +1601,7 @@ Bugs fixed:
    (unix/configure) [AD]
  - Unix builder script was ignoring some early test results when running
    later tests, causing erroneous configuration related to wide
-   characters and Unicode.  (unix/configure)  [EG, SMS]
+   characters and Unicode.  (unix/configure) [EG, SMS]
 
 6.10c11 (03 Nov 2014):
  - Windows DLL interface/entry functions Wiz_SingleEntryUnzip() and
@@ -1582,7 +1611,7 @@ Bugs fixed:
  - Work around MS compiler quirk which caused bad behavior in the
    Windows DLL.  Forum topic:
    http://www.info-zip.org/phpBB3/viewtopic.php?f=4&t=447
-   (windll/windll.c)  [JBCarpen, SMS]
+   (windll/windll.c) [JBCarpen, SMS]
  - ZipInfo displayed wrong data for MD5 extra block (ID = 0x4b46).
    (zipinfo.c) [Wojtek Michalski]
  - A corrupt (or crafted) archive could cause memory access problems.
@@ -1619,7 +1648,7 @@ Bugs fixed:
    [SMS]
  - Limited to VMS a change intended to fix a message format problem on
    VMS.  It was enabled everywhere, but could cause spurious blank lines
-   on non-VMS systems.  (fileio.c)  [SMS]
+   on non-VMS systems.  (fileio.c) [SMS]
  _ Added more details to documentation on build customization.
    (INSTALL) [SMS]
  - Advanced copyright dates in messages to 2015.  (unzip.c) [SMS]
@@ -1679,12 +1708,13 @@ Bugs fixed:
    conflict resolution queries, as described above.  Some related code
    reorganization changed some variable names in non-Windows-specific
    modules.  (consts.h, extract.c, globals.h, unix/unix.c, unzip.c,
-   unzpriv.h, vms/vms.c) [SMS] 
+   unzpriv.h, vms/vms.c) [SMS]
 
 6.10c17 (18 Mar 2015)
  - Added a type cast to clear a compiler complaint.  (fileio.c) [SMS]
  - Changed an archive size variable type from z_uint4 to zoff_t for
-   better agreement with run-time seek/tell functions. (globals.h) [SMS]
+   better agreement with run-time seek/tell functions.  (globals.h)
+   [SMS]
 
 6.10c18 (18 Mar 2015)
  - Repaired damage to REENTRANT-sensitive code (such as the Windows DLL)
@@ -1695,26 +1725,40 @@ Bugs fixed:
    SMS]
 
 6.1c19 (26 Jun 2015)
- - Changed the displayed program version number to omit the PATCH_LEVEL
-   digit when it's zero, so, henceforth, UnZip version 6.1 will
-   generally be called version "6.1", not "6.10".  Added
-   -vq/--quick-version (/VERBOSE=BRIEF) option to provide a brief
-   (one-line) program version report.  (BUGS, Contents, INSTALL, README,
-   unzip.c, unzip.h, unzip610c.ann, unzpriv.h, unzvers.h, zipinfo.c,
-   docs/Contents, docs/unzip.txt, docs/unzipsfx.txt, docs/zipinfo.txt,
-   libiz/Contents, man/Contents, man/man1/Contents, man/man1/unzip.1,
-   man/man1/unzipsfx.1, man/man1/zipinfo.1, unix/Contents,
-   unix/README.zOS, vms/build_unzip.com, vms/cmdline.c, vms/Contents,
-   vms/descrip.mms, vms/descrip_mkdeps.mms, vms/descrip_src.mms,
-   vms/INSTALL_VMS.txt, vms/unzip_cli.help, vms/UNZIP_DEF.RNH,
-   vms/unz_cli.cld, win32/Contents, windll/Contents, wrap/Contents)
-   [SMS]
  - Repaired damage to AppleDouble extraction in the non-stream case,
-   beginning in 6.10c16.  (extract.c)  [SMS]
+   beginning in 6.10c16.  (extract.c) [SMS]
  - The "files tested" count in the error-summary trailer could be wrong
    for a streamed archive, when a list of archive members was specified.
-   (extract.c)  [SMS]
+   (extract.c) [SMS]
  - Removed the now-spurious warning, "zipfile claims to be last disk of
    a multi-part archive [...]".  Improved handling of segmented archives
    where the segment size varied.  (fileio.c, globals.h, process.c)
    [Petr Stodulka, SMS]
+
+6.1c20 (16 Mar 2016)
+ - One more bug in handling of segmented archives.  (fileio.c) [Petr
+   Stodulka, SMS]
+ - Incompatible declarations of function and prototype for
+   set_zipfn_sgmnt_name().  (fileio.c) [SMS]
+ - Since version 6.10b03, if the "external file attributes" for an
+   archive member was zero, typically when the archive was created from
+   a FAT file system (or similar, so, lacking UNIX-like permissions),
+   and then the archive member was extracted on a VMS system, the
+   resulting file and directory permissions could be defective.
+   (vms/vms.c) [SMS]
+ - The zipgrep shell script was erroneously adding backslash escapes to
+   pattern strings, making some legitimate egrep patterns behave like
+   simple grep patterns.  The zipgrep "usage" text now reminds the user
+   (and the developer) that it uses egrep.  (unix/zipgrep) [SMS]
+ - UnZip gave unhelpful error messages when trying to process archive
+   members with AES_WG encryption and an unsupported compression method
+   (for example, JPEG or WavPack).  Now, if AES_WG encryption is not
+   supported, then the "skipping" action message should complain about
+   "AES_WG_encr".  If AES_WG encryption _is_ supported, then the
+   "skipping" action message should complain about the actual
+   unsupported compression method.  (AES_WG encryption is denoted by a
+   fake "compression method" of 99, and the actual compression method is
+   stored in an AES_WG extra block.  In some cases, the AES_WG "99"
+   value was being used instead of the actual value from the extra
+   block.)  (extract.c)  [Elvis Angelaccio, SMS] 
+ - Revised some "UT"-related comments.  (process.c) [SMS]

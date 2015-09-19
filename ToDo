@@ -27,7 +27,7 @@ New stuff to be added to the main list (if not already there):
         Seems to be in 6.10b.
 - Look at extracting files with names larger than local OS limit (maybe
     by adding a truncation option.  (12 Jul 2010 EG, from forum thread
-    "Info-ZIP Bugs > UnZip Bugs > unzip archives with very long filenames")    
+    "Info-ZIP Bugs > UnZip Bugs > unzip archives with very long filenames")
 - Add compression method 98 (PPMd).  See the thread for references.  (12 Jul
     2010 EG, from forum thread "Info-ZIP Bugs > UnZip Bugs > unsupported
     compression method 98")
