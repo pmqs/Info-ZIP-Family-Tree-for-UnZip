@@ -6,3 +6,5 @@ unzip.txt       UnZip manual page, formatted output
 unzipsfx.txt    UnZipSFX manual page, formatted output
 zipgrep.txt     ZipGrep manual page, formatted output
 zipinfo.txt     ZipInfo manual page, formatted output
+UNZIP.HTX       UnZip VMS Help output (Unix-style command-line)
+UNZIP_CLI.HTX   UnZip VMS Help output (VMS-style command-line)

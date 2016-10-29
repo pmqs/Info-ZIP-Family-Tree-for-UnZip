@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2000-Apr-09 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -24,20 +24,23 @@ ZCONST unsigned near mask_bits[17] = {
 };
 
 #ifndef SFX
-   ZCONST char Far EndSigMsg[] =
-   "\nnote:  didn't find end-of-central-dir signature at end of central dir.\n";
+ZCONST char Far DigSigMsg[] =
+ "\nnote: central-dir digital signature found (and ignored).  Bytes: %ld\n";
+ZCONST char Far EndSigMsg[] =
+ "\nnote:  didn't find end-of-central-dir signature at end of central dir.\n";
 #endif
-
-ZCONST char Far CentSigMsg[] =
-  "error:  expected central file header signature not found (file #%lu).\n";
-ZCONST char Far SeekMsg[] =
-  "error [%s]:  attempt to seek before beginning of zipfile (%d)\n%s";
-ZCONST char Far FilenameNotMatched[] = "caution: filename not matched:  %s\n";
-ZCONST char Far ExclFilenameNotMatched[] =
-  "caution: excluded filename not matched:  %s\n";
 
 ZCONST char Far ActionMsg[] =
   "%8sing: %-22s  %s%s";
+ZCONST char Far CentSigMsg[] =
+  "error:  expected central file header signature not found (file #%lu).\n";
+ZCONST char Far ErrorUnexpectedEOF[] =
+ "error:  Unexpected end-of-file (loc=%d) reading %s.\n";
+ZCONST char Far ExclFilenameNotMatched[] =
+  "caution: excluded filename not matched:  %s\n";
+ZCONST char Far FilenameNotMatched[] = "caution: filename not matched:  %s\n";
+ZCONST char Far SeekMsg[] =
+  "error [%s]:  attempt to seek before beginning of zipfile (%d)\n%s";
 
 #if (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE))
 ZCONST char Far ActionMsgw[] =

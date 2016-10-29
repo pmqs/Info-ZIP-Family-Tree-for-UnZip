@@ -1,4 +1,4 @@
-.\"  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+.\"  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 .\"
 .\"  See the accompanying file LICENSE, version 2009-Jan-02 or later
 .\"  (the contents of which are also included in unzip.h) for terms of use.
@@ -8,7 +8,7 @@
 .\" unzip.1 by Greg Roelofs, Fulvio Marino, Jim van Zandt and others.
 .\"
 .\" =========================================================================
-.TH UNZIP 1L "17 Apr 2015 (v6.1)" "Info-ZIP"
+.TH UNZIP 1L "2016-09-29 (v6.1)" "Info-ZIP"
 .\" =========================================================================
 .\"
 .\" Define .EX/.EE (for multiline user-command examples; normal Courier font).
@@ -115,9 +115,9 @@ the three-character sequence "[[]".
 .IP
 If no wildcard matches are found, then the specification is assumed to
 be a literal filename.  If that also fails, then the
-suffix "\fC\.zip\fR" and/or "\fC\.ZIP\fR" is appended, and that is
-tried.  (For this reason, if a non-existent file is specified, then the
-resulting error message may mention these other names with
+suffix "\fC\.zip\fR" and/or "\fC\.ZIP\fR" is appended, and the resulting
+name is tried.  (For this reason, if a non-existent file is specified,
+then the resulting error message may mention these other names with
 their "\fC\.zip\fR" or "\fC\.ZIP\fR" suffixes.)
 .IP
 Note that a "\fC\.zip\fR" or "\fC\.ZIP\fR" name ending on an archive is
@@ -196,10 +196,10 @@ provide automatic ASCII-EBCDIC conversion, where appropriate.
 .br
 Primary Mode.  Freshen existing files.  That is, extract only those
 files that already exist on disk and that are newer than the disk
-copies.  By default \fIUnZip\fP queries before overwriting, but the
-\fB\-o\fP option may be used to suppress the queries.  Note that on
-many operating systems, the TZ (timezone) environment variable must be
-set correctly in order for \fB\-f\fP/\fB\-\-freshen\fP and
+copies.  By default, \fIUnZip\fP queries the user before overwriting,
+but the \fB\-o\fP option may be used to suppress the queries.  Note that
+on many operating systems, the TZ (timezone) environment variable must
+be set correctly in order for \fB\-f\fP/\fB\-\-freshen\fP and
 \fB\-u\fP/\fB\-\-update\fP to work properly.  (On Unix the variable is
 usually set automatically.)  The reasons for this are somewhat subtle
 but have to do with the differences between DOS-format file times
@@ -257,7 +257,7 @@ OS/2 access control lists (ACLs).  In addition, the archive comment and
 individual member comments (if any) are displayed.
 .IP
 If a file was archived from a single-case file system (for example, the
-old MS-DOS FAT file system) and the \fB\-L\fP option was given, the
+old MS-DOS FAT file system) and the \fB\-L\fP option was given, then the
 filename is converted to lowercase and is shown prefixed with a caret
 (^).
 .IP
@@ -280,7 +280,7 @@ Primary Mode.  Display the Info-ZIP license.
 Primary Mode.  Extract files to stdout (pipe).  Only the actual file
 data for the members are sent to stdout (no file names, or other
 information, as would be displayed with \fB\-c\fP), and the files are
-always extracted in binary format, just as they are stored (no
+always extracted in binary format, just as they are stored (with no
 line-ending or ASCII-EBCDIC conversions).
 .PP
 .PD 0
@@ -292,7 +292,7 @@ line-ending or ASCII-EBCDIC conversions).
 Primary Mode.  Set the timestamp on the archive(s) to that of the newest
 file in each one.  This corresponds to \fIZip\fP's \fB\-go\fP option,
 except that it can be used on wildcard archives (for example,
-"\fCunzip\ \-T\ '*.zip'\fR") and is much faster.
+"\fCunzip\ \-T\ '*.zip'\fR") and may be faster.
 .PP
 .PD 0
 .B \-t
@@ -406,8 +406,8 @@ characters are replaced by underscores.
 .PD
 .B \-\-api\-help
 .br
-[OS/2, Unix DLL] Print extended help for the DLL's application
-programming interface (API).
+[DLL, object library] Print extended help for the DLL or object library
+application programming interface (API).
 .PP
 .PD 0
 .B \-a
@@ -444,7 +444,7 @@ text files.  See also \fB\-b\fP and \fB\-S\fP.
 .PD
 .B \-\-backup
 .br
-[when built with UNIXBACKUP enabled] Save a backup copy of each
+[When built with UNIXBACKUP enabled] Save a backup copy of each
 overwritten file.  The backup file gets the name of the target file with
 a tilde and optionally a unique sequence number (up to 5 digits)
 appended.  The sequence number is appended whenever another file with
@@ -1441,29 +1441,31 @@ variable is ignored on these systems.
 \fIZip\fP and \fIUnZip\fP have long supported a relatively weak
 encryption method, which we call Traditional ZIP encryption.  The source
 code for Traditional encryption is included in the source kits, and
-support for Traditional encryption is enabled by default.  (Build-time C
-macros: IZ_CRYPT_TRAD, NO_CRYPT.)
+support for Traditional encryption is enabled by default.
 .PP
-Beginning with \fIUnZip\fP version 6.1 and \fIZip\fP version 3.1,
-these programs also offer a stronger, Advanced Encryption Standard (AES)
-encryption method, which we call AES WinZip/Gladman (AES_WG)
-encryption.  (The encryption code was supplied by Brian Gladman, and the
-archive format is intended to be compatible with that used by the
-\fIWinZip\fP program.  \fIWinZip\fP is a registered trademark of WinZip
-International LLC.)  The source code for AES_WG encryption is
-distributed in a separate kit (for export control reasons), and support
-for AES_WG encryption must be enabled explicitly at build
-time.  (Build-time C macro: IZ_CRYPT_AES_WG.)  See the INSTALL file in
-the source kit for details on how to enable AES_WG encryption (or how to
-disable Traditional encryption).
+The Info-ZIP programs \fIUnZip\fP (version 6.1 and later) and \fIZip\fP
+(version 3.1 and later)include optional support for Advanced Encryption
+Standard (AES) encryption, a relatively strong encryption method.
 .TP
-For details on the WinZip AES scheme, see:
+The Info-ZIP AES implementation is based on the \fIWinZip\fP AES
+specification, and uses AES encryption code supplied by Brian Gladman.
+We refer to it as IZ_AES_WG (Info-ZIP AES WinZip/Gladman) or simply
+AES_WG.  (\fIWinZip\fP is a registered trademark of WinZip International
+LLC.)  The source code for AES_WG encryption is included in the normal
+UnZip source kit, and support for it will be enabled by default.
+.TP
+The WinZip AES scheme is described in:
 http://www.winzip.com/aes_info.htm
 .TP
-For information on the separate AES_WG source kit, see:
-ftp://ftp.info-zip.org/pub/infozip/crypt/
+For information on the IZ_AES_WG source code, see:
+aes_wg/README_AES_WG.txt
+.br
+or:
 .br
 ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
+.TP
+See the INSTALL file in the source kit for details on how to disable
+AES_WG encryption (or how to disable Traditional encryption).
 .PP
 Normally, encryption passwords are supplied by the user interactively
 when requested by the program.  See the \fB\-P\fP option for a (less
@@ -1769,15 +1771,15 @@ FTP access is available, too:
 .SH AUTHORS
 The primary Info-ZIP authors (current semi-active members of the
 Zip-Bugs workgroup) are:  Ed Gordon (Zip, general maintenance, shared
-code, Zip64, Win32, Unix, Unicode); Christian Spieler (\fIUnZip\fP
-maintenance coordination, VMS, MS-DOS, Win32, shared code, general Zip
-and \fIUnZip\fP integration and optimization); Onno van der Linden
-(Zip); Mike White (Win32, Windows GUI, Windows DLLs); Kai Uwe Rommel
-(OS/2, Win32); Steven M. Schweda (VMS, Unix, support of new features);
-Paul Kienitz (Amiga, Win32, Unicode); Chris Herborth (BeOS, QNX, Atari);
+code, Zip64, Win32, Unix, Unicode); Christian Spieler (VMS, MS-DOS,
+Win32, shared code, general Zip and \fIUnZip\fP integration and
+optimization); Onno van der Linden (Zip); Mike White (Win32, Windows
+GUI, Windows DLLs); Kai Uwe Rommel (OS/2, Win32); Steven M. Schweda
+(\fIUnZip\fP maintenance, VMS, Unix, support of new features); Paul
+Kienitz (Amiga, Win32, Unicode); Chris Herborth (BeOS, QNX, Atari);
 Jonathan Hudson (SMS/QDOS); Sergio Monesi (Acorn RISC OS); Harald Denker
 (Atari, MVS); John Bush (Solaris, Amiga); Hunter Goatley (VMS, Info-ZIP
-Site maintenance); Steve Salisbury (Win32); Steve Miller (Windows CE
+server maintenance); Steve Salisbury (Win32); Steve Miller (Windows CE
 GUI), Johnny Lee (MS-DOS, Win32, Zip64); and Dave Smith (Tandem NSK).
 .PP
 The following people are former members of the Info-ZIP development

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -30,6 +30,10 @@
 
 #ifndef __unzpriv_h   /* prevent multiple inclusions */
 #define __unzpriv_h
+
+#ifdef VMSCLI
+# include "unzvers.h"   /* Need BETA for some VMS CLI strings. */
+#endif /* def VMSCLI */
 
 /* First thing: Signal all following code that we compile UnZip utilities! */
 #ifndef UNZIP
@@ -1564,11 +1568,6 @@ void izu_md_check( void);
 
 /* The below is for use in the caller-provided options table */
 
-/* option groups */
-#define UZO 1   /* UnZip option */
-#define ZIO 2   /* ZipInfo option */
-
-
 /* value_type - value is always returned as a string. */
 #define o_NO_VALUE        0   /* this option does not take a value */
 #define o_REQUIRED_VALUE  1   /* this option requires a value */
@@ -1616,7 +1615,6 @@ void izu_md_check( void);
 
 /* options array is set in unzip.c */
 struct option_struct {
-  int option_group;         /* either UZO for UnZip or ZIO for ZipInfo syntax */
   char Far *shortopt;       /* pointer to short option string */
   char Far *longopt;        /* pointer to long option string */
   int  value_type;          /* from above */
@@ -1868,6 +1866,7 @@ struct file_list {
 #endif
 
 #ifndef NO_USER_PROGRESS
+# define U_P_NODENAME_LEN 32
 # ifndef VMS
 #  include <signal.h>
 # endif /* ndef VMS */
@@ -2161,6 +2160,7 @@ struct file_list {
 #define EB_UT_FL_MTIME    (1 << 0)      /* mtime present */
 #define EB_UT_FL_ATIME    (1 << 1)      /* atime present */
 #define EB_UT_FL_CTIME    (1 << 2)      /* ctime present */
+#define EB_UT_FL_TIMES    0xff /* Mask for all time flag bits. */
 
 #define EB_FLGS_OFFS      4    /* offset of flags area in generic compressed
                                   extra field blocks (BEOS, MAC, and others) */
@@ -2666,13 +2666,16 @@ typedef struct _APIDocStruct {
    int    MAIN                  OF((int argc, char **argv));
 #endif /* ndef WINDLL */
    int    unzip                 OF((__GPRO__ int argc, char **argv));
-   int    uz_opts               OF((__GPRO__ int *pargc, char ***pargv));
    int    usage                 OF((__GPRO__ int error));
+   int    uz_opts               OF((__GPRO__
+                                 ZCONST struct option_struct *opts,
+                                 int *pargc, char ***pargv));
 
 /* Command-line option function prototypes. */
 
 /* get_option() - Get the next option from args. */
-unsigned long get_option OF((__GPRO__ int option_group,
+unsigned long get_option OF((__GPRO__
+                             ZCONST struct option_struct *opts,
                              char ***pargs, int *argc, int *argnum,
                              int *optchar,
                              char **value, int *negated, int *first_nonopt_arg,
@@ -2716,6 +2719,7 @@ void     free_G_buffers          OF((__GPRO));
 int      process_file_hdr        OF((__GPRO));
 int      process_cdir_file_hdr   OF((__GPRO));
 int      process_local_file_hdr  OF((__GPRO));
+int      process_cdir_digsig     OF((__GPRO__ long *enddigsig_len_p));
 int      getZip64Data            OF((__GPRO__ ZCONST uch *ef_buf,
                                      long ef_len));
 #ifdef UNICODE_SUPPORT
@@ -2743,13 +2747,15 @@ int ef_scan_for_aes              OF((ZCONST uch *ef_buf, long ef_len,
   ---------------------------------------------------------------------------*/
 
 #ifndef NO_ZIPINFO
-int      zi_opts                 OF((__GPRO__ int *pargc, char ***pargv));
+int      zi_opts                 OF((__GPRO__
+                                  ZCONST struct option_struct *opts,
+                                  int *pargc, char ***pargv));
 void     zi_end_central          OF((__GPRO));
 int      zipinform               OF((__GPRO));
 /* static int      zi_long       OF((__GPRO__ zusz_t *pEndprev)); */
 /* static int      zi_short      OF((__GPRO)); */
 /* static char    *zi_time       OF((__GPRO__ ZCONST ulg *datetimez,
-                                     ZCONST time_t *modtimez, char *d_t_str));*/
+                                  ZCONST time_t *modtimez, char *d_t_str)); */
 #endif /* !NO_ZIPINFO */
 
 /*---------------------------------------------------------------------------
@@ -2776,7 +2782,7 @@ int      open_outfile         OF((__GPRO));                    /* also vms.c */
 int      set_zipfn_sgmnt_name OF((__GPRO__ zuvl_t sgmnt_nr));
 void     undefer_input        OF((__GPRO));
 void     defer_leftover_input OF((__GPRO));
-unsigned readbuf              OF((__GPRO__ char *buf, register unsigned len));
+unsigned readbuf              OF((__GPRO__ uch *buf, register unsigned len));
 int      readbyte             OF((__GPRO));
 int      fillinbuf            OF((__GPRO));
 int      seek_zipf            OF((__GPRO__ zoff_t abs_offset));
@@ -3550,51 +3556,65 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 /*  Global constants  */
 /**********************/
 
-#define UNZIP_MAINTAINER "Steven M. Schweda"
-
-   extern ZCONST unsigned near mask_bits[17];
+    extern ZCONST unsigned near mask_bits[17];
 
 #ifdef EBCDIC
-   extern ZCONST uch ebcdic[];
+    extern ZCONST uch ebcdic[];
 #endif
 #ifdef IZ_ISO2OEM_ARRAY
-   extern ZCONST uch Far *iso2oem;
-   extern ZCONST uch Far iso2oem_850[];
+    extern ZCONST uch Far *iso2oem;
+    extern ZCONST uch Far iso2oem_850[];
 #endif
 #ifdef IZ_OEM2ISO_ARRAY
-   extern ZCONST uch Far *oem2iso;
-   extern ZCONST uch Far oem2iso_850[];
+    extern ZCONST uch Far *oem2iso;
+    extern ZCONST uch Far oem2iso_850[];
 #endif
 
-   extern ZCONST char Far  CentSigMsg[];
+    extern ZCONST char Far  CentSigMsg[];
 #ifndef SFX
-   extern ZCONST char Far  EndSigMsg[];
-#endif
-   extern ZCONST char Far  SeekMsg[];
-   extern ZCONST char Far  FilenameNotMatched[];
-   extern ZCONST char Far  ExclFilenameNotMatched[];
-   extern ZCONST char Far  ReportMsg[];
-   extern ZCONST char Far  ActionMsg[];
+    extern ZCONST char Far  DigSigMsg[];
+    extern ZCONST char Far  EndSigMsg[];
+#endif /* ndef SFX */
+    extern ZCONST char Far  ErrorUnexpectedEOF[];
+    extern ZCONST char Far  SeekMsg[];
+    extern ZCONST char Far  FilenameNotMatched[];
+    extern ZCONST char Far  ExclFilenameNotMatched[];
+    extern ZCONST char Far  ReportMsg[];
+    extern ZCONST char Far  ActionMsg[];
 #if (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE))
-   extern ZCONST char Far  ActionMsgw[];
+    extern ZCONST char Far  ActionMsgw[];
 #endif /* (defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)) */
 
 #ifndef SFX
-   extern ZCONST char Far  Zipnfo[];
-   extern ZCONST char Far  CompiledWith[];
-#endif /* !SFX */
+    extern ZCONST char Far  Zipnfo[];
+    extern ZCONST char Far  CompiledWith[];
+#endif /* ndef SFX */
+
+#ifdef VMSCLI
+# ifdef BETA
+    extern ZCONST char BetaVersion[];
+# endif /* def BETA */
+# ifdef SFX
+    extern ZCONST char UnzipBanner[];
+# else /* def SFX */
+    extern ZCONST char UnzipUsageLine1[];
+#  ifndef NO_ZIPINFO
+    extern ZCONST char ZipInfoUsageLine1[];
+#  endif /* ndef NO_ZIPINFO */
+# endif /* def SFX [else] */
+#endif /* def VMSCLI */
 
 /* Defined in extract.c, used in os2/os2.c. */
-extern ZCONST char Far TruncEAs[];
+    extern ZCONST char Far TruncEAs[];
 /* Defined in extract.c, used in win32/win32.c. */
-extern ZCONST char Far TruncNTSD[];
+    extern ZCONST char Far TruncNTSD[];
 
 /***********************************/
 /*  Global (shared?) RTL variables */
 /***********************************/
 
 #ifdef DECLARE_ERRNO
-   extern int             errno;
+    extern int             errno;
 #endif
 
 /*---------------------------------------------------------------------

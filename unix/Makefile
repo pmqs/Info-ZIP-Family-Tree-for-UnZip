@@ -1,8 +1,8 @@
 #==============================================================================
 # unix/Makefile
-# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2015-01-09
+# - For UnZip, fUnZip, UnZipSFX, and ZipInfo            Revised: 2017-04-28
 #
-# Copyright (c) 2004-2014 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2017 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -53,13 +53,13 @@
 #
 # Optional features include (see INSTALL for installation instructions):
 #
-# AES encryption - See the files INSTALL and aes_wg/README_AES_WG.txt
-#   for more information.  To include AES_WG (WinZip/Gladman) encryption
-#   support, unpack a compatible AES_WG source kit (iz_aes_wg13.zip, or
-#   the latest compatible kit available on the Info-ZIP server) to
-#   populate the local ./aes_wg subdirectory.  To disable AES_WG
-#   encryption support (when the source kit is present), set the "make"
-#   macro NO_AES_WG to 1.
+# AES_WG encryption - See the files INSTALL and aes_wg/README_AES_WG.txt
+#   for more information.  To include AES_WG encryption support, unpack
+#   a compatible AES_WG source kit (iz_aes_wg16.zip, or the latest
+#   compatible kit available on the Info-ZIP server) to populate the
+#   local ./aes_wg subdirectory.  To disable AES_WG encryption support
+#   (when the source kit is present), set the "make" macro NO_AES_WG to
+#   1.
 #
 # LZMA compression - See the files INSTALL and szip/README_LZMA.txt for
 #   more information.  To disable LZMA compression support, set the
@@ -289,7 +289,7 @@ PROD = .
 
 # Build Dependencies for "make"
 # - Optional object library names
-#    AES (WinZip/Gladman) encryption
+#    AES_WG encryption
 #    BZIP2 compression
 #    LZMA compression
 #    PPMd compression
@@ -407,7 +407,7 @@ H_UNZIP  = unzip.h          \
 
 H_UNZIPL = api.h $(H_UNZIP)
 
-# C header files: AES (WinZip/Gladman) encryption
+# C header files: AES_WG encryption
 H_AES    = aes_wg/aes.h     \
            aes_wg/aesopt.h  \
            aes_wg/fileenc.h \
@@ -520,7 +520,7 @@ O_CRC_I  = $(PROD)/crc_i86.o
 O_CRC_G  = $(PROD)/crc_gcc.o
 O_CRC_SV = $(PROD)/crc_sysv.o
 
-# object files: AES (WinZip/Gladman) encryption
+# object files: AES_WG encryption
 O_AES    = $(PROD)/aescrypt.o   \
            $(PROD)/aeskey.o     \
            $(PROD)/aestab.o     \
@@ -545,7 +545,7 @@ O_PPMD   = $(PROD)/Ppmd8.o      \
 #  Build configuration:  object libraries
 #----------------------------------------------------------------------------
 
-# object library: AES (WinZip/Gladman) encryption
+# object library: AES_WG encryption
 AR_AES   = $(PROD)/libiz_aes_wg.a
 
 # object library: BZIP2 compression
@@ -919,7 +919,7 @@ $(PROD)/win32i64_f.o:  win32/win32i64.c  $(H_UNZIP)
 
 #----------------------------------------------------------------------------
 
-# C Compile rules: AES (WinZip/Gladman) encryption
+# C Compile rules: AES_WG encryption
 
 $(PROD)/aescrypt.o: aes_wg/aescrypt.c $(H_AES)
 	$(CC) -c $(CF) -o $@ aes_wg/aescrypt.c
@@ -993,10 +993,10 @@ $(O_CRC_SV): crc_i386.S $(ACONF_DEP)
 #  Build rules: Object libraries (.o -> .a)
 #----------------------------------------------------------------------------
 
-# Object library rule: AES (WinZip/Gladman) encryption
+# Object library rule: AES_WG encryption
 
 $(AR_AES): $(O_AES)
-	@echo 'Building/updating AES (WinZip/Gladman) object library...'
+	@echo 'Building/updating AES_WG object library...'
 	-$(RM) $@
 	$(AR) $@ $(O_AES)
 	-$(RANLIB) $@
@@ -1107,42 +1107,52 @@ $(PROD)/manout:
 #    /bin/man does not support "-x".  Specify "COL=/usr/5bin/col".
 
 $(DOC_UNZIP): man/man1/unzip.1
-	man -M ` pwd `/man unzip    | $(COL) -bx | uniq | expand > $@
+	LANG=C man -M ` pwd `/man unzip | \
+         $(COL) -bx | uniq | expand > $@
 	@echo ''
 
 $(DOC_SFX):   man/man1/unzipsfx.1
-	man -M ` pwd `/man unzipsfx | $(COL) -bx | uniq | expand > $@
+	LANG=C man -M ` pwd `/man unzipsfx | \
+         $(COL) -bx | uniq | expand > $@
 	@echo ''
 
 $(DOC_FUZ):   man/man1/funzip.1
-	man -M ` pwd `/man funzip   | $(COL) -bx | uniq | expand > $@
+	LANG=Cman -M ` pwd `/man funzip | \
+         $(COL) -bx | uniq | expand > $@
 	@echo ''
 
 $(DOC_ZINFO): man/man1/zipinfo.1
-	man -M ` pwd `/man zipinfo  | $(COL) -bx | uniq | expand > $@
+	LANG=C man -M ` pwd `/man zipinfo | \
+         $(COL) -bx | uniq | expand > $@
 	@echo ''
 
 $(DOC_ZGREP): man/man1/zipgrep.1
-	man -M ` pwd `/man zipgrep  | $(COL) -bx | uniq | expand > $@
+	LANG=C man -M ` pwd `/man zipgrep | \
+         $(COL) -bx | uniq | expand > $@
 	@echo ''
 
 # UnZip alternate documentation generation rules
 # - Requires nroff, or GNU groff package.
 
 $(PMAN_UNZIP): man/man1/unzip.1
-	nroff -man man/man1/unzip.1    | $(COL) -bx | uniq > $@
+	LANG=Cnroff -man man/man1/unzip.1 | \
+         $(COL) -bx | uniq > $@
 
 $(PMAN_SFX):   man/man1/unzipsfx.1
-	nroff -man man/man1/unzipsfx.1 | $(COL) -bx | uniq > $@
+	LANG=C nroff -man man/man1/unzipsfx.1 | \
+         $(COL) -bx | uniq > $@
 
 $(PMAN_FUZ):   man/man1/funzip.1
-	nroff -man man/man1/funzip.1   | $(COL) -bx | uniq > $@
+	LANG=C nroff -man man/man1/funzip.1 | \
+         $(COL) -bx | uniq > $@
 
 $(PMAN_ZINFO): man/man1/zipinfo.1
-	nroff -man man/man1/zipinfo.1  | $(COL) -bx | uniq > $@
+	LANG=C nroff -man man/man1/zipinfo.1 | \
+         $(COL) -bx | uniq > $@
 
 $(PMAN_ZGREP): man/man1/zipgrep.1
-	nroff -man man/man1/zipgrep.1  | $(COL) -bx | uniq > $@
+	LANG=C nroff -man man/man1/zipgrep.1 | \
+         $(COL) -bx | uniq > $@
 
 #----------------------------------------------------------------------------
 #  Build rules: Standard build targets
@@ -1162,8 +1172,7 @@ MU:         $(UNZIP_PPGMS)
 U:          $(PPGM_FUZ) $(PPGM_SFX)
 
 #----------------------------------------------------------------------------
-#  Build rules: ???????
-#  FIX_ME: ??????
+#  Build rules: Alternative (non-generic).
 #----------------------------------------------------------------------------
 unix_make:
 # @echo \

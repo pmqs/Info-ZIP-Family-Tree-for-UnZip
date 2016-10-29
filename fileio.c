@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -890,7 +890,7 @@ void defer_leftover_input(__G)
 
 unsigned readbuf(__G__ buf, size)   /* return number of bytes read into buf */
     __GDEF
-    char *buf;
+    uch *buf;
     register unsigned size;
 {
     register unsigned count;
@@ -903,7 +903,7 @@ unsigned readbuf(__G__ buf, size)   /* return number of bytes read into buf */
         {
             if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
             {
-              /* read() got no data.  If the srchive is segmented, then
+              /* read() got no data.  If the archive is segmented, then
                * try again with the next segment file.
                */
               /*if(fd_is_valid(G.zipfd_sgmnt)) {*/
@@ -961,7 +961,7 @@ int readbyte(__G)   /* refill inbuf and return a byte if available, else EOF */
     {
         if ((G.incnt = read(G.zipfd, (char *)G.inbuf, INBUFSIZ)) == 0)
         {
-            /* read() got no data.  If the srchive is segmented, then
+            /* read() got no data.  If the archive is segmented, then
              * try again with the next segment file.
              */
             /* if(fd_is_valid(G.zipfd_sgmnt)) { */
@@ -1154,10 +1154,10 @@ int seek_zipf(__G__ abs_offset)
     }
     /* Get the new segment size, and calculate the new offset. */
 #ifdef USE_STRM_INPUT
-    zfseeko(G.zipfd, 0, SEEK_END);
+    zfseeko(G.zipfd, (zoff_t)0, SEEK_END);
     request += zftello(G.zipfd);
 #else /* def USE_STRM_INPUT */
-    request += zlseek(G.zipfd, 0, SEEK_END);
+    request += zlseek(G.zipfd, (zoff_t)0, SEEK_END);
 #endif /* USE_STRM_INPUT */
 
     /* now it should be always -1
@@ -2378,7 +2378,7 @@ void UZ_EXP UzpMorePause(pG, prompt, flag)
 
 
 
-#ifndef WINDLL
+#if !defined( WINDLL) && !defined( DLL)
 
 /**************************/
 /* Function UzpPassword() */
@@ -2437,12 +2437,8 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
 
 } /* end function UzpPassword() */
 
-#endif /* ndef WINDLL */
 
 
-
-
-#if !defined( WINDLL) && !defined( DLL)
 
 /**********************/
 /* Function handler() */
@@ -2990,7 +2986,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         comment_bytes_left = length;
         if (length >= 10)
         {
-            block_len = readbuf(__G__ (char *)G.outbuf, 10);
+            block_len = readbuf(__G__ G.outbuf, 10);
             if (block_len == 0)
                 return PK_EOF;
             comment_bytes_left -= block_len;
@@ -3048,7 +3044,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             register uch *p = G.outbuf;
             register uch *q = G.outbuf;
 
-            if ((block_len = readbuf(__G__ (char *)G.outbuf,
+            if ((block_len = readbuf(__G__ G.outbuf,
                    IZ_MIN((unsigned)OUTBUFSIZ, comment_bytes_left))) == 0)
                 return PK_EOF;
             comment_bytes_left -= block_len;
@@ -3202,7 +3198,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         } else
             /* no excess size */
             block_len = 0;
-        if (readbuf(__G__ G.filename, length) == 0)
+        if (readbuf(__G__ (uch *)G.filename, length) == 0)
             return PK_EOF;
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
 #endif /* def UNICODE_SUPPORT [else] */
@@ -3303,7 +3299,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
              */
             unsigned int len_rb;
 
-            if ((len_rb = readbuf(__G__ (char *)G.extra_field, length)) == 0)
+            if ((len_rb = readbuf(__G__ G.extra_field, length)) == 0)
                 return PK_EOF;
             if (len_rb < length)
             {
@@ -3530,7 +3526,7 @@ char *name_only( path)
     }
 # endif /* def WIN32 */
 
-    dot = strchr( name, '.');
+    dot = strrchr( name, '.');
     if (dot == NULL)
     {
         len = strlen( name);    /* No dot found. */

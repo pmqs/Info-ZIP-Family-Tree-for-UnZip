@@ -2,7 +2,7 @@
 
   unzip.h
 
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
 
   This header file contains the public macros and typedefs required by
   both the UnZip sources and by any application using the UnZip API.  If
@@ -751,6 +751,12 @@ int      UZ_EXP UzpFileTree        OF((char *name, cbList(callBack),
 
 unsigned UZ_EXP UzpVersion2        OF((UzpVer2 *version));
 char    *UZ_EXP UzpVersionStr      OF((void));
+# ifdef VMS
+char    *UZ_EXP UzpDclStr          OF((void));
+#  ifndef NO_ZIPINFO
+char    *UZ_EXP ZiDclStr           OF((void));
+#  endif /* ndef NO_ZIPINFO */
+# endif /* def VMS */
 int      UZ_EXP UzpValidate        OF((char *archive, int AllCodes));
 
 void     show_commandline          OF((char *args[]));

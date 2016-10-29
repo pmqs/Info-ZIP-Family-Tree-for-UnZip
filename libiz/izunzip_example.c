@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -53,6 +53,13 @@
 
 #include <stdio.h>
 #include <string.h>
+
+
+/* Ask the MS VS linker to search for the unzip and bzip2 libraries. */
+#ifdef WIN32
+# pragma comment( lib, "unzip32")
+# pragma comment( lib, "libbz2")
+#endif
 
 
 #ifdef MY_PW

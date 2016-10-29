@@ -1,0 +1,10 @@
+
+IZ_AES_WG -- Info-ZIP AES (WinZip/Gladman) encryption source kit,
+Version 1.6  2017-01-23.
+For use with Info-ZIP UnZip and Zip (and related utilities).
+
+See enclosed files LICENSE, README_AES_WG.txt, and USexport_AES_WG.msg
+for terms and conditions, and notification pursuant to Section 740.13(e)
+of the amended Export Administration Regulations of the Bureau of
+Industry and Security of the U.S. Department of Commerce.
+ 

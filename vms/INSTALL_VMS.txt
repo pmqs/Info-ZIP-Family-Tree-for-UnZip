@@ -1,7 +1,7 @@
       INSTALL_VMS.txt -- UnZip Installation Supplement for VMS (OpenVMS)
       ==================================================================
 
-   UnZip version 6.1.  Revised: 2015-06-10.
+   UnZip version 6.1.  Revised: 2017-01-27.
 
 ------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ Info-ZIP server:
       ftp://ftp.info-zip.org/pub/infozip/vms/
 
    To unpack the UnZip source kit, choose a suitable working directory,
-and UnZip the UnZip kit there.  For example:
+and unzip the UnZip kit there.  For example:
 
       SET DEFAULT dev:[dir.unzip]       ! Some convenient directory.
       UNZIP unzip61.zip                 ! Unpack the UnZip source kit.
@@ -42,35 +42,22 @@ below.  For example:
    Advanced Encryption Standard (AES) Encryption
    ---------------------------------------------
 
-   To enable support for AES encryption, a separate IZ_AES_WG source kit
-is needed.  On the Info-ZIP FTP server, the IZ_AES_WG source kit should
-be found in:
+   All the source files needed to enable support for AES encryption are
+included in a normal UnZip source kit.  Information about AES encryption
+in Info-ZIP programs can normally be found in the file
+[.aes_wg]README_AES_WG.txt.
 
-      ftp://ftp.info-zip.org/pub/infozip/crypt/
+      For export control reasons, it may be possible to find an UnZip
+      source kit from which these files have been removed.  If the files
+      in the [.aes_wg] subdirectory are missing, then the simplest
+      solution is to fetch a complete source kit from any of the usual
+      places.  For more information if the [.aes_wg]README_AES_WG.txt
+      file is missing, it should also be available at:
 
-The latest kit should be:
-
-      ftp://ftp.info-zip.org/pub/infozip/crypt/iz_aes_wg.zip
-
-but other, older kits may also be available there.  Version
-compatibility information should be included in the IZ_AES_WG
-documentation.  The latest version of that should be:
-
-      ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
-
-It might be wise to read that before downloading any particular
-IZ_AES_WG kit.
-
-   The IZ_AES_WG kit should be unpacked in the main UnZip directory,
-where it should populate the [.aes_wg] subdirectory.  For example, if
-the proper IZ_AES_WG kit is "iz_aes_wg13.zip", then use commands like
-the following:
-
-      SET DEFAULT [.unzip61]            ! (If not already there.)
-      UNZIP [-]iz_aes_wg13.zip
+            ftp://ftp.info-zip.org/pub/infozip/crypt/README_AES_WG.txt
 
    See the "Build" section, below, for details on how to build UnZip
-with AES encryption support.
+with or without AES encryption support.
 
      The IZ_AES_WG code may be too modern for VAX C.
 
@@ -91,7 +78,7 @@ bzip2 compression, or to download a different bzip2 source kit:
 
       http://antinode.info/dec/sw/bzip2.html
 
-   The UnZip builders for VMS wiil, by default, use the bzip2 source kit
+   By default, the UnZip builders for VMS will use the bzip2 source kit
 which is included in the UnZip source kit to create the required bzip2
 object library.  The builders can also use an existing bzip2 object
 library, which is supplied by the user.  For details on how to use an
@@ -173,13 +160,13 @@ like the following:
    Bzip2 Compression
    -----------------
 
-   The optional bzip2 compression method is enabled by default, and the
-required source code is included in the UnZip source kit.  By default,
-the builders will use the bzip2 source kit in the [.bzip2] subdirectory
-to build the required bzip2 object library.
+   By default, suppport for the bzip2 compression method is enabled, and
+the required source code is included in the UnZip source kit.  By
+default, the builders will use the bzip2 source kit in the [.bzip2]
+subdirectory to build the required bzip2 object library.
 
-   To disable bzip2 compression, add the appropriate option to the
-builder command line.  For example:
+   To disable it, add the appropriate option to the builder command
+line.  For example:
 
          @ [.vms]build_unzip NOIZ_BZIP2
       or:
@@ -234,15 +221,15 @@ like these:
    LZMA and PPMd Compression Methods
    ---------------------------------
 
-   The optional LZMA and PPMd compression methods (new in UnZip version
-6.1) are enabled by default, and the required source code is included
+   By default, support for the LZMA and PPMd compression methods (new in
+UnZip version 6.1) is enabled.  The required source code is included
 in the UnZip source kit.  The code used to implement these compression
 methods is generally written to newer C language standards than the base
 Info-ZIP code, so some very old compilers may be unable to build UnZip
 if these features are enabled.
 
-   To disable LZMA and/or PPMd compression, add the appropriate option
-to the builder command line.  For example:
+   To disable support for LZMA and/or PPMd compression, add the
+appropriate option to the builder command line.  For example:
 
          @ [.vms]build_unzip NOLZMA NOPPMD
       or:
@@ -253,15 +240,13 @@ to the builder command line.  For example:
    Advanced Encryption Standard (AES) Encryption
    ---------------------------------------------
 
-   By default, AES encryption is not enabled.  To enable it, first
-download and unpack the separate IZ_AES_WG source kit, as explained
-above.  With the IZ_AES_WG source kit unpacked into its [.aes_wg]
-subdirectory, add the appropriate AES_WG option to the builder command
-line.  For example:
+   By default, support for AES_WG encryption is enabled if the AES_WG
+source files are present in the [.aes_wg] subdirectory.  To disable it,
+add the appropriate option to the builder command line.  For example:
 
-         @ [.vms]build_unzip AES_WG
+         @ [.vms]build_unzip NO_AES_WG
       or:
-         MMS /DESC = [.vms] /MACRO = (AES_WG=1)
+         MMS /DESC = [.vms] /MACRO = (NO_AES_WG=1)
 
    The code used to implement AES_WG encryption is generally written to
 newer C language standards than the base Info-ZIP code, so some very old
@@ -272,9 +257,10 @@ compilers may be unable to build UnZip if this feature is enabled.
    Traditional Zip Encryption
    --------------------------
 
-   By default, Traditional Zip encryption is enabled.  To disable it,
-the C macro NO_CRYPT must be defined at build time.  This can be done by
-adding NO_CRYPT to the LOCAL_UNZIP symbol/macro.  For example:
+   By default, support for Traditional Zip encryption is enabled.  To
+disable it, the C macro NO_CRYPT must be defined at build time.  This
+can be done by adding NO_CRYPT to the LOCAL_UNZIP symbol/macro.  For
+example:
 
          LOCAL_UNZIP == "NO_CRYPT"
          @ [.vms]build_unzip
@@ -353,7 +339,7 @@ variants with different options using the same source tree.
 
       Note that if PROD=dest_dir is specified for a build, then it must
       also be specified for other builder operations, such as TEST or
-      CLEAN, which also need to know which destination directory to use.
+      CLEAN, which use the destination directory.
 
       Note that PROD=dest_dir has no effect on any automatically built
       bzip2 object library, so it's generally safer to use a pre-built

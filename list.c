@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -93,7 +93,10 @@ static ZCONST char Far ShortFileTrailer[] =
 int list_files(__G)     /* return PK-type error code */
     __GDEF
 {
-    int do_this_file=FALSE, cfactor, error, error_in_archive=PK_COOL;
+    int do_this_file = FALSE;
+    int cfactor;
+    int error;
+    int error_in_archive = PK_COOL;
 #ifndef WINDLL
     char sgn, cfactorstr[12];
     int longhdr=(uO.vflag>1);
@@ -113,6 +116,7 @@ int list_files(__G)     /* return PK-type error code */
     ulg ea_size, tot_easize=0L, tot_eafiles=0L;
     ulg acl_size, tot_aclsize=0L, tot_aclfiles=0L;
 #endif
+    long enddigsig_len;
     min_info info;
     char methbuf[8];
     static ZCONST char dtype[]="NXFS";  /* see zi_short() */
@@ -158,10 +162,24 @@ int list_files(__G)     /* return PK-type error code */
     }
 #endif /* ndef WINDLL */
 
-    for (j = 1L;;j++) {
+    enddigsig_len = -1;
 
+    for (j = 1L; ; j++)
+    {
         if (readbuf(__G__ G.sig, 4) == 0)
             return PK_EOF;
+
+        if (memcmp(G.sig, central_digsig_sig, 4) == 0)
+        { /* Central directory digital signature.  Record its
+           * existence.  Read (and, for now, ignore) the data.
+           */
+          error = process_cdir_digsig( __G__ &enddigsig_len);
+          if (error != PK_OK)
+          {
+            return error;       /* Return the error code. */
+          }
+        } /* process_cdir_digsig() should have read the next sig. */
+
         if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
             /* no new central directory entry
              * -> is the number of processed entries compatible with the
@@ -339,7 +357,7 @@ int list_files(__G)     /* return PK-type error code */
                 methbuf[5] = dtype[(G.crec.general_purpose_bit_flag>>1) & 3];
             } else if (methnum >= NUM_METHODS) {
                 /* 2013-02-26 SMS.
-                 * http://sourceforge.net/p/infozip/bugs/27/
+                 * http://sourceforge.net/p/infozip/bugs/27/  CVE-2014-9913.
                  * Unexpectedly large compression methods overflow
                  * &methbuf[].  Use the old, three-digit decimal format
                  * for values which fit.  Otherwise, sacrifice the
@@ -515,27 +533,34 @@ int list_files(__G)     /* return PK-type error code */
     }
 
     /* Skip the following checks in case of a premature listing break. */
-    if (error_in_archive <= PK_WARN) {
-
+    if (error_in_archive <= PK_WARN)
+    {
 /*---------------------------------------------------------------------------
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
-
-        if ( (memcmp(G.sig,
-                     (G.ecrec.have_ecr64 ?
-                      end_central64_sig : end_central_sig),
-                     4) != 0)
-            && (!G.ecrec.is_zip64_archive)
-            && (memcmp(G.sig, end_central_sig, 4) != 0)
-           ) {          /* just to make sure again */
+        if ((memcmp( G.sig,
+         (G.ecrec.have_ecr64 ? end_central64_sig : end_central_sig), 4)
+         != 0) &&
+         (!G.ecrec.is_zip64_archive) &&
+         (memcmp( G.sig, end_central_sig, 4) != 0))
+        {
             Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
-            error_in_archive = PK_WARN;   /* didn't find sig */
+            error_in_archive = PK_WARN; /* Didn't find EOCD sig. */
+        }
+
+        if (enddigsig_len >= 0)
+        {
+          Info( slide, 0x401, ((char *)slide, LoadFarString( DigSigMsg),
+           enddigsig_len));
+# if 0   /* Enable to make this a warning. */
+          if (error_in_archive < PK_WARN)       /* Keep more severe error. */
+            error_in_archive = PK_WARN;
+# endif /* 0 */
         }
 
         /* Set specific return code when no files have been found. */
         if (members == 0L && error_in_archive <= PK_WARN)
             error_in_archive = PK_FIND;
-
     }
 
     return error_in_archive;
@@ -573,11 +598,14 @@ int get_time_stamp(__G__ last_modtime, nmember)  /* return PK-type error code */
     time_t *last_modtime;
     ulg *nmember;
 {
-    int do_this_file=FALSE, error, error_in_archive=PK_COOL;
+    int do_this_file = FALSE;
+    int error;
+    int error_in_archive = PK_COOL;
     ulg j;
 # ifdef USE_EF_UT_TIME
     iztimes z_utime;
 # endif
+    long enddigsig_len;
     min_info info;
 
 
@@ -592,10 +620,24 @@ int get_time_stamp(__G__ last_modtime, nmember)  /* return PK-type error code */
     *nmember = 0L;
     G.pInfo = &info;
 
-    for (j = 1L;; j++) {
+    enddigsig_len = -1;
 
+    for (j = 1L; ; j++)
+    {
         if (readbuf(__G__ G.sig, 4) == 0)
             return PK_EOF;
+
+        if (memcmp(G.sig, central_digsig_sig, 4) == 0)
+        { /* Central directory digital signature.  Record its
+           * existence.  Read (and, for now, ignore) the data.
+           */
+          error = process_cdir_digsig( __G__ &enddigsig_len);
+          if (error != PK_OK)
+          {
+            return error;       /* Return the error code. */
+          }
+        } /* process_cdir_digsig() should have read the next sig. */
+
         if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
             if (((unsigned)(j - 1) & (unsigned)0xFFFF) ==
                 (unsigned)G.ecrec.total_entries_central_dir) {
@@ -689,11 +731,26 @@ int get_time_stamp(__G__ last_modtime, nmember)  /* return PK-type error code */
 /*---------------------------------------------------------------------------
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
-
-    if (memcmp(G.sig, end_central_sig, 4)) {    /* just to make sure again */
+    if ((memcmp( G.sig,
+     (G.ecrec.have_ecr64 ? end_central64_sig : end_central_sig), 4) != 0) &&
+     (!G.ecrec.is_zip64_archive) &&
+     (memcmp( G.sig, end_central_sig, 4) != 0))
+    {
         Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
         error_in_archive = PK_WARN;
     }
+
+    if (enddigsig_len >= 0)
+    {
+      Info( slide, 0x401, ((char *)slide, LoadFarString( DigSigMsg),
+       enddigsig_len));
+# if 0   /* Enable to make this a warning. */
+      if (error_in_archive < PK_WARN)       /* Keep more severe
+error. */
+        error_in_archive = PK_WARN;
+# endif /* 0 */
+    }
+
     if (*nmember == 0L && error_in_archive <= PK_WARN)
         error_in_archive = PK_FIND;
 

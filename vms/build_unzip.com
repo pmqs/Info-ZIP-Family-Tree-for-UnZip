@@ -2,10 +2,10 @@ $! BUILD_UNZIP.COM
 $!
 $!     UnZip 6.1 for VMS -- DCL Build procedure.
 $!
-$!     Last revised:  2015-05-18  SMS.
+$!     Last revised:  2016-11-18  SMS.
 $!
 $!----------------------------------------------------------------------
-$! Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.
+$! Copyright (c) 2004-2016 Info-ZIP.  All rights reserved.
 $!
 $! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 $! contents of which are also included in zip.h) for terms of use.  If,
@@ -136,7 +136,8 @@ $ on error then goto error
 $ on control_y then goto error
 $ OLD_VERIFY = f$verify( 0)
 $!
-$ edit := edit                  ! override customized edit commands
+$ arch = ""                     ! Prepare for early abort.
+$ edit := edit                  ! Override customized edit commands.
 $ say := write sys$output
 $!
 $! Get LOCAL_UNZIP symbol options.
@@ -153,8 +154,7 @@ $     endif
 $ endif
 $!
 $! Check for the presence of "VMSCLI" in LOCAL_UNZIP.  If yes, we will
-$! define the foreign command for "unzip" to use the executable
-$! containing the VMS CLI interface.
+$! define the foreign command for "unzip" to use the VMS CLI executable.
 $!
 $ pos_cli = f$locate( "VMSCLI", LOCAL_UNZIP)
 $ len_local_unzip = f$length( LOCAL_UNZIP)
@@ -598,7 +598,7 @@ $ libunzip_opt = "[.''dest']LIB_IZUNZIP.OPT"
 $!
 $! If DASHV was requested, then run "unzip -v" (and exit).
 $!
-$ if (dashv)
+$ if (DASHV)
 $ then
 $     mcr [.'dest']unzip -v
 $     goto error
@@ -606,7 +606,7 @@ $ endif
 $!
 $! If SLASHV was requested, then run "unzip_cli /verbose" (and exit).
 $!
-$ if (slashv)
+$ if (SLASHV)
 $ then
 $     mcr [.'dest']unzip_cli /verbose
 $     goto error
@@ -614,7 +614,7 @@ $ endif
 $!
 $! If TEST was requested, then run the basic tests (and exit).
 $!
-$ if (test)
+$ if (TEST)
 $ then
 $     @ [.vms]test_unzip.com "" [.'dest']
 $     goto error
@@ -622,7 +622,7 @@ $ endif
 $!
 $! If TEST_PPMD was requested, then run the PPMd tests (and exit).
 $!
-$ if (test_ppmd)
+$ if (TEST_PPMD)
 $ then
 $     @ [.vms]test_unzip.com "" [.'dest'] NOSFX
 $     goto error
@@ -814,6 +814,7 @@ $         say "   BZIP2 include dir: ''f$trnlnm( "incl_bzip2")'"
 $     endif
 $     say "   BZIP2 library dir: ''f$trnlnm( "lib_bzip2")'"
 $ endif
+$!
 $ if (IZ_ZLIB .nes. "")
 $ then
 $     if (MAKE_EXE)
@@ -830,6 +831,23 @@ $!-------------------------- UnZip section -----------------------------
 $!
 $ if (MAKE_HELP)
 $ then
+$!
+$! Ensure that [.vms] exists at the start of a search-list SYS$DISK.
+$! (Used for UNZIP_DEF.RNH copy here, and UNZIP_CLI.HELP below.)
+$!
+$     vms_dest_dir = f$parse( "SYS$DISK:", , , "device") + "[]vms.dir"
+$     if (f$search( vms_dest_dir) .eqs "")
+$     then
+$         create /directory /log [.vms]
+$     endif
+$!
+$! Accommodate an ODS2+NFS-encoded ".RNH" source file name.
+$!
+$     if ((f$search( "[.VMS]UNZIP_DEF.RNH") .eqs. "") .and. -
+       (f$search( "[.VMS]$UNZIP_DEF.RNH") .nes. ""))
+$     then
+$         copy [.VMS]$UNZIP_DEF.RNH SYS$DISK:[.VMS]UNZIP_DEF.RNH
+$     endif
 $!
 $! Process the Unix-style help file.
 $!
@@ -943,10 +961,9 @@ $! Create the callable library link options file, if needed.
 $!
 $     if (LIBUNZIP .ne. 0)
 $     then
-$         def_dev_dir_orig = f$environment( "default")
 $         set default [.'dest']
 $         def_dev_dir = f$environment( "default")
-$         set default 'def_dev_dir_orig'
+$         set default [-]
 $         create /fdl = [.VMS]STREAM_LF.FDL 'libunzip_opt'
 $         open /append opt_file_lib 'libunzip_opt'
 $         write opt_file_lib "! DEFINE LIB_IZUNZIP ''def_dev_dir'"
@@ -1125,8 +1142,8 @@ $!
 $ if (MAKE_HELP)
 $ then
 $     set default [.VMS]
-$     edit /tpu /nosection /nodisplay /command = CVTHELP.TPU -
-       UNZIP_CLI.HELP
+$     edit /tpu /nosection /nodisplay /command = cvthelp.tpu -
+       'f$search( "UNZIP_CLI.HELP")' /output = SYS$DISK:[]
 $     set default [-]
 $     runoff /output = UNZIP_CLI.HLP [.VMS]UNZIP_CLI.RNH
 $ endif
@@ -1349,8 +1366,8 @@ $ then
 $!
 $     there = here- "]"+ ".''dest']"
 $!
-$!    Define the foreign command symbols.  Similar commands may be useful
-$!    in SYS$MANAGER:SYLOGIN.COM and/or users' LOGIN.COM.
+$!    Define the foreign command symbols.  Similar commands may be
+$!    useful in SYS$MANAGER:SYLOGIN.COM and/or users' LOGIN.COM.
 $!
 $     unzip   == "$''there'''unzexec'.EXE"
 $     zipinfo == "$''there'''unzexec'.EXE ""-Z"""

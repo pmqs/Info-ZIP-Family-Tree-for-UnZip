@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -10,21 +10,22 @@
 
   unzip.c
 
-  UnZip - a zipfile extraction utility.  See below for make instructions, or
-  read the comments in Makefile and the various Contents files for more de-
-  tailed explanations.  To report a bug, submit a *complete* description via
-  //www.info-zip.org/zip-bug.html; include machine type, operating system and
-  version, compiler and version, and reasonably detailed error messages or
-  problem report.  To join Info-ZIP, see the instructions in README.
+  UnZip - a zipfile extraction utility.  See below for make
+  instructions, or read the comments in Makefile and the various
+  Contents files for more detailed explanations.  To report a bug,
+  submit a *complete* description via //www.info-zip.org/zip-bug.html;
+  include machine type, operating system and version, compiler and
+  version, and reasonably detailed error messages or problem report.
+  To join Info-ZIP, see the instructions in README.
 
-  UnZip 5.x is a greatly expanded and partially rewritten successor to 4.x,
-  which in turn was almost a complete rewrite of version 3.x.  For a detailed
-  revision history, see UnzpHist.zip at quest.jpl.nasa.gov.  For a list of
-  the many (near infinite) contributors, see "CONTRIBS" in the UnZip source
-  distribution.  (Some of this information is outdated and needs to be
-  updated.)
+  UnZip 5.x was a greatly expanded and partially rewritten successor to
+  4.x, which in turn was almost a complete rewrite of version 3.x.  For
+  a detailed revision history, see UnzpHist.zip at quest.jpl.nasa.gov.
+  For a list of the many (near infinite) contributors, see "CONTRIBS" in
+  the UnZip source distribution.  (Some of this information is outdated
+  and needs to be updated.)
 
-  UnZip 6.0 adds support for archives larger than 4 GiB using the Zip64
+  UnZip 6.0 added support for archives larger than 4 GiB using the Zip64
   extensions as well as support for Unicode information embedded per the
   latest zip standard additions.
 
@@ -32,18 +33,19 @@
 
   [from original zipinfo.c]
 
-  This program reads great gobs of totally nifty information, including the
-  central directory stuff, from ZIP archives ("zipfiles" for short).  It
-  started as just a testbed for fooling with zipfiles, but at this point it
-  is actually a useful utility.  It also became the basis for the rewrite of
-  UnZip (3.16 -> 4.0), using the central directory for processing rather than
-  the individual (local) file headers.
+  This program reads great gobs of totally nifty information, including
+  the central directory stuff, from ZIP archives ("zipfiles" for short).
+  It started as just a testbed for fooling with zipfiles, but at this
+  point it is actually a useful utility.  It also became the basis for
+  the rewrite of UnZip (3.16 -> 4.0), using the central directory for
+  processing rather than the individual (local) file headers.
 
-  As of ZipInfo v2.0 and UnZip v5.1, the two programs are combined into one.
-  If the executable is named "unzip" (or "unzip.exe", depending), it behaves
-  like UnZip by default; if it is named "zipinfo" or "ii", it behaves like
-  ZipInfo.  The ZipInfo behavior may also be triggered by use of unzip's -Z
-  option; for example, "unzip -Z [zipinfo_options] archive.zip".
+  As of ZipInfo v2.0 and UnZip v5.1, the two programs are combined into
+  one.  If the executable is named "unzip" (or "unzip.exe", depending),
+  it behaves like UnZip by default; if it is named "zipinfo" or "ii", it
+  behaves like ZipInfo.  The ZipInfo behavior may also be triggered by
+  use of unzip's -Z option; for example:
+    unzip -Z [zipinfo_options] archive.zip
 
   Another dandy product from your buddies at Newtware!
 
@@ -56,7 +58,6 @@
                (This software is free but NOT IN THE PUBLIC DOMAIN.)
 
   ---------------------------------------------------------------------------*/
-
 
 
 #define __UNZIP_C       /* identifies this source module */
@@ -126,10 +127,10 @@ USER_PROGRESS_CLASS void user_progress OF((int));
 /* Constants */
 /*************/
 
-# include "consts.h" /* all constant global variables are in here */
-                     /* (non-constant globals were moved to globals.c) */
+# include "consts.h" /* All constant global variables are in here. */
+                     /* (Non-constant globals were moved to globals.c.) */
 
-/* constant local variables: */
+/* Constant local variables: */
 
 # if !defined( SFX) || defined( DIAG_SFX)
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
@@ -191,28 +192,30 @@ static ZCONST char Far BadJunkDirsValue[] =
 /* usage() strings */
 # ifndef SFX
 #  ifdef VMS
+static ZCONST char Far ExampleCmnt[] = "!";
 static ZCONST char Far Example3[] = "vms.c";
 static ZCONST char Far Example2[] = "  unzip \"-V\" foo \"Bar\"\
- (Quote names to preserve case, unless SET PROC/PARS=EXT)\n";
-#  else /* !VMS */
+ ! Use quotes to preserve case, unless SET PROC/PARS=EXTE\n";
+#  else /* def VMS */
+static ZCONST char Far ExampleCmnt[] = "#";
 static ZCONST char Far Example3[] = "ReadMe";
 #   ifdef RISCOS
 static ZCONST char Far Example2[] =
- "  unzip foo -d RAM:$   => extract all files from foo into RAMDisc\n";
-#   else /* !RISCOS */
+ "  unzip foo -d RAM:$   # Extract all files from foo into RAMDisc\n";
+#   else /* def RISCOS */
 #    if (defined(OS2) || (defined(DOS_FLX_OS2_W32) && defined(MORE)))
 static ZCONST char Far Example2[] =
  "";                /* no room:  too many local3[] items */
-#    else /* !OS2 */
+#    else /* (defined(OS2) || (defined(DOS_FLX_OS2_W32) && defined(MORE))) */
 #     ifdef MACOS
 static ZCONST char Far Example2[] = ""; /* not needed */
-#     else /* !MACOS */
+#     else /* def MACOS */
 static ZCONST char Far Example2[] = " \
- unzip -p foo | more  => send contents of foo.zip via pipe into program more\n";
-#     endif /* ?MACOS */
-#    endif /* ?OS2 */
-#   endif /* ?RISCOS */
-#  endif /* ?VMS */
+ unzip -p foo | more  # Pipe contents of foo.zip into program \"more\"\n";
+#     endif /* def MACOS [else] */
+#    endif /* (defined(OS2) || (defined(DOS_FLX_OS2_W32) && defined(MORE))) [else] */
+#   endif /* def RISCOS [else] */
+#  endif /* def VMS [else] */
 
 /* local1[]:  command options */
 #  if defined(TIMESTAMP)
@@ -280,13 +283,13 @@ static ZCONST char Far local2[] = " -X | -ka  restore UIC | ACL";
 #    ifdef MORE
 static ZCONST char Far local3[] = "\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
-  -D- restore dir (-D: no) timestamps        -M  pipe through \"more\" pager\n\
+  -D- restore dir (-D: no) times             -M  pipe through \"more\" pager\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
-\n\n";
+\n";
 #    else /* def MORE */
 static ZCONST char Far local3[] = "\n\
   -Y  treat \".nnn\" as \";nnn\" version         -2  force ODS2 names\n\
-  -D- restore dir (-D: no) timestamps\n\
+  -D- restore dir (-D: no) times\n\
   (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\
 \n\n";
 #    endif /* def MORE [else] */
@@ -300,21 +303,23 @@ static ZCONST char Far local2[] = " -X  restore UID/GID info";
 #     ifdef __APPLE__
 #      ifdef MORE
 static ZCONST char Far local3[] = "\
-  -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n\
+  -K  keep setuid/setgid/tacky permissions   -D- restore dir (-D: no) times\n\
   -J  No special AppleDouble file handling\n\
   -Je/-Jf/-Jq/-Jr  ignore extended attrs/Finder info/quarantine/resource fork\
-\n";
+\n\
+  -M  pipe through \"more\" pager\n";
 #      else /* def MORE */
 static ZCONST char Far local3[] = "\
-  -K  keep setuid/setgid/tacky permissions   -J  No spec'l AplDbl file handling\
-\n\
+  -K  keep setuid/setgid/tacky permissions   -D- restore dir (-D: no) times\n\
+  -J  No special AppleDouble file handling\n\
   -Je/-Jf/-Jq/-Jr  ignore extended attrs/Finder info/quarantine/resource fork\
 \n";
 #      endif /* def MORE [else] */
 #     else /* def __APPLE__ */
 #      ifdef MORE
 static ZCONST char Far local3[] = "\
-  -K  keep setuid/setgid/tacky permissions   -M  pipe through \"more\" pager\n";
+  -K  keep setuid/setgid/tacky permissions   -D- restore dir (-D: no) times\n\
+  -M  pipe through \"more\" pager\n";
 #      else /* def MORE */
 static ZCONST char Far local3[] = "\
   -K  keep setuid/setgid/tacky permissions\n";
@@ -362,39 +367,75 @@ static ZCONST char Far local3[] = "";
 #  endif /* ?DOS_FLX_OS2_W32 */
 # endif /* ndef SFX */
 
+/* UnZip Usage DCL suggestion strings. */
+# ifdef VMS
+#  ifdef VMSCLI	
+#   define USAGE_DCL_U "  DCL: unzip == \"$ dev:[dir]unzip_cli\""
+#  else /* def VMSCLI */
+#   define USAGE_DCL_U "  DCL: unzip == \"$ dev:[dir]unzip.exe\""
+#  endif /* def VMSCLI [else] */
+# else /* def VMS */
+#  define USAGE_DCL_U  ""
+# endif /* def VMS [else] */
+
+/* ZipInfo Usage DCL suggestion and example strings. */
 # ifndef NO_ZIPINFO
 #  ifdef VMS
+#   ifdef VMSCLI	
+#    define USAGE_DCL_Z "  DCL: zipinfo == \"$ dv:[dr]unzip_cli /zipi\""
+#   else /* def VMSCLI */
+#    define USAGE_DCL_Z "  DCL: zipinfo == \"$ dv:[dr]unzip \"\"-Z\"\"\""
+#   endif /* def VMSCLI [else] */
 static ZCONST char Far ZipInfoExample[] = "* or % (e.g., \"*font-%.zip\")";
-#  else
+#  else /* def VMS */
+#   define USAGE_DCL_Z  ""
 static ZCONST char Far ZipInfoExample[] = "*, ?, [] (e.g., \"[a-j]*.zip\")";
-#  endif
+#  endif /* def VMS [else] */
 
+/* ZipInfo Usage text strings.
+ *    Maintain consistency between these strings and the corresponding
+ *    VMS CLI strings in vms/cmdline.c.
+ */
+#  ifdef VMSCLI
+/* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
+ZCONST char Far ZipInfoUsageLine1[] = "\
+Info-ZIP ZipInfo %s (%s)%s\n\
+ Copyright (c) 1990-2017 Info-ZIP.  License: unzip /license\n";
+#  else /* def VMSCLI */
 static ZCONST char Far ZipInfoUsageLine1[] = "\
-ZipInfo %s (%s) by Info-ZIP.  Maintainer: %s\n\
-\n\
-List name, date/time, attribute, size, compression method, etc., about files\n\
-in list (excluding those in xlist) contained in the specified .zip archive(s).\
-\n\"file[.zip]\" may be a wildcard name containing %s.\n\n\
-   usage:  zipinfo [-12smlvChMtTz] file[.zip] [list...] [-x xlist...]\n\
-      or:  unzip %s-Z%s [-12smlvChMtTz] file[.zip] [list...] [-x xlist...]\n";
+Info-ZIP ZipInfo %s (%s)%s\n\
+ Copyright (c) 1990-2017 Info-ZIP.  License: unzip --license\n";
+#  endif /* def VMSCLI [else] */
 
-static ZCONST char Far ZipInfoUsageLine2[] = "\nmain\
- listing-format options:             -s  short Unix \"ls -l\" format (def.)\n\
+static ZCONST char Far ZipInfoUsageLine2[] = "\
+Usage: zipinfo [-12smlvChMtTz] file[.zip] [list...] [-x xlist...]\n\
+   or: unzip %s-Z%s [-12smlvChMtTz] file[.zip] [list...] [-x xlist...]\n\
+\n\
+Action: List name, date/time, attribute, size, compression method, etc., for\n\
+files in list (excluding those in xlist) from the specified .zip archive(s).\n\
+\"file[.zip]\" may be a wildcard name containing %s.\n";
+
+static ZCONST char Far ZipInfoUsageLine3[] = "\n\
+Options (main listing format)            -s  short Unix \"ls -l\" format (def.)\
+\n\
   -1  filenames ONLY, one per line       -m  medium Unix \"ls -l\" format\n\
-  -2  just filenames but allow -h/-t/-z  -l  long Unix \"ls -l\" format\n\
+  -2  like -1, but allowing -h/-t/-z     -l  long Unix \"ls -l\" format\n\
                                          -v  verbose, multi-page format\n";
 
-static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
+static ZCONST char Far ZipInfoUsageLine4[] = "\
+Options (modifiers):\n\
   -h  print header line       -t  print totals for listed files or for all\n\
   -z  print zipfile comment   -T  print file times in sortable decimal format\
-\n  -C  be case-insensitive   %s\
-  -x  exclude filenames that follow from listing\n";
+\n\
+  -C  be case-insensitive%s\
+  -x xlist  exclude from the listing the filenames in xlist\n";
+
 #  ifdef MORE
-static ZCONST char Far ZipInfoUsageLine4[] =
-     "  -M  page output through built-in \"more\"\n";
-#  else /* !MORE */
-static ZCONST char Far ZipInfoUsageLine4[] = "";
-#  endif /* ?MORE */
+static ZCONST char Far ZipInfoUsageLine4m[] =
+     "     -M  page output through built-in \"more\"\n";
+#  else /*  defMORE */
+static ZCONST char Far ZipInfoUsageLine4m[] = "";
+#  endif /* def MORE [else] */
 # endif /* !NO_ZIPINFO */
 
 # ifdef BETA
@@ -402,7 +443,7 @@ static ZCONST char Far ZipInfoUsageLine4[] = "";
 static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 #  endif /* ndef VMSCLI */
 ZCONST char Far BetaVersion[] = "%s\
-        THIS IS STILL A BETA VERSION OF UNZIP%s -- DO NOT DISTRIBUTE.\n\n";
+        THIS IS A BETA VERSION OF UNZIP%s -- NOT FOR GENERAL DISTRIBUTION.\n";
 # endif
 
 # ifndef VMSCLI
@@ -411,25 +452,32 @@ static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 ZCONST char Far UnzipBanner[] =
  "%s %s (%s)  (c) %4.4s Info-ZIP  http://info-zip.org\n";
 
+/* UnZipSFX Usage text strings.
+ *    Maintain consistency between these strings and the corresponding
+ *    VMS CLI strings in vms/cmdline.c.
+ */
 # ifdef SFX
+static ZCONST char Far UnzipSFXUsage[] = "\n\
+Usage: %s%s %s\n\
+        [-opts[modifiers]] [members]\n\n";
 #  ifdef SFX_EXDIR
 static ZCONST char Far UnzipSFXOpts[] =
-   "Valid options are -cfptuz; modifiers are -abCdjLnoPq%sV%s.\n";
+   " Options (primary mode): -cfptuz  Modifiers: -abCdjLnoPq%sV%s\n";
 #  else
 static ZCONST char Far UnzipSFXOpts[] =
-     "Valid options are -cfptuz; modifiers are -abCjLnoPq%sV%s.\n";
+     " Options (primary mode): -cfptuz  Modifiers: -abCjLnoPq%sV%s\n";
 #  endif
 #  ifdef VMS
-static ZCONST char Far UnzipSFXOptsV[] =
-"(Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\n";
+static ZCONST char Far UnzipSFXOptsV[] = "\
+ (Must quote upper-case options, like \"-V\", unless SET PROC/PARSE=EXTEND.)\n";
 #  endif /* def VMS */
 static ZCONST char Far UnzipSFXOpts2[] =
-     "For license info: \"--license\".\n";
+     " License: --license  More info: See UnZip documentation.\n";
 # endif /* def SFX */
 
 # if !defined( SFX) || defined( DIAG_SFX)
 static ZCONST char Far CompileOptions[] =
- "UnZip special compilation options:\n";
+ "UnZip special compilation options/features:\n";
 static ZCONST char Far CompileOptFormat[] = "        %s\n";
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
 static ZCONST char Far EnvOptions[] =
@@ -524,7 +572,11 @@ static ZCONST char Far No_More[] =
 #  endif
 #  ifdef NO_ZIPINFO
 static ZCONST char Far No_ZipInfo[] =
+#   ifdef VMS
+ "NO_ZIPINFO           (ZipInfo -Z (/ZIPINFO) mode disabled)";
+#   else /* def VMS */
  "NO_ZIPINFO           (ZipInfo -Z mode disabled)";
+#   endif /* def VMS */
 #  endif
 #  ifdef NTSD_EAS
 static ZCONST char Far NTSDExtAttrib[] =
@@ -715,37 +767,41 @@ static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 #  endif /* !__RSXNT__ */
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
+/* UnZip Usage text strings.
+ *    Maintain consistency between these strings and the corresponding
+ *    VMS CLI strings in vms/cmdline.c.
+ */
 # ifndef SFX
 #  ifdef VMSCLI
-    /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
+/* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %s (%s) by Info-ZIP.  Maintainer: %s\n\
- Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip /license\n";
+Info-ZIP UnZip %s (%s)%s\n\
+ Copyright (c) 1990-2017 Info-ZIP.  License: unzip /license\n";
 #  else /* def VMSCLI */
-    static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %s (%s) by Info-ZIP.  Maintainer: %s\n\
- Copyright (c) 1990-2015 Info-ZIP.  For software license: unzip --license\n";
+static ZCONST char Far UnzipUsageLine1[] = "\
+Info-ZIP UnZip %s (%s)%s\n\
+ Copyright (c) 1990-2017 Info-ZIP.  License: unzip --license\n";
 #  endif /* def VMSCLI [else] */
-#  define UnzipUsageLine1v       UnzipUsageLine1
 
-static ZCONST char Far UnzipUsageLine2v[] = "\
- See README for details.  More info: http://info-zip.org/UnZip.html\n\n";
+static ZCONST char Far UnzipVersionLine[] = "\
+ More info: http://info-zip.org  http://info-zip.org/UnZip.html\n\
+ Bugs: http://www.info-zip.org/zip-bug.html  See README for details.\n\n";
 
 #  ifdef MACOS
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-d exdir]\n\
- Default action is to extract files in list, to exdir;\n\
+ Default action: Extract files in list, to exdir;\n\
   file[.zip] may be a wildcard.  %s\n";
 #  else /* !MACOS */
 #   ifdef VM_CMS
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d fm]\n\
- Default action is to extract files in list, except those in xlist, to disk fm;\
+ Default action: Extract files in list, except those in xlist, to disk fm;\
 \n  file[.zip] may be a wildcard.  %s\n";
 #   else /* !VM_CMS */
 static ZCONST char Far UnzipUsageLine2[] = "\
 Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n\
- Default action is to extract files in list, except those in xlist, to exdir;\n\
+ Default action: Extract files in list, except those in xlist, to exdir;\n\
  file[.zip] may be a wildcard.  %s\n";
 #   endif /* ?VM_CMS */
 #  endif /* ?MACOS */
@@ -753,42 +809,37 @@ Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n\
 #  ifdef NO_ZIPINFO
 #  define ZIPINFO_MODE_OPTION  ""
 static ZCONST char Far ZipInfoMode[] =
- "(ZipInfo mode is disabled in this version.)";
+ "(ZipInfo mode is disabled in this build.)";
 #  else
 #  define ZIPINFO_MODE_OPTION  "[-Z] "
 static ZCONST char Far ZipInfoMode[] =
  "-Z => ZipInfo mode (\"unzip -Z\" for usage).";
 #  endif /* ?NO_ZIPINFO */
 
-#  ifdef VMS
-static ZCONST char Far VMSusageLine2b[] = "\
-=> Define foreign command symbol in LOGIN.COM: \
-unzip == \"$ dev:[dir]unzip.exe\"\n";
-#  endif
-
 #  ifdef MACOS
-static ZCONST char Far UnzipUsageLine3[] = "\n\
+static ZCONST char Far UnzipUsageLine3[] = "\
+Options (primary mode):\n\
   -d  extract files into exdir               -l  list files (short format)\n\
   -f  freshen existing files, create none    -t  test compressed archive data\n\
   -u  update files, create if necessary      -z  display archive comment only\n\
   -v  list verbosely/show version info     %s\n";
-#  else /* !MACOS */
+#  else /* def MACOS */
 #   ifdef VM_CMS
-static ZCONST char Far UnzipUsageLine3[] = "\n\
+static ZCONST char Far UnzipUsageLine3[] = "\
+Options (primary mode):\n\
   -p  extract files to pipe, no messages     -l  list files (short format)\n\
   -f  freshen existing files, create none    -t  test compressed archive data\n\
   -u  update files, create if necessary      -z  display archive comment only\n\
-  -v  list verbosely/show version info     %s\n\
-  -x  exclude files that follow (in xlist)   -d  extract files onto disk fm\n";
-#   else /* !VM_CMS */
-static ZCONST char Far UnzipUsageLine3[] = "\n\
+  -v  list verbosely/show version info     %s\n";
+#   else /* def VM_CMS */
+static ZCONST char Far UnzipUsageLine3[] = "\
+Options (primary mode):\n\
   -p  extract files to pipe, no messages     -l  list files (short format)\n\
   -f  freshen existing files, create none    -t  test compressed archive data\n\
   -u  update files, create if necessary      -z  display archive comment only\n\
-  -v  list verbosely/show version info     %s\n\
-  -x  exclude files that follow (in xlist)   -d  extract files into exdir\n";
-#   endif /* ?VM_CMS */
-#  endif /* ?MACOS */
+  -v  list verbosely/show version info     %s\n";
+#   endif /* def VM_CMS [else] */
+#  endif /* def MACOS [else] */
 
 /* There is not enough space on a standard 80x25 Windows console screen for
  * the additional line advertising the UTF-8 debugging options. This may
@@ -801,7 +852,8 @@ static ZCONST char Far UnzipUsageLine3[] = "\n\
 #  if (defined(UNICODE_SUPPORT) && !defined(WIN32))
 #   ifdef VMS
 static ZCONST char Far UnzipUsageLine4[] = "\
-Modifiers:\n\
+Options (modifiers):\n\
+  -x  exclude files that follow (in xlist)   -d  extract files into exdir\n\
   -n  never overwrite or make a new version of an existing file\n\
   -o  always make a new version (-oo: overwrite original) of an existing file\n\
   -q  quiet mode (-qq => quieter)            -a  auto-convert any text files\n\
@@ -809,45 +861,400 @@ Modifiers:\n\
   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#   else /* !VMS */
+#   else /* def VMS */
 static ZCONST char Far UnzipUsageLine4[] = "\
-Modifiers:\n\
+Options (modifiers):\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
   -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
   -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#   endif /* ?VMS */
-#  else /* !UNICODE_SUPPORT */
+#   endif /* def VMS [else] */
+#  else /* (defined(UNICODE_SUPPORT) && !defined(WIN32)) */
 #   ifdef VMS
 static ZCONST char Far UnzipUsageLine4[] = "\
-Modifiers:\n\
+Options (modifiers):\n\
   -n  never overwrite or make a new version of an existing file\n\
   -o  always make a new version (-oo: overwrite original) of an existing file\n\
   -q  quiet mode (-qq => quieter)            -a  auto-convert any text files\n\
   -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#   else /* !VMS */
+#   else /* def VMS */
 static ZCONST char Far UnzipUsageLine4[] = "\
-Modifiers:\n\
+Options (modifiers):\n\
   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
   -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
   -j[=N] junk paths (strip all/top-N dirs)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
 lowercase\n %-42s  -V  retain VMS version numbers\n%s";
-#   endif /* ?VMS */
-#  endif /* ?UNICODE_SUPPORT */
+#   endif /* def VMS [else] */
+#  endif /* (defined(UNICODE_SUPPORT) && !defined(WIN32)) [else] */
 
 static ZCONST char Far UnzipUsageLine5[] = "\
-See \"unzip -hh\" for more help.  Examples:\n\
-  unzip data1 -x joe   => extract all files except joe from archive data1.zip\n\
+More help: unzip -hh   Examples:\n\
+  unzip data1 -x joe   %s Extract all files except joe from archive data1.zip\n\
 %s\
-  unzip -fo foo %-6s => quietly replace existing %s if archive file newer\n";
+  unzip -fo foo %-6s %s Replace quietly existing %s if archive file newer\n";
 
 # endif /* ndef SFX */
 
+
+
+/*
+ * -------------------------------------------------------
+ * Command Line Options
+ * -------------------------------------------------------
+ *
+ * Valid command line options.
+ *
+ * get_option() uses one of these tables to check if an option is valid,
+ * and if it takes a value (also called an option parameter).
+ * To add an option to UnZip or ZipInfo, add it to the appropriate
+ * table, and add a case in the main switch to handle it.
+ *
+ *  The fields:
+ *      shortopt     - short option name (1 or 2 chars)
+ *      longopt      - long option name
+ *      value_type   - see unzpriv.h for constants
+ *      negatable    - option is negatable with trailing -
+ *      ID           - unsigned long int returned for option
+ *      name         - short description of option which is
+ *                       returned on some errors and when options
+ *                       are listed with -so option, can be NULL
+ *
+ * If shortopt or longopt is not used, then set it to "".
+ *
+ * Single-character short options use the shortopt character as an ID.
+ * Two-character short options use a non-ASCII code (o_XX), defined in
+ * unzpriv.h.  (Look for "Option ID".)
+ */
+
+/* The tables below are based on the old main command line code, with
+ * some changes.
+ */
+
+static ZCONST struct option_struct far options_unzip[] =
+{
+/* UnZip options */
+
+/*   short longopt            value_type        negatable
+ *     ID    description
+ */
+    {"0",  "no-char-set",     o_NO_VALUE,       o_NEGATABLE,
+       '0',  "don't map FAT/NTFS names"},
+# ifdef VMS
+    {"2",  "force-ods2",      o_NO_VALUE,       o_NEGATABLE,
+       '2',  "Force ODS2-compliant names."},
+# endif
+    {"a",  "ascii",           o_NO_VALUE,       o_NEGATABLE,
+       'a',  "text convert (EOL char, ASCII->EBCDIC)"},
+# if (defined(DLL) && defined(API_DOC))
+    {"A",  "api-help",        o_OPTIONAL_VALUE, o_NOT_NEGATABLE,
+       'A',  "extended help for API"},
+# endif
+    {"b",  "binary",          o_NO_VALUE,       o_NEGATABLE,
+       'b',  "binary, no ASCII conversions"},
+# ifdef UNIXBACKUP
+    {"B",  "backup",          o_NO_VALUE,       o_NEGATABLE,
+       'B',  "back up existing files"},
+# endif
+# ifdef CMS_MVS
+    {"B",  "cms-mvs-binary",  o_NO_VALUE,       o_NEGATABLE,
+       'b',  "CMS/MVS binary"},
+# endif
+    {"c",  "to-stdout",       o_NO_VALUE,       o_NEGATABLE,
+       'c',  "output to stdout"},
+# ifdef CMS_MVS
+    /* for CMS_MVS map to lower case */
+    {"C",  "cms-mvs-lower",   o_NO_VALUE,       o_NEGATABLE,
+       'C',  "CMS/MVS lower case"},
+# else /* ifdef CMS_MVS */
+    {"C",  "ignore-case",     o_NO_VALUE,       o_NEGATABLE,
+       'C',  "ignore case"},
+# endif /* ifdef CMS_MVS [else] */
+# if (!defined(SFX) || defined(SFX_EXDIR))
+    {"d",  "extract-dir",     o_REQUIRED_VALUE, o_NEGATABLE,
+       'd',  "extraction root directory"},
+# endif
+# ifndef SFX
+    {"da", "auto-extract-dir", o_OPT_EQ_VALUE,  o_NEGATABLE,
+       o_da, "automatic extraction root directory"},
+# endif /* ndef SFX */
+# if (!defined(NO_TIMESTAMPS))
+       /* seems the best long option name I can think of */
+    {"D",  "dir-timestamps",  o_NO_VALUE,       o_NEGATABLE,
+       'D',  "restore no times (-D- = dir and file)"},
+# endif
+    {"e",  "extract",         o_NO_VALUE,       o_NEGATABLE,
+       'e',  "extract (not used?)"},
+# ifdef MACOS
+    {"E",  "mac-efs",         o_NO_VALUE,       o_NEGATABLE,
+       'E',  "show Mac e.f. when restoring"},
+# endif
+    {"f",  "freshen",         o_NO_VALUE,       o_NEGATABLE,
+       'f',  "freshen (extract only newer files)"},
+# if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
+    {"F",  "keep-nfs",        o_NO_VALUE,       o_NEGATABLE,
+       'F',  "Acorn filetype & NFS extension handling"},
+# endif
+    {"h",  "help",            o_NO_VALUE,       o_NOT_NEGATABLE,
+       'h',  "help"},
+    {"hh", "long-help",       o_NO_VALUE,       o_NOT_NEGATABLE,
+       o_hh, "long help"},
+# ifdef MACOS
+    {"i",  "no-mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
+       'i',  "ignore filenames stored in Mac ef"},
+# endif
+# ifdef ICONV_MAPPING
+#  ifdef UNIX
+    {"I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'I',  "ISO char set to use"},
+#  endif /* def ICONV_MAPPING */
+# endif
+    {"j",  "junk-dirs",       o_OPT_EQ_VALUE,   o_NEGATABLE,
+       'j',  "junk directories, extract names only"},
+# ifdef J_FLAG
+    {"J",  "junk-attrs",      o_NO_VALUE,       o_NEGATABLE,
+       'J',  "Junk AtheOS, BeOS, or MacOS file attrs"},
+# endif
+# if defined( UNIX) && defined( __APPLE__)
+    {"Je", "junk-extattrs",   o_NO_VALUE,       o_NEGATABLE,
+       o_Je, "Junk Mac OS X extended attributes"},
+    {"Jf", "junk-finder",     o_NO_VALUE,       o_NEGATABLE,
+       o_Jf, "Junk Mac OS X Finder info"},
+    {"Jq", "junk-qtn",        o_NO_VALUE,       o_NEGATABLE,
+       o_Jq, "Junk Mac OS X quarantine"},
+    {"Jr", "junk-rsrc",       o_NO_VALUE,       o_NEGATABLE,
+       o_Jr, "Junk Mac OS X resource fork"},
+# endif /* defined( UNIX) && defined( __APPLE__) */
+    {"",   "jar",             o_NO_VALUE,       o_NEGATABLE,
+       o_ja, "Treat archive(s) as Java JAR (UTF-8)"},
+# ifdef ATH_BEO_UNX
+    {"K",  "keep-s-attrs",    o_NO_VALUE,       o_NEGATABLE,
+       'K',  "retain SUID/SGID/Tacky attrs"},
+# endif
+# ifdef KFLAG
+    {"k",  "keep-permissions", o_NO_VALUE,      o_NEGATABLE,
+       'k',  "retain permissions"},
+# endif
+# ifdef VMS
+    {"ka", "keep-acl",        o_NO_VALUE,       o_NEGATABLE,
+       o_ka, "restore (VMS) ACL"},
+# endif
+# ifndef SFX
+    {"l",  "list",            o_NO_VALUE,       o_NEGATABLE,
+        'l', "list archive members"},
+# endif
+# ifndef CMS_MVS
+    {"L",  "lowercase-names", o_NO_VALUE,       o_NEGATABLE,
+       'L',  "convert (some) names to lower"},
+# endif
+    {"",   "license",         o_NO_VALUE,   o_NOT_NEGATABLE,
+       o_LI, "Info-ZIP license"},
+# ifdef MORE
+#  ifdef CMS_MVS
+    {"m",  "more",            o_NO_VALUE,       o_NEGATABLE,
+       'm',  "pipe output through more"},
+#  endif
+    {"M",  "more",            o_NO_VALUE,       o_NEGATABLE,
+       'M',  "pipe output through more"},
+# endif /* MORE */
+    {"n",  "never-overwrite", o_NO_VALUE,       o_NEGATABLE,
+       'n',  "never overwrite files (no prompting)"},
+# ifdef AMIGA
+    {"N",  "comment-to-note", o_NO_VALUE,       o_NEGATABLE,
+       'N',  "restore comments as filenotes"},
+# endif
+# ifdef ICONV_MAPPING
+#  ifdef UNIX
+    {"O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'O',  "OEM char set to use"},
+#  endif /* def ICONV_MAPPING */
+# endif
+    {"o",  "overwrite",       o_NO_VALUE,       o_NEGATABLE,
+       'o',  "overwrite files without prompting"},
+    {"p",  "pipe-to-stdout",  o_NO_VALUE,       o_NEGATABLE,
+       'p',  "pipe extraction to stdout, no messages"},
+# ifdef IZ_CRYPT_ANY
+    {"P",  "password",        o_REQUIRED_VALUE, o_NEGATABLE,
+       'P',  "password"},
+# endif
+    {"q",  "quiet",           o_NO_VALUE,       o_NEGATABLE,
+       'q',  "quiet mode (additional q's => more quiet)"},
+# ifdef QDOS
+    {"Q",  "QDOS",            o_NO_VALUE,       o_NEGATABLE,
+       'Q',  "QDOS flags"},
+# endif
+# ifdef TANDEM
+    {"r",  "remove-exts",     o_NO_VALUE,       o_NEGATABLE,
+       'r',  "remove file extensions"},
+# endif
+    {"s",  "space-to-uscore", o_NO_VALUE,       o_NEGATABLE,
+       's',  "spaces to underscores"},
+# ifdef VMS
+    {"S",  "streamlf",        o_NO_VALUE,       o_NEGATABLE,
+       'S',  "VMS extract text as Stream_LF"},
+# endif
+# ifndef SFX
+    {"sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
+       o_sc, "show processed command line and exit"},
+#  if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
+    {"si", "show-pid",        o_NO_VALUE,       o_NEGATABLE,
+       o_si, "show process ID"},
+#  endif /* !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
+    {"so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
+       o_so, "show available options on this system"},
+# endif /* ndef SFX */
+    {"t",  "test",            o_NO_VALUE,       o_NEGATABLE,
+       't',  "test archive"},
+# ifdef TIMESTAMP
+    {"T",  "timestamp-new",   o_NO_VALUE,       o_NEGATABLE,
+       'T',  "timestamp archive same as newest file"},
+# endif
+    {"u",  "update",          o_NO_VALUE,       o_NEGATABLE,
+       'u',  "update (extract only new/newer files)"},
+# ifdef UNICODE_SUPPORT
+    {"U",  "unicode",         o_NO_VALUE,       o_NEGATABLE,
+       'U',  "escape non-ASCII Unicode, disable Unicode"},
+# endif /* ?UNICODE_SUPPORT */
+# if !defined( SFX) || defined( DIAG_SFX)
+    {"v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
+       'v',  "verbose"},
+    {"",   "version",         o_NO_VALUE,       o_NEGATABLE,
+       o_ve, "version"},
+    {"",   "version",         o_NO_VALUE,       o_NEGATABLE,
+       o_ve, "version"},
+    {"vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
+       o_vq, "show brief/quick version"},
+# endif
+# ifndef CMS_MVS
+    {"V",  "keep-versions",  o_NO_VALUE,       o_NEGATABLE,
+       'V',  "don't strip VMS version numbers"},
+# endif
+# ifdef WILD_STOP_AT_DIR
+    {"W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
+       'W',  "wildcard * doesn't span /"},
+# endif
+    {"x",  "exclude",         o_VALUE_LIST,     o_NOT_NEGATABLE,
+       'x',  "exclude this list of files"},
+# if (defined(RESTORE_UIDGID) || defined(RESTORE_ACL))
+    {"X",  "restore-owner",   o_NO_VALUE,       o_NEGATABLE,
+       'X',  "restore owner/group (UID/GID, UIC, ...)"},
+# endif
+# ifdef VMS
+    {"Y",  "dot-version",     o_NO_VALUE,       o_NEGATABLE,
+       'Y',  "VMS treat .nnn as ;nnn version"},
+# endif
+    {"z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
+       'z',  "show zipfile comment"},
+# if !defined( SFX) && !defined( NO_ZIPINFO)
+    {"Z",  "zipinfo-mode",    o_NO_VALUE,       o_NOT_NEGATABLE,
+       'Z',  "ZipInfo mode (must be first option)"},
+# endif
+# ifdef RISCOS
+    {"/",  "extensions",      o_REQUIRED_VALUE, o_NEGATABLE,
+       '/',  "override Unzip$Exts"},
+# endif
+# ifdef VOLFLAG
+    {"$",  "volume-labels",   o_NO_VALUE,       o_NEGATABLE,
+       '$',  "extract volume labels"},
+# endif
+# if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
+    {":",  "do-double-dots",  o_NO_VALUE,       o_NEGATABLE,
+       ':',  "don't skip ../ path elements"},
+# endif
+# ifdef UNIX
+    {"^",  "control-in-name", o_NO_VALUE,       o_NEGATABLE,
+       '^',  "allow control chars in filenames"},
+# endif
+    /* Array terminator. */
+    {NULL, NULL,              o_NO_VALUE,       o_NOT_NEGATABLE,
+       0,    NULL} /* end has option_ID = 0 */
+};
+
+# ifndef NO_ZIPINFO
+
+/* ZipInfo options */
+
+static ZCONST struct option_struct far options_zipinfo[] =
+{
+/*   short longopt            value_type        negatable
+ *     ID    description
+ */
+    {"1",  "names-only",      o_NO_VALUE,       o_NEGATABLE,
+       '1',  "names-only list"},
+    {"2",  "names-mostly",    o_NO_VALUE,       o_NEGATABLE,
+       '2',  "names-mostly list"},
+#  ifndef CMS_MVS
+    {"C",  "ignore-case",     o_NO_VALUE,       o_NEGATABLE,
+       'C',  "ignore case"},
+#  endif
+    {"h",  "header",          o_NO_VALUE,       o_NEGATABLE,
+       'h',  "header line"},
+#  ifdef ICONV_MAPPING
+#   ifdef UNIX
+    {"I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'I',  "ISO charset to use"},
+#   endif /* def ICONV_MAPPING */
+#  endif
+    {"l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
+       'l',  "long list"},
+    {"",   "license",         o_NO_VALUE,   o_NOT_NEGATABLE,
+       o_LI, "Info-ZIP license"},
+    {"m",  "medium-list",     o_NO_VALUE,       o_NEGATABLE,
+       'm',  "medium list"},
+#  ifdef MORE
+    {"M",  "more",            o_NO_VALUE,       o_NEGATABLE,
+       'M',  "output like more"},
+# endif
+    {"mc", "member-counts",   o_NO_VALUE,       o_NEGATABLE,
+       o_mc, "show separate dir/file/link member counts"},
+# ifdef ICONV_MAPPING
+#  ifdef UNIX
+    {"O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
+       'O',  "OEM charset to use"},
+#  endif /* def ICONV_MAPPING */
+# endif
+    {"s",  "short-list",      o_NO_VALUE,       o_NEGATABLE,
+       's',  "short list"},
+# ifndef SFX
+    {"sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
+       o_sc, "show processed command line and exit"},
+    {"so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
+       o_so, "show available options on this system"},
+# endif /* ndef SFX */
+    {"t",  "totals",          o_NO_VALUE,       o_NEGATABLE,
+       't',  "totals line"},
+    {"T",  "decimal-time",    o_NO_VALUE,       o_NEGATABLE,
+       'T',  "decimal time format"},
+#  ifdef UNICODE_SUPPORT
+    {"U",  "unicode",         o_NO_VALUE,       o_NEGATABLE,
+       'U',  "escape non-ASCII Unicode, disable Unicode"},
+#  endif
+    {"v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
+       'v',  "very detailed list"},
+    {"",   "version",         o_NO_VALUE,       o_NEGATABLE,
+       o_ve, "version"},
+    {"vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
+       o_vq, "show brief/quick version"},
+#  ifdef WILD_STOP_AT_DIR
+    {"W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
+       'W',  "wildcard * doesn't span /"},
+#  endif
+    {"x",  "exclude",         o_VALUE_LIST,     o_NOT_NEGATABLE,
+       'x',  "exclude this list of files"},
+    {"z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
+       'z',  "print zipfile comment"},
+    {"Z",  "zipinfo-mode",    o_NO_VALUE,       o_NEGATABLE,
+       'Z',  "ZipInfo mode"},
+
+    /* Array terminator. */
+    {NULL, NULL,              o_NO_VALUE,       o_NOT_NEGATABLE,
+       0,    NULL} /* end has option_ID = 0 */
+};
+# endif /* ndef NO_ZIPINFO */
 
 
 /*****************************/
@@ -874,8 +1281,6 @@ int MAIN(argc, argv)   /* return PK-type error code (except under VMS) */
     DESTROYGLOBALS();
     RETURN(r);
 }
-
-
 
 
 /*******************************/
@@ -1228,11 +1633,12 @@ int unzip(__G__ argc, argv)
             goto cleanup_and_exit;
         }
     }
-#  endif /* VMSCLI */
+#  endif /* def VMSCLI */
 
     uO.zipinfo_mode = FALSE;
-    error = uz_opts(__G__ &argc, &argv);   /* UnZipSFX call only */
-    if (error) {
+    error = uz_opts(__G__ options_unzip, &argc, &argv);   /* UnZipSFX. */
+    if (error)
+    {
          /* Parsing error message already emitted.
           * Leave a blank line, and add the (brief) SFX usage message.
           */
@@ -1240,7 +1646,7 @@ int unzip(__G__ argc, argv)
         USAGE( error);
     }
 
-# else /* !SFX */
+# else /* def SFX */
 
 #  ifdef RISCOS
     /* get the extensions to swap from environment */
@@ -1260,7 +1666,7 @@ int unzip(__G__ argc, argv)
             goto cleanup_and_exit;
         }
     }
-#  endif /* VMSCLI */
+#  endif /* def VMSCLI */
 
     G.noargs = (argc == 1);   /* no options, no zipfile, no anything */
 
@@ -1305,7 +1711,7 @@ int unzip(__G__ argc, argv)
             perror(LoadFarString(NoMemEnvArguments));
 #   endif
     } else
-#  endif /* !NO_ZIPINFO */
+#  endif /* ndef NO_ZIPINFO */
     {
         uO.zipinfo_mode = FALSE;
 #  ifndef _WIN32_WCE /* Win CE does not support environment variables */
@@ -1333,19 +1739,27 @@ int unzip(__G__ argc, argv)
         }
 #  ifndef NO_ZIPINFO
         if (uO.zipinfo_mode)
-            error = zi_opts(__G__ &argc, &argv);
+        {
+            error = zi_opts(__G__ options_zipinfo, &argc, &argv);
+        }
         else
-#  endif /* !NO_ZIPINFO */
-            error = uz_opts(__G__ &argc, &argv);
+#  endif /* ndef NO_ZIPINFO */
+        {
+            error = uz_opts(__G__ options_unzip, &argc, &argv);
+        }
     }
 
-# endif /* ?SFX */
+# endif /* def SFX [else] */
 
-    if ((argc < 0) || error) {
+    if ((argc < 0) || error)
+    {
         retcode = error;
         if ((argc < -1) || error)
         {
-            Info(slide, 0x401, ((char *)slide, "\n"));
+            if (error)
+            {   /* Leave a blank line after an error message. */
+                Info(slide, 0x401, ((char *)slide, "\n"));
+            }
             USAGE( error);
         }
         goto cleanup_and_exit;
@@ -1486,355 +1900,6 @@ static int setsignalhandler(__G__ p_savedhandler_chain, signal_type,
 # endif /* REENTRANT && !NO_EXCEPT_SIGNALS */
 
 
-/*
- * -------------------------------------------------------
- * Command Line Options
- * -------------------------------------------------------
- *
- * Valid command line options.
- *
- * The function get_option() uses this table to check if an option is
- * valid, and if it takes a value (also called an option parameter).
- * To add an option to UnZip, add it to this table, and add a case in
- * the main switch to handle it.
- *
- *  The fields:
- *      option_group - UZO for UnZip option, ZIO for ZipInfo option
- *      shortopt     - short option name (1 or 2 chars)
- *      longopt      - long option name
- *      value_type   - see unzpriv.h for constants
- *      negatable    - option is negatable with trailing -
- *      ID           - unsigned long int returned for option
- *      name         - short description of option which is
- *                       returned on some errors and when options
- *                       are listed with -so option, can be NULL
- *
- * If shortopt or longopt is not used, then set it to "".
- *
- * Most option IDs are set to the shortopt char.  For multichar short
- * options, ID is set to an arbitrary unused constant.  See list in
- * unzpriv.h.
- */
-
-/* The table below is based on the old main command line code, with a
- * few changes.  Note that UnZip and ZipInfo filter out their own
- * options based on the option_group value, so the same option letter
- * can be used for both.
- */
-
-static struct option_struct far options[] = {
-
-  /* UnZip options */
-
-  /*    short   longopt            value_type        negatable
-       ID    name */
-    {UZO, "0",  "no-char-set",     o_NO_VALUE,       o_NEGATABLE,
-       '0',  "don't map FAT/NTFS names"},
-# ifdef VMS
-    {UZO, "2",  "force-ods2",      o_NO_VALUE,       o_NEGATABLE,
-       '2',  "Force ODS2-compliant names."},
-# endif
-    {UZO, "a",  "ascii",           o_NO_VALUE,       o_NEGATABLE,
-       'a',  "text convert (EOL char, ASCII->EBCDIC)"},
-# if (defined(DLL) && defined(API_DOC))
-    {UZO, "A",  "api-help",        o_OPTIONAL_VALUE, o_NOT_NEGATABLE,
-       'A',  "extended help for API"},
-# endif
-    {UZO, "b",  "binary",          o_NO_VALUE,       o_NEGATABLE,
-       'b',  "binary, no ASCII conversions"},
-# ifdef UNIXBACKUP
-    {UZO, "B",  "backup",          o_NO_VALUE,       o_NEGATABLE,
-       'B',  "back up existing files"},
-# endif
-# ifdef CMS_MVS
-    {UZO, "B",  "cms-mvs-binary",  o_NO_VALUE,       o_NEGATABLE,
-       'b',  "CMS/MVS binary"},
-# endif
-    {UZO, "c",  "to-stdout",       o_NO_VALUE,       o_NEGATABLE,
-       'c',  "output to stdout"},
-# ifdef CMS_MVS
-    /* for CMS_MVS map to lower case */
-    {UZO, "C",  "cms-mvs-lower",   o_NO_VALUE,       o_NEGATABLE,
-       'C',  "CMS/MVS lower case"},
-# else /* ifdef CMS_MVS */
-    {UZO, "C",  "ignore-case",     o_NO_VALUE,       o_NEGATABLE,
-       'C',  "ignore case"},
-# endif /* ifdef CMS_MVS [else] */
-# if (!defined(SFX) || defined(SFX_EXDIR))
-    {UZO, "d",  "extract-dir",     o_REQUIRED_VALUE, o_NEGATABLE,
-       'd',  "extraction root directory"},
-# endif
-# ifndef SFX
-    {UZO, "da", "auto-extract-dir", o_OPT_EQ_VALUE,  o_NEGATABLE,
-       o_da, "automatic extraction root directory"},
-# endif /* ndef SFX */
-# if (!defined(NO_TIMESTAMPS))
-       /* seems the best long option name I can think of */
-    {UZO, "D",  "dir-timestamps",  o_NO_VALUE,       o_NEGATABLE,
-       'D',  "restore no times (-D- = dir and file)"},
-# endif
-    {UZO, "e",  "extract",         o_NO_VALUE,       o_NEGATABLE,
-       'e',  "extract (not used?)"},
-# ifdef MACOS
-    {UZO, "E",  "mac-efs",         o_NO_VALUE,       o_NEGATABLE,
-       'E',  "show Mac e.f. when restoring"},
-# endif
-    {UZO, "f",  "freshen",         o_NO_VALUE,       o_NEGATABLE,
-       'f',  "freshen (extract only newer files)"},
-# if (defined(RISCOS) || defined(ACORN_FTYPE_NFS))
-    {UZO, "F",  "keep-nfs",        o_NO_VALUE,       o_NEGATABLE,
-       'F',  "Acorn filetype & NFS extension handling"},
-# endif
-    {UZO, "h",  "help",            o_NO_VALUE,       o_NOT_NEGATABLE,
-       'h',  "help"},
-    {UZO, "hh", "long-help",       o_NO_VALUE,       o_NOT_NEGATABLE,
-       o_hh, "long help"},
-# ifdef MACOS
-    {UZO, "i",  "no-mac-ef-names", o_NO_VALUE,       o_NEGATABLE,
-       'i',  "ignore filenames stored in Mac ef"},
-# endif
-# ifdef ICONV_MAPPING
-#  ifdef UNIX
-    {UZO, "I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
-       'I',  "ISO char set to use"},
-#  endif /* def ICONV_MAPPING */
-# endif
-    {UZO, "j",  "junk-dirs",       o_OPT_EQ_VALUE,   o_NEGATABLE,
-       'j',  "junk directories, extract names only"},
-# ifdef J_FLAG
-    {UZO, "J",  "junk-attrs",      o_NO_VALUE,       o_NEGATABLE,
-       'J',  "Junk AtheOS, BeOS, or MacOS file attrs"},
-# endif
-# if defined( UNIX) && defined( __APPLE__)
-    {UZO, "Je", "junk-extattrs",   o_NO_VALUE,       o_NEGATABLE,
-       o_Je, "Junk Mac OS X extended attributes"},
-    {UZO, "Jf", "junk-finder",     o_NO_VALUE,       o_NEGATABLE,
-       o_Jf, "Junk Mac OS X Finder info"},
-    {UZO, "Jq", "junk-qtn",        o_NO_VALUE,       o_NEGATABLE,
-       o_Jq, "Junk Mac OS X quarantine"},
-    {UZO, "Jr", "junk-rsrc",       o_NO_VALUE,       o_NEGATABLE,
-       o_Jr, "Junk Mac OS X resource fork"},
-# endif /* defined( UNIX) && defined( __APPLE__) */
-    {UZO, "",   "jar",             o_NO_VALUE,       o_NEGATABLE,
-       o_ja, "Treat archive(s) as Java JAR (UTF-8)"},
-# ifdef ATH_BEO_UNX
-    {UZO, "K",  "keep-s-attrs",    o_NO_VALUE,       o_NEGATABLE,
-       'K',  "retain SUID/SGID/Tacky attrs"},
-# endif
-# ifdef KFLAG
-    {UZO, "k",  "keep-permissions", o_NO_VALUE,      o_NEGATABLE,
-       'k',  "retain permissions"},
-# endif
-# ifdef VMS
-    {UZO, "ka", "keep-acl",        o_NO_VALUE,       o_NEGATABLE,
-       o_ka, "restore (VMS) ACL"},
-# endif
-# ifndef SFX
-    {UZO, "l",  "list",            o_NO_VALUE,       o_NEGATABLE,
-        'l', "list archive members"},
-# endif
-# ifndef CMS_MVS
-    {UZO, "L",  "lowercase-names", o_NO_VALUE,       o_NEGATABLE,
-       'L',  "convert (some) names to lower"},
-# endif
-    {UZO, "",   "license",         o_NO_VALUE,   o_NOT_NEGATABLE,
-       o_LI, "Info-ZIP license"},
-# ifdef MORE
-#  ifdef CMS_MVS
-    {UZO, "m",  "more",            o_NO_VALUE,       o_NEGATABLE,
-       'm',  "pipe output through more"},
-#  endif
-    {UZO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
-       'M',  "pipe output through more"},
-# endif /* MORE */
-    {UZO, "n",  "never-overwrite", o_NO_VALUE,       o_NEGATABLE,
-       'n',  "never overwrite files (no prompting)"},
-# ifdef AMIGA
-    {UZO, "N",  "comment-to-note", o_NO_VALUE,       o_NEGATABLE,
-       'N',  "restore comments as filenotes"},
-# endif
-# ifdef ICONV_MAPPING
-#  ifdef UNIX
-    {UZO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
-       'O',  "OEM char set to use"},
-#  endif /* def ICONV_MAPPING */
-# endif
-    {UZO, "o",  "overwrite",       o_NO_VALUE,       o_NEGATABLE,
-       'o',  "overwrite files without prompting"},
-    {UZO, "p",  "pipe-to-stdout",  o_NO_VALUE,       o_NEGATABLE,
-       'p',  "pipe extraction to stdout, no messages"},
-# ifdef IZ_CRYPT_ANY
-    {UZO, "P",  "password",        o_REQUIRED_VALUE, o_NEGATABLE,
-       'P',  "password"},
-# endif
-    {UZO, "q",  "quiet",           o_NO_VALUE,       o_NEGATABLE,
-       'q',  "quiet mode (additional q's => more quiet)"},
-# ifdef QDOS
-    {UZO, "Q",  "QDOS",            o_NO_VALUE,       o_NEGATABLE,
-       'Q',  "QDOS flags"},
-# endif
-# ifdef TANDEM
-    {UZO, "r",  "remove-exts",     o_NO_VALUE,       o_NEGATABLE,
-       'r',  "remove file extensions"},
-# endif
-    {UZO, "s",  "space-to-uscore", o_NO_VALUE,       o_NEGATABLE,
-       's',  "spaces to underscores"},
-# ifdef VMS
-    {UZO, "S",  "streamlf",        o_NO_VALUE,       o_NEGATABLE,
-       'S',  "VMS extract text as Stream_LF"},
-# endif
-# ifndef SFX
-    {UZO, "sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
-       o_sc, "show processed command line and exit"},
-#  if !defined( VMS) && defined( ENABLE_USER_PROGRESS)
-    {UZO, "si", "show-pid",        o_NO_VALUE,       o_NEGATABLE,
-       o_si, "show process ID"},
-#  endif /* !defined( VMS) && defined( ENABLE_USER_PROGRESS) */
-    {UZO, "so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
-       o_so, "show available options on this system"},
-# endif /* ndef SFX */
-    {UZO, "t",  "test",            o_NO_VALUE,       o_NEGATABLE,
-       't',  "test archive"},
-# ifdef TIMESTAMP
-    {UZO, "T",  "timestamp-new",   o_NO_VALUE,       o_NEGATABLE,
-       'T',  "timestamp archive same as newest file"},
-# endif
-    {UZO, "u",  "update",          o_NO_VALUE,       o_NEGATABLE,
-       'u',  "update (extract only new/newer files)"},
-# ifdef UNICODE_SUPPORT
-    {UZO, "U",  "unicode",         o_NO_VALUE,       o_NEGATABLE,
-       'U',  "escape non-ASCII Unicode, disable Unicode"},
-# endif /* ?UNICODE_SUPPORT */
-# if !defined( SFX) || defined( DIAG_SFX)
-    {UZO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
-       'v',  "verbose"},
-    {UZO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
-       o_ve, "version"},
-    {UZO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
-       o_ve, "version"},
-    {UZO, "vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
-       o_vq, "show brief/quick version"},
-# endif
-# ifndef CMS_MVS
-    {UZO, "V",  "keep-versions",  o_NO_VALUE,       o_NEGATABLE,
-       'V',  "don't strip VMS version numbers"},
-# endif
-# ifdef WILD_STOP_AT_DIR
-    {UZO, "W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
-       'W',  "wildcard * doesn't span /"},
-# endif
-    {UZO, "x",  "exclude",         o_VALUE_LIST,     o_NOT_NEGATABLE,
-       'x',  "exclude this list of files"},
-# if (defined(RESTORE_UIDGID) || defined(RESTORE_ACL))
-    {UZO, "X",  "restore-owner",   o_NO_VALUE,       o_NEGATABLE,
-       'X',  "restore owner/group (UID/GID, UIC, ...)"},
-# endif
-# ifdef VMS
-    {UZO, "Y",  "dot-version",     o_NO_VALUE,       o_NEGATABLE,
-       'Y',  "VMS treat .nnn as ;nnn version"},
-# endif
-    {UZO, "z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
-       'z',  "show zipfile comment"},
-# if !defined( SFX) && !defined( NO_ZIPINFO)
-    {UZO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NOT_NEGATABLE,
-       'Z',  "ZipInfo mode (must be first option)"},
-# endif
-# ifdef RISCOS
-    {UZO, "/",  "extensions",      o_REQUIRED_VALUE, o_NEGATABLE,
-       '/',  "override Unzip$Exts"},
-# endif
-# ifdef VOLFLAG
-    {UZO, "$",  "volume-labels",   o_NO_VALUE,       o_NEGATABLE,
-       '$',  "extract volume labels"},
-# endif
-# if (!defined(RISCOS) && !defined(CMS_MVS) && !defined(TANDEM))
-    {UZO, ":",  "do-double-dots",  o_NO_VALUE,       o_NEGATABLE,
-       ':',  "don't skip ../ path elements"},
-# endif
-# ifdef UNIX
-    {UZO, "^",  "control-in-name", o_NO_VALUE,       o_NEGATABLE,
-       '^',  "allow control chars in filenames"},
-# endif
-
-# ifndef NO_ZIPINFO
-  /* ZipInfo options */
-
-  /* short longopt                 value_type        negatable
-       ID    name (help text) */
-    {ZIO, "1",  "names-only",      o_NO_VALUE,       o_NEGATABLE,
-       '1',  "names-only list"},
-    {ZIO, "2",  "names-mostly",    o_NO_VALUE,       o_NEGATABLE,
-       '2',  "names-mostly list"},
-#  ifndef CMS_MVS
-    {ZIO, "C",  "ignore-case",     o_NO_VALUE,       o_NEGATABLE,
-       'C',  "ignore case"},
-#  endif
-    {ZIO, "h",  "header",          o_NO_VALUE,       o_NEGATABLE,
-       'h',  "header line"},
-#  ifdef ICONV_MAPPING
-#   ifdef UNIX
-    {ZIO, "I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
-       'I',  "ISO charset to use"},
-#   endif /* def ICONV_MAPPING */
-#  endif
-    {ZIO, "l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
-       'l',  "long list"},
-    {ZIO, "",   "license",         o_NO_VALUE,   o_NOT_NEGATABLE,
-       o_LI, "Info-ZIP license"},
-    {ZIO, "m",  "medium-list",     o_NO_VALUE,       o_NEGATABLE,
-       'm',  "medium list"},
-#  ifdef MORE
-    {ZIO, "M",  "more",            o_NO_VALUE,       o_NEGATABLE,
-       'M',  "output like more"},
-# endif
-    {ZIO, "mc", "member-counts",   o_NO_VALUE,       o_NEGATABLE,
-       o_mc, "show separate dir/file/link member counts"},
-# ifdef ICONV_MAPPING
-#  ifdef UNIX
-    {ZIO, "O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
-       'O',  "OEM charset to use"},
-#  endif /* def ICONV_MAPPING */
-# endif
-    {ZIO, "s",  "short-list",      o_NO_VALUE,       o_NEGATABLE,
-       's',  "short list"},
-# ifndef SFX
-    {ZIO, "sc", "show-command",    o_NO_VALUE,       o_NEGATABLE,
-       o_sc, "show processed command line and exit"},
-    {ZIO, "so", "show-options",    o_NO_VALUE,       o_NEGATABLE,
-       o_so, "show available options on this system"},
-# endif /* ndef SFX */
-    {ZIO, "t",  "totals",          o_NO_VALUE,       o_NEGATABLE,
-       't',  "totals line"},
-    {ZIO, "T",  "decimal-time",    o_NO_VALUE,       o_NEGATABLE,
-       'T',  "decimal time format"},
-#  ifdef UNICODE_SUPPORT
-    {ZIO, "U",  "unicode",         o_NO_VALUE,       o_NEGATABLE,
-       'U',  "escape non-ASCII Unicode, disable Unicode"},
-#  endif
-    {ZIO, "v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
-       'v',  "very detailed list"},
-    {ZIO, "",   "version",         o_NO_VALUE,       o_NEGATABLE,
-       o_ve, "version"},
-    {ZIO, "vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
-       o_vq, "show brief/quick version"},
-#  ifdef WILD_STOP_AT_DIR
-    {ZIO, "W",  "wild-no-span",    o_NO_VALUE,       o_NEGATABLE,
-       'W',  "wildcard * doesn't span /"},
-#  endif
-    {ZIO, "x",  "exclude",         o_VALUE_LIST,     o_NOT_NEGATABLE,
-       'x',  "exclude this list of files"},
-    {ZIO, "z",  "zipfile-comment", o_NO_VALUE,       o_NEGATABLE,
-       'z',  "print zipfile comment"},
-    {ZIO, "Z",  "zipinfo-mode",    o_NO_VALUE,       o_NEGATABLE,
-       'Z',  "ZipInfo mode"},
-# endif /* ndef NO_ZIPINFO */
-
-    /* the end of the list */
-    {0,   NULL, NULL,                   o_NO_VALUE,       o_NOT_NEGATABLE,
-       0,    NULL} /* end has option_ID = 0 */
-  };
-
-
 /* 2012-12-12 SMS.
  * Free some storage, if it was allocated, and we care.
  * (Use before a fatal error exit.)
@@ -1852,8 +1917,9 @@ static struct option_struct far options[] = {
 /* Function uz_opts() */
 /**********************/
 
-int uz_opts(__G__ pargc, pargv)
+int uz_opts(__G__ opts, pargc, pargv)
     __GDEF
+    ZCONST struct option_struct *opts;
     int *pargc;
     char ***pargv;
 {
@@ -1874,10 +1940,12 @@ int uz_opts(__G__ pargc, pargv)
     int negative = 0;     /* 1 = option negated */
     int fna = 0;          /* current first non-opt arg */
     int optnum = 0;       /* index in table */
+    int dashdash = 0;     /* Have seen "--". */
 
 
-    /* since get_option() returns xfiles and files one at a time, store them
-       in linked lists until have them all */
+    /* Because get_option() returns xfiles and files one at a time,
+     * store them in linked lists until we have them all.
+     */
 
     int file_count = 0;
     struct file_list *next_file;
@@ -1911,7 +1979,6 @@ int uz_opts(__G__ pargc, pargv)
     G.filespecs = 0;
     G.xfilespecs = 0;
 
-
     /*
     -------------------------------------------
     Process command line using get_option
@@ -1933,9 +2000,6 @@ int uz_opts(__G__ pargc, pargv)
            value    - char* to value (free() when done with it) or NULL if none
            negative - option was negated with trailing -
 
-       The first argument, UZO, tells get_option() that these are the UnZip
-       options (not ZipInfo options).
-
        See the comments for get_option() for the other parameters.
     */
 
@@ -1949,7 +2013,7 @@ int uz_opts(__G__ pargc, pargv)
      * the "while" loop, this storage will be free()'d.
      */
 
-    while ((option = get_option(__G__ UZO, &args, &argcnt, &argnum,
+    while ((option = get_option(__G__ opts, &args, &argcnt, &argnum,
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
@@ -2612,7 +2676,18 @@ int uz_opts(__G__ pargc, pargv)
             case o_NON_OPTION_ARG:
                 /* Not an option.  (Because of permutation, no more
                  * "-" options are expected henceforth.)
+                 * "--" also appears here.
                  */
+
+                /* First "--" is ignored (and stops arg processing for
+                 * remaining args).
+                 */
+                if ((strcmp( value, "--") == 0) && (dashdash == 0))
+                {
+                  dashdash = 1;
+                }
+                else
+
 # ifndef SFX
                 /* For non-SFX (only), the first non-option argument is
                  * the archive name.  (For SFX, every non-option argument
@@ -2622,16 +2697,17 @@ int uz_opts(__G__ pargc, pargv)
                 {
                     /* first non-option argument is zip file */
                     G.wildzipfn = value;
-
-                } else
+                }
+                else
 # endif /* ndef SFX */
                 {
                     /* add include file to list */
-                    if (in_files_count == 0) {
+                    if (in_files_count == 0)
+                    {
                         /* first entry */
                         if ((next_file = (struct file_list *)
-                                         izu_malloc(sizeof(struct file_list))
-                            ) == NULL) {
+                         izu_malloc(sizeof(struct file_list)) ) == NULL)
+                        {
                             Info(slide, 0x401, ((char *)slide,
                               LoadFarString(NoMemArgsList)));
                             /* Leaving early.  Free it. */
@@ -2643,11 +2719,13 @@ int uz_opts(__G__ pargc, pargv)
                         next_file->next = NULL;
                         in_files = next_file;
                         next_in_files = next_file;
-                    } else {
+                    }
+                    else
+                    {
                         /* add next entry */
                         if ((next_file = (struct file_list *)
-                                         izu_malloc(sizeof(struct file_list))
-                            ) == NULL) {
+                         izu_malloc(sizeof(struct file_list))) == NULL)
+                        {
                             Info(slide, 0x401, ((char *)slide,
                               LoadFarString(NoMemArgsList)));
                             /* Leaving early.  Free it. */
@@ -2668,26 +2746,28 @@ int uz_opts(__G__ pargc, pargv)
                 uzo_err = TRUE;
                 break;
 
-        } /* end switch */
+        } /* switch (option) */
 
         FREE_NON_NULL( value);          /* Free it now, if it's not in use. */
 
-    } /* while get_option() */
+    } /* while (get_option()) */
 
 
     /* convert files and xfiles lists to arrays */
 
     /* convert files list to array */
-    if (in_files_count) {
-      if ((G.pfnames = (char **) izu_malloc(
-       (in_files_count + 1) * sizeof(char *))
-          ) == NULL) {
+    if (in_files_count)
+    {
+      if ((G.pfnames = (char **)
+       izu_malloc( (in_files_count + 1) * sizeof(char *))) == NULL)
+      {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArgsList)));
           UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return PK_MEM;
       }
       file_count = 0;
-      for (next_file = in_files; next_file;) {
+      for (next_file = in_files; next_file;)
+      {
           G.pfnames[file_count] = next_file->name;
           in_files = next_file;
           next_file = next_file->next;
@@ -2699,16 +2779,18 @@ int uz_opts(__G__ pargc, pargv)
     }
 
     /* convert xfiles list to array */
-    if (in_xfiles_count) {
-      if ((G.pxnames = (char **) izu_malloc(
-       (in_xfiles_count + 1) * sizeof(char *))
-          ) == NULL) {
+    if (in_xfiles_count)
+    {
+      if ((G.pxnames = (char **)
+       izu_malloc( (in_xfiles_count + 1) * sizeof(char *))) == NULL)
+      {
           Info(slide, 0x401, ((char *)slide, LoadFarString(NoMemArgsList)));
           UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
           return PK_MEM;
       }
       file_count = 0;
-      for (next_file = in_xfiles; next_file;) {
+      for (next_file = in_xfiles; next_file;)
+      {
           G.pxnames[file_count] = next_file->name;
           in_xfiles = next_file;
           next_file = next_file->next;
@@ -2918,7 +3000,6 @@ int uz_opts(__G__ pargc, pargv)
 } /* end function uz_opts() */
 
 
-
 # if !defined( SFX) || defined( DIAG_SFX)
 #  ifndef _WIN32_WCE    /* Win CE does not support environment variables */
 
@@ -3092,18 +3173,30 @@ int usage(__G__ u_err)   /* return PK-type error code */
 {
     int flag = (u_err? 1 : 0);
 
-    Info(slide, flag, ((char *)slide, LoadFarString( UnzipBanner),
+    Info( slide, flag, ((char *)slide, LoadFarString( UnzipBanner),
      "UnZipSFX", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
-    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOpts),
-      SFXOPT1, LOCAL));
-#  ifdef VMS
-    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOptsV)));
-#  endif /* def VMS */
-    Info(slide, flag, ((char *)slide, LoadFarString(UnzipSFXOpts2)));
 #  ifdef BETA
-    Info(slide, flag, ((char *)slide, LoadFarString(BetaVersion), "\n",
+    Info( slide, flag, ((char *)slide, LoadFarString( BetaVersion), "\n",
      "SFX"));
 #  endif
+
+#  ifdef VMS
+#   define CMD_PREFIX "MCR "
+#   define CMD_CONTIN "-"
+#  else /* def VMS */
+#   define CMD_PREFIX ""
+#   define CMD_CONTIN "\\"
+#  endif /* def VMS [else] */
+
+    Info( slide, flag, ((char *)slide, LoadFarString( UnzipSFXUsage),
+     CMD_PREFIX, G.zipfn, CMD_CONTIN));
+
+    Info( slide, flag, ((char *)slide, LoadFarString( UnzipSFXOpts),
+     SFXOPT1, LOCAL));
+#  ifdef VMS
+    Info( slide, flag, ((char *)slide, LoadFarString( UnzipSFXOptsV)));
+#  endif /* def VMS */
+    Info(slide, flag, ((char *)slide, LoadFarString( UnzipSFXOpts2)));
 
     if (u_err)
         return PK_PARAM;
@@ -3135,39 +3228,38 @@ int usage(__G__ u_err)   /* return PK-type error code */
     (Strings must be no longer than 512 bytes for Turbo C, apparently.)
   ---------------------------------------------------------------------------*/
 
-    if (uO.zipinfo_mode) {
-
+    if (uO.zipinfo_mode)
+    {
 #  ifndef NO_ZIPINFO
 
-        Info(slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine1),
-         UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER,
-         LoadFarStringSmall2( ZipInfoExample), QUOTS,QUOTS));
-        Info(slide, flag, ((char *)slide, LoadFarString(ZipInfoUsageLine2)));
-        Info(slide, flag, ((char *)slide, LoadFarString(ZipInfoUsageLine3),
-         LoadFarStringSmall(ZipInfoUsageLine4)));
+        Info( slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine1),
+         UzpVersionStr(), UZ_VERSION_DATE, USAGE_DCL_Z));
+#  ifdef BETA
+        Info( slide, flag, ((char *)slide, LoadFarString( BetaVersion), "",
+         ""));
+#  endif
+        Info( slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine2),
+         QUOTS, QUOTS, LoadFarStringSmall2( ZipInfoExample)));
+        Info( slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine3)));
+        Info( slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine4),
+         LoadFarString( ZipInfoUsageLine4m)));
 #   ifdef VMS
         Info(slide, flag, ((char *)slide, "\n\
   (Must quote upper-case options and names, unless SET PROC/PARSE=EXTEND.)\
 \n"));
-#   endif
-
+#   endif /* def VMS */
 #  endif /* ndef NO_ZIPINFO */
-
-    } else {   /* UnZip mode */
-
+    }
+    else
+    {   /* UnZip mode */
         Info(slide, flag, ((char *)slide, LoadFarString( UnzipUsageLine1),
-         UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER));
+         UzpVersionStr(), UZ_VERSION_DATE, USAGE_DCL_U));
 #  ifdef BETA
         Info(slide, flag, ((char *)slide, LoadFarString(BetaVersion), "", ""));
 #  endif
 
         Info(slide, flag, ((char *)slide, LoadFarString(UnzipUsageLine2),
           ZIPINFO_MODE_OPTION, LoadFarStringSmall(ZipInfoMode)));
-
-#  ifdef VMS
-        if (!u_err)  /* maybe no command-line tail found; show extra help */
-            Info(slide, flag, ((char *)slide, LoadFarString(VMSusageLine2b)));
-#  endif
 
         Info(slide, flag, ((char *)slide, LoadFarString(UnzipUsageLine3),
           LoadFarStringSmall(local1)));
@@ -3178,9 +3270,11 @@ int usage(__G__ u_err)   /* return PK-type error code */
         /* This is extra work for SMALL_MEM, but it will work since
          * LoadFarStringSmall2 uses the same buffer.  Remember, this
          * is a hack. */
-        Info(slide, flag, ((char *)slide, LoadFarString(UnzipUsageLine5),
-          LoadFarStringSmall(Example2), LoadFarStringSmall2(Example3),
-          LoadFarStringSmall2(Example3)));
+        Info(slide, flag, ((char *)slide,
+         LoadFarString( UnzipUsageLine5), LoadFarStringSmall( ExampleCmnt),
+          LoadFarStringSmall( Example2),
+          LoadFarStringSmall2( Example3), LoadFarStringSmall( ExampleCmnt),
+          LoadFarStringSmall2( Example3)));
 
     } /* end if (uO.zipinfo_mode) */
 
@@ -3205,7 +3299,7 @@ void show_license(__G)
 
     /* license array */
     static ZCONST char *text[] = {
-  "Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.",
+  "Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.",
   "",
   "This is version 2009-Jan-02 of the Info-ZIP license.",
   "",
@@ -3441,17 +3535,17 @@ static void help_extended(__G)
   "  If port supports [], must escape [ as [[]",
   "  For shells that expand wildcards, escape (\\* or \"*\") so UnZip can recurse.",
   "",
-  "Include and Exclude:",
-  "  -i pattern pattern ...   include files that match a pattern",
-  "  -x pattern pattern ...   exclude files that match a pattern",
+  "Include and Exclude archive members:",
+  "  pattern pattern ...      include members that match a pattern",
+  "  -x pattern pattern ...   exclude members that match a pattern",
   "  Patterns are paths with optional wildcards and match paths as stored in",
   "  archive.  Exclude and include lists end at next option or end of line.",
   "    unzip archive -x pattern pattern ...",
   "",
   "Segmented (split) archives (archives created as a set of split files):",
   "  Currently, all archive segments must be files on a single volume, with",
-  "  name extensions \".z01\", \".z02\", and so on, with the last segment"
-  "  \".zip.\"",
+  "  name extensions \".z01\", \".z02\", and so on, with the last segment",
+  "  \".zip\".",
   "",
   "Streaming (piping into UnZip):",
   "  Currently UnZip does not support streaming.  The FUnZip utility can be",
@@ -3564,75 +3658,86 @@ static void help_extended(__G)
 void show_options(__G)
     __GDEF
 {
-    extent i;
+    int i;
     size_t lolen;
-    char optiontext[200];
-    char gr[4];
     char sh[7];
     char lo[80];
-    char val_type[5];
-    char neg[2];
+    char *val_type;
+    char *neg;
+    ZCONST struct option_struct *opts;
 
-    sprintf(optiontext, "%s\n\n%s\n%s",
-      "Available options on this system",
-      "UNZ = UnZip option, INF = ZipInfo option",
-      "n = Negatable");
-    Info(slide, 0, ((char *)slide, "%s\n\n", optiontext));
+#  ifdef NO_ZIPINFO
+#   define CMD_NAME "UnZip"
+#  else /* def NO_ZIPINFO */
+#   define CMD_NAME (uO.zipinfo_mode ? "ZipInfo" : "UnZip")
+#  endif /* def NO_ZIPINFO [else] */
 
-    sprintf(optiontext, "grp  sh   long             val   n  description");
-    Info(slide, 0, ((char *)slide, "%s\n", optiontext));
+    Info(slide, 0, ((char *)slide, "\
+Available %s options:\n", CMD_NAME));
 
-    for (i = 0; options[i].option_ID != 0; i++)
+    Info(slide, 0, ((char *)slide, "\
+ sh  long               val  neg description\n"));
+
+    Info(slide, 0, ((char *)slide, "\
+ --  ----               ---  --- -----------\n"));
+
+#  ifndef NO_ZIPINFO
+    if (uO.zipinfo_mode)
     {
-        if (options[i].option_group == UZO)
-            strcpy(gr, "UNZ");
-        else if (options[i].option_group == ZIO)
-            strcpy(gr, "INF");
-        else
-            strcpy(gr, "?  ");
+      opts = options_zipinfo;
+    }
+    else
+#  endif /* ndef NO_ZIPINFO */
+    {
+      opts = options_unzip;
+    }
 
-        strcpy(sh, options[i].shortopt);
+    for (i = 0; opts[i].option_ID != 0; i++)
+    {
+        strcpy(sh, opts[i].shortopt);
         strcat(sh, "  ");
         sh[2] = '\0';
 
-        strcpy(lo, options[i].longopt);
+        strcpy(lo, opts[i].longopt);
         lolen = strlen(lo);
         strcat(lo, "                      ");
-        if (lolen < 15)
-          lolen = 15;
+        if (lolen < 17)
+          lolen = 17;
         lo[lolen] = '\0';
 
-        switch (options[i].value_type) {
+        switch (opts[i].value_type)
+        {
             case o_NO_VALUE:
-                strcpy(val_type, "none"); break;
+                val_type = "    "; break;
             case o_REQUIRED_VALUE:
-                strcpy(val_type, "requ"); break;
+                val_type = "requ"; break;
             case o_OPTIONAL_VALUE:
-                strcpy(val_type, "optn"); break;
+                val_type = "optn"; break;
             case o_VALUE_LIST:
-                strcpy(val_type, "list"); break;
+                val_type = "list"; break;
             case o_ONE_CHAR_VALUE:
-                strcpy(val_type, "char"); break;
+                val_type = "char"; break;
             case o_NUMBER_VALUE:
-                strcpy(val_type, "numb"); break;
+                val_type = "numb"; break;
             case o_OPT_EQ_VALUE:
-                strcpy(val_type, "=val"); break;
+                val_type = "=val"; break;
             default:
-                strcpy(val_type, "?   ");
+                val_type = "????";
         }
 
-        if (options[i].negatable == 0)
-            strcpy(neg, "n");
-        else if (options[i].negatable == 1)
-            strcpy(neg, "y");
+        if (opts[i].negatable == 0)
+            neg = "   ";
+        else if (opts[i].negatable == 1)
+            neg = "neg";
         else
-            strcpy(neg, "?");
+            neg = "???";
 
-        sprintf(optiontext, "%s  %s   %s  %s  %s  %s", gr, sh, lo, val_type,
-          neg, options[i].name);
-        Info(slide, 0, ((char *)slide, "%s\n", optiontext));
+        Info(slide, 0, ((char *)slide, "\
+ %s  %s  %s %s %s\n",
+         sh, lo, val_type, neg, opts[i].name));
     }
 } /* end function show_options() */
+
 
 /* Print processed command line. */
 void show_commandline( args)
@@ -3672,12 +3777,14 @@ extern char *getenv();
 
 char *UZ_EXP UzpVersionStr( OFT( void))
 {
-  static char vs[ 32] = "";
-  char pl_sufx[ 8] = "";
+  char pl_sufx[ 8];
   char *bt_sufx = "";
 
-  if (*vs == '\0')
+  GETGLOBALS();
+
+  if (*G.prog_vers_str == '\0')
   {
+    *pl_sufx = '\0';
     if (UZ_PATCHLEVEL != 0)
     {
       sprintf( pl_sufx, ".%d", UZ_PATCHLEVEL);
@@ -3686,11 +3793,29 @@ char *UZ_EXP UzpVersionStr( OFT( void))
     {
       bt_sufx = UZ_BETALEVEL;
     }
-    sprintf( vs, "%d.%d%s%s", UZ_MAJORVER, UZ_MINORVER, pl_sufx, bt_sufx);
+    sprintf( G.prog_vers_str, "%d.%d%s%s",
+     UZ_MAJORVER, UZ_MINORVER, pl_sufx, bt_sufx);
   }
 
-  return vs;
+  return G.prog_vers_str;
 }
+
+
+# ifndef SFX
+#  ifdef VMS
+char *UZ_EXP UzpDclStr( OFT( void))
+{
+  return USAGE_DCL_U;
+}
+
+#   ifndef NO_ZIPINFO
+char *UZ_EXP ZiDclStr( OFT( void))
+{
+  return USAGE_DCL_Z;
+}
+#   endif /* ndef NO_ZIPINFO */
+#  endif /* def VMS */
+# endif /* ifndef SFX */
 
 
 # if !defined( SFX) || defined( DIAG_SFX)
@@ -3712,10 +3837,16 @@ void show_version_info(__G)
         int numopts = 0;
 
 #  ifndef SFX
-        Info(slide, 0, ((char *)slide, LoadFarString( UnzipUsageLine1v),
-         UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER));
+        Info(slide, 0, ((char *)slide, LoadFarString( UnzipUsageLine1),
+         UzpVersionStr(), UZ_VERSION_DATE,
+         "  Maintainer: Steven M. Schweda"));
         Info(slide, 0, ((char *)slide,
-          LoadFarString(UnzipUsageLine2v)));
+          LoadFarString(UnzipVersionLine)));
+#  ifdef BETA
+        Info( slide, 0, ((char *)slide, LoadFarString( BetaVersion),
+         "", ""));
+        Info( slide, 0, ((char *)slide, "%s", "\n"));
+#  endif
         version(__G);
 #  endif /* ndef SFX */
 
@@ -4130,12 +4261,6 @@ void show_version_info(__G)
 #define READ_REST_ARGS_VERBATIM  -8     /* 7/25/04 EG */
 
 
-/* global veriables */
-
-int enable_permute = 1;                     /* yes - return options first */
-/* 7/25/04 EG */
-int doubledash_ends_options = 1;            /* when -- what follows are not options */
-
 /* buffer for error messages (this sizing is a guess but must hold 2 paths) */
 #define OPTIONERR_BUF_SIZE (80+ 2* PATH_MAX)
 char optionerrbuf[OPTIONERR_BUF_SIZE + 1];
@@ -4171,8 +4296,8 @@ static ZCONST char Far no_arg_files_err[] = "argument files not enabled\n";
 
 
 /* copy error, option name, and option description if any to buf */
-static int optionerr(options, buf, err, optind, islong)
-  struct option_struct *options;
+static int optionerr( opts, buf, err, optind, islong)
+  ZCONST struct option_struct *opts;
   char *buf;
   ZCONST char Far *err;
   int optind;
@@ -4180,15 +4305,15 @@ static int optionerr(options, buf, err, optind, islong)
 {
   char optname[50];
 
-  if (options[optind].name && options[optind].name[0] != '\0') {
+  if (opts[optind].name && opts[optind].name[0] != '\0') {
     sprintf(optname, "'%s' (%s)",
-            LoadFarStringSmall2(islong ? options[optind].longopt
-                                       : options[optind].shortopt),
-            LoadFarStringSmall(options[optind].name));
+            LoadFarStringSmall2(islong ? opts[optind].longopt
+                                       : opts[optind].shortopt),
+            LoadFarStringSmall(opts[optind].name));
   } else {
     sprintf(optname, "'%s'",
-            LoadFarStringSmall2(islong ? options[optind].longopt
-                                       : options[optind].shortopt));
+            LoadFarStringSmall2(islong ? opts[optind].longopt
+                                       : opts[optind].shortopt));
   }
   sprintf(buf, LoadFarStringSmall(err), optname);
   return 0;
@@ -4382,7 +4507,6 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
  * option_num so no static storage is used.  Returns the option_ID.
  *
  * parameters:
- *    option_group - either UZO for UnZip options or ZIO for ZipInfo options
  *    args         - argv array of arguments
  *    argnum       - index of current arg in args
  *    optchar      - pointer to index of next char to process.  Can be 0 or
@@ -4397,10 +4521,10 @@ int insert_arg(__G__ pargs, arg, at_arg, free_args)
  *                   value lists.
  *    depth        - recursion depth (0 at top level, 1 or more in arg files)
  */
-static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
+static unsigned long get_shortopt(__G__ opts, args, argnum, optchar,
                                   negated, value, option_num, depth)
   __GDEF
-  int option_group;
+  ZCONST struct option_struct *opts;
   ZCONST char **args;
   int argnum;
   int *optchar;
@@ -4440,10 +4564,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
 
   /* look for match in options */
   clen = MB_CLEN(shortopt);
-  for (op = 0; options[op].option_ID; op++) {
-    /* Only look at options in this option group */
-    if (options[op].option_group == option_group) {
-      s = options[op].shortopt;
+  for (op = 0; opts[op].option_ID; op++) {
+      s = opts[op].shortopt;
       if (s && s[0] == shortopt[0]) {
         if (s[1] == '\0' && clen == 1) {
           /* single char match */
@@ -4458,7 +4580,6 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           }
         }
       }
-    }
   }
 
   if (match > -1) {
@@ -4468,9 +4589,9 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
     /* check for trailing dash negating option */
     if (*nextchar == '-') {
       /* negated */
-      if (options[match].negatable == o_NOT_NEGATABLE) {
-        if (options[match].value_type == o_NO_VALUE) {
-          optionerr(options, optionerrbuf, op_not_neg_err, match, 0);
+      if (opts[match].negatable == o_NOT_NEGATABLE) {
+        if (opts[match].value_type == o_NO_VALUE) {
+          optionerr( opts, optionerrbuf, op_not_neg_err, match, 0);
           if (depth > 0) {
             /* unwind */
             oWARN(optionerrbuf);
@@ -4491,13 +4612,13 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
     /* value */
     clen = MB_CLEN(arg + (*optchar));
     /* optional value, one char value, and number value must follow option */
-    if (options[match].value_type == o_ONE_CHAR_VALUE) {
+    if (opts[match].value_type == o_ONE_CHAR_VALUE) {
       /* one char value */
       if (arg[(*optchar) + clen]) {
         /* has value */
         if (MB_CLEN(arg + (*optchar) + clen) > 1) {
           /* multibyte value not allowed for now */
-          optionerr(options, optionerrbuf, oco_no_mbc_err, match, 0);
+          optionerr( opts, optionerrbuf, oco_no_mbc_err, match, 0);
           if (depth > 0) {
             /* unwind */
             oWARN(optionerrbuf);
@@ -4517,7 +4638,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         clen = 1;
       } else {
         /* one char values require a value */
-        optionerr(options, optionerrbuf, oco_req_val_err, match, 0);
+        optionerr( opts, optionerrbuf, oco_req_val_err, match, 0);
         if (depth > 0) {
           oWARN(optionerrbuf);
           return o_ARG_FILE_ERR;
@@ -4526,7 +4647,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
           return o_BAD_ERR;
         }
       }
-    } else if (options[match].value_type == o_NUMBER_VALUE) {
+    } else if (opts[match].value_type == o_NUMBER_VALUE) {
       /* read chars until end of number */
       start = arg + (*optchar) + clen;
       if (*start == '+' || *start == '-') {
@@ -4536,7 +4657,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
       for (; isdigit(*s); MB_NEXTCHAR(s)) ;
       if (s == start) {
         /* no digits */
-        optionerr(options, optionerrbuf, num_req_val_err, match, 0);
+        optionerr( opts, optionerrbuf, num_req_val_err, match, 0);
         if (depth > 0) {
           oWARN(optionerrbuf);
           return o_ARG_FILE_ERR;
@@ -4554,7 +4675,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
       strncpy(*value, start, (int)(s - start));
       (*value)[(int)(s - start)] = '\0';
       clen = MB_CLEN(s);
-    } else if (options[match].value_type == o_OPTIONAL_VALUE) {
+    } else if (opts[match].value_type == o_OPTIONAL_VALUE) {
       /* optional value */
       /* This seemed inconsistent so now if no value attached to argument look
          to the next argument if that argument is not an option for option
@@ -4586,7 +4707,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         strcpy(*value, args[argnum + 1]);
         *optchar = SKIP_VALUE_ARG;
       }
-    } else if (options[match].value_type == o_OPT_EQ_VALUE) {
+    } else if (opts[match].value_type == o_OPT_EQ_VALUE) {
       /* Optional value, but "=" required with detached value. */
       int have_eq = 0;
 
@@ -4657,8 +4778,8 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
         /* No "=", therefore no value. */
         *optchar = THIS_ARG_DONE;
       }
-    } else if (options[match].value_type == o_REQUIRED_VALUE ||
-               options[match].value_type == o_VALUE_LIST) {
+    } else if (opts[match].value_type == o_REQUIRED_VALUE ||
+               opts[match].value_type == o_VALUE_LIST) {
       /* see if follows option */
       if (arg[(*optchar) + clen]) {
         /* has value following option as -ovalue */
@@ -4683,14 +4804,14 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
             return o_BAD_ERR;
           }
           strcpy(*value, args[argnum + 1]);
-          if (options[match].value_type == o_VALUE_LIST) {
+          if (opts[match].value_type == o_VALUE_LIST) {
             *optchar = START_VALUE_LIST;
           } else {
             *optchar = SKIP_VALUE_ARG;
           }
         } else {
           /* no value found */
-          optionerr(options, optionerrbuf, op_req_val_err, match, 0);
+          optionerr( opts, optionerrbuf, op_req_val_err, match, 0);
           if (depth > 0) {
             oWARN(optionerrbuf);
             return o_ARG_FILE_ERR;
@@ -4703,7 +4824,7 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
     }
 
     *option_num = match;
-    return options[match].option_ID;
+    return opts[match].option_ID;
   }
   sprintf(optionerrbuf, LoadFarStringSmall(sh_op_not_sup_err), *shortopt);
   if (depth > 0) {
@@ -4723,10 +4844,10 @@ static unsigned long get_shortopt(__G__ option_group, args, argnum, optchar,
  * Parameters same as for get_shortopt.
  */
 
-static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
+static unsigned long get_longopt(__G__ opts, args, argnum, optchar,
                                  negated, value, option_num, depth)
   __GDEF
-  int option_group;
+  ZCONST struct option_struct *opts;
   ZCONST char **args;
   int argnum;
   int *optchar;
@@ -4784,17 +4905,15 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
   }
 
   /* look for long option match */
-  for (op = 0; options[op].option_ID; op++) {
-    /* Only look at options in the option group */
-    if (options[op].option_group == option_group) {
-      if (options[op].longopt &&
-          strcmp(LoadFarStringSmall(options[op].longopt), longopt) == 0) {
+  for (op = 0; opts[op].option_ID; op++) {
+      if (opts[op].longopt &&
+          strcmp(LoadFarStringSmall(opts[op].longopt), longopt) == 0) {
         /* exact match */
         match = op;
         break;
       }
-      if (options[op].longopt &&
-          strncmp(LoadFarStringSmall(options[op].longopt),
+      if (opts[op].longopt &&
+          strncmp(LoadFarStringSmall(opts[op].longopt),
                   longopt, strlen(longopt)) == 0) {
         if (match > -1) {
           sprintf(optionerrbuf, LoadFarStringSmall(long_op_ambig_err),
@@ -4811,7 +4930,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
         }
         match = op;
       }
-    }
+
   }
 
   if (match == -1) {
@@ -4830,8 +4949,8 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
   *optchar = THIS_ARG_DONE;
 
   /* if negated then see if allowed */
-  if (*negated && options[match].negatable == o_NOT_NEGATABLE) {
-    optionerr(options, optionerrbuf, op_not_neg_err, match, 1);
+  if (*negated && opts[match].negatable == o_NOT_NEGATABLE) {
+    optionerr( opts, optionerrbuf, op_not_neg_err, match, 1);
     izu_free(arg);
     if (depth > 0) {
       /* unwind */
@@ -4843,7 +4962,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
     }
   }
   /* get value */
-  if (options[match].value_type == o_OPT_EQ_VALUE) {
+  if (opts[match].value_type == o_OPT_EQ_VALUE) {
     /* Optional value, but "=" required with detached value. */
     if (valuestart == NULL) {
       /* "--opt ="? */
@@ -4880,7 +4999,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       }
       strcpy(*value, valuestart);
     }
-  } else if (options[match].value_type == o_OPTIONAL_VALUE) {
+  } else if (opts[match].value_type == o_OPTIONAL_VALUE) {
     /* optional value in form option=value */
     if (valuestart) {
       /* option=value */
@@ -4891,10 +5010,10 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
       }
       strcpy(*value, valuestart);
     }
-  } else if (options[match].value_type == o_REQUIRED_VALUE ||
-             options[match].value_type == o_NUMBER_VALUE ||
-             options[match].value_type == o_ONE_CHAR_VALUE ||
-             options[match].value_type == o_VALUE_LIST) {
+  } else if (opts[match].value_type == o_REQUIRED_VALUE ||
+             opts[match].value_type == o_NUMBER_VALUE ||
+             opts[match].value_type == o_ONE_CHAR_VALUE ||
+             opts[match].value_type == o_VALUE_LIST) {
     /* handle long option one char and number value as required value */
     if (valuestart) {
       /* option=value */
@@ -4915,14 +5034,14 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
         }
         /* using next arg as value */
         strcpy(*value, args[argnum + 1]);
-        if (options[match].value_type == o_VALUE_LIST) {
+        if (opts[match].value_type == o_VALUE_LIST) {
           *optchar = START_VALUE_LIST;
         } else {
           *optchar = SKIP_VALUE_ARG;
         }
       } else {
         /* no value found */
-        optionerr(options, optionerrbuf, op_req_val_err, match, 1);
+        optionerr( opts, optionerrbuf, op_req_val_err, match, 1);
         izu_free(arg);
         if (depth > 0) {
           /* unwind */
@@ -4934,11 +5053,11 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
         }
       }
     }
-  } else if (options[match].value_type == o_NO_VALUE) {
+  } else if (opts[match].value_type == o_NO_VALUE) {
     /* this option does not accept a value */
     if (valuestart) {
       /* --option=value */
-      optionerr(options, optionerrbuf, op_no_allow_val_err, match, 1);
+      optionerr( opts, optionerrbuf, op_no_allow_val_err, match, 1);
       izu_free(arg);
       if (depth > 0) {
         oWARN(optionerrbuf);
@@ -4952,7 +5071,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
   izu_free(arg);
 
   *option_num = match;
-  return options[match].option_ID;
+  return opts[match].option_ID;
 }
 
 
@@ -5026,7 +5145,7 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
  * Command line is read from left to right.  As get_option() finds non-option
  * arguments (arguments not starting with - and that are not values to options)
  * it moves later options and values in front of the non-option arguments.
- * This permuting is turned off by setting enable_permute to 0.  Then
+ * This permuting is turned off by setting G.permute_opts_args to 0.  Then
  * get_option() will return options and non-option arguments in the order
  * found.  Currently permuting is only done after an argument is completely
  * processed so that any value can be moved with options they go with.  All
@@ -5118,14 +5237,13 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
  *       back later.
  *
  *  non-option argument
- *       is any argument not given above.  If enable_permute is 1 then
+ *       is any argument not given above.  If G.permute_opts_args, then
  *       these are returned after all options, otherwise all options and
  *       args are returned in order.  Returns option ID o_NON_OPTION_ARG
  *       and sets value to the argument.
  *
  *
  * Arguments to get_option:
- *  int option_group       - either UZO for UnZip or ZIO for ZipInfo
  *  char ***pargs          - pointer to arg array in the argv form
  *  int *argc              - returns the current argc for args incl. args[0]
  *  int *argnum            - the index of the current argument (caller
@@ -5150,10 +5268,10 @@ static unsigned long get_longopt(__G__ option_group, args, argnum, optchar,
  *
  */
 
-unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value,
+unsigned long get_option(__G__ opts, pargs, argc, argnum, optchar, value,
                          negated, first_nonopt_arg, option_num, recursion_depth)
   __GDEF
-  int option_group;
+  ZCONST struct option_struct *opts;
   char ***pargs;
   int *argc;
   int *argnum;
@@ -5223,14 +5341,13 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
      value list */
   option_ID = 0;
   if (*option_num != o_NO_OPTION_MATCH) {
-    option_ID = options[*option_num].option_ID;
+    option_ID = opts[*option_num].option_ID;
   }
 
   /* get next option if any */
   for (;;)  {
     if (read_rest_args_verbatim) {
-      /* rest of args after "--" are non-option args if doubledash_ends_options
-         set */
+      /* Args after "--" are non-option args, if G.dashdash_ends_opts. */
       argn++;
       if (argn > argcnt || args[argn] == NULL) {
         /* done */
@@ -5249,7 +5366,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
 
     /* permute non-option args after option args so options are returned
        first */
-    } else if (enable_permute) {
+    } else if (G.permute_opts_args) {
       if (optc == SKIP_VALUE_ARG || optc == SKIP_VALUE_ARG2 ||
           optc == THIS_ARG_DONE ||
           optc == START_VALUE_LIST || optc == IN_VALUE_LIST ||
@@ -5394,7 +5511,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         /* arg = - */
         /* treat like non-option arg */
         *option_num = o_NO_OPTION_MATCH;
-        if (enable_permute) {
+        if (G.permute_opts_args) {
           /* permute args to move all non-option args to end */
           if (first_nonoption_arg < 0) {
             first_nonoption_arg = argn;
@@ -5416,7 +5533,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
         /* long option */
         if (arg[2] == '\0') {
           /* arg = -- */
-          if (doubledash_ends_options) {
+          if (G.dashdash_ends_opts) {
             /* Now -- stops permuting and forces the rest of
                the command line to be read verbatim - 7/25/04 EG */
 
@@ -5437,7 +5554,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
           } else {
             /* treat like non-option arg */
             *option_num = o_NO_OPTION_MATCH;
-            if (enable_permute) {
+            if (G.permute_opts_args) {
               /* permute args to move all non-option args to end */
               if (first_nonoption_arg < 0) {
                 first_nonoption_arg = argn;
@@ -5457,7 +5574,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
           }
 
         } else {
-          option_ID = get_longopt(__G__ option_group, (ZCONST char **)args, argn,
+          option_ID = get_longopt(__G__ opts, (ZCONST char **)args, argn,
                                   &optc, negated,
                                   value, option_num, recursion_depth);
           if (option_ID == o_BAD_ERR) {
@@ -5471,7 +5588,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
 
       } else {
         /* short option */
-        option_ID = get_shortopt(__G__ option_group, (ZCONST char **)args, argn,
+        option_ID = get_shortopt(__G__ opts, (ZCONST char **)args, argn,
                                  &optc, negated,
                                  value, option_num, recursion_depth);
 
@@ -5491,7 +5608,7 @@ unsigned long get_option(__G__ option_group, pargs, argc, argnum, optchar, value
       }
     } else {
       /* non-option */
-      if (enable_permute) {
+      if (G.permute_opts_args) {
         /* permute args to move all non-option args to end */
         if (first_nonoption_arg < 0) {
           first_nonoption_arg = argn;
@@ -5559,9 +5676,7 @@ int arg;
 #  endif /* def CLK_TCK [else] */
 #  define U_P_NODENAME_LEN 32
 
-  static int not_first = 0;                             /* First time flag. */
-  static char u_p_nodename[ U_P_NODENAME_LEN+ 1];       /* "host::tty". */
-  static char u_p_prog_name[] = "unzip";                /* Program name. */
+  static char u_p_prog_name[] = "UnZip";                /* Program name. */
 
   struct utsname u_p_utsname;
   struct tm u_p_loc_tm;
@@ -5575,16 +5690,16 @@ int arg;
   GETGLOBALS();
 
   /* On the first time through, get the host name and tty name, and form
-   * the "host::tty" string (in u_p_nodename) for the intro line.
+   * the "host::tty" string (in G.u_p_nodename) for the intro line.
    */
-  if (not_first == 0)
+  if (G.u_p_not_first == 0)
   {
-    not_first = 1;
+    G.u_p_not_first = 1;
     /* Host name.  (Trim off any domain info.  (Needed on Tru64.)) */
     uname( &u_p_utsname);
-    strncpy( u_p_nodename, u_p_utsname.nodename, (U_P_NODENAME_LEN- 8));
-    u_p_nodename[ 24] = '\0';
-    cp = strchr( u_p_nodename, '.');
+    strncpy( G.u_p_nodename, u_p_utsname.nodename, (U_P_NODENAME_LEN- 8));
+    G.u_p_nodename[ 24] = '\0';
+    cp = strchr( G.u_p_nodename, '.');
     if (cp != NULL)
       *cp = '\0';
 
@@ -5596,9 +5711,9 @@ int arg;
       if (cp != NULL)
         tty_name += 5;
 
-      strcat( u_p_nodename, "::");
-      strncat( u_p_nodename, tty_name,
-       (U_P_NODENAME_LEN- strlen( u_p_nodename)));
+      strcat( G.u_p_nodename, "::");
+      strncat( G.u_p_nodename, tty_name,
+       (U_P_NODENAME_LEN- strlen( G.u_p_nodename)));
     }
   }
 
@@ -5616,7 +5731,7 @@ int arg;
 
   /* Put out intro line. */
   fprintf( stderr, "%s %02d:%02d:%02d %s CPU=%.2f\n",
-   u_p_nodename,
+   G.u_p_nodename,
    u_p_loc_tm.tm_hour, u_p_loc_tm.tm_min, u_p_loc_tm.tm_sec,
    u_p_prog_name,
    (stime_f+ utime_f));

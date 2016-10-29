@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -429,7 +429,7 @@ char *UzpFeatures()
     strcat( featurelist, "no_zipinfo;");
 # endif
 
-    feats = malloc( strlen( featurelist) + 1);
+    feats = izu_malloc( strlen( featurelist) + 1);
     if (feats != NULL)
     {
         strcpy( feats, featurelist);
@@ -879,8 +879,10 @@ int UZ_EXP UzpGrep( OFT( char *)archive,
     UzpCB *UsrFuncts;
 #  endif /* def NO_PROTO */
 {
-    int retcode = FALSE, compare;
-    ulg i, j, patternLen, buflen;
+    int retcode = FALSE;
+    int compare;
+    ulg i, j, buflen;
+    size_t patternLen;
     char * sz, *p;
     UzpOpts flgopts;
     UzpBuffer retstr;

@@ -2,7 +2,7 @@
 	Ident		"03-007"
 
 !-----------------------------------------------------------------------
-! Copyright (c) 2001-2015 Info-ZIP.  All rights reserved.
+! Copyright (c) 2001-2016 Info-ZIP.  All rights reserved.
 !
 ! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 ! contents of which are also included in zip.h) for terms of use.  If,
@@ -176,6 +176,7 @@ Define Syntax INFORMATION
 	Parameter	P2, Label=INFILE, VALUE(LIST), Prompt="Files to display"
 
 	Qualifier	ZIPINFO, NonNegatable, DEFAULT
+	Qualifier	LICENSE, NonNegatable
 	Qualifier	LONG, Negatable
 	Qualifier	MEDIUM, Negatable
 	Qualifier	ONE_LINE, Negatable

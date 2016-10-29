@@ -1,7 +1,7 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
-  See the accompanying file LICENSE, version 2007-Mar-04 or later
+  See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
   If, for some reason, all these files are missing, the Info-ZIP license
   also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -16,8 +16,8 @@
   The fatal bzip2 error bail-out routine is provided in a separate code
   module, so that it can be easily overridden when the UnZip package is
   used as a static link library. One example is the WinDLL static library
-  usage for building a monolythic binary of the Windows application "WiZ"
-  that supports bzip2 both in compression and decompression operations.
+  usage for building a monolithic binary of the Windows application "WiZ"
+  that supports bzip2 in both compression and decompression operations.
 
   Contains:  bz_internal_error()      (BZIP2_SUPPORT only)
 

@@ -4577,7 +4577,6 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
 #    ifdef Tracing
             char *path = wchar_to_local_string((wchar_t *)pathw, G.unicode_escape_all);
             Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
-            
 
        FnFilter1(path)));
             izu_free(path);

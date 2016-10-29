@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -133,9 +133,6 @@
 
 #define UNZIP_INTERNAL
 #include "unzip.h"
-#ifndef TEST
-#  include "unzvers.h"  /* for VMSCLI_usage() */
-#endif /* !TEST */
 
 /* Workaround for broken header files of older DECC distributions
  * that are incompatible with the /NAMES=AS_IS qualifier. */
@@ -180,8 +177,8 @@ globalvalue CLI$_COMMA;
     if ((requested) > (reserved)) { \
         char *save_buf = (buf); \
         (reserved) += ARGBSIZE_UNIT; \
-        if (((buf) = (char *) realloc( (buf), (reserved))) == NULL) { \
-            if (save_buf != NULL) free( save_buf); \
+        if (((buf) = (char *)izu_realloc( (buf), (reserved))) == NULL) { \
+            if (save_buf != NULL)izu_free( save_buf); \
             return SS$_INSFMEM; \
         } \
     } \
@@ -417,7 +414,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     /*
      *  There will always be a new_argv[] because of the image name.
      */
-    if ((the_cmd_line = (char *) malloc(cmdl_size = ARGBSIZE_UNIT)) == NULL)
+    if ((the_cmd_line = (char *)izu_malloc(cmdl_size = ARGBSIZE_UNIT)) == NULL)
         return SS$_INSFMEM;
 
 #define UNZIP_COMMAND_NAME "unzip"
@@ -477,6 +474,17 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     */
     status = cli$present(&cli_exclude);
     exclude_list = ((status & 1) != 0);
+
+    /*
+     * Show license text.
+     */
+#define OPT_LI   "--license"    /* "--license  Show license text. */
+
+    status = cli$present( &cli_license);
+    if (status & 1)
+    {
+        ADD_ARG( OPT_LI);
+    }
 
     /*
      * Verbose command-line translation.
@@ -993,17 +1001,6 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
                 }
             }
             ADD_ARG( opt);
-        }
-
-        /*
-         * Show license text.
-         */
-#define OPT_LI   "--license"    /* "--license  Show license text. */
-
-        status = cli$present( &cli_license);
-        if (status & 1)
-        {
-            ADD_ARG( OPT_LI);
         }
 
         /*
@@ -1811,7 +1808,7 @@ vms_unzip_cmdline (int *argc_p, char ***argv_p)
     **  We have finished collecting the strings for the argv vector,
     **  release unused space.
     */
-    if ((the_cmd_line = (char *) realloc(the_cmd_line, cmdl_len)) == NULL)
+    if ((the_cmd_line = (char *)izu_realloc(the_cmd_line, cmdl_len)) == NULL)
         return SS$_INSFMEM;
 
     /*
@@ -1902,7 +1899,7 @@ get_list (struct dsc$descriptor_s *qual, struct dsc$descriptor_d *rawtail,
         */
         if (*p_str == NULL) {
             *p_size = ARGBSIZE_UNIT;
-            if ((*p_str = (char *) malloc(*p_size)) == NULL)
+            if ((*p_str = (char *)izu_malloc(*p_size)) == NULL)
                 return SS$_INSFMEM;
             len = 0;
         } else {
@@ -1973,10 +1970,6 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 
     /* UnZipSFX Usage Guide. */
 
-    extern ZCONST char UnzipBanner[];
-#  ifdef BETA
-    extern ZCONST char BetaVersion[];
-#  endif
     int flag;
 
     if (!show_VMSCLI_usage)
@@ -1985,11 +1978,11 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
     flag = (error? 1 : 0);
 
     Info(slide, flag, ((char *)slide, UnzipBanner,
-     "UnZip",
-     UzpVersionStr(),
-     UZ_VERSION_DATE,
-     UZ_VERSION_DATE));
-
+     "UnZip", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
+#  ifdef BETA
+    Info( slide, flag, ((char *)slide, LoadFarString( BetaVersion),
+     "\n", ""));
+#  endif
     Info(slide, flag, ((char *)slide, "\
 \n\
 Usage: MCR %s -\n\
@@ -2064,10 +2057,6 @@ UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
 ));
 #  endif /* def MORE [else] */
 
-#  ifdef BETA
-    Info(slide, flag, ((char *)slide, BetaVersion, "\n", "SFX"));
-#  endif
-
     if (error)
         return PK_PARAM;
     else
@@ -2077,10 +2066,6 @@ UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
 
     /* Normal UnZip or ZipInfo Usage Guide. */
 
-    extern ZCONST char UnzipUsageLine1[];
-#  ifdef BETA
-    extern ZCONST char BetaVersion[];
-#  endif
     int flag;
 
     if (!show_VMSCLI_usage)
@@ -2096,16 +2081,15 @@ UnZip program instead of this built-in (limited) UnZipSFX self-extractor.\n\
     Print either ZipInfo usage or UnZip usage, depending on incantation.
   ---------------------------------------------------------------------------*/
 
-    if (uO.zipinfo_mode) {
-
+    if (uO.zipinfo_mode)
+    {
 #  ifndef NO_ZIPINFO
 
-        /* ZipInfo Usage guide. */
-
-        Info(slide, flag, ((char *)slide, "\
-ZipInfo %d.%d%d%s %s, by Info-ZIP.  Maintainer: <Apply Within>\n\n",
-          ZI_MAJORVER, ZI_MINORVER,
-          UZ_PATCHLEVEL, UZ_BETALEVEL, UZ_VERSION_DATE));
+        /* ZipInfo Usage guide.
+         *    Compare: unzip.c: ZipInfoUsageLine1, et al.
+         */
+        Info( slide, flag, ((char *)slide, ZipInfoUsageLine1,
+          UzpVersionStr(), UZ_VERSION_DATE, ZiDclStr()));
 
         Info(slide, flag, ((char *)slide, "\
 Usage:  ZIPINFO [/zipinfo_qualifiers] [file[.zip]] [member [,...]]\n\
@@ -2141,18 +2125,19 @@ General qualifiers:\n\
 "));
 
         Info(slide, flag, ((char *)slide, "\n\
-Type 'unzip \"-Z\"' for Unix-style usage guide.\n\
-Quote member names if /MATCH=CASE=SENSITIVE (default).\n\
+Unix-style usage guide: unzip \"-Z\"\n\
+Quote archive member names if /MATCH=CASE=SENSITIVE (default).\n\
 "));
 
 #  endif /* ndef NO_ZIPINFO */
-
-    } else {   /* UnZip mode */
+    }
+    else
+    {   /* UnZip mode */
 
         /* Normal UnZip Usage Guide. */
 
         Info(slide, flag, ((char *)slide, UnzipUsageLine1,
-          UzpVersionStr(), UZ_VERSION_DATE, UNZIP_MAINTAINER));
+          UzpVersionStr(), UZ_VERSION_DATE, UzpDclStr()));
 
 #  ifdef BETA
         Info(slide, flag, ((char *)slide, BetaVersion, "", ""));
@@ -2160,17 +2145,17 @@ Quote member names if /MATCH=CASE=SENSITIVE (default).\n\
 
         Info(slide, flag, ((char *)slide, "\
 Usage: UNZIP [/unzip_qualifiers] [file[.zip]] [member [,...]]\n\
-  Default action is to extract specified (or all) members from file.zip\n\
+  Default action: Extract specified (or all) members from file.zip\n\
 %s\n",
 #  ifdef NO_ZIPINFO
-          "  (ZipInfo mode is disabled in this version.)"
+          "  (ZipInfo mode is disabled in this build.)"
 #  else
-          "  Do \"UNZIP /ZIPINFO\" for ZipInfo-mode usage."
+          "  ZipInfo-mode usage: \"UNZIP /ZIPINFO\""
 #  endif
 ));
 
         Info(slide, flag, ((char *)slide, "\
-Primary mode qualifiers (Do \"unzip -h\" for Unix-style options):\n\
+Primary mode qualifiers (For Unix-style options: \"unzip -h\"):\n\
   /COMMENT, /FRESHEN, /HELP[=EXTENDED], /LICENSE, /LIST, /PIPE, /SCREEN,\n\
   /TEST, /TIMESTAMP, /UPDATE, /VERBOSE\n\
 General qualifiers:\n\

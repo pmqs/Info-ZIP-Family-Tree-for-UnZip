@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1354,16 +1354,18 @@ static int create_qio_output(__GPRO)
 #ifdef NAML$C_MAXRSS
 
         /* Enable fancy name characters.  Note that "fancy" here does
-           not include Unicode, for which there's no support elsewhere.
-        */
+         * not include Unicode, for which there's no support elsewhere.
+         * 2017-03-14 SMS.  Added fib$v_percent_literal to handle "%".
+         */
         pka_fib.fib$v_names_8bit = 1;
+        pka_fib.fib$v_percent_literal = 1;
         pka_fib.fib$b_name_format_in = FIB$C_ISL1;
 
         /* ODS5 Extended names used as input to QIO have peculiar
-           encoding (perhaps to minimize storage?), so the special
-           filesys_name result (typically containing fewer carets) must
-           be used here.
-        */
+         * encoding (perhaps to minimize storage?), so the special
+         * filesys_name result (typically containing fewer carets) must
+         * be used here.
+         */
         pka_fnam.dsc$a_pointer = nam.naml$l_filesys_name;
         pka_fnam.dsc$w_length = nam.naml$l_filesys_name_size;
 
@@ -1824,7 +1826,7 @@ static int find_vms_attrs(__GPRO__ int set_date_time)
                     Info(slide, 0, ((char *)slide,
                          " version made by %s ]\n", verbuf));
                 }
-                free(vers);
+                izu_free(vers);
 #endif /* CHECK_VERSIONS */
             } else {
                 Info(slide, 1, ((char *)slide,
@@ -1949,21 +1951,21 @@ static void free_up()
     /*
      * Free up all allocated XABs.
      */
-    if (xabdat != NULL) free(xabdat);
-    if (xabpro != NULL) free(xabpro);
-    if (xabrdt != NULL) free(xabrdt);
-    if (xabfhc != NULL) free(xabfhc);
+    if (xabdat != NULL) izu_free(xabdat);
+    if (xabpro != NULL) izu_free(xabpro);
+    if (xabrdt != NULL) izu_free(xabrdt);
+    if (xabfhc != NULL) izu_free(xabfhc);
     while (first_xab != NULL)
     {
         struct XAB *x;
 
         x = (struct XAB *) first_xab->xab$l_nxt;
-        free(first_xab);
+        izu_free(first_xab);
         first_xab = x;
     }
     /* Free FAB storage, if not the static one. */
     if (outfab != NULL && outfab != &fileblk)
-        free(outfab);
+        izu_free(outfab);
 }
 
 
@@ -2817,7 +2819,7 @@ static int _close_rms(__GPRO)
             if (QCOND2)
             {
                 /* Link text storage. */
-                char* link_target = malloc(ucsize + 1);
+                char* link_target = izu_malloc( ucsize + 1);
 
                 if (link_target == NULL)
                 {
@@ -2844,7 +2846,7 @@ static int _close_rms(__GPRO)
                           FnFilter1(link_target)));
                     }
 
-                    free(link_target);
+                    izu_free(link_target);
                 }
             }
         }
@@ -2870,7 +2872,7 @@ static int _close_rms(__GPRO)
             }
             else
             {
-                if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize))
+                if ((slnk_entry = (slinkentry *)izu_malloc( slnk_entrysize))
                     == NULL) {
                     Info(slide, 0x201, ((char *)slide,
                       "warning:  symbolic link (%s) failed, no mem\n",
@@ -2895,7 +2897,7 @@ static int _close_rms(__GPRO)
                         Info(slide, 0x201, ((char *)slide,
                           "warning:  error reading symlink text (rms): %s\n",
                           strerror(EVMSERR, status)));
-                        free(slnk_entry);
+                        izu_free(slnk_entry);
                         retcode = PK_DISK;
                     }
                     else
@@ -3029,7 +3031,7 @@ static int _close_qio(__GPRO)
         extent ucsize = (extent)G.lrec.ucsize;
         char *link_target;   /* Link text storage. */
 
-        if ((link_target = malloc(ucsize + 1)) == NULL)
+        if ((link_target = izu_malloc( ucsize + 1)) == NULL)
         {
             Info(slide, 0x201, ((char *)slide,
               "warning:  cannot show symlink (%s) target, no mem\n",
@@ -3075,7 +3077,7 @@ static int _close_qio(__GPRO)
                   FnFilter1(link_target)));
             }
 
-            free(link_target);
+            izu_free(link_target);
 
         }
     }
@@ -3192,7 +3194,7 @@ int defer_dir_attribs(__G__ pd)
      */
     fnlen = strlen(G.filename);
     xlen = G.lrec.extra_field_length;
-    d_entry = (vmsdirattr *) malloc(sizeof(vmsdirattr) + fnlen + xlen);
+    d_entry = (vmsdirattr *)izu_malloc( sizeof(vmsdirattr) + fnlen + xlen);
     *pd = (direntry *) d_entry;
     if (d_entry == (vmsdirattr *) NULL)
     {
@@ -3465,16 +3467,18 @@ int set_direc_attribs(__G__ d)
 # ifdef NAML$C_MAXRSS
 
     /* Enable fancy name characters.  Note that "fancy" here does
-       not include Unicode, for which there's no support elsewhere.
-    */
+     * not include Unicode, for which there's no support elsewhere.
+     * 2017-03-14 SMS.  Added fib$v_percent_literal to handle "%".
+     */
     pka_fib.fib$v_names_8bit = 1;
+    pka_fib.fib$v_percent_literal = 1;
     pka_fib.fib$b_name_format_in = FIB$C_ISL1;
 
     /* ODS5 Extended names used as input to QIO have peculiar
-       encoding (perhaps to minimize storage?), so the special
-       filesys_name result (typically containing fewer carets) must
-       be used here.
-    */
+     * encoding (perhaps to minimize storage?), so the special
+     * filesys_name result (typically containing fewer carets) must
+     * be used here.
+     */
     pka_fnam.dsc$a_pointer = nam.naml$l_filesys_name;
     pka_fnam.dsc$w_length = nam.naml$l_filesys_name_size;
 
@@ -3586,7 +3590,7 @@ int set_direc_attribs(__G__ d)
     sys$dassgn(pka_devchn);
 cleanup_exit:
     free_up();                          /* Free FAB, XAB storage. */
-    free(d);                            /* Free directory attribute storage. */
+    izu_free(d);                        /* Free directory attribute storage. */
     G.extra_field = sav_ef_ptr;         /* Restore original pointer. */
     return retcode;
 } /* end function set_direc_attribs() */
@@ -3804,16 +3808,18 @@ int stamp_file(fname, modtime)
 # ifdef NAML$C_MAXRSS
 
     /* Enable fancy name characters.  Note that "fancy" here does
-       not include Unicode, for which there's no support elsewhere.
-    */
+     * not include Unicode, for which there's no support elsewhere.
+     * 2017-03-14 SMS.  Added fib$v_percent_literal to handle "%".
+     */
     pka_fib.fib$v_names_8bit = 1;
+    pka_fib.fib$v_percent_literal = 1;
     pka_fib.fib$b_name_format_in = FIB$C_ISL1;
 
     /* ODS5 Extended names used as input to QIO have peculiar
-       encoding (perhaps to minimize storage?), so the special
-       filesys_name result (typically containing fewer carets) must
-       be used here.
-    */
+     * encoding (perhaps to minimize storage?), so the special
+     * filesys_name result (typically containing fewer carets) must
+     * be used here.
+     */
     pka_fnam.dsc$a_pointer = nam.naml$l_filesys_name;
     pka_fnam.dsc$w_length = nam.naml$l_filesys_name_size;
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-2 or later
   (the contents of which are also included in zip.h) for terms of use.
@@ -626,7 +626,7 @@ int zipcloak(z, passwd)
         res = fcrypt_init(
          (encryption_method- (AES_MIN_ENCRYPTION- 1)),  /* AES mode. */
          (unsigned char*) passwd,                       /* Password. */
-         strlen( passwd),                               /* Password length. */
+         (unsigned int) strlen( passwd),                /* Password length. */
          zsalt,                                         /* Salt. */
          zpwd_verifier,                                 /* Password vfy buf. */
          &zctx);                                        /* AES context. */
@@ -824,7 +824,7 @@ int zipbare(z, passwd)
         /* Initialize the AES decryption machine for the password check. */
         fcrypt_init( aes_mode,                  /* AES mode. */
                      (unsigned char*) passwd,   /* Password. */
-                     strlen( passwd),           /* Password length. */
+                     (unsigned int) strlen( passwd),    /* Password length. */
                      h,                         /* Salt. */
                      hh,                        /* PASSWORD_VERIFIER. */
                      &zctx);                    /* AES context. */
@@ -1252,7 +1252,7 @@ local int testkey(__G__ hd_len, h, key)
     {
         fcrypt_init( GLOBAL( pInfo->cmpr_mode_aes),     /* AES mode. */
                      (unsigned char*) key,      /* Password. */
-                     strlen( key),              /* Password length. */
+                     (unsigned int) strlen( key),       /* Password length. */
                      h,                         /* Salt. */
                      hh,                        /* PASSWORD_VERIFIER. */
                      GLOBAL( zcx));             /* AES context. */

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -77,25 +77,30 @@ int main(int argc, char *argv[])
 
     pVersion = UzpVersion();
 
-    printf("UnZip DLL example: checking version numbers (DLL is dated %s)\n",
+    fprintf( stderr,
+      "UnZip DLL example: checking version numbers (DLL is dated %s)\n",
       pVersion->date);
-    printf("   UnZip versions:    expecting %u.%u%u, using %u.%u%u%s\n",
+    fprintf( stderr,
+      "   UnZip versions:    expecting %u.%u%u, using %u.%u%u%s\n",
       UZ_MAJORVER, UZ_MINORVER, UZ_PATCHLEVEL, pVersion->unzip.vmajor,
       pVersion->unzip.vminor, pVersion->unzip.patchlevel, pVersion->betalevel);
-    printf("   ZipInfo versions:  expecting %u.%u%u, using %u.%u%u\n",
+    fprintf( stderr,
+      "   ZipInfo versions:  expecting %u.%u%u, using %u.%u%u\n",
       ZI_MAJORVER, ZI_MINORVER, UZ_PATCHLEVEL, pVersion->zipinfo.vmajor,
       pVersion->zipinfo.vminor, pVersion->zipinfo.patchlevel);
 
 /*
     D2_M*VER and os2dll.* are obsolete, though retained for compatibility:
 
-    printf("   OS2 DLL versions:  expecting %u.%u%u, using %u.%u%u\n",
+    fprintf( stderr,
+      "   OS2 DLL versions:  expecting %u.%u%u, using %u.%u%u\n",
       D2_MAJORVER, D2_MINORVER, D2_PATCHLEVEL, pVersion->os2dll.vmajor,
       pVersion->os2dll.vminor, pVersion->os2dll.patchlevel);
  */
 
     if (pVersion->flag & 2)
-        printf("   using zlib version %s\n", pVersion->zlib_version);
+        fprintf( stderr,
+          "   using zlib version %s\n", pVersion->zlib_version);
 
     /* This example code only uses the dll calls UzpVersion() and
      * UzpMain().  The APIs for these two calls have maintained backward
@@ -115,7 +120,8 @@ int main(int argc, char *argv[])
           )
          ) )
     {
-        printf("  aborting because of too old UnZip DLL version!\n");
+        fprintf( stderr,
+          "  aborting because of too old UnZip DLL version!\n");
         return -1;
     }
 
@@ -146,7 +152,7 @@ int main(int argc, char *argv[])
 #  define UZ_API_COMP_REVIS             UZ_GENAPI_COMP_REVIS
 # endif /* def WINDLL [else] */
 #endif /* def OS2DLL [else] */
-        printf(
+        fprintf( stderr,
           "   UnZip API version: can handle <= %u.%u%u, DLL supplies %u.%u%u\n",
           UZ_API_COMP_MAJOR, UZ_API_COMP_MINOR, UZ_API_COMP_REVIS,
           pVersion->dllapimin.vmajor, pVersion->dllapimin.vminor,
@@ -160,11 +166,12 @@ int main(int argc, char *argv[])
               )
              ) )
         {
-            printf("  aborting because of unsupported dll api version!\n");
+            fprintf( stderr,
+              "  aborting because of unsupported dll api version!\n");
             return -1;
         }
     }
-    printf("\n");
+    fprintf( stderr, "\n");
 
     /* Call the UnZip entry point function, UzpMainI(), passing it an
      * UnZip command expressed as an argument vector.

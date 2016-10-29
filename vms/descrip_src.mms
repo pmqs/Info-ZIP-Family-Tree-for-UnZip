@@ -2,10 +2,10 @@
 #
 #    UnZip 6.1 for VMS -- MMS (or MMK) Source Description File.
 #
-#    Last revised:  2015-05-18
+#    Last revised:  2017-01-27
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2017 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -88,8 +88,8 @@ UNK_DEST = 1
 .ENDIF                              # __IA64__
 .ENDIF                          # __ALPHA__
 
-# AES_WG support.  Default to disabled, but the .FIRST rule will detect
-# the presence of the optional source kit, and advise accordingly.
+# AES_WG support.  Default to enabled, but the .FIRST rule will detect
+# the absence of the optional source kit, and advise/fail accordingly.
 
 # Translate NO_AES_WG to NOAES_WG.
 .IFDEF NO_AES_WG                # NO_AES_WG
@@ -97,6 +97,12 @@ UNK_DEST = 1
 .ELSE                               # NOAES_WG
 NOAES_WG = 1
 .ENDIF                              # NOAES_WG
+.ENDIF                          # NO_AES_WG
+
+# Default: AES_WG.
+.IFDEF NOAES_WG                 # NOAES_WG
+.ELSE                           # NOAES_WG
+AES_WG = 1
 .ENDIF                          # NO_AES_WG
 
 # Skip AES_WG check if AES_WG is explicitly disabled.
@@ -447,6 +453,9 @@ NON_VAX_CMPL = 1
 	@ if (no_aes_wg_kit) then -
 	   write sys$output -
 	    "   Optional AES_WG source kit ([.aes_wg]) not found."
+	@ if (no_aes_wg_kit) then -
+	   write sys$output -
+	    "   To disable AES_WG support, add ""/MACRO = NO_AES_WG=1""."
 	@ if (no_aes_wg_kit) then -
 	   write sys$output ""
 	@ if (no_aes_wg_kit) then -

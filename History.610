@@ -1,4 +1,4 @@
-UnZip, version 6.1c, ?? ??? 2014
+UnZip, version 6.1c, ?? ??? 2016
 
 These changes occurred in beta versions 6.10a through 6.1c.
 
@@ -651,6 +651,16 @@ Features added (or removed):
    theos/theos.c, tops20/tops20.c, unix/unix.c, vms/vms.c,
    win32/win32.c, zos/vmmvs.c) [sanvila, SMS]
 
+6.1c21 (30 Oct 2016):
+ - Changed the command-line syntax of the Windows test command script to
+   allow the user to specify a particular UnZip program name, instead of
+   "unzip".  This allows the test script to be used with the UnZip-like
+   example programs supplied with DLL (windll/unzipstb.c) or static
+   library (winlib/izunzip_example.c).  (win32/test_unzip.cmd) [SMS]
+ - Revised Usage text, and, on VMS, the DCL foreign-command symbol
+   suggestions.  Other related, minor code tidying.  (unzip.c, unzip.h,
+   unzpriv.h, vms/cmdline.c) [SMS]
+
 
 Bugs fixed:
 
@@ -861,12 +871,12 @@ Bugs fixed:
  - Add comment about disk number == 1.  (process.c) [EG]
 
 6.10c04 (05 Aug 2011):
- - Replace some Mac-specific AppleDouble-related code which got omitted
+ - Restore some Mac-specific AppleDouble-related code which got omitted
    between 6.10a and 6.10b(?)  (extract.c) [SMS]
- - Replace lost code for enhanced "apparent file type" message in
+ - Restore lost code for enhanced "apparent file type" message in
    ZipInfo.  A hex value is now included, to show useful info for
    unexpected values (not "binary", "ebcdic", or "text").  zipinfo.c [SMS]
- - Replace lost change enabling "-s" everywhere.  Replace lost change to
+ - Restore lost change enabling "-s" everywhere.  Restore lost change to
    VMS usage text.  (unzip.c, unzip.h) [SMS]
  - Remove an unused variable (aes_strngth).  (zipinfo.c) [EG, SMS]
  - Reform a defective ZCRYPT version test, now handling version 3.0 case.
@@ -1356,7 +1366,7 @@ Bugs fixed:
    large values should be displayed properly when space allows.  Forum
    topics: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=267
    http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=437
-   (zipinfo.c) [quanww, sanvila, SMS]
+   CVE-2014-9913.  (zipinfo.c) [quanww, sanvila, SMS]
  - Added some crude, optional, dynamic memory tracing diagnostic
    capability for use by developers.  (api.c, crypt.c, envargs.c,
    extract.c, fileio.c, funzip.c, globals.c, inflate.c, match.c,
@@ -1760,5 +1770,151 @@ Bugs fixed:
    fake "compression method" of 99, and the actual compression method is
    stored in an AES_WG extra block.  In some cases, the AES_WG "99"
    value was being used instead of the actual value from the extra
-   block.)  (extract.c)  [Elvis Angelaccio, SMS] 
+   block.)  (extract.c)  [Elvis Angelaccio, SMS]
  - Revised some "UT"-related comments.  (process.c) [SMS]
+
+6.1c21 (12 May 2017):
+ - Changed the Windows DLL UnZip-like example program to send its
+   example-specific messages to stderr instead of stdout.  This allows
+   the ZipInfo test in the Windows test command script
+   (win32/test_unzip.cmd) to pass.  (windll/unzipstb.c) [SMS]
+ - Extended the crude, optional, dynamic memory tracing diagnostic
+   capability for use by developers to some VMS-specific modules.
+   (vms/cmdline.c, vms/vms.c) [SMS]
+ - The -da/--auto-extract-dir (/[NO]AUTO_DIRECTORY) option, to create a
+   destination directory based on the archive name, was truncating the
+   archive name at the leftmost dot, not the rightmost dot, leading to a
+   truncated directory name if the archive name included multiple dots.
+   (fileio.c) [SMS]
+ - Updated the LICENSE notice in source files to "version 2009-Jan-02".
+   Updated the copyright date in the LICENSE file itself.  (apihelp.c,
+   consts.h, crc32.c, crc32.h, ebcdic.h, envargs.c, explode.c,
+   gbloffs.c, globals.c, inflate.h, LICENSE, timezone.c, timezone.h,
+   ubz2err.c, unreduce.c, unshrink.c, zip.h, acorn/riscos.c,
+   acorn/riscos.h, acorn/swiven.c, acorn/swiven.h, amiga/amiga.h,
+   amiga/crc_68.a, amiga/filedate.c, amiga/flate.a, amiga/makesfx.c,
+   amiga/stat.c, amiga/z-stat.h, aosvs/aosvs.h, atheos/athcfg.h,
+   atheos/atheos.h, beos/beos.h, beos/beosmain.cpp, flexos/flxcfg.h,
+   human68k/crc_68.s, human68k/flate.s, macos/README.TXT, macos/UnZp.h,
+   macos/UnZpLib.h, macos/UnZpSFX.h, macos/UnZpSx.h,
+   macos/source/charmap.h, macos/source/getenv.c,
+   macos/source/helpers.c, macos/source/helpers.h,
+   macos/source/maccfg.h, macos/source/macdir.c, macos/source/macdir.h,
+   macos/source/macscreen.c, macos/source/macstat.c,
+   macos/source/macstat.h, macos/source/macstuff.h,
+   macos/source/mactime.c, macos/source/mactime.h,
+   macos/source/macunzip.c, macos/source/pathname.c,
+   macos/source/pathname.h, macos/source/sxunzip.c, msdos/crc_i86.asm,
+   msdos/doscfg.h, netware/nlmcfg.h, os2/os2acl.c, os2/os2acl.h,
+   os2/os2cfg.h, os2/os2data.h, os2/rexxapi.c, os2/rexxhelp.c,
+   qdos/callstub.c, qdos/config.S, qdos/crc68.s, qdos/izqdos.h,
+   qdos/makesfx.c, tandem/tandem.c, tandem/tandem.h, tandem/tannsk.h,
+   theos/charconv.h, theos/oldstat.h, theos/stat.h, theos/theos.c,
+   theos/thscfg.h, theos/_fprintf.c, theos/_isatty.c, theos/_setargv.c,
+   theos/_sprintf.c, theos/_stat.c, tops20/tops20.c, unix/macosx.h,
+   vms/vmsdefs.h, win32/crc_i386.asm, win32/crc_i386.c,
+   win32/crc_lcc.asm, win32/rsxntwin.h, wince/intrface.h,
+   wince/punzip.h, wince/punzip.rcv, wince/wince.cpp, wince/winmain.cpp,
+   wince/winmain.h, windll/decs.h, windll/windll.h,
+   windll/guisfx/dialog.h, zos/vmmvs.c, zos/vmmvs.h, zvm/vmstat.h)
+   [EG, SMS]
+ - The new command-line parser was not properly handling a double hyphen
+   ("--") token, which should stop option interpretation.  When that was
+   changed, some loose global variables were moved into the main globals
+   structure.
+   Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=526
+   (globals.c, globals.h, unzip.c, zipinfo.c) [SMS]
+ - In the VMS CLI UnZip program (UNZIP_CLI.EXE) in /ZIPINFO mode, the
+   /LICENSE qualifier was not recognized.  (vms/cmdline.c,
+   vms/unz_cli.cld) [SMS]
+ - Simplified handling of the different option lists for UnZip and
+   ZipInfo modes.  (unzip.c, unzpriv.h, zipinfo.c) [SMS]
+ - Moved some global variables for user-progress messages into the main
+   globals structure.  (globals.c, globals.h, unzip.c) [SMS]
+ - On Unix, file date-time values in a "UT" (0x5455) extra field block
+   could be ignored if a modern "ux" (0x7875) UID/GID block followed it
+   (which would be usual for an archive created bu Zip 3.x).  The DOS
+   (local) modification date-time (which is always present) would then
+   used instead, but it has a two-second resolution and no timezone
+   information.  The result was a file modification date-time with an
+   even number of seconds, even if the original value was odd, and
+   unexpected hours/date caused by the loss of timezone information.
+   (process.c) [Andries van Bergen, SMS]
+ - In ZipInfo ("-Z", /ZIPINFO) short-format ("-s", /SHORT, default)
+   reports, an unexpectedly large compression method value (>999) caused
+   a (mostly harmless) buffer overflow, and spoiled the report format.
+   Now, values less than 1000 are displayed as before, using a
+   three-digit decimal format, "uDDD", but larger values are displayed
+   using a four-digit (unlabled) hexadecimal format, "XXXX".
+   https://launchpad.net/bugs/1643750  CVE-2016-9844.
+   (zipinfo.c) [Alexis Vanden Eijnde, Tyler Hicks, SMS]
+ - On VMS, a "%" character in an archive name, or in an archive member
+   directory or file name, could cause spurious error/warning messages
+   when a caret-escaped percent sign ("^%") was erroneously interpreted
+   as a one-character wildcard.  Typical messages included:
+      (unzip -T name_with_^%_sign.zip):
+   [ Modify file QIO failed. ]
+   [ %SYSTEM-W-NOMOREFILES, no more files ]
+   warning:  cannot set time for: dev:[dir]name_with_^%_sign.zip;1
+      (extracting/creating a directory with a "%"):
+   warning:  set-dir-attributes failed ($qiow mod) for dev:[dir]x.DIR;1.
+   [ %SYSTEM-W-NOMOREFILES, no more files ]
+   warning:  set times/attribs failed for dev:[dir]
+     failed setting times/attribs for 1 dir entries
+      (extracting a regular file with a "%"):
+   [ Cannot create (QIO) output file dev:[dir]name_with^%_sign.txt ]
+   [ %SYSTEM-W-BADFILENAME, bad file name syntax ]
+   and so on.  In a related problem, on VMS, match.c:iswild() ignored
+   caret escapes, causing many non-wildcard names to be considered
+   wildcard names.  Also, since VMS V7.2 on non-VAX, "?" is a
+   one-character wildcard, equivalent to "%", but was not treated as
+   such.  (Correcting this problem makes possible the first of the
+   problems shown above.)  For example:
+      ($unzip -T name_with_^%_sign.zip)
+   unzip:  cannot find any matches for wildcard specification
+    "name_with_^%_sign.zip".
+   (match.c, vms/vms.c) [Jouk Jansen, SMS]
+ - Added "ZCONST" to an argument declaration in action_msg() to clear a
+   GCC compiler warning on AIX.  (extract.c) [SMS]
+ - Changed some archive data buffer types from "char" to "unsigned
+   char".  (extract.c, globals.c, globals.h, fileio.c, process.c,
+   unzpriv.h) [SMS]
+ - Added code to detect (and, for now, mostly ignore) a Central
+   Directory Digital Signature.  Previously, its presence could cause a
+   spurious informational message: "note:  didn't find
+   end-of-central-dir signature at end of central dir."  Now, it
+   triggers an informational message saying that the digital signature
+   data were detected but ignored.  (consts.h, extract.c, globals.c,
+   globals.h, list.c, process.c, unzpriv.h, zipinfo.c) [Jakub Martisko,
+   SMS]
+ - When processing a Zip64 (large-file) archive, "unzip -T" could
+   generate a spurious informational message, "note:  didn't find
+   end-of-central-dir signature at end of central dir."  Otherwise, the
+   results seem to have been correct.  (list.c) [SMS]
+ - Added a Windows-specific "#pragma comment" directive for the bzip2
+   object library in the UnZip object library example program, solving a
+   build failure on Windows.  (libiz/izunzip_example.c) [SMS]
+ - In the Unix builder, added "LANG=C" to the generation rules ("man",
+   nroff) for the ".txt[r]" plain-text formatted "man" files.  This
+   prevents a Unicode locale at build time from affecting the results.
+   (unix/Makefile) [SMS]
+ - Changed a variable type, and added type casts to clear some (VS 2017)
+   compiler warnings involving AES_WG encryption on x64 (using
+   aes_wg/fileenc.c:fcrypt_init()).  (api.c, crypt.c) [SMS]
+ - Tidied Windows vc10 builders, mostly for x64, but some more generally.
+   The bzip2 code (bzip2\compress.c) may trigger a harmless warning on
+   x64.  Made AES_WG support the default (C macro: CRYPT_AES_WG).
+   (win32/vc10/funzip/funzip.vcxproj,
+   win32/vc10/unzipsfx/unzipsfx.vcxproj,
+   windll/vc10/unzip32_dll/unzip32_dll.vcxproj, winlib/vc10/winlib.sln,
+   winlib/vc10/izunzip_example/izunzip_example.vcxproj,
+   winlib/vc10/winlib/winlib.vcxproj) [SMS]
+ - Build failed with an old C compiler (HP-UX PA-RISC bundled).  In
+   process.c:process_zipfiles(), an insufficiently primitve variable
+   declaration.  In unzip.c:UzpVersionStr(), a defective array
+   declaration/initialization.  (process.c, unzip.c) [SMS]
+ - Sloppy code caused various run-time errors when built with an old C
+   compiler (HP-UX PA-RISC bundled).  Typical error messages included:
+    "zipinfo:  Streaming input archive not supported in ZipInfo mode."
+    "End-of-central-directory signature not found."
+   (fileio.c, process.c) [SMS]

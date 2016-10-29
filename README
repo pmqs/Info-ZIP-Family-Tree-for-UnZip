@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.1c (BETA).
-   Document date: 2015-04-15
+   Document date: 2016-04-07
 
 ------------------------------------------------------------------------
 
@@ -132,8 +132,8 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
    - New option "-so"/"--options" lists all available options.
    - New option "-sc"/"--commandline" shows the input command line and
      exits.
-   - New "--license" option lists the license.  This allows distribution
-     without additional documentation.
+   - New "--license" option displays the license.  This allows program
+     distribution without additional documentation.
 
 - Behavior change: Now, by default, date-time information is restored on
   extracted files only, not on created directories.  Use "-D" to restore
@@ -169,7 +169,7 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
   query should always show the file-system path/name which has the
   conflict (including the effects of any "-d exdir" or "-j[=N]"
   options), and a user-specified "rename" (file-system) path/name should
-  be used as-specified.
+  be used as specified.
 
 - New -da/--auto-extract-dir option to specify a destination directory
   for extracted files which is derived from the base name of the
@@ -271,6 +271,9 @@ welcome, as are feature requests and other suggestions, and even general
 usage questions (ideally on topics which are not already well explained
 in the existing documentation).
 
+   This is especially true for UnZip 6.1c, because of the extent of the
+changes made since UnZip 6.10b.
+
    The developers also use an internal e-mail discussion forum, with a
 Web-form submission gateway ("Info-ZIP Bug Report") at:
       http://info-zip.org/zip-bug.html
@@ -322,5 +325,20 @@ suggest).  A to-do list is kept in the file ToDo, which is a reasonable
 place to start for anyone wishing to contribute.  There are many
 projects, small and large (some, _very_ large), listed there.  New
 contributors are welcome.
+
+   We try to acknowledge contributions in the release notes (History.*,
+and so on), but sometimes we fail.  If you deserve credit for some
+contribution but don't see it, please let us know, and we'll try again
+in the next release.
+
+------------------------------------------------------------------------
+
+      Apology
+      -------
+
+   Too much time has passed between the releases of UnZip versions 6.10b
+and 6.1c.  UnZip 6.1c lacks support for some new features in Zip 3.1d. 
+We'll try to get the missing features into UnZip 6.1d, and to get the
+final UnZip 6.1 released in a more timely way.
 
 ------------------------------------------------------------------------

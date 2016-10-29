@@ -1,9 +1,8 @@
 @echo off
-
 rem #    UnZip test script (Windows command).
 rem #
 rem #-----------------------------------------------------------------------
-rem # Copyright (c) 2012-2013 Info-ZIP.  All rights reserved.
+rem # Copyright (c) 2012-2016 Info-ZIP.  All rights reserved.
 rem #
 rem # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 rem # contents of which are also included in zip.h) for terms of use.  If,
@@ -11,20 +10,36 @@ rem # for some reason, all these files are missing, the Info-ZIP license
 rem # may also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
 rem #-----------------------------------------------------------------------
 rem #
+rem # Command-line arguments:
+rem #
 rem #    %1 = test archive name.  Default: testmake.zip
 rem #    %2 = program directory (relative).  Default: .
-rem #    %3 = non-null to skip funzip and SFX tests.
+rem #    %3 = Specific UnZip program name to test.  Default: Test unzip,
+rem #         funzip, and unzipsfx.  (Specifying a specific program
+rem #         skips the funzip and unzipsfx tests.)
+rem #
+rem # History:
+rem #
+rem #    2016-06-15  SMS.  Changed %3 from a non-null token to a
+rem #    specific UnZip program name.
+rem #    Changed to leave the temporary test directory
+rem #    ("test_dir_%RANDOM%") intact if the test-fail count is
+rem #    positive.
 rem #
 rem #    2013-06-12  SMS.  New.  Adapted from unix/test_unzip.sh
 rem #
 rem # Typical usage:
 rem #    win32\test_unzip.cmd testmake.zip win32\vc10\Debug
-rem #    win32\test_unzip.cmd testmake_ppmd.zip win32\vc10\Debug NOFUNSFX
+rem #    win32\test_unzip.cmd testmake_ppmd.zip win32\vc10\Debug unzip
+rem #    win32\test_unzip.cmd testmake.zip windll\vc10\Debug unzipstb
+rem #    win32\test_unzip.cmd testmake.zip winlib\vc10\Debug izunzip_example
 
 setlocal enabledelayedexpansion
 
 set t_a=testmake.zip
 set prd=.
+
+rem # Test archive name.
 
 if "%1" == "" (
     set test_archive=%t_a%
@@ -36,6 +51,8 @@ if "%1" == "" (
     )
 )
 
+rem # Program directory.
+
 if "%2" == "" (
     set prod=%prd%
 ) else (
@@ -46,23 +63,27 @@ if "%2" == "" (
     )
 )
 
+rem # Program list and UnZip program name.
+
+if "%3" == "" (
+    set program_list=unzip funzip unzipsfx
+    set unzip_prog=unzip
+) else (
+    set program_list=%3
+    set unzip_prog=%3
+)
+
 set /a pass=0
 set /a fail=0
 
-rem # Clean environment.
+rem # Arrange a clean test environment.
 
 set UNZIP=
 set UNZIPOPT=
 set ZIPINFO=
 set ZIPINFOOPT=
 
-rem # Check for existence of expected programs.
-
-if "%3" == "" (
-    set program_list=funzip unzip unzipsfx
-) else (
-    set program_list=unzip
-)
+rem # Check for existence of expected program(s).
 
 for %%p in (%program_list%) do (
     set prog=%%p
@@ -95,9 +116,9 @@ set member_2=testmake.zipinfo
 rem # Test simple UnZip extraction.
 
 echo.
-echo ^>^>^> UnZip extraction test...'
+echo ^>^>^> UnZip extraction test...
 
-..\%prod%\unzip -b ..\%test_archive% %member_1%
+..\%prod%\%unzip_prog% -b ..\%test_archive% %member_1%
 set status=!ERRORLEVEL!
 
 if not !status! == 0 (
@@ -122,7 +143,7 @@ rem # (Use "-a" to get proper local line endings for "-Z" test below.)
 echo.
 echo ^>^>^> UnZip "-x" extraction test...
 
-..\%prod%\unzip -ao ..\%test_archive% -x %member_1%
+..\%prod%\%unzip_prog% -ao ..\%test_archive% -x %member_1%
 set status=!ERRORLEVEL!
 
 if not !status! == 0 (
@@ -147,7 +168,7 @@ echo ^>^>^> UnZip "-d dest_dir" extraction test...
 
 if exist %member_1% (
 
-    ..\%prod%\unzip -bo ..\%test_archive% -d dest_dir %member_1%
+    ..\%prod%\%unzip_prog% -bo ..\%test_archive% -d dest_dir %member_1%
     set status=!ERRORLEVEL!
 
     if not !status! == 0 (
@@ -173,7 +194,7 @@ if exist %member_1% (
         )
     )
 ) else (
-    echo ^>^>^> Fail: The UnZip "-d" test relies on success in the UnZip "-x" test."
+    echo ^>^>^> Fail: The UnZip "-d" test relies on success in the UnZip "-x" test.
     set /a fail=%fail% + 1
 )
 
@@ -182,7 +203,7 @@ rem # Test UnZip extraction with "-o" option.
 echo.
 echo ^>^>^> UnZip "-o" extraction test...
 
-..\%prod%\unzip -bo ..\%test_archive% %member_1%
+..\%prod%\%unzip_prog% -bo ..\%test_archive% %member_1%
 set status=!ERRORLEVEL!
 
 if not !status! == 0 (
@@ -206,7 +227,7 @@ echo ^>^>^> ZipInfo ("unzip -Z") test...
 if exist %member_2% (
 
     cd ..
-    %prod%\unzip -Z -mc- %test_archive% > %tmp_dir%\testmake.unzip-Z
+    %prod%\%unzip_prog% -Z -mc- %test_archive% > %tmp_dir%\testmake.unzip-Z
     set status=!ERRORLEVEL!
     cd %tmp_dir%
 
@@ -223,7 +244,7 @@ if exist %member_2% (
             echo ^>^>^> Pass.
             set /a pass=%pass% + 1
         ) else (
-            echo ^>^>^> Fail: ZipInfo output mismatch."
+            echo ^>^>^> Fail: ZipInfo output mismatch.
 
 echo ^>^>^> ###   ZipInfo output does not match the expected output.
 echo ^>^>^> ###   ^(If the only difference is in the date-time values, then this may
@@ -233,7 +254,7 @@ echo ^>^>^> ###   be caused by a time-zone difference, which may not be importan
         )
     )
 ) else (
-    echo ^>^>^> Fail: The ZipInfo test relies on success in the UnZip test."
+    echo ^>^>^> Fail: The ZipInfo test relies on success in the UnZip test.
     set /a fail=%fail% + 1
 )
 
@@ -280,7 +301,6 @@ if "%3" == "" (
     )
 )
 
-
 rem # Test UnZipSFX.
 
 if "%3" == "" (
@@ -310,7 +330,7 @@ if "%3" == "" (
                     echo ^>^>^> Pass.
                     set /a pass=%pass% + 1
                 ) else (
-                    echo ^>^>^> Fail: Extracted file contents mismatch."
+                    echo ^>^>^> Fail: Extracted file contents mismatch.
                     set /a fail=%fail% + 1
                 )
             ) else (
@@ -324,7 +344,7 @@ if "%3" == "" (
     )
 )
 
-rem Expected results.
+rem # Expected results.
 
 set fail_expected=0
 if "%3" == "" (
@@ -333,7 +353,7 @@ if "%3" == "" (
     set pass_expected=5
 )
 
-rem Result summary.
+rem # Result summary.
 
 echo.
 echo ^>^>^> Test Results:   Pass: %pass%, Fail: %fail%
@@ -345,10 +365,17 @@ if not %exit_status% == 0 (
 )
 echo.
 
-rem # Clean up.
+rem # Clean up.  Delete the temporary test directory, unless a test
+rem # fails unexpectedly.
 
 cd %dir_orig%
-if exist %tmp_dir% rmdir /q /s %tmp_dir%
+if %fail% == %fail_expected% (
+    if exist %tmp_dir% rmdir /q /s %tmp_dir%
+) else (
+    echo ^>^>^> ###   See files in: %tmp_dir%
+    echo.
+)
+
 
 rem # Exit with an appropriate status value.
 

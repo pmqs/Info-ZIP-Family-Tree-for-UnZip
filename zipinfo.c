@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -494,7 +494,8 @@ static ZCONST char Far *method[NUM_METHODS] = {
 /*  Function zi_opts()  */
 /************************/
 
-int zi_opts(__G__ pargc, pargv)
+int zi_opts(__G__ opts, pargc, pargv)
+    ZCONST struct option_struct *opts;
     int *pargc;
     char ***pargv;
     __GDEF
@@ -523,6 +524,8 @@ int zi_opts(__G__ pargc, pargv)
     int fna = 0;          /* current first non-opt arg */
     int optnum = 0;       /* index in table */
     int showhelp = 0;     /* for --commandline */
+    int dashdash = 0;     /* Have seen "--". */
+
 
     /* since get_option() returns xfiles and files one at a time, store them in
        linked lists until have them all */
@@ -596,7 +599,7 @@ int zi_opts(__G__ pargc, pargv)
      * the "while" loop, this storage will be free()'d.
      */
 
-    while ((option = get_option( __G__ ZIO, &args, &argcnt, &argnum,
+    while ((option = get_option( __G__ opts, &args, &argcnt, &argnum,
                                 &optchar, &value, &negative,
                                 &fna, &optnum, 0)))
     {
@@ -609,124 +612,124 @@ int zi_opts(__G__ pargc, pargv)
 
         switch (option)
         {
-                case '1':      /* shortest listing:  JUST filenames */
-                    if (negative)
-                        uO.lflag = -2;
-                    else
-                        uO.lflag = 1;
-                    break;
-                case '2':      /* just filenames, plus headers if specified */
-                    if (negative)
-                        uO.lflag = -2;
-                    else
-                        uO.lflag = 2;
-                    break;
+            case '1':      /* shortest listing:  JUST filenames */
+                if (negative)
+                    uO.lflag = -2;
+                else
+                    uO.lflag = 1;
+                break;
+            case '2':      /* just filenames, plus headers if specified */
+                if (negative)
+                    uO.lflag = -2;
+                else
+                    uO.lflag = 2;
+                break;
 #ifndef CMS_MVS
-                case ('C'):    /* -C:  match filenames case-insensitively */
-                    if (negative)
-                        uO.C_flag = FALSE;
-                    else
-                        uO.C_flag = TRUE;
-                    break;
+            case ('C'):    /* -C:  match filenames case-insensitively */
+                if (negative)
+                    uO.C_flag = FALSE;
+                else
+                    uO.C_flag = TRUE;
+                break;
 #endif /* !CMS_MVS */
-                case 'h':      /* header line */
-                    if (negative)
-                        hflag_2 = hflag_slmv = FALSE;
-                    else {
-                        hflag_2 = hflag_slmv = explicit_h = TRUE;
-                        if (uO.lflag == -1)
-                            uO.lflag = 0;
-                    }
-                    break;
+            case 'h':      /* header line */
+                if (negative)
+                    hflag_2 = hflag_slmv = FALSE;
+                else {
+                    hflag_2 = hflag_slmv = explicit_h = TRUE;
+                    if (uO.lflag == -1)
+                        uO.lflag = 0;
+                }
+                break;
 #if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
 # ifdef UNIX
-                case ('I'):    /* -I:  map ISO name to internal */
-                    strncpy( G.iso_cp, value, sizeof( G.iso_cp));
-                    break;
+            case ('I'):    /* -I:  map ISO name to internal */
+                strncpy( G.iso_cp, value, sizeof( G.iso_cp));
+                break;
 # endif /* def UNIX */
 #endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
-                case 'l':      /* longer form of "ls -l" type listing */
-                    if (negative)
-                        uO.lflag = -2;
-                    else
-                        uO.lflag = 5;
-                    break;
-                case (o_LI):    /* show license */
-                    showhelp = -1;
-                    break;
-                case 'm':      /* medium form of "ls -l" type listing */
-                    if (negative)
-                        uO.lflag = -2;
-                    else
-                        uO.lflag = 4;
-                    break;
-                case (o_mc):   /* show separate dir/file/link member counts */
-                    if (negative)
-                        uO.member_counts = -1;
-                    else
-                        uO.member_counts = 1;
-                    break;
+            case 'l':      /* longer form of "ls -l" type listing */
+                if (negative)
+                    uO.lflag = -2;
+                else
+                    uO.lflag = 5;
+                break;
+            case (o_LI):    /* show license */
+                showhelp = -1;
+                break;
+            case 'm':      /* medium form of "ls -l" type listing */
+                if (negative)
+                    uO.lflag = -2;
+                else
+                    uO.lflag = 4;
+                break;
+            case (o_mc):   /* show separate dir/file/link member counts */
+                if (negative)
+                    uO.member_counts = -1;
+                else
+                    uO.member_counts = 1;
+                break;
 #ifdef MORE
-                case 'M':      /* send output through built-in "more" */
-                    if (negative)
-                        G.M_flag = FALSE;
-                    else
-                        G.M_flag = TRUE;
-                    break;
+            case 'M':      /* send output through built-in "more" */
+                if (negative)
+                    G.M_flag = FALSE;
+                else
+                    G.M_flag = TRUE;
+                break;
 #endif
 # if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
 # ifdef UNIX
-                case ('O'):    /* -O:  map OEM name to internal */
-                    strncpy( G.oem_cp, value, sizeof( G.oem_cp));
-                    break;
+            case ('O'):    /* -O:  map OEM name to internal */
+                strncpy( G.oem_cp, value, sizeof( G.oem_cp));
+                break;
 # endif /* def UNIX */
 #endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
-                case 's':      /* default:  shorter "ls -l" type listing */
-                    if (negative)
-                        uO.lflag = -2;
-                    else
-                        uO.lflag = 3;
-                    break;
+            case 's':      /* default:  shorter "ls -l" type listing */
+                if (negative)
+                    uO.lflag = -2;
+                else
+                    uO.lflag = 3;
+                break;
 #ifndef SFX
-                case (o_sc):   /* show processed command line and exit */
-                    *pargc = -1;
-                    showhelp = -3;
-                    break;
+            case (o_sc):   /* show processed command line and exit */
+                *pargc = -1;
+                showhelp = -3;
+                break;
 
-                case (o_so):   /* show processed command line and exit */
-                    *pargc = -1;
-                    showhelp = -2;
-                    break;
+            case (o_so):   /* show processed command line and exit */
+                *pargc = -1;
+                showhelp = -2;
+                break;
 #endif /* ndef SFX */
-                case 't':      /* totals line */
-                    if (negative)
-                        tflag_2v = tflag_slm = FALSE;
-                    else {
-                        tflag_2v = tflag_slm = explicit_t = TRUE;
-                        if (uO.lflag == -1)
-                            uO.lflag = 0;
-                    }
-                    break;
-                case ('T'):    /* use (sortable) decimal time format */
-                    if (negative)
-                        uO.T_flag = FALSE;
-                    else
-                        uO.T_flag = TRUE;
-                    break;
+            case 't':      /* totals line */
+                if (negative)
+                    tflag_2v = tflag_slm = FALSE;
+                else {
+                    tflag_2v = tflag_slm = explicit_t = TRUE;
+                    if (uO.lflag == -1)
+                        uO.lflag = 0;
+                }
+                break;
+            case ('T'):    /* use (sortable) decimal time format */
+                if (negative)
+                    uO.T_flag = FALSE;
+                else
+                    uO.T_flag = TRUE;
+                break;
 #ifdef UNICODE_SUPPORT
-                case ('U'):    /* escape UTF-8, or disable UTF-8 support */
-                    if (negative)
-                        uO.U_flag = IZ_MAX(uO.U_flag - 1, 0);
-                    else
-                        uO.U_flag++;
-                    break;
+            case ('U'):    /* escape UTF-8, or disable UTF-8 support */
+                if (negative)
+                    uO.U_flag = IZ_MAX(uO.U_flag - 1, 0);
+                else
+                    uO.U_flag++;
+                break;
 #endif /* UNICODE_SUPPORT */
-                case 'v':      /* turbo-verbose listing */
-                    if (negative)
-                        uO.lflag = -2;
-                    else
-                        uO.lflag = 10;
-                    break;
+            case 'v':      /* turbo-verbose listing */
+                if (negative)
+                    uO.lflag = -2;
+                else
+                    uO.lflag = 10;
+                break;
 #ifndef SFX
             case (o_ve):   /* version */
                 if (negative)
@@ -751,69 +754,81 @@ int zi_opts(__G__ pargc, pargv)
 #endif /* ndef SFX */
 
 #ifdef WILD_STOP_AT_DIR
-                case ('W'):    /* Wildcard interpretation (stop at '/'?) */
-                    if (negative)
-                        uO.W_flag = FALSE;
-                    else
-                        uO.W_flag = TRUE;
-                    break;
+            case ('W'):    /* Wildcard interpretation (stop at '/'?) */
+                if (negative)
+                    uO.W_flag = FALSE;
+                else
+                    uO.W_flag = TRUE;
+                break;
 #endif /* WILD_STOP_AT_DIR */
-                case ('x'):     /* Exclude.  Add -x file to linked list. */
-                    if (in_xfiles_count == 0) {
-                        /* first entry */
-                        if ((in_xfiles = (struct file_list *) izu_malloc(
-                         sizeof(struct file_list))) == NULL) {
-                            Info(slide, 0x401, ((char *)slide,
-                             LoadFarString(NoMemArguments)));
-                            /* Leaving early.  Free it. */
-                            FREE_NON_NULL( value);
-                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
-                            return PK_MEM;
-                        }
-                        in_xfiles->name = value;
-                        in_xfiles->next = NULL;
-                        next_in_xfiles = in_xfiles;
-                    } else {
-                        /* add next entry */
-                        if ((next_file = (struct file_list *) izu_malloc(
-                         sizeof(struct file_list))) == NULL) {
-                            Info(slide, 0x401, ((char *)slide,
-                             LoadFarString(NoMemArguments)));
-                            /* Leaving early.  Free it. */
-                            FREE_NON_NULL( value);
-                            UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
-                            return PK_MEM;
-                        }
-                        next_in_xfiles->next = next_file;
-                        next_file->name = value;
-                        next_file->next = NULL;
-                        next_in_xfiles = next_file;
+            case ('x'):     /* Exclude.  Add -x file to linked list. */
+                if (in_xfiles_count == 0) {
+                    /* first entry */
+                    if ((in_xfiles = (struct file_list *) izu_malloc(
+                     sizeof(struct file_list))) == NULL) {
+                        Info(slide, 0x401, ((char *)slide,
+                         LoadFarString(NoMemArguments)));
+                        /* Leaving early.  Free it. */
+                        FREE_NON_NULL( value);
+                        UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
+                        return PK_MEM;
                     }
-                    in_xfiles_count++;
-                    value = NULL;       /* In use.  Don't free it. */
-                case 'z':      /* print zipfile comment */
-                    if (negative)
-                        uO.zflag = 0;
-                    else
-                        uO.zflag = 1;
-                    break;
-                case 'Z':      /* ZipInfo mode:  ignore */
-                    break;
-                case o_NON_OPTION_ARG:
-                    /* not an option */
-                    /* no more options as permuting */
+                    in_xfiles->name = value;
+                    in_xfiles->next = NULL;
+                    next_in_xfiles = in_xfiles;
+                } else {
+                    /* add next entry */
+                    if ((next_file = (struct file_list *) izu_malloc(
+                     sizeof(struct file_list))) == NULL) {
+                        Info(slide, 0x401, ((char *)slide,
+                         LoadFarString(NoMemArguments)));
+                        /* Leaving early.  Free it. */
+                        FREE_NON_NULL( value);
+                        UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
+                        return PK_MEM;
+                    }
+                    next_in_xfiles->next = next_file;
+                    next_file->name = value;
+                    next_file->next = NULL;
+                    next_in_xfiles = next_file;
+                }
+                in_xfiles_count++;
+                value = NULL;       /* In use.  Don't free it. */
+            case 'z':      /* print zipfile comment */
+                if (negative)
+                    uO.zflag = 0;
+                else
+                    uO.zflag = 1;
+                break;
+            case 'Z':      /* ZipInfo mode:  ignore */
+                break;
+            case o_NON_OPTION_ARG:
+                /* Not an option.  (Because of permutation, no more
+                 * "-" options are expected henceforth.)
+                 * "--" also appears here.
+                 */
 
-
+                /* First "--" is ignored (and stops arg processing for
+                 * remaining args).
+                 */
+                if ((strcmp( value, "--") == 0) && (dashdash == 0))
+                {
+                  dashdash = 1;
+                }
+                else
+                {
                     if (G.wildzipfn == NULL) {
                         /* first non-option argument is zip file */
                         G.wildzipfn = value;
-
-                    } else {
+                    }
+                    else
+                    {
                         /* add include file to list */
                         if (in_files_count == 0) {
                             /* first entry */
-                            if ((next_file = (struct file_list *) izu_malloc(
-                             sizeof(struct file_list))) == NULL) {
+                            if ((next_file = (struct file_list *)
+                             izu_malloc( sizeof(struct file_list))) == NULL)
+                            {
                                 Info(slide, 0x401, ((char *)slide,
                                  LoadFarString(NoMemArguments)));
                                 /* Leaving early.  Free it. */
@@ -825,10 +840,13 @@ int zi_opts(__G__ pargc, pargv)
                             next_file->next = NULL;
                             in_files = next_file;
                             next_in_files = next_file;
-                        } else {
+                        }
+                        else
+                        {
                             /* add next entry */
-                            if ((next_file = (struct file_list *) izu_malloc(
-                             sizeof(struct file_list))) == NULL) {
+                            if ((next_file = (struct file_list *)
+                             izu_malloc( sizeof(struct file_list))) == NULL)
+                            {
                                 Info(slide, 0x401, ((char *)slide,
                                  LoadFarString(NoMemArguments)));
                                 /* Leaving early.  Free it. */
@@ -843,16 +861,17 @@ int zi_opts(__G__ pargc, pargv)
                         }
                         in_files_count++;
                     }
-                    value = NULL;       /* In use.  Don't free it. */
-                    break;
-                default:
-                    error = TRUE;
-                    break;
-        } /* switch */
+                }
+                value = NULL;       /* In use.  Don't free it. */
+                break;
+            default:
+                error = TRUE;
+                break;
+        } /* switch (option) */
 
         FREE_NON_NULL( value);          /* Free it now, if it's not in use. */
 
-    } /* get_option() */
+    } /* while (get_option()) */
 
 
     if (showhelp == -1)
@@ -1066,7 +1085,9 @@ void zi_end_central(__G)
 int zipinform(__G)   /* return PK-type error code */
     __GDEF
 {
-    int do_this_file=FALSE, error, error_in_archive=PK_COOL;
+    int do_this_file = FALSE;
+    int error;
+    int error_in_archive = PK_COOL;
     int *fn_matched=NULL, *xn_matched=NULL;
     ulg j;
     ulg members = 0L;
@@ -1079,6 +1100,7 @@ int zipinform(__G)   /* return PK-type error code */
     zusz_t tot_csize=0L, tot_ucsize=0L;
     zusz_t endprev;   /* buffers end of previous entry for zi_long()'s check
                        *  of extra bytes */
+    long enddigsig_len;
 
 
 /*---------------------------------------------------------------------------
@@ -1115,12 +1137,27 @@ int zipinform(__G)   /* return PK-type error code */
     /* reset endprev for new zipfile; account for multi-part archives (?) */
     endprev = (G.crec.relative_offset_local_header == 4L)? 4L : 0L;
 
+    enddigsig_len = -1;
 
-    for (j = 1L;; j++) {
+    for (j = 1L; ; j++)
+    {
         if (readbuf(__G__ G.sig, 4) == 0) {
             error_in_archive = PK_EOF;
             break;
         }
+
+        if (memcmp(G.sig, central_digsig_sig, 4) == 0)
+        { /* Central directory digital signature.  Record its
+           * existence.  Read (and, for now, ignore) the data.
+           */
+          error = process_cdir_digsig( __G__ &enddigsig_len);
+          if (error != PK_OK)
+          {
+            error_in_archive = error;   /* Record the error code. */
+            break;
+          }
+        } /* process_cdir_digsig() should have read the next sig. */
+
         if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a CentDir entry? */
             /* no new central directory entry
              * -> is the number of processed entries compatible with the
@@ -1349,12 +1386,11 @@ int zipinform(__G)   /* return PK-type error code */
 
 
     /* Skip the following checks in case of a premature listing break. */
-    if (error_in_archive <= PK_WARN) {
-
+    if (error_in_archive <= PK_WARN)
+    {
 /*---------------------------------------------------------------------------
     Double check that we're back at the end-of-central-directory record.
   ---------------------------------------------------------------------------*/
-
         if ( (memcmp(G.sig,
                      (G.ecrec.have_ecr64 ?
                       end_central64_sig : end_central_sig),
@@ -1363,7 +1399,17 @@ int zipinform(__G)   /* return PK-type error code */
             && (memcmp(G.sig, end_central_sig, 4) != 0)
            ) {          /* just to make sure again */
             Info(slide, 0x401, ((char *)slide, LoadFarString(EndSigMsg)));
-            error_in_archive = PK_WARN;   /* didn't find sig */
+            error_in_archive = PK_WARN;   /* Didn't find EOCD sig. */
+        }
+
+        if (enddigsig_len >= 0)
+        {
+          Info( slide, 0x401, ((char *)slide, LoadFarString( DigSigMsg),
+           enddigsig_len));
+# if 0   /* Enable to make this a warning. */
+          if (error_in_archive < PK_WARN)       /* Keep more severe error. */
+            error_in_archive = PK_WARN;		
+# endif /* 0 */
         }
 
         /* Set specific return code when no files have been found. */
@@ -2546,7 +2592,18 @@ static int zi_short(__G)   /* return PK-type error code */
         ush  dnum=(ush)((G.crec.general_purpose_bit_flag>>1) & 3);
         methbuf[3] = dtype[dnum];
     } else if (methnum >= NUM_METHODS) {   /* unknown */
-        sprintf(&methbuf[1], "%03u", G.crec.compression_method);
+        /* 2016-12-05 SMS.
+         * https://launchpad.net/bugs/1643750  CVE-2016-9844.
+         * Unexpectedly large compression methods overflow
+         * &methbuf[].  Use the old, three-digit decimal format
+         * for values which fit.  Otherwise, sacrifice the "u",
+         * and use four-digit hexadecimal.
+         */
+        if (G.crec.compression_method <= 999) {
+            sprintf( &methbuf[ 1], "%03u", G.crec.compression_method);
+        } else {
+            sprintf( &methbuf[ 0], "%04X", G.crec.compression_method);
+        }
     }
 
     memset( attribs, ' ', (sizeof( attribs)- 1));

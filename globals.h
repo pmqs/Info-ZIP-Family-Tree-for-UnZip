@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -195,8 +195,15 @@ typedef struct Globals {
     zvoid *callerglobs; /* pointer to structure of pass-through global vars */
 # endif
 
+    /* Program version string for unzip.c:UzpVersionStr(). */
+    char prog_vers_str[ 32];
+
     /* command options of general use */
     UzpOpts UzO;        /* command options of general use */
+
+    /* Option processing. */
+    int permute_opts_args;      /* !0: Return "-" options first. */
+    int dashdash_ends_opts;     /* !0: "--" ends options. */
 
 # ifndef FUNZIP
     /* command options specific to the high level command line interface */
@@ -273,7 +280,7 @@ typedef struct Globals {
 
     char **pfnames;
     char **pxnames;
-    char sig[4];
+    uch sig[4];
     char answerbuf[10];
     min_info info[DIR_BLKSIZ];
     min_info *pInfo;
@@ -499,6 +506,8 @@ typedef struct Globals {
 
 #  ifdef ENABLE_USER_PROGRESS
     ZCONST char *action_msg_str;        /* Mthd str used with ActionMsg[]. */
+    int u_p_not_first;                          /* First time flag. */
+    char u_p_nodename[ U_P_NODENAME_LEN+ 1];    /* "host::tty". */
 #  endif /* def ENABLE_USER_PROGRESS */
 
 # endif /* ndef FUNZIP */
@@ -518,16 +527,17 @@ typedef struct Globals {
 
 Uz_Globs *globalsCtor   OF((void));
 
-/* pseudo constant sigs; they are initialized at runtime so unzip executable
- * won't look like a zipfile
+/* Pseudo-constant sigs.  They are partially initialized at runtime, so
+ * that a program executable won't look like a zip archive.  See
+ * globals.c and process.c:process_zipfiles().
  */
-extern char local_hdr_sig[4];
-extern char central_hdr_sig[4];
-extern char end_central_sig[4];
-extern char end_central32_sig[4];
-extern char end_central64_sig[4];
-extern char end_centloc64_sig[4];
-/* extern char extd_local_sig[4];  NOT USED YET */
+extern uch central_digsig_sig[ 4];
+extern uch central_hdr_sig[ 4];
+extern uch end_centloc64_sig[ 4];
+extern uch end_central_sig[ 4];
+extern uch end_central64_sig[ 4];
+/* extern uch extd_local_sig[ 4]; */   /* NOT USED YET */
+extern uch local_hdr_sig[ 4];
 
 # ifdef REENTRANT
 #  define G                   (*(Uz_Globs *)pG)

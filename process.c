@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -27,6 +27,7 @@
              get_cdir_ent()
   (ext)      process_cdir_file_hdr()
   (ext)      process_local_file_hdr()
+  (ext)      process_cdir_digsig()
   (ext)      getZip64Data()
   (ext)      ef_scan_for_izux()
   (ext)      getRISCOSexfield()
@@ -257,7 +258,7 @@ static zoff_t file_size(fh)
 
 #ifdef USE_STRM_INPUT
     /* Seek to actual EOF. */
-    sts = zfseeko(file, 0, SEEK_END);
+    sts = zfseeko(file, (zoff_t)0, SEEK_END);
     if (sts != 0) {
         /* fseeko() failed.  (Unlikely.) */
         ofs = EOF;
@@ -287,8 +288,8 @@ static zoff_t file_size(fh)
     }
 #else /* def USE_STRM_INPUT */
     /* Seek to actual EOF. */
-    ofs = zlseek(fh, 0, SEEK_END);
-    if (ofs == (zoff_t) -1) {
+    ofs = zlseek(fh, (zoff_t)0, SEEK_END);
+    if (ofs == (zoff_t)(-1)) {
         /* zlseek() failed.  (Unlikely.) */
         ofs = EOF;
     } else if (ofs < 0) {
@@ -299,7 +300,7 @@ static zoff_t file_size(fh)
            Won't be at actual EOF if offset was truncated.
         */
         ofs = zlseek(fh, ofs, SEEK_SET);
-        if (ofs == (zoff_t) -1) {
+        if (ofs == (zoff_t)(-1)) {
             /* zlseek() failed.  (Unlikely.) */
             ofs = EOF;
         } else {
@@ -601,7 +602,7 @@ static int rec_find(__G__ searchlen, signature, rec_size)
     /* return 0 when rec found, 1 when not found, 2 in case of read error */
     __GDEF
     zoff_t searchlen;
-    char* signature;
+    uch* signature;
     int rec_size;
 {
     int i, numblks, found=FALSE;
@@ -661,7 +662,7 @@ static int rec_find(__G__ searchlen, signature, rec_size)
 
         for (G.inptr = G.inbuf+INBUFSIZ-1;  G.inptr >= G.inbuf; --G.inptr)
             if ( (*G.inptr == (uch)0x50) &&         /* ASCII 'P' */
-                 !memcmp((char *)G.inptr, signature, 4) ) {
+                 !memcmp(G.inptr, signature, 4) ) {
                 G.incnt -= (int)(G.inptr - G.inbuf);
                 found = TRUE;
                 break;
@@ -925,9 +926,9 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
 
     if (G.ziplen <= INBUFSIZ) {
 #ifdef USE_STRM_INPUT
-        zfseeko(G.zipfd, 0L, SEEK_SET);
+        zfseeko(G.zipfd, (zoff_t)0, SEEK_SET);
 #else /* def USE_STRM_INPUT */
-        zlseek(G.zipfd, 0L, SEEK_SET);
+        zlseek(G.zipfd, (zoff_t)0, SEEK_SET);
 #endif /* def USE_STRM_INPUT [else] */
         if ((G.incnt = read(G.zipfd,(char *)G.inbuf,(unsigned int)G.ziplen))
             == (int)G.ziplen)
@@ -986,7 +987,7 @@ static int find_ecrec(__G__ searchlen)          /* return PK-class error */
       G.inptr-G.inbuf, G.inptr-G.inbuf);
 #endif
 
-    if (readbuf(__G__ (char *)byterec, ECREC_SIZE+4) == 0)
+    if (readbuf(__G__ byterec, ECREC_SIZE+4) == 0)
         return PK_EOF;
 
     G.ecrec.number_this_disk =
@@ -1841,6 +1842,11 @@ int process_zipfiles(__G)    /* return PK-type error code */
     int NumMissFiles;
     int NumWarnFiles;
     int NumWinFiles;
+# ifndef VMS
+#  ifdef ZSUFX2
+    char *zipfn_sufx_p;
+#  endif
+# endif
 #endif /* ndef SFX */
 
     int error = 0;
@@ -1872,14 +1878,18 @@ int process_zipfiles(__G)    /* return PK-type error code */
     CRC_32_TAB = NULL;
 #endif /* 0 */
 
-    /* finish up initialization of magic signature strings */
-    local_hdr_sig[0]  /* = extd_local_sig[0] */ =       /* ASCII 'P', */
-      central_hdr_sig[0] = end_central_sig[0] =         /* not EBCDIC */
-      end_centloc64_sig[0] = end_central64_sig[0] = 0x50;
+    /* Finish initialization of magic signature strings.
+     * Insert (ASCII, not EBCDIC) 'P' and 'K'.
+     */
+    central_digsig_sig[ 0] = central_hdr_sig[ 0] =
+     end_centloc64_sig[ 0] = end_central_sig[ 0] =
+     end_central64_sig[ 0] = /* extd_local_sig[ 0] = */
+     local_hdr_sig[ 0] = 0x50;                          /* 'P'. */
 
-    local_hdr_sig[1]  /* = extd_local_sig[1] */ =       /* ASCII 'K', */
-      central_hdr_sig[1] = end_central_sig[1] =         /* not EBCDIC */
-      end_centloc64_sig[1] = end_central64_sig[1] = 0x4B;
+    central_digsig_sig[ 1] = central_hdr_sig[ 1] =
+     end_centloc64_sig[ 1] = end_central_sig[ 1] =
+     end_central64_sig[ 1] = /* extd_local_sig[ 1] = */
+     local_hdr_sig[ 1] = 0x4b;                          /* 'K'. */
 
 /*---------------------------------------------------------------------------
     Make sure timezone info is set correctly; localtime() returns GMT on some
@@ -2097,7 +2107,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
                  */
                 /* Append ZSUFX to the archive name, and try again. */
 #  ifdef ZSUFX2
-                char *zipfn_sufx_p =    /* Save pointer for ZSUFX2, below. */
+                zipfn_sufx_p =          /* Save pointer for ZSUFX2, below. */
 #  endif
                  strcpy( zipfn_prev+ strlen( zipfn_prev), ZSUFX);
 
@@ -2247,7 +2257,7 @@ static int get_cdir_ent(__G)    /* return PK-type error code */
     usable struct (crec)).
   ---------------------------------------------------------------------------*/
 
-    if (readbuf(__G__ (char *)byterec, CREC_SIZE) == 0)
+    if (readbuf(__G__ byterec, CREC_SIZE) == 0)
         return PK_EOF;
 
     G.crec.version_made_by[0] = byterec[C_VERSION_MADE_BY_0];
@@ -2333,7 +2343,7 @@ int process_local_file_hdr(__G)    /* return PK-type error code */
     usable struct (lrec)).
   ---------------------------------------------------------------------------*/
 
-    if (readbuf(__G__ (char *)byterec, LREC_SIZE) == 0)
+    if (readbuf(__G__ byterec, LREC_SIZE) == 0)
         return PK_EOF;
 
     G.lrec.version_needed_to_extract[0] =
@@ -2362,6 +2372,71 @@ int process_local_file_hdr(__G)    /* return PK-type error code */
 
     return PK_COOL;
 } /* process_local_file_hdr(). */
+
+
+/**********************************/
+/* Function process_cdir_digsig() */
+/**********************************/
+
+int process_cdir_digsig(__G__ enddigsig_len_p)
+    __GDEF
+    long *enddigsig_len_p;
+{
+  uch *digsig_buf;
+  uch digsig_len[ 2];
+  long enddigsig_len;
+  int error = PK_OK;            /* Return PK-type status.  Assume success. */
+
+  /* Read the two-byte byte count. */
+  if (readbuf(__G__ digsig_len, 2) < 2)
+  {
+    Info(slide, 0x221, ((char *)slide,
+     LoadFarString( ErrorUnexpectedEOF), 2, G.zipfn));
+    error = PK_EOF;
+  }
+  else
+  { /* Good byte count data.  Assemble the value.  Return it, if requested. */
+    enddigsig_len = makeword( digsig_len);
+    if (enddigsig_len_p != NULL)
+    {
+      *enddigsig_len_p = enddigsig_len;
+    }
+    /* Allocate storage for data. */
+    digsig_buf = (uch *)izu_malloc( enddigsig_len);
+    if (digsig_buf == (uch *)NULL)
+    {
+      Info( slide, 0x401, ((char *)slide,
+       "Not enough memory for Central Dir digital signature"));
+      error = PK_MEM;
+    }
+    else
+    { /* Have storage.  Read the data. */
+      if ((long)readbuf(__G__ digsig_buf, enddigsig_len) < enddigsig_len)
+      {
+        Info(slide, 0x221, ((char *)slide,
+         LoadFarString( ErrorUnexpectedEOF), 21, G.zipfn));
+        error = PK_EOF;
+      }
+      else
+      {
+        /* Process digital signature here.  (Currently not done.) */
+        /* Then free its storage. */
+        izu_free( digsig_buf);
+
+        /* Read what should be the EOCD[64] signature. */
+        if (readbuf(__G__ G.sig, 4) < 4)
+        {
+          Info(slide, 0x221, ((char *)slide,
+           LoadFarString( ErrorUnexpectedEOF), 22, G.zipfn));
+          error = PK_EOF;
+        }
+      }
+    }
+  }
+
+  return error;
+
+} /* process_cdir_digsig(). */
 
 
 /*******************************/
@@ -2976,7 +3051,7 @@ char *wide_to_local_string(wide_string, escape_all)
   wchar_t wc;
   int b;
   int state_dependent;
-  int wsize = 0;
+  int wsize;
   int max_bytes = MB_CUR_MAX;
   char buf[9];
   char *buffer = NULL;
@@ -3312,23 +3387,31 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 # endif
 
 /*---------------------------------------------------------------------------
- *    This function scans the extra field for EF_TIME ("UT"), EF_IZUNIX2
- * ("Ux"), EF_IZUNIX ("UX"), or EF_PKUNIX (0x000d) blocks containing
- * Unix-style time_t (GMT) values for the entry's access, creation, and
- * modification time.
+ *    This function scans the extra field for the following blocks,
+ * containing Unix-compatible (time_t, UTC) file times and/or UID/GID.
+ *
+ * EF_PKUNIX  0x000d)     : 32-bit atime, mtime; 16-bit UID, GID;
+ *                          other, optional data (which we ignore?).
+ * EF_IZUNIX  0x5855 "UX"): 32-bit atime, mtime; 16-bit UID, GID.
+ *                          (Same as fixed part of EF_PKUNIX.)
+ * EF_IZUNIX2 0x7855 "Ux"): 16-bit UID, GID.  (No data in cent. dir.)
+ * EF_IZUNIX3 0x7875 "ux"): Variable-length UID, GID.
+ * EF_TIME    0x5455 "UT"): flags, 32-bit mtime?, atime?, ctime?.
+ *                          (Only mtime in central directory.)
+ *
  *    If a valid block is found (and the z_utim pointer is not NULL),
  * then the time stamps are copied to the iztimes structure.
- *    If an IZUNIX2 ("Ux") block is found or the IZUNIX ("UX") block
- * contains UID/GID fields, and the z_uidgid array pointer is not NULL,
- * then the owner info is transfered as well.
- *    The presence of an EF_TIME ("UT") or EF_IZUNIX2 ("Ux") block
- * results in ignoring all data from probably present, obsolete
- * EF_IZUNIX ("UX") blocks.
+ *    If an IZUNIX2 ("Ux") block is found or the IZUNIX ("UX") or PKUNIX
+ * block contains UID/GID fields, and the z_uidgid array pointer is not
+ * NULL, then the UID/GID data are also transfered.
+ *    The presence of an EF_TIME ("UT"), EF_IZUNIX2 ("Ux"), or
+ * EF_IZUNIX3 ("ux") block results in ignoring all data from probably
+ * present, obsolete EF_IZUNIX ("UX") blocks.
  *    If multiple blocks of the same type are found, then only the
  * information from the last block is used.
  *    The return value is a combination of the EF_TIME ("UT") Flags
- * field with an additional flag bit indicating the presence of valid
- * UID/GID info, or 0 in case of failure.
+ * field with an additional flag bit (EB_UX2_VALID) indicating the
+ * presence of valid UID/GID info (or 0 in case of failure).
   ---------------------------------------------------------------------------*/
 
     if (ef_len == 0 || ef_buf == NULL || (z_utim == 0 && z_uidgid == NULL))
@@ -3351,12 +3434,12 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 
         switch (eb_id) {
           case EF_TIME:         /* "UT" */
-            flags &= ~0x0ff;    /* ignore previous IZUNIX or EF_TIME fields */
+            flags &= ~EB_UT_FL_TIMES;   /* Ignore any previous times. */
             have_new_type_eb = 1;
             if ( eb_len >= EB_UT_MINLEN && z_utim != NULL) {
                 unsigned eb_idx = EB_UT_TIME1;
                 TTrace((stderr, "ef_scan_for_izux: found TIME extra field\n"));
-                flags |= (ef_buf[EB_HEADSIZE+EB_UT_FLAGS] & 0x0ff);
+                flags |= (ef_buf[EB_HEADSIZE+EB_UT_FLAGS] & EB_UT_FL_TIMES);
                 if ((flags & EB_UT_FL_MTIME)) {
                     if ((long)(eb_idx+4) <= eb_len) {
                         i_time = (long)makelong((EB_HEADSIZE+eb_idx) + ef_buf);
@@ -3378,7 +3461,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                               ut_in_archive_sgn = 0;
                               /* cannot determine sign of mtime;
                                  without modtime: ignore complete UT field */
-                              flags &= ~0x0ff;  /* no time_t times available */
+                              flags &= ~EB_UT_FL_TIMES;  /* No times. */
                               TTrace((stderr,
                                "  UT modtime range error; ignore e.f.!\n"));
                               break;            /* stop scanning this field */
@@ -3397,7 +3480,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                             if (!ut_zip_unzip_compatible) {
                               /* UnZip interprets mtime differently than Zip;
                                  without modtime: ignore complete UT field */
-                              flags &= ~0x0ff;  /* no time_t times available */
+                              flags &= ~EB_UT_FL_TIMES;  /* No times. */
                               TTrace((stderr,
                                "  UT modtime range error; ignore e.f.!\n"));
                               break;            /* stop scanning this field */
@@ -3493,10 +3576,13 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
             }
             break;
 
-          case EF_IZUNIX2:      /* "Ux" */
-            if (have_new_type_eb == 0) {
-                flags &= ~0x0ff;        /* ignore any previous IZUNIX field */
+          case EF_IZUNIX2:      /* "Ux", 16-bit UID, GID. */
+            if (have_new_type_eb == 0) {        /* (< 1) */
                 have_new_type_eb = 1;
+            }
+            if (have_new_type_eb <= 1) {
+                /* Ignore any prior (EF_IZUNIX/EF_PKUNIX) UID/GID. */
+                flags &= EB_UT_FL_TIMES;
             }
 # ifdef IZ_HAVE_UXUIDGID
             if (have_new_type_eb > 1)
@@ -3509,10 +3595,11 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 # endif
             break;
 
-          case EF_IZUNIX3:      /* "ux" */
+          case EF_IZUNIX3:      /* "ux", Variable-length UID, GID. */
             /* new 3rd generation Unix ef */
-            have_new_type_eb = 2;
-
+            have_new_type_eb = 2;       /* (Maximum newness, so no tests.) */
+            /* Ignore any prior EF_IZUNIX/EF_PKUNIX/EF_IZUNIX2 UID/GID. */
+            flags &= EB_UT_FL_TIMES;
         /*
           Version       1 byte      version of this extra field, currently 1
           UIDSize       1 byte      Size of UID field (min = 2)
@@ -3537,8 +3624,6 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                  */
                 unsigned uid_size;
                 unsigned gid_size;
-
-                flags &= ~0x0ff;        /* Ignore any previous UNIX field. */
 
                 uid_size = *((EB_HEADSIZE + 1) + ef_buf);
 
@@ -3565,7 +3650,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
 # endif /* def IZ_HAVE_UXUIDGID */
             break;
 
-          case EF_IZUNIX:       /* "UX" */
+          case EF_IZUNIX:       /* "UX", atime, mtime; 16-bit UID, GID. */
           case EF_PKUNIX:       /* 0x000d (Same layout as IZUNIX) */
             if (eb_len >= EB_UX_MINLEN) {
                 TTrace((stderr, "ef_scan_for_izux: found %s extra field\n",
@@ -3591,7 +3676,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                             ut_in_archive_sgn = 0;
                             /* cannot determine sign of mtime;
                                without modtime: ignore complete UT field */
-                            flags &= ~0x0ff;    /* no time_t times available */
+                            flags &= ~EB_UT_FL_TIMES;   /* No times. */
                             TTrace((stderr,
                              "  UX modtime range error: ignore e.f.!\n"));
                         }
@@ -3609,7 +3694,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                         if (!ut_zip_unzip_compatible) {
                             /* UnZip interpretes mtime differently than Zip;
                                without modtime: ignore complete UT field */
-                            flags &= ~0x0ff;    /* no time_t times available */
+                            flags &= ~EB_UT_FL_TIMES;   /* No times. */
                             TTrace((stderr,
                              "  UX modtime range error: ignore e.f.!\n"));
                         }
@@ -3629,7 +3714,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                         } else if (ut_in_archive_sgn == 1) {
                             z_utim->atime =
                               (time_t)((ulg)i_time & (ulg)0xffffffffL);
-                        } else if (flags & 0x0ff) {
+                        } else if (flags & EB_UT_FL_TIMES) {
                             /* sign of 32-bit time is unknown -> ignore it */
                             flags &= ~EB_UT_FL_ATIME;
                             TTrace((stderr,
@@ -3640,7 +3725,7 @@ unsigned ef_scan_for_izux(ef_buf, ef_len, ef_is_c, dos_mdatetime,
                     }
 # else /* def TIME_T_TYPE_DOUBLE */
                     if (((ulg)(i_time) & (ulg)(0x80000000L)) &&
-                        !ut_zip_unzip_compatible && (flags & 0x0ff)) {
+                        !ut_zip_unzip_compatible && (flags & EB_UT_FL_TIMES)) {
                         /* atime not in range of UnZip's time_t */
                         flags &= ~EB_UT_FL_ATIME;
                         TTrace((stderr,

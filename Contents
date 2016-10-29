@@ -42,7 +42,7 @@ man/man1/       nroff "man" sources for the main user documentation
 
    Miscellaneous
 file_id.diz     BBS-oriented file describing this archive  [?]
-testmake.zip    Test archive for checking whether newly built UnZip works
+testmake.zip    Test archive for checking an UnZip program
 testmake_ppmd.zip  Test archive with PPMd compression
 
    Source Code
@@ -69,6 +69,7 @@ inflate.c       Deflate compression (method 8)
 inflate.h       Header file for inflate.c
 list.c          UnZip (not ZipInfo) listing
 match.c         Pattern-matching for filename wildcards
+memdiag.c       Memory diagnostics
 process.c       Multiple archives, memory management, extra field
 timezone.c      Timezone and timestamp supplement
 timezone.h      Header file for timezone.c
@@ -106,6 +107,7 @@ vms/            VMS/OpenVMS
 win32/          Windows 9x and Windows NT
 wince/          Windows CE (GUI version)
 windll/         Windows 3.x/9x/NT DLLs
+winlib/         Windows NT object library
 zos/            z/OS
 zvm/            VM/CMS and MVS
 

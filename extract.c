@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -182,10 +182,10 @@ static ZCONST char Far ComprMsgNum[] =
 static ZCONST char Far FilNamMsg[] =
   "%s:  bad filename length (%s)\n";
 #ifndef SFX
-   static ZCONST char Far WarnNoMemCFName[] =
-     "%s:  warning, no memory for comparison with local header\n";
-   static ZCONST char Far LvsCFNamMsg[] =
-     "%s:  mismatching \"local\" filename (%s),\n\
+static ZCONST char Far WarnNoMemCFName[] =
+ "%s:  warning, no memory for comparison with local header\n";
+static ZCONST char Far LvsCFNamMsg[] =
+ "%s:  mismatching \"local\" filename (%s),\n\
          continuing with \"central\" filename version\n";
 #endif /* ndef SFX */
 #if !defined(SFX) && defined(UNICODE_SUPPORT)
@@ -293,8 +293,6 @@ static ZCONST char Far AplDblNameTooLong[] =
      "error:  invalid response [%s]\n";
 #endif /* ndef WINDLL */
 
-static ZCONST char Far ErrorUnexpectedEOF[] =
-  "error:  Unexpected end-of-file reading %s.\n";
 static ZCONST char Far ErrorInArchive[] =
   "At least one %serror %swas detected in %s.\n";
 static ZCONST char Far ZeroFilesTested[] =
@@ -2223,7 +2221,7 @@ static int extract_test_trailer(__G__ n_fil, n_bad_pwd, n_skip, err_in_arch)
 
 void action_msg( __G__ action, flag)
   __GDEF
-  char *action;
+  ZCONST char *action;
   int flag;                             /* 0: Name only; 1: Name + [type]. */
 {
   char *str1;
@@ -3341,28 +3339,11 @@ startover:
      * SFX, because we assume that our Zip doesn't do it.
      */
 #ifndef SFX
-    if (G.pInfo->hostnum == FS_FAT_ && !MBSCHR(G.filename, '/'))
+    error = backslash_slash( __G);
+    if (error != PK_OK)
     {
-      char *p = G.filename;
-
-      if (*p)
-      {
-        do
-        {
-          if (*p == '\\')
-          {
-            if (!G.reported_backslash)
-            {
-              Info(slide, 0x21, ((char *)slide,
-               LoadFarString(BackslashPathSep), G.zipfn));
-              G.reported_backslash = TRUE;
-              if (*perr_in_arch == PK_OK)
-                *perr_in_arch = PK_WARN;
-            }
-            *p = '/';
-          }
-        } while (*PREINCSTR(p));
-      }
+      if (*perr_in_arch == PK_OK)
+        *perr_in_arch = error;
     }
 #endif /* ndef SFX */
 
@@ -3577,28 +3558,11 @@ startover:
      * SFX, because we assume that our Zip doesn't do it.
      */
 #ifndef SFX
-    if (G.pInfo->hostnum == FS_FAT_ && !MBSCHR(G.filename, '/'))
+    error = backslash_slash( __G);
+    if (error != PK_OK)
     {
-      char *p = G.filename;
-
-      if (*p)
-      {
-        do
-        {
-          if (*p == '\\')
-          {
-            if (!G.reported_backslash)
-            {
-              Info(slide, 0x21, ((char *)slide,
-               LoadFarString(BackslashPathSep), G.zipfn));
-              G.reported_backslash = TRUE;
-              if (*perr_in_arch == PK_OK)
-                *perr_in_arch = PK_WARN;
-            }
-            *p = '/';
-          }
-        } while (*PREINCSTR(p));
-      }
+      if (*perr_in_arch == PK_OK)
+        *perr_in_arch = error;
     }
 #endif /* ndef SFX */
 
@@ -5430,6 +5394,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
     zuvl_t sgmnt_nr;
     zipfd_t zipfd;
 #ifndef SFX
+    long enddigsig_len;
     int no_endsig_found;
 #endif
     int do_this_file;
@@ -5511,6 +5476,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 
     members_processed = 0;
 #ifndef SFX
+    enddigsig_len = -1;
     no_endsig_found = FALSE;
 #endif
     reached_end = FALSE;
@@ -5537,11 +5503,32 @@ int extract_or_test_files(__G)    /* return PK-type error code */
 
             if (readbuf(__G__ G.sig, 4) == 0) {
                 Info(slide, 0x221, ((char *)slide,
-                 LoadFarString( ErrorUnexpectedEOF), G.zipfn));
+                 LoadFarString( ErrorUnexpectedEOF), 1, G.zipfn));
                 error_in_archive = PK_EOF;
                 reached_end = TRUE;     /* ...so no more left to do */
                 break;
             }
+
+            if (memcmp( G.sig, central_digsig_sig, 4) == 0)
+            { /* Central directory digital signature.  Record its
+               * existence (unless SFX).  Read (and, for now, ignore)
+               * the data.
+               */
+#ifdef SFX
+# define ENDDIGSIGLENPTR NULL
+#else
+# define ENDDIGSIGLENPTR &enddigsig_len
+#endif /* def SFX [else] */
+
+              error = process_cdir_digsig( __G__ ENDDIGSIGLENPTR);
+              if (error != PK_OK)
+              {
+                error_in_archive = error;
+                reached_end = TRUE;    /* Actual EOF or no mem. */
+                break;
+              }
+            } /* process_cdir_digsig() should have read the next sig. */
+
             if (memcmp(G.sig, central_hdr_sig, 4)) {  /* is it a new entry? */
                 /* no new central directory entry
                  * -> is the number of processed entries compatible with the
@@ -5554,13 +5541,11 @@ int extract_or_test_files(__G)    /* return PK-type error code */
                     /* yes, so look if we ARE back at the end_central record
                      */
                     no_endsig_found =
-                      ( (memcmp(G.sig,
-                                (G.ecrec.have_ecr64 ?
-                                 end_central64_sig : end_central_sig),
-                                4) != 0)
-                       && (!G.ecrec.is_zip64_archive)
-                       && (memcmp(G.sig, end_central_sig, 4) != 0)
-                      );
+                     ((memcmp( G.sig,
+                     (G.ecrec.have_ecr64 ?
+                     end_central64_sig : end_central_sig), 4) != 0) &&
+                     (!G.ecrec.is_zip64_archive) &&
+                     (memcmp( G.sig, end_central_sig, 4) != 0));
 #endif /* ndef SFX */
                 } else {
                     /* no; we have found an error in the central directory
@@ -5762,7 +5747,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
         else
         {
             Info(slide, 0x221, ((char *)slide,
-             LoadFarString( ErrorUnexpectedEOF), G.zipfn));
+             LoadFarString( ErrorUnexpectedEOF), 11, G.zipfn));
             error_in_archive = PK_EOF;
             reached_end = TRUE;     /* ...so no more left to do */
             break;
@@ -5834,6 +5819,16 @@ int extract_or_test_files(__G)    /* return PK-type error code */
         Info(slide, 0x401, ((char *)slide, LoadFarString(ReportMsg)));
         if (!error_in_archive)       /* don't overwrite stronger error */
             error_in_archive = PK_WARN;
+    }
+
+    if (enddigsig_len >= 0)
+    {
+      Info( slide, 0x401, ((char *)slide, LoadFarString( DigSigMsg),
+       enddigsig_len));
+# if 0   /* Enable to make this a warning. */
+      if (error_in_archive < PK_WARN)           /* Keep more severe error. */
+        error_in_archive = PK_WARN;
+# endif /* 0 */
     }
 #endif /* ndef SFX */
 

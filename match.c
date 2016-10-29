@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -376,35 +376,64 @@ static int namecmp(s1, s2)
 
 
 
+/* iswild() was originally only used for stat()-bug workaround in
+ *          VAX C, Turbo/Borland C, Watcom C, Atari MiNT libs.
+ *          It's now used in process_zipfiles() as well.
+ *
+ * 2017-03-14 SMS.  Added code to deal with caret escapes on VMS.
+ * Archive name containing "^%" or "^*" was erroneously treated as wild.
+ * Similarly, on VMS, "^", not "\", is an escape character.
+ * Also, as of VMS V7.2 (non-VAX), "?" is wild (equivalent to "%").
+ * The classy method on VMS would be to use $PARSE, and check
+ * nam[l].naml$v_wildcard, but this scheme should be adequate (and
+ * better than it was).
+ */
 
-int iswild(p)        /* originally only used for stat()-bug workaround in */
-    ZCONST char *p;  /*  VAX C, Turbo/Borland C, Watcom C, Atari MiNT libs; */
-{                    /*  now used in process_zipfiles() as well */
-    for (; *p; INCSTR(p))
-        if (*p == '\\' && *(p+1))
+#ifdef VMS
+# define ESC_CHR '^'
+#else
+# define ESC_CHR '\\'
+#endif
+
+int iswild(p)
+    ZCONST char *p;
+{
+    for (; *p; INCSTR( p))
+    {
+        if ((*p == ESC_CHR) && *(p+ 1))
+        {
             ++p;
+        }
 #ifdef THEOS
         else if (*p == '?' || *p == '*' || *p=='#'|| *p == '@')
-#else /* !THEOS */
-#ifdef VMS
-        else if (*p == '%' || *p == '*')
-#else /* !VMS */
-#ifdef AMIGA
+#else /* def THEOS */
+# ifdef VMS
+        else if ((*p == '%') ||
+#  if !defined(__VAX) && defined( __VMS_VER) && (__VMS_VER >= 70200000)
+         (*p == '?') ||
+#  endif
+         (*p == '*'))
+# else /* def VMS */
+#  ifdef AMIGA
         else if (*p == '?' || *p == '*' || (*p=='#' && p[1]=='?') || *p == '[')
-#else /* !AMIGA */
+#  else /* def AMIGA */
         else if (*p == '?' || *p == '*' || *p == '[')
-#endif /* ?AMIGA */
-#endif /* ?VMS */
-#endif /* ?THEOS */
+#  endif /* def AMIGA [else] */
+# endif /* def VMS [else] */
+#endif /* def THEOS [else] */
+        {
 #ifdef QDOS
             return (int)p;
 #else
             return TRUE;
 #endif
-
+        }
+    }
     return FALSE;
 
 } /* end function iswild() */
+
+
 
 #if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
 int iswildw(pw)          /* originally only used for stat()-bug workaround in */
