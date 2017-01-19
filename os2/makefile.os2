@@ -477,7 +477,7 @@ klibc:
 	AS="gcc -Zomf" \
 	ASFLAGS="-Di386" \
 	LDFLAGS="-o ./" \
-	LDFLAGS2="-g -Zomf -Zargs-wild -Zargs-resp $(LDFLAGS) -lbz2" \
+	LDFLAGS2="-g -Zomf -Zargs-resp $(LDFLAGS) -lbz2" \
 	OUT="-o" \
 	OBJ=".o" \
 	CRCA_O="crc_gcc.o" \
