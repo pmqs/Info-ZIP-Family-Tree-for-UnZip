@@ -704,6 +704,7 @@ install:	$(MANS)
 	-$(INSTALL_D) $(BINDIR)
 	$(INSTALL_PROGRAM) $(UNZIPS) $(BINDIR)
 	$(INSTALL) os2/zipgrep.cmd $(BINDIR)
+	$(INSTALL) os2/zip2exe.cmd $(BINDIR)
 	$(RM) $(BINDIR)/zipinfo$E
 	$(LN) -s unzip$E $(BINDIR)/zipinfo$E
 	-$(INSTALL_D) $(MANDIR)

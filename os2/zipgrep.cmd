@@ -35,16 +35,19 @@ do QUEUED()
     PULL junk
 end
 
+/* HB: No real egrep on OS/2 */
+egrep = 'grep -E'
+
 /* GRR:  can also add "2>&1" before pipe in following external command */
 '@unzip -Z1' zipfile members '| rxqueue'
 
 do while QUEUED() > 0
     PARSE PULL file
-    '@unzip -p' zipfile file '| egrep -is' string
+    '@unzip -p' zipfile file '| 'egrep' -is' string
     if rc == 0 then do
         SAY file':'
         /* can comment out following line if just want filenames */
-        '@unzip -p' zipfile file '| egrep -i' string
+        '@unzip -p' zipfile file '| 'egrep' -i' string
     end
 end
 
