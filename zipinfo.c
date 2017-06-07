@@ -1082,7 +1082,7 @@ void zi_end_central(__G)
 /*  Function zipinform()  */
 /**************************/
 
-int zipinform(__G)   /* return PK-type error code */
+int zipinform(__G)              /* Return PK-type error code. */
     __GDEF
 {
     int do_this_file = FALSE;
@@ -1253,7 +1253,7 @@ int zipinform(__G)   /* return PK-type error code */
                 case 1:
                 case 2:
                     fnprint(__G);
-                    SKIP_(G.crec.file_comment_length)
+                    SKIP_ZI( G.crec.file_comment_length)
                     break;
 
                 case 3:
@@ -1274,7 +1274,7 @@ int zipinform(__G)   /* return PK-type error code */
                     break;
 
                 default:
-                    SKIP_(G.crec.file_comment_length)
+                    SKIP_ZI( G.crec.file_comment_length)
                     break;
 
             } /* end switch (lflag) */
@@ -1313,8 +1313,8 @@ int zipinform(__G)   /* return PK-type error code */
 #endif
 
         } else {        /* not listing this file */
-            SKIP_(G.crec.extra_field_length)
-            SKIP_(G.crec.file_comment_length)
+            SKIP_ZI( G.crec.extra_field_length)
+            SKIP_ZI( G.crec.file_comment_length)
             if (endprev != 0) endprev = 0;
 
         } /* end if (list member?) */
@@ -1366,6 +1366,8 @@ int zipinform(__G)   /* return PK-type error code */
     Check for unmatched filespecs on command line and print warning if any
     found.
   ---------------------------------------------------------------------------*/
+
+err_exit:                       /* Used by the SKIP_ZI() macro. */
 
     if (fn_matched) {
         if (error_in_archive <= PK_WARN)
@@ -2552,7 +2554,9 @@ static int zi_short(__G)   /* return PK-type error code */
     unsigned    xattr_high;
     unsigned    xattr_low;
 #define xattr xattr_high
-    char        *p, workspace[12], attribs[16];
+    char        *p;
+    char        workspace[12];
+    char        attribs[21];    /* Need 16 for attribs, 21 for d_t_buf. */
     char        methbuf[5];
     static ZCONST char dtype[5]="NXFS"; /* normal, maximum, fast, superfast */
     static ZCONST char Far oss[NUM_HOSTS+1][4] = {
@@ -2853,8 +2857,8 @@ static int zi_short(__G)   /* return PK-type error code */
         Info(slide, 0, ((char *)slide, " %s",
           FmZofft(G.crec.csize, "8", "u")));
 
-    /* For printing of date & time, a "char d_t_buf[16]" is required.
-     * To save stack space, we reuse the "char attribs[16]" buffer whose
+    /* For printing of date & time, a "char d_t_buf[21]" is required.
+     * To save stack space, we reuse the "char attribs[21]" buffer whose
      * content is no longer needed.
      */
 #   define d_t_buf attribs
@@ -2934,7 +2938,7 @@ static char *zi_time(__G__ datetimez, modtimez, d_t_str)
     __GDEF
     ZCONST ulg *datetimez;
     ZCONST time_t *modtimez;
-    char *d_t_str;
+    char *d_t_str;                      /* 21 char (incl NUL), minimum. */
 {
     unsigned yr, mo, dy, hh, mm, ss;
     char monthbuf[4];

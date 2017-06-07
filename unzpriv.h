@@ -17,22 +17,21 @@
 
   ---------------------------------------------------------------------------*/
 
-/* It has been proposed to replace unzpriv.h by zip-like tailor.h and tree of
-   PORT/osdep.h headers.
-   - This is a result of the effort to synchronize/rationalize the build
-     systems (such as unix/Makefile and unix/configure).
-   - This will ensure that customization is as close as possible between Zip
-     and UnZip.
-   - This in turn will make it much easier to safely share code between the
-     Zip and UnZip source trees.
+/* It has been proposed to replace unzpriv.h by zip-like tailor.h and
+ * tree of PORT/osdep.h headers.
+ * - This is a result of the effort to synchronize/rationalize the build
+ *   systems (such as unix/Makefile and unix/configure).
+ * - This will ensure that customization is as close as possible between Zip
+ *   and UnZip.
+ * - This in turn will make it much easier to safely share code between the
+ *   Zip and UnZip source trees.
+ */
 
-   This might get done in the next beta. */
-
-#ifndef __unzpriv_h   /* prevent multiple inclusions */
+#ifndef __unzpriv_h     /* Prevent multiple inclusions. */
 #define __unzpriv_h
 
 #ifdef VMSCLI
-# include "unzvers.h"   /* Need BETA for some VMS CLI strings. */
+# include "unzvers.h"   /* Need BETA_MSG for some VMS CLI strings. */
 #endif /* def VMSCLI */
 
 /* First thing: Signal all following code that we compile UnZip utilities! */
@@ -208,30 +207,31 @@
 #endif
 
 /* This needs fixing, but currently assume that we don't have full
-   Unicode support unless UNICODE_WCHAR is set.
-
-   What we should do is define three possibilities:
-   UNICODE_WCHAR  = we have the wide character support we need for Unicode.
-                    If unix/configure found the port is missing something,
-                    the port needs to provide it and turn Unicode back on.
-                    Check for HAVE_TOWUPPER and so on.
-   UNICODE_ICONV  = we can use iconv for Unicode conversions.  All processing
-                    will be done using 8-bit characters.
-   UNICODE_NATIVE = we don't need to do any conversions.  This flag is needed,
-                    though, so we know to set the UTF-8 bit.  It also means
-                    we somehow have verified the character set as UTF-8.
-                    However, note that if the port has no way to convert
-                    from UTF-8, the code page must be UTF-8 to see paths in
-                    an existing archive.
-
-   I can't see any reason more than one of these should be set in any
-   particular build, so there probably should be some priority order for these
-   set up.  For instance, if UTF-8 is native, then paths coming in are already
-   UTF-8 and the UTF-8 paths in existing archives should be readable, so no
-   conversion code may be needed, just the code to detect if UNICODE_NATIVE
-   really applies.
-
-   This might get done in the next beta. */
+ * Unicode support unless UNICODE_WCHAR is set.
+ *
+ * What we should do is define three possibilities:
+ * UNICODE_WCHAR    We have the wide character support we need for
+ *                  Unicode.  If unix/configure found the port is
+ *                  missing something, then the port needs to provide it
+ *                  and turn Unicode back on.
+ *                  Check for HAVE_TOWUPPER and so on.
+ * UNICODE_ICONV    We can use iconv for Unicode conversions.  All
+ *                  processing will be done using 8-bit characters.
+ * UNICODE_NATIVE   We don't need to do any conversions.  This flag is
+ *                  needed, though, so we know to set the UTF-8 bit.  It
+ *                  also means that we somehow have verified the
+ *                  character set as UTF-8.  Note, however, that if the
+ *                  port has no way to convert from UTF-8, then the code
+ *                  page must be UTF-8 to see paths in an existing
+ *                  archive. 
+ *
+ * No reason is known to set more than one of these in any particular
+ * build, so there probably should be some priority order for them.
+ * For instance, if UTF-8 is native, then paths coming in are already
+ * UTF-8, and the UTF-8 paths in existing archives should be readable,
+ * so no    conversion code should be needed, only the code to detect if
+ * UNICODE_NATIVE really applies.
+ */
 
 #ifdef UNICODE_SUPPORT
 # if !(defined(UNICODE_WCHAR))
@@ -301,6 +301,7 @@
 #    define BSD 1
 #  endif
 #endif /* ultrix || __ultrix || bsd4_2 */
+
 #if (defined(sun) || defined(pyr) || defined(CONVEX))
 #  if (!defined(BSD) && !defined(SYSV))
 #    define BSD 1
@@ -694,10 +695,12 @@
 /* ----------------------------------------------------------------------------
    MUST BE AFTER LARGE FILE INCLUDES
    ---------------------------------------------------------------------------- */
-/* This stuff calls in types and messes up large file includes.  It needs to
-   go after large file defines in local includes.
-   I am guessing that moving them here probably broke some ports, but hey.
-   10/31/2004 EG */
+/* This stuff calls in types and messes up large file includes.  It
+ * needs to appear after large file defines in local includes.
+ * I am guessing that moving them here probably broke some ports, but hey.
+ * 10/31/2004 EG
+ */
+
 /* ----------------------------------------------------------------------------
    Common includes
    ---------------------------------------------------------------------------- */
@@ -1414,19 +1417,19 @@ void izu_md_check( void);
 
 #ifdef _MBCS
    /* Multi Byte Character Set support
-      - This section supports a number of mbcs-related functions which
-        will use the OS-provided version (if found by a unix/configure
-        test, or equivalent) or will use a generic minimally-functional
-        version provided as a fileio.c function.
-      - All references to this function UnZip code are via the FUNCTION
-        name.
-      - If unix/configure finds the OS-provided function, it will define
-        a macro in the form FUNCTION=function.
-      - If not defined:
-        - A replacement is defined below pointing to the generic version.
-        - The prototype for the generic function will be defined (below).
-        - A NEED_FUNCTION macro will also be defined, to enable compile
-          of the fileio.c code to implement the generic function.
+    * - This section supports a number of mbcs-related functions which
+    *   will use the OS-provided version (if found by a unix/configure
+    *   test, or equivalent) or will use a generic minimally-functional
+    *   version provided as a fileio.c function.
+    * - All references to this function UnZip code are via the FUNCTION
+    *   name.
+    * - If unix/configure finds the OS-provided function, it will define
+    *   a macro in the form FUNCTION=function.
+    * - If not defined:
+    *   - A replacement is defined below pointing to the generic version.
+    *   - The prototype for the generic function will be defined (below).
+    *   - A NEED_FUNCTION macro will also be defined, to enable compile
+    *     of the fileio.c code to implement the generic function.
     */
 
 #  include <stdlib.h>
@@ -1559,38 +1562,38 @@ void izu_md_check( void);
 
 
 /*--------------------------------------------------------------------
-    Long option support
-    23 August 2003
-    Originally from Zip 3.0
-    Updated for UnZip 1 March 2008
-    See unzip.c
-  --------------------------------------------------------------------*/
+ *  Long option support
+ *  23 August 2003
+ *  Originally from Zip 3.0
+ *  Updated for UnZip 1 March 2008
+ *  See unzip.c
+ *--------------------------------------------------------------------
+ */
 
-/* The below is for use in the caller-provided options table */
+/* Options table flag values. */
 
-/* value_type - value is always returned as a string. */
-#define o_NO_VALUE        0   /* this option does not take a value */
-#define o_REQUIRED_VALUE  1   /* this option requires a value */
-#define o_OPTIONAL_VALUE  2   /* value is optional (see get_option() for details) */
-#define o_VALUE_LIST      3   /* this option takes a list of values */
-#define o_ONE_CHAR_VALUE  4   /* next char is value (does not end short opt string) */
-#define o_NUMBER_VALUE    5   /* value is integer (does not end short opt string) */
-#define o_OPT_EQ_VALUE    6   /* value optional, but "=" required for one. */
+/* value_type - Value is always returned as a string. */
+#define o_NO_VALUE        0   /* No value. */
+#define o_REQUIRED_VALUE  1   /* Value required. */
+#define o_OPTIONAL_VALUE  2   /* Value optional. */
+#define o_VALUE_LIST      3   /* Value list required. */
+#define o_ONE_CHAR_VALUE  4   /* One-char value (doesn't end short opt str). */
+#define o_NUMBER_VALUE    5   /* Integer value (doesn't end short opt str). */
+#define o_OPT_EQ_VALUE    6   /* Value optional, but "=" required for one. */
 
-/* negatable - a dash following the option (but before any value) sets negated. */
-#define o_NOT_NEGATABLE   0   /* trailing '-' to negate either starts value or generates error */
-#define o_NEGATABLE       1   /* trailing '-' sets negated to TRUE */
-
+/* negatable - Hyphen after option (but before any value) sets negated. */
+#define o_NOT_NEGATABLE   0   /* trailing "-" either starts value or error. */
+#define o_NEGATABLE       1   /* trailing "-" sets negated to TRUE. */
 
 /* option_num can be this when option not in options table */
 #define o_NO_OPTION_MATCH     -1
-
-/* special values returned by get_option - do not use these as option IDs */
-#define o_NON_OPTION_ARG      ((unsigned long) 0xFFFF)    /* returned for non-option
-                                                             args */
-#define o_ARG_FILE_ERR        ((unsigned long) 0xFFFE)    /* internal recursion
-                                                             return (user never sees) */
-#define o_BAD_ERR             ((unsigned long) 0xFFFD)    /* bad error */
+							
+/* Special values returned by get_option - do not use these as option IDs */
+#define o_NON_OPTION_ARG      ((unsigned long) 0xFFFF)  /* non-option arg */
+#define o_ARG_FILE_ERR        ((unsigned long) 0xFFFE)  /* internal recursion
+                                                           error (Should
+                                                           never occur.) */
+#define o_BAD_ERR             ((unsigned long) 0xFFFD)  /* bad error */
 
 /* Most option IDs are set to the shortopt char.  For multichar short
  * options, ID is set to an arbitrary unused constant (defined below).
@@ -2069,7 +2072,8 @@ struct file_list {
 #define AESENCRED        99
 #define NUM_METHODS      19     /* Number of known method IDs. */
 /* Be sure to update list.c (list_files()), extract.c, and zipinfo.c
- * appropriately if NUM_METHODS changes. */
+ * appropriately, if NUM_METHODS changes.
+ */
 
 /* (the PK-class error codes are public and have been moved into unzip.h) */
 
@@ -2555,13 +2559,13 @@ typedef struct VMStimbuf {
 
 
 /* The following structs are used to hold all header data of a zip entry.
-   Traditionally, the structs' layouts followed the data layout of the
-   corresponding zipfile header structures.  However, the zipfile header
-   layouts were designed in the old ages of 16-bit CPUs, they are subject
-   to structure padding and/or alignment issues on newer systems with a
-   "natural word width" of more than 2 bytes.
-   Please note that the structure members are now reordered by size
-   (top-down), to prevent internal padding and optimize memory usage!
+ * Traditionally, the structs' layouts followed the data layout of the
+ * corresponding zipfile header structures.  However, the zipfile header
+ * layouts were designed in the old ages of 16-bit CPUs, they are subject
+ * to structure padding and/or alignment issues on newer systems with a
+ * "natural word width" of more than 2 bytes.
+ * Please note that the structure members are now reordered by size
+ * (top-down), to prevent internal padding and optimize memory usage!
  */
    typedef struct local_file_header {                   /* LOCAL */
        zusz_t csize;
@@ -2615,12 +2619,13 @@ typedef struct VMStimbuf {
 
 
 /* Huffman code lookup table entry--this entry is four bytes for machines
-   that have 16-bit pointers (e.g. PC's in the small or medium model).
-   Valid extra bits are 0..16.  e == 31 is EOB (end of block), e == 32
-   means that v is a literal, 32 < e < 64 means that v is a pointer to
-   the next table, which codes (e & 31)  bits, and lastly e == 99 indicates
-   an unused code.  If a code with e == 99 is looked up, this implies an
-   error in the data. */
+ * that have 16-bit pointers (e.g. PC's in the small or medium model).
+ * Valid extra bits are 0..16.  e == 31 is EOB (end of block), e == 32
+ * means that v is a literal, 32 < e < 64 means that v is a pointer to
+ * the next table, which codes (e & 31)  bits, and lastly e == 99 indicates
+ * an unused code.  If a code with e == 99 is looked up, this implies an
+ * error in the data.
+ */
 
 struct huft {
     uch e;                /* number of extra bits or operation */
@@ -3101,7 +3106,7 @@ int      iswildw         OF((ZCONST wchar_t *pw));                /* match.c */
 #endif
 
 /* declarations of public CRC-32 functions have been moved into crc32.h
-   (free_crc_table(), get_crc_table(), crc32())                      crc32.c */
+ * (free_crc_table(), get_crc_table(), crc32())                      crc32.c */
 
 int      dateformat      OF((void));                                /* local */
 char     dateseparator   OF((void));                                /* local */
@@ -3287,24 +3292,31 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #  define TEST_NTSD     NULL    /*   ... is not available */
 #endif
 
-#define SKIP_(length) if(length&&((error=do_string(__G__ length,SKIP))!=0))\
-  {error_in_archive=error; if(error>1) return error;}
-
 /*
- *  Skip a variable-length field, and report any errors.  Used in zipinfo.c
- *  and unzip.c in several functions.
- *
- *  macro SKIP_(length)
- *      ush length;
- *  {
- *      if (length && ((error = do_string(length, SKIP)) != 0)) {
- *          error_in_archive = error;   /-* might be warning *-/
- *          if (error > 1)              /-* fatal *-/
- *              return (error);
- *      }
- *  }
- *
+ * SKIP_() - Macro to skip a variable-length field, record a more severe
+ * error, and return.  Used in list.c and zipinfo.c.
  */
+#define SKIP_( len) \
+if ((len > 0) && ((error = do_string( __G__ len, SKIP)) != PK_OK)) \
+{ \
+  if (error > error_in_archive) \
+    error_in_archive = error; \
+  if (error > PK_WARN) \
+    return error; \
+}
+
+/* 2017-06-06 SMS.  https://sourceforge.net/p/infozip/patches/21/
+ * Use SKIP_ZI() in zipinfo.c:zipinform(), instead of SKIP_(), to free
+ * storage (fn_matched, xn_matched) before returning after an error.
+ */
+#define SKIP_ZI( len) \
+if ((len > 0) && ((error = do_string( __G__ len, SKIP)) != PK_OK)) \
+{ \
+  if (error > error_in_archive) \
+    error_in_archive = error; \
+  if (error > PK_WARN) \
+    goto err_exit; \
+}
 
 
 #ifdef FUNZIP
@@ -3591,9 +3603,9 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #endif /* ndef SFX */
 
 #ifdef VMSCLI
-# ifdef BETA
+# ifdef BETA_MSG
     extern ZCONST char BetaVersion[];
-# endif /* def BETA */
+# endif /* def BETA_MSG */
 # ifdef SFX
     extern ZCONST char UnzipBanner[];
 # else /* def SFX */

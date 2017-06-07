@@ -661,6 +661,9 @@ Features added (or removed):
    suggestions.  Other related, minor code tidying.  (unzip.c, unzip.h,
    unzpriv.h, vms/cmdline.c) [SMS]
 
+6.1c21 (08 Jun 2017):
+ - No news.
+
 
 Bugs fixed:
 
@@ -1265,10 +1268,11 @@ Bugs fixed:
    compiling (NOCOMPILE).  (vms/build_unzip.com) [SMS]
  - Fixed some bad behavior (program aborts or loops, or faulty memory
    access) caused by (intentionally) defective/corrupt archives.
-   Reported by OUSPG ("https://www.ee.oulu.fi/research/ouspg/").
-   Removed some harmless but redundant free() instances from extract.c.
-   (crypt.c, crypt.h, extract.c, fileio.c, funzip.c, os2/os2.c,
-   process.c, unzpriv.h, win32/win32.c, zipinfo.c) [Aki Helin, SMS]
+   Reported by OUSPG ("https://www.ee.oulu.fi/research/ouspg/"),
+   CVE-2015-7696.  Removed some harmless but redundant free() instances
+   from extract.c.  (crypt.c, crypt.h, extract.c, fileio.c, funzip.c,
+   os2/os2.c, process.c, unzpriv.h, win32/win32.c, zipinfo.c) [Aki
+   Helin, SMS]
  - memcpy() was being used in some cases on overlapping buffers, which
    could cause bad extracted data (and "bad CRC" errors) on some
    systems.  Forum topic:
@@ -1918,3 +1922,22 @@ Bugs fixed:
     "zipinfo:  Streaming input archive not supported in ZipInfo mode."
     "End-of-central-directory signature not found."
    (fileio.c, process.c) [SMS]
+
+6.1c22 (08 Jun 2017):
+ - Removed the "NOT FOR GENERAL DISTRIBUTION" message from the program
+   banner for public beta releases.  New C macro: BETA_MSG.  (unzip.c,
+   unzpriv.h, unzvers.h, vms/cmdline.c) [SMS]
+ - Removed definition of unused macro RELEASE.  (unzvers.h) [SMS]
+ - Invalid archive data could cause the bzip2 expander to loop.
+   CVE-2015-7697.  https://sourceforge.net/p/infozip/patches/23/
+   Minor code tidying to replace some raw integers with PK_xxx status
+   values in the bzip2 expansion code.  (extract.c) [Kamil Dudka, SMS]
+ - Made some changes to reduce complaints from Parfait static analysis.
+   https://sourceforge.net/p/infozip/patches/21/
+    - Added a NULL pointer check in process.c:wide_to_local_string().
+    - Extended a static buffer in zipinfo.c:zi_short() to avoid a buffer
+      overflow with longer date-time strings.
+    - Changed the flow in zipinfo.c:zipinform() to free some storage
+      (fn_matched, xn_matched) before returning after an error.  New
+      macro: unzpriv.h:SKIP_ZI().
+   (process.c, unzpriv.h, zipinfo.c) [Jiri Kukacka, SMS]

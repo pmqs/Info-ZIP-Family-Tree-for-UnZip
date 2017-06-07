@@ -1,5 +1,5 @@
 
-Info-Zip UnZip -- Source kit.  Version 6.10c21 (pre-BETA)  2017-05-15.
+Info-Zip UnZip -- Source kit.  Version 6.1c22 (pre-BETA)  2017-06-08.
 
 See enclosed files INSTALL, LICENSE, and README.  For information on
 Info-Zip UnZip and Zip:

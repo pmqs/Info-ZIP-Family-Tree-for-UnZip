@@ -1077,7 +1077,7 @@ static int TestExtraField(__G__ ef_buf, ef_len)
     if (!uO.qflag)
         Info(slide, 0, ((char *)slide, " OK\n"));
 
-    return PK_COOL;
+    return PK_OK;
 
 } /* TestExtraField(). */
 
@@ -2295,7 +2295,8 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
      __GDEF
 {
     register int b;
-    int r, error=PK_COOL;
+    int r;
+    int error = PK_OK;
 
     /* AES-encrypted data include a trailer which must not be put out.
      * For STORED data, the output bytes are counted in bytes_put_out,
@@ -2644,25 +2645,29 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
               }
             }
 
-            if ((r = UZbunzip2(__G)) != 0) {
-                if (r < PK_DISK) {
+            if ((r = UZbunzip2(__G)) != 0)
+            {
+                if (r < PK_DISK)
+                {
                     if ((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))
+                    {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarStringSmall(ErrUnzipFile), r == PK_MEM3 ?
                           LoadFarString(NotEnoughMem) :
                           LoadFarString(InvalidComprData),
                           LoadFarStringSmall2(BUnzip),
                           FnFilter1(G.filename)));
+                    }
                     else
+                    {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarStringSmall(ErrUnzipNoFile), r == PK_MEM3 ?
                           LoadFarString(NotEnoughMem) :
                           LoadFarString(InvalidComprData),
                           LoadFarStringSmall2(BUnzip)));
-                    error = ((r == 3) ? PK_MEM3 : PK_ERR);
-                } else {
-                    error = r;
+                    }
                 }
+                error = r;
             }
             break;
 #endif /* def BZIP2_SUPPORT */
@@ -2680,25 +2685,29 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
               }
             }
 
-            if ((r = UZlzma(__G)) != 0) {
-                if (r < PK_DISK) {
+            if ((r = UZlzma(__G)) != 0)
+            {
+                if (r < PK_DISK)
+                {
                     if ((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))
+                    {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarStringSmall(ErrUnzipFile), r == PK_MEM3 ?
                           LoadFarString(NotEnoughMem) :
                           LoadFarString(InvalidComprData),
                           LoadFarStringSmall2(UnLZMA),
                           FnFilter1(G.filename)));
+                    }
                     else
+                    {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarStringSmall(ErrUnzipNoFile), r == PK_MEM3 ?
                           LoadFarString(NotEnoughMem) :
                           LoadFarString(InvalidComprData),
                           LoadFarStringSmall2(UnLZMA)));
-                    error = ((r == 3) ? PK_MEM3 : PK_ERR);
-                } else {
-                    error = r;
+                    }
                 }
+                error = r;
             }
             break;
 #endif /* LZMA_SUPPORT */
@@ -2716,25 +2725,29 @@ static int extract_or_test_member(__G)  /* return PK-type error code */
               }
             }
 
-            if ((r = UZppmd(__G)) != 0) {
-                if (r < PK_DISK) {
+            if ((r = UZppmd(__G)) != 0)
+            {
+                if (r < PK_DISK)
+                {
                     if ((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))
+                    {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarStringSmall(ErrUnzipFile), r == PK_MEM3 ?
                           LoadFarString(NotEnoughMem) :
                           LoadFarString(InvalidComprData),
                           LoadFarStringSmall2(UnPPMd),
                           FnFilter1(G.filename)));
+                    }
                     else
+                    {
                         Info(slide, 0x401, ((char *)slide,
                           LoadFarStringSmall(ErrUnzipNoFile), r == PK_MEM3 ?
                           LoadFarString(NotEnoughMem) :
                           LoadFarString(InvalidComprData),
                           LoadFarStringSmall2(UnPPMd)));
-                    error = ((r == 3) ? PK_MEM3 : PK_ERR);
-                } else {
-                    error = r;
+                    }
                 }
+                error = r;
             }
             break;
 #endif /* PPMD_SUPPORT */
@@ -5872,7 +5885,8 @@ int memextract(__G__ tgt, tgtsize, src, srcsize)  /* extract compressed */
     zoff_t old_csize=G.csize;
     uch   *old_inptr=G.inptr;
     int    old_incnt=G.incnt;
-    int    r, error=PK_OK;
+    int    r;
+    int    error = PK_OK;
     ush    method;
     ulg    extra_field_crc;
 
@@ -5966,7 +5980,7 @@ int memflush(__G__ rawbuf, size)
     G.outsize -= size;
     G.outcnt += size;
 
-    return 0;
+    return PK_OK;
 
 } /* memflush(). */
 
@@ -6386,11 +6400,18 @@ wchar_t *fnfilterw( src, dst, siz)
 static int UZbunzip2(__G)
     __GDEF
 /* decompress a bzipped entry using the libbz2 routines */
-{
-    int retval = 0;     /* return code: 0 = "no error" */
-    int err=BZ_OK;
+{				
+    int retval = PK_OK;         /*  Return PK-type error code. */
+    int err = BZ_OK;
     int repeated_buf_err;
     bz_stream bstrm;
+
+    /* Data sanity check.  (Avoid infinite loop.) */
+    if ((G.incnt <= 0) && (G.csize <= 0))
+    {
+        Trace(( stderr, "UZbunzip2(): Data sanity failure.\n"));
+        return PK_WARN;
+    }
 
 #if defined(DLL) && !defined(NO_SLIDE_REDIR)
     if (G.redirect_slide)
@@ -6405,24 +6426,22 @@ static int UZbunzip2(__G)
     bstrm.next_in = (char *)G.inptr;
     bstrm.avail_in = G.incnt;
 
-    {
-        /* local buffer for efficiency */
-        /* $TODO Check for BZIP LIB version? */
+    /* local buffer for efficiency */
+    /* $TODO Check for BZIP LIB version? */
 
-        bstrm.bzalloc = NULL;
-        bstrm.bzfree = NULL;
-        bstrm.opaque = NULL;
+    bstrm.bzalloc = NULL;
+    bstrm.bzfree = NULL;
+    bstrm.opaque = NULL;
 
-        Trace((stderr, "initializing bzlib()\n"));
-        err = BZ2_bzDecompressInit(&bstrm, 0, 0);
+    Trace((stderr, "initializing bzlib()\n"));
+    err = BZ2_bzDecompressInit(&bstrm, 0, 0);
 
-        if (err == BZ_MEM_ERROR)
-            return 3;
+    if (err == BZ_MEM_ERROR)
+        return PK_MEM;
 #ifdef Tracing  /* 2012-12-03 SMS.  Avoid complaints about empty if(). */
-        else if (err != BZ_OK)
-            Trace((stderr, "oops!  (BZ2_bzDecompressInit() err = %d)\n", err));
+    else if (err != BZ_OK)
+        Trace((stderr, "oops!  (BZ2_bzDecompressInit() err = %d)\n", err));
 #endif /* def Tracing */
-    }
 
 #ifdef FUNZIP
     while (err != BZ_STREAM_END) {
@@ -6435,12 +6454,12 @@ static int UZbunzip2(__G)
             err = BZ2_bzDecompress(&bstrm);
 
             if (err == BZ_DATA_ERROR) {
-                retval = 2; goto uzbunzip_cleanup_exit;
+                retval = PK_ERR; goto uzbunzip_cleanup_exit;
             } else if (err == BZ_MEM_ERROR) {
-                retval = 3; goto uzbunzip_cleanup_exit;
+                retval = PK_MEM3; goto uzbunzip_cleanup_exit;
             }
 #ifdef Tracing  /* 2012-12-03 SMS.  Avoid complaints about empty if(). */
-            else if (err != BZ_OK && err != BZ_STREAM_END)
+            else if ((err != BZ_OK) && (err != BZ_STREAM_END))
                 Trace((stderr, "oops!  (bzip(first loop) err = %d)\n", err));
 #endif /* def Tracing */
 
@@ -6454,7 +6473,7 @@ static int UZbunzip2(__G)
             if (bstrm.avail_in == 0) {
                 if (fillinbuf(__G) == 0) {
                     /* no "END-condition" yet, but no more data */
-                    retval = 2; goto uzbunzip_cleanup_exit;
+                    retval = PK_ERR; goto uzbunzip_cleanup_exit;
                 }
                 bstrm.next_in = (char *)G.inptr;
                 bstrm.avail_in = G.incnt;
@@ -6477,9 +6496,9 @@ static int UZbunzip2(__G)
     while (err != BZ_STREAM_END) {
         err = BZ2_bzDecompress(&bstrm);
         if (err == BZ_DATA_ERROR) {
-            retval = 2; goto uzbunzip_cleanup_exit;
+            retval = PK_ERR; goto uzbunzip_cleanup_exit;
         } else if (err == BZ_MEM_ERROR) {
-            retval = 3; goto uzbunzip_cleanup_exit;
+            retval = PK_MEM3; goto uzbunzip_cleanup_exit;
         } else if (err != BZ_OK && err != BZ_STREAM_END) {
             Trace((stderr, "oops!  (bzip(final loop) err = %d)\n", err));
             DESTROYGLOBALS();

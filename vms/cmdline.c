@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1979,7 +1979,7 @@ int VMSCLI_usage(__GPRO__ int error)    /* returns PK-type error code */
 
     Info(slide, flag, ((char *)slide, UnzipBanner,
      "UnZip", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
-#  ifdef BETA
+#  ifdef BETA_MSG
     Info( slide, flag, ((char *)slide, LoadFarString( BetaVersion),
      "\n", ""));
 #  endif
@@ -2139,7 +2139,7 @@ Quote archive member names if /MATCH=CASE=SENSITIVE (default).\n\
         Info(slide, flag, ((char *)slide, UnzipUsageLine1,
           UzpVersionStr(), UZ_VERSION_DATE, UzpDclStr()));
 
-#  ifdef BETA
+#  ifdef BETA_MSG
         Info(slide, flag, ((char *)slide, BetaVersion, "", ""));
 #  endif
 

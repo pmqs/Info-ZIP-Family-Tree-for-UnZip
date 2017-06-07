@@ -3057,6 +3057,9 @@ char *wide_to_local_string(wide_string, escape_all)
   char *buffer = NULL;
   char *local_string = NULL;
 
+  if (wide_string == NULL)
+    return NULL;
+
   for (wsize = 0; wide_string[wsize]; wsize++) ;
 
   if (max_bytes < MAX_ESCAPE_BYTES)

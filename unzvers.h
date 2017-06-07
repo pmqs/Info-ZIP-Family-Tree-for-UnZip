@@ -15,19 +15,23 @@
 
 # ifdef BETA
 #  undef BETA                   /* Swap blocks.  Last of define/undef wins. */
+#  undef BETA_MSG
 # endif
 
+/* Define BETA_MSG to restore the unzip.c:BetaVersion[] message:
+ *     [...] NOT FOR GENERAL DISTRIBUTION
+ */
 # ifndef BETA
 #  define BETA                  /* Undefine BETA for public releases. */
+#  define BETA_MSG /*_xxx*/     /* Remove "_xxx" to activate the message. */
 # endif
 
 # ifdef BETA
-#  define UZ_BETALEVEL      "c21-BETA"
-#  define UZ_VERSION_DATE   "2017-05-15"        /* Internal beta version. */
+#  define UZ_BETALEVEL      "c22-BETA"
+#  define UZ_VERSION_DATE   "2017-06-08"        /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
 #  define UZ_VERSION_DATE   "2017-XX-XX"        /* Official release version. */
-#  define RELEASE
 # endif
 
 # define UZ_MAJORVER    6               /* UnZip */
@@ -38,7 +42,7 @@
 
 # define UZ_PATCHLEVEL  0
 
-# define UZ_VER_STRING  "6.1c21"        /* Sync with Version numbers! */
+# define UZ_VER_STRING  "6.1c22"        /* Sync with Version numbers! */
 
 # ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"

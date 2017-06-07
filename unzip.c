@@ -438,13 +438,13 @@ static ZCONST char Far ZipInfoUsageLine4m[] = "";
 #  endif /* def MORE [else] */
 # endif /* !NO_ZIPINFO */
 
-# ifdef BETA
+# ifdef BETA_MSG
 #  ifndef VMSCLI
 static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
 #  endif /* ndef VMSCLI */
 ZCONST char Far BetaVersion[] = "%s\
         THIS IS A BETA VERSION OF UNZIP%s -- NOT FOR GENERAL DISTRIBUTION.\n";
-# endif
+# endif /* def BETA_MSG */
 
 # ifndef VMSCLI
 static                  /* Used in vms/cmdline.c, so not static in VMS CLI. */
@@ -2969,11 +2969,11 @@ int uz_opts(__G__ opts, pargc, pargv)
         Info(slide, (uzo_err ? 1 : 0),
          ((char *)slide, LoadFarString( UnzipBanner),
          "UnZipSFX", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
-#  ifdef BETA
+#  ifdef BETA_MSG
     /* always print the beta warning:  no unauthorized distribution!! */
     Info(slide, (uzo_err ? 1 : 0),
      ((char *)slide, LoadFarString(BetaVersion), "\n", "SFX"));
-#  endif /* def BETA */
+#  endif /* def BETA_MSG */
 # endif /* def SFX */
 
     if (uO.cflag || uO.tflag || uO.vflag || uO.zflag
@@ -3175,7 +3175,7 @@ int usage(__G__ u_err)   /* return PK-type error code */
 
     Info( slide, flag, ((char *)slide, LoadFarString( UnzipBanner),
      "UnZipSFX", UzpVersionStr(), UZ_VERSION_DATE, UZ_VERSION_DATE));
-#  ifdef BETA
+#  ifdef BETA_MSG
     Info( slide, flag, ((char *)slide, LoadFarString( BetaVersion), "\n",
      "SFX"));
 #  endif
@@ -3234,7 +3234,7 @@ int usage(__G__ u_err)   /* return PK-type error code */
 
         Info( slide, flag, ((char *)slide, LoadFarString( ZipInfoUsageLine1),
          UzpVersionStr(), UZ_VERSION_DATE, USAGE_DCL_Z));
-#  ifdef BETA
+#  ifdef BETA_MSG
         Info( slide, flag, ((char *)slide, LoadFarString( BetaVersion), "",
          ""));
 #  endif
@@ -3254,7 +3254,7 @@ int usage(__G__ u_err)   /* return PK-type error code */
     {   /* UnZip mode */
         Info(slide, flag, ((char *)slide, LoadFarString( UnzipUsageLine1),
          UzpVersionStr(), UZ_VERSION_DATE, USAGE_DCL_U));
-#  ifdef BETA
+#  ifdef BETA_MSG
         Info(slide, flag, ((char *)slide, LoadFarString(BetaVersion), "", ""));
 #  endif
 
@@ -3842,7 +3842,7 @@ void show_version_info(__G)
          "  Maintainer: Steven M. Schweda"));
         Info(slide, 0, ((char *)slide,
           LoadFarString(UnzipVersionLine)));
-#  ifdef BETA
+#  ifdef BETA_MSG
         Info( slide, 0, ((char *)slide, LoadFarString( BetaVersion),
          "", ""));
         Info( slide, 0, ((char *)slide, "%s", "\n"));
