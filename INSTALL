@@ -1,17 +1,14 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.1.  Revised: 2017-01-27
+   UnZip version 6.1.  Revised: 2017-06-14
 
 ------------------------------------------------------------------------
 
    On most system types, the general procedure to build and install
-UnZip follows these steps:
+UnZip follows these steps (described in more detail below):
 
-      1. Unpack the UnZip source kit.  (Some optional features, such as
-      optional compression or encryption methods, may require additional
-      source kits.  Obtain and unpack any additional source kits, if
-      needed.)
+      1. Unpack the UnZip source kit.
 
       2. Build.  That is, compile and link the programs.  A C compiler
       and a "make" program are usually required.  Other standard utility
@@ -591,9 +588,8 @@ MVS, z/OS
    and execute it to compile and link all the sources.  C/370 2.1 or
    later is required.  See README.MVS for further details.  (This is a
    new port and may need a little more work even to compile.)  There has
-   been considerable work on the MVS and z/OS ports lately (indeed, z/OS
-   may be split off as its own port soon), so there should be updates to
-   these procedures shortly.
+   been considerable work on the MVS and z/OS ports in recent years, but
+   not much lately.
 
 VM/CMS
    Unpack all the files and transfer them with ASCII -> EBCDIC
@@ -605,7 +601,7 @@ VM/CMS
    will abend without access to the C/370 runtime library.  See the
    README.CMS file for more details.
 
-Windows (XP, Vista, 7, and so on)
+Windows (XP, Vista, 7, 10, and so on)
    UnZip solution and project files for Microsoft Visual Studio 2010 are
    supplied in the win32\vc10\ subdirectory.  Optional features, such as
    optional compression and encryption methods, are controlled by
@@ -628,8 +624,8 @@ Windows (XP, Vista, 7, and so on)
    Studio 2010 are supplied in the windll\vc10\ subdirectory.  As with
    UnZip itself, optional features are controlled by Preprocessor
    Definitions (C macros).  Also similarly, the solution file,
-   unzip32_dll.sln, includes the "libbz2" project as as a prerequisite
-   for the "unz32dll" and "uzexampl" projects.
+   unzip32_dll.sln, includes the "libbz2" project as a prerequisite for
+   the "unz32dll" and "uzexampl" projects.
 
    Currently, Microsoft Visual Studio 2010 (Visual C++ v10.0), VS 2012
    (VC++ v11.0), VS 2013 (VC++ 12.0), and VS 2015 (VC++ 14.0) are the
@@ -914,11 +910,11 @@ Human68K, TOPS-20, AOS/VS, etc.
    Post-Installation
    -----------------
 
-   Some operating systems may require a timezone variable to be set
-correctly (often "TZ").  Unix and VMS generally do so by default.
-Windows does, if set up properly.  Other operating systems may not.  See
-the discussion of the -f and -u options in the UnZip man page (or
-docs/unzip.txt).
+   Some operating systems may require some kind of timezone
+configuration (environment variable "TZ", or other).  Unix, VMS (V7.0 or
+later), and Windows generally do this by default.  Other operating
+systems may not.  See the discussion of the -f and -u options in the
+UnZip man page (or docs/unzip.txt).
 
 ------------------------------------------------------------------------
 
@@ -930,6 +926,17 @@ docs/unzip.txt).
       General C macros
       System-Specific C macros
       Unicode-related C macros
+
+   Note that in the descriptions below, some of these macros are
+described as defined by default.  In some cases, this is done
+statically, in one of the header files; in other cases, it may be done
+dynamically, by the builders (scripts, "make" or MMS/MMK description
+files, Visual Studio project files, and so on).  In any case, the result
+may be affected by the builders being used, build options specified by
+the user, compiler limitations (especially on very old systems), files
+which are included in (or have been removed from) the kit, and so on.
+Thus, "default" in the following descriptions is normally accurate, but
+that can be influenced by various external factors.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -950,11 +957,11 @@ BZIP2_SFX
    bzip2 compression support is disabled in UnZipSFX even when it's
    enabled in UnZip itself.
 
-BZIP2_SUPPORT   (requires bzip2 object library)
+BZIP2_SUPPORT
    Enable support for bzip2 compression.  UnZip can optionally support
    the "bzip2" compression algorithm on most ports on 32-bit (or higher)
-   platforms.  Currently, this support is integrated in the builders for
-   MSDOS 32-bit (DJGPP), Unix, VMS, and Windows.
+   platforms.  Currently, this support is enabled by default in the
+   builders for MSDOS 32-bit (DJGPP), Unix, VMS, and Windows.
 
       Compilation:
       - MSDOS: You have to supply the macro definition "USEBZ2=1" on the
@@ -985,11 +992,10 @@ CHEAP_SFX_AUTORUN
    with the "-d <extract_dir>" command line option, therefore
    CHEAP_SFX_AUTORUN implicitly sets the NO_SFX_EXDIR option (below).
 
-IZ_CRYPT_AES_WG   (requires additional external code distribution)
+IZ_CRYPT_AES_WG
    Enable WinZip/Gladman AES (strong) encryption support.  Currently,
-   this support is integrated in the Make procedures of MSDOS 32-bit
-   (DJGPP), VMS, Windows, and many Unix systems.  A separately
-   distributed IZ_AES_WG source code kit is required.
+   this support is enabled by default in the builders for MSDOS 32-bit
+   (DJGPP), Unix, VMS, and Windows.
 
 IZ_CRYPT_AES_WG_SFX
    Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
@@ -998,15 +1004,16 @@ IZ_CRYPT_AES_WG_SFX
    it's enabled in UnZip itself.
 
 IZ_CRYPT_TRAD_SFX
-   Enable Traditional (weak) encryption support in UnZipSFX.  The
-   default setting is to disable Traditional encryption in UnZipSFX, to
-   reduce its size.  In UnZip, encryption support is enabled by default.
+   Enable Traditional (weak) encryption support in UnZipSFX.  By
+   default, to reduce the size of the UnZipSFX executable, Traditional
+   encryption support is disabled in UnZipSFX even when it's enabled in
+   UnZip itself.  In UnZip, encryption support is enabled by default.
    See also NO_CRYPT, below.
 
 DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
    Specify the order in which date components are printed in
    non-ZipInfo-mode listings: day-month-year, month-day-year, or
-   year-month-day.  On DOS, FlexOS, OS2, Theos and Windows, the format
+   year-month-day.  On DOS, FlexOS, OS2, Theos, and Windows, the format
    is automatically obtained from the operating system; most others
    default to DF_MDY.
 
@@ -1032,12 +1039,12 @@ NO_DEFLATE64   (default in UnZipSFX)
    better compression ratios on highly redundant data.  For better
    compatibility with archives which use this method, UnZip should be
    built with support for Deflate64 enabled.  However, this results in
-   significantly larger memory requirements to run the program.  For
-   16-bit executables (DOS and OS/2), the special memory management to
-   support the 64K history buffer results in a slight speed penalty.
-   For UnZipSFX, "Deflate64" support should be unnecessary so long as
-   the Info-ZIP Zip utility does not support it.  The NO_DEFLATE64
-   option disables Deflate64 support.
+   larger memory requirements to run the program.  For 16-bit
+   executables (DOS and OS/2), the special memory management to support
+   the 64K history buffer results in a slight speed penalty.  For
+   UnZipSFX, "Deflate64" support should be unnecessary so long as the
+   Info-ZIP Zip utility does not support it.  The NO_DEFLATE64 option
+   disables Deflate64 support.
 
 DELETE_IF_FULL   (any system with unlink() function)
    If a write error is encountered (most likely due to a full disk),
@@ -1052,10 +1059,11 @@ LZMA_SFX
    enabled in UnZip itself.
 
 LZMA_SUPPORT
-   Enable LZMA compression support in UnZip.
+   Enable LZMA compression support in UnZip.  Enabled by default on
+   Unix, VMS, and Windows.
 
 LZW_CLEAN
-UNSHRINK_SUPPORT   (now default, as of January 2005)
+UNSHRINK_SUPPORT   (default, as of January 2005)
    The "shrinking" algorithm from PKZIP 1.0 is an LZW variant.  Unisys
    patented the Lempel-Ziv-Welch algorithm in 1985 and has publicly
    claimed that decompression is covered by it.  (IBM also patented the
@@ -1063,11 +1071,12 @@ UNSHRINK_SUPPORT   (now default, as of January 2005)
    Unisys and IBM patents expired worldwide, so unshrinking is now
    enabled again by default.  If you do not wish to include the LZW
    method, you may still disable it by defining LZW_CLEAN.  (Unshrinking
-   was used by PKZIP 1.0 and 1.1, and Zip 1.0 and 1.1. All newer
-   archives use only the deflation method.)
+   was used by PKZIP 1.0 and 1.1, and Zip 1.0 and 1.1.  Newer program
+   versions do not use the "shrinking" method.)
 
 NO_BUILD_DATE
-   Omit the build date from the "Compiled with" line in the "-v" report.
+   Omit the build date from the "Compiled with" line in the "-v" report,
+   to make the build reproducible.
 
 NO_CRYPT
    Disable all encryption support in all programs.
@@ -1117,8 +1126,7 @@ OS2_EAS
    List the sizes of OS/2 EAs and ACLs for each file as two extra
    columns in "unzip -l" output.  This is primarily useful on OS/2
    systems, but, because zipfiles are portable, OS2_EAS can be defined
-   for any system. (May be extended someday to show sizes of Mac
-   resource forks, RISCOS and VMS file info, etc.)
+   for any system.
 
 PPMD_SFX
    Enable PPMd compression support in UnZipSFX (if it's enabled in
@@ -1127,7 +1135,8 @@ PPMD_SFX
    enabled in UnZip itself.
 
 PPMD_SUPPORT
-   Enable PPMd compression support in UnZip.
+   Enable PPMd compression support in UnZip.  Enabled by default on
+   Unix, VMS, and Windows.
 
 UNIXBACKUP   (default on OS/2, Unix, Windows)
    Enable a -B option that instructs UnZip to rename files that would
@@ -1154,7 +1163,7 @@ USE_UNREDUCE_SMITH
    all restrictions in Smith's copyright.  See the UnZip COPYING.OLD
    file for details.
 
-VMS_TEXT_CONV   (default everywhere except VMS)
+VMS_TEXT_CONV   (default everywhere except VMS, where it's not needed)
 NO_VMS_TEXT_CONV
    VMS_TEXT_CONV enables conversion of some VMS-specific text file
    formats, and is defined by default in UnZip (but not in UnZipSFX).
@@ -1171,7 +1180,7 @@ NO_VMS_TEXT_CONV
    field analyzer to identify such text files.  (Very old versions of
    UnZip applied some heuristics instead.)
 
-WILD_STOP_AT_DIR   (incompatible with WINDLL!)
+WILD_STOP_AT_DIR
    Enables an additional option "-W".  When "-W" is specified, the
    pattern-matching routine is modified so that both "?" (single-char
    wildcard) and "*" (multi-char wildcard) do not match the directory

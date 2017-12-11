@@ -661,7 +661,10 @@ Features added (or removed):
    suggestions.  Other related, minor code tidying.  (unzip.c, unzip.h,
    unzpriv.h, vms/cmdline.c) [SMS]
 
-6.1c21 (08 Jun 2017):
+6.1c22 (08 Jun 2017):
+ - No news.
+
+6.1c23 (11 Dec 2017):
  - No news.
 
 
@@ -1774,7 +1777,7 @@ Bugs fixed:
    fake "compression method" of 99, and the actual compression method is
    stored in an AES_WG extra block.  In some cases, the AES_WG "99"
    value was being used instead of the actual value from the extra
-   block.)  (extract.c)  [Elvis Angelaccio, SMS]
+   block.)  (extract.c) [Elvis Angelaccio, SMS]
  - Revised some "UT"-related comments.  (process.c) [SMS]
 
 6.1c21 (12 May 2017):
@@ -1941,3 +1944,50 @@ Bugs fixed:
       (fn_matched, xn_matched) before returning after an error.  New
       macro: unzpriv.h:SKIP_ZI().
    (process.c, unzpriv.h, zipinfo.c) [Jiri Kukacka, SMS]
+
+6.1c23 (29 Nov 2017):
+ - On Windows with Unicode support, for an archive whose paths used
+   backslash ("\") directory separators, the backslashes were
+   mishandled, resulting in extracted file paths/names like "dir_name"
+   instead of "dir\name".  Similar problems could have occurred with
+   absolute paths in an archive.  Both backslash directory separators
+   and absolute paths violate the standard for zip archives, but they
+   can be found in some archives.  UnZip's policy is to treat backslash
+   characters as slash characters ("/") for archive members which claim
+   to originate on FAT (or similar) file systems, but this was failing
+   in some cases on Windows with Unicode support enabled.
+   Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=541
+   (extract.c) [SMS]
+ - On Windows with Unicode support, some name storage could be reused
+   inappropriately, resulting in a file with a Unicode name being
+   extracted with a (wrong) name left over from some previously
+   processed file.
+   Forum topic: http://www.info-zip.org/phpBB3/viewtopic.php?f=7&t=541
+   (fileio.c) [SMS]
+ - Some standard memory-allocation function names were still used
+   instead of the private ones which support the crude, optional,
+   dynamic memory tracing diagnostic capability for use by developers.
+   (fileio.c, unzpriv.h, win32/win32.c) [SMS]
+ - On Windows with Unicode support, memory leaked when creating a
+   directory for extracted files.  (win32/win32.c) [Andreas
+   Schniertshauer, SMS]
+ - On VMS, in -f/--freshen (/FRESHEN) mode, UnZip did not attempt to
+   create nonexistent files, but it would erroneously create a directory
+   stack which would lead to a nonexistent file.  For example, in an
+   empty directory (where there's nothing to freshen), when freshening
+   "a/b/c.txt" UnZip would create "[.a.b]", and then not create "c.txt"
+   in it.  Now, as on other systems, when freshening, neither
+   directories nor files are created when they do not already exist. 
+   (Exception: When overwriting, or creating a new version of, an
+   existing file (interactive "[r]ename" option), the user-specified
+   directories and file are always created.)  (vms/vms.c) [SMS]
+ - Long member names in an archive could cause buffer overflow in
+   encryption password processing.  (fileio.c) [R. Freingruber, SMS]
+ - Long member names in an archive which require character-set
+   conversion could cause buffer overflow in character-set conversion. 
+   (fileio.c) [R. Freingruber, SMS]
+ - An archive name with no ".zip" suffix caused buffer overflow in
+   split-archive segment name ("xxx.z01", ...) formation.  (fileio.c)
+   [R. Freingruber, SMS]
+ - Invalid extra-field data (EF_STREAM, "xl" extra block) could cause
+   buffer overflow.  (extract.c) [R. Freingruber, SMS]

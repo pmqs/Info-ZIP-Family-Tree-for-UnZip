@@ -1,8 +1,18 @@
 
-Info-Zip UnZip -- Source kit.  Version 6.1c22 (pre-BETA)  2017-06-08.
+Info-Zip UnZip -- Source kit.  Version 6.1c23 (pre-BETA)  2017-12-11.
 
-See enclosed files INSTALL, LICENSE, and README.  For information on
-Info-Zip UnZip and Zip:
+Kit contents copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+   License terms in: LICENSE
+Exceptions:
+    aes_wg/ Copyright (c) 2002, Dr Brian Gladman.  All rights reserved.
+        License terms in: aes_wg/aes.h
+    bzip2/ Copyright (C) 1996-2010 Julian R Seward.  All rights reserved.
+        License terms in: bzip2/LICENSE
+    szip/ Public domain, Igor Pavlov.
+
+See also enclosed files INSTALL and README.
+
+For information on Info-Zip UnZip and Zip:
     http://info-zip.org/
     http://sourceforge.net/projects/infozip/
 Executables for some released versions may also be available:

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -1218,7 +1218,7 @@ void close_outfile(__G)
             return;
         }
 
-        if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize)) == NULL) {
+        if ((slnk_entry = (slinkentry *)izu_malloc(slnk_entrysize)) == NULL) {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: no mem\n",
               FnFilter1(G.filename)));
@@ -1255,7 +1255,7 @@ void close_outfile(__G)
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed\n",
               FnFilter1(G.filename)));
-            free(slnk_entry);
+            izu_free(slnk_entry);
             fclose(G.outfile);
             return;
         }
@@ -1447,7 +1447,7 @@ void close_outfile(__G)
             return;
         }
 
-        if ((slnk_entry = (slinkentry *)malloc(slnk_entrysize)) == NULL) {
+        if ((slnk_entry = (slinkentry *)izu_malloc(slnk_entrysize)) == NULL) {
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed: no mem\n",
               FnFilter1(G.filename)));
@@ -1481,7 +1481,7 @@ void close_outfile(__G)
             Info(slide, 0x201, ((char *)slide,
               "warning:  symbolic link (%s) failed\n",
               FnFilter1(G.filename)));
-            free(slnk_entry);
+            izu_free(slnk_entry);
             fclose(G.outfile);
             return;
         }
@@ -3822,7 +3822,6 @@ int checkdirw(__G__ pathcompw, flag)
                 return MPN_ERR_TOOLONG;
             }
             {
-                char *buildpathFAT = wchar_to_local_string(G.buildpathFATw, G.unicode_escape_all);
                 int i = MKDIRW(G.buildpathFATw, 0777);
                 if (i == -1) { /* create the directory */
                     Info(slide, 1, ((char *)slide,
@@ -3838,7 +3837,7 @@ int checkdirw(__G__ pathcompw, flag)
                     return MPN_ERR_SKIP;
                 }
                 G.created_dir = TRUE;
-                }
+            }
         } else if (!S_ISDIR(G.statbuf.st_mode)) {
             Info(slide, 1, ((char *)slide,
               "checkdir(2) error: %s exists but is not directory\n\
@@ -4114,7 +4113,6 @@ int checkdirw(__G__ pathcompw, flag)
                         /* file exists, or need 2+ subdir levels */
                         /* 2013-03-12 SMS.
                          * izu_free(pathcomp);
-                         * Should be "izu_free(pathcompw);"???
                          */
                         return MPN_ERR_SKIP;
                     }
@@ -4575,10 +4573,10 @@ int zstat_win32w(__W32STAT_GLOBALS__ const wchar_t *pathw, z_stat *buf)
         if ((flags != INVALID_FILE_ATTRIBUTES) &&
          (flags & FILE_ATTRIBUTE_DIRECTORY)) {
 #    ifdef Tracing
-            char *path = wchar_to_local_string((wchar_t *)pathw, G.unicode_escape_all);
+            char *path = wchar_to_local_string((wchar_t *)pathw,
+             G.unicode_escape_all);
             Trace((stderr, "\nstat(\"%s\",...) failed on existing directory\n",
-
-       FnFilter1(path)));
+             FnFilter1(path)));
             izu_free(path);
 #    endif /* def Tracing */
             memset(buf, 0, sizeof(z_stat));
@@ -4746,6 +4744,7 @@ char *wide_to_local_string(wide_string, escape_all)
   if (max_bytes < MB_CUR_MAX)
     max_bytes = MB_CUR_MAX;
 
+  /* Over-allocate a working buffer. */
   if ((buffer = (char *)izu_malloc(wsize * max_bytes + 1)) == NULL) {
     return NULL;
   }
@@ -4799,6 +4798,8 @@ char *wide_to_local_string(wide_string, escape_all)
       izu_free(escape_string);
     }
   }
+
+  /* Re-allocate a buffer with the final size. */
   if ((local_string = (char *)izu_realloc(
    buffer, strlen(buffer) + 1)) == NULL) {
     izu_free(buffer);
@@ -5027,7 +5028,7 @@ int symlinkw( const char *target, const wchar_t *namew, int is_dir)
     {
       sts = GetLastError();
     }
-    free( targetw);
+    izu_free( targetw);
   }
   return sts;
 }

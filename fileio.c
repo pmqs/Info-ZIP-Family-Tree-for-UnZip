@@ -14,7 +14,10 @@
   output, file-related sorts of things, plus some miscellaneous stuff.  Most
   of the stuff has to do with opening, closing, reading and/or writing files.
 
-  Contains:  open_input_file()
+  Contains:  open_infile()
+             close_infile()
+             set_zipfn_sgmnt_name()
+             open_infile_sgmnt()
              open_outfile()           (not: VMS, AOS/VS, CMSMVS, MACOS, TANDEM)
              undefer_input()
              defer_leftover_input()
@@ -24,6 +27,7 @@
              seek_zipf()
              fgets_ans()
              flush()                  (non-VMS)
+             partflush() 
              is_vms_varlen_txt()      (non-VMS, VMS_TEXT_CONV only)
              disk_error()             (non-VMS)
              UzpMessagePrnt()
@@ -43,7 +47,9 @@
              str2iso()                (CRYPT && NEED_STR2ISO, only)
              str2oem()                (CRYPT && NEED_STR2OEM, only)
              memset()                 (ZMEM only)
+             memcmp()                 (ZMEM only)
              memcpy()                 (ZMEM only)
+             labs()
              zstrnicmp()              (NO_STRNICMP only)
              zstat()                  (REGULUS only)
              plastchar()              (_MBCS only)
@@ -347,8 +353,9 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
   zuvl_t sgmnt_nr;
 #endif /* def PROTO [else] */
 {
-  char *suffix;
-  int sufx_len;
+  int dgt_ndx;
+  int sufx_ndx;
+  size_t zipfn_len;
 
 /* sizeof( ".z65535") == 8 should be safe. */
 #define SGMNT_NAME_BOOST 8
@@ -361,10 +368,12 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
     return 1;
   }
 
+  zipfn_len = strlen( G.zipfn);
+
   if (G.zipfn_sgmnt == NULL)
-  {
-    G.zipfn_sgmnt_size = (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST;
-    if ((G.zipfn_sgmnt = izu_malloc(G.zipfn_sgmnt_size)) == NULL)
+  { /* Allocate new space. */
+    G.zipfn_sgmnt_size = (int)zipfn_len+ SGMNT_NAME_BOOST;
+    if ((G.zipfn_sgmnt = izu_malloc( G.zipfn_sgmnt_size)) == NULL)
     {
       G.zipfn_sgmnt_size = -1;
       return 1;
@@ -372,11 +381,11 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
   }
   else
   {
-    if (G.zipfn_sgmnt_size < (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST)
-    {
-      G.zipfn_sgmnt_size = (int)strlen(G.zipfn)+ SGMNT_NAME_BOOST;
-      izu_free(G.zipfn_sgmnt);
-      if ((G.zipfn_sgmnt = izu_malloc(G.zipfn_sgmnt_size)) == NULL)
+    if (G.zipfn_sgmnt_size < (int)zipfn_len+ SGMNT_NAME_BOOST)
+    { /* Allocated space could be too small.  Reallocate. */
+      G.zipfn_sgmnt_size = (int)zipfn_len+ SGMNT_NAME_BOOST;
+      G.zipfn_sgmnt = izu_realloc( G.zipfn_sgmnt, G.zipfn_sgmnt_size);
+      if (G.zipfn_sgmnt == NULL)
       {
         G.zipfn_sgmnt_size = -1;
         return 1;
@@ -384,11 +393,10 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
     }
   }
 
-
   if (sgmnt_nr == G.ecrec.number_this_disk)
   {
-    zfstrcpy(G.zipfn_sgmnt, G.zipfn);
-    return 0;           /* Last segment.  Name already ".zip." */
+    zfstrcpy( G.zipfn_sgmnt, G.zipfn);
+    return 0;           /* Last segment.  Leave archive name as-is. */
   }
 
 #ifdef VMS
@@ -402,30 +410,33 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
 
 #else /* def VMS */
 
-  zfstrcpy(G.zipfn_sgmnt, G.zipfn);
-  /* Expect to find ".zXX" at the end of the segment file name. */
-  sufx_len = IZ_MAX( 0, ((int)strlen(G.zipfn_sgmnt)- 4));
-  suffix = G.zipfn_sgmnt+ sufx_len;
-
-  /* try find filename extension and set right position for add number */
-  if (zfstrcmp(suffix, ZSUFX) == 0)
+  dgt_ndx = -1;                         /* Suffix not found. */
+  zfstrcpy( G.zipfn_sgmnt, G.zipfn);    /* Copy whole archive name. */
+  /* Expect ".zip", or similar suffix, at the end of the segment file name. */
+  sufx_ndx = IZ_MAX( 0, ((int)strlen( G.zipfn_sgmnt)- strlen( ZSUFX)));
+  if (zfstrcmp( (G.zipfn+ sufx_ndx), ZSUFX) == 0)       /* Case-insens? */
   {
-    suffix += 2;        /* Point to digits after ".z". */
+    dgt_ndx = strlen( G.zipfn_sgmnt)- 2;
+  }
 # ifdef ZSUFX2
-  }
-  else if (zfstrcmp(suffix, ZSUFX2) == 0)       /* Check alternate suffix. */
-  {
-    suffix[1] = 'z';    /* Should be always lowercase??? */
-    suffix += 2;        /* Point to digits after ".z". */
-# endif
-  }
   else
   {
-    zfstrcpy( (suffix+ sufx_len), ZSUFX);
-    suffix += sufx_len+ 2;
+    sufx_ndx = IZ_MAX( 0, ((int)strlen( G.zipfn_sgmnt)- strlen( ZSUFX2)));
+    if (zfstrcmp( (G.zipfn+ sufx_ndx), ZSUFX2) == 0)    /* Case-insens? */
+    {
+      dgt_ndx = strlen( G.zipfn_sgmnt)- 2;
+    }
   }
-  /* Insert the next segment number into the file name (G.zipfn_sgmnt). */
-  sprintf(suffix, "%02d", (sgmnt_nr+ 1));
+# endif /* def ZSUFX2 */
+
+  if (dgt_ndx < 0)
+  { /* No suffix detected.  Append the (local) standard suffix. */
+    strcpy( (G.zipfn_sgmnt+ zipfn_len), ZSUFX);
+    dgt_ndx = zipfn_len+ strlen( ZSUFX)- 2;
+  }
+
+  /* Overwrite the last two suffix characters with the next segment number. */
+  sprintf( (G.zipfn_sgmnt+ dgt_ndx), "%02d", (sgmnt_nr+ 1));
 
 #endif /* def VMS [else] */
 
@@ -615,7 +626,7 @@ int open_outfile(__G)           /* return 1 if fail */
                 if (flen > tlen) flen = tlen;
                 tlen = FILNAMSIZ;
             } else {
-                tname = (char *)malloc(tlen);
+                tname = (char *)izu_malloc(tlen);
                 if (tname == NULL)
                     return 1;                 /* in case we run out of space */
                 strcpy(tname, G.filename);    /* make backup name */
@@ -707,7 +718,7 @@ int open_outfile(__G)           /* return 1 if fail */
 #  ifdef TOPS20
     char *tfilnam;
 
-    if ((tfilnam = (char *)malloc(2*strlen(G.filename)+1)) == (char *)NULL)
+    if ((tfilnam = (char *)izu_malloc(2*strlen(G.filename)+1)) == (char *)NULL)
         return 1;
     strcpy(tfilnam, G.filename);
     upper(tfilnam);
@@ -2396,6 +2407,8 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
     int r = IZ_PW_ENTERED;
     char *m;
     char *prompt;
+    char *ep;
+    char *zp;
 
 #  ifndef REENTRANT
     /* tell picky compilers to shut up about "unused variable" warnings */
@@ -2404,9 +2417,12 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
 
     if (*rcnt == 0) {           /* First call for current entry */
         *rcnt = 2;
-        if ((prompt = (char *)malloc(2*FILNAMSIZ + 15)) != (char *)NULL) {
-            sprintf(prompt, LoadFarString(PasswPrompt),
-                    FnFilter1(zfn), FnFilter2(efn));
+        zp = FnFilter1( zfn);
+        ep = FnFilter2( efn);
+        prompt = (char *)izu_malloc(    /* Slightly too long (2* "%s"). */
+         sizeof( PasswPrompt)+ strlen( zp)+ strlen( ep));
+        if (prompt != (char *)NULL) {
+            sprintf(prompt, LoadFarString(PasswPrompt), zp, ep);
             m = prompt;
         } else
             m = (char *)LoadFarString(PasswPrompt2);
@@ -2601,7 +2617,7 @@ time_t dos_to_unix_time(dosdatetime)
         return (time_t)-1;
 
 #   ifdef TOPS20
-    tmx = (struct tmx *)malloc(sizeof(struct tmx));
+    tmx = (struct tmx *)izu_malloc(sizeof(struct tmx));
     sprintf (temp, "%02d/%02d/%02d %02d:%02d:%02d", mo+1, dy+1, yr, hh, mm, ss);
     time_parse(temp, tmx, (char *)0);
     m_time = time_make(tmx);
@@ -3146,7 +3162,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             {
                 if (G.filename_full)
                     izu_free(G.filename_full);
-                G.filename_full = malloc( fnbufsiz);
+                G.filename_full = izu_malloc( fnbufsiz);
                 if (G.filename_full == NULL)
                     return PK_MEM;
                 G.fnfull_bufsize = fnbufsiz;
@@ -3162,7 +3178,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 fnbufsiz = length + 1;
             if (G.filename_full)
                 izu_free(G.filename_full);
-            G.filename_full = malloc(fnbufsiz);
+            G.filename_full = izu_malloc(fnbufsiz);
             if (G.filename_full == NULL)
                 return PK_MEM;
             G.fnfull_bufsize = fnbufsiz;
@@ -3182,6 +3198,21 @@ int do_string(__G__ length, option)   /* return PK-type error code */
         block_len = 0;
         strncpy(G.filename, G.filename_full, length);
         G.filename[length] = '\0';      /* terminate w/zero:  ASCIIZ */
+
+        /* 2017-07-25 SMS.
+         * Moved to here from case EXTRA_FIELD:, below.  (Old Unicode
+         * names were getting reused.)
+         * 2013-02-11 SMS.
+         * Free old G.unipath_filename storage, if not already
+         * done (G.unipath_filename == G.filename_full).
+         */
+        if ((G.unipath_filename != NULL) &&
+         (G.unipath_filename != G.filename_full))
+        {
+            izu_free( G.unipath_filename);
+        }
+        G.unipath_filename = NULL;
+
 #else /* def UNICODE_SUPPORT */
         if (length == 0)
         {
@@ -3284,7 +3315,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             return PK_COOL;
         }
         /* Allocate new extra field storage, and fill it. */
-        if ((G.extra_field = (uch *)malloc(length)) == (uch *)NULL) {
+        if ((G.extra_field = (uch *)izu_malloc(length)) == (uch *)NULL) {
             Info(slide, 0x401, ((char *)slide, LoadFarString(ExtraFieldTooLong),
               length));
             /* cur_zipfile_bufstart already takes account of extra_bytes,
@@ -3321,6 +3352,8 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 error = PK_WARN;
             }
 #ifdef UNICODE_SUPPORT
+
+#if 0  /* See case DS_FN:, above. */
             /* 2013-02-11 SMS.
              * Free old G.unipath_filename storage, if not already
              * done (G.unipath_filename == G.filename_full).
@@ -3331,12 +3364,15 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 izu_free( G.unipath_filename);
             }
             G.unipath_filename = NULL;
+#endif /* 0 */
+
             if (G.UzO.U_flag < 2) {
               /* check if GPB11 (General Purpuse Bit 11) is set indicating
                  the standard path and comment are UTF-8 */
               if (G.pInfo->GPFIsUTF8) {
                 /* if GPB11 set then filename_full is untruncated UTF-8 */
-                if (!(G.unipath_filename = malloc(strlen(G.filename_full)+1)))
+                if (!(G.unipath_filename =
+                 izu_malloc(strlen(G.filename_full)+1)))
                   return PK_MEM;
                 strcpy(G.unipath_filename, G.filename_full);
               } else {
@@ -3401,9 +3437,9 @@ int do_string(__G__ length, option)   /* return PK-type error code */
               }
 # ifdef WIN32_WIDE
 #  ifdef DYNAMIC_WIDE_NAME
-            /* 2013-02-12 SMS.
-             * Free old G.unipath_widefilename storage.
-             */
+              /* 2013-02-12 SMS.
+               * Free old G.unipath_widefilename storage.
+               */
               if (G.unipath_widefilename != NULL)
               {
                 izu_free( G.unipath_widefilename);
@@ -3415,10 +3451,15 @@ int do_string(__G__ length, option)   /* return PK-type error code */
               if (G.has_win32_wide) {
                 if (G.unipath_filename)
 #  ifdef DYNAMIC_WIDE_NAME
+                {
                   /* Get wide path from UTF-8 */
-                  G.unipath_widefilename = utf8_to_wchar_string(G.unipath_filename);
+                  G.unipath_widefilename =
+                   utf8_to_wchar_string( G.unipath_filename);
+                }
                 else
-                  G.unipath_widefilename = utf8_to_wchar_string(G.filename);
+                {
+                  G.unipath_widefilename = utf8_to_wchar_string( G.filename);
+                }
 #  else /* def DYNAMIC_WIDE_NAME */
                   /* Get wide path from UTF-8 */
                   utf8_to_wchar_string( G.unipath_widefilename,
@@ -3469,7 +3510,8 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             izu_free(G.filenotes[G.filenote_slot]);     /* should not happen */
         G.filenotes[G.filenote_slot] = NULL;
         if (tmp_fnote[0]) {
-            if (!(G.filenotes[G.filenote_slot] = malloc(strlen(tmp_fnote)+1)))
+            if (!(G.filenotes[G.filenote_slot] =
+             izu_malloc(strlen(tmp_fnote)+1)))
                 return PK_MEM;
             strcpy(G.filenotes[G.filenote_slot], tmp_fnote);
         }

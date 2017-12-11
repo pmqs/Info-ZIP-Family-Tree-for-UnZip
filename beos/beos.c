@@ -1733,7 +1733,11 @@ void charset_to_intern(char *string, char *from_charset)
     d = buf = malloc(buflen + 1);
     if (d)
     {
-        memset( buf, 0, buflen);
+        /* 2017-11-29 Rene Freingruber, SMS.
+         * Was using buflen, ignoring last byte.  Next strcpy() was
+         * strncpy() with a bad maxchar parameter (buflen). 
+         */
+        memset( buf, 0, (buflen+ 1));
 
         /* 2015-02-12 William Robinet, SMS.  CVE-2015-1315.
          * Added FILNAMSIZ check to avoid buffer overflow.  Better would
@@ -1742,7 +1746,7 @@ void charset_to_intern(char *string, char *from_charset)
         if ((iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1) &&
          (strlen(buf) < FILNAMSIZ))
         {
-            strncpy(string, buf, buflen);
+            strcpy(string, buf);
         }
         free(buf);
     }

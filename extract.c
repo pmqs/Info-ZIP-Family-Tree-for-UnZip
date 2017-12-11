@@ -18,6 +18,7 @@
              check_unmatched_names()
              match_include_exclude()
              name_abs_rel()
+             name_abs_relw()
              name_junk()
              name_junkw()
              test_compr_eb()
@@ -35,6 +36,7 @@
              password_check()                   (IZ_CRYPT_ANY)
              detect_apl_dbl()                   (UNIX && __APPLE__)
              backslash_slash()                  (ndef SFX)
+             backslash_slashw()                 (ndef SFX)
              extract_test_trailer()
              extract_or_test_member()
              mapname_dir_vollab()
@@ -630,6 +632,43 @@ static int name_abs_rel( __G)           /* Return PK-type error code. */
 } /* name_abs_rel(). */
 
 
+#if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+/******************************/
+/*  Function name_abs_relw()  */
+/******************************/
+
+static int name_abs_relw( __G)          /* Return PK-type error code. */
+  __GDEF
+{
+  int error = PK_OK;
+
+  /* Transform an absolute path to a relative path, and warn user. */
+  if (G.unipath_widefilename[0] == L'/')
+  {
+    Info(slide, 0x401, ((char *)slide,
+     LoadFarString(AbsolutePathWarning),
+     FnFilterW1(G.unipath_widefilename)));
+    error = PK_WARN;
+
+    do                          /* While there's a leading slash, ... */
+    {
+      wchar_t *wp;
+
+      wp = G.unipath_widefilename + 1;
+      do                        /* Left-shift all characters one place. */
+      {
+        *(wp-1) = *wp;
+      } while (*wp++ != L'\0');
+    } while (G.unipath_widefilename[0] == L'/');
+  }
+
+  return error;
+} /* name_abs_relw(). */
+
+#endif /* defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+
 /**************************/
 /*  Function name_junk()  */
 /**************************/
@@ -719,7 +758,7 @@ static int name_junkw( __G)             /* Return PK-type error code. */
   if (uO.jflag < 0)
   {
     /* "-j": Junking all directories.  Find last slash (if any). */
-    wslp = wcschr( G.unipath_widefilename, '/');
+    wslp = wcschr( G.unipath_widefilename, L'/');
     if (wslp != NULL)
     {
       /* Found a last slash.  Name begins after it. */
@@ -733,7 +772,7 @@ static int name_junkw( __G)             /* Return PK-type error code. */
 
     for (i = 0; i < uO.jflag; i++)
     {
-      wslp = wcschr( G.unipath_jdir_widefilename, '/');
+      wslp = wcschr( G.unipath_jdir_widefilename, L'/');
       if (wslp == NULL)
       {
         if (G.filename[ strlen( G.filename)- 1] == '/')
@@ -1219,8 +1258,11 @@ static int ef_scan_for_stream( ef_ptr, ef_len, btmp_siz, btmp, xlhdr, cmnt)
       /* Loop through (and save) the bitmap bytes. */
       data_byte = 0;
       do
-      {
-        if (bitmap_byte_max >= eb_len)          /* Stay within the block. */
+      { /* Stay within the block (and whole field). */
+        /* 2017-11-29 Rene Freingruber, SMS.
+         * Added check for end of extra field (ef_len).
+         */
+        if ((bitmap_byte_max >= eb_len) || (data_byte >= ef_len))
         {
           /* Out of data before end-of-bitmap. */
           TTrace((stderr,
@@ -1230,6 +1272,7 @@ static int ef_scan_for_stream( ef_ptr, ef_len, btmp_siz, btmp, xlhdr, cmnt)
         }
 
         /* If the user has space for another, then return a bitmap byte. */
+
         bitmap = *(ef_ptr+ (data_byte++));
         if (bitmap_byte_max < *btmp_siz)
         {
@@ -2085,7 +2128,7 @@ static int detect_apl_dbl( __G)
 #endif /* defined( UNIX) && defined( __APPLE__) */
 
 
-# ifndef SFX
+#ifndef SFX
 
 /********************************/
 /*  Function backslash_slash()  */
@@ -2121,7 +2164,46 @@ static int backslash_slash( __G)
   return error;
 } /* backslash_slash(). */
 
-# endif /* ndef SFX */
+
+# if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE)
+
+/*********************************/
+/*  Function backslash_slashw()  */
+/*********************************/
+static int backslash_slashw( __G)
+  __GDEF
+{
+  int error = PK_OK;                    /* Return PK-type error code. */
+
+  if ((G.pInfo->hostnum == FS_FAT_) && !MBSCHR(G.filename, '/'))
+  {
+    wchar_t *wp = G.unipath_widefilename;
+
+    if (*wp)
+    {
+      do
+      {
+        if (*wp == L'\\')
+        {
+          if (!G.reported_backslash)
+          {
+            Info(slide, 0x21, ((char *)slide,
+             LoadFarString(BackslashPathSep), G.zipfn));
+            G.reported_backslash = TRUE;
+            error = PK_WARN;
+          }
+          *wp = L'/';
+        }
+      } while (*(++wp));
+    }
+  }
+
+  return error;
+} /* backslash_slashw(). */
+
+# endif /* if defined(UNICODE_SUPPORT) && defined(WIN32_WIDE) */
+
+#endif /* ndef SFX */
 
 
 /*************************************/
@@ -3571,7 +3653,7 @@ startover:
      * SFX, because we assume that our Zip doesn't do it.
      */
 #ifndef SFX
-    error = backslash_slash( __G);
+    error = backslash_slashw( __G);
     if (error != PK_OK)
     {
       if (*perr_in_arch == PK_OK)
@@ -3582,7 +3664,7 @@ startover:
     if (!*prenamed)
     {
       /* Transform absolute path to relative path, and warn user. */
-      error = name_abs_rel( __G);
+      error = name_abs_relw( __G);
       if (error != PK_OK)
         *perr_in_arch = error;
     }
@@ -5266,7 +5348,6 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
             if (G.pInfo->lcflag) {      /* replace with lowercase filename */
                 wcslwr(G.unipath_widefilename);
             }
-# endif /* def DYNAMIC_WIDE_NAME [else] */
 # if 0
             if (G.pInfo->vollabel && (length > 8) &&
              (G.unipath_widefilename[8] == '.')) {
@@ -5276,6 +5357,7 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
             }
 # endif /* 0 */
         }
+# endif /* def DYNAMIC_WIDE_NAME [else] */
 
 # ifndef SFX
         /* Filename consistency checks must come after reading in the

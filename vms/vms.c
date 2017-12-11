@@ -225,8 +225,6 @@ static int  (*_close_routine)(__GPRO);
 static int  _read_link_rms(__GPRO__ int byte_count, char *link_text_buf);
 #endif /* def SYMLINKS */
 
-static void init_buf_ring(void);
-static void set_default_datetime_XABs(__GPRO);
 static int  create_default_output(__GPRO);
 static int  create_rms_output(__GPRO);
 static int  create_qio_output(__GPRO);
@@ -4674,8 +4672,8 @@ static void adj_file_name_ods5(__GPRO__ char *dest, char *src)
 
 
 
-#define FN_MASK         7
-#define USE_DEFAULT     (FN_MASK+1)
+#define FN_MASK  7
+#define RENAMED  (FN_MASK+1)
 
 /*
  * Checkdir function codes:
@@ -4683,7 +4681,7 @@ static void adj_file_name_ods5(__GPRO__ char *dest, char *src)
  *      INIT        -   get ready for "filename"
  *      APPEND_DIR  -   append pathcomp
  *      APPEND_NAME -   append filename
- *      APPEND_NAME | USE_DEFAULT   -    expand filename using collected path
+ *      APPEND_NAME | RENAMED  -    expand filename using collected path
  *      GETPATH     -   return resulting filespec
  *      END         -   free dynamically allocated space prior to program exit
  */
@@ -4733,9 +4731,9 @@ int mapname(__G__ renamed)
         return (error & ~MPN_MASK) | MPN_ERR_SKIP;
     }
 
-    if ( renamed )
+    if (renamed)
     {
-        if ( !(error = checkdir(__G__ pathcomp, APPEND_NAME | USE_DEFAULT)) )
+        if (!(error = checkdir(__G__ pathcomp, APPEND_NAME | RENAMED)))
             strcpy(G.filename, pathcomp);
         return error;
     }
@@ -4866,7 +4864,9 @@ int mapname(__G__ renamed)
         return error;
     }
 
-    /* can create path as long as not just freshening, or if user told us */
+    /* Can create path, if not just freshening, or if user told us.
+     * On VMS, "user told us" = RENAMED, which is handled in checkdir().
+     */
     G.create_dirs = !uO.fflag;
 
     created_dir = FALSE;        /* not yet */
@@ -5008,6 +5008,93 @@ int mapname(__G__ renamed)
 
 
 
+static int create_dir( dir_spec)
+    /* Returns:
+     * Zero: No error.  (Directory created or already existed.)
+     * Non-zero: Directory creation failed.
+     *
+     * 2017-10-07  SMS.  New.
+     * Disabled the old code to save a created dir name, and then skip
+     * dir creation if the same dir spec recurs.  The fix in checkdir()
+     * to stop creating nonexistent dirs in freshen mode requires
+     * testing for dir existence, so now this function won't be invoked
+     * repeatedly for the same dir spec.  (Unless someone fiddles with a
+     * dir mid-job, in which case always checking the dirs should work
+     * better.  Testing with an UnZip kit on an Alpha XP1000 showed no
+     * reliable performance difference between pre- and post-fix code.
+     * Post-fix, the disabled code (DIR_TEST_OPT) is pointless.)
+     */
+    char *dir_spec;
+{
+    int sts;
+
+#ifdef DIR_TEST_OPT
+
+    /* Retained for historical interest only, I hope.  2017-10-07  SMS. */
+
+    /* Previously created directory (initialized to impossible dir. spec.) */
+    static char dir_spec_prev[ FILNAMSIZ] = "\t";
+
+    if (STRICMP( dir_spec_prev, dir_spec) == 0)
+    {   /* Previously created this directory. */
+        return 0;
+    }
+#endif /* def DIR_TEST_OPT */
+
+    sts = mkdir( dir_spec, 0);
+    if (sts == 0)
+    {
+        created_dir = TRUE;
+    }
+    else if (errno == EEXIST)
+    {
+        sts = 0;        /* Good enough, although unlikely. */
+    }
+
+#ifdef DIR_TEST_OPT
+    if (sts == 0)
+    {
+        strcpy( dir_spec_prev, dir_spec);       /* Save created dir spec. */
+    }
+#endif /* def DIR_TEST_OPT */
+
+    return sts;
+
+} /* end function create_dir() */
+
+
+
+static int test_dir_exists( dir_spec)
+    /* Returns:
+     * Zero: Directory does not exist.)
+     * Non-zero: Directory exists.
+     */
+    char *dir_spec;
+{
+    int sts;
+    struct FAB fab;
+    struct NAMX_STRUCT nam;
+
+    fab = cc$rms_fab;           /* Initialize FAB. */
+    nam = CC_RMS_NAMX;          /* Initialize NAM[L]. */
+    fab.FAB_NAMX = &nam;        /* Point FAB to NAM[L]. */
+
+    NAMX_DNA_FNA_SET( fab)
+    FAB_OR_NAML(fab, nam).FAB_OR_NAML_DNA = PATH_DEFAULT;
+    FAB_OR_NAML(fab, nam).FAB_OR_NAML_DNS = strlen( PATH_DEFAULT);
+    FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNA = dir_spec;
+    FAB_OR_NAML(fab, nam).FAB_OR_NAML_FNS = strlen( dir_spec);
+    nam.NAMX_ESA = NULL;
+    nam.NAMX_ESS = 0;
+
+    sts = sys$parse( &fab);
+
+    return ((sts & STS$M_SEVERITY) == STS$K_SUCCESS);
+
+} /* end function test_dir_exists() */
+
+
+
 int checkdir(__G__ pathcomp, fcn)
 /*
  * returns:
@@ -5018,22 +5105,29 @@ int checkdir(__G__ pathcomp, fcn)
  *                    exists and is not a directory, but is supposed to be
  *  MPN_ERR_TOOLONG - path is too long
  *  MPN_NOMEM       - can't allocate memory for filename buffers
+ *
+ * In unix/unix.c:checkdir(), APPEND_DIR causes directory creation, as
+ * the Unix directory path is accumulated.  (Some (older?) Unix mkdir()
+ * implementations fail with ENOENT if the parent directory does not
+ * already exist.)
+ *
+ * Here, APPEND_DIR accumulates a VMS directory spec, but APPEND_NAME
+ * causes the actual directory creation.  On VMS, mkdir() can create the
+ * whole directory stack at one time.
  */
     __GDEF
     char *pathcomp;
     int fcn;
 {
-    int function=fcn & FN_MASK;
-    static char pathbuf[FILNAMSIZ];
+    int function = fcn & FN_MASK;       /* Strip flags from function code. */
+    static char pathbuf[FILNAMSIZ];     /* Accumulated VMS path. */
 
-    /* previously created directory (initialized to impossible dir. spec.) */
-    static char lastdir[FILNAMSIZ] = "\t";
 
     static char *pathptr = pathbuf;     /* For debugger */
     static char *devptr, *dirptr;
     static int  devlen, dirlen;
     static int  root_dirlen;
-    static char *end;
+    static char *end;                   /* Ptr to current end of pathbuf. */
     static int  first_comp, root_has_dir;
     static int  rootlen=0;
     static char *rootend;
@@ -5042,19 +5136,20 @@ int checkdir(__G__ pathcomp, fcn)
     struct FAB fab;
     struct NAMX_STRUCT nam;
 
-
 /************
  *** ROOT ***
  ************/
 
 #if (!defined(SFX) || defined(SFX_EXDIR))
+
     if (function == ROOT)
-    {   /*  Assume VMS root spec */
+    {   /*  Assume VMS root dir spec. */
         /* 2006-01-20 SMS.
-           Changed to use sys$parse() instead of sys$filescan() for analysis
-           of the user-specified destination directory.  Previously, various
-           values behaved badly, without complaint, e.g. "-d sys$scratch".
-        */
+         * Changed to use sys$parse() instead of sys$filescan() for
+         * analysis of the user-specified destination directory.
+         * Previously, various values behaved badly, without complaint,
+         * e.g. "-d sys$scratch".
+         */
 
         /* If the root path has already been set, return immediately. */
         if (rootlen > 0)
@@ -5139,22 +5234,26 @@ int checkdir(__G__ pathcomp, fcn)
 
         devlen = nam.NAMX_L_DIR - nam.NAMX_ESA;
 
-        /* If directory not found, then create it. */
+        /* If directory not found, then create it, if allowed. */
         if (status == RMS$_DNF)
         {
-            if (status = mkdir(nam.NAMX_ESA, 0))
+            if (!G.create_dirs)
+            {
+                /* Skip (or treat as stored file). */
+                return MPN_INF_SKIP;
+            }
+            else if (mkdir( nam.NAMX_ESA, 0))
             {
                 Info(slide, 1, ((char *)slide,
-                  "Can not create destination directory: %s\n",
-                  FnFilter1(nam.NAMX_ESA)));
-
-                /* path didn't exist, tried to create, and failed. */
+                 "Can not create destination directory: %s\n",
+                 FnFilter1(nam.NAMX_ESA)));
+                /* Path didn't exist, tried to create, and failed. */
                 return MPN_ERR_SKIP;
             }
         }
 
         /* Save the (valid) device:[directory] spec. */
-        strcpy(pathbuf, nam.NAMX_ESA);
+        strcpy( pathbuf, nam.NAMX_ESA);
 
         /* At this point, the true destination is known.  If the user
          * supplied an invalid destination directory, the default
@@ -5199,8 +5298,8 @@ int checkdir(__G__ pathcomp, fcn)
         first_comp = !root_has_dir;
         return MPN_OK;
     }
-#endif /* !SFX || SFX_EXDIR */
 
+#endif /* !SFX || SFX_EXDIR */
 
 /************
  *** INIT ***
@@ -5218,8 +5317,11 @@ int checkdir(__G__ pathcomp, fcn)
         }
         end = rootend;
         first_comp = !root_has_dir;
+
+        /* Reset dirlen.  If ROOT set, change terminator (from "]") to ".". */
         if ( dirlen = root_dirlen )
             end[-1] = '.';
+
         *end = '\0';
         return MPN_OK;
     }
@@ -5228,11 +5330,12 @@ int checkdir(__G__ pathcomp, fcn)
 /******************
  *** APPEND_DIR ***
  ******************/
+
     if ( function == APPEND_DIR )
     {
         int cmplen;
 
-        cmplen = strlen(pathcomp);
+        cmplen = strlen( pathcomp);
 
         if ( first_comp )
         {
@@ -5270,11 +5373,13 @@ int checkdir(__G__ pathcomp, fcn)
 /*******************
  *** APPEND_NAME ***
  *******************/
+
     if ( function == APPEND_NAME )
-    {
-        if ( fcn & USE_DEFAULT )
-        {   /* Expand renamed filename using collected path, return
-             *  at pathcomp */
+    {   /* Expand filename using collected path, return at pathcomp.
+         * Create directories as needed, if allowed (not -f/--freshen).
+         */
+        if (fcn & RENAMED)
+        {   /* Renamed (user-specified) filename, so always create dirs. */
             fab = cc$rms_fab;           /* Initialize FAB. */
             nam = CC_RMS_NAMX;          /* Initialize NAM[L]. */
             fab.FAB_NAMX = &nam;        /* Point FAB to NAM[L]. */
@@ -5288,65 +5393,85 @@ int checkdir(__G__ pathcomp, fcn)
             nam.NAMX_ESA = pathcomp;    /* (Great design. ---v.  SMS.) */
             nam.NAMX_ESS = NAMX_MAXRSS; /* Assume large enough. */
 
-            if (!OK(status = sys$parse(&fab)) && status == RMS$_DNF )
-                                         /* Directory not found: */
-            {                            /* ... try to create it */
+            status = sys$parse( &fab);
+            if (status == RMS$_DNF)
+            {   /* 2017-10-07 SMS.  Removed redundant "!OK(status) &&"
+                 * from test.  An otherwise bad user-specified file spec
+                 * will generate an error ("Cannot create ($create)
+                 * output file") when its use is attempted.  Good
+                 * enough?
+                 */
+                /* Directory not found.  Try to create it, if allowed.
+                 * Here, RENAMED, it's always allowed.
+                 */
                 char    save;
                 char    *dirend;
                 int     mkdir_failed;
 
                 dirend = (char*)nam.NAMX_L_DIR + nam.NAMX_B_DIR;
-                save = *dirend;
-                *dirend = '\0';
-                if ( (mkdir_failed = mkdir(nam.NAMX_L_DEV, 0)) &&
-                     errno == EEXIST )
-                    mkdir_failed = 0;
-                *dirend = save;
-                if ( mkdir_failed )
-                    return 3;
-                created_dir = TRUE;
-            }                                /* if (sys$parse... */
+                save = *dirend; /* Save real name char. */
+                *dirend = '\0'; /* Temporarily NUL-terminate dev:[dir] spec. */
+
+                mkdir_failed = create_dir( nam.NAMX_L_DEV);
+                *dirend = save; /* Restore real name char. */
+                if (mkdir_failed)
+                {
+                    return MPN_INF_SKIP;
+                }
+            }                                   /* end:if RMS$_DNF */
             pathcomp[nam.NAMX_ESL] = '\0';
             return MPN_OK;
-        }                                /* if (USE_DEFAULT) */
+        }                                       /* end:if RENAMED */
         else
-        {
-            *end = '\0';
-            if ( dirlen )
-            {
-                dirptr[dirlen-1] = ']'; /* Close directory */
+        {   /* Normal (not renamed) filename.  Create dirs, if allowed. */
+            int dir_exists;
 
-                /*
-                 *  Try to create the target directory.
-                 *  Don't waste time creating directory that was created
-                 *  last time.
-                 */
-                if ( STRICMP(lastdir, pathbuf) )
+            *end = '\0';
+            if (dirlen > 0)
+            {
+                dirptr[dirlen-1] = ']'; /* Close (non-null) directory spec. */
+                dir_exists = test_dir_exists( pathbuf);
+
+                /*  Try to create the target dir, if required and allowed. */
+                if (!dir_exists)
                 {
-                    mkdir_failed = 0;
-                    if ( mkdir(pathbuf, 0) )
+                    if (!G.create_dirs)
                     {
-                        if ( errno != EEXIST )
-                            mkdir_failed = 1;   /* Mine for GETPATH */
+                        /* Skip (or treat as stored file). */
+                        return MPN_INF_SKIP;
                     }
                     else
-                        created_dir = TRUE;
-                    strcpy(lastdir, pathbuf);
+                    {
+                        mkdir_failed = create_dir( pathbuf);
+                    }
                 }
             }
             else
-            {   /*
+            {   /* (dirlen <= 0)
                  * Target directory unspecified.
-                 * Try to create "SYS$DISK:[]"
+                 * Try to create "SYS$DISK:[]", if required and allowed.
                  */
-                if ( strcmp(lastdir, PATH_DEFAULT) )
+                dir_exists = test_dir_exists( PATH_DEFAULT);
+
+                /*  Try to create the target dir, if required and allowed. */
+                if (!dir_exists)
                 {
-                    strcpy(lastdir, PATH_DEFAULT);
-                    mkdir_failed = 0;
-                    if ( mkdir(lastdir, 0) && errno != EEXIST )
-                        mkdir_failed = 1;   /* Mine for GETPATH */
+                    if (!G.create_dirs)
+                    {
+                        /* Skip (or treat as stored file). */
+                        return MPN_INF_SKIP;
+                    }
+                    else
+                    {
+                        mkdir_failed = create_dir( PATH_DEFAULT);
+                    }
                 }
             }
+            if (mkdir_failed)
+            {
+                return MPN_INF_SKIP;
+            }
+
             if ( strlen(pathcomp) + (end-pathbuf) > NAMX_MAXRSS )
                 return MPN_INF_TRUNC;
             strcpy(end, pathcomp);
@@ -5355,10 +5480,10 @@ int checkdir(__G__ pathcomp, fcn)
         }
     }
 
-
 /***************
  *** GETPATH ***
  ***************/
+
     if ( function == GETPATH )
     {
         if ( mkdir_failed )
@@ -5368,10 +5493,10 @@ int checkdir(__G__ pathcomp, fcn)
         return MPN_OK;
     }
 
-
 /***********
  *** END ***
  ***********/
+
     if ( function == END )
     {
         Trace((stderr, "checkdir(): nothing to free...\n"));
@@ -5380,7 +5505,6 @@ int checkdir(__G__ pathcomp, fcn)
     }
 
     return MPN_INVALID; /* should never reach */
-
 }
 
 

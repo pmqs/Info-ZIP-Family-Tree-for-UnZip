@@ -30,6 +30,7 @@ void izu_md_check( void)
   md_ptr_t mdp;
   int i;
   int idd = 0;
+  unsigned char uc;
 
   mdp = &md_ht;
   while ((mdp = mdp->fwd) != &md_ht)
@@ -39,35 +40,35 @@ void izu_md_check( void)
     /* Verify contents of beginning fill region. */
     for (i = 0; i < MD_FILL_BEG_SIZE; i++)
     {
-      if (((unsigned char *)((unsigned char *)mdp)+ (sizeof md_ht))[ i] !=
-       MD_FILL_BEG_FILL)
+      uc = ((unsigned char *)((unsigned char *)mdp)+ (sizeof md_ht))[ i];
+
+      if (uc != MD_FILL_BEG_FILL)
       {
         if (idd == 0)
         {
           idd = 1;
           fprintf( stderr, " mdp = %08x , siz = %8ld.\n", mdp, mdp->siz);
         }
-        fprintf( stderr, " bf[%d] = %02x.\n",
-         i,
-         ((unsigned char *)((unsigned char *)mdp)+ (sizeof md_ht))[ i]);
+        fprintf( stderr, " bf[%d] = %02x >%c<\n",
+         i, uc, (isprint( uc) ? uc : '.'));
       }
     }
 
     /* Verify contents of ending fill region. */
     for (i = 0; i < MD_FILL_END_SIZE; i++)
     {
-      if (((unsigned char *)((unsigned char *)mdp)+ (sizeof md_ht)+
-       MD_FILL_BEG_SIZE+ mdp->siz)[ i] != MD_FILL_END_FILL)
+      uc = ((unsigned char *)((unsigned char *)mdp)+ (sizeof md_ht)+
+       MD_FILL_BEG_SIZE+ mdp->siz)[ i];
+
+      if (uc != MD_FILL_END_FILL)
       {
         if (idd == 0)
         {
           idd = 1;
           fprintf( stderr, " mdp = %08x , siz = %8ld.\n", mdp, mdp->siz);
         }
-        fprintf( stderr, " ef[%d] = %02x.\n",
-         i,
-         ((unsigned char *)((unsigned char *)mdp)+ (sizeof md_ht)+
-         MD_FILL_BEG_SIZE+ mdp->siz)[ i]);
+        fprintf( stderr, " ef[%d] = %02x >%c<\n",
+         i, uc, (isprint( uc) ? uc : '.'));
       }
     }
   }

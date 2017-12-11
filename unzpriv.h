@@ -779,10 +779,10 @@
 
 
 #ifdef MEMDIAG
-void izu_free( void *ptr);
-void *izu_malloc( size_t siz);
-void *izu_realloc( void *ptr, size_t siz);
-void izu_md_check( void);
+extern void izu_free( void *ptr);
+extern void *izu_malloc( size_t siz);
+extern void *izu_realloc( void *ptr, size_t siz);
+extern void izu_md_check( void);
 #else /* def MEMDIAG */
 # define izu_free free
 # define izu_malloc malloc
@@ -1044,8 +1044,8 @@ void izu_md_check( void);
 #    define INT_16BIT       /* on 16-bit systems int size is 16 bits */
 #  endif
 #else
-#  define nearmalloc  malloc
-#  define nearfree    free
+#  define nearmalloc  izu_malloc
+#  define nearfree    izu_free
 #  if (!defined(__IBMC__) || !defined(OS2))
 #    ifndef near
 #      define near
@@ -1155,8 +1155,8 @@ void izu_md_check( void);
 #else
 #  define zfstrcpy(dest, src)       strcpy((dest), (src))
 #  define zfstrcmp(s1, s2)          strcmp((s1), (s2))
-#  define zfmalloc                  malloc
-#  define zffree(x)                 free(x)
+#  define zfmalloc                  izu_malloc
+#  define zffree(x)                 izu_free(x)
 #  ifdef QDOS
 #    define LoadFarString(x)        Qstrfix(x)   /* fix up _ for '.' */
 #    define LoadFarStringSmall(x)   Qstrfix(x)

@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.1c (BETA).
-   Document date: 2016-04-07
+   Document date: 2017-12-08
 
 ------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ additional (mostly old) documentation of particular interest to
 developers.
 
    For program usage information, source kits include a "docs"
-subdirectory wich contains ".txt" files with formatted Unix "man"
+subdirectory which contains ".txt" files with formatted Unix "man"
 output, and may also include ".htx" files with VMS help output.
 
 ------------------------------------------------------------------------
@@ -97,29 +97,21 @@ complaints and suggestions involving their use on almost anything.
 UnZip has been ported to operating systems like AmigaDOS, AOS/VS, Atari
 TOS, Acorn RISC OS, BeOS, FlexOS, Human68k, IBM mainframes (MVS, VM/CMS,
 z/OS), Macintosh (pre-OS-X), MS-DOS, OS/2, SMS/QDOS, Tandem NSK, and
-TOPS-20.  A DLL is available for OS/2 and Windows.
+TOPS-20.  A DLL is available for OS/2 and Windows.  An object library is
+available on Unix, VMS, and Windows.
 
 ------------------------------------------------------------------------
 
-      Significant New Features and Behavior Changes Since UnZip 6.00
+      Significant Behavior Changes and New Features Since UnZip 6.00
       --------------------------------------------------------------
 
-- Optional support for WinZip-compatible AES encryption (compression
-  method 99).  For better export control, the source kit for AES
-  encryption is distributed separately from the main UnZip source kit.
-  See aes_wg/README_AES_WG.txt for more information.
+      For more details on new command-line options or other features,
+      please see the usual Unix "man" or VMS HELP documentation.
 
-- Optional support for compression methods LZMA (14) and PPMd (98).
-  See szip/README_SZIP.txt for more information.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-- Full Unicode support for Windows
-
-- New -I and -O options for ISO and OEM character set conversion,
-  respectively, using iconv.  See INSTALL (or unix/Makefile) for details
-  on enabling iconv support.
-
-- New command-line parser (like the one used by Zip).  Functional
-  changes include:
+- Behavior change: New command-line parser (like the one used by Zip).
+  Functional changes include:
    - Addition of long options, like "--license".
    - Addition of two-character short options, for example, "-so".  Note
      that this can make some combined one-character options ambiguous.
@@ -171,11 +163,27 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
   options), and a user-specified "rename" (file-system) path/name should
   be used as specified.
 
-- New -da/--auto-extract-dir option to specify a destination directory
-  for extracted files which is derived from the base name of the
-  archive.  For example, with -da, extraction of "fred.zip" is done into
-  subdirectory "fred" instead of into the current directory.  (On VMS,
-  subdirectory "[.fred]".)
+- Behavior change (possible): New -da/--auto-extract-dir option to
+  specify a destination directory for extracted files which is derived
+  from the base name of the archive.  For example, with -da, extraction
+  of "fred.zip" is done into subdirectory "fred" instead of into the
+  current directory.  (On VMS, subdirectory "[.fred]".)  Previously
+  (with the old command-line parser), "-da" would be interpreted as
+  equivalent to "-d a", which would extract into the destination
+  directory "a".
+
+- Optional support for WinZip-compatible AES encryption (compression
+  method 99).  See aes_wg/README_AES_WG.txt for more information.
+
+- Optional support for compression methods LZMA (14) and PPMd (98).
+  See szip/README_SZIP.txt for more information.
+
+- Better Unicode support for Windows
+
+- New -I and -O options for ISO and OEM character set conversion,
+  respectively, using iconv.  See INSTALL (or unix/Makefile) for details
+  on enabling/disabling iconv support.  (The unix/configure script
+  should enable it automatically, by default, where it appears to work.)
 
 - -j/--junk-dirs option now accepts an optional value, the number of
   directory levels to discard.  As before, plain "-j" discards all
@@ -230,9 +238,9 @@ TOPS-20.  A DLL is available for OS/2 and Windows.
    If you have a question regarding redistribution of Info-ZIP software,
 whether as-is, as packaging for a commercial product, or as an integral
 part of a commercial product, please read the Frequently Asked Questions
-(FAQ) section of the included COPYING file.  All Info-ZIP releases are
-now covered by the Info-ZIP license.  See the file LICENSE.  The most
-current license should be available at:
+(FAQ) section of the included COPYING.OLD file.  All Info-ZIP releases
+are now covered by the Info-ZIP license.  See the file LICENSE.  The
+most current license should be available at:
 
       http://info-zip.org/license.html
       ftp://ftp.info-zip.org/pub/infozip/license.html
@@ -337,8 +345,47 @@ in the next release.
       -------
 
    Too much time has passed between the releases of UnZip versions 6.10b
-and 6.1c.  UnZip 6.1c lacks support for some new features in Zip 3.1d. 
+and 6.1c.  UnZip 6.1c lacks support for some new features in Zip 3.1d.
 We'll try to get the missing features into UnZip 6.1d, and to get the
 final UnZip 6.1 released in a more timely way.
+
+------------------------------------------------------------------------
+
+         WARNING
+         -------
+
+      The Info-ZIP AES_WG source kit (iz_aes_wg.zip), and the UnZip and
+      Zip source kits which include it, are subject to US export control
+      laws.  BEFORE downloading or using any version of any of these
+      kits, read the following Encryption Notice.  You agree to follow
+      these terms (as well as the terms of the Info-ZIP license) when
+      you download and/or use any of these source kits.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+         Encryption Notice
+         -----------------
+
+      This software kit includes encryption software.  The country or
+      other jurisdiction where you are may restrict the import,
+      possession, use, and/or re-export to another country, of
+      encryption software.  BEFORE using any encryption software, please
+      check all applicable laws, regulations, and policies concerning
+      the import, possession, use, and re-export of encryption software,
+      to see if these are permitted.  Some helpful information may be
+      found at: http://www.wassenaar.org/
+
+      Export and re-export of this software from the US are governed by
+      the US Department of Commerce, Bureau of Industry and Security
+      (BIS).  This is open-source ("publicly available") software.
+      Info-ZIP has submitted the required notification to the BIS.  The
+      details are:
+         Export Commodity Control Number (ECCN) 5D002
+         License Exception: Technology Software Unrestricted (TSU)
+         (Export Administration Regulations (EAR) Section 740.13)
+
+      A copy of the required BIS notification is available in the file
+      aes_wg/USexport_aes_wg.msg in the source kits, and at:
+         ftp://ftp.info-zip.org/pub/infozip/crypt/USexport_AES_WG.msg
 
 ------------------------------------------------------------------------
