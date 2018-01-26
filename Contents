@@ -116,5 +116,6 @@ zvm/            VM/CMS and MVS
 aes_wg/         AES_WG encryption
 bzip2/          bzip2 compression
 libiz/          Information (example program) for the UnZip object library
-szip/           LZMA and PPMd compression
+lzma/           LZMA compression
+ppmd/           PPMd compression
 wrap/           Wrappers for optional source modules

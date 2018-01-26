@@ -667,6 +667,11 @@ Features added (or removed):
 6.1c23 (11 Dec 2017):
  - No news.
 
+6.1c24 (26 Jan 2018):
+ - Haiku support integrated with Unix.  Standard Unix build procedures
+   should work ("make" target: "haiku").  (unzip.c, unzpriv.h,
+   unix/Makefile, unix.c) [pulkomandy, SMS]
+
 
 Bugs fixed:
 
@@ -1977,17 +1982,56 @@ Bugs fixed:
    empty directory (where there's nothing to freshen), when freshening
    "a/b/c.txt" UnZip would create "[.a.b]", and then not create "c.txt"
    in it.  Now, as on other systems, when freshening, neither
-   directories nor files are created when they do not already exist. 
+   directories nor files are created when they do not already exist.
    (Exception: When overwriting, or creating a new version of, an
    existing file (interactive "[r]ename" option), the user-specified
    directories and file are always created.)  (vms/vms.c) [SMS]
  - Long member names in an archive could cause buffer overflow in
    encryption password processing.  (fileio.c) [R. Freingruber, SMS]
  - Long member names in an archive which require character-set
-   conversion could cause buffer overflow in character-set conversion. 
+   conversion could cause buffer overflow in character-set conversion.
    (fileio.c) [R. Freingruber, SMS]
  - An archive name with no ".zip" suffix caused buffer overflow in
    split-archive segment name ("xxx.z01", ...) formation.  (fileio.c)
    [R. Freingruber, SMS]
  - Invalid extra-field data (EF_STREAM, "xl" extra block) could cause
    buffer overflow.  (extract.c) [R. Freingruber, SMS]
+
+6.1c24 (06 Dec 2018):
+ - ICONV_MAPPING code (-I, -O) was erroneously disabled on systems
+   without Unicode support.  Untangled ICONV_MAPPING code from Unicode
+   code.  Moved (duplicated) iconv-related functions from OS-specific
+   modules to new iconv_map.c source file.  Added new C macros,
+   NO_ICONV_MAPPING and NO_ICONV_MAPPING_SFX, for user control over the
+   feature in normal programs/libraries and UnZipSFX, respectively.
+   (globals.h, iconv_map.c, unzip.c, unzpriv.h, beos/beocfg.h,
+   beos/beos.c, libiz/izunzip_example.c, unix/configure, unix/Makefile,
+   unix/unix.c, vms/descrip.mms, vms/descrip_mkdeps.mms,
+   vms/descrip_src.mms, vms/vmscfg.h) [SMS]
+ - Minor (mostly typographical) changes to name matching code.  Fixed a
+   link problem on VMS for the main-program test code.  (match.c) [SMS]
+ - strcpy was (mis)used on overlapping storage.  Replaced by memmove().
+   https://sourceforge.net/p/infozip/bugs/54/  (envargs.c) [Jakub
+   Martisko, SMS]
+ - Restructured the (7-Zip/p7zip) LZMA and PPMd code to deal with
+   inconsistencies between recent LZMA and PPMd source kits.  The old,
+   common szip/ directory has been split into separate lzma/ and ppmd/
+   directories.  The "-v" report now shows independent LZMA and PPMd
+   version numbers.  (extract.c, globals.c, globals.h, if_lzma.c (new),
+   if_lzma.h (new), if_ppmd.c (new), if_ppmd.h (new), INSTALL,
+   process.c, README, unzip.c, unix/configure, unix/Makefile,
+   vms/build_unzip.com, vms/descrip_mkdeps.mms, vms/descrip_src.mms,
+   various win*/vc10/*/*.vcproj* builders, wrap/if_lzma.c (new),
+   wrap/if_ppmd.c (new), wrap/LzFind.c, wrap/LzmaDec.c, wrap/LzmaEnc.c,
+   wrap/Ppmd8.c, wrap/Ppmd8Dec.c, wrap/Ppmd8Enc.c) [SMS]
+ - Updated LZMA SDK code, version 18.05, and p7zip PPMd code, version
+   16.02.  (lzma/, ppmd/) [SMS]
+ - Added some type casts to quiet some compilers on systems with 64-bit
+   "size_t" (hence strlen()).  (fileio.c) [SMS]
+ - VMS MMS/MMK dependency builder now honors the LIST macro for compiler
+   listings during a dependency build.  (vms/descrip_mkdeps.mms) [SMS]
+ - Faulty memory management: free() of non-malloc() pointer in DLL or
+   object library (compiled with REENTRANT defined), after certain
+   reports were put out (-h, -hh, --license, -sc, -so).  (unzip.c) [SMS]
+ - Minor changes (comments, diagnostics format, variable password) in
+   the object library example program.  (libiz/izunzip_example.c) [SMS]

@@ -213,6 +213,15 @@ Uz_Globs *globalsCtor()
     G.u_p_not_first = 0;                /* First time flag. */
     G.u_p_nodename[ 0] = '\0';          /* "host::tty". */
 # endif /* def ENABLE_USER_PROGRESS */
+
+# ifdef LZMA_SUPPORT
+    G.struct_lzma_p = NULL;             /* Storage pointer and flag. */
+# endif /* def LZMA_SUPPORT */
+
+# ifdef PPMD_SUPPORT
+    G.struct_ppmd_p = NULL;             /* Storage pointer and flag. */
+# endif /* def PPMD_SUPPORT */
+
 #endif /* ndef FUNZIP */
 
     G.query_fp = stdin;         /* Change to terminal if streaming archive. */

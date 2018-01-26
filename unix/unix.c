@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -31,11 +31,6 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 
-#ifdef ICONV_MAPPING
-# include <iconv.h>
-# include <langinfo.h>
-#endif /* ICONV_MAPPING */
-
 #ifdef SCO_XENIX
 # define SYSNDIR
 #else  /* SCO Unix, AIX, DNIX, TI SysV, Coherent 4.x, ... */
@@ -53,6 +48,21 @@
 #  define DIRENT
 # endif
 #endif
+
+#ifdef __HAIKU__
+# include <fs_attr.h>
+# include <support/ByteOrder.h>
+# include <Mime.h>
+# define EB_BE_FL_BADBITS    0xfe       /* bits currently undefined */
+static uch *scanBeOSexfield  OF((const uch *ef_ptr, unsigned ef_len));
+static void setBeOSexfield   OF((const char *path, uch *extra_field));
+# ifdef BEOS_USE_PRINTEXFIELD
+static void printBeOSexfield OF((int isdir, uch *extra_field));
+# endif
+# ifdef BEOS_ASSIGN_FILETYPE
+static void assign_MIME( const char * );
+# endif
+#endif /* def __HAIKU__ */
 
 #ifdef _POSIX_VERSION
 # ifndef DIRENT
@@ -690,6 +700,17 @@ int mapname(__G__ renamed)
                 G.action_msg_str = "creat";
 #endif /* def ENABLE_USER_PROGRESS */
             }
+
+#ifdef __HAIKU__
+            if (!uO.J_flag) {   /* Handle the BeOS extra field if present. */
+                void *ptr = scanBeOSexfield(G.extra_field,
+                                            G.lrec.extra_field_length);
+                if (ptr) {
+                    setBeOSexfield(G.filename, ptr);
+                }
+            }
+#endif /* def __HAIKU__ */
+
 #ifndef NO_CHMOD
 # ifdef KFLAG
             if (uO.kflag >= 0)
@@ -721,6 +742,20 @@ int mapname(__G__ renamed)
             /* set dir time (note trailing '/') */
             return (error & ~MPN_MASK) | MPN_CREATED_DIR;
         }
+
+#ifdef __HAIKU__
+        /* TODO: should we re-write the BeOS extra field data in case it's
+         * changed?  The answer is yes. [Sept 1999 - cjh]
+         */
+        if (!uO.J_flag) {       /* Handle the BeOS extra field if present. */
+            void *ptr = scanBeOSexfield(G.extra_field,
+                                        G.lrec.extra_field_length);
+            if (ptr) {
+                setBeOSexfield(G.filename, ptr);
+            }
+        }
+#endif /* def __HAIKU__ */
+
         /* dir existed already; don't look for data to extract */
         return (error & ~MPN_MASK) | MPN_INF_SKIP;
     }
@@ -1233,14 +1268,29 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
 #  else
         extent attribsize = 0;
 #  endif
+        extent slnk_entrysize;
+        slinkentry *slnk_entry;
+
+#  ifdef __HAIKU__
+        uch *BeOS_exfld;
+
+        if (!uO.J_flag) {
+            /* Symlinks can have attributes, too. */
+            BeOS_exfld = scanBeOSexfield(G.extra_field,
+                                         G.lrec.extra_field_length);
+            if (BeOS_exfld) {
+                attribsize = makeword(EB_LEN + BeOS_exfld) + EB_HEADSIZE;
+            }
+         }
+#  endif /* def __HAIKU__ */
+
         /* size of the symlink entry is the sum of
          *  (struct size (includes 1st '\0') + 1 additional trailing '\0'),
          *  system specific attribute data size (might be 0),
          *  and the lengths of name and link target.
          */
-        extent slnk_entrysize = (sizeof(slinkentry) + 1) + attribsize +
+        slnk_entrysize = (sizeof(slinkentry) + 1) + attribsize +
                                 ucsize + strlen(G.filename);
-        slinkentry *slnk_entry;
 
         if (slnk_entrysize < ucsize) {
             Info(slide, 0x201, ((char *)slide,
@@ -1261,11 +1311,18 @@ void close_outfile(__G)    /* GRR: change to return PK-style warning level */
         slnk_entry->targetlen = ucsize;
         slnk_entry->attriblen = attribsize;
 #  ifdef SET_SYMLINK_ATTRIBS
-        memcpy(slnk_entry->buf, &(G.pInfo->file_attr),
-               sizeof(unsigned));
+
+#   ifdef __HAIKU__
+        if (attribsize > sizeof(unsigned))
+            memcpy(slnk_entry->buf, BeOS_exfld, attribsize);
+#   else
+        memcpy(slnk_entry->buf, &(G.pInfo->file_attr), sizeof(unsigned));
         if (have_uidgid_flg)
             memcpy(slnk_entry->buf + 4, z_uidgid, sizeof(z_uidgid));
-#  endif
+#   endif /* def __HAIKU__ */
+
+#  endif /* def SET_SYMLINK_ATTRIBS */
+
         slnk_entry->target = slnk_entry->buf + slnk_entry->attriblen;
         slnk_entry->fname = slnk_entry->target + ucsize + 1;
         strcpy(slnk_entry->fname, G.filename);
@@ -1452,6 +1509,13 @@ int set_symlnk_attribs(__G__ slnk_entry)
     slinkentry *slnk_entry;
 {
     if (slnk_entry->attriblen > 0) {
+
+# ifdef __HAIKU__
+      if (slnk_entry->attriblen > sizeof(unsigned)) {
+        setBeOSexfield(slnk_entry->fname, (uch *)slnk_entry->buf);
+      }
+# endif
+
 # ifndef NO_LCHOWN
       if (slnk_entry->attriblen > sizeof(unsigned)) {
         ulg *z_uidgid_p = (zvoid *)(slnk_entry->buf + sizeof(unsigned));
@@ -2286,191 +2350,285 @@ static void qlfix(__G__ ef_ptr, ef_len)
 #endif /* def QLZIP */
 
 
-/* ISO/OEM (iconv) character conversion. */
+#ifdef __HAIKU__
 
-#ifdef ICONV_MAPPING
-
-typedef struct {
-/*  char *local_charset; */
-    char *local_lang;
-    char *archive_charset;
-} CHARSET_MAP;
-
-/* Was:  A mapping of local <-> archive charsets used by default to convert
- *  filenames of DOS/Windows Zip archives.  Currently very basic.
- */
-/* Now:  A mapping of environment language <-> archive charsets used by default
- * to convert filenames of DOS/Windows Zip archives.  Currently incomplete.
- */
+/******************************/
+/* Extra field functions      */
+/******************************/
 
 /*
- * static CHARSET_MAP dos_charset_map[] = {
- *     { "ANSI_X3.4-1968", "CP850" },
- *     { "ISO-8859-1", "CP850" },
- *     { "CP1252", "CP850" },
- *     { "UTF-8", "CP866" },
- *     { "KOI8-R", "CP866" },
- *     { "KOI8-U", "CP866" },
- *     { "ISO-8859-5", "CP866" }
- * };
+ * Scan the extra fields in extra_field, and look for a BeOS EF.
+ * Return a pointer to that EF, or NULL if it's not there.
  */
-
-static CHARSET_MAP dos_charset_map[] = {
-    { "C", "CP850" },
-    { "en", "CP850" },
-    /*  a lot of latin1 not included, by default it will be "CP850"  */
-    { "bs", "CP852" },
-    { "cs", "CP852" },
-    { "hr", "CP852" },
-    { "hsb", "CP852" },
-    { "hu", "CP852" },
-    { "pl", "CP852" },
-    { "ro", "CP852" },
-    { "sk", "CP852" },
-    { "sl", "CP852" },
-    { "ru", "CP866" },
-    { "be", "CP866" },
-    { "bg", "CP866" },
-    { "mk", "CP866" },
-    { "uk", "CP866" },
-    { "ar", "CP864" },
-    { "el", "CP869" },
-    { "he", "CP862" },
-    { "iw", "CP862" },
-    { "ku", "CP857" },
-    { "tr", "CP857" },
-    { "zh", "CP950" },  /*  CP936   */
-    { "ja", "CP932" },
-    { "ko", "CP949" },
-    { "th", "CP874" },
-    { "da", "CP865" },
-    { "nb", "CP865" },
-    { "nn", "CP865" },
-    { "no", "CP865" },
-    { "is", "CP861" },
-    { "lt", "CP775" },
-    { "lv", "CP775" },
-};
-
-
-/* Try to guess the default value of G.oem_cp based on the current locale.
- * G.iso_cp is left alone for now.
- */
-void init_conversion_charsets( __G)
- __GDEF
+static uch *scanBeOSexfield(const uch *ef_ptr, unsigned ef_len)
 {
-/*
- *  const char *local_charset;
- *  int i;
- */
-    char *locale;
-    char *loc = NULL;
+    while( ef_ptr != NULL && ef_len >= EB_HEADSIZE ) {
+        unsigned eb_id  = makeword(EB_ID + ef_ptr);
+        unsigned eb_len = makeword(EB_LEN + ef_ptr);
 
-    /* Make a guess only if G.oem_cp is not already set. */
-/*
- *  if(*OEM_CP == '\0') {
- *      local_charset = nl_langinfo(CODESET);
- *      for (i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
- *          if (!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
- *              strncpy(OEM_CP, dos_charset_map[i].archive_charset,
- *               sizeof(OEM_CP));
- *              break;
- *          }
- *  }
- */
-
-    if (*G.oem_cp != '\0')
-        return;
-
-    locale = getenv("LC_ALL");
-    if (!locale)
-        locale = getenv("LANG");
-
-    if (locale && (loc = izu_malloc(strlen(locale) + 1)) != NULL)
-    {
-        char *p;
-        int i;
-
-        strcpy(loc, locale);
-
-        /* Extract language part. */
-        p = strchr(loc, '.');
-        if (p)
-            *p = '\0';
-
-        /* Extract main language part. */
-        p = strchr(loc, '_');
-        if (p)
-            *p = '\0';
-
-        for (i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
-        {
-            if (!strcmp(loc, dos_charset_map[i].local_lang))
-            {
-                strncpy( G.oem_cp, dos_charset_map[i].archive_charset,
-                 sizeof( G.oem_cp));
-                break;
-            }
+        if (eb_len > (ef_len - EB_HEADSIZE)) {
+            Trace((stderr,
+              "scanBeOSexfield: block length %u > rest ef_size %u\n", eb_len,
+              ef_len - EB_HEADSIZE));
+            break;
         }
-        /* 2012-11-27 SMS. */
-        izu_free( loc);
+
+        if (eb_id == EF_BEOS && eb_len >= EB_BEOS_HLEN) {
+            return (uch *)ef_ptr;
+        }
+
+        ef_ptr += (eb_len + EB_HEADSIZE);
+        ef_len -= (eb_len + EB_HEADSIZE);
     }
 
-    if (*G.oem_cp == '\0')      /* Set default one. */
-        strncpy( G.oem_cp, "CP850", sizeof( G.oem_cp));
+    return NULL;
 }
 
-/* Convert a string from one encoding to the current locale using iconv().
- * Be as non-intrusive as possible.  If error is encountered during
- * conversion, just leave the string intact.
+/* Used by setBeOSexfield():
+ *
+ * Set a file/directory's attributes to the attributes passed in.
+ *
+ * If set_file_attrs() fails, an error will be returned:
+ *     EOK - no errors occurred
+ *     (Other values will be whatever the failed function returned.
+ *     No docs yet, or I'd list a few.)
  */
-void charset_to_intern(char *string, char *from_charset)
+static int set_file_attrs( const char *name,
+                           const unsigned char *attr_buff,
+                           const off_t total_attr_size )
 {
-    iconv_t cd;
-    char *buf;
-    char *d;
-    const char *local_charset;
-    ICONV_ARG2 char *s;
-    size_t buflen;
-    size_t dlen;
-    size_t slen;
+    int                  retval = EOK;
+    unsigned char       *ptr;
+    const unsigned char *guard;
+    int                  fd;
 
-    if (*from_charset == '\0')
-        return;
+    ptr   = (unsigned char *)attr_buff;
+    guard = ptr + total_attr_size;
 
-    buf = NULL;
-    local_charset = nl_langinfo(CODESET);
-
-    if ((cd = iconv_open(local_charset, from_charset)) == (iconv_t)-1)
-        return;
-
-    slen = strlen(string);
-    s = string;
-    dlen = buflen = 2 * slen;
-    d = buf = izu_malloc(buflen + 1);
-    if (d)
-    {
-        /* 2017-11-29 Rene Freingruber, SMS.
-         * Was using buflen, ignoring last byte.  Next strcpy() was
-         * strncpy() with a bad maxchar parameter (buflen). 
-         */
-        memset( buf, 0, (buflen+ 1));
-
-        /* 2015-02-12 William Robinet, SMS.  CVE-2015-1315.
-         * Added FILNAMSIZ check to avoid buffer overflow.  Better would
-         * be to pass in an actual destination buffer size.
-         */
-        if ((iconv(cd, &s, &slen, &d, &dlen) != (size_t)-1) &&
-         (strlen(buf) < FILNAMSIZ))
-        {
-            strcpy(string, buf);
-        }
-        izu_free(buf);
+    fd = open(name, O_RDONLY | O_NOTRAVERSE);
+    if (fd < 0) {
+        return errno; /* should it be -fd ? */
     }
-    iconv_close(cd);
+
+    while (ptr < guard) {
+        ssize_t              wrote_bytes;
+        const char          *attr_name;
+        unsigned char       *attr_data;
+        uint32              attr_type;
+        int64               attr_size;
+
+        attr_name  = (char *)&(ptr[0]);
+        ptr       += strlen(attr_name) + 1;
+
+        /* The attr_info data is stored in big-endian format because the
+         * PowerPC port was here first.
+         */
+        memcpy(&attr_type, ptr, 4); ptr += 4;
+        memcpy(&attr_size, ptr, 8); ptr += 8;
+        attr_type = (uint32)B_BENDIAN_TO_HOST_INT32( attr_type );
+        attr_size = (off_t)B_BENDIAN_TO_HOST_INT64( attr_size );
+
+        if (attr_size < 0LL) {
+            Info(slide, 0x201, ((char *)slide,
+                 "warning: skipping attribute with invalid length (%Ld)\n",
+                 attr_size));
+            break;
+        }
+
+        attr_data  = ptr;
+        ptr       += attr_size;
+
+        if (ptr > guard) {
+            /* We've got a truncated attribute. */
+            Info(slide, 0x201, ((char *)slide,
+                 "warning: truncated attribute\n"));
+            break;
+        }
+
+        /* Wave the magic wand... this will swap Be-known types properly. */
+        (void)swap_data( attr_type, attr_data, attr_size,
+                         B_SWAP_BENDIAN_TO_HOST );
+
+        wrote_bytes = fs_write_attr(fd, attr_name, attr_type, 0,
+                                    attr_data, attr_size);
+        if (wrote_bytes != attr_size) {
+            Info(slide, 0x201, ((char *)slide,
+                 "warning: wrote %ld attribute bytes of %ld\n",
+                 (unsigned long)wrote_bytes,(unsigned long)attr_size));
+        }
+    }
+
+    close(fd);
+
+    return retval;
 }
 
-#endif /* def ICONV_MAPPING */
+static void setBeOSexfield(const char *path, uch *extra_field)
+{
+    uch *ptr       = extra_field;
+    ush  id        = 0;
+    ush  size      = 0;
+    ulg  full_size = 0;
+    uch  flags     = 0;
+    uch *attrbuff  = NULL;
+    int retval;
+
+    if( extra_field == NULL ) {
+        return;
+    }
+
+    /* Collect the data from the extra field buffer. */
+    id        = makeword(ptr);    ptr += 2;   /* we don't use this... */
+    size      = makeword(ptr);    ptr += 2;
+    full_size = makelong(ptr);    ptr += 4;
+    flags     = *ptr;             ptr++;
+
+    /* Do a little sanity checking. */
+    if (flags & EB_BE_FL_BADBITS) {
+        /* corrupted or unsupported */
+        Info(slide, 0x201, ((char *)slide,
+          "Unsupported flags set for this BeOS extra field, skipping.\n"));
+        return;
+    }
+    if (size <= EB_BEOS_HLEN) {
+        /* corrupted, unsupported, or truncated */
+        Info(slide, 0x201, ((char *)slide,
+             "BeOS extra field is %d bytes, should be at least %d.\n", size,
+             EB_BEOS_HLEN));
+        return;
+    }
+    if (full_size < (size - EB_BEOS_HLEN)) {
+        /* possible old archive? will this screw up on valid archives? */
+        Info(slide, 0x201, ((char *)slide,
+             "Skipping attributes: BeOS extra field is %d bytes, "
+             "data size is %ld.\n", size - EB_BEOS_HLEN, full_size));
+        return;
+    }
+
+    /* Find the BeOS file attribute data. */
+    if (flags & EB_BE_FL_UNCMPR) {
+        /* Uncompressed data */
+        attrbuff = ptr;
+    } else {
+        /* Compressed data */
+        attrbuff = (uch *)malloc( full_size );
+        if (attrbuff == NULL) {
+            /* No memory to uncompress attributes */
+            Info(slide, 0x201, ((char *)slide,
+                 "Can't allocate memory to uncompress file attributes.\n"));
+            return;
+        }
+
+        retval = memextract(__G__ attrbuff, full_size,
+                            ptr, size - EB_BEOS_HLEN);
+        if( retval != PK_OK ) {
+            /* error uncompressing attributes */
+            Info(slide, 0x201, ((char *)slide,
+                 "Error uncompressing file attributes.\n"));
+
+            /* Some errors here might not be so bad.  We should expect
+             * some truncated data, for example.  If the data were
+             * corrupt, we should _not_ attempt to restore the attrs
+             * for this file... there's no way to detect what attrs
+             * are good and which are bad.
+             */
+            free (attrbuff);
+            return;
+        }
+    }
+
+    /* Now attempt to set the file attributes on the extracted file. */
+    retval = set_file_attrs(path, attrbuff, (off_t)full_size);
+    if (retval != EOK) {
+        Info(slide, 0x201, ((char *)slide,
+             "Error writing file attributes.\n"));
+    }
+
+    /* Clean up, if necessary */
+    if (attrbuff != ptr) {
+        free(attrbuff);
+    }
+    return;
+}
+
+# ifdef BEOS_USE_PRINTEXFIELD
+static void printBeOSexfield( int isdir, uch *extra_field )
+{
+    uch *ptr       = extra_field;
+    ush  id        = 0;
+    ush  size      = 0;
+    ulg  full_size = 0;
+    uch  flags     = 0;
+
+    /* Tell picky compilers to be quiet. */
+    isdir = isdir;
+
+    if( extra_field == NULL ) {
+        return;
+    }
+
+    /* Collect the data from the buffer. */
+    id        = makeword( ptr );    ptr += 2;
+    size      = makeword( ptr );    ptr += 2;
+    full_size = makelong( ptr );    ptr += 4;
+    flags     = *ptr;               ptr++;
+
+    if( id != EF_BEOS ) {
+        /* not a 'Be' field */
+        printf("\t*** Unknown field type (0x%04x, '%c%c')\n", id,
+               (char)(id >> 8), (char)id);
+    }
+
+    if( flags & EB_BE_FL_BADBITS ) {
+        /* corrupted or unsupported */
+        printf("\t*** Corrupted BeOS extra field:\n");
+        printf("\t*** unknown bits set in the flags\n");
+        printf("\t*** (Possibly created by an old version of zip for BeOS.\n");
+    }
+
+    if( size <= EB_BEOS_HLEN ) {
+        /* corrupted, unsupported, or truncated */
+        printf("\t*** Corrupted BeOS extra field:\n");
+        printf("\t*** size is %d, should be larger than %d\n", size,
+               EB_BEOS_HLEN );
+    }
+
+    if( flags & EB_BE_FL_UNCMPR ) {
+        /* Uncompressed data */
+        printf("\tBeOS extra field data (uncompressed):\n");
+        printf("\t\t%ld data bytes\n", full_size);
+    } else {
+        /* Compressed data */
+        printf("\tBeOS extra field data (compressed):\n");
+       printf("\t\t%d compressed bytes\n", size - EB_BEOS_HLEN);
+        printf("\t\t%ld uncompressed bytes\n", full_size);
+    }
+}
+# endif /* def BEOS_USE_PRINTEXFIELD */
+
+# ifdef BEOS_ASSIGN_FILETYPE
+/* Note: This will no longer be necessary in BeOS PR4.
+ * update_mime_info() will be updated to build its own absolute pathname
+ * if it's not given one.
+ */
+static void assign_MIME( const char *file )
+{
+    char *fullname;
+    char buff[PATH_MAX], cwd_buff[PATH_MAX];
+    int retval;
+
+    if( file[0] == '/' ) {
+        fullname = (char *)file;
+    } else {
+        sprintf( buff, "%s/%s", getcwd( cwd_buff, PATH_MAX ), file );
+        fullname = buff;
+    }
+
+    retval = update_mime_info( fullname, FALSE, TRUE, TRUE );
+}
+# endif /* def BEOS_ASSIGN_FILETYPE */
+
+#endif /* def __HAIKU__ */
 
 
 #if defined( UNIX) && defined( __APPLE__)

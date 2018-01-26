@@ -35,22 +35,6 @@ vc10\               Directory for Visual C++ 2010 (10.0) project files
     unzipsfx.vcxproj
     unzipsfx.vcxproj.filters
 
-vc6\                Directory for Visual C++ 6.0 project files
-  funzip.dsp          Project file for fUnZip command-line tool
-  unzip.dsp           Project file for UnZip command-line main program
-  unzipsfx.dsp        Project file for UnZipSFX console mode stub
-  unzipbz2.dsp        Project file for UnZip with bzip2 support
-  bz2lib.dsp          Project file for bz2lib bzip2 compression library
-  unzip.dsw           Workspace file for all UnZip command-line tools
-
-vc8\                Directory for Visual C++ 2005 (8.0) project files
-  funzip.vcproj       Project file for fUnZip command-line tool
-  unzip.vcproj        Project file for UnZip command-line main program
-  unzipsfx.vcproj     Project file for UnZipSFX console mode stub
-  unzipbz2.vcproj     Project file for UnZip with bzip2 support
-  bz2lib.vcproj       Project file for bz2lib bzip2 compression library
-  unzip.sln           Solution file for all UnZip command-line tools
-
    crc_i386.c has been tested with MSVC and can be selected through the
 MSVC makefile.  It is provided for those who may have MSVC but no
 assembler. Note that some C compilers on Pentium-class machines have

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2015 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -11,7 +11,7 @@
   ---------------------------------------------------------------------------*/
 
 #ifndef __unxcfg_h
-#define __unxcfg_h
+# define __unxcfg_h
 
 
 /* LARGE FILE SUPPORT - 10/6/04 EG */
@@ -290,17 +290,17 @@ typedef struct stat z_stat;
 
 /* Allow archive from stdin (ARCHIVE_STDIN, USE_EF_STREAM). */
 
-#ifndef NO_ARCHIVE_STDIN
+# ifndef NO_ARCHIVE_STDIN
 #  ifndef ARCHIVE_STDIN
-#    define ARCHIVE_STDIN
+#   define ARCHIVE_STDIN
 #  endif /* ndef ARCHIVE_STDIN */
-#endif /* ndef NO_ARCHIVE_STDIN */
+# endif /* ndef NO_ARCHIVE_STDIN */
 
 /* ARCHIVE_STDIN normally implies USE_EF_STREAM. */
-#ifndef NO_USE_EF_STREAM
+# ifndef NO_USE_EF_STREAM
 #  if defined( ARCHIVE_STDIN) && !defined( USE_EF_STREAM)
-#    define USE_EF_STREAM
+#   define USE_EF_STREAM
 #  endif /* defined( ARCHIVE_STDIN) && !defined( USE_EF_STREAM) */
-#endif /* ndef NO_USE_EF_STREAM */
+# endif /* ndef NO_USE_EF_STREAM */
 
 #endif /* ndef __unxcfg_h */

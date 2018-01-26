@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -161,30 +161,6 @@
 # ifdef BZIP2_SUPPORT
 #  include "bzlib.h"
 # endif /* def BZIP2_SUPPORT */
-
-# if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
-#  include "szip/Types.h"
-# endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
-
-# ifdef LZMA_SUPPORT
-#  include "szip/LzmaDec.h"
-# endif /* def LZMA_SUPPORT */
-
-# ifdef PPMD_SUPPORT
-#  include "szip/Ppmd8.h"
-
-struct Globals;         /* Early (vacant) declaration. */
-
-/* 7-Zip I/O structure (reduced). */
-typedef struct
-{
-  IByteIn p;
-  Bool extra;
-  SRes res;
-  struct Globals *pG;
-} CByteInToLook;
-# endif /* def PPMD_SUPPORT */
-
 
 /*************/
 /*  Globals  */
@@ -392,12 +368,13 @@ typedef struct Globals {
     wchar_t  *unipath_jdir_widefilename;    /* Ptr to non-junk path. */
     int      has_win32_wide;       /* true if Win32 W calls work */
 #   endif /* def WIN32_WIDE */
-#   if defined( ICONV_MAPPING) && defined( MAX_CP_NAME)
+#  endif /* def UNICODE_SUPPORT */
+
+#  if defined( ICONV_MAPPING) && defined( MAX_CP_NAME)
     /* ISO/OEM (iconv) character conversion. */
     char iso_cp[ MAX_CP_NAME];          /* Character set names. */
     char oem_cp[ MAX_CP_NAME];
-#   endif /* defined( ICONV_MAPPING) && defined( MAX_CP_NAME) */
-#  endif /* def UNICODE_SUPPORT */
+#  endif /* defined( ICONV_MAPPING) && defined( MAX_CP_NAME) */
 
 #  ifdef CMS_MVS_INFILE_TMP
     /* 2015-03-17 SMS.  See note in zos/vmmvs.c. */
@@ -486,22 +463,14 @@ typedef struct Globals {
     fcrypt_ctx zcx[ 1];         /* AES context. */
 #  endif /* def IZ_CRYPT_AES_WG */
 
-/* 7-Zip (LZMA, PPMd) memory allocation function structure. */
-#  if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
-    ISzAlloc g_Alloc;
-#  endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
-
-/* 7-Zip LZMA compression parameters. */
+/* 7-Zip LZMA compression structure. */
 #  ifdef LZMA_SUPPORT
-    CLzmaProps clzma_props;     /* LZMA properties. */
-    CLzmaDec state_lzma;        /* LZMA context. */
+    zvoid *struct_lzma_p;       /* Pointer to (opaque) LZMA structure. */
 #  endif /* def LZMA_SUPPORT */
 
-/* 7-Zip PPMd compression parameters. */
+/* 7-Zip PPMd compression structure. */
 #  ifdef PPMD_SUPPORT
-    CPpmd8 ppmd8;               /* PPMd structure. */
-    int ppmd_constructed;       /* PPMd initialization flag. */
-    CByteInToLook szios;        /* 7-Zip-like I/O structure. */
+    zvoid *struct_ppmd_p;       /* Pointer to (opaque) PPMd structure. */
 #  endif /* def PPMD_SUPPORT */
 
 #  ifdef ENABLE_USER_PROGRESS

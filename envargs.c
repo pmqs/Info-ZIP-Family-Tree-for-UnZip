@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -31,6 +31,7 @@
 #define __ENVARGS_C     /* identifies this source module */
 #define UNZIP_INTERNAL
 #include "unzip.h"
+#include <string.h>     /* memmove(). */
 
 #ifdef __EMX__          /* emx isspace() returns TRUE on extended ASCII !! */
 #  define ISspace(c) ((c) & 0x80 ? 0 : isspace((unsigned)c))
@@ -117,8 +118,11 @@ int envargs(Pargc, Pargv, envstr, envstr2)
                 *(bufptr++) = '\0';     /* overwrite trailing " */
 
             /* remove escape characters */
+            /* 2018-11-13 SMS. Changed strcpy() to memmove().
+             * https://sourceforge.net/p/infozip/bugs/54/
+             */
             while ((argstart = MBSCHR(argstart, '\\')) != (char *)NULL) {
-                strcpy(argstart, argstart + 1);
+                memmove( argstart, (argstart+ 1), (strlen( argstart+ 1)+ 1));
                 if (*argstart)
                     ++argstart;
             }

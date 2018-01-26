@@ -1,7 +1,7 @@
       INSTALL -- Info-ZIP UnZip Installation Instructions
       ===================================================
 
-   UnZip version 6.1.  Revised: 2017-06-14
+   UnZip version 6.1.  Revised: 2018-12-05
 
 ------------------------------------------------------------------------
 
@@ -992,24 +992,6 @@ CHEAP_SFX_AUTORUN
    with the "-d <extract_dir>" command line option, therefore
    CHEAP_SFX_AUTORUN implicitly sets the NO_SFX_EXDIR option (below).
 
-IZ_CRYPT_AES_WG
-   Enable WinZip/Gladman AES (strong) encryption support.  Currently,
-   this support is enabled by default in the builders for MSDOS 32-bit
-   (DJGPP), Unix, VMS, and Windows.
-
-IZ_CRYPT_AES_WG_SFX
-   Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
-   it's enabled in UnZip).  By default, to reduce the size of the
-   UnZipSFX executable, AES_WG support is disabled in UnZipSFX even when
-   it's enabled in UnZip itself.
-
-IZ_CRYPT_TRAD_SFX
-   Enable Traditional (weak) encryption support in UnZipSFX.  By
-   default, to reduce the size of the UnZipSFX executable, Traditional
-   encryption support is disabled in UnZipSFX even when it's enabled in
-   UnZip itself.  In UnZip, encryption support is enabled by default.
-   See also NO_CRYPT, below.
-
 DATE_FORMAT=DF_DMY or DF_MDY or DF_YMD
    Specify the order in which date components are printed in
    non-ZipInfo-mode listings: day-month-year, month-day-year, or
@@ -1051,6 +1033,38 @@ DELETE_IF_FULL   (any system with unlink() function)
    enabling this option will cause the incomplete file to be deleted
    instead of closed normally.  This is particularly useful on Windows
    CE, which must generally contend with extremely limited resources.
+
+DIAG_SFX
+   Enable the "-v" (/VERBOSE=NORMAL) option in the UnZipSFX programs,
+   (where it is normally disabled), to allow the user to see the "UnZip
+   special compilation options/features" as in a normal UnZip program.
+   This is intended for developers, but it could be useful for anyone
+   who builds UnZipSFX with non-default options
+
+ICONV_MAPPING
+NO_ICONV_MAPPING
+NO_ICONV_MAPPING_SFX
+   Override the OS-specific decision on support for ISO/OEM (iconv,
+   -I/-O) conversion of file names.  NO_ICONV_MAPPING_SFX affects only
+   UnZipSFX.
+
+IZ_CRYPT_AES_WG
+   Enable WinZip/Gladman AES (strong) encryption support.  Currently,
+   this support is enabled by default in the builders for MSDOS 32-bit
+   (DJGPP), Unix, VMS, and Windows.
+
+IZ_CRYPT_AES_WG_SFX
+   Enable WinZip/Gladman AES (strong) encryption support in UnZipSFX (if
+   it's enabled in UnZip).  By default, to reduce the size of the
+   UnZipSFX executable, AES_WG support is disabled in UnZipSFX even when
+   it's enabled in UnZip itself.
+
+IZ_CRYPT_TRAD_SFX
+   Enable Traditional (weak) encryption support in UnZipSFX.  By
+   default, to reduce the size of the UnZipSFX executable, Traditional
+   encryption support is disabled in UnZipSFX even when it's enabled in
+   UnZip itself.  In UnZip, encryption support is enabled by default.
+   See also NO_CRYPT, below.
 
 LZMA_SFX
    Enable LZMA compression support in UnZipSFX (if it's enabled in
@@ -1464,7 +1478,7 @@ seems to work.  For example:
 
     make -f unix/Makefile [options] CC=gcc generic          # Build.
     make -f unix/Makefile [options] test_ppmd               # Test.
-    gcc -c -O1 szip/Ppmd8.c                                 # (Or "-O2"?)
+    gcc -c -O1 ppmd/Ppmd8.c                                 # (Or "-O2"?)
     make -f unix/Makefile [options] CC=gcc generic          # Re-link.
     make -f unix/Makefile [options] test_ppmd               # Re-test.
 
@@ -1476,7 +1490,7 @@ then add a suitable "-o" option to the compiler command.  For example:
 
     make -f unix/Makefile [options] CC=gcc PROD=pd generic
     make -f unix/Makefile [options] PROD=pd test_ppmd
-    gcc -c -O1 -o pd/Ppmd8.o szip/Ppmd8.c
+    gcc -c -O1 -o pd/Ppmd8.o ppmd/Ppmd8.c
     [...]
 
    Other compilers (AIX xlC?) may need some other optimization setting.

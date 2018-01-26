@@ -706,7 +706,7 @@ int zipcloak(z, passwd)
 
     /* Since we seek to the start of each local header can skip
        reading any extended local header */
-#if 0
+#if 0 /* Apparently not??? */
     if ((flag & 8) != 0 && zfseeko(in_file, 16L, SEEK_CUR)) {
         return ferror(in_file) ? ZE_READ : ZE_EOF;
     }

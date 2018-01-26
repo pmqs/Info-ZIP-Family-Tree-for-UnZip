@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -33,7 +33,8 @@
   other system-specific options which may be needed).  For example:
 
     cc izunzip_example.c -IUnZip_Source_Dir -o izunzip_example \
-     -LUnzip_Object_Dir -LBzip2_Object_Dir -lizunzip -lbz2 -lizunzip
+     -LUnzip_Object_Dir -LBzip2_Object_Dir \
+     -lizunzip -lbz2 -liconv -lizunzip
 
   Additional -L and/or -l options may be needed to supply other external
   libraries, such as iconv or zlib, if these are used.
@@ -52,6 +53,7 @@
 #include "unzip.h"              /* UnZip specifics. */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -75,14 +77,23 @@ int UZ_EXP MyUzpPassword( zvoid *pG,            /* Ignore (globals pointer). */
                           ZCONST char *zfn,     /* Archive name. */
                           ZCONST char *efn)     /* Archive member name. */
 {
+    char *pwp;
+
     fprintf( stderr, "MyUP.  size = %d, zfn: >%s<\n", size, zfn);
     fprintf( stderr, "MyUP.  efn: >%s<\n", efn);
     fprintf( stderr, "MyUP.  *rcnt = %d\n", *rcnt);
-    strncpy( pwbuf, "password", size);
+
+    pwp = getenv( "UZP_PW");    /* Use UZP_PW value, if defined. */
+    if (pwp == NULL)
+    {
+        pwp = "password";       /* Otherwise, "password". */
+    }
+    strncpy( pwbuf, pwp, size);
+    fprintf( stderr, "MyUP.  pwbuf: >%s<\n", pwbuf);
     return IZ_PW_ENTERED;
 }
 #else /* def MY_PW */
-# define UZP_PW NULL
+# define UZP_PW NULL            /* Fail violently. */
 #endif /* def MY_PW [else] */
 
 
@@ -131,10 +142,12 @@ int main( OFT( int) argc, OFT( char **)argv)
     /* Display the returned status value.
      * On VMS, also get and display the VMS-format status code.
      */
-    fprintf( stderr, " Raw sts = %d.\n", sts);
 #ifdef __VMS
     vsts = vms_status( sts);
-    fprintf( stderr, " VMS sts = %d (%%x%08x).\n", vsts, vsts);
+    fprintf( stderr, " sts = %d, VMS sts = %d (%%x%08x).\n",
+      sts, vsts, vsts);
+#else
+    fprintf( stderr, " sts = %d.\n", sts);
 #endif
 
     /* Get and display the library version. */

@@ -170,7 +170,7 @@ static ZCONST char Far NoMemArguments[] =
 
 static ZCONST char Far CentralDirEntry[] =
   "\nCentral directory entry #%lu:\n---------------------------\n\n";
-#if 0
+#if 0 /* Unused. */
 static ZCONST char Far ZipfileStats[] =
   "%lu file%s, %s bytes uncompressed, %s bytes compressed:  %s%d.%d%%\n";
 #endif /* 0 */
@@ -1333,7 +1333,7 @@ int zipinform(__G)              /* Return PK-type error code. */
             sgn = "-";
             cfactor = -cfactor;
         }
-#if 0
+#if 0 /* Unused. */
         Info(slide, 0, ((char *)slide, LoadFarString(ZipfileStats),
           members, (members==1L) ? nullStr : plurSufx,
           FmZofft(tot_ucsize, NULL, "u"),
@@ -1958,7 +1958,7 @@ static int zi_long(__G__ pEndprev, error_in_archive)
                     break;
                 case EF_IZUNIX3:
                     ef_fieldname = efIZUnix3;
-#if 0
+#if 0 /* ??? */
                     if (*pEndprev > 0L)
                         *pEndprev += 4L;  /* 4 byte UID/GID in local copy */
 #endif

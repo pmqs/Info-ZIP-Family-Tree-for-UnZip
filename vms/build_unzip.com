@@ -2,10 +2,10 @@ $! BUILD_UNZIP.COM
 $!
 $!     UnZip 6.1 for VMS -- DCL Build procedure.
 $!
-$!     Last revised:  2016-11-18  SMS.
+$!     Last revised:  2018-12-06  SMS.
 $!
 $!----------------------------------------------------------------------
-$! Copyright (c) 2004-2016 Info-ZIP.  All rights reserved.
+$! Copyright (c) 2004-2018 Info-ZIP.  All rights reserved.
 $!
 $! See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 $! contents of which are also included in zip.h) for terms of use.  If,
@@ -899,6 +899,9 @@ $     cc 'DEF_UNX' /object = [.'dest']EXPLODE.OBJ EXPLODE.C
 $     cc 'DEF_UNX' /object = [.'dest']EXTRACT.OBJ EXTRACT.C
 $     cc 'DEF_UNX' /object = [.'dest']FILEIO.OBJ FILEIO.C
 $     cc 'DEF_UNX' /object = [.'dest']GLOBALS.OBJ GLOBALS.C
+$     cc 'DEF_UNX' /object = [.'dest']ICONV_MAP.OBJ ICONV_MAP.C
+$     cc 'DEF_UNX' /object = [.'dest']IF_LZMA.OBJ IF_LZMA.C
+$     cc 'DEF_UNX' /object = [.'dest']IF_PPMD.OBJ IF_PPMD.C
 $     cc 'DEF_UNX' /object = [.'dest']INFLATE.OBJ INFLATE.C
 $     cc 'DEF_UNX' /object = [.'dest']LIST.OBJ LIST.C
 $     cc 'DEF_UNX' /object = [.'dest']MATCH.OBJ MATCH.C
@@ -922,6 +925,9 @@ $         cc 'DEF_LIBUNZIP' /object = [.'dest']EXPLODE_L.OBJ EXPLODE.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']EXTRACT_L.OBJ EXTRACT.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']FILEIO_L.OBJ FILEIO.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']GLOBALS_L.OBJ GLOBALS.C
+$         cc 'DEF_LIBUNZIP' /object = [.'dest']ICONV_MAP_L.OBJ ICONV_MAP.C
+$         cc 'DEF_LIBUNZIP' /object = [.'dest']IF_LZMA_L.OBJ IF_LZMA.C
+$         cc 'DEF_LIBUNZIP' /object = [.'dest']IF_PPMD_L.OBJ IF_PPMD.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']INFLATE_L.OBJ INFLATE.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']LIST_L.OBJ LIST.C
 $         cc 'DEF_LIBUNZIP' /object = [.'dest']PROCESS_L.OBJ PROCESS.C
@@ -947,14 +953,14 @@ $     endif
 $!
 $     if (NOLZMA .le. 0)
 $     then
-$         cc 'DEF_UNX' /object = [.'dest']LZFIND.OBJ [.SZIP]LZFIND.C
-$         cc 'DEF_UNX' /object = [.'dest']LZMADEC.OBJ [.SZIP]LZMADEC.C
+$         cc 'DEF_UNX' /object = [.'dest']LZFIND.OBJ [.LZMA]LZFIND.C
+$         cc 'DEF_UNX' /object = [.'dest']LZMADEC.OBJ [.LZMA]LZMADEC.C
 $     endif
 $!
 $     if (NOPPMD .le. 0)
 $     then
-$         cc 'DEF_UNX' /object = [.'dest']PPMD8.OBJ [.SZIP]PPMD8.C
-$         cc 'DEF_UNX' /object = [.'dest']PPMD8DEC.OBJ [.SZIP]PPMD8DEC.C
+$         cc 'DEF_UNX' /object = [.'dest']PPMD8.OBJ [.PPMD]PPMD8.C
+$         cc 'DEF_UNX' /object = [.'dest']PPMD8DEC.OBJ [.PPMD]PPMD8DEC.C
 $     endif
 $!
 $! Create the callable library link options file, if needed.
@@ -1006,6 +1012,9 @@ $     libr /object /replace 'lib_unzip' -
        [.'dest']EXTRACT.OBJ, -
        [.'dest']FILEIO.OBJ, -
        [.'dest']GLOBALS.OBJ, -
+       [.'dest']ICONV_MAP.OBJ, -
+       [.'dest']IF_LZMA.OBJ, -
+       [.'dest']IF_PPMD.OBJ, -
        [.'dest']INFLATE.OBJ, -
        [.'dest']LIST.OBJ, -
        [.'dest']MATCH.OBJ, -
@@ -1062,6 +1071,9 @@ $         libr /object /replace 'lib_libunzip' -
            [.'dest']EXTRACT_L.OBJ, -
            [.'dest']FILEIO_L.OBJ, -
            [.'dest']GLOBALS_L.OBJ, -
+           [.'dest']ICONV_MAP_L.OBJ, -
+           [.'dest']IF_LZMA_L.OBJ, -
+           [.'dest']IF_PPMD_L.OBJ, -
            [.'dest']INFLATE_L.OBJ, -
            [.'dest']LIST_L.OBJ, -
            [.'dest']PROCESS_L.OBJ, -
@@ -1231,6 +1243,9 @@ $     cc 'DEF_SXUNX' /object = [.'dest']CRYPT_.OBJ CRYPT.C
 $     cc 'DEF_SXUNX' /object = [.'dest']EXTRACT_.OBJ EXTRACT.C
 $     cc 'DEF_SXUNX' /object = [.'dest']FILEIO_.OBJ FILEIO.C
 $     cc 'DEF_SXUNX' /object = [.'dest']GLOBALS_.OBJ GLOBALS.C
+$     cc 'DEF_SXUNX' /object = [.'dest']ICONV_MAP_.OBJ ICONV_MAP.C
+$     cc 'DEF_SXUNX' /object = [.'dest']IF_LZMA_.OBJ IF_LZMA.C
+$     cc 'DEF_SXUNX' /object = [.'dest']IF_PPMD_.OBJ IF_PPMD.C
 $     cc 'DEF_SXUNX' /object = [.'dest']INFLATE_.OBJ INFLATE.C
 $     cc 'DEF_SXUNX' /object = [.'dest']MATCH_.OBJ MATCH.C
 $     cc 'DEF_SXUNX' /object = [.'dest']PROCESS_.OBJ PROCESS.C
@@ -1254,6 +1269,9 @@ $     libr /object /replace 'lib_unzipsfx' -
        [.'dest']EXTRACT_.OBJ, -
        [.'dest']FILEIO_.OBJ, -
        [.'dest']GLOBALS_.OBJ, -
+       [.'dest']ICONV_MAP_.OBJ, -
+       [.'dest']IF_LZMA_.OBJ, -
+       [.'dest']IF_PPMD_.OBJ, -
        [.'dest']INFLATE_.OBJ, -
        [.'dest']MATCH_.OBJ, -
        [.'dest']PROCESS_.OBJ, -

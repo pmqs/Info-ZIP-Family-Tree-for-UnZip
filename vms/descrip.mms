@@ -2,10 +2,10 @@
 #
 #    UnZip 6.1 for VMS -- MMS (or MMK) Description File.
 #
-#    Last revised:  2015-04-15
+#    Last revised:  2018-12-04
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2001-2015 Info-ZIP.  All rights reserved.
+# Copyright (c) 2001-2018 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -496,6 +496,15 @@ OPT_ID_SFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OPT
 [.$(DEST)]GLOBALS_.OBJ : GLOBALS.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
+[.$(DEST)]ICONV_MAP_.OBJ : ICONV_MAP.C
+	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
+
+[.$(DEST)]IF_LZMA_.OBJ : IF_LZMA.C
+	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
+
+[.$(DEST)]IF_PPMD_.OBJ : IF_PPMD.C
+	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
+
 [.$(DEST)]INFLATE_.OBJ : INFLATE.C
 	$(CC) $(CFLAGS) $(CDEFS_SFX) $(MMS$SOURCE)
 
@@ -546,6 +555,15 @@ OPT_ID_SFX = SYS$DISK:[.$(DEST)]UNZIPSFX.OPT
 	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
 
 [.$(DEST)]GLOBALS_L.OBJ : GLOBALS.C
+	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
+
+[.$(DEST)]ICONV_MAP_L.OBJ : ICONV_MAP.C
+	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
+
+[.$(DEST)]IF_LZMA_L.OBJ : IF_LZMA.C
+	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
+
+[.$(DEST)]IF_PPMD_L.OBJ : IF_PPMD.C
 	$(CC) $(CFLAGS) $(CDEFS_LIBUNZIP) $(MMS$SOURCE)
 
 [.$(DEST)]INFLATE_L.OBJ : INFLATE.C

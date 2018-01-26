@@ -5348,7 +5348,7 @@ static int extract_or_test_entrylistw(__G__ mbr_ndx,
             if (G.pInfo->lcflag) {      /* replace with lowercase filename */
                 wcslwr(G.unipath_widefilename);
             }
-# if 0
+# if 0 /* ??? */
             if (G.pInfo->vollabel && (length > 8) &&
              (G.unipath_widefilename[8] == '.')) {
                 wchar_t *p = G.unipath_widefilename+8;
@@ -6619,31 +6619,10 @@ uzbunzip_cleanup_exit:
 #endif /* BZIP2_SUPPORT */
 
 
-#if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
-
-#include "szip/Types.h"
-
-/* 2011-12-24  SMS.
- * 7-ZIP offers memory allocation functions with diagnostics conditional
- * on _SZ_ALLOC_DEBUG: szip/Alloc.c: MyAlloc(), MyFree().  Using these
- * functions complicates linking with separately conditional LZMA and
- * PPMd support, so it's easier to use plain malloc() and free() here,
- * or else add the diagnostic messages to these Sz* functions, rather
- * than drag szip/Alloc.c into the picture.  To use the szip/Alloc.c
- * functions, add
- *    #include "szip/Alloc.h"
- * above, change malloc() and free() below to MyAlloc() and MyFree(),
- * and add szip/Alloc.* back to the builders.  (And then solve the other
- * problems.)
- */
-void *SzAlloc(void *p, size_t size) { p = p; return izu_malloc(size); }
-void SzFree(void *p, void *address) { p = p; izu_free(address); }
-#endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
-
-
 #ifdef LZMA_SUPPORT
 
-#include "szip/LzmaDec.h"
+# include "lzma/LzmaDec.h"      /* LZMA constants, function prototypes. */
+# include "if_lzma.h"           /* Function prototypes for if_lzma.c. */
 
 /***********************/
 /*  Function UZlzma()  */
@@ -6680,13 +6659,18 @@ static int UZlzma(__G)
 
     zusz_t ucsize_lzma;         /* LZMA uncompressed bytes left to put out. */
 
-    /* Initialize 7-Zip (LZMA, PPMd) memory allocation function pointer
-     * structure (once).
-     */
-    if ((G.g_Alloc.Alloc == NULL) || (G.g_Alloc.Free == NULL))
+    /* Allocate and initialize the 7-Zip LZMA sructure (once). */
+
+    if (G.struct_lzma_p == NULL)
     {
-        G.g_Alloc.Alloc = SzAlloc;
-        G.g_Alloc.Free = SzFree;
+      G.struct_lzma_p = alloc_lzma();   /* Alloc the main LZMA struct. */
+      if (G.struct_lzma_p == NULL)
+      {
+        return PK_MEM3;
+      }
+
+      /* Set the 7-Zip LZMA alloc+free function pointers. */
+      g_lzma_prep_alloc_free( __G);
     }
 
     /* Uncompressed bytes to put out. */
@@ -6721,19 +6705,24 @@ static int UZlzma(__G)
     if (lzma_props_len != LZMA_PROPS_SIZE)
         return PK_ERR;
 
-    sts = LzmaProps_Decode( &G.clzma_props, lzma_props, LZMA_PROPS_SIZE);
+    sts = g_lzma_props_decode( __G__ lzma_props);
 
     Trace(( stderr,
      "LzmaProps_Decode() = %d, dicSize = %u, lc = %u, lp = %u, pb = %u.\n",
-     sts, G.clzma_props.dicSize, G.clzma_props.lc,
-     G.clzma_props.lp, G.clzma_props.pb));
+     sts,
+     g_lzma_clzma_props_dicsize_vf( __G),
+     g_lzma_clzma_props_lc_vf( __G),
+     g_lzma_clzma_props_lp_vf( __G),
+     g_lzma_clzma_props_pb_vf( __G)));
 
     /* Verbose test (-tv) information. */
     if (uO.tflag && uO.vflag)
     {
         Info( slide, 0, ((char *)slide, LoadFarString( InfoMsgLZMA),
-         G.clzma_props.dicSize, G.clzma_props.lc,
-         G.clzma_props.lp, G.clzma_props.pb));
+         g_lzma_clzma_props_dicsize_vf( __G),
+         g_lzma_clzma_props_lc_vf( __G),
+         g_lzma_clzma_props_lp_vf( __G),
+         g_lzma_clzma_props_pb_vf( __G)));
     }
 
     /* Require valid LZMA properties. */
@@ -6741,16 +6730,14 @@ static int UZlzma(__G)
         return PK_ERR;
 
     /* Set up LZMA decode. */
-    LzmaDec_Construct( &G.state_lzma);
-    sts = LzmaDec_Allocate( &G.state_lzma, lzma_props,
-     LZMA_PROPS_SIZE, &G.g_Alloc);
+    sts = g_lzma_construct_allocate( __G__ lzma_props);
 
     if (sts != SZ_OK)
     {
         return PK_MEM3;
     }
 
-    LzmaDec_Init( &G.state_lzma);
+    g_lzma_dec_init( __G);                      /* LzmaDec_Init(). */
 
 #if defined(DLL) && !defined(NO_SLIDE_REDIR)
     if (G.redirect_slide)
@@ -6778,8 +6765,10 @@ static int UZlzma(__G)
             out_buf_size_len = (SizeT)ucsize_lzma;
         }
 
-        sts = LzmaDec_DecodeToBuf( &G.state_lzma, next_out, &out_buf_size_len,
+        sts = LzmaDec_DecodeToBuf( g_lzma_state_lzma_pf( __G),
+         next_out, &out_buf_size_len,
          next_in, &in_buf_size_len, finishMode, &sts2);
+
         avail_in -= in_buf_size_len;    /* Input unused. */
         avail_out -= out_buf_size_len;  /* Output unused. */
 
@@ -6820,7 +6809,7 @@ static int UZlzma(__G)
 
 uzlzma_cleanup_exit:
 
-    LzmaDec_Free( &G.state_lzma, &G.g_Alloc);
+    g_lzma_free( __G);                  /* LzmaDec_Free(). */
 
     /* Advance the global input pointer to past the used data. */
     G.inptr = next_in+ in_buf_size_len;
@@ -6828,38 +6817,34 @@ uzlzma_cleanup_exit:
 
     return sts;
 } /* UZlzma(). */
+
 #endif /* def LZMA_SUPPORT */
 
 
 #ifdef PPMD_SUPPORT
 
-#include "szip/Ppmd8.h"
+# include "ppmd/Ppmd8.h"        /* PPMd8 constants, function prototypes. */
+# include "if_ppmd.h"           /* Function prototypes for if_ppmd.c. */
 
 /*******************************/
 /*  Function ppmd_read_byte()  */
 /*******************************/
 
 /* 7-Zip-compatible I/O Read function. */
-static Byte ppmd_read_byte( void *pp)
+static Byte ppmd_read_byte( void *szios_p)
 {
     int b;
 
-    /* 2012-03-17 SMS.
-     * Note that if REENTRANT and USETHREADID are defined (globals.h),
-     * then GETGLOBALS() is actually a function call, to
-     * getGlobalPointer().  It might be smarter to add a "G" pointer to
-     * the CByteInToLook structure (done), set it once (done), and then
-     * use it here (not done), instead of calling getGlobalPointer() for
-     * every byte fetched.  (Add a "G" parameter to NEXTBYTE?)
-     */
-    CByteInToLook *p = (CByteInToLook *)pp;
+    /* If REENTRANT, set the global structure pointer (pG). */
     GETGLOBALS();
 
     b = NEXTBYTE;
     if (b == EOF)
     {
-        p->extra = True;
-        p->res = SZ_ERROR_INPUT_EOF;
+        /* Set szios_p->extra = True, szios_p->res = SZ_ERROR_INPUT_EOF.
+         * (CByteInToLook *szios_p).
+         */
+        nextbyte_eof_ppmd( szios_p);
         b = 0;
     }
     return b;
@@ -6890,28 +6875,36 @@ static int UZppmd(__G)
     unsigned memSize;
     unsigned restor;
 
-    /* Initialize 7-Zip (LZMA, PPMd) memory allocation function pointer
-     * structure (once).
+    /* Local values from the (global) PPMd structure.
+     * Watch for type deviation from "ppmd/SzTypes.h".
      */
+    void *g_ppmd_alloc_ppmd_p;
+    int  *g_ppmd_szios_extra_p;
+    int  *g_ppmd_szios_res_p;
+    void *g_ppmd8_p;
+    int   sz_error_data_ppmd;
 
-    if ((G.g_Alloc.Alloc == NULL) || (G.g_Alloc.Free == NULL))
+    /* Allocate and initialize the 7-Zip PPMd sructure (once). */
+
+    if (G.struct_ppmd_p == NULL)
     {
-        G.g_Alloc.Alloc = SzAlloc;
-        G.g_Alloc.Free = SzFree;
+      G.struct_ppmd_p = alloc_ppmd();   /* Alloc the main PPMd struct. */
+      if (G.struct_ppmd_p == NULL)
+      {
+        return PK_MEM3;
+      }
+
+      /* Initialize 7-Zip PPMd structures. */
+      g_ppmd8_prep( __G__ ppmd_read_byte);
     }
 
-    /* Initialize PPMd8 structure (once). */
-    if (G.ppmd_constructed == 0)
-    {
-        Ppmd8_Construct( &G.ppmd8);
-        G.ppmd_constructed = 1;
-    }
+    /* Locate the PPMd8 structure and 7-Zip I/O structure members. */
+    g_ppmd8_p = g_ppmd8_pf( __G);
+    g_ppmd_szios_extra_p = g_ppmd_szios_extra_pf( __G);
+    g_ppmd_szios_res_p = g_ppmd_szios_res_pf( __G);
 
-    /* Initialize simulated 7-Zip I/O structure. */
-    G.szios.p.Read = ppmd_read_byte;
-    G.szios.extra = False;
-    G.szios.res = SZ_OK;
-    G.szios.pG = &G;
+    /* Local copy of SZ_ERROR_DATA. */
+    sz_error_data_ppmd = sz_error_data_ppmd_f();
 
     sts = 0;
     /* Extract PPMd properties. */
@@ -6947,21 +6940,24 @@ static int UZppmd(__G)
     if ((order < PPMD8_MIN_ORDER) || (order > PPMD8_MAX_ORDER))
         return PK_ERR;
 
-    if (!Ppmd8_Alloc( &G.ppmd8, memSize, &G.g_Alloc))
+    if (!g_ppmd8_alloc( __G__ memSize))
         return PK_MEM3;
 
-    G.ppmd8.Stream.In = &G.szios.p;
+    g_ppmd_alloc_ppmd_p = g_ppmd_alloc_ppmd_pf( __G);
 
-    sts = Ppmd8_RangeDec_Init( &G.ppmd8);
+    g_ppmd8_stream( __G);
+
+    sts = Ppmd8_RangeDec_Init( g_ppmd8_p);
     if (!sts)
         return PK_ERR;
-    else if (G.szios.extra)
-      sts = ((G.szios.res != SZ_OK) ? G.szios.res : SZ_ERROR_DATA);
+    else if (*g_ppmd_szios_extra_p)
+      sts = ((*g_ppmd_szios_res_p != SZ_OK) ?
+       *g_ppmd_szios_res_p : sz_error_data_ppmd);
     else
     {
         int sym;
 
-        Ppmd8_Init( &G.ppmd8, order, restor);
+        Ppmd8_Init( g_ppmd8_p, order, restor);
 
 #if defined(DLL) && !defined(NO_SLIDE_REDIR)
         if (G.redirect_slide) {
@@ -6972,7 +6968,7 @@ static int UZppmd(__G)
 #endif
 
         sym = 0;
-        while ((sym >= 0) && (G.szios.extra == 0))
+        while ((sym >= 0) && (*g_ppmd_szios_extra_p == 0))
         {
             /* Reset output buffer pointer. */
             next_out = redirSlide;
@@ -6980,8 +6976,8 @@ static int UZppmd(__G)
             /* Decode input to fill the output buffer. */
             for (avail_out = wsize; avail_out > 0; avail_out--)
             {
-                sym = Ppmd8_DecodeSymbol( &G.ppmd8);
-                if (G.szios.extra || sym < 0)
+                sym = Ppmd8_DecodeSymbol( g_ppmd8_p);
+                if (*g_ppmd_szios_extra_p || sym < 0)
                     break;
                 *(next_out++) = sym;
             }
@@ -6995,7 +6991,7 @@ static int UZppmd(__G)
              (unsigned long)(next_out- redirSlide)));
         }
 
-        if (G.szios.extra)
+        if (*g_ppmd_szios_extra_p)
         {
             /* Insufficient input data. */
             sts = PK_ERR;
@@ -7007,7 +7003,8 @@ static int UZppmd(__G)
         }
         else
         {
-            sts2 = Ppmd8_RangeDec_IsFinishedOK( &G.ppmd8);
+            sts2 = g_ppmd8_range_dec_finished_ok( __G);
+
             if (sts2 == 0)
             {
                 sts = PK_ERR;
@@ -7017,7 +7014,8 @@ static int UZppmd(__G)
 
 uzppmd_cleanup_exit:
 
-    Ppmd8_Free( &G.ppmd8, &G.g_Alloc);
+    /* Free PPMd internal (p->Base) storage. */
+    Ppmd8_Free( g_ppmd8_p, g_ppmd_alloc_ppmd_p);
 
     return sts;
 } /* UZppmd(). */

@@ -141,6 +141,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\consts.h" />
+    <ClInclude Include="..\..\..\crc32.h" />
+    <ClInclude Include="..\..\..\crypt.h" />
+    <ClInclude Include="..\..\..\ebcdic.h" />
+    <ClInclude Include="..\..\..\globals.h" />
+    <ClInclude Include="..\..\..\if_lzma.h" />
+    <ClInclude Include="..\..\..\if_ppmd.h" />
+    <ClInclude Include="..\..\..\inflate.h" />
+    <ClInclude Include="..\..\..\ttyio.h" />
+    <ClInclude Include="..\..\..\unzip.h" />
+    <ClInclude Include="..\..\..\unzpriv.h" />
+    <ClInclude Include="..\..\..\unzvers.h" />
+    <ClInclude Include="..\..\..\zip.h" />
     <ClInclude Include="..\..\..\aes_wg\aes.h" />
     <ClInclude Include="..\..\..\aes_wg\aesopt.h" />
     <ClInclude Include="..\..\..\aes_wg\brg_endian.h" />
@@ -150,25 +163,21 @@
     <ClInclude Include="..\..\..\aes_wg\pwd2key.h" />
     <ClInclude Include="..\..\..\aes_wg\sha1.h" />
     <ClInclude Include="..\..\..\bzip2\bzlib.h" />
-    <ClInclude Include="..\..\..\consts.h" />
-    <ClInclude Include="..\..\..\crc32.h" />
-    <ClInclude Include="..\..\..\crypt.h" />
-    <ClInclude Include="..\..\..\ebcdic.h" />
-    <ClInclude Include="..\..\..\globals.h" />
-    <ClInclude Include="..\..\..\inflate.h" />
-    <ClInclude Include="..\..\..\szip\CpuArch.h" />
-    <ClInclude Include="..\..\..\szip\LzFind.h" />
-    <ClInclude Include="..\..\..\szip\LzHash.h" />
-    <ClInclude Include="..\..\..\szip\LzmaDec.h" />
-    <ClInclude Include="..\..\..\szip\Ppmd.h" />
-    <ClInclude Include="..\..\..\szip\Ppmd8.h" />
-    <ClInclude Include="..\..\..\szip\SzVersion.h" />
-    <ClInclude Include="..\..\..\szip\Types.h" />
-    <ClInclude Include="..\..\..\ttyio.h" />
-    <ClInclude Include="..\..\..\unzip.h" />
-    <ClInclude Include="..\..\..\unzpriv.h" />
-    <ClInclude Include="..\..\..\unzvers.h" />
-    <ClInclude Include="..\..\..\zip.h" />
+    <ClInclude Include="..\..\..\lzma\Compiler.h" />
+    <ClInclude Include="..\..\..\lzma\CpuArch.h" />
+    <ClInclude Include="..\..\..\lzma\LzFind.h" />
+    <ClInclude Include="..\..\..\lzma\LzHash.h" />
+    <ClInclude Include="..\..\..\lzma\LzmaDec.h" />
+    <ClInclude Include="..\..\..\lzma\Precomp.h" />
+    <ClInclude Include="..\..\..\lzma\SzTypes.h" />
+    <ClInclude Include="..\..\..\lzma\SzVersion.h" />
+    <ClInclude Include="..\..\..\ppmd\Compiler.h" />
+    <ClInclude Include="..\..\..\ppmd\CpuArch.h" />
+    <ClInclude Include="..\..\..\ppmd\Ppmd.h" />
+    <ClInclude Include="..\..\..\ppmd\Ppmd8.h" />
+    <ClInclude Include="..\..\..\ppmd\Precomp.h" />
+    <ClInclude Include="..\..\..\ppmd\SzTypes.h" />
+    <ClInclude Include="..\..\..\ppmd\SzVersion.h" />
     <ClInclude Include="..\..\nt.h" />
     <ClInclude Include="..\..\rsxntwin.h" />
     <ClInclude Include="..\..\w32cfg.h" />
@@ -181,6 +190,7 @@
     <ClCompile Include="..\..\..\extract.c" />
     <ClCompile Include="..\..\..\fileio.c" />
     <ClCompile Include="..\..\..\globals.c" />
+    <ClCompile Include="..\..\..\iconv_map.c" />
     <ClCompile Include="..\..\..\inflate.c" />
     <ClCompile Include="..\..\..\match.c" />
     <ClCompile Include="..\..\..\process.c" />
@@ -195,6 +205,8 @@
     <ClCompile Include="..\..\..\wrap\crc_i386.c" />
     <ClCompile Include="..\..\..\wrap\fileenc.c" />
     <ClCompile Include="..\..\..\wrap\hmac.c" />
+    <ClCompile Include="..\..\..\wrap\if_lzma.c" />
+    <ClCompile Include="..\..\..\wrap\if_ppmd.c" />
     <ClCompile Include="..\..\..\wrap\LzFind.c" />
     <ClCompile Include="..\..\..\wrap\LzmaDec.c" />
     <ClCompile Include="..\..\..\wrap\Ppmd8.c" />

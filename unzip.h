@@ -356,7 +356,7 @@ freely, subject to the above disclaimer and the following restrictions:
     Grab system-dependent definition of EXPENTRY for prototypes below.
   ---------------------------------------------------------------------------*/
 
-#if 0
+#if 0 /* ??? */
 # if (defined(OS2) && !defined(FUNZIP))
 #  ifdef UNZIP_INTERNAL
 #   define INCL_NOPM

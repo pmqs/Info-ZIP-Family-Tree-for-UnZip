@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -26,12 +26,16 @@
 #  define BETA_MSG /*_xxx*/     /* Remove "_xxx" to activate the message. */
 # endif
 
+/**************************************************/
+/****  Also check copyright dates in unzip.c.  ****/
+/**************************************************/
+
 # ifdef BETA
-#  define UZ_BETALEVEL      "c23-BETA"
-#  define UZ_VERSION_DATE   "2017-12-08"        /* Internal beta version. */
+#  define UZ_BETALEVEL      "c24-BETA"
+#  define UZ_VERSION_DATE   "2018-12-06"        /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "2017-XX-XX"        /* Official release version. */
+#  define UZ_VERSION_DATE   "2018-XX-XX"        /* Official release version. */
 # endif
 
 # define UZ_MAJORVER    6               /* UnZip */
@@ -42,7 +46,7 @@
 
 # define UZ_PATCHLEVEL  0
 
-# define UZ_VER_STRING  "6.1c23"        /* Sync with Version numbers! */
+# define UZ_VER_STRING  "6.1c24"        /* Sync with Version numbers! */
 
 # ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"

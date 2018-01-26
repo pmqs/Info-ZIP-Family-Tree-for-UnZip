@@ -48,6 +48,15 @@
 # include "crc32.h"
 #endif
 
+#ifdef LZMA_SUPPORT
+# include "if_lzma.h"
+#endif /* def LZMA_SUPPORT */
+
+#ifdef PPMD_SUPPORT
+# include "if_ppmd.h"
+#endif /* def PPMD_SUPPORT */
+
+
 static ZCONST char Far CannotAllocateBuffers[] =
   "error:  cannot allocate unzip buffers\n";
 
@@ -1761,22 +1770,22 @@ void free_G_buffers(__G)     /* releases all memory allocated in global vars */
     G.inbuf = G.outbuf = (uch *)NULL;
 
 # ifdef LZMA_SUPPORT
-    /* Free any LZMA-related dynamic storage.
-     * (Note that LzmaDec_Free() does not check for pointer validity.)
-     */
-    if (G.state_lzma.probs != NULL)
+    /* Free any LZMA-related dynamic storage. */
+    if (G.struct_lzma_p != NULL)
     {
-        LzmaDec_Free( &G.state_lzma, &G.g_Alloc);
+        g_lzma_free( __G);
+        izu_free( G.struct_lzma_p);
+        G.struct_lzma_p = NULL;
     }
 # endif /* def LZMA_SUPPORT */
 
 # ifdef PPMD_SUPPORT
-    /* Free any PPMd-related dynamic storage.
-     * (Note that Ppmd8_Free() does not check for pointer validity.)
-     */
-    if (G.ppmd8.Base != NULL)
+    /* Free any PPMd-related dynamic storage. */
+    if (G.struct_ppmd_p != NULL)
     {
-        Ppmd8_Free( &G.ppmd8, &G.g_Alloc);
+        g_ppmd8_free( __G);
+        izu_free( G.struct_ppmd_p);
+        G.struct_ppmd_p = NULL;
     }
 # endif /* def PPMD_SUPPORT */
 
@@ -2213,7 +2222,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
      * Freeing dynamic storage is now done by globals.h:DESTROYGLOBALS()
      * (using free_G_buffers()), but only if REENTRANT.
      */
-#if 0
+#if 0 /* Disabled. */
     /* free allocated memory */
     free_G_buffers(__G);
 #endif /* 0 */
@@ -2223,7 +2232,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
 } /* process_zipfiles(). */
 
 
-#if 0
+#if 0 /* currently unused */
 /********************************/
 /* Function check_ecrec_zip64() */
 /********************************/

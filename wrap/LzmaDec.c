@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2013 Info-ZIP.  All rights reserved.
+  Copyright (c) 2013-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -8,9 +8,9 @@
 */
 
 /*
- * Wrapper for "szip/LzmaDec.c".
+ * Wrapper for "lzma/LzmaDec.c".
  */
 
 #ifdef LZMA_SUPPORT
-# include "../szip/LzmaDec.c"
+# include "../lzma/LzmaDec.c"
 #endif

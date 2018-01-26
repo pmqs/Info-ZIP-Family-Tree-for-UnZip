@@ -873,8 +873,7 @@ static ZCONST uch cpdext32[] = {
 # endif
 
 
-/* moved to consts.h (included in unzip.c), resp. funzip.c */
-#if 0
+#if 0 /* Moved to consts.h (included in unzip.c), resp. funzip.c. */
 /* And'ing with mask_bits[n] masks the lower n bits */
 ZCONST unsigned near mask_bits[17] = {
     0x0000,
@@ -920,8 +919,7 @@ ZCONST unsigned near mask_bits[17] = {
    enabled by defining the preprocessor symbol FIX_PAST_EOB_BY_TABLEADJUST.
  */
 
-/* These have been moved to globals.h */
-#if 0
+#if 0 /* These have been moved to globals.h */
 ulg bb;                         /* bit buffer */
 unsigned bk;                    /* bits in bit buffer */
 #endif
@@ -1223,8 +1221,7 @@ cleanup_and_exit:
 
 
 /* Globals for literal tables (built once) */
-/* Moved to globals.h                      */
-#if 0
+#if 0 /* Moved to globals.h */
 struct huft *fixed_tl = (struct huft *)NULL;
 struct huft *fixed_td;
 int fixed_bl, fixed_bd;

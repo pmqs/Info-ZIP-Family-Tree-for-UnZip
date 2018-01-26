@@ -4,9 +4,9 @@
 
 #==============================================================================
 # unix/configure: Detect feature support and pass that information to Makefile.
-# - For UnZip, UnZipSFX, fUnZip, and ZipInfo            Revised: 2015-03-04
+# - For UnZip, UnZipSFX, fUnZip, and ZipInfo            Revised: 2018-05-04
 #
-# Copyright (c) 2004-2015 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2018 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -1329,12 +1329,12 @@ if [ -n "${NO_LZMA}" ]; then
   echo "LZMA compression disabled."
 else
   echon "Check LZMA compression support..."
-  if [ -d "${SRCDIR}/szip" ]; then
+  if [ -d "${SRCDIR}/lzma" ]; then
     echo ''
-    echon "  Check for LZMA header file in szip/ directory..."
-    if [ -f "${SRCDIR}/szip/LzmaDec.h" ]; then
+    echon "  Check for LZMA header file in lzma/ directory..."
+    if [ -f "${SRCDIR}/lzma/LzmaDec.h" ]; then
       cat > conftest.c << _EOF_
-#include "szip/LzmaDec.h"
+#include "lzma/LzmaDec.h"
 int main()
 {
    typedef int zoff_t;
@@ -1355,17 +1355,17 @@ _EOF_
         echo "-- Building ${LIB_LZMA}."
       else
         echo '  No.'
-        echo "^^ LZMA test build failed. Check szip/ directory."
+        echo "^^ LZMA test build failed. Check lzma/ directory."
         echo "^^ Unable to include LZMA compression support."
       fi
     else
       echo '  No.'
-      echo "^^ LZMA source code not found in szip/ directory."
+      echo "^^ LZMA source code not found in lzma/ directory."
       echo "^^ Unable to include LZMA compression support."
     fi
   else
     echo '  No.'
-    echo "^^ Directory szip/ not found."
+    echo "^^ Directory lzma/ not found."
     echo "^^ Unable to include LZMA compression support."
   fi
 fi
@@ -1378,12 +1378,12 @@ if [ -n "${NO_PPMD}" ]; then
   echo "PPMd compression disabled."
 else
   echon "Check PPMd compression support..."
-  if [ -d "${SRCDIR}/szip" ]; then
+  if [ -d "${SRCDIR}/ppmd" ]; then
     echo ''
-    echon "  Check for PPMd header file in szip/ directory..."
-    if [ -f "${SRCDIR}/szip/Ppmd.h" ]; then
+    echon "  Check for PPMd header file in ppmd/ directory..."
+    if [ -f "${SRCDIR}/ppmd/Ppmd.h" ]; then
       cat > conftest.c << _EOF_
-#include "szip/Ppmd.h"
+#include "ppmd/Ppmd.h"
 int main()
 {
    typedef int zoff_t;
@@ -1404,17 +1404,17 @@ _EOF_
         echo "-- Building ${LIB_PPMD}."
       else
         echo '  No.'
-        echo "^^ PPMd test build failed.  Check szip/ directory."
+        echo "^^ PPMd test build failed.  Check ppmd/ directory."
         echo "^^ Unable to include PPMd compression support."
       fi
     else
       echo '  No.'
-      echo "^^ PPMd source code not found in szip/ directory."
+      echo "^^ PPMd source code not found in ppmd/ directory."
       echo "^^ Unable to include PPMd compression support."
     fi
   else
     echo '  No.'
-    echo "^^ Directory szip/ not found."
+    echo "^^ Directory ppmd/ not found."
     echo "^^ Unable to include PPMd compression support."
   fi
 fi
@@ -2062,7 +2062,6 @@ _EOF_
   # Check for wide char for Unicode support (wchar_t, wide encoding, and
   # wide functions for Unicode support.
   echon 'Check for wide char Unicode support...'
-  iconv_ok=0
 
   cat > conftest.c << _EOF_
 #include <stdlib.h>
@@ -2123,7 +2122,6 @@ _EOF_
     elif [ $status -eq 2 ]; then
       echo '-- Have wchar_t with known UCS encoding - enabling Unicode support.'
       CFLAGS_TST="${CFLAGS_TST} -DUNICODE_SUPPORT -DUNICODE_WCHAR"
-      iconv_ok=1
     else
       echo "^^ No Unicode (wchar_t) support - conftest returned $status."
     fi
@@ -2155,52 +2153,54 @@ else
 fi
 
 # Configure optional ISO/OEM (iconv) conversion library.
-# (User may disable: "NO_ICONV=1", and UNICODE_SUPPORT must be enabled.)
+# (User may disable: "NO_ICONV=1".)
 if [ -n "${NO_ICONV}" ]; then
   echo "ISO/OEM (iconv) conversion support disabled."
 else
   echon "Check ISO/OEM (iconv) conversion support..."
-  if [ $iconv_ok -eq 0 ]; then
-    echo '  No.'
-    echo "^^ No wide Unicode support, so no ISO/OEM (iconv) conversion support."
-  else
-    cat > conftest.c << _EOF_
+  cat > conftest.c << _EOF_
 #include <iconv.h>
 int main()
 {
 #ifndef ICONV_MAPPING
-   forget it
+  forget it
 #endif
-   iconv_t rslt;
-   rslt = iconv_open( "ASCII", "ASCII");
-   return ((rslt == (iconv_t)(-1)) ? -1 : 0);
+  iconv_t rslt;
+  rslt = iconv_open( "ASCII", "ASCII");
+  return ((rslt == (iconv_t)(-1)) ? -1 : 0);
 }
 _EOF_
-    $CC_TST $CFLAGS -DICONV_MAPPING -c conftest.c >/dev/null 2>/dev/null
+  $CC_TST $CFLAGS -DICONV_MAPPING -c conftest.c >/dev/null 2>/dev/null
+  status=$?
+  liconv=0
+  if [ $status -eq 0 ]; then
+    # Try linking with no special library.
+    $CC_TST $LFLAGS1 -o conftest conftest.o >/dev/null 2>/dev/null
     status=$?
-    if [ $status -eq 0 ]; then
-      # Try linking with no special library.
-      $CC_TST $LFLAGS1 -o conftest conftest.o >/dev/null 2>/dev/null
+    if [ $status -ne 0 ]; then
+      # That failed, so try linking with libiconv.
+      $CC_TST $LFLAGS1 -liconv -o conftest conftest.o >/dev/null 2>/dev/null
       status=$?
-      if [ $status -ne 0 ]; then
-        # That failed, so try linking with libiconv.
-        $CC_TST $LFLAGS1 -liconv -o conftest conftest.o >/dev/null 2>/dev/null
-        status=$?
-        if [ $status -eq 0 ]; then
-          LFLAGS2="${LFLAGS2} -liconv"
-        fi
+      if [ $status -eq 0 ]; then
+        liconv=1
       fi
     fi
     if [ $status -eq 0 ]; then
-      CFLAGS_TST="${CFLAGS_TST} -DICONV_MAPPING"
-      echo '  Yes (ICONV_MAPPING).'
-    else
-      echo '  No.'
-      echo "^^ Unable to include ISO/OEM (iconv) conversion support."
+      ./conftest >/dev/null 2>/dev/null
+      status=$?
     fi
   fi
+  if [ $status -eq 0 ]; then
+    CFLAGS_TST="${CFLAGS_TST} -DICONV_MAPPING"
+    if [ $liconv -ne 0 ]; then
+      LFLAGS2="${LFLAGS2} -liconv"
+    fi
+    echo '  Yes (ICONV_MAPPING).'
+  else
+    echo '  No.'
+    echo "^^ Unable to include ISO/OEM (iconv) conversion support."
+  fi
 fi
-
 
 # Check for gcc no-builtin flag.
 # - gnu C supports -fno-builtin since version 2

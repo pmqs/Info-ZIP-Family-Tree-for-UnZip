@@ -2,10 +2,10 @@
 #
 #    UnZip 6.1 for VMS -- MMS (or MMK) Source Description File.
 #
-#    Last revised:  2017-01-27
+#    Last revised:  2018-11-23
 #
 #----------------------------------------------------------------------
-# Copyright (c) 2004-2017 Info-ZIP.  All rights reserved.
+# Copyright (c) 2004-2018 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -692,6 +692,9 @@ MODS_OBJS_LIB_UNZIP_N = \
  EXTRACT=[.$(DEST)]EXTRACT.OBJ \
  FILEIO=[.$(DEST)]FILEIO.OBJ \
  GLOBALS=[.$(DEST)]GLOBALS.OBJ \
+ ICONV_MAP=[.$(DEST)]ICONV_MAP.OBJ \
+ IF_LZMA=[.$(DEST)]IF_LZMA.OBJ \
+ IF_PPMD=[.$(DEST)]IF_PPMD.OBJ \
  INFLATE=[.$(DEST)]INFLATE.OBJ \
  LIST=[.$(DEST)]LIST.OBJ \
  MATCH=[.$(DEST)]MATCH.OBJ \
@@ -721,7 +724,7 @@ MODS_OBJS_LIB_UNZIP_AES = \
  SHA1=[.$(DEST)]SHA1.OBJ
 .ENDIF                          # AES_WG
 
-#    Primary object library, [.SZIP], LZMA.
+#    Primary object library, [.LZMA], LZMA.
 
 .IFDEF LZMA                     # LZMA
 MODS_OBJS_LIB_UNZIP_LZMA = \
@@ -729,7 +732,7 @@ MODS_OBJS_LIB_UNZIP_LZMA = \
  LZMADEC=[.$(DEST)]LZMADEC.OBJ
 .ENDIF                          # LZMA
 
-#    Primary object library, [.SZIP], PPMd.
+#    Primary object library, [.PPMD], PPMd.
 
 .IFDEF PPMD                     # PPMD
 MODS_OBJS_LIB_UNZIP_PPMD = \
@@ -767,6 +770,9 @@ MODS_OBJS_LIB_UNZIPSFX_N = \
  EXTRACT$(GCC_)=[.$(DEST)]EXTRACT_.OBJ \
  FILEIO$(GCC_)=[.$(DEST)]FILEIO_.OBJ \
  GLOBALS$(GCC_)=[.$(DEST)]GLOBALS_.OBJ \
+ ICONV_MAP$(GCC_)=[.$(DEST)]ICONV_MAP_.OBJ \
+ IF_LZMA$(GCC_)=[.$(DEST)]IF_LZMA_.OBJ \
+ IF_PPMD$(GCC_)=[.$(DEST)]IF_PPMD_.OBJ \
  INFLATE$(GCC_)=[.$(DEST)]INFLATE_.OBJ \
  MATCH$(GCC_)=[.$(DEST)]MATCH_.OBJ \
  PROCESS$(GCC_)=[.$(DEST)]PROCESS_.OBJ \
@@ -792,7 +798,7 @@ MODS_OBJS_LIB_UNZIPSFX_AES = \
  SHA1=[.$(DEST)]SHA1.OBJ
 .ENDIF                          # AES_WG
 
-#    Primary object library, [.SZIP], LZMA.
+#    Primary object library, [.LZMA], LZMA.
 
 .IFDEF LZMA                     # LZMA
 MODS_OBJS_LIB_UNZIPSFX_LZMA = \
@@ -800,7 +806,7 @@ MODS_OBJS_LIB_UNZIPSFX_LZMA = \
  LZMADEC=[.$(DEST)]LZMADEC.OBJ
 .ENDIF                          # LZMA
 
-#    Primary object library, [.SZIP], PPMd.
+#    Primary object library, [.PPMD], PPMd.
 
 .IFDEF PPMD                     # PPMD
 MODS_OBJS_LIB_UNZIPSFX_PPMD = \
@@ -842,6 +848,9 @@ MODS_OBJS_LIB_LIBUNZIP_NL = \
  EXTRACT$(GCC_L)=[.$(DEST)]EXTRACT_L.OBJ \
  FILEIO$(GCC_L)=[.$(DEST)]FILEIO_L.OBJ \
  GLOBALS$(GCC_L)=[.$(DEST)]GLOBALS_L.OBJ \
+ ICONV_MAP$(GCC_L)=[.$(DEST)]ICONV_MAP_L.OBJ \
+ IF_LZMA$(GCC_L)=[.$(DEST)]IF_LZMA_L.OBJ \
+ IF_PPMD$(GCC_L)=[.$(DEST)]IF_PPMD_L.OBJ \
  INFLATE$(GCC_L)=[.$(DEST)]INFLATE_L.OBJ \
  LIST$(GCC_L)=[.$(DEST)]LIST_L.OBJ \
  PROCESS$(GCC_L)=[.$(DEST)]PROCESS_L.OBJ \

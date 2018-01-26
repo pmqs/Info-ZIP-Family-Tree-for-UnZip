@@ -27,7 +27,7 @@
              seek_zipf()
              fgets_ans()
              flush()                  (non-VMS)
-             partflush() 
+             partflush()
              is_vms_varlen_txt()      (non-VMS, VMS_TEXT_CONV only)
              disk_error()             (non-VMS)
              UzpMessagePrnt()
@@ -413,18 +413,18 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
   dgt_ndx = -1;                         /* Suffix not found. */
   zfstrcpy( G.zipfn_sgmnt, G.zipfn);    /* Copy whole archive name. */
   /* Expect ".zip", or similar suffix, at the end of the segment file name. */
-  sufx_ndx = IZ_MAX( 0, ((int)strlen( G.zipfn_sgmnt)- strlen( ZSUFX)));
+  sufx_ndx = IZ_MAX( 0, ((int)strlen( G.zipfn_sgmnt)- (int)strlen( ZSUFX)));
   if (zfstrcmp( (G.zipfn+ sufx_ndx), ZSUFX) == 0)       /* Case-insens? */
   {
-    dgt_ndx = strlen( G.zipfn_sgmnt)- 2;
+    dgt_ndx = (int)strlen( G.zipfn_sgmnt)- 2;
   }
 # ifdef ZSUFX2
   else
   {
-    sufx_ndx = IZ_MAX( 0, ((int)strlen( G.zipfn_sgmnt)- strlen( ZSUFX2)));
+    sufx_ndx = IZ_MAX( 0, ((int)strlen( G.zipfn_sgmnt)- (int)strlen( ZSUFX2)));
     if (zfstrcmp( (G.zipfn+ sufx_ndx), ZSUFX2) == 0)    /* Case-insens? */
     {
-      dgt_ndx = strlen( G.zipfn_sgmnt)- 2;
+      dgt_ndx = (int)strlen( G.zipfn_sgmnt)- 2;
     }
   }
 # endif /* def ZSUFX2 */
@@ -432,7 +432,7 @@ int set_zipfn_sgmnt_name( __G__ sgmnt_nr)
   if (dgt_ndx < 0)
   { /* No suffix detected.  Append the (local) standard suffix. */
     strcpy( (G.zipfn_sgmnt+ zipfn_len), ZSUFX);
-    dgt_ndx = zipfn_len+ strlen( ZSUFX)- 2;
+    dgt_ndx = (int)zipfn_len+ (int)strlen( ZSUFX)- 2;
   }
 
   /* Overwrite the last two suffix characters with the next segment number. */
@@ -3424,7 +3424,7 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                 }
 # endif /* def UNICODE_WCHAR */
 
-# if 0
+# if 0 /* Disabled. */
                 /* 2013-02-10 SMS.
                  * This disabled code section does not catch all the
                  * cases.  The new pre-use free() code, above, should.

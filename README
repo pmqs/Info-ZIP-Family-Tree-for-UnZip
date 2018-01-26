@@ -2,7 +2,7 @@
                         ------------------------
 
    Program version: 6.1c (BETA).
-   Document date: 2017-12-08
+   Document date: 2018-11-27
 
 ------------------------------------------------------------------------
 
@@ -176,7 +176,8 @@ available on Unix, VMS, and Windows.
   method 99).  See aes_wg/README_AES_WG.txt for more information.
 
 - Optional support for compression methods LZMA (14) and PPMd (98).
-  See szip/README_SZIP.txt for more information.
+  See lzma/README_LZMA.txt and ppmd/README_PPMD.txt for more
+  information.
 
 - Better Unicode support for Windows
 

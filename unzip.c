@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -75,9 +75,13 @@
 # include "aes_wg/iz_aes_wg.h"
 #endif /* def IZ_CRYPT_AES_WG */
 
-#if defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT)
-# include "szip/SzVersion.h"
-#endif /* defined( LZMA_SUPPORT) || defined( PPMD_SUPPORT) */
+#ifdef LZMA_SUPPORT
+# include "if_lzma.h"
+#endif /* def LZMA_SUPPORT */
+
+#ifdef PPMD_SUPPORT
+# include "if_ppmd.h"
+#endif /* def PPMd_SUPPORT */
 
 #ifndef WINDLL_OLD      /* The WINDLL port uses windll/windll.c instead... */
 
@@ -400,11 +404,11 @@ static ZCONST char Far ZipInfoExample[] = "*, ?, [] (e.g., \"[a-j]*.zip\")";
 /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far ZipInfoUsageLine1[] = "\
 Info-ZIP ZipInfo %s (%s)%s\n\
- Copyright (c) 1990-2017 Info-ZIP.  License: unzip /license\n";
+ Copyright (c) 1990-2018 Info-ZIP.  License: unzip /license\n";
 #  else /* def VMSCLI */
 static ZCONST char Far ZipInfoUsageLine1[] = "\
 Info-ZIP ZipInfo %s (%s)%s\n\
- Copyright (c) 1990-2017 Info-ZIP.  License: unzip --license\n";
+ Copyright (c) 1990-2018 Info-ZIP.  License: unzip --license\n";
 #  endif /* def VMSCLI [else] */
 
 static ZCONST char Far ZipInfoUsageLine2[] = "\
@@ -461,11 +465,11 @@ static ZCONST char Far UnzipSFXUsage[] = "\n\
 Usage: %s%s %s\n\
         [-opts[modifiers]] [members]\n\n";
 #  ifdef SFX_EXDIR
-static ZCONST char Far UnzipSFXOpts[] =
-   " Options (primary mode): -cfptuz  Modifiers: -abCdjLnoPq%sV%s\n";
+static ZCONST char Far UnzipSFXOpts[] =           /*   I     O        */
+    " Options (primary mode): -cfptuz  Modifiers: -abCd%sjLn%soPq%sV%s\n";
 #  else
-static ZCONST char Far UnzipSFXOpts[] =
-     " Options (primary mode): -cfptuz  Modifiers: -abCjLnoPq%sV%s\n";
+static ZCONST char Far UnzipSFXOpts[] =            /*   I    O        */
+     " Options (primary mode): -cfptuz  Modifiers: -abC%sjLn%soPq%sV%s\n";
 #  endif
 #  ifdef VMS
 static ZCONST char Far UnzipSFXOptsV[] = "\
@@ -776,11 +780,11 @@ static ZCONST char Far EnvGO32TMP[] = "GO32TMP";
 /* Used in vms/cmdline.c, so not static in VMS CLI.  "/lic" v. "--lic". */
 ZCONST char Far UnzipUsageLine1[] = "\
 Info-ZIP UnZip %s (%s)%s\n\
- Copyright (c) 1990-2017 Info-ZIP.  License: unzip /license\n";
+ Copyright (c) 1990-2018 Info-ZIP.  License: unzip /license\n";
 #  else /* def VMSCLI */
 static ZCONST char Far UnzipUsageLine1[] = "\
 Info-ZIP UnZip %s (%s)%s\n\
- Copyright (c) 1990-2017 Info-ZIP.  License: unzip --license\n";
+ Copyright (c) 1990-2018 Info-ZIP.  License: unzip --license\n";
 #  endif /* def VMSCLI [else] */
 
 static ZCONST char Far UnzipVersionLine[] = "\
@@ -1008,11 +1012,9 @@ static ZCONST struct option_struct far options_unzip[] =
        'i',  "ignore filenames stored in Mac ef"},
 # endif
 # ifdef ICONV_MAPPING
-#  ifdef UNIX
     {"I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'I',  "ISO char set to use"},
-#  endif /* def ICONV_MAPPING */
-# endif
+# endif /* def ICONV_MAPPING */
     {"j",  "junk-dirs",       o_OPT_EQ_VALUE,   o_NEGATABLE,
        'j',  "junk directories, extract names only"},
 # ifdef J_FLAG
@@ -1068,11 +1070,9 @@ static ZCONST struct option_struct far options_unzip[] =
        'N',  "restore comments as filenotes"},
 # endif
 # ifdef ICONV_MAPPING
-#  ifdef UNIX
     {"O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'O',  "OEM char set to use"},
-#  endif /* def ICONV_MAPPING */
-# endif
+# endif /* def ICONV_MAPPING */
     {"o",  "overwrite",       o_NO_VALUE,       o_NEGATABLE,
        'o',  "overwrite files without prompting"},
     {"p",  "pipe-to-stdout",  o_NO_VALUE,       o_NEGATABLE,
@@ -1122,8 +1122,6 @@ static ZCONST struct option_struct far options_unzip[] =
 # if !defined( SFX) || defined( DIAG_SFX)
     {"v",  "verbose",         o_NO_VALUE,       o_NEGATABLE,
        'v',  "verbose"},
-    {"",   "version",         o_NO_VALUE,       o_NEGATABLE,
-       o_ve, "version"},
     {"",   "version",         o_NO_VALUE,       o_NEGATABLE,
        o_ve, "version"},
     {"vq", "quick-version",   o_NO_VALUE,       o_NOT_NEGATABLE,
@@ -1194,11 +1192,9 @@ static ZCONST struct option_struct far options_zipinfo[] =
     {"h",  "header",          o_NO_VALUE,       o_NEGATABLE,
        'h',  "header line"},
 #  ifdef ICONV_MAPPING
-#   ifdef UNIX
     {"I",  "iso-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'I',  "ISO charset to use"},
-#   endif /* def ICONV_MAPPING */
-#  endif
+#  endif /* def ICONV_MAPPING */
     {"l",  "long-list",       o_NO_VALUE,       o_NEGATABLE,
        'l',  "long list"},
     {"",   "license",         o_NO_VALUE,   o_NOT_NEGATABLE,
@@ -1212,11 +1208,9 @@ static ZCONST struct option_struct far options_zipinfo[] =
     {"mc", "member-counts",   o_NO_VALUE,       o_NEGATABLE,
        o_mc, "show separate dir/file/link member counts"},
 # ifdef ICONV_MAPPING
-#  ifdef UNIX
     {"O",  "oem-char-set",    o_REQUIRED_VALUE, o_NOT_NEGATABLE,
        'O',  "OEM charset to use"},
-#  endif /* def ICONV_MAPPING */
-# endif
+# endif /* def ICONV_MAPPING */
     {"s",  "short-list",      o_NO_VALUE,       o_NEGATABLE,
        's',  "short list"},
 # ifndef SFX
@@ -1318,10 +1312,10 @@ int unzip(__G__ argc, argv)
       if ((retcode = setsignalhandler(__G__ &oldsighandlers, (sigtype), \
                                       (newsighandler))) > PK_WARN) \
           goto cleanup_and_exit
-#  else
+#  else /* def REENTRANT */
 #   define SET_SIGHANDLER(sigtype, newsighandler) \
       signal((sigtype), (newsighandler))
-#  endif
+#  endif /* def REENTRANT [else] */
 # endif /* NO_EXCEPT_SIGNALS */
 
 # ifdef DLL
@@ -1406,11 +1400,8 @@ int unzip(__G__ argc, argv)
 
 # endif /* UNICODE_SUPPORT */
 
-
 # ifdef ICONV_MAPPING
-#  ifdef UNIX
     init_conversion_charsets( __G);
-#  endif
 # endif /* def ICONV_MAPPING */
 
 # if (defined(__IBMC__) && defined(__DEBUG_ALLOC__))
@@ -1630,6 +1621,9 @@ int unzip(__G__ argc, argv)
         ulg status = vms_unzip_cmdline(&argc, &argv);
         if (!(status & 1)) {
             retcode = (int)status;
+            /* Leave a blank line after an error message. */
+            Info(slide, 0x401, ((char *)slide, "\n"));
+            USAGE( error);              /* sfx_cli /fred */
             goto cleanup_and_exit;
         }
     }
@@ -1640,10 +1634,9 @@ int unzip(__G__ argc, argv)
     if (error)
     {
          /* Parsing error message already emitted.
-          * Leave a blank line, and add the (brief) SFX usage message.
+          * Leave a blank line, and (below) add the (brief) SFX usage message.
           */
         Info(slide, 0x401, ((char *)slide, "\n"));
-        USAGE( error);
     }
 
 # else /* def SFX */
@@ -1756,11 +1749,7 @@ int unzip(__G__ argc, argv)
         retcode = error;
         if ((argc < -1) || error)
         {
-            if (error)
-            {   /* Leave a blank line after an error message. */
-                Info(slide, 0x401, ((char *)slide, "\n"));
-            }
-            USAGE( error);
+            USAGE( error);              /* sfx --fred, sfx_cli --fred */
         }
         goto cleanup_and_exit;
     }
@@ -2019,8 +2008,8 @@ int uz_opts(__G__ opts, pargc, pargv)
     {
         if (option == o_BAD_ERR)
         {
-          FREE_NON_NULL( value);        /* Leaving early.  Free it. */
-          UPDATE_PARGV;                 /* See note 2013-01-17 SMS. */
+          FREE_NON_NULL( value);                /* Leaving early.  Free it. */
+          UPDATE_PARGV;                         /* See note 2013-01-17 SMS. */
           return(PK_PARAM);
         }
 
@@ -2172,7 +2161,7 @@ int uz_opts(__G__ opts, pargc, pargv)
                      LoadFarString( BadAutoDestValue)));
                     /* Leaving early.  Free it. */
                     FREE_NON_NULL( value);
-                    UPDATE_PARGV;       /* See note 2013-01-17 SMS. */
+                    UPDATE_PARGV;               /* See note 2013-01-17 SMS. */
                     return PK_PARAM;
                 }
 #  endif /* ndef SFX */
@@ -2233,13 +2222,11 @@ int uz_opts(__G__ opts, pargc, pargv)
                 }
                 break;
 # endif  /* def MACOS */
-# if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
-#  ifdef UNIX
+# ifdef ICONV_MAPPING
             case ('I'): /* -I [UNIX] ISO char set of input entries */
                 strncpy( G.iso_cp, value, sizeof( G.iso_cp));
                 break;
-#  endif /* def UNIX */
-# endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
+# endif /* def ICONV_MAPPING */
             case ('j'):    /* junk pathnames/directory structure */
                 if (negative)
                 {
@@ -2405,13 +2392,11 @@ int uz_opts(__G__ opts, pargc, pargv)
                 } else
                     ++uO.overwrite_all;
                 break;
-# if defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING)
-#  ifdef UNIX
+# ifdef ICONV_MAPPING
             case ('O'): /* -O [UNIX] OEM char set of input entries */
                 strncpy( G.oem_cp, value, sizeof( G.oem_cp));
                 break;
-#  endif /* def UNIX */
-# endif /* defined( UNICODE_SUPPORT) && defined( ICONV_MAPPING) */
+# endif /* def ICONV_MAPPING */
             case ('p'):    /* pipes:  extract to stdout, no messages */
                 if (negative) {
                     uO.cflag = FALSE;
@@ -2434,8 +2419,7 @@ int uz_opts(__G__ opts, pargc, pargv)
                     return(PK_PARAM);   /* don't extract here by accident */
                 }
                 if (uO.pwdarg != (char *)NULL) {
-#if 0
-                    GRR:  eventually support multiple passwords?
+#if 0 /* GRR:  eventually support multiple passwords? */
                     Info(slide, 0x401, ((char *)slide,
                       LoadFarString(OnlyOnePasswd)));
                     FREE_NON_NULL( value);      /* Leaving early.  Free it. */
@@ -2865,15 +2849,12 @@ int uz_opts(__G__ opts, pargc, pargv)
 # if !defined( SFX) || defined( DIAG_SFX)
         if (uO.vflag >= 2 && argc == -1) {              /* "unzip -v" */
             show_version_info(__G);
-            return PK_OK;
+            return PK_OK;                       /* *pargv already set. */
         }
 #  ifndef SFX
         if (!G.noargs && !uzo_err)
             uzo_err = TRUE;     /* had options (not -h or -v) but no zipfile */
 #  endif /* ndef SFX */
-#  if defined( SFX) && !defined( DIAG_SFX)
-        return USAGE(uzo_err);
-#  endif /* defined( SFX) && !defined( DIAG_SFX) */
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 
 # if defined( SFX) && defined( DIAG_SFX)
@@ -2895,26 +2876,32 @@ int uz_opts(__G__ opts, pargc, pargv)
 # ifndef SFX
         if (showhelp == 2) {
             help_extended(__G);
+            UPDATE_PARGV;                       /* See note 2013-01-17 SMS. */
             return PK_OK;
         } else
 # endif /* ndef SFX */
         {
-            return USAGE(PK_OK);
+            UPDATE_PARGV;                       /* See note 2013-01-17 SMS. */
+                                        /* sfx --help, sfx_cli --help */
+            return USAGE(PK_OK);        /* sfx_cli /help (VMSCLI_usage()) */
         }
     } else if (showhelp == -1) {
       *pargc = -1;
       show_license(__G);
+      UPDATE_PARGV;                             /* See note 2013-01-17 SMS. */
       return PK_OK;
 # ifndef SFX
     } else if (showhelp == -2) {
       /* show available options */
       *pargc = -1;
       show_options(__G);
+      UPDATE_PARGV;                             /* See note 2013-01-17 SMS. */
       return PK_OK;
     } else if (showhelp == -3) {
       /* show command line args */
       *pargc = -1;
       show_commandline( args);
+      UPDATE_PARGV;                             /* See note 2013-01-17 SMS. */
       return PK_OK;
 # endif /* ndef SFX */
     }
@@ -2954,12 +2941,12 @@ int uz_opts(__G__ opts, pargc, pargv)
 # ifndef SFX
         if (uO.vflag >= 2 && argc == -1) {              /* "unzip -v" */
             show_version_info(__G);
-            return PK_OK;
+            return PK_OK;                       /* *pargv already set. */
         }
         if (!G.noargs && !uzo_err)
             uzo_err = TRUE;     /* had options (not -h or -v) but no zipfile */
 # endif /* ndef SFX */
-        return (uzo_err ? PK_PARAM : PK_COOL);
+        return (uzo_err ? PK_PARAM : PK_COOL);  /* *pargv already set. */
     }
 
 # ifdef SFX
@@ -3153,16 +3140,23 @@ void show_env( __G__ non_null_only)
 
 #  ifndef NO_TIMESTAMP
 #   ifdef MORE
-#      define SFXOPT1 "DM"
+#    define SFXOPT1 "DM"
 #   else
-#      define SFXOPT1 "D"
+#    define SFXOPT1 "D"
 #   endif
 #  else
 #   ifdef MORE
-#      define SFXOPT1 "M"
+#    define SFXOPT1 "M"
 #   else
-#      define SFXOPT1 ""
+#    define SFXOPT1 ""
 #   endif
+#  endif
+#  ifdef ICONV_MAPPING
+#   define SFXICO1 "I"
+#   define SFXICO2 "O"
+#  else
+#   define SFXICO1 ""
+#   define SFXICO2 ""
 #  endif
 
 /* SFX Usage guide. */
@@ -3192,7 +3186,7 @@ int usage(__G__ u_err)   /* return PK-type error code */
      CMD_PREFIX, G.zipfn, CMD_CONTIN));
 
     Info( slide, flag, ((char *)slide, LoadFarString( UnzipSFXOpts),
-     SFXOPT1, LOCAL));
+     SFXICO1, SFXICO2, SFXOPT1, LOCAL));
 #  ifdef VMS
     Info( slide, flag, ((char *)slide, LoadFarString( UnzipSFXOptsV)));
 #  endif /* def VMS */
@@ -3299,7 +3293,7 @@ void show_license(__G)
 
     /* license array */
     static ZCONST char *text[] = {
-  "Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.",
+  "Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.",
   "",
   "This is version 2009-Jan-02 of the Info-ZIP license.",
   "",
@@ -3464,10 +3458,10 @@ static void help_extended(__G)
   "         restore.",
   "  -F   [Acorn] Suppress removal of NFS filetype extension.  [Non-Acorn if",
   "         ACORN_FTYPE_NFS] Translate filetype and append to name.",
-  "  -I   [Unix, with ICONV_MAPPING] ISO code page to use.",
+  "  -I   [ICONV_MAPPING] ISO code page to use.",
   "  -i   [MacOS] Ignore filenames in MacOS extra field.  Instead, use name in",
   "         standard header.",
-  "  -J   [BeOS] Junk file attributes.",
+  "  -J   [BeOS, Haiku] Junk file attributes.",
   "       [MacOS] Ignore MacOS specific info.",
   "       [MacOSX] No special AppleDouble file handling.",
   "  -Je  [MacOSX] Ignore AppleDouble extended attributes.",
@@ -3487,7 +3481,7 @@ static void help_extended(__G)
   "  -M   Pipe all output through internal pager similar to Unix more(1).",
   "  -N   [Amiga] Extract file comments as Amiga filenotes.",
   "  -n   Never overwrite existing files.  Skip extracting that file, no prompt.",
-  "  -O   [Unix, with ICONV_MAPPING] OEM code page to use.  If -O is not used,",
+  "  -O   [ICONV_MAPPING] OEM code page to use.  If -O is not used,",
   "         UnZip tries to set automatically the OEM code page, based on",
   "         the current environment language setting.",
   "  -o   Overwrite existing files without prompting.  Useful with -f.  Use with",
@@ -3569,8 +3563,8 @@ static void help_extended(__G)
   "  Unicode.  Unicode comments are only supported currently if UTF-8 is the",
   "  native character set.  Full comment support is expected shortly.",
   "",
-  "  On Unix, with ICONV_MAPPING defined at build time, options -I and -O are",
-  "  used to specify the ISO and OEM code pages used for name conversions.",
+  "  With ICONV_MAPPING defined at build time, options -I and -O are used",
+  "  to specify the ISO and OEM code pages used for name conversions.",
   "  By default, UnZip will try to select a code page based on the user's",
   "  environment (language settings).  -I and -O will override this.",
   "",
@@ -4088,14 +4082,14 @@ void show_version_info(__G)
 #  endif /* def BZIP2_SUPPORT */
 #  ifdef LZMA_SUPPORT
         sprintf((char *)(slide+256), LoadFarStringSmall(LZMA_Sup),
-         MY_VERSION);
+         version_lzma());
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
          (char *)(slide+256)));
         ++numopts;
 #  endif /* def LZMA_SUPPORT */
 #  ifdef PPMD_SUPPORT
         sprintf((char *)(slide+256), LoadFarStringSmall(PPMD_Sup),
-         MY_VERSION);
+         version_ppmd());
         Info(slide, 0, ((char *)slide, LoadFarString(CompileOptFormat),
          (char *)(slide+256)));
         ++numopts;
@@ -4169,7 +4163,7 @@ void show_version_info(__G)
         show_env( __G__ 0);
 #  endif /* !_WIN32_WCE */
     }
-} /* end function show_version() */
+} /* end function show_version_info() */
 
 # endif /* !defined( SFX) || defined( DIAG_SFX) */
 #endif /* ndef WINDLL_OLD */

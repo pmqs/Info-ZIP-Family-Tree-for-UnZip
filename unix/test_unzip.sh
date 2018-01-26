@@ -2,9 +2,9 @@
 
 #==============================================================================
 # unix/test_unzip.sh: UnZip (basic) test script.
-# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2013-11-29
+# - For UnZip, UnZipSFX, fUnZip and ZipInfo             Revised: 2018-12-01
 #
-# Copyright (c) 2011-2013 Info-ZIP.  All rights reserved.
+# Copyright (c) 2011-2018 Info-ZIP.  All rights reserved.
 #
 # See the accompanying file LICENSE, version 2009-Jan-2 or later (the
 # contents of which are also included in zip.h) for terms of use.  If,
@@ -19,6 +19,8 @@
 #    $2 = program directory (relative).  Default: .
 #    $3 = non-null to skip funzip and SFX tests.
 #
+#    2018-12-01  SMS.  Added environment variable TEST_UNZIP_SAVE to
+#                      inhibit deletion of test directoy.
 #    2013-11-29  SMS.  Copyright, documentation, license.
 #    2013-06-03  SMS.  Added exit status value.
 #    2012-12-16  SMS.  Added "-mc-" to UnZip "-Z" command to suppress
@@ -85,7 +87,8 @@ fi
 dir_orig=` pwd `
 
 trap 'cd "${dir_orig}" ;
-if test -n "${tmp_dir}" -a -d "${tmp_dir}" ; then
+if test -n "${tmp_dir}" -a -d "${tmp_dir}" -a \
+ -z "${TEST_UNZIP_SAVE}"; then
     rm -r "${tmp_dir}"
 fi' 0 2 3 6 15
 
