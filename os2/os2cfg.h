@@ -123,6 +123,9 @@ typedef long long    zoff_t;
 #if (!defined(NOTIMESTAMP) && !defined(TIMESTAMP))
 #  define TIMESTAMP
 #endif
+#if (!defined(SET_DIR_ATTRIB) && defined(__KLIBC__))
+#  define SET_DIR_ATTRIB
+#endif
 
 /* check that TZ environment variable is defined before using UTC times */
 #if (!defined(NO_IZ_CHECK_TZ) && !defined(IZ_CHECK_TZ))

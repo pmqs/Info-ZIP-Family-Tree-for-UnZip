@@ -138,6 +138,10 @@ static ZCONST char Far PathTooLongTrunc[] =
    static ZCONST char Far CantCreateExtractDir[] =
      "checkdir:  cannot create extraction directory: %s\n";
 #endif
+#ifdef SET_DIR_ATTRIB
+static ZCONST char CannotSetItemTimestamps[] =
+  "warning:  cannot set modif./access times for %s\n          %s\n";
+#endif
 
 #ifndef __GNUC__
    /* all supported non-gcc compilers provide MSC/DOS style mkdir() */
@@ -222,6 +226,19 @@ FEA2LIST, *PFEA2LIST;
 #endif /* !__32BIT__ */
 
 
+#ifdef SET_DIR_ATTRIB
+typedef struct uxdirattr {      /* struct for holding unix style directory */
+    struct uxdirattr *next;     /*  info until can be sorted and set at end */
+    char *fn;                   /* filename of directory */
+    union {
+        iztimes t3;             /* mtime, atime, ctime */
+        ztimbuf t2;             /* modtime, actime */
+    } u;
+    unsigned perms;             /* same as min_info.file_attr */
+    char fnbuf[1];              /* buffer stub for directory name */
+} uxdirattr;
+#define UxAtt(d)  ((uxdirattr *)d)    /* typecast shortcut */
+#endif /* SET_DIR_ATTRIB */
 
 
 
@@ -2411,3 +2428,47 @@ void os2GlobalsCtor(__GPRO)
 }
 
 #endif /* !FUNZIP */
+
+#ifdef SET_DIR_ATTRIB
+int defer_dir_attribs(__G__ pd)
+    __GDEF
+    direntry **pd;
+{
+    uxdirattr *d_entry;
+
+    d_entry = (uxdirattr *)malloc(sizeof(uxdirattr) + strlen(G.filename));
+    *pd = (direntry *)d_entry;
+    if (d_entry == (uxdirattr *)NULL) {
+        return PK_MEM;
+    }
+    d_entry->fn = d_entry->fnbuf;
+    strcpy(d_entry->fn, G.filename);
+
+    d_entry->perms = G.pInfo->file_attr;
+    d_entry->u.t3.mtime = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+    d_entry->u.t3.atime = dos_to_unix_time(G.lrec.last_mod_dos_datetime);
+
+    return PK_OK;
+} /* end function defer_dir_attribs() */
+
+
+int set_direc_attribs(__G__ d)
+    __GDEF
+    direntry *d;
+{
+    int errval = PK_OK;
+
+    /* Skip restoring directory time stamps on user' request. */
+    if (uO.D_flag <= 0) {
+        /* restore directory timestamps */
+        if (utime(d->fn, &UxAtt(d)->u.t2)) {
+            Info(slide, 0x201, ((char *)slide, CannotSetItemTimestamps,
+              FnFilter1(d->fn), strerror(errno)));
+            if (!errval)
+                errval = PK_WARN;
+        }
+    }
+    return errval;
+} /* end function set_direc_attribs() */
+
+#endif /* SET_DIR_ATTRIB */
