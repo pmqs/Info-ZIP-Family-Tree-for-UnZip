@@ -1851,6 +1851,7 @@ int process_zipfiles(__G)    /* return PK-type error code */
     int NumMissFiles;
     int NumWarnFiles;
     int NumWinFiles;
+    int want_blank = 0;
 # ifndef VMS
 #  ifdef ZSUFX2
     char *zipfn_sufx_p;
@@ -1860,7 +1861,6 @@ int process_zipfiles(__G)    /* return PK-type error code */
 
     int error = 0;
     int error_in_archive = 0;
-    int want_blank = 0;
 
 /*---------------------------------------------------------------------------
     Start by allocating buffers and (re)constructing the various PK signature

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -199,12 +199,10 @@ unsigned UZ_EXP UzpVersion2( OFT( UzpVer2 *)version)
 char *UzpFeatures()
 {
     char *feats;
-    char tempstring[ 100];      /* Temporary string storage. */
     char featurelist[ 1000];    /* Feature string storage. */
 
     /* All features start and end with a semi-colon for easy parsing. */
     strcpy( featurelist, ";");
-    tempstring[ 0] = '\0';      /* Avoid "unused" warning. */
 
 # ifdef ACORN_FTYPE_NFS
     strcat( featurelist, "apple_nfrsrc;");
@@ -400,9 +398,14 @@ char *UzpFeatures()
 # endif
 
 # ifdef USE_ZLIB
-    strcat( featurelist, "zlib;");
-    sprintf( tempstring, "zlib_version:%s,%s;", ZLIB_VERSION, zlibVersion());
-    strcat( featurelist, tempstring);
+    {				
+        char tempstring[ 100];          /* Temporary string storage. */
+
+        strcat( featurelist, "zlib;");
+        sprintf( tempstring, "zlib_version:%s,%s;",
+         ZLIB_VERSION, zlibVersion());
+        strcat( featurelist, tempstring);
+    }
 # endif
 
 # ifdef VMSCLI

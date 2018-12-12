@@ -43,16 +43,22 @@
  * 2013-04-12 SMS for Info-ZIP.
  * SunOS 4.x lacks <sys/isa_defs.h>, so skip it on SPARC.
  * #if defined( __sun )
+ *
+ * 2018-12-20 SMS for Info-ZIP.
+ * Added __riscos with __GNUC__ to the <endian.h> section.
+ *
  **********************************************************************
  */
 #if defined( __sun ) && !defined( __sparc )
 #  include <sys/isa_defs.h>
-#elif defined( __FreeBSD__ ) || defined( __OpenBSD__ ) || defined( __NetBSD__ )
+#elif defined( __FreeBSD__ ) || defined( __OpenBSD__ ) || \
+      defined( __NetBSD__ )
 #  include <sys/endian.h>
 #elif defined( BSD ) && ( BSD >= 199103 ) || defined( __APPLE__ ) || \
       defined( __CYGWIN32__ ) || defined( __DJGPP__ ) || defined( __osf__ )
 #  include <machine/endian.h>
-#elif defined( __linux__ )
+#elif defined( __linux__ ) || \
+      defined( __GNUC__ ) && (defined( __riscos ))
 /**********************************************************************
  * 2011-06-16 SMS for Info-ZIP.
  * __GNUC__ does _not_ ensure <endian.h>, so we disable the following

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2016 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -37,53 +37,57 @@ int stat(char *filename,struct stat *res)
  if (type==0)
    return -1;
 
- res->st_dev=0;
- res->st_ino=0;
- res->st_nlink=0;
- res->st_uid=1;
- res->st_gid=1;
- res->st_rdev=0;
- res->st_blksize=1024;
+ {
+  GETGLOBALS();                 /* Needed for uO with DLL/REENTRANT. */
 
- res->st_mode = ((attr & 0001) << 8) | ((attr & 0002) << 6) |
-                ((attr & 0020) >> 2) | ((attr & 0040) >> 4);
+  res->st_dev=0;
+  res->st_ino=0;
+  res->st_nlink=0;
+  res->st_uid=1;
+  res->st_gid=1;
+  res->st_rdev=0;
+  res->st_blksize=1024;
 
- switch (type) {
-   case 1:                        /* File */
-    res->st_mode |= S_IFREG;
-    break;
-   case 2:                        /* Directory */
-    res->st_mode |= S_IFDIR | 0700;
-    break;
-   case 3:                        /* Image file */
-    if (uO.scanimage)
-      res->st_mode |= S_IFDIR | 0700;
-    else
-      res->st_mode |= S_IFREG;
-    break;
+  res->st_mode = ((attr & 0001) << 8) | ((attr & 0002) << 6) |
+                 ((attr & 0020) >> 2) | ((attr & 0040) >> 4);
+
+  switch (type) {
+    case 1:                        /* File */
+     res->st_mode |= S_IFREG;
+     break;
+    case 2:                        /* Directory */
+     res->st_mode |= S_IFDIR | 0700;
+     break;
+    case 3:                        /* Image file */
+     if (uO.scanimage)
+       res->st_mode |= S_IFDIR | 0700;
+     else
+       res->st_mode |= S_IFREG;
+     break;
+  }
+
+  if ((((unsigned int) load) >> 20) == 0xfff) {     /* date stamped file */
+    register unsigned int t1, t2, tc;
+
+    t1 = (unsigned int) (exec);
+    t2 = (unsigned int) (load & 0xff);
+
+    tc = 0x6e996a00U;
+    if (t1 < tc)
+      t2--;
+    t1 -= tc;
+    t2 -= 0x33;          /* 00:00:00 Jan. 1 1970 = 0x336e996a00 */
+
+    t1 = (t1 / 100) + (t2 * 42949673U);  /* 0x100000000 / 100 = 42949672.96 */
+    t1 -= (t2 / 25);             /* compensate for .04 error */
+
+    res->st_atime = res->st_mtime = res->st_ctime = t1;
+  }
+  else
+    res->st_atime = res->st_mtime = res->st_ctime = 0;
+
+  return 0;
  }
-
- if ((((unsigned int) load) >> 20) == 0xfff) {     /* date stamped file */
-   register unsigned int t1, t2, tc;
-
-   t1 = (unsigned int) (exec);
-   t2 = (unsigned int) (load & 0xff);
-
-   tc = 0x6e996a00U;
-   if (t1 < tc)
-     t2--;
-   t1 -= tc;
-   t2 -= 0x33;          /* 00:00:00 Jan. 1 1970 = 0x336e996a00 */
-
-   t1 = (t1 / 100) + (t2 * 42949673U);  /* 0x100000000 / 100 = 42949672.96 */
-   t1 -= (t2 / 25);             /* compensate for .04 error */
-
-   res->st_atime = res->st_mtime = res->st_ctime = t1;
- }
- else
-   res->st_atime = res->st_mtime = res->st_ctime = 0;
-
- return 0;
 }
 
 #ifndef SFX
@@ -104,16 +108,20 @@ DIR *opendir(char *dirname)
    return NULL;
  }
 
- strcpy(thisdir->dirname,dirname);
- if (thisdir->dirname[strlen(thisdir->dirname)-1]=='.')
-   thisdir->dirname[strlen(thisdir->dirname)-1]=0;
-
- if (SWI_OS_File_5(thisdir->dirname,&type,NULL,NULL,NULL,&attr)!=NULL ||
-     type<=1 || (type==3 && !uO.scanimage))
  {
-   free(thisdir->dirname);
-   free(thisdir);
-   return NULL;
+   GETGLOBALS();                /* Needed for uO with DLL/REENTRANT. */
+
+   strcpy(thisdir->dirname,dirname);
+   if (thisdir->dirname[strlen(thisdir->dirname)-1]=='.')
+     thisdir->dirname[strlen(thisdir->dirname)-1]=0;
+
+   if (SWI_OS_File_5(thisdir->dirname,&type,NULL,NULL,NULL,&attr)!=NULL ||
+       type<=1 || (type==3 && !uO.scanimage))
+   {
+     free(thisdir->dirname);
+     free(thisdir);
+     return NULL;
+   }
  }
 
  thisdir->buf=malloc(DIR_BUFSIZE);
@@ -210,11 +218,17 @@ int rmdir(char *d)
    free(s);
    return -1;
  }
- if (objtype<2 || (!uO.scanimage && objtype==3)) {
-/* this is a file or it doesn't exist */
-   free(s);
-   return -1;
+
+ {
+   GETGLOBALS();                /* Needed for uO with DLL/REENTRANT. */
+
+   if (objtype<2 || (!uO.scanimage && objtype==3)) {
+     /* this is a file or it doesn't exist */
+     free(s);
+     return -1;
+   }
  }
+
  if (SWI_OS_File_6(s)!=NULL) {
    free(s);
    return -1;

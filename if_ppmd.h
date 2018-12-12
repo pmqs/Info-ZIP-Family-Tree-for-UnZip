@@ -17,28 +17,26 @@
 
 zvoid *alloc_ppmd();
 
+zvoid  g_alloc_ppmd_set( __GPRO);
+
 zvoid *g_ppmd_alloc_ppmd_pf( __GPRO);
+zvoid  g_ppmd_io( __GPRO__ zvoid *);
 zvoid *g_ppmd_szios_extra_pf( __GPRO);
 zvoid *g_ppmd_szios_res_pf( __GPRO);
 
 int    g_ppmd8_alloc( __GPRO__ int);
-zvoid  g_ppmd8_free( __GPRO);
-zvoid *g_ppmd8_pf( __GPRO);
-
-zvoid  g_alloc_ppmd_set( __GPRO);
-
-
-zvoid  g_ppmd8_prep( __GPRO__ zvoid *);
-
-zvoid  g_ppmd_io( __GPRO__ zvoid *);
 zvoid *g_ppmd8_construct( __GPRO);
+int    g_ppmd8_decode_symbol( __GPRO);
+zvoid  g_ppmd8_free( __GPRO);
+zvoid  g_ppmd8_init( __GPRO__ unsigned order, unsigned restor);
+zvoid *g_ppmd8_pf( __GPRO);
+zvoid  g_ppmd8_prep( __GPRO__ unsigned char (zvoid *));
+int    g_ppmd8_range_dec_finished_ok( __GPRO);
+int    g_ppmd8_range_dec_init( __GPRO);
 zvoid *g_ppmd8_stream( __GPRO);
 
-int    sz_error_data_ppmd_f();
-int    g_ppmd8_range_dec_finished_ok( __GPRO);
-
 zvoid  nextbyte_eof_ppmd( zvoid *);
-
+zvoid  ppmd8_consts( unsigned *max, unsigned *min, int *sz_err_dat);
 char  *version_ppmd();
 
 #endif /* ndef __IF_PPMD_H */

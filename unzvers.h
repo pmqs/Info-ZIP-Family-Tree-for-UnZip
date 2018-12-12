@@ -31,8 +31,8 @@
 /**************************************************/
 
 # ifdef BETA
-#  define UZ_BETALEVEL      "c24-BETA"
-#  define UZ_VERSION_DATE   "2018-12-06"        /* Internal beta version. */
+#  define UZ_BETALEVEL      "c25-BETA"
+#  define UZ_VERSION_DATE   "2018-12-20"        /* Internal beta version. */
 # else
 #  define UZ_BETALEVEL      ""
 #  define UZ_VERSION_DATE   "2018-XX-XX"        /* Official release version. */
@@ -46,7 +46,7 @@
 
 # define UZ_PATCHLEVEL  0
 
-# define UZ_VER_STRING  "6.1c24"        /* Sync with Version numbers! */
+# define UZ_VER_STRING  "6.1c25"        /* Sync with Version numbers! */
 
 # ifndef IZ_COMPANY_NAME
 #  define IZ_COMPANY_NAME "Info-ZIP"

@@ -1,39 +1,919 @@
-# Makefile for UnZip, UnZipSFX, ZipInfo and fUnZip (6.0 or later)
-# using GCC 4 (or later).
-# You may look at <URL:http://www.riscos.info/index.php/GCCSDK> for an
-# up-to-date GCC port.
-
-CC   = gcc
-BIND = $(CC)
-AS   = $(CC) -c
-SQUEEZE = squeeze -v
-E    ?=
-
-# flags
-#   CFLAGS    flags for C compile
-#   LFLAGS1   flags after output file spec, before obj file list
-#   LFLAGS2   flags after obj file list (libraries, etc)
+#-----------------------------------------------------------------------
+#    acorn/GMakefile -- RISC OS, GCC            Revised: 2018-12-20
+#    For UnZip, fUnZip, UnZipSFX, and ZipInfo
 #
-CFLAGS   = -mlibscl -O2 -mthrowback -DNO_STRNICMP -Wall -I.
-LFLAGS1  = -mlibscl
-LFLAGS2  =
+# Copyright (c) 2004-2018 Info-ZIP.  All rights reserved.
+#
+# See the accompanying file LICENSE, version 2009-Jan-2 or later (the
+# contents of which are also included in zip.h) for terms of use.  If,
+# for some reason, all these files are missing, the Info-ZIP license may
+# also be found at: ftp://ftp.info-zip.org/pub/infozip/license.html
+#-----------------------------------------------------------------------
 
-# object file lists
-OBJS1 = unzip.o crc32.o $(CRCA_O) crypt.o envargs.o explode.o
-OBJS2 = extract.o fileio.o globals.o inflate.o list.o match.o
-OBJS3 = process.o ttyio.o ubz2err.o unreduce.o unshrink.o zipinfo.o
-OBJS = $(OBJS1) $(OBJS2) $(OBJS3) riscos.o swiven.o acorn.o
-LOBJS = $(OBJS)
-OBJSDLL = $(OBJS:.o=.pic.o) api.pic.o
-OBJX = unzipsfx.o crc32_.o $(CRCA_O) crypt_.o extract_.o fileio_.o \
-	globals_.o inflate_.o match_.o process_.o ttyio_.o ubz2err_.o \
-	 riscos_.o swiven.o acorn_.o
-LOBJX = $(OBJX)
-OBJF = funzip.o crc32.o $(CRCA_O) cryptf.o globalsf.o inflatef.o ttyiof.o \
-	 swiven.o
-UNZIP_H = unzip.h unzpriv.h globals.h acorn/riscos.h
+#-----------------------------------------------------------------------
+#
+#    INSTRUCTIONS
+#
+# unzip -/c:h unzip61/zip               Extract the files from the UnZip
+#                                          source kit, with the required
+#                                          name transformations.
+#					
+# make -f acorn/GMakefile               Make UnZip programs with
+#                                          typical optional features.
+# make -f acorn/GMakefile help          Advice on building, and
+#                                          control of optional features.
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# "make" macros for users:
+#
+#    C compiler options
+#    ------------------
+#       CFLAGS      Default: optimization, warnings.
+#       CF_NOOPT    Default: some required items, and any user-specified
+#                   LOCAL_UNZIP value.
+#       CF_MACH     Default: machine/architecture-related.
+#
+#    Link options
+#    ------------
+#       LF1, LF2    Link options, early and late.
+#
+#
+#    Optional feature control
+#    ------------------------
+#       NO_AES_WG       Disable AES_WG encryption.
+#       AES_WG_SFX      Enable AES_WG encryption in SFX.
+#
+#       NO_IZ_BZIP2     Disable bzip2 compression.
+#       BZIP2_SFX       Enable bzip2 compression in SFX.
+#
+#       ICONV_MAPPING   Enable ISO/OEM (iconv, -I/-O) conversion.
+#
+#       NO_LZMA         Disable LZMA compression.
+#       LZMA_SFX        Enable LZMA compression in SFX.
+#
+#       NO_PPMD         Disable PPMd compression.
+#       PPMD_SFX        Enable PPMd compression in SFX.
+#
+#       NO_TRAD         Disable Traditional zip encryption.
+#       TRAD_SFX        Enable Traditional zip encryption in SFX.
+#
+#-----------------------------------------------------------------------
+#
+#    Notes
+#
+#    This "make" file resembles unix/Makefile, but does not use a
+# "configure" script.  Instead, relying on GNU "make" conditionals,
+# "make" macros control optional features directly.
+#
+#-----------------------------------------------------------------------
 
-all:	  unzip funzip unzipsfx
+# Product file directory default is "@".
+PROD = @
+
+#-----------------------------------------------------------------------
+#    Tools
+#-----------------------------------------------------------------------
+AR      = ar cq
+CC      = gcc
+LD      = $(CC)
+AS      = $(CC) -c
+SQUEEZE = squeeze -v
+
+#-----------------------------------------------------------------------
+#  Object library names, options.
+#  LIB_xxx = base name.  AR_xxx = path to ".a" file.
+#-----------------------------------------------------------------------
+
+# Object library: AES_WG encryption
+LIB_AES_WG = aes_wg
+AR_AES_WG  = $(PROD)/lib$(LIB_AES_WG).a
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library: BZIP2 compression
+LIB_BZIP2  = bz2
+AR_BZIP2   = $(PROD)/lib$(LIB_BZIP2).a
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library: LZMA compression
+LIB_LZMA   = iz_lzma
+AR_LZMA    = $(PROD)/lib$(LIB_LZMA).a
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library: PPMd compression
+LIB_PPMD   = iz_ppmd
+AR_PPMD    = $(PROD)/lib$(LIB_PPMD).a
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object library: Callable UnZip
+LIB_UNZIP  = izunzip
+AR_UNZIP   = $(PROD)/lib$(LIB_UNZIP).a
+LIB_OPT_UNZIP = -L$(PROD) -l$(LIB_UNZIP)
+
+#-----------------------------------------------------------------------
+# Optional feature macro processing.
+#-----------------------------------------------------------------------
+
+# AES_WG encryption.
+
+ifeq "$(NO_AES_WG)" ""
+AR_AES_WG_ = $(AR_AES_WG)                               # Lib dependency
+LIB_OPT_AES_WG = -l$(LIB_AES_WG)                        # Link options
+ ifeq "$(AES_WG_SFX)" ""
+CFEAT_AES_WG = -DCRYPT_AES_WG                           # CC opts (norm)
+ else
+CFEAT_AES_WG = -DCRYPT_AES_WG -DCRYPT_AES_WG_SFX        # CC opts (sfx)
+ endif
+endif
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# BZIP2 compression.
+
+ifeq "$(NO_IZ_BZIP2)" ""
+AR_BZIP2_ = $(AR_BZIP2)                                 # Lib dependency
+LIB_OPT_BZIP2 = -l$(LIB_BZIP2)                          # Link options
+CFEAT_BZIP2 = -Ibzip2 -DBZIP2_SUPPORT                   # CC opts (all)
+CF_BZ = -Wall -Winline -O2 $(CF_MACH) -DBZ_NO_STDIO -DBZIP2_SUPPORT
+ ifeq "$(BZIP2_SFX)" ""
+CF_BZ_SFX = $(CF_BZ) -DSFX                              # CC opts (norm)
+ else
+CF_BZ_SFX = $(CF_BZ) -DSFX -DBZIP2_SFX                  # CC opts (sfx)
+ endif
+endif
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# ICONV name mapping.
+
+ifneq "$(ICONV_MAPPING)" ""
+CFEAT_ICONV_MAPPING = -DICONV_MAPPING                   # CC opts (all)
+LF1_ICONV_MAPPING = -liconv                             # Link options
+endif
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# LZMA compression.
+
+ifeq "$(NO_LZMA)" ""
+AR_LZMA_ = $(AR_LZMA)                                   # Lib dependency
+LIB_OPT_LZMA = -l$(LIB_LZMA)                            # Link options
+ ifeq "$(LZMA_SFX)" ""
+CFEAT_LZMA = -DLZMA_SUPPORT                             # CC opts (norm)
+ else
+CFEAT_LZMA = -DLZMA_SUPPORT -DLZMA_SFX                  # CC opts (sfx)
+ endif
+endif
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# PPMd compression.
+
+ifeq "$(NO_PPMD)" ""
+AR_PPMD_ = $(AR_PPMD)                                   # Lib dependency
+LIB_OPT_PPMD = -l$(LIB_PPMD)                            # Link options
+ ifeq "$(PPMD_SFX)" ""
+CFEAT_PPMD = -DPPMD_SUPPORT                             # CC opts (norm)
+ else
+CFEAT_PPMD = -DPPMD_SUPPORT -DPPMD_SFX                  # CC opts (sfx)
+ endif
+endif
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Traditional zip encryption.
+
+ifeq "$(NO_TRAD)" ""
+ ifneq "$(TRAD_SFX)" ""
+CFEAT_TRAD = -DCRYPT_TRAD_SFX                           # CC opts (sfx)
+ endif
+else
+CFEAT_TRAD = -DNO_CRYPT_TRAD                            # CC opts (norm)
+endif
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Combined compiler options.
+
+CFEAT = -DNO_USER_PROGRESS \
+        $(CFEAT_AES_WG) $(CFEAT_BZIP2) \
+        $(CFEAT_ICONV_MAPPING) $(CFEAT_LZMA) $(CFEAT_PPMD) \
+        $(CFEAT_TRAD)
+
+#-----------------------------------------------------------------------
+# C compiler options.
+#-----------------------------------------------------------------------
+
+# Machine/architecture compiler options.
+
+CF_MACH = -mlibscl -mthrowback
+
+# General compiler options.
+
+CF_NOOPT = -I. $(CF_MACH) $(LOCAL_UNZIP)        # Not related to optimization.
+CFLAGS   = -O2 -Wall
+
+CF       = $(CFLAGS) $(CF_NOOPT) $(CFEAT)       # C compiler flags.
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Linker and linker options (early and late).
+
+LF1     = -mlibscl $(LF1_ICONV_MAPPING)
+LF2     =
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Optional object library link options.
+
+LIB_OPTS = -L$(PROD) $(LIB_OPT_AES_WG) $(LIB_OPT_BZIP2) \
+           $(LIB_OPT_LZMA) $(LIB_OPT_PPMD) 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Executable program name extension.  (None.)
+PGMEXT =
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Popular "make" targets.  ### ("test" would be nice.)
+MISC_TARGETS = clean  dashv  help
+
+#-----------------------------------------------------------------------
+#  Build configuration: Executable programs
+#-----------------------------------------------------------------------
+
+PGM_FUZ      = funzip$(PGMEXT)
+PGM_SFX      = unzipsfx$(PGMEXT)
+PGM_UNZIP    = unzip$(PGMEXT)
+PGM_UNZXMPL  = izunzip_example$(PGMEXT)
+PGM_ZGREP    = zipgrep
+PGM_ZINFO    = zipinfo$(PGMEXT)
+
+PPGM_FUZ     = $(PROD)/$(PGM_FUZ)
+PPGM_SFX     = $(PROD)/$(PGM_SFX)
+PPGM_UNZIP   = $(PROD)/$(PGM_UNZIP)
+PPGM_UNZXMPL = $(PROD)/$(PGM_UNZXMPL)
+
+UNZIP_PPGMS = $(PPGM_FUZ)   \
+              $(PPGM_SFX)   \
+              $(PPGM_UNZIP)
+
+#-----------------------------------------------------------------------
+
+# Binaries build list (executables and/or object library).
+# - Default: main program and utilities.  See below.
+BINS = MU
+
+#-----------------------------------------------------------------------
+
+# Default target.
+
+all: prod_dir $(BINS)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Binaries build list (BINS) options:
+L:          $(AR_UNZIP) $(PPGM_UNZXMPL)
+LM:         $(AR_UNZIP) $(PPGM_UNZXMPL) $(PPGM_UNZIP)
+LMU:        $(AR_UNZIP) $(PPGM_UNZXMPL) $(UNZIP_PPGMS)
+LU:         $(AR_UNZIP) $(PPGM_UNZXMPL) $(PPGM_FUZ) $(PPGM_SFX)
+M:          $(PPGM_UNZIP)
+MU:         $(UNZIP_PPGMS)
+U:          $(PPGM_FUZ) $(PPGM_SFX)
+
+#-----------------------------------------------------------------------
+
+# Create product directory.  (Required before any use of $(PROD).)
+prod_dir:
+	%cdir $(PROD)
+
+#-----------------------------------------------------------------------
+# Source file lists.
+#-----------------------------------------------------------------------
+
+# OS-dependent source files.
+
+OSDEP_H    = acorn/riscos.h
+
+# OS-dependent object files.
+
+#  UnZip.
+OSDEP_OCU  = $(PROD)/acorn.o  \
+             $(PROD)/riscos.o \
+             $(PROD)/swiven.o
+#  fUnZip.
+OSDEP_OCF  = $(PROD)/swiven.o
+
+#  UnZip object library, DLL/RENTRANT-sensitive.
+OSDEP_OCLR = $(PROD)/acorn_l.o  \
+             $(PROD)/riscos_l.o
+
+#  UnZip object library, DLL/RENTRANT-insensitive.
+OSDEP_OCLN = $(PROD)/swiven.o
+
+#  UnZipSFX.
+OSDEP_OCS  = $(PROD)/acorn_s.o  \
+             $(PROD)/riscos_s.o \
+             $(PROD)/swiven.o
+
+#-----------------------------------------------------------------------
+#  Build configuration: header files
+#-----------------------------------------------------------------------
+
+# OSDEP_H is system-dependent.
+
+# C header files: unzip
+H_UNZIP  = unzip.h   \
+           unzpriv.h \
+           globals.h \
+           $(OSDEP_H)
+
+H_UNZIPL = api.h $(H_UNZIP)
+
+# C header files: AES_WG encryption
+H_AES_WG = aes_wg/aes.h     \
+           aes_wg/aesopt.h  \
+           aes_wg/fileenc.h \
+           aes_wg/hmac.h    \
+           aes_wg/prng.h    \
+           aes_wg/pwd2key.h \
+           aes_wg/sha1.h
+
+# C header files: LZMA compression
+H_LZMA   = lzma/LzFind.h    \
+           lzma/LzHash.h    \
+           lzma/LzmaDec.h   \
+           lzma/SzTypes.h   \
+           lzma/SzVersion.h
+
+# C header files: PPMd compression
+H_PPMD   = ppmd/Ppmd.h      \
+           ppmd/Ppmd8.h     \
+           ppmd/SzTypes.h   \
+           ppmd/SzVersion.h
+
+#-----------------------------------------------------------------------
+#  Build configuration: object files
+#-----------------------------------------------------------------------
+
+# object files: unzip
+O_UNZIP  = $(PROD)/unzip.o     \
+           $(PROD)/crc32.o     \
+           $(PROD)/crypt.o     \
+           $(PROD)/envargs.o   \
+           $(PROD)/explode.o   \
+           $(PROD)/extract.o   \
+           $(PROD)/fileio.o    \
+           $(PROD)/globals.o   \
+           $(PROD)/iconv_map.o \
+           $(PROD)/if_lzma.o   \
+           $(PROD)/if_ppmd.o   \
+           $(PROD)/inflate.o   \
+           $(PROD)/list.o      \
+           $(PROD)/match.o     \
+           $(PROD)/process.o   \
+           $(PROD)/ttyio.o     \
+           $(PROD)/ubz2err.o   \
+           $(PROD)/unreduce.o  \
+           $(PROD)/unshrink.o  \
+           $(PROD)/zipinfo.o   \
+           $(OSDEP_OCU)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: UnZip object library.  Modules sensitive to DLL/REENTRANT.
+O_UNZIPLR = $(PROD)/api_l.o       \
+            $(PROD)/apihelp_l.o   \
+            $(PROD)/crypt_l.o     \
+            $(PROD)/explode_l.o   \
+            $(PROD)/extract_l.o   \
+            $(PROD)/fileio_l.o    \
+            $(PROD)/globals_l.o   \
+            $(PROD)/iconv_map_l.o \
+            $(PROD)/if_lzma_l.o   \
+            $(PROD)/if_ppmd_l.o   \
+            $(PROD)/inflate_l.o   \
+            $(PROD)/list_l.o      \
+            $(PROD)/process_l.o   \
+            $(PROD)/ttyio_l.o     \
+            $(PROD)/ubz2err_l.o   \
+            $(PROD)/unshrink_l.o  \
+            $(PROD)/unzip_l.o     \
+            $(PROD)/zipinfo_l.o   \
+            $(OSDEP_OCLR)
+            
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: UnZip object library.  Modules insensitive to DLL/REENTRANT.
+O_UNZIPLN = $(PROD)/crc32.o    \
+            $(PROD)/envargs.o  \
+            $(PROD)/match.o    \
+            $(PROD)/unreduce.o \
+            $(OSDEP_OCLN)
+
+# object files: UnZip DLL
+O_DLL    = $(O_UNZIP)        \
+           $(PROD)/api.o     \
+           $(PROD)/apihelp.o
+
+O_UNZXMPL = $(PROD)/izunzip_example.o
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: unzipsfx
+O_SFX    = $(PROD)/unzipsfx.o    \
+           $(PROD)/crc32.o       \
+           $(PROD)/crypt_s.o     \
+           $(PROD)/extract_s.o   \
+           $(PROD)/fileio_s.o    \
+           $(PROD)/globals_s.o   \
+           $(PROD)/iconv_map_s.o \
+           $(PROD)/if_lzma_s.o   \
+           $(PROD)/if_ppmd_s.o   \
+           $(PROD)/inflate_s.o   \
+           $(PROD)/match.o       \
+           $(PROD)/process_s.o   \
+           $(PROD)/ttyio.o       \
+           $(PROD)/ubz2err_s.o   \
+           $(OSDEP_OCS)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: funzip
+O_FUZ    = $(PROD)/funzip.o    \
+           $(PROD)/crc32_f.o   \
+           $(PROD)/crypt_f.o   \
+           $(PROD)/globals_f.o \
+           $(PROD)/inflate_f.o \
+           $(PROD)/ttyio_f.o   \
+           $(OSDEP_OCF)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: AES_WG encryption
+O_AES_WG = $(PROD)/aescrypt.o \
+           $(PROD)/aeskey.o   \
+           $(PROD)/aestab.o   \
+           $(PROD)/fileenc.o  \
+           $(PROD)/hmac.o     \
+           $(PROD)/prng.o     \
+           $(PROD)/pwd2key.o  \
+           $(PROD)/sha1.o
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: LZMA compression
+O_LZMA   = $(PROD)/LzFind.o  \
+           $(PROD)/LzmaDec.o
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: PPMd compression
+O_PPMD   = $(PROD)/Ppmd8.o    \
+           $(PROD)/Ppmd8Dec.o
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# object files: BZIP2 compression
+O_BZIP2   = $(PROD)/blocksort.o  \
+            $(PROD)/bzlib.o      \
+            $(PROD)/compress.o   \
+            $(PROD)/crctable.o   \
+            $(PROD)/decompress.o \
+            $(PROD)/huffman.o    \
+            $(PROD)/randtable.o
+
+#-----------------------------------------------------------------------
+#  Build rules: File suffixes
+#  - Disable all built-in rules.
+#  - Only explicit 1:1 rules are used.
+#-----------------------------------------------------------------------
+.SUFFIXES:
+
+#-----------------------------------------------------------------------
+#  Build rules: C compile (.c -> .o)
+#  - Explicit 1:1 rules are used.
+#-----------------------------------------------------------------------
+
+# C Compile rules: UnZip
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# A) Core UnZip C files
+
+$(PROD)/unzip.o:      unzip.c     $(H_UNZIP) consts.h crypt.h \
+                       if_lzma.h if_ppmd.h unzvers.h
+	$(CC) -c $(CF) -o $@ unzip.c
+
+$(PROD)/crc32.o:      crc32.c     $(H_UNZIP) crc32.h zip.h
+	$(CC) -c $(CF) -o $@ crc32.c
+
+$(PROD)/crypt.o:      crypt.c     $(H_UNZIP) crc32.h crypt.h ttyio.h zip.h
+	$(CC) -c $(CF) -o $@ crypt.c
+
+$(PROD)/envargs.o:    envargs.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ envargs.c
+
+$(PROD)/explode.o:    explode.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ explode.c
+
+$(PROD)/extract.o:    extract.c   $(H_UNZIP) crc32.h crypt.h \
+                       if_lzma.h if_ppmd.h
+	$(CC) -c $(CF) -o $@ extract.c
+
+$(PROD)/fileio.o:     fileio.c    $(H_UNZIP) crc32.h crypt.h ebcdic.h ttyio.h
+	$(CC) -c $(CF) -o $@ fileio.c
+
+$(PROD)/globals.o:    globals.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ globals.c
+
+$(PROD)/iconv_map.o:  iconv_map.c  $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ iconv_map.c
+
+$(PROD)/if_lzma.o:    if_lzma.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ if_lzma.c
+
+$(PROD)/if_ppmd.o:    if_ppmd.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ if_ppmd.c
+
+$(PROD)/inflate.o:    inflate.c   $(H_UNZIP) inflate.h
+	$(CC) -c $(CF) -o $@ inflate.c
+
+$(PROD)/list.o:       list.c      $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ list.c
+
+$(PROD)/match.o:      match.c     $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ match.c
+
+$(PROD)/process.o:    process.c   $(H_UNZIP) crc32.h if_lzma.h if_ppmd.h
+	$(CC) -c $(CF) -o $@ process.c
+
+$(PROD)/ttyio.o:      ttyio.c     $(H_UNZIP) crypt.h ttyio.h zip.h
+	$(CC) -c $(CF) -o $@ ttyio.c
+
+$(PROD)/ubz2err.o:    ubz2err.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ ubz2err.c
+
+$(PROD)/unreduce.o:   unreduce.c  $(H_UNZIP) expand.c
+	$(CC) -c $(CF) -o $@ unreduce.c
+
+$(PROD)/unshrink.o:   unshrink.c  $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ unshrink.c
+
+$(PROD)/zipinfo.o:    zipinfo.c   $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ zipinfo.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# B) System-specific C files
+
+$(PROD)/acorn.o:       acorn/acorn.c $(UNZIP_H)
+	$(CC) $(CF) -c -o $@ acorn/acorn.c
+
+$(PROD)/riscos.o:	acorn/riscos.c $(UNZIP_H)
+	$(CC) $(CF) -c -o $@ acorn/riscos.c
+
+$(PROD)/swiven.o:	acorn/swiven.c
+	$(CC) $(CF) -c -o $@ acorn/swiven.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# A') Callable UnZip C files
+
+$(PROD)/api_l.o:      api.c       $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ api.c
+
+$(PROD)/apihelp_l.o:  apihelp.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ apihelp.c
+
+$(PROD)/crypt_l.o:    crypt.c     $(H_UNZIPL) crc32.h crypt.h ttyio.h zip.h
+	$(CC) -c $(CF) -DDLL -o $@ crypt.c
+
+$(PROD)/explode_l.o:  explode.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ explode.c
+
+$(PROD)/extract_l.o:  extract.c   $(H_UNZIPL) crc32.h crypt.h \
+                       if_lzma.h if_ppmd.h
+	$(CC) -c $(CF) -DDLL -o $@ extract.c
+
+$(PROD)/fileio_l.o:   fileio.c    $(H_UNZIPL) crc32.h crypt.h ebcdic.h ttyio.h
+	$(CC) -c $(CF) -DDLL -o $@ fileio.c
+
+$(PROD)/globals_l.o:  globals.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ globals.c
+
+$(PROD)/iconv_map_l.o:  iconv_map.c  $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ iconv_map.c
+
+$(PROD)/if_lzma_l.o:  if_lzma.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ if_lzma.c
+
+$(PROD)/if_ppmd_l.o:  if_ppmd.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ if_ppmd.c
+
+$(PROD)/inflate_l.o:  inflate.c   $(H_UNZIPL) inflate.h
+	$(CC) -c $(CF) -DDLL -o $@ inflate.c
+
+$(PROD)/list_l.o:     list.c      $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ list.c
+
+$(PROD)/process_l.o:  process.c   $(H_UNZIPL) crc32.h if_lzma.h if_ppmd.h
+	$(CC) -c $(CF) -DDLL -o $@ process.c
+
+$(PROD)/ttyio_l.o:    ttyio.c     $(H_UNZIPL) crypt.h ttyio.h zip.h
+	$(CC) -c $(CF) -DDLL -o $@ ttyio.c
+
+$(PROD)/ubz2err_l.o:  ubz2err.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ ubz2err.c
+
+$(PROD)/unreduce_l.o: unreduce.c  $(H_UNZIPL) expand.c
+	$(CC) -c $(CF) -DDLL -o $@ unreduce.c
+
+$(PROD)/unshrink_l.o: unshrink.c  $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ unshrink.c
+
+$(PROD)/unzip_l.o:    unzip.c     $(H_UNZIPL) consts.h crypt.h \
+                       if_lzma.h if_ppmd.h unzvers.h
+	$(CC) -c $(CF) -DDLL -o $@ unzip.c
+
+$(PROD)/zipinfo_l.o:  zipinfo.c   $(H_UNZIPL)
+	$(CC) -c $(CF) -DDLL -o $@ zipinfo.c
+
+$(PROD)/unix_l.o:   unix/unix.c $(H_UNZIPL) unix/macosx.h
+	$(CC) -c $(CF) -DDLL -o $@ unix/unix.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# B') System-specific C files
+
+$(PROD)/acorn_l.o:	acorn/acorn.c $(UNZIP_H)
+	$(CC) $(CF) -c -DDLL -o $@ acorn/acorn.c
+
+$(PROD)/riscos_l.o:	acorn/riscos.c $(UNZIP_H)
+	$(CC) $(CF) -c -DDLL -o $@ acorn/riscos.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# C Compile rules: UnZip object library, example program.
+
+$(PROD)/api.o:        api.c       $(H_UNZIP)
+	$(CC) -c $(CF) -DDLL -o $@ api.c
+
+$(PROD)/apihelp.o:    apihelp.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DDLL -o $@ apihelp.c
+
+$(PROD)/izunzip_example.o:   libiz/izunzip_example.c $(H_UNZIP)
+	$(CC) -c $(CF) -o $@ libiz/izunzip_example.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# C Compile rules: UnZipSFX
+
+# A) Core UnZipSFX C files
+
+$(PROD)/unzipsfx.o:   unzip.c     $(H_UNZIP) consts.h crypt.h \
+                                   if_lzma.h if_ppmd.h unzvers.h
+	$(CC) -c $(CF) -DSFX -o $@ unzip.c
+
+$(PROD)/crypt_s.o:    crypt.c     $(H_UNZIP) zip.h crypt.h crc32.h ttyio.h
+	$(CC) -c $(CF) -DSFX -o $@ crypt.c
+
+$(PROD)/extract_s.o:  extract.c   $(H_UNZIP) crc32.h crypt.h \
+                       if_lzma.h if_ppmd.h
+	$(CC) -c $(CF) -DSFX -o $@ extract.c
+
+$(PROD)/fileio_s.o:   fileio.c    $(H_UNZIP) crc32.h crypt.h ttyio.h ebcdic.h
+	$(CC) -c $(CF) -DSFX -o $@ fileio.c
+
+$(PROD)/globals_s.o:  globals.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DSFX -o $@ globals.c
+
+$(PROD)/iconv_map_s.o:  iconv_map.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DSFX -o $@ iconv_map.c
+
+$(PROD)/if_lzma_s.o:  if_lzma.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DSFX -o $@ if_lzma.c
+
+$(PROD)/if_ppmd_s.o:  if_ppmd.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DSFX -o $@ if_ppmd.c
+
+$(PROD)/inflate_s.o:  inflate.c   $(H_UNZIP) inflate.h
+	$(CC) -c $(CF) -DSFX -o $@ inflate.c
+
+$(PROD)/match_s.o:    match.c     $(H_UNZIP)
+	$(CC) -c $(CF) -DSFX -o $@ match.c
+
+$(PROD)/process_s.o:  process.c   $(H_UNZIP) crc32.h if_lzma.h if_ppmd.h
+	$(CC) -c $(CF) -DSFX -o $@ process.c
+
+$(PROD)/ttyio_s.o:    ttyio.c     $(H_UNZIP) zip.h crypt.h ttyio.h
+	$(CC) -c $(CF) -DSFX -o $@ ttyio.c
+
+$(PROD)/ubz2err_s.o:  ubz2err.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DSFX -o $@ ubz2err.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# B) System-specific C files.
+
+$(PROD)/acorn_s.o:	acorn/acorn.c $(UNZIP_H)
+	$(CC) $(CF) -c -DSFX -DSFX_EXDIR -o $@ acorn/acorn.c
+
+$(PROD)/riscos_s.o:	acorn/riscos.c $(UNZIP_H)
+	$(CC) $(CF) -c -DSFX -DSFX_EXDIR -o $@ acorn/riscos.c
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# C Compile rules: fUnZip
+
+$(PROD)/funzip.o:     funzip.c    $(H_UNZIP) crc32.h crypt.h ttyio.h
+	$(CC) -c $(CF) -DFUNZIP -o $@ funzip.c
+
+$(PROD)/crc32_f.o:    crc32.c     $(H_UNZIP) crc32.h zip.h
+	$(CC) -c $(CF) -DFUNZIP -o $@ crc32.c
+
+$(PROD)/crypt_f.o:    crypt.c     $(H_UNZIP) zip.h crypt.h crc32.h ttyio.h
+	$(CC) -c $(CF) -DFUNZIP -o $@ crypt.c
+
+$(PROD)/globals_f.o:  globals.c   $(H_UNZIP)
+	$(CC) -c $(CF) -DFUNZIP -o $@ globals.c
+
+$(PROD)/inflate_f.o:  inflate.c   $(H_UNZIP) inflate.h
+	$(CC) -c $(CF) -DFUNZIP -o $@ inflate.c
+
+$(PROD)/match_f.o:    match.c     $(H_UNZIP)
+	$(CC) -c $(CF) -DFUNZIP -o $@ match.c
+
+$(PROD)/ttyio_f.o:    ttyio.c     $(H_UNZIP) zip.h crypt.h ttyio.h
+	$(CC) -c $(CF) -DFUNZIP -o $@ ttyio.c
+
+# B) fUnZip C files for specific ports
+
+#-----------------------------------------------------------------------
+
+# C Compile rules: AES_WG encryption
+
+$(PROD)/aescrypt.o: aes_wg/aescrypt.c $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/aescrypt.c
+
+$(PROD)/aeskey.o:   aes_wg/aeskey.c   $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/aeskey.c
+
+$(PROD)/aestab.o:   aes_wg/aestab.c   $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/aestab.c
+
+$(PROD)/fileenc.o:  aes_wg/fileenc.c  $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/fileenc.c
+
+$(PROD)/hmac.o:     aes_wg/hmac.c     $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/hmac.c
+
+$(PROD)/prng.o:     aes_wg/prng.c     $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/prng.c
+
+$(PROD)/pwd2key.o:  aes_wg/pwd2key.c  $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/pwd2key.c
+
+$(PROD)/sha1.o:     aes_wg/sha1.c     $(H_AES)
+	$(CC) -c $(CF) -o $@ wrap/sha1.c
+
+#-----------------------------------------------------------------------
+
+# C Compile rules: BZIP2 compression
+
+$(PROD)/blocksort.o : bzip2/blocksort.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/blocksort.c
+
+$(PROD)/bzlib.o : bzip2/bzlib.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/bzlib.c
+
+$(PROD)/compress.o : bzip2/compress.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/compress.c
+
+$(PROD)/crctable.o : bzip2/crctable.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/crctable.c
+
+$(PROD)/decompress.o : bzip2/decompress.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/decompress.c
+
+$(PROD)/huffman.o : bzip2/huffman.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/huffman.c
+
+$(PROD)/randtable.o : bzip2/randtable.c
+	$(CC) -c $(CF_BZ) -o $@ bzip2/randtable.c
+
+#-----------------------------------------------------------------------
+
+# C Compile rules: LZMA compression
+
+$(PROD)/LzFind.o:   lzma/LzFind.c     $(H_LZMA)
+	$(CC) -c $(CF) -o $@ wrap/LzFind.c
+
+$(PROD)/LzmaDec.o:  lzma/LzmaDec.c    $(H_LZMA)
+	$(CC) -c $(CF) -o $@ wrap/LzmaDec.c
+
+#-----------------------------------------------------------------------
+
+# C Compile rules: PPMd compression
+
+$(PROD)/Ppmd8.o:    ppmd/Ppmd8.c      $(H_PPMD)
+	$(CC) -c $(CF) -o $@ wrap/Ppmd8.c
+
+$(PROD)/Ppmd8Dec.o: ppmd/Ppmd8Dec.c   $(H_PPMD)
+	$(CC) -c $(CF) -o $@ wrap/Ppmd8Dec.c
+
+#-----------------------------------------------------------------------
+#  Build rules: Object libraries (.o -> .a)
+#-----------------------------------------------------------------------
+
+# Object library rule: AES_WG
+
+$(AR_AES_WG): $(O_AES_WG)
+	@%echo 'Building/updating AES_WG object library...'
+	-$(RM) $@
+	$(AR) $@ $(O_AES_WG)
+	-$(RANLIB) $@
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library rule: BZIP2
+
+$(AR_BZIP2): $(O_BZIP2)
+	@%echo 'Building/updating BZIP2 object library...'
+	-$(RM) $@
+	$(AR) $@ $(O_BZIP2)
+	-$(RANLIB) $@
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library rule: LZMA
+
+$(AR_LZMA): $(O_LZMA)
+	@%echo 'Building/updating LZMA object library...'
+	-$(RM) $@
+	$(AR) $@ $(O_LZMA)
+	-$(RANLIB) $@
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library rule: PPMd
+
+$(AR_PPMD): $(O_PPMD)
+	@%echo 'Building/updating PPMd object library...'
+	-$(RM) $@
+	$(AR) $@ $(O_PPMD)
+	-$(RANLIB) $@
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Object library rule: Callable UnZip
+
+$(AR_UNZIP): $(O_UNZIPLR) $(O_UNZIPLN) $(O_AES_WG) $(O_LZMA) $(O_PPMD)
+	@%echo 'Building/updating Callable UnZip object library...'
+	-$(RM) $@
+	$(AR) $@ $(O_UNZIPLR) $(O_UNZIPLN) \
+         $(O_AES_WG) $(O_LZMA) $(O_PPMD)
+	-$(RANLIB) $@
+
+#-----------------------------------------------------------------------
+#  Build rules: Link programs (.o -> executables)
+#-----------------------------------------------------------------------
+
+# Link rule: funzip
+
+$(PPGM_FUZ): $(O_FUZ)
+	$(LD) -o $@ $(LF1) $(O_FUZ) $(LF2)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Link rule: unzip
+
+$(PPGM_UNZIP): $(O_UNZIP) $(AR_AES_WG_) $(AR_BZIP2_) \
+               $(AR_LZMA_) $(AR_PPMD_)
+	$(LD) -o $@ $(LF1) $(O_UNZIP) $(LIB_OPTS) $(LF2)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Link rule: unzipsfx
+
+$(PPGM_SFX): $(O_SFX) $(AR_AES_WG_) $(AR_BZIP2_) \
+               $(AR_LZMA_) $(AR_PPMD_)
+	$(LD) -o $@ $(LF1) $(O_SFX) $(LIB_OPTS) $(LF2)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Link rule: izunzip_example
+
+$(PPGM_UNZXMPL): $(O_UNZXMPL) $(AR_UNZIP) $(AR_BZIP2_)
+	$(LD) -o $@ $(LF1) $(O_UNZXMPL) \
+         $(LIB_OPT_UNZIP) $(LIB_OPT_BZIP2) $(LF2)
+
+#-----------------------------------------------------------------------
 
 install:  unzip funzip unzipsfx
 	$(SQUEEZE) unzip %.unzip
@@ -41,114 +921,70 @@ install:  unzip funzip unzipsfx
 	$(SQUEEZE) unzipsfx unzipsfx
 	copy %.unzip %.zipinfo ~CVF
 
-# suffix rules
-.SUFFIXES:
-.SUFFIXES: _.o .o .c
-.c_.o:
-	$(CC) -c $(CFLAGS) -DUTIL -o $@ $<
+#-----------------------------------------------------------------------
 
-.c.o:
-	$(CC) -c $(CFLAGS) $<
+# Target: clean
+# Remove programs, object libraries, object files.
+clean: prod_dir
+	-remove $(PROD).$(PGM_FUZ)
+	-remove $(PROD).$(PGM_SFX)
+	-remove $(PROD).$(PGM_UNZIP)
+	-wipe $(PROD).*/a ~cf
+	-cdir $(PROD).o
+	-create $(PROD).o.!fake! 0
+	-wipe $(PROD).o.* ~cf
 
-# rules for common stuff
-crc32.o:	crc32.c $(UNZIP_H) zip.h crc32.h
-crypt.o:	crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
-envargs.o:	envargs.c $(UNZIP_H)
-explode.o:	explode.c $(UNZIP_H)
-extract.o:	extract.c $(UNZIP_H) crc32.h crypt.h
-fileio.o:	fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h
-funzip.o:	funzip.c $(UNZIP_H) crc32.h crypt.h ttyio.h
-globals.o:	globals.c $(UNZIP_H)
-inflate.o:	inflate.c inflate.h $(UNZIP_H)
-list.o:		list.c $(UNZIP_H)
-match.o:	match.c $(UNZIP_H)
-process.o:	process.c $(UNZIP_H) crc32.h
-ttyio.o:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
-ubz2err.o:	ubz2err.c $(UNZIP_H)
-unreduce.o:	unreduce.c $(UNZIP_H)
-unshrink.o:	unshrink.c $(UNZIP_H)
-unzip.o:	unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
-zipinfo.o:	zipinfo.c $(UNZIP_H)
+#-----------------------------------------------------------------------
 
-# unzipsfx compilation section
-unzipsfx.o:	unzip.c $(UNZIP_H) crypt.h unzvers.h consts.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ unzip.c
+dashv:
+	$(PROD).$(PGM_UNZIP) -v
 
-crc32_.o:	crc32.c $(UNZIP_H) zip.h crc32.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ crc32.c
+#-----------------------------------------------------------------------
 
-crypt_.o:	crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ crypt.c
+help:
+	@%echo ""
+	@%echo "Additional "make" targets include:"
+	@%echo ""
+	@%echo "  $(MISC_TARGETS)"
+	@%echo ""
+	@%echo '"make" macros to control various optional features:'
+	@%echo '    "NO_AES_WG=1"     Disable AES_WG encryption.'
+	@%echo '    "AES_WG_SFX=1"    Ensable AES_WG encryption in SFX.'
+	@%echo '    "BINS=[L][M][U]   Binaries build list:'
+	@%echo '                       L: object library (libizunzip.a)'
+	@%echo '                       M: main program (UnZip)'
+	@%echo '                       U: utility programs (fUnZip, UnZipSFX)'
+	@%echo '                       Default: MU.'
+	@%echo '    "IZ_BZIP2=bz2dir" Use bzip2 compression from dir "bz2dir".'
+	@%echo '    "NO_IZ_BZIP2=1"   Disable bzip2 compression.'
+	@%echo '    "BZIP2_SFX=1"     Ensable bzip2 compression in SFX.'
+	@%echo '    "LOCAL_UNZIP=opts" Add C compiler options, "opts".'
+	@%echo '    "NO_LZMA=1"       Disable LZMA compression.'
+	@%echo '    "LZMA_SFX=1"      Enable LZMA compression in SFX.'
+	@%echo '    "NO_PPMD=1"       Disable PPMd compression.'
+	@%echo '    "PPMD_SFX=1"      Enable PPMd compression in SFX.'
+	@%echo '    "PROD=subdir"     Build product files in "subdir", not "@".'
+	@%echo ''
+	@%echo 'Examples:'
+	@%echo '   Make UnZip programs without LZMA or PPMd compression.'
+	@%echo '      make -f acorn/GMakefile NO_LZMA=1 NO_PPMD=1'
+	@%echo ''
+	@%echo 'Use the "clean" target to delete any product files before'
+	@%echo 'building with different options.  (Or, specify an empty'
+	@%echo 'PROD directory.)'
+	@%echo ''
+	@%echo 'After UnZip has been built, use the "dashv" target to get'
+	@%echo 'an "unzip -v" report from the created executable.'
+	@%echo ''
+	@%echo 'See the files INSTALL, unzip.txt, and acorn.GMakefile for more'
+	@%echo 'information.'
+	@%echo ''
 
-extract_.o:	extract.c $(UNZIP_H) crc32.h crypt.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ extract.c
-
-fileio_.o:	fileio.c $(UNZIP_H) crc32.h crypt.h ttyio.h ebcdic.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ fileio.c
-
-globals_.o:	globals.c $(UNZIP_H)
-	$(CC) -c $(CFLAGS) -DSFX -o $@ globals.c
-
-inflate_.o:	inflate.c inflate.h $(UNZIP_H) crypt.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ inflate.c
-
-match_.o:	match.c $(UNZIP_H)
-	$(CC) -c $(CFLAGS) -DSFX -o $@ match.c
-
-process_.o:	process.c $(UNZIP_H) crc32.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ process.c
-
-ttyio_.o:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
-	$(CC) -c $(CFLAGS) -DSFX -o $@ ttyio.c
-
-ubz2err_.o:	ubz2err.c $(UNZIP_H)
-	$(CC) -c $(CFLAGS) -DSFX -o $@ ubz2err.c
-
-
-# funzip compilation section
-cryptf.o:	crypt.c $(UNZIP_H) zip.h crypt.h crc32.h ttyio.h
-	$(CC) -c $(CFLAGS) -DFUNZIP -o $@ crypt.c
-
-globalsf.o:	globals.c $(UNZIP_H)
-	$(CC) -c $(CFLAGS) -DFUNZIP -o $@ globals.c
-
-inflatef.o:	inflate.c inflate.h $(UNZIP_H) crypt.h
-	$(CC) -c $(CFLAGS) -DFUNZIP -o $@ inflate.c
-
-ttyiof.o:	ttyio.c $(UNZIP_H) zip.h crypt.h ttyio.h
-	$(CC) -c $(CFLAGS) -DFUNZIP -o $@ ttyio.c
-
-
-acorn.o:       acorn/acorn.c $(UNZIP_H)
-	$(CC) $(CFLAGS) -c acorn/acorn.c
-acorn_.o:	acorn/acorn.c $(UNZIP_H)
-	$(CC) $(CFLAGS) -c -DSFX -DSFX_EXDIR -o acorn_.o acorn/acorn.c
-acornf.o:	acorn/acorn.c $(UNZIP_H)
-	$(CC) $(CFLAGS) -c -DFUNZIP -o acornf.o acorn/acorn.c
-
-riscos.o:	acorn/riscos.c $(UNZIP_H)
-	$(CC) $(CFLAGS) -c acorn/riscos.c
-riscos_.o:	acorn/riscos.c $(UNZIP_H)
-	$(CC) $(CFLAGS) -c -DSFX -DSFX_EXDIR -o riscos_.o acorn/riscos.c
-riscosf.o:	acorn/riscos.c $(UNZIP_H)
-	$(CC) $(CFLAGS) -c -DFUNZIP -o riscosf.o acorn/riscos.c
-
-swiven.o:	acorn/swiven.c
-	$(CC) $(CFLAGS) -c acorn/swiven.c
-
-unzip:	  $(OBJS)
-	  $(BIND) -o unzip$(E) $(LFLAGS1) $(OBJS) $(LFLAGS2)
-funzip:	  $(OBJF)
-	  $(BIND) -o funzip$(E) $(LFLAGS1) $(OBJF) $(LFLAGS2)
-unzipsfx: $(OBJX)
-	  $(BIND) -o unzipsfx$(E) $(LFLAGS1) $(OBJX) $(LFLAGS2)
-
-clean:
-	remove unzip
-	remove funzip
-	remove zipinfo
-	remove unzipsfx
-	create o.!fake! 0
-	wipe o.* ~cf
+###
+###	@%echo '    "NO_ICONV=1"      Disable ISO/OEM (iconv) conversion.'
+###	@%echo '    "IZ_ZLIB=zdir"    Use zlib from dir "zdir" for Deflate.'
+###	@%echo '    "LIST=1"          Generate C compiler and linker listing.'
+###
+#-----------------------------------------------------------------------
 
 # end of Makefile

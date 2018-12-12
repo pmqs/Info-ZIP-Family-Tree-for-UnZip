@@ -672,6 +672,10 @@ Features added (or removed):
    should work ("make" target: "haiku").  (unzip.c, unzpriv.h,
    unix/Makefile, unix.c) [pulkomandy, SMS]
 
+6.1c25 (12 Dec 2018):
+ - No news.
+
+
 
 Bugs fixed:
 
@@ -2035,3 +2039,13 @@ Bugs fixed:
    reports were put out (-h, -hh, --license, -sc, -so).  (unzip.c) [SMS]
  - Minor changes (comments, diagnostics format, variable password) in
    the object library example program.  (libiz/izunzip_example.c) [SMS]
+
+6.1c25 (20 Dec 2018):
+ - Completed segregation of the PPMd code.  (extract.c, if_ppmd.c,
+   if_ppmd.h) [SMS]
+ - In a "generic" Unix build, ICONV_MAPPING could be set incorrectly. 
+   (unix/configure) [SMS]
+ - Slight reduction in compiler complaints.  (api.c, process.c) [SMS]
+ - Better support for GCC on RISC OS.  (unzpriv.h, acorn/GMakefile,
+   acorn/riscos.c, acorn/riscos.h, aes_wg/brg_endian.h) [SMS]
+

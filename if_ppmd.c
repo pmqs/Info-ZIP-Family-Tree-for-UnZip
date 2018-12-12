@@ -15,16 +15,18 @@
  *   SzAlloc_ppmd()
  *   SzFree_ppmd()
  *   alloc_ppmd()
+ *   g_ppmd_szios_extra_pf()
+ *   g_ppmd_szios_res_pf()
  *   g_ppmd8_alloc()
+ *   g_ppmd8_decode_symbol()
  *   g_ppmd8_free()
  *   g_ppmd8_pf()
  *   g_ppmd8_prep()
  *   g_ppmd8_range_dec_finished_ok()
+ *   g_ppmd8_range_dec_init()
  *   g_ppmd8_stream()
- *   g_ppmd_alloc_ppmd_pf()
- *   g_ppmd_szios_extra_pf()
- *   g_ppmd_szios_res_pf()
  *   nextbyte_eof_ppmd()
+ *   ppmd8_consts()
  *   sz_error_data_ppmd_f()
  *   version_ppmd()
  *
@@ -106,11 +108,35 @@ zvoid *alloc_ppmd()
 }
 
 
+/* Return pointer to global structure I/O member, Bool.
+ */
+zvoid *g_ppmd_szios_extra_pf( __GPRO)
+{
+  return (&G_PPMD_P->szios.extra);
+}
+
+
+/* Return pointer to global structure I/O member, SRes.
+ */
+zvoid *g_ppmd_szios_res_pf( __GPRO)
+{
+  return (&G_PPMD_P->szios.res);
+}
+
+
 /* Allocate PPMd8 storage.
  */
 int g_ppmd8_alloc( __GPRO__ int size)
 {
   return Ppmd8_Alloc( &(G_PPMD_P->ppmd8), size, &(G_PPMD_P->g_Alloc_ppmd));
+}
+
+
+/* Return Ppmd8_DecodeSymbol() value.
+ */
+Bool g_ppmd8_decode_symbol( __GPRO)
+{
+  return Ppmd8_DecodeSymbol( &(G_PPMD_P->ppmd8));
 }
 
 
@@ -125,6 +151,14 @@ zvoid g_ppmd8_free( __GPRO)
   {
     Ppmd8_Free( &(G_PPMD_P->ppmd8), &(G_PPMD_P->g_Alloc_ppmd));
   }
+}
+
+
+/* Ppmd8_Init().
+ */
+void g_ppmd8_init( __GPRO__ unsigned order, unsigned restor)
+{
+  Ppmd8_Init( &(G_PPMD_P->ppmd8), order, restor);
 }
 
 
@@ -155,6 +189,14 @@ zvoid g_ppmd8_prep( __GPRO__ Byte p_r_b( zvoid *))
 }
 
 
+/* Return Ppmd8_RangeDec_Init() value.
+ */
+Bool g_ppmd8_range_dec_init( __GPRO)
+{
+  return Ppmd8_RangeDec_Init( &(G_PPMD_P->ppmd8));
+}
+
+
 /* Return Ppmd8_RangeDec_IsFinishedOK() value.
  */
 int g_ppmd8_range_dec_finished_ok( __GPRO)
@@ -171,36 +213,22 @@ zvoid g_ppmd8_stream( __GPRO)
 }
 
 
-/* Return pointer to global structure member, ISzAlloc.
- */
-zvoid *g_ppmd_alloc_ppmd_pf( __GPRO)
-{
-  return (&(G_PPMD_P->g_Alloc_ppmd));
-}
-
-
-/* Return pointer to global structure I/O member, Bool.
- */
-zvoid *g_ppmd_szios_extra_pf( __GPRO)
-{
-  return (&G_PPMD_P->szios.extra);
-}
-
-
-/* Return pointer to global structure I/O member, SRes.
- */
-zvoid *g_ppmd_szios_res_pf( __GPRO)
-{
-  return (&G_PPMD_P->szios.res);
-}
-
-
 /* Set PPMd I/O structure members to indicate EOF.
  */
 zvoid nextbyte_eof_ppmd( CByteInToLook *szios_p)
 {
   szios_p->extra = True;
   szios_p->res = SZ_ERROR_INPUT_EOF;
+}
+
+
+/* Return some 7-Zip and PPMd8 constants.
+ */
+zvoid ppmd8_consts( unsigned *max, unsigned *min, int *sz_err_dat)
+{
+  *max = PPMD8_MAX_ORDER;
+  *min = PPMD8_MIN_ORDER;
+  *sz_err_dat = SZ_ERROR_DATA;
 }
 
 

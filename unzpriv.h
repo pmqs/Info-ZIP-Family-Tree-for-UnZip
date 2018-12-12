@@ -1916,7 +1916,7 @@ struct file_list {
 #   include <signal.h>
 #  endif /* ndef VMS */
 #  if defined(VMS) || defined(SIGUSR1)
-#   if !defined(MACOS) && !defined(WINDLL)
+#   if !defined(MACOS) && !defined( RISCOS) && !defined(WINDLL)
 #    define ENABLE_USER_PROGRESS
 #   endif /* !defined(MACOS) && !defined(WINDLL) */
 #  endif /* defined(VMS) || defined(SIGUSR1) */

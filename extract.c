@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2017 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2018 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -6823,7 +6823,6 @@ uzlzma_cleanup_exit:
 
 #ifdef PPMD_SUPPORT
 
-# include "ppmd/Ppmd8.h"        /* PPMd8 constants, function prototypes. */
 # include "if_ppmd.h"           /* Function prototypes for if_ppmd.c. */
 
 /*******************************/
@@ -6831,7 +6830,7 @@ uzlzma_cleanup_exit:
 /*******************************/
 
 /* 7-Zip-compatible I/O Read function. */
-static Byte ppmd_read_byte( void *szios_p)
+static unsigned char ppmd_read_byte( void *szios_p)
 {
     int b;
 
@@ -6875,17 +6874,18 @@ static int UZppmd(__G)
     unsigned memSize;
     unsigned restor;
 
+    /* General 7-Zip and PPMd8 constants. */
+    unsigned iz_ppmd8_max_order;
+    unsigned iz_ppmd8_min_order;
+    int      sz_error_data_ppmd;
+
     /* Local values from the (global) PPMd structure.
      * Watch for type deviation from "ppmd/SzTypes.h".
      */
-    void *g_ppmd_alloc_ppmd_p;
     int  *g_ppmd_szios_extra_p;
     int  *g_ppmd_szios_res_p;
-    void *g_ppmd8_p;
-    int   sz_error_data_ppmd;
 
     /* Allocate and initialize the 7-Zip PPMd sructure (once). */
-
     if (G.struct_ppmd_p == NULL)
     {
       G.struct_ppmd_p = alloc_ppmd();   /* Alloc the main PPMd struct. */
@@ -6894,17 +6894,19 @@ static int UZppmd(__G)
         return PK_MEM3;
       }
 
-      /* Initialize 7-Zip PPMd structures. */
+      /* Initialize 7-Zip PPMd I/O and memory, and PPMd8 structures. */
       g_ppmd8_prep( __G__ ppmd_read_byte);
     }
 
-    /* Locate the PPMd8 structure and 7-Zip I/O structure members. */
-    g_ppmd8_p = g_ppmd8_pf( __G);
+    /* Locate some 7-Zip I/O structure members. */
     g_ppmd_szios_extra_p = g_ppmd_szios_extra_pf( __G);
     g_ppmd_szios_res_p = g_ppmd_szios_res_pf( __G);
 
-    /* Local copy of SZ_ERROR_DATA. */
-    sz_error_data_ppmd = sz_error_data_ppmd_f();
+    /* Get local copies of some 7-Zip and PPMd8 constants:
+     * PPMD8_MAX_ORDER, PPMD8_MIN_ORDER, SZ_ERROR_DATA.
+     */
+    ppmd8_consts( &iz_ppmd8_max_order, &iz_ppmd8_min_order,
+     &sz_error_data_ppmd);
 
     sts = 0;
     /* Extract PPMd properties. */
@@ -6937,17 +6939,15 @@ static int UZppmd(__G)
     /* Convert archive MB value into raw byte value. */
     memSize <<= 20;
 
-    if ((order < PPMD8_MIN_ORDER) || (order > PPMD8_MAX_ORDER))
+    if ((order < iz_ppmd8_min_order) || (order > iz_ppmd8_max_order))
         return PK_ERR;
 
     if (!g_ppmd8_alloc( __G__ memSize))
         return PK_MEM3;
 
-    g_ppmd_alloc_ppmd_p = g_ppmd_alloc_ppmd_pf( __G);
-
     g_ppmd8_stream( __G);
 
-    sts = Ppmd8_RangeDec_Init( g_ppmd8_p);
+    sts =  g_ppmd8_range_dec_init( __G);
     if (!sts)
         return PK_ERR;
     else if (*g_ppmd_szios_extra_p)
@@ -6957,7 +6957,7 @@ static int UZppmd(__G)
     {
         int sym;
 
-        Ppmd8_Init( g_ppmd8_p, order, restor);
+        g_ppmd8_init( __G__ order, restor);
 
 #if defined(DLL) && !defined(NO_SLIDE_REDIR)
         if (G.redirect_slide) {
@@ -6976,7 +6976,8 @@ static int UZppmd(__G)
             /* Decode input to fill the output buffer. */
             for (avail_out = wsize; avail_out > 0; avail_out--)
             {
-                sym = Ppmd8_DecodeSymbol( g_ppmd8_p);
+                sym = g_ppmd8_decode_symbol( __G);
+
                 if (*g_ppmd_szios_extra_p || sym < 0)
                     break;
                 *(next_out++) = sym;
@@ -7015,8 +7016,9 @@ static int UZppmd(__G)
 uzppmd_cleanup_exit:
 
     /* Free PPMd internal (p->Base) storage. */
-    Ppmd8_Free( g_ppmd8_p, g_ppmd_alloc_ppmd_p);
+    g_ppmd8_free( __G);
 
     return sts;
 } /* UZppmd(). */
+
 #endif /* def PPMD_SUPPORT */

@@ -3836,11 +3836,11 @@ void show_version_info(__G)
          "  Maintainer: Steven M. Schweda"));
         Info(slide, 0, ((char *)slide,
           LoadFarString(UnzipVersionLine)));
-#  ifdef BETA_MSG
+#   ifdef BETA_MSG
         Info( slide, 0, ((char *)slide, LoadFarString( BetaVersion),
          "", ""));
         Info( slide, 0, ((char *)slide, "%s", "\n"));
-#  endif
+#   endif
         version(__G);
 #  endif /* ndef SFX */
 
