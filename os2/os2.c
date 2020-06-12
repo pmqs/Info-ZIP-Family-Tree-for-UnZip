@@ -2192,11 +2192,7 @@ void version(__G)
     len = sprintf((char *)slide, LoadFarString(CompiledWith),
 
 #if defined(__GNUC__)
-#  ifdef __EMX__  /* __EMX__ is defined as "1" only (sigh) */
-      "emx+gcc ", __VERSION__,
-#  else
       "gcc ", __VERSION__,
-#  endif
 #elif defined(__IBMC__)
       "IBM ",
 #  if (__IBMC__ < 200)
@@ -2261,7 +2257,7 @@ void version(__G)
       " (16-bit)",
 #  endif
 #else
-      " (32-bit)",
+      " and OS/2 based systems",
 #endif
 
 #ifdef __DATE__
