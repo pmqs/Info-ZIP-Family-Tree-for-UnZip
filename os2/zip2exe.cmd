@@ -11,6 +11,9 @@
 |**  executables.                                                   **|
 |**                                                                 **|
 \*********************************************************************/
+call RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
+call SysLoadFuncs
+
 rc = 0
 debug = 0
 /**  Start Argument processing  ** end Initialization               **/
@@ -41,10 +44,10 @@ if fileexists = '' then DO
   end
 /**  Find  zip.exe location    ** end Argument processing          **/
 parse source . . command_file
-zipexe = substr(command_file,1,lastpos('\',command_file))||'zip.exe'
+zipexe = SysSearchPath("PATH","ZIP.EXE")
 if stream(zipexe,'c','query exists') = '' then do
     say 'We are unable to locate the zip.exe command.'
-    say 'Eensure that the zip2exe command is in the directory',
+    say 'Ensure that the zip2exe command is in the directory',
         'which contains zip.exe'
     rc = 9
     signal fini
@@ -52,9 +55,8 @@ end
 
 /**  Start unzipsfx location    ** end Argument processing          **/
 parse SOURCE . . command_file
-unzipsfx = SUBSTR(command_file,1,LASTPOS('\',command_file))||,
-          'UNZIPSFX.EXE'
-if stream(unzipsfx,'C','QUERY EXISTS') = '' then DO
+unzipsfx = SysSearchPath("PATH","UNZIPSFX.EXE")
+if stream(unzipsfx,'c','query exists') = '' then do
     say 'We are unable to locate the UNZIPSFX.EXE source.'
     say 'Ensure that the ZIP2EXE command is in the directory',
         'which contains UNZIPSFX.EXE'
