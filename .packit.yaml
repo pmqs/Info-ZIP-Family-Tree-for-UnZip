@@ -1,0 +1,12 @@
+jobs:
+- job: copr_build
+  metadata:
+    targets: &id001
+    - centos-stream-x86_64
+  trigger: pull_request
+- job: tests
+  metadata:
+    targets: *id001
+  trigger: pull_request
+specfile_path: SPECS/unzip.spec
+upstream_ref: sg-start
