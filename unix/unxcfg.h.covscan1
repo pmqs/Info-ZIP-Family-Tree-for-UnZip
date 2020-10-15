@@ -228,7 +228,7 @@ typedef struct stat z_stat;
 /*    and notfirstcall are used by do_wild().                          */
 
 
-#define MAX_CP_NAME 25 + 1 
+#define MAX_CP_NAME 25 
    
 #ifdef SETLOCALE
 #  undef SETLOCALE
