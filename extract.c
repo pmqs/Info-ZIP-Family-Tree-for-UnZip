@@ -28,6 +28,7 @@
              fnfilter()
              dircomp()                (SET_DIR_ATTRIB only)
              UZbunzip2()              (USE_BZIP2 only)
+             UZzstd_decompress()      (USE_ZSTD only)
 
   ---------------------------------------------------------------------------*/
 
@@ -139,17 +140,18 @@ static ZCONST char Far ComprMsgNum[] =
    static ZCONST char Far CmprLZMA[]       = "LZMA";
    static ZCONST char Far CmprIBMTerse[]   = "IBM/Terse";
    static ZCONST char Far CmprIBMLZ77[]    = "IBM LZ77";
+   static ZCONST char Far CmprZstd[]       = "zstd";
    static ZCONST char Far CmprWavPack[]    = "WavPack";
    static ZCONST char Far CmprPPMd[]       = "PPMd";
    static ZCONST char Far *ComprNames[NUM_METHODS] = {
      CmprNone, CmprShrink, CmprReduce, CmprReduce, CmprReduce, CmprReduce,
      CmprImplode, CmprTokenize, CmprDeflate, CmprDeflat64, CmprDCLImplode,
-     CmprBzip, CmprLZMA, CmprIBMTerse, CmprIBMLZ77, CmprWavPack, CmprPPMd
+     CmprBzip, CmprLZMA, CmprIBMTerse, CmprIBMLZ77, CmprZstd, CmprWavPack, CmprPPMd
    };
    static ZCONST unsigned ComprIDs[NUM_METHODS] = {
      STORED, SHRUNK, REDUCED1, REDUCED2, REDUCED3, REDUCED4,
      IMPLODED, TOKENIZED, DEFLATED, ENHDEFLATED, DCLIMPLODED,
-     BZIPPED, LZMAED, IBMTERSED, IBMLZ77ED, WAVPACKED, PPMDED
+     BZIPPED, LZMAED, IBMTERSED, IBMLZ77ED, ZSTDED, WAVPACKED, PPMDED
    };
 #endif /* !SFX */
 static ZCONST char Far FilNamMsg[] =
@@ -272,6 +274,10 @@ static ZCONST char Far InvalidComprData[] = "invalid compressed data to ";
 static ZCONST char Far Inflate[] = "inflate";
 #ifdef USE_BZIP2
   static ZCONST char Far BUnzip[] = "bunzip";
+#endif
+
+#ifdef USE_ZSTD
+  static ZCONST char Far Unzstd[] = "unzstd";
 #endif
 
 #ifndef SFX
@@ -832,6 +838,12 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #  define UNKN_LZMA TRUE      /* LZMA unknown */
 #endif
 
+#ifdef USE_ZSTD
+#  define UNKN_ZSTD (G.crec.compression_method!=ZSTDED)
+#else
+#  define UNKN_ZSTD TRUE      /* zstd unknown */
+#endif
+
 #ifdef USE_WAVP
 #  define UNKN_WAVP (G.crec.compression_method!=WAVPACKED)
 #else
@@ -849,11 +861,11 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method<DEFLATED \
       && G.crec.compression_method>ENHDEFLATED \
-      && UNKN_BZ2 && UNKN_LZMA && UNKN_WAVP && UNKN_PPMD)
+      && UNKN_BZ2 && UNKN_LZMA && UNKN_ZSTD && UNKN_WAVP && UNKN_PPMD)
 #  else
 #    define UNKN_COMPR \
      (G.crec.compression_method!=STORED && G.crec.compression_method!=DEFLATED\
-      && UNKN_BZ2 && UNKN_LZMA && UNKN_WAVP && UNKN_PPMD)
+      && UNKN_BZ2 && UNKN_LZMA && UNKN_ZSTD && UNKN_WAVP && UNKN_PPMD)
 #  endif
 #else
 #  ifdef COPYRIGHT_CLEAN  /* no reduced files */
@@ -871,20 +883,22 @@ static int store_info(__G)   /* return 0 if skipping, 1 if OK */
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
      (G.crec.compression_method>ENHDEFLATED && UNKN_BZ2 && UNKN_LZMA \
-      && UNKN_WAVP && UNKN_PPMD))
+      && UNKN_ZSTD && UNKN_WAVP && UNKN_PPMD))
 #  else
 #    define UNKN_COMPR (UNKN_RED || UNKN_SHR || \
      G.crec.compression_method==TOKENIZED || \
      (G.crec.compression_method>DEFLATED && UNKN_BZ2 && UNKN_LZMA \
-      && UNKN_WAVP && UNKN_PPMD))
+      && UNKN_ZSTD && UNKN_WAVP && UNKN_PPMD))
 #  endif
 #endif
 
-#if (defined(USE_BZIP2) && (UNZIP_VERSION < UNZIP_BZ2VERS))
-    int unzvers_support = (UNKN_BZ2 ? UNZIP_VERSION : UNZIP_BZ2VERS);
 #   define UNZVERS_SUPPORT  unzvers_support
-#else
-#   define UNZVERS_SUPPORT  UNZIP_VERSION
+    int unzvers_support = UNZIP_VERSION;
+#if defined(USE_BZIP2)
+    if (!UNKN_BZ2 && UNZIP_BZ2VERS > unzvers_support) unzvers_support = UNZIP_BZ2VERS;
+#endif
+#if defined(USE_ZSTD)
+    if (!UNKN_ZSTD && UNZIP_ZSTDVERS > unzvers_support) unzvers_support = UNZIP_ZSTDVERS;
 #endif
 
 /*---------------------------------------------------------------------------
@@ -1907,6 +1921,37 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             break;
 #endif /* USE_BZIP2 */
 
+#ifdef USE_ZSTD
+        case ZSTDED:
+            if (!uO.tflag && QCOND2) {
+                Info(slide, 0, ((char *)slide, LoadFarString(ExtractMsg),
+                  "unzstd", FnFilter1(G.filename),
+                  (uO.aflag != 1 /* && G.pInfo->textfile==G.pInfo->textmode */)?
+                  "" : (G.pInfo->textfile? txt : bin), uO.cflag? NEWLINE : ""));
+            }
+            if ((r = UZzstd_decompress(__G)) != 0) {
+                if (r < PK_DISK) {
+                    if ((uO.tflag && uO.qflag) || (!uO.tflag && !QCOND2))
+                        Info(slide, 0x401, ((char *)slide,
+                          LoadFarStringSmall(ErrUnzipFile), r == 3?
+                          LoadFarString(NotEnoughMem) :
+                          LoadFarString(InvalidComprData),
+                          LoadFarStringSmall2(Unzstd),
+                          FnFilter1(G.filename)));
+                    else
+                        Info(slide, 0x401, ((char *)slide,
+                          LoadFarStringSmall(ErrUnzipNoFile), r == 3?
+                          LoadFarString(NotEnoughMem) :
+                          LoadFarString(InvalidComprData),
+                          LoadFarStringSmall2(Unzstd)));
+                    error = ((r == 3) ? PK_MEM3 : PK_ERR);
+                } else {
+                    error = r;
+                }
+            }
+            break;
+#endif /* USE_ZSTD */
+
         default:   /* should never get to this point */
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(FileUnknownCompMethod), FnFilter1(G.filename)));
@@ -2818,3 +2863,106 @@ uzbunzip_cleanup_exit:
     return retval;
 } /* end function UZbunzip2() */
 #endif /* USE_BZIP2 */
+
+#ifdef USE_ZSTD
+
+/**********************************/
+/*  Function UZzstd_decompress()  */
+/**********************************/
+
+int UZzstd_decompress(__G)
+__GDEF
+/* decompress a zstd entry using the libzstd routines */
+{
+    int retval = 0;     /* return code: 0 = "no error" */
+    int err=1; // zstd meaning: there is unprocessed input data
+    int repeated_buf_err;
+
+    Trace((stderr, "initializing zstdlib()\n"));
+    ZSTD_DCtx* const dctx = ZSTD_createDCtx();
+
+    if (dctx == NULL)
+      return 3; // ret code: not enough memory
+
+#if (defined(DLL) && !defined(NO_SLIDE_REDIR))
+    if (G.redirect_slide)
+        wsize = G.redirect_size, redirSlide = G.redirect_buffer;
+    else
+        wsize = WSIZE, redirSlide = slide;
+#endif
+
+    ZSTD_inBuffer input = { (const void *)G.inptr, G.incnt, 0 };
+    ZSTD_outBuffer output = { (void *)redirSlide, wsize, 0 };
+
+#define ZSTD_STREAM_END 0
+#ifdef FUNZIP
+    while (err != ZSTD_STREAM_END) {
+#else /* !FUNZIP */
+    while (G.csize > 0) {
+        Trace((stderr, "first loop:  G.csize = %ld\n", G.csize));
+#endif /* ?FUNZIP */
+        while (output.pos < output.size) {
+            err = ZSTD_decompressStream(dctx, &output , &input);
+
+            if (ZSTD_isError(err)) {
+                Trace((stderr, "oops!  (zstd error = %d, %s\n", err, ZSTD_getErrorName(err)));
+                retval = 2; goto uzzstd_cleanup_exit;
+            }
+
+#ifdef FUNZIP
+            if (err == ZSTD_STREAM_END) /* "END-of-entry-condition" ? */
+#else /* !FUNZIP */
+            if (G.csize <= 0L)          /* "END-of-entry-condition" ? */
+#endif /* ?FUNZIP */
+                break;
+
+            if (input.pos == input.size) {
+                if (fillinbuf(__G) == 0) {
+                    /* no "END-condition" yet, but no more data */
+                    retval = 2; goto uzzstd_cleanup_exit;
+                }
+
+                input.src = (const void *)G.inptr;
+                input.size = G.incnt;
+                input.pos = 0;
+            }
+            Trace((stderr, "     avail_in = %u\n", input.size - input.pos));
+        }
+        /* flush slide[] */
+        if ((retval = FLUSH(output.pos)) != 0)
+            goto uzzstd_cleanup_exit;
+        Trace((stderr, "inside loop:  flushing %ld bytes\n",
+          (long)(output.pos)));
+        output.dst = (void *)redirSlide;
+        output.size = wsize;
+        output.pos = 0;
+    }
+
+    /* no more input, so loop until we have all output */
+    Trace((stderr, "beginning final loop:  err = %d\n", err));
+    repeated_buf_err = FALSE;
+    while (err != ZSTD_STREAM_END) {
+        err = ZSTD_decompressStream(dctx, &output , &input);
+        if (ZSTD_isError(err)) {
+            Trace((stderr, "oops!  (zstd final lopp, error = %d, %s\n", err, ZSTD_getErrorName(err)));
+            retval = 2; goto uzzstd_cleanup_exit;
+        }
+        /* final flush of slide[] */
+        if ((retval = FLUSH(output.pos)) != 0)
+            goto uzzstd_cleanup_exit;
+        Trace((stderr, "final loop:  flushing %ld bytes\n",
+          (long)(output.pos)));
+        output.dst = (void *)redirSlide;
+        output.size = wsize;
+        output.pos = 0;
+    }
+
+    G.inptr += input.pos;
+    G.incnt = (G.inbuf + INBUFSIZ) - G.inptr;  /* reset for other routines */
+
+uzzstd_cleanup_exit:
+    ZSTD_freeDCtx(dctx);
+
+    return retval;
+} /* end function UZzstd_decompress() */
+#endif /* USE_ZSTD */

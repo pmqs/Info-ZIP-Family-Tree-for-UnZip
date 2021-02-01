@@ -146,6 +146,10 @@
 #  include "bzlib.h"
 #endif
 
+#ifdef USE_ZSTD
+#  include "zstd.h"
+#endif
+
 
 /*************/
 /*  Globals  */
