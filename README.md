@@ -17,3 +17,5 @@ make
 ./unzip -v
 ```
 
+## TODO
+Build and test `funzip`. The zstd support is probably broken in `funzip`, but it works in `unzip`.
