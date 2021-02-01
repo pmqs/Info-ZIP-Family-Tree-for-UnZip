@@ -11,12 +11,14 @@ www.zstd.net
 
 ## linux build
 
+option1: using cmake
 ```
 cmake .
 make
 ./unzip -v
 ```
 
-## TODO
-- Build and test `funzip`. The zstd support is probably broken in `funzip`, but it works in `unzip`.
-- Add zstd handling to `unix/configure` and `unix/makefile`. Currently it only builds witch cmake.
+option2: using make
+```
+make -f unix/Makefile generic_zstd
+```

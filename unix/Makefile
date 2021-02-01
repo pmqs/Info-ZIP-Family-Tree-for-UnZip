@@ -573,6 +573,14 @@ generic_bz2:	unix_make
 	 L_BZ2="-lbz2" LIBBZ2="$(IZ_OUR_BZIP2_DIR)/libbz2.a" \
 	 CC_BZ="$(CC)" CFLAGS_BZ="$(CFLAGS)"
 
+# Generic unzip and funzip target using either shared or static libzstd for
+# zstd compression method.
+
+generic_zstd:	unix_make
+	@echo\
+ "This target assumes libzstd (libzstd.a or libzstd.so.*) is already installed."
+	$(MAKE) unzip funzip CF="$(CF) -DUSE_ZSTD" LF2="-lzstd $(LF2)"
+
 # Generic unzip and funzip target using either shared or static zlib for
 # inflate rather than the original UnZip version.  (libz was libgz prior
 # to 0.94)  Need to figure out how to force unzipsfx to use static libz.
