@@ -18,6 +18,8 @@ if ( WIN32 AND NOT CYGWIN )
 else ( )
   add_definitions ( -DUNIX )
   set ( SRC_UNZIP ${SRC_UNZIP} unix/unix.c )
+
+  add_definitions ( -DUSE_ZSTD )
 endif ( )
 
 include_directories ( . )
@@ -29,6 +31,8 @@ if ( NOT HAVE_LCHMOD )
 endif ( )
 
 add_executable ( unzip ${SRC_UNZIP} )
+
+target_link_libraries(unzip zstd)
 
 install_executable ( unzip )
 install_data ( README LICENSE )
