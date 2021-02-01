@@ -21,4 +21,5 @@ make
 option2: using make
 ```
 make -f unix/Makefile generic_zstd
+./unzip -v
 ```
