@@ -2944,7 +2944,7 @@ __GDEF
     while (err != ZSTD_STREAM_END) {
         err = ZSTD_decompressStream(dctx, &output , &input);
         if (ZSTD_isError(err)) {
-            Trace((stderr, "oops!  (zstd final lopp, error = %d, %s\n", err, ZSTD_getErrorName(err)));
+            Trace((stderr, "oops!  (zstd final loop, error = %d, %s\n", err, ZSTD_getErrorName(err)));
             retval = 2; goto uzzstd_cleanup_exit;
         }
         /* final flush of slide[] */
