@@ -527,15 +527,6 @@ int zi_opts(__G__ pargc, pargv)
                     else
                         uO.lflag = 3;
                     break;
-                case 't':      /* totals line */
-                    if (negative)
-                        tflag_2v = tflag_slm = FALSE, negative = 0;
-                    else {
-                        tflag_2v = tflag_slm = explicit_t = TRUE;
-                        if (uO.lflag == -1)
-                            uO.lflag = 0;
-                    }
-                    break;
                 case ('T'):    /* use (sortable) decimal time format */
                     if (negative)
                         uO.T_flag = FALSE, negative = 0;

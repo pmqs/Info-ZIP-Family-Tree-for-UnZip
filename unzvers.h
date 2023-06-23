@@ -22,7 +22,7 @@
 #  define UZ_VERSION_DATE   "17 Apr 09"         /* internal beta version */
 #else
 #  define UZ_BETALEVEL      ""
-#  define UZ_VERSION_DATE   "20 April 2009"     /* official release version */
+#  define UZ_VERSION_DATE   "23 June 2023"     /* official release version */
 #  define RELEASE
 #endif
 
@@ -32,12 +32,12 @@
 #define ZI_MAJORVER    3   /* ZipInfo */
 #define ZI_MINORVER    0
 
-#define UZ_PATCHLEVEL  0
+#define UZ_PATCHLEVEL  1
 
-#define UZ_VER_STRING  "6.0"          /* keep in sync with Version numbers! */
+#define UZ_VER_STRING  "6.0.1"          /* keep in sync with Version numbers! */
 
 #ifndef IZ_COMPANY_NAME               /* might be already defined... */
-#  define IZ_COMPANY_NAME "Info-ZIP"
+#  define IZ_COMPANY_NAME "dSPACE GmbH"
 #endif
 
 /* these are obsolete but remain for backward compatibility: */

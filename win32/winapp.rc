@@ -1,50 +1,96 @@
-#include <windows.h>
-#if (defined(WIN32) && !defined(__EMX__) && !defined(__MINGW32__))
-#include <winver.h>
-#endif
-#include "../unzvers.h"
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// German (Germany) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION UZ_MAJORVER,UZ_MINORVER,UZ_PATCHLEVEL,0
-PRODUCTVERSION UZ_MAJORVER,UZ_MINORVER,UZ_PATCHLEVEL,0
-FILEFLAGSMASK 0x3L
+ FILEVERSION 6,0,1,0
+ PRODUCTVERSION 6,0,1,0
+ FILEFLAGSMASK 0x3L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
 #else
  FILEFLAGS 0x0L
 #endif
-FILEOS VOS__WINDOWS32
-FILETYPE VFT_APP
-FILESUBTYPE 0x0L
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-#ifdef _UNICODE
-        BLOCK "040904B0"
-#else
-        BLOCK "040904E4"
-#endif
+        BLOCK "040904e4"
         BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", IZ_COMPANY_NAME "\0"
-            VALUE "FileDescription", "Info-ZIP's UnZip for Win32 console\0"
-            VALUE "FileVersion", UZ_VER_STRING "\0"
-            VALUE "InternalName", "UnZip\0"
-            VALUE "LegalCopyright", "Info-ZIP 1996-2009\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "UNZIP.EXE\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "Info-ZIP's UnZip for Windows\0"
-            VALUE "ProductVersion", UZ_VER_STRING "\0"
-            VALUE "SpecialBuild", "\0"
+            VALUE "CompanyName", "dSPACE GmbH"
+            VALUE "FileDescription", "UnZip for Win32 console"
+            VALUE "FileVersion", "6.0.1"
+            VALUE "InternalName", "UnZip"
+            VALUE "LegalCopyright", "dSPACE GmbH 2023"
+            VALUE "OriginalFilename", "unzip.exe"
+            VALUE "ProductName", "ds-unzip"
+            VALUE "ProductVersion", "6.0.1"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-#ifdef _UNICODE
-        VALUE "Translation", 0x409, 1200
-#else
         VALUE "Translation", 0x409, 1252
-#endif
     END
 END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

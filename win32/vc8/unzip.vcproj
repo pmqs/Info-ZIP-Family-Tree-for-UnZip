@@ -4,6 +4,7 @@
 	Version="8,00"
 	Name="unzip"
 	ProjectGUID="{BCBD96B1-A86D-415C-9BF7-AC8EEEC669A2}"
+	RootNamespace="unzip"
 	>
 	<Platforms>
 		<Platform
@@ -1096,6 +1097,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\winapp.rc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\zipinfo.c"
 				>
 				<FileConfiguration
@@ -1162,6 +1167,10 @@
 			</File>
 			<File
 				RelativePath="..\nt.h"
+				>
+			</File>
+			<File
+				RelativePath="..\resource.h"
 				>
 			</File>
 			<File

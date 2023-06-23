@@ -328,7 +328,7 @@ static ZCONST char Far ZipInfoUsageLine2[] = "\nmain\
                                          -v  verbose, multi-page format\n";
 
 static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
-  -h  print header line       -t  print totals for listed files or for all\n\
+  -h  print header line\n\
   -z  print zipfile comment   -T  print file times in sortable decimal format\
 \n  -C  be case-insensitive   %s\
   -x  exclude filenames that follow from listing\n";
@@ -555,11 +555,12 @@ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
 #ifdef VMS
 /* UnzipUsageLine1[] is also used in vms/cmdline.c:  do not make it static */
    ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  For more details see: unzip -v.\n\n";
+Copyright 2023, dSPACE GmbH.\n\
+ds-unzip %d.%d.%d%s (%s).  For more details see: unzip -v.\n\n";
 # ifdef COPYRIGHT_CLEAN
    static ZCONST char Far UnzipUsageLine1v[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by C. Spieler.  Send\n\
-bug reports using http://www.info-zip.org/zip-bug.html; see README for details.\
+Copyright 2023, dSPACE GmbH.\n\
+ds-unzip %d.%d.%d%s (%s).\
 \n\n";
 # else
    static ZCONST char Far UnzipUsageLine1v[] = "\
@@ -570,8 +571,8 @@ Send bug reports using //www.info-zip.org/zip-bug.html; see README for details.\
 #else /* !VMS */
 # ifdef COPYRIGHT_CLEAN
    static ZCONST char Far UnzipUsageLine1[] = "\
-UnZip %d.%d%d%s of %s, by Info-ZIP.  Maintained by C. Spieler.  Send\n\
-bug reports using http://www.info-zip.org/zip-bug.html; see README for details.\
+Copyright 2023, dSPACE GmbH.\n\
+ds-unzip %d.%d.%d%s (%s).\
 \n\n";
 # else
    static ZCONST char Far UnzipUsageLine1[] = "\
@@ -625,21 +626,21 @@ Usage: unzip %s[-opts[modifiers]] file[.zip] [list] [-x xlist] [-d exdir]\n \
 #ifdef MACOS
 static ZCONST char Far UnzipUsageLine3[] = "\n\
   -d  extract files into exdir               -l  list files (short format)\n\
-  -f  freshen existing files, create none    -t  test compressed archive data\n\
+  -f  freshen existing files, create none\n\
   -u  update files, create if necessary      -z  display archive comment only\n\
   -v  list verbosely/show version info     %s\n";
 #else /* !MACOS */
 #ifdef VM_CMS
 static ZCONST char Far UnzipUsageLine3[] = "\n\
   -p  extract files to pipe, no messages     -l  list files (short format)\n\
-  -f  freshen existing files, create none    -t  test compressed archive data\n\
+  -f  freshen existing files, create none\n\
   -u  update files, create if necessary      -z  display archive comment only\n\
   -v  list verbosely/show version info     %s\n\
   -x  exclude files that follow (in xlist)   -d  extract files onto disk fm\n";
 #else /* !VM_CMS */
 static ZCONST char Far UnzipUsageLine3[] = "\n\
   -p  extract files to pipe, no messages     -l  list files (short format)\n\
-  -f  freshen existing files, create none    -t  test compressed archive data\n\
+  -f  freshen existing files, create none\n\
   -u  update files, create if necessary      -z  display archive comment only\n\
   -v  list verbosely/show version info     %s\n\
   -x  exclude files that follow (in xlist)   -d  extract files into exdir\n";
@@ -1684,12 +1685,6 @@ int uz_opts(__G__ pargc, pargv)
                         uO.S_flag = TRUE;
                     break;
 #endif /* VMS */
-                case ('t'):
-                    if (negative)
-                        uO.tflag = FALSE, negative = 0;
-                    else
-                        uO.tflag = TRUE;
-                    break;
 #ifdef TIMESTAMP
                 case ('T'):
                     if (negative)
@@ -2107,8 +2102,6 @@ static void help_extended(__G)
   "Some examples:",
   "  unzip -l foo.zip        - list files in short format in archive foo.zip",
   "",
-  "  unzip -t foo            - test the files in archive foo",
-  "",
   "  unzip -Z foo            - list files using more detailed zipinfo format",
   "",
   "  unzip foo               - unzip the contents of foo in current dir",
@@ -2137,7 +2130,6 @@ static void help_extended(__G)
   "  -l   List files using short form.",
   "  -p   Extract files to pipe (stdout).  Only file data is output and all",
   "         files extracted in binary mode (as stored).",
-  "  -t   Test archive files.",
   "  -T   Set timestamp on archive(s) to that of newest file.  Similar to",
   "       zip -o but faster.",
   "  -u   Update existing older files on disk as -f and extract new files.",
@@ -2233,11 +2225,6 @@ static void help_extended(__G)
   "  used to process the first entry in a stream.",
   "    cat archive | funzip",
   "",
-  "Testing archives:",
-  "  -t        test contents of archive",
-  "  This can be modified using -q for quieter operation, and -qq for even",
-  "  quieter operation.",
-  "",
   "Unicode:",
   "  If compiled with Unicode support, unzip automatically handles archives",
   "  with Unicode entries.  Currently Unicode on Win32 systems is limited.",
@@ -2256,8 +2243,6 @@ static void help_extended(__G)
   "  -v  List zipfile information in verbose, multi-page format.",
   "  -h  List header line.  Includes archive name, actual size, total files.",
   "  -M  Pipe all output through internal pager similar to Unix more(1) command.",
-  "  -t  List totals for files listed or for all files.  Includes uncompressed",
-  "        and compressed sizes, and compression factors.",
   "  -T  Print file dates and times in a sortable decimal format (yymmdd.hhmmss)",
   "        Default date and time format is a more human-readable version.",
   "  -U  [UNICODE] If entry has a UTF-8 Unicode path, display any characters",
@@ -2289,7 +2274,6 @@ static void help_extended(__G)
   "unzipsfx options:",
   "  -c, -p - Output to pipe.  (See above for unzip.)",
   "  -f, -u - Freshen and Update, as for unzip.",
-  "  -t     - Test embedded archive.  (Can be used to list contents.)",
   "  -z     - Print archive comment.  (See unzip above.)",
   "",
   "unzipsfx modifiers:",
