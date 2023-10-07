@@ -324,7 +324,8 @@ static ZCONST char Far BadExtraFieldCRC[] =
 static ZCONST char Far NotEnoughMemCover[] =
   "error: not enough memory for bomb detection\n";
 static ZCONST char Far OverlappedComponents[] =
-  "error: invalid zip file with overlapped components (possible zip bomb)\n";
+  "error: invalid zip file with overlapped components (possible zip bomb)\n \
+To unzip the file anyway, rerun the command with UNZIP_DISABLE_ZIPBOMB_DETECTION=TRUE environmnent variable\n";
 
 
 
@@ -500,7 +501,8 @@ int extract_or_test_files(__G)    /* return PK-type error code */
        the end of central directory record (including the Zip64 end of central
        directory locator, if present), and the Zip64 end of central directory
        record, if present. */
-    if (G.cover == NULL) {
+    if (uO.zipbomb == TRUE) {
+      if (G.cover == NULL) {
         G.cover = malloc(sizeof(cover_t));
         if (G.cover == NULL) {
             Info(slide, 0x401, ((char *)slide,
@@ -529,6 +531,7 @@ int extract_or_test_files(__G)    /* return PK-type error code */
         Info(slide, 0x401, ((char *)slide,
           LoadFarString(OverlappedComponents)));
         return PK_BOMB;
+      }
     }
 
 /*---------------------------------------------------------------------------
@@ -1219,10 +1222,12 @@ static int extract_or_test_entrylist(__G__ numchunk,
 
         /* seek_zipf(__G__ pInfo->offset);  */
         request = G.pInfo->offset + G.extra_bytes;
-        if (cover_within((cover_t *)G.cover, request)) {
+        if (uO.zipbomb == TRUE) {
+          if (cover_within((cover_t *)G.cover, request)) {
             Info(slide, 0x401, ((char *)slide,
               LoadFarString(OverlappedComponents)));
             return PK_BOMB;
+          }
         }
         inbuf_offset = request % INBUFSIZ;
         bufstart = request - inbuf_offset;
@@ -1764,17 +1769,19 @@ reprompt:
             return IZ_CTRLC;        /* cancel operation by user request */
         }
 #endif
-        error = cover_add((cover_t *)G.cover, request,
-                          G.cur_zipfile_bufstart + (G.inptr - G.inbuf));
-        if (error < 0) {
+        if (uO.zipbomb == TRUE) {
+          error = cover_add((cover_t *)G.cover, request,
+                            G.cur_zipfile_bufstart + (G.inptr - G.inbuf));
+          if (error < 0) {
             Info(slide, 0x401, ((char *)slide,
-              LoadFarString(NotEnoughMemCover)));
+                                LoadFarString(NotEnoughMemCover)));
             return PK_MEM;
-        }
-        if (error != 0) {
+          }
+          if (error != 0) {
             Info(slide, 0x401, ((char *)slide,
-              LoadFarString(OverlappedComponents)));
+                                LoadFarString(OverlappedComponents)));
             return PK_BOMB;
+          }
         }
 #ifdef MACOS  /* MacOS is no preemptive OS, thus call event-handling by hand */
         UserStop();
@@ -2174,8 +2181,8 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
     }
 
     undefer_input(__G);
-
-    if ((G.lrec.general_purpose_bit_flag & 8) != 0) {
+    if (uO.zipbomb == TRUE) {
+      if ((G.lrec.general_purpose_bit_flag & 8) != 0) {
         /* skip over data descriptor (harder than it sounds, due to signature
          * ambiguity)
          */
@@ -2200,6 +2207,7 @@ static int extract_or_test_member(__G)    /* return PK-type error code */
             shy += 8 - readbuf((char *)buf, 8); /* skip eight more for ZIP64 */
         if (shy)
             error = PK_ERR;
+      }
     }
 
     return error;

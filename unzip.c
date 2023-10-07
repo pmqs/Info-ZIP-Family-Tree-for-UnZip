@@ -1354,9 +1354,8 @@ int uz_opts(__G__ pargc, pargv)
     int *pargc;
     char ***pargv;
 {
-    char **argv, *s;
+    char **argv, *s, *zipbomb_envar;
     int argc, c, error=FALSE, negative=0, showhelp=0;
-
 
     argc = *pargc;
     argv = *pargv;
@@ -2014,6 +2013,18 @@ opts_done:  /* yes, very ugly...but only used by UnZipSFX with -x xlist */
         G.extract_flag = FALSE;
     else
         G.extract_flag = TRUE;
+
+    /* Disable the zipbomb detection, this is the only option set only via the shell variables but it should at least not clash with something in the future. */
+    zipbomb_envar = getenv("UNZIP_DISABLE_ZIPBOMB_DETECTION");
+    uO.zipbomb = TRUE;
+    if (zipbomb_envar != NULL) {
+      /* strcasecmp might be a better approach here but it is POSIX-only */
+      if ((strcmp ("TRUE", zipbomb_envar) == 0)
+       || (strcmp ("True", zipbomb_envar) == 0)
+       || (strcmp ("true",zipbomb_envar) == 0)) {
+        uO.zipbomb = FALSE;
+      }
+    }
 
     *pargc = argc;
     *pargv = argv;
