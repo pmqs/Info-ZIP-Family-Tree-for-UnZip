@@ -87,7 +87,7 @@
 #  endif
 #endif
 #include "ebcdic.h"   /* definition/initialization of ebcdic[] */
-
+#include "dsrecode.c"
 
 /*
    Note: Under Windows, the maximum size of the buffer that can be used
