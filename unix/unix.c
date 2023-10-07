@@ -1945,7 +1945,9 @@ void init_conversion_charsets()
     	for(i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
     		if(!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
     			strncpy(OEM_CP, dos_charset_map[i].archive_charset,
-    					sizeof(OEM_CP));
+    					MAX_CP_NAME - 1);
+
+			OEM_CP[MAX_CP_NAME - 1] = '\0';
     			break;
     		}
     }

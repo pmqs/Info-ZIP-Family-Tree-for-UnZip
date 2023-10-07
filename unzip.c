@@ -1561,7 +1561,8 @@ int uz_opts(__G__ pargc, pargv)
         		                  "error:  a valid character encoding should follow the -I argument"));
     	                        return(PK_PARAM); 
     						}
-    						strncpy(ISO_CP, s, sizeof(ISO_CP));
+    						strncpy(ISO_CP, s, MAX_CP_NAME - 1);
+                ISO_CP[MAX_CP_NAME - 1] = '\0';
     					} else { /* -I charset */
     						++argv;
     						if(!(--argc > 0 && *argv != NULL && **argv != '-')) {
@@ -1570,7 +1571,8 @@ int uz_opts(__G__ pargc, pargv)
     	                        return(PK_PARAM); 
     						}
     						s = *argv;
-    						strncpy(ISO_CP, s, sizeof(ISO_CP));
+    						strncpy(ISO_CP, s, MAX_CP_NAME - 1);
+                ISO_CP[MAX_CP_NAME - 1] = '\0';
     					}
     					while(*(++s)); /* No params straight after charset name */
     				}
@@ -1665,7 +1667,8 @@ int uz_opts(__G__ pargc, pargv)
         		                  "error:  a valid character encoding should follow the -I argument"));
     	                        return(PK_PARAM); 
     						}
-    						strncpy(OEM_CP, s, sizeof(OEM_CP));
+    						strncpy(OEM_CP, s, MAX_CP_NAME - 1);
+                OEM_CP[MAX_CP_NAME - 1] = '\0';
     					} else { /* -O charset */
     						++argv;
     						if(!(--argc > 0 && *argv != NULL && **argv != '-')) {
@@ -1674,7 +1677,8 @@ int uz_opts(__G__ pargc, pargv)
     	                        return(PK_PARAM); 
     						}
     						s = *argv;
-    						strncpy(OEM_CP, s, sizeof(OEM_CP));
+    						strncpy(OEM_CP, s, MAX_CP_NAME - 1);
+                OEM_CP[MAX_CP_NAME - 1] = '\0';
     					}
     					while(*(++s)); /* No params straight after charset name */
     				}
