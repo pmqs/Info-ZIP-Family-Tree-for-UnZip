@@ -1919,8 +1919,6 @@ int getZip64Data(__G__ ef_buf, ef_len)
 #define Z64FLGS 0xffff
 #define Z64FLGL 0xffffffff
 
-    G.zip64 = FALSE;
-
     if (ef_len == 0 || ef_buf == NULL)
         return PK_COOL;
 
@@ -1984,7 +1982,7 @@ int getZip64Data(__G__ ef_buf, ef_len)
           break;                /* Expect only one EF_PKSZ64 block. */
 #endif /* 0 */
 
-          G.zip64 = TRUE;
+          G.pInfo->zip64 = TRUE;
         }
 
         /* Skip this extra field block. */
