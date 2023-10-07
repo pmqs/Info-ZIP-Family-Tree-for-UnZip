@@ -545,7 +545,7 @@ generic:	flags	   # now try autoconfigure first
 #	make $(MAKEF) unzips CF="${CF} `cat flags`"
 
 generic_gcc:
-	$(MAKE) $(MAKEF) generic CC=gcc IZ_BZIP2="$(IZ_BZIP2)"
+	$(MAKE) $(MAKEF) generic CC="gcc -std=gnu89" IZ_BZIP2="$(IZ_BZIP2)"
 
 # extensions to perform SVR4 package-creation after compilation
 generic_pkg:	generic svr4package
