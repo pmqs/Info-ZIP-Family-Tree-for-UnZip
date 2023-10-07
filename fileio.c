@@ -2390,6 +2390,9 @@ int do_string(__G__ length, option)   /* return PK-type error code */
                   /* convert UTF-8 to local character set */
                   fn = utf8_to_local_string(G.unipath_filename,
                                             G.unicode_escape_all);
+                  if (fn == NULL)
+                    return PK_ERR;
+
                   /* make sure filename is short enough */
                   if (strlen(fn) >= FILNAMSIZ) {
                     fn[FILNAMSIZ - 1] = '\0';

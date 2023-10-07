@@ -2598,6 +2598,8 @@ char *utf8_to_local_string(utf8_string, escape_all)
   int escape_all;
 {
   zwchar *wide = utf8_to_wide_string(utf8_string);
+  if (wide == NULL)
+    return NULL;
   char *loc = wide_to_local_string(wide, escape_all);
   free(wide);
   return loc;
