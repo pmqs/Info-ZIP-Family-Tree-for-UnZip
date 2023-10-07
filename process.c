@@ -203,6 +203,8 @@ static ZCONST char Far Cent64EndSigSearchOff[] =
 #endif
 static ZCONST char Far ZipfileCommTrunc1[] =
   "\ncaution:  zipfile comment truncated\n";
+static ZCONST char Far FileNameTooLong[] =
+  "%s: error: %s (truncated): %s\n";
 #ifndef NO_ZIPINFO
    static ZCONST char Far NoZipfileComment[] =
      "There is no zipfile comment.\n";
@@ -389,6 +391,17 @@ int process_zipfiles(__G)    /* return PK-type error code */
         Trace((stderr, "do_wild( %s ) returns %s\n", G.wildzipfn, G.zipfn));
 
         lastzipfn = G.zipfn;
+
+        if (strlen(G.wildzipfn) > strlen(G.zipfn))
+        {
+            Info(slide, 1, ((char *)slide,
+                            LoadFarString(FileNameTooLong),
+                            uO.zipinfo_mode? LoadFarStringSmall(Zipnfo) : LoadFarStringSmall(Unzip),
+                            G.zipfn, strerror(ENAMETOOLONG)));
+
+            free_G_buffers(__G);
+            return PK_NOZIP;
+        }
 
         /* print a blank line between the output of different zipfiles */
         if (!uO.qflag  &&  error != PK_NOZIP  &&  error != IZ_DIR
