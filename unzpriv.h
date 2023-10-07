@@ -1211,6 +1211,7 @@
 # ifdef UNICODE_WCHAR
 #  if !(defined(_WIN32_WCE) || defined(POCKET_UNZIP))
 #   include <wchar.h>
+#   include <wctype.h>
 #  endif
 # endif
 # ifndef _MBCS  /* no need to include <locale.h> twice, see below */
@@ -2394,6 +2395,12 @@ int    memflush                  OF((__GPRO__ ZCONST uch *rawbuf, ulg size));
 #endif
 char  *fnfilter                  OF((ZCONST char *raw, uch *space,
                                      extent size));
+
+# if defined( UNICODE_SUPPORT) && defined( _MBCS)
+wchar_t *fnfilterw               OF((ZCONST wchar_t *src, wchar_t *dst,
+                                     extent siz));
+#endif
+
 
 /*---------------------------------------------------------------------------
     Decompression functions:
