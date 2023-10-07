@@ -2596,7 +2596,7 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
      */
 #   define UZ_FNFILTER_REPLACECHAR      '?'
 # endif
-        if (!isprint(*r)) {
+        if (*r < 32) { //(!isprint(*r)) {
             if (*r < 32) {
                 /* ASCII control codes are escaped as "^{letter}". */
                 if (se != NULL && (s > (space + (size-4)))) {
