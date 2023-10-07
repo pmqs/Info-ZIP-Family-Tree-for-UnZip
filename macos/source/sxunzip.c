@@ -123,7 +123,7 @@ static char UnZipVersionLocal[50];
 
 memset(UnZipVersionLocal,0,sizeof(UnZipVersionLocal));
 
-sprintf(UnZipVersionLocal, "[%s %s]", __DATE__, __TIME__);
+sprintf(UnZipVersionLocal, "[Unknown]");
 
 return UnZipVersionLocal;
 }

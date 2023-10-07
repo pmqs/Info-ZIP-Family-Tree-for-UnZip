@@ -664,14 +664,6 @@ void version(__G)
 
     /* Add compile environment */
     platform,
-
-    /* Add timestamp */
-#ifdef __DATE__
-      " on " __DATE__
-#ifdef __TIME__
-      " at " __TIME__
-#endif
-#endif
       ".\n", "",
       liblvlmsg
     );

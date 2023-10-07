@@ -1002,12 +1002,7 @@ void version(__G)
   sprintf(buf2,"unknown version");
 # endif
 #endif
-
-#ifdef __DATE__
-  sprintf(buf4," on %s",__DATE__);
-#else
   strcpy(buf4," unknown date");
-#endif
 
 /******
 #ifdef __TIME__

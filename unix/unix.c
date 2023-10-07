@@ -1705,11 +1705,7 @@ void version(__G)
 #endif /* Sun */
 #endif /* SGI */
 
-#ifdef __DATE__
-      " on ", __DATE__
-#else
       "", ""
-#endif
     );
 
     (*G.message)((zvoid *)&G, slide, (ulg)strlen((char *)slide), 0);

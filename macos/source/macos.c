@@ -937,14 +937,11 @@ void version(__G)
 ZCONST char Far CompiledWith[] =
                "Compiled with %s%s for %s%s%s%s.\n\n"; */
 
-char DateTime[50];
-
 #ifdef __MWERKS__
 char CompVer[10];
 sprintf(CompVer, "%x", __MWERKS__);
 #endif
 
-    sprintf(DateTime,"%s  %s",__DATE__, __TIME__);
 
     sprintf((char *)slide, LoadFarString(CompiledWith),
 
@@ -960,13 +957,7 @@ sprintf(CompVer, "%x", __MWERKS__);
 #else
       " PowerPC Processor",
 #endif
-
-#ifdef __DATE__
-
-      "\n compile time: ", DateTime, ""
-#else
       "", "", ""
-#endif
     );
 
     (*G.message)((zvoid *)&G, slide, (ulg)strlen((char *)slide), 0);
