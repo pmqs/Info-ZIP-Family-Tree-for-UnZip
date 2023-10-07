@@ -2500,13 +2500,15 @@ char *wide_to_local_string(wide_string, escape_all)
   char buf[9];
   char *buffer = NULL;
   char *local_string = NULL;
+  size_t buffer_size;
 
   for (wsize = 0; wide_string[wsize]; wsize++) ;
 
   if (max_bytes < MAX_ESCAPE_BYTES)
     max_bytes = MAX_ESCAPE_BYTES;
 
-  if ((buffer = (char *)malloc(wsize * max_bytes + 1)) == NULL) {
+  buffer_size = wsize * max_bytes + 1;
+  if ((buffer = (char *)malloc(buffer_size)) == NULL) {
     return NULL;
   }
 
@@ -2545,7 +2547,11 @@ char *wide_to_local_string(wide_string, escape_all)
       /* no MB for this wide */
         /* use escape for wide character */
         char *escape_string = wide_to_escape_string(wide_string[i]);
-        strcat(buffer, escape_string);
+        size_t buffer_len = strlen(buffer);
+        size_t escape_string_len = strlen(escape_string);
+        if (buffer_len + escape_string_len + 1 > buffer_size)
+          escape_string_len = buffer_size - buffer_len - 1;
+        strncat(buffer, escape_string, escape_string_len);
         free(escape_string);
     }
   }
