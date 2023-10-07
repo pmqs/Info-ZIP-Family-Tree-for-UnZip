@@ -2889,7 +2889,7 @@ char *fnfilter(raw, space, size)   /* convert name to safely printable form */
             strcpy( (char *)space, raw);
             return (char *)space;
         }
-        woslen = wcstombs( newraw, wostring, (woslen * MB_CUR_MAX) + 1);
+        woslen = wcstombs( newraw, wostring, woslen + 1);
 
         if (size > 0) {
             slim = space + size - 4;
