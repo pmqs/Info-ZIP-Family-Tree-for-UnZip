@@ -25,7 +25,7 @@
 unzip \- list, test and extract compressed files in a ZIP archive
 .PD
 .SH SYNOPSIS
-\fBunzip\fP [\fB\-Z\fP] [\fB\-cflptTuvz\fP[\fBabjnoqsCDKLMUVWX$/:^\fP]]
+\fBunzip\fP [\fB\-Z\fP] [\fB\-cflptTuvz\fP[\fBabjnoqsCDKLMOUVWX$/:^\fP]]
 \fIfile\fP[\fI.zip\fP] [\fIfile(s)\fP\ .\|.\|.]
 [\fB\-x\fP\ \fIxfile(s)\fP\ .\|.\|.] [\fB\-d\fP\ \fIexdir\fP]
 .PD
@@ -386,6 +386,9 @@ of \fIzip\fP(1L), which stores filenotes as comments.
 overwrite existing files without prompting.  This is a dangerous option, so
 use it with care.  (It is often used with \fB\-f\fP, however, and is the only
 way to overwrite directory EAs under OS/2.)
+.TP
+.B \-O
++file names will be converted to ISO8859-2 instead of to ISO8859-1
 .IP \fB\-P\fP\ \fIpassword\fP
 use \fIpassword\fP to decrypt encrypted zipfile entries (if any).  \fBTHIS IS
 INSECURE!\fP  Many multi-user operating systems provide ways for any user to

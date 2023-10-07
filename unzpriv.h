@@ -2899,8 +2899,15 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #      define IZ_ISO2OEM_ARRAY
 #    endif
 #    define _ISO_INTERN(str1) if (iso2oem) {register uch *p;\
-       for (p=(uch *)(str1); *p; p++)\
-         *p = native((*p & 0x80) ? iso2oem[*p & 0x7f] : *p);}
+       if (uO.iso8859_2 == FALSE) { \
+         for (p=(uch *)(str1); *p; p++) \
+           *p = native((*p & 0x80) ? iso2oem[*p & 0x7f] : *p); \
+       } \
+       else { \
+         for (p=(uch *)(str1); *p; p++) \
+           *p = native((*p & 0x80) ? iso2oem_2[*p & 0x7f] : *p); \
+       }; \
+     }
 #  else
 #    define _ISO_INTERN(str1)   A_TO_N(str1)
 #  endif
@@ -2914,8 +2921,15 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #      define IZ_OEM2ISO_ARRAY
 #    endif
 #    define _OEM_INTERN(str1) if (oem2iso) {register uch *p;\
-       for (p=(uch *)(str1); *p; p++)\
-         *p = native((*p & 0x80) ? oem2iso[*p & 0x7f] : *p);}
+       if (uO.iso8859_2 == FALSE) { \
+         for (p=(uch *)(str1); *p; p++) \
+           *p = native((*p & 0x80) ? oem2iso[*p & 0x7f] : *p); \
+       } \
+       else { \
+         for (p=(uch *)(str1); *p; p++) \
+           *p = native((*p & 0x80) ? oem2iso_2[*p & 0x7f] : *p); \
+       } \
+     }
 #  endif
 #endif
 
@@ -2942,6 +2956,7 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
      /* know: "ASCII" is "OEM" */
 #    define ASCII2ISO(c) \
        ((((c) & 0x80) && oem2iso) ? oem2iso[(c) & 0x7f] : (c))
+       (( ((c) & 0x80) ? ((uO.iso8859_2 == FALSE) ? (oem2iso ? oem2iso[(c) & 0x7f] : (c)) : oem2iso_2[(c) & 0x7f]) : (c))
 #    if (defined(NEED_STR2ISO) && !defined(CRYP_USES_OEM2ISO))
 #      define CRYP_USES_OEM2ISO
 #    endif
@@ -2957,8 +2972,9 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #    define ASCII2OEM(c) (c)
 #  else
      /* assume: "ASCII" is "ISO-ANSI" */
-#    define ASCII2OEM(c) \
-       ((((c) & 0x80) && iso2oem) ? iso2oem[(c) & 0x7f] : (c))
+#    define ASCII2OEM(c) (((c) & 0x80) ? \
+       ((uO.iso8859_2 == FALSE) ? (iso2oem ? iso2oem[(c) & 0x7f] : (c)) : iso2oem_2[(c) & 0x7f]) : \
+       (c))
 #    if (defined(NEED_STR2OEM) && !defined(CRYP_USES_ISO2OEM))
 #      define CRYP_USES_ISO2OEM
 #    endif
@@ -3029,10 +3045,12 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
 #endif
 #ifdef IZ_ISO2OEM_ARRAY
    extern ZCONST uch Far *iso2oem;
+   extern ZCONST uch Far iso2oem_2[];
    extern ZCONST uch Far iso2oem_850[];
 #endif
 #ifdef IZ_OEM2ISO_ARRAY
    extern ZCONST uch Far *oem2iso;
+   extern ZCONST uch Far oem2iso_2[];
    extern ZCONST uch Far oem2iso_850[];
 #endif
 

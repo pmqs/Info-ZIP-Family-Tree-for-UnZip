@@ -502,6 +502,7 @@ typedef struct _UzpOpts {
     int K_flag;         /* -K: keep setuid/setgid/tacky permissions */
 #endif
     int lflag;          /* -12slmv: listing format (zipinfo) */
+    int iso8859_2;      /* -O: ISO8859-2 is used instead ISO8859-1 */
     int L_flag;         /* -L: convert filenames from some OSes to lowercase */
     int overwrite_none; /* -n: never overwrite files (no prompting) */
 #ifdef AMIGA

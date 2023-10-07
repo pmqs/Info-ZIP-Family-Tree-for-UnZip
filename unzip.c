@@ -1592,6 +1592,12 @@ int uz_opts(__G__ pargc, pargv)
                     } else
                         ++uO.overwrite_all;
                     break;
+                case ('O'):    /* spaces in filenames:  allow by default */
+                    if (negative)
+                        uO.iso8859_2 = FALSE, negative = 0;
+                    else
+                        uO.iso8859_2 = TRUE;
+                    break;
                 case ('p'):    /* pipes:  extract to stdout, no messages */
                     if (negative) {
                         uO.cflag = FALSE;
