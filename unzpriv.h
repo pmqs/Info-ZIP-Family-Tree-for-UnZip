@@ -1806,6 +1806,8 @@
 #define EB_NTSD_VERSION   4    /* offset of NTSD version byte */
 #define EB_NTSD_MAX_VER   (0)  /* maximum version # we know how to handle */
 
+#define EB_PKVMS_MINLEN   4    /* minimum data length of PKVMS extra block */
+
 #define EB_ASI_CRC32      0    /* offset of ASI Unix field's crc32 checksum */
 #define EB_ASI_MODE       4    /* offset of ASI Unix permission mode field */
 
