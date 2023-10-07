@@ -518,6 +518,7 @@ typedef struct _UzpOpts {
 #if (defined(MSDOS) || defined(FLEXOS) || defined(OS2) || defined(WIN32))
     int sflag;          /* -s: convert spaces in filenames to underscores */
 #endif
+    int no_conv_enc;    /* -S: suppress encoding conversion */
 #if (defined(NLM))
     int sflag;          /* -s: convert spaces in filenames to underscores */
 #endif

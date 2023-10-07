@@ -1689,6 +1689,13 @@ int uz_opts(__G__ pargc, pargv)
                     else
                         uO.S_flag = TRUE;
                     break;
+#else
+                case ('S'):    /* suppress file name encoding conversions */
+                    if (negative)
+                        uO.no_conv_enc = FALSE, negative = 0;
+                    else
+                        uO.no_conv_enc = TRUE;
+                    break;
 #endif /* VMS */
                 case ('t'):
                     if (negative)

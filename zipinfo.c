@@ -527,6 +527,12 @@ int zi_opts(__G__ pargc, pargv)
                     else
                         uO.lflag = 3;
                     break;
+	        case 'S':      /* suppress encoding conversion */
+                    if (negative)
+                        uO.no_conv_enc = FALSE, negative = 0;
+                    else
+                        uO.no_conv_enc = TRUE;
+                    break;
                 case 't':      /* totals line */
                     if (negative)
                         tflag_2v = tflag_slm = FALSE, negative = 0;
