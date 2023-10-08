@@ -83,20 +83,10 @@ Here  are a few repos that have made custom changes to `unzip`
 These sites below either contain binaries only or have made changes to the infozip sources but in a way that makes it difficult to metge into this repo. They are included here for reference.
 
 | Code Sourced From | Notes | Branched From Infozip Tag |
-| --- | ---|
+| --- | ---| --- |
 | https://github.com/jhamby/gnv-unzip | VMS Changes |  6.0
 | http://hpux.connect.org.uk/hppd/hpux/Misc/unzip-6.0/ | HP-UX binaries | 6.0
 | https://gitlab.com/FreeDOS/archiver/unzip | FreeDOS | 6.0
-
-## Reference
-
-
-| Distribution  | Site | Bugs |
-|--- | ---| --- |
-| Arch Linux | https://gitlab.archlinux.org/archlinux/packaging/packages/unzip | https://bugs.archlinux.org/?project=1&string=unzip |
-| Debian | https://packages.debian.org/source/sid/unzip | https://bugs.debian.org/cgi-bin/pkgreport.cgi?src=unzip |
-| Ubuntu | https://launchpad.net/ubuntu/+source/unzip | https://launchpad.net/ubuntu/+source/unzip/+bugs |
-| openSUSE | https://build.opensuse.org/package/show/Archiving/unzip | https://bugzilla.opensuse.org/buglist.cgi?quicksearch=unzip |
 
 
 # AUTHOR
