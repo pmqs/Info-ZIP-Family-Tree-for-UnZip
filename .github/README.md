@@ -8,7 +8,7 @@ The base and trunk of the tree contain all the Info-ZIP official and beta releas
 
 There are no guarantees that this repo contains *all* the available sources for the `unzip` code. The Linux distributions in particular (mostly) contain  the same set of changes so it is unlikely they will all ever be included here. If there is an important fork that is missing please report it.
 
-A companion repo `pmqs/infozip-family-tree-for-zip` contains the equivalent for the Info-ZIP `unzip` program.
+A companion repo [Info-Zip-Family-Tree-for-Zip](https://github.com/pmqs/Info-ZIP-Family-Tree-for-Zip) contains the equivalent for the Info-ZIP `unzip` program.
 
 
 
