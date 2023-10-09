@@ -12,11 +12,6 @@ jobs:
 
     strategy:
       matrix:
-        compiler:
-          - gcc
-          - clang
-
-
         branch:
 
           # - develop
@@ -38,10 +33,12 @@ jobs:
           - slackware
           - ubuntu
 
-
-
           # other forks
           - packit-service-unzip
+
+        compiler:
+          - gcc
+          - clang
 
     name: Build with '${{ matrix.branch }}' and CC=${{ matrix.compiler }}
     steps:
@@ -51,13 +48,11 @@ jobs:
         ref: ${{ matrix.branch }}
 
     - name: Install librcc for opensuse
-      if: ${{ matrix.branch }} == 'opensuse'
+      if: matrix.branch == 'opensuse'
       run: sudo apt-get install -y librcc-dev
 
     - name: Configure & build
-      run: make -f unix/Makefile generic
-      env:
-        CC: ${{ matrix.compiler }}
+      run: make -f unix/Makefile generic CC=${{ matrix.compiler }}
 
     - name: Run unzip -v
       run: ./unzip -v
