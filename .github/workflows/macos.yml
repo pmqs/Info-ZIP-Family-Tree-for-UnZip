@@ -1,7 +1,5 @@
 name: MacOS Build
 
-# disabled
-
 on:
   workflow_dispatch:
   push:
@@ -52,3 +50,9 @@ jobs:
 
     - name: Run unzip -v
       run: ./unzip -v
+
+    - name: Run unzip -h
+      run: ./unzip -h
+
+    - name: Run unzip -hh
+      run: ./unzip -hh
