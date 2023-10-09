@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -298,6 +298,8 @@ char ZCONST Far TruncNTSD[] =
 #ifndef SFX
    static ZCONST char Far InconsistEFlength[] = "bad extra-field entry:\n \
      EF block length (%u bytes) exceeds remaining EF data (%u bytes)\n";
+   static ZCONST char Far TooSmallEBlength[] = "bad extra-field entry:\n \
+     EF block length (%u bytes) invalid (< %d)\n";
    static ZCONST char Far InvalidComprDataEAs[] =
      " invalid compressed data for EAs\n";
 #  if (defined(WIN32) && defined(NTSD_EAS))
@@ -2020,7 +2022,8 @@ static int TestExtraField(__G__ ef, ef_len)
         ebID = makeword(ef);
         ebLen = (unsigned)makeword(ef+EB_LEN);
 
-        if (ebLen > (ef_len - EB_HEADSIZE)) {
+        if (ebLen > (ef_len - EB_HEADSIZE))
+        {
            /* Discovered some extra field inconsistency! */
             if (uO.qflag)
                 Info(slide, 1, ((char *)slide, "%-22s ",
@@ -2155,11 +2158,29 @@ static int TestExtraField(__G__ ef, ef_len)
                 }
                 break;
             case EF_PKVMS:
-                if (makelong(ef+EB_HEADSIZE) !=
-                    crc32(CRCVAL_INITIAL, ef+(EB_HEADSIZE+4),
-                          (extent)(ebLen-4)))
-                    Info(slide, 1, ((char *)slide,
-                      LoadFarString(BadCRC_EAs)));
+                /* 2015-01-30 SMS.  Added sufficient-bytes test/message
+                 * here.  (Removed defective ebLen test above.)
+                 *
+                 * If sufficient bytes (EB_PKVMS_MINLEN) are available,
+                 * then compare the stored CRC value with the calculated
+                 * CRC for the remainder of the data (and complain about
+                 * a mismatch).
+                 */
+                if (ebLen < EB_PKVMS_MINLEN)
+                {
+                    /* Insufficient bytes available. */
+                    Info( slide, 1,
+                     ((char *)slide, LoadFarString( TooSmallEBlength),
+                     ebLen, EB_PKVMS_MINLEN));
+                }
+                else if (makelong(ef+ EB_HEADSIZE) !=
+                 crc32(CRCVAL_INITIAL,
+                 (ef+ EB_HEADSIZE+ EB_PKVMS_MINLEN),
+                 (extent)(ebLen- EB_PKVMS_MINLEN)))
+                {
+                     Info(slide, 1, ((char *)slide,
+                       LoadFarString(BadCRC_EAs)));
+                }
                 break;
             case EF_PKW32:
             case EF_PKUNIX:
