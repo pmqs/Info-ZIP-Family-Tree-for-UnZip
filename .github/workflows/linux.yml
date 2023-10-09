@@ -13,8 +13,8 @@ jobs:
     strategy:
       matrix:
         compiler:
-            - gcc
-            - clang
+        - gcc
+        - clang
 
 
         branch:
