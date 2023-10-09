@@ -17,7 +17,7 @@ jobs:
           # - develop
 
           # main linux distros
-          - aix
+          - aix 
           - centos
           - debian
           - fedora
@@ -43,7 +43,7 @@ jobs:
     #   run: sudo apt-get install -y librcc-dev
 
     - name: Configure & build
-      run: make -f unix/Makefile generic
+      run: make -f unix/Makefile macosx
 
     - name: Run unzip -v
       run: ./unzip -v
