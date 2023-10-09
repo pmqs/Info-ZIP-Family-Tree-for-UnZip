@@ -1257,8 +1257,17 @@ static int extract_or_test_entrylist(__G__ numchunk,
         if (G.lrec.compression_method == STORED) {
             zusz_t csiz_decrypted = G.lrec.csize;
 
-            if (G.pInfo->encrypted)
+            if (G.pInfo->encrypted) {
+                if (csiz_decrypted < 12) {
+                    /* handle the error now to prevent unsigned overflow */
+                    Info(slide, 0x401, ((char *)slide,
+                      LoadFarStringSmall(ErrUnzipNoFile),
+                      LoadFarString(InvalidComprData),
+                      LoadFarStringSmall2(Inflate)));
+                    return PK_ERR;
+                }
                 csiz_decrypted -= 12;
+            }
             if (G.lrec.ucsize != csiz_decrypted) {
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarStringSmall2(WrnStorUCSizCSizDiff),
@@ -2732,6 +2741,12 @@ __GDEF
     int err=BZ_OK;
     int repeated_buf_err;
     bz_stream bstrm;
+
+    if (G.incnt <= 0 && G.csize <= 0L) {
+        /* avoid an infinite loop */
+        Trace((stderr, "UZbunzip2() got empty input\n"));
+        return 2;
+    }
 
 #if (defined(DLL) && !defined(NO_SLIDE_REDIR))
     if (G.redirect_slide)
