@@ -28,8 +28,10 @@ jobs:
           - ubuntu
 
           # unzip beta releases
+          - '5.10c25'
 
           # other forks
+          - packit-service-unzip
 
     name: Build with '${{ matrix.branch }}'
     steps:
