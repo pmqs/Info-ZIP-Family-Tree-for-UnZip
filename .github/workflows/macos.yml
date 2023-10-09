@@ -31,7 +31,7 @@ jobs:
 
           # other forks
 
-    name: Build with '${{ matrix.branch }}''
+    name: Build with '${{ matrix.branch }}'
     steps:
 
     - uses: actions/checkout@v4
