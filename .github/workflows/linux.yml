@@ -43,7 +43,7 @@ jobs:
           # other forks
           - packit-service-unzip
 
-    name: Build with '${{ matrix.branch }}'
+    name: Build with '${{ matrix.branch }}' and CC=${{ matrix.compiler }
     steps:
 
     - uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
       run: make -f unix/Makefile generic
       env:
         CC: ${{ matrix.compiler }}
-        
+
     - name: Run unzip -v
       run: ./unzip -v
 
