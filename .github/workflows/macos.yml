@@ -38,9 +38,9 @@ jobs:
       with:
         ref: ${{ matrix.branch }}
 
-    - name: Install librcc for opensuse
-      if: ${{ matrix.branch }} == 'opensuse'
-      run: sudo apt-get install -y librcc-dev
+    # - name: Install librcc for opensuse
+    #   if: ${{ matrix.branch }} == 'opensuse'
+    #   run: sudo apt-get install -y librcc-dev
 
     - name: Configure & build
       run: make -f unix/Makefile generic
