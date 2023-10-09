@@ -1,0 +1,49 @@
+name: MacOS Build
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        branch:
+
+          # - develop
+
+          # main linux distros
+          - aix
+          - centos
+          - debian
+          - fedora
+        # disable- issues with rcc symbols missing
+        #   - opensuse
+          - oracle
+          - slackware
+          - ubuntu
+
+          # unzip beta releases
+
+          # other forks
+
+    name: Build with '${{ matrix.branch }}''
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ matrix.branch }}
+
+    - name: Install librcc for opensuse
+      if: ${{ matrix.branch }} == 'opensuse'
+      run: sudo apt-get install -y librcc-dev
+
+    - name: Configure & build
+      run: make -f unix/Makefile generic
+
+    - name: Run unzip -v
+      run: ./unzip -v
