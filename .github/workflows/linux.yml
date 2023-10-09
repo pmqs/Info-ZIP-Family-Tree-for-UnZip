@@ -27,7 +27,7 @@ jobs:
           - slackware
           - ubuntu
 
-          # zip beta releases
+          # unzip beta releases
 
           # other forks
 
