@@ -13,8 +13,8 @@ jobs:
     strategy:
       matrix:
         compiler:
-        - gcc
-        - clang
+          - gcc
+          - clang
 
 
         branch:
@@ -22,10 +22,10 @@ jobs:
           # - develop
 
         # official release
-        - '6.0'
+          - '6.0'
 
         # unzip beta releases
-        - '6.10c25'
+          - '6.10c25'
 
           # main linux distros
           - aix
