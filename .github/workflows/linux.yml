@@ -12,9 +12,20 @@ jobs:
 
     strategy:
       matrix:
+        compiler:
+            - gcc
+            - clang
+
+
         branch:
 
           # - develop
+
+        # official release
+        - '6.0'
+
+        # unzip beta releases
+        - '6.10c25'
 
           # main linux distros
           - aix
@@ -27,8 +38,7 @@ jobs:
           - slackware
           - ubuntu
 
-          # unzip beta releases
-          - '6.10c25'
+
 
           # other forks
           - packit-service-unzip
@@ -46,7 +56,9 @@ jobs:
 
     - name: Configure & build
       run: make -f unix/Makefile generic
-
+      env:
+        CC: ${{ matrix.compiler }}
+        
     - name: Run unzip -v
       run: ./unzip -v
 
