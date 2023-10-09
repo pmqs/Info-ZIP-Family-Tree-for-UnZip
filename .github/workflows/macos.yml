@@ -1,5 +1,7 @@
 name: MacOS Build
 
+# disabled
+
 on:
   workflow_dispatch:
   push:
@@ -18,14 +20,14 @@ jobs:
 
           # main linux distros
           - aix
-          - centos
+          # - centos
           - debian
-          - fedora
+          # - fedora
         # disable- issues with rcc symbols missing
         #   - opensuse
           - oracle
-          - slackware
-          - ubuntu
+          # - slackware
+          # - ubuntu
 
           # unzip beta releases
 
@@ -41,7 +43,7 @@ jobs:
     # - name: Install librcc for opensuse
     #   if: ${{ matrix.branch }} == 'opensuse'
     #   run: sudo apt-get install -y librcc-dev
-    
+
     - name: Install libiconv
       run: brew install libiconv
 
