@@ -28,7 +28,7 @@ jobs:
           - ubuntu
 
           # unzip beta releases
-          - '5.10c25'
+          - '6.10c25'
 
           # other forks
           - packit-service-unzip
