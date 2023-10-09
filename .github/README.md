@@ -62,7 +62,7 @@ Each distribution is checked into a branch that matches the distribution name. A
 | oracle | https://github.com/oracle/solaris-userland/tree/master/components/unzip | 6.10c25 |
 | opensuse | https://build.opensuse.org/package/show/Archiving/unzip | 6.0 |
 | aix | https://www.ibm.com/support/pages/node/883796 | 6.0 |
-
+| slackware | https://slackware.osuosl.org/slackware-14.2/patches/source/infozip/unzip-patches/ | 3.0 |
 
 
 ## Miscellaneous Distributions
