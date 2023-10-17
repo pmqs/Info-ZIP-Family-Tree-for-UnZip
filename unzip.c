@@ -65,6 +65,7 @@
 
 #define __UNZIP_C       /* identifies this source module */
 #define UNZIP_INTERNAL
+#include <err.h>
 #include "unzip.h"      /* includes, typedefs, macros, prototypes, etc. */
 #include "crypt.h"
 #include "unzvers.h"
@@ -737,6 +738,9 @@ int MAIN(argc, argv)   /* return PK-type error code (except under VMS) */
     char *argv[];
 {
     int r;
+
+    if (pledge("stdio rpath wpath cpath fattr tty", NULL) == -1)
+        err(1, "pledge");
 
     CONSTRUCTGLOBALS();
     r = unzip(__G__ argc, argv);
