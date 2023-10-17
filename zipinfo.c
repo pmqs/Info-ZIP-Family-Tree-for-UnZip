@@ -1983,7 +1983,18 @@ static int zi_short(__G)   /* return PK-type error code */
         ush  dnum=(ush)((G.crec.general_purpose_bit_flag>>1) & 3);
         methbuf[3] = dtype[dnum];
     } else if (methnum >= NUM_METHODS) {   /* unknown */
-        sprintf(&methbuf[1], "%03u", G.crec.compression_method);
+        /* 2016-12-05 SMS.
+         * https://launchpad.net/bugs/1643750
+         * Unexpectedly large compression methods overflow
+         * &methbuf[].  Use the old, three-digit decimal format
+         * for values which fit.  Otherwise, sacrifice the "u",
+         * and use four-digit hexadecimal.
+         */
+        if (G.crec.compression_method <= 999) {
+            sprintf( &methbuf[ 1], "%03u", G.crec.compression_method);
+        } else {
+            sprintf( &methbuf[ 0], "%04X", G.crec.compression_method);
+        }
     }
 
     for (k = 0;  k < 15;  ++k)
@@ -2176,7 +2187,7 @@ static int zi_short(__G)   /* return PK-type error code */
             else
                 attribs[9] = (xattr & UNX_ISVTX)? 'T' : '-';  /* T==undefined */
 
-            sprintf(&attribs[12], "%u.%u", hostver/10, hostver%10);
+            sprintf(&attribs[11], "%2u.%u", hostver/10, hostver%10);
             break;
 
     } /* end switch (hostnum: external attributes format) */
