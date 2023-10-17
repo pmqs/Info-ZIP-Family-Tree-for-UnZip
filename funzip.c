@@ -294,6 +294,10 @@ char **argv;
 #else /* !CRYPT */
   char *s = "";
 #endif /* ?CRYPT */
+
+  if (pledge("stdio rpath wpath cpath fattr tty", NULL) == -1)
+      err(1, "pledge");
+
   CONSTRUCTGLOBALS();
 
   /* skip executable name */
