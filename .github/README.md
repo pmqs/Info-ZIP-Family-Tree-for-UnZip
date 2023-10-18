@@ -64,6 +64,7 @@ Each distribution is checked into a branch that matches the distribution name. A
 | aix | https://www.ibm.com/support/pages/node/883796 | 6.0 |
 | slackware | https://slackware.osuosl.org/slackware-14.2/patches/source/infozip/unzip-patches/ | 6.0 |
 | openbsd | https://github.com/openbsd/ports/tree/master/archivers/unzip | 6.0 |
+| freebsd | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
 
 
 ## Miscellaneous Distributions
