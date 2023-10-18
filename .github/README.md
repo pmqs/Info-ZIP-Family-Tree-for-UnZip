@@ -50,7 +50,8 @@ The changes nade in these distributions are mostly, but not exclusively, to do w
 
 There are a *lot* of distributions out there. Patches from some of the main distributions are shown in the table below -- these seem to be the repos where a lot of other distributions source their changes. There is a huge amount of overlap between the distributions
 
-Each distribution is checked into a branch that matches the distribution name. All but one are branched from the `6.0` tag in the  `infozip` branch.
+Each distribution is checked into a branch that matches the distribution name. All but one are branched from the `6.0` tag in the  `infozip` branch. FreeBSD build a number of locale specific variants of `unzip`  - the branch names used here have the two character country code appended.
+
 
 
 | Branch Name | Code Sourced From | Branched From Infozip Tag |
@@ -65,6 +66,9 @@ Each distribution is checked into a branch that matches the distribution name. A
 | slackware | https://slackware.osuosl.org/slackware-14.2/patches/source/infozip/unzip-patches/ | 6.0 |
 | openbsd | https://github.com/openbsd/ports/tree/master/archivers/unzip | 6.0 |
 | freebsd | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
+| freebsd-zh | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
+| freebsd-ko | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
+| freebsd-ru | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
 
 
 ## Miscellaneous Distributions
