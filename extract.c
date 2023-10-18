@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1990-2009 Info-ZIP.  All rights reserved.
+  Copyright (c) 1990-2014 Info-ZIP.  All rights reserved.
 
   See the accompanying file LICENSE, version 2009-Jan-02 or later
   (the contents of which are also included in unzip.h) for terms of use.
@@ -298,6 +298,8 @@ char ZCONST Far TruncNTSD[] =
 #ifndef SFX
    static ZCONST char Far InconsistEFlength[] = "bad extra-field entry:\n \
      EF block length (%u bytes) exceeds remaining EF data (%u bytes)\n";
+   static ZCONST char Far TooSmallEFlength[] = "bad extra-field entry:\n \
+     EF block length (%u bytes) invalid (< %d)\n";
    static ZCONST char Far InvalidComprDataEAs[] =
      " invalid compressed data for EAs\n";
 #  if (defined(WIN32) && defined(NTSD_EAS))
@@ -1255,8 +1257,17 @@ static int extract_or_test_entrylist(__G__ numchunk,
         if (G.lrec.compression_method == STORED) {
             zusz_t csiz_decrypted = G.lrec.csize;
 
-            if (G.pInfo->encrypted)
+            if (G.pInfo->encrypted) {
+                if (csiz_decrypted <= 12) {
+                    /* handle the error now to prevent unsigned overflow */
+                    Info(slide, 0x401, ((char *)slide,
+                      LoadFarStringSmall(ErrUnzipNoFile),
+                      LoadFarString(InvalidComprData),
+                      LoadFarStringSmall2(Inflate)));
+                    return PK_ERR;
+                }
                 csiz_decrypted -= 12;
+            }
             if (G.lrec.ucsize != csiz_decrypted) {
                 Info(slide, 0x401, ((char *)slide,
                   LoadFarStringSmall2(WrnStorUCSizCSizDiff),
@@ -2023,13 +2034,24 @@ static int TestExtraField(__G__ ef, ef_len)
         ebID = makeword(ef);
         ebLen = (unsigned)makeword(ef+EB_LEN);
 
-        if (ebLen > (ef_len - EB_HEADSIZE)) {
+        if (ebLen > (ef_len - EB_HEADSIZE))
+        {
            /* Discovered some extra field inconsistency! */
             if (uO.qflag)
                 Info(slide, 1, ((char *)slide, "%-22s ",
                   FnFilter1(G.filename)));
             Info(slide, 1, ((char *)slide, LoadFarString(InconsistEFlength),
               ebLen, (ef_len - EB_HEADSIZE)));
+            return PK_ERR;
+        }
+        else if (ebLen < EB_HEADSIZE)
+        {
+            /* Extra block length smaller than header length. */
+            if (uO.qflag)
+                Info(slide, 1, ((char *)slide, "%-22s ",
+                  FnFilter1(G.filename)));
+            Info(slide, 1, ((char *)slide, LoadFarString(TooSmallEFlength),
+              ebLen, EB_HEADSIZE));
             return PK_ERR;
         }
 
@@ -2217,6 +2239,7 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
     ulg eb_ucsize;
     uch *eb_ucptr;
     int r;
+    ush method;
 
     if (compr_offset < 4)                /* field is not compressed: */
         return PK_OK;                    /* do nothing and signal OK */
@@ -2225,6 +2248,13 @@ static int test_compr_eb(__G__ eb, eb_size, compr_offset, test_uc_ebdata)
         ((eb_ucsize = makelong(eb+(EB_HEADSIZE+EB_UCSIZE_P))) > 0L &&
          eb_size <= (compr_offset + EB_CMPRHEADLEN)))
         return IZ_EF_TRUNC;               /* no compressed data! */
+
+    method = makeword(eb + (EB_HEADSIZE + compr_offset));
+    if ((method == STORED) &&
+        (eb_size - compr_offset - EB_CMPRHEADLEN != eb_ucsize))
+	return PK_ERR;			  /* compressed & uncompressed
+					   * should match in STORED
+					   * method */
 
     if (
 #ifdef INT_16BIT
@@ -2700,6 +2730,12 @@ __GDEF
     int err=BZ_OK;
     int repeated_buf_err;
     bz_stream bstrm;
+
+    if (G.incnt <= 0 && G.csize <= 0L) {
+        /* avoid an infinite loop */
+        Trace((stderr, "UZbunzip2() got empty input\n"));
+        return 2;
+    }
 
 #if (defined(DLL) && !defined(NO_SLIDE_REDIR))
     if (G.redirect_slide)
