@@ -705,7 +705,8 @@ modifiers:\n\
   -q  quiet mode (-qq => quieter)            -a  auto-convert any text files\n\
   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
   -C  match filenames case-insensitively     -L  make (some) names \
-lowercase\n %-42s  -V  retain VMS version numbers\n%s";
+lowercase\n %-42s  -V  retain VMS version numbers\n\
+                                             -.  don't translate filenames\n%s";
 #else /* !VMS */
 static ZCONST char Far UnzipUsageLine4[] = "\
 modifiers:\n\
@@ -1917,6 +1918,12 @@ int uz_opts(__G__ pargc, pargv)
                         ++uO.cflxflag;
                     break;
 #endif /* UNIX */
+                case ('.'):
+                    if (negative)
+                        uO.dotflag = FALSE, negative = 0;
+                    else
+                        uO.dotflag = TRUE;
+                    break;
                 default:
                     error = TRUE;
                     break;
