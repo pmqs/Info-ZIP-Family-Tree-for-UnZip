@@ -42,7 +42,7 @@
 # such as -DDOSWILD).
 
 # UnZip flags
-CC = cc#	try using "gcc" target rather than changing this (CC and LD
+#CC = cc#	try using "gcc" target rather than changing this (CC and LD
 LD = $(CC)#	must match, else "unresolved symbol:  ___main" is possible)
 AS = as
 LOC = $(D_USE_BZ2) $(LOCAL_UNZIP)
@@ -580,7 +580,7 @@ generic_bz2:	unix_make
 generic_zlib:	unix_make
 	@echo\
  "This target assumes zlib (libz.a or libz.so.*) is already installed."
-	$(MAKE) unzip funzip CF="$(CF) -DUSE_ZLIB" LF2="-lz $(LF2)"
+	$(MAKE) unzip funzip CF="$(CF) -DUSE_ZLIB" LF2="$(LF2)"
 
 # Generic GNU C shared library.  This is an example of how to compile UnZip as
 # a shared library.  (Doing so as a static library would be similar.)  See also
@@ -651,7 +651,7 @@ vax:		unzips	# general-purpose VAX target (not counting VMS)
 bsd:		_bsd	# generic BSD (BSD 4.2 & Ultrix handled in unzip.h)
 
 _bsd:		unix_make
-	$(MAKE) unzips CF="$(CF) -DBSD"
+	$(MAKE) unzips CF="$(CF) -DBSD -DUNIX"
 
 #----------------------------------------------------------------------------
 #  SysV group (for extern long timezone and ioctl.h instead of sgtty.h):
