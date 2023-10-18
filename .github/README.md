@@ -54,7 +54,7 @@ Each distribution is checked into a branch that matches the distribution name. A
 
 
 
-| Branch Name | Code Sourced From | Branched From Infozip Tag |
+| Branch Name | Code Sourced From | Branched From Tag |
 |---|---|---|
 | debian | https://packages.debian.org/source/sid/unzip | 6.0 |
 | ubuntu | https://packages.ubuntu.com/mantic/unzip | 6.0 |
@@ -65,9 +65,9 @@ Each distribution is checked into a branch that matches the distribution name. A
 | aix | https://www.ibm.com/support/pages/node/883796 | 6.0 |
 | slackware | https://slackware.osuosl.org/slackware-14.2/patches/source/infozip/unzip-patches/ | 6.0 |
 | freebsd | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
-| freebsd-zh | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
-| freebsd-ko | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
-| freebsd-ru | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | 6.0 |
+| freebsd-zh | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | freebsd |
+| freebsd-ko | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | freebsd |
+| freebsd-ru | https://github.com/freebsd/freebsd-ports/tree/main/archivers/unzip | freebsd |
 | netbsd | https://github.com/NetBSD/pkgsrc/tree/trunk/archivers/unzip | 6.0 |
 | openbsd | https://github.com/openbsd/ports/tree/master/archivers/unzip | 6.0 |
 
@@ -76,7 +76,7 @@ Each distribution is checked into a branch that matches the distribution name. A
 
 Here  are a few repos that have made custom changes to `unzip`
 
-| Branch | Code Sourced From | Notes | Branched From Infozip Tag |
+| Branch | Code Sourced From | Notes | Branched From Tag |
 |---| --- | ---| ---|
 | shigeya-unzip60 | https://github.com/shigeya/unzip60 | MacOS changes for localization & [Homebrew](https://brew.sh/)  | 6.0 |
 |sskaje-lzfse | https://github.com/sskaje/unzip-lzfse  |  Adds `lzfse` support for reading [ipa](https://en.wikipedia.org/wiki/.ipa) files | 6.0
@@ -89,7 +89,7 @@ Here  are a few repos that have made custom changes to `unzip`
 
 These sites below either contain binaries only or have made changes to the infozip sources but in a way that makes it difficult to metge into this repo. They are included here for reference.
 
-| Code Sourced From | Notes | Branched From Infozip Tag |
+| Code Sourced From | Notes | Branched From Tag |
 | --- | ---| --- |
 | https://github.com/jhamby/gnv-unzip | VMS Changes |  6.0
 | http://hpux.connect.org.uk/hppd/hpux/Misc/unzip-6.0/ | HP-UX binaries | 6.0
