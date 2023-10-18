@@ -97,7 +97,7 @@ int list_files(__G)    /* return PK-type error code */
 {
     int do_this_file=FALSE, cfactor, error, error_in_archive=PK_COOL;
 #ifndef WINDLL
-    char sgn, cfactorstr[10];
+    char sgn, cfactorstr[12];
     int longhdr=(uO.vflag>1);
 #endif
     int date_format;
@@ -116,7 +116,7 @@ int list_files(__G)    /* return PK-type error code */
     ulg acl_size, tot_aclsize=0L, tot_aclfiles=0L;
 #endif
     min_info info;
-    char methbuf[8];
+    char methbuf[80];
     static ZCONST char dtype[]="NXFS";  /* see zi_short() */
     static ZCONST char Far method[NUM_METHODS+1][8] =
         {"Stored", "Shrunk", "Reduce1", "Reduce2", "Reduce3", "Reduce4",
@@ -339,7 +339,14 @@ int list_files(__G)    /* return PK-type error code */
                 G.crec.compression_method == ENHDEFLATED) {
                 methbuf[5] = dtype[(G.crec.general_purpose_bit_flag>>1) & 3];
             } else if (methnum >= NUM_METHODS) {
-                sprintf(&methbuf[4], "%03u", G.crec.compression_method);
+                /* Fix for CVE-2014-9913, similar to CVE-2016-9844.
+                 * Use the old decimal format only for values which fit.
+                 */
+                if (G.crec.compression_method <= 999) {
+                    sprintf( &methbuf[ 4], "%03u", G.crec.compression_method);
+                } else {
+                    sprintf( &methbuf[ 3], "%04X", G.crec.compression_method);
+                }
             }
 
 #if 0       /* GRR/Euro:  add this? */
