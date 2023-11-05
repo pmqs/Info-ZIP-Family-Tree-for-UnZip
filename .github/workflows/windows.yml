@@ -48,7 +48,7 @@ jobs:
         ref: ${{ matrix.branch }}
 
     - name: Configure & build
-      run: make -f win32/Makefile.gcc
+      run: make -f win32/Makefile.gcc -DCC_CPU_OPT
 
     - name: Run unzip -v
       run: ./unzip -v
