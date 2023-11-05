@@ -1,0 +1,60 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        branch:
+
+          - develop
+
+        # official release
+          - '6.0'
+
+        # unzip beta releases
+          - '6.10c25'
+
+        #   # main linux distros
+        #   - aix
+        #   - centos
+        #   - debian
+        #   - fedora
+        # # disable- issues with rcc symbols missing
+        # #   - opensuse
+        #   - oracle
+        #   - slackware
+        #   - ubuntu
+
+        #   # other forks
+        #   - packit-service-unzip
+
+        # compiler:
+        #   - gcc
+        #   - clang
+
+    name: Build with '${{ matrix.branch }}'
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ matrix.branch }}
+
+    - name: Configure & build
+      run: make -f win32/Makefile.gcc
+
+    - name: Run unzip -v
+      run: ./unzip -v
+
+    - name: Run unzip -h
+      run: ./unzip -h
+
+    - name: Run unzip -hh
+      run: ./unzip -hh
